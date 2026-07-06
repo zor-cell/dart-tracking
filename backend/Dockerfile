@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-# system libraries for openCV
+# system libraries for opencv
 RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
