@@ -1,0 +1,13 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Backend for automatic dart-tracking"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.139.0",
+    "numpy>=2.5.1",
+    "opencv-python-headless>=5.0.0.93",
+    "uvicorn[standard]>=0.50.2",
+    "websockets>=16.0",
+]

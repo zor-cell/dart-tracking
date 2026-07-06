@@ -1,2 +1,18 @@
 name: dart-tracking
 services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend_container
+    restart: unless-stopped
+    ports:
+      - "10020:8000"
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend_container
+    restart: unless-stopped
+    ports:
+      - "10021:80"
