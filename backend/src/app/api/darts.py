@@ -9,7 +9,7 @@ async def dart_tracking_endpoint(websocket: WebSocket):
 
     try:
         while True:
-            data = await websocket.receive_text()
-            await websocket.send_json({"echo": f"Received: {data}"})
+            data = await websocket.receive_bytes()
+            await websocket.send_json({"echo": f"Received {len(data)} bytes"})
     except Exception as e:
         print(f"Connection closed: {e}")

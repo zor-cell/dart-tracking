@@ -1,0 +1,28 @@
+<div class="capture">
+  <h1>Wurf-Erkennung</h1>
+
+  <div class="preview">
+    <video #video class="preview__video" muted playsinline></video>
+    <canvas #diffCanvas [width]="160" [height]="90" class="preview__hidden-canvas"></canvas>
+    <canvas #captureCanvas class="preview__hidden-canvas"></canvas>
+  </div>
+
+  <div class="controls">
+    @if (cameraStatus() === 'idle' || cameraStatus() === 'error') {
+      <p-button label="Kamera starten" (onClick)="start()" />
+    } @else {
+      <p-button label="Kamera stoppen" severity="secondary" (onClick)="stop()" />
+    }
+  </div>
+
+  <div class="status">
+    <span class="status__badge" [class.status__badge--active]="displayStatus() !== 'idle'">
+      {{ statusLabel() }}
+    </span>
+    <span class="status__connection">WebSocket: {{ connectionStatus() }}</span>
+  </div>
+
+  @if (cameraError(); as error) {
+    <p class="error">{{ error }}</p>
+  }
+</div>
