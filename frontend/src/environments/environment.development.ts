@@ -1,3 +1,5 @@
 export const environment = {
-  backendWsUrl: 'ws://localhost:8000/ws/darts',
+  production: false,
+  httpApiUrl: 'http://localhost:8000/api',
+  wsApiUrl: 'ws://localhost:8000/api/ws'
 };
