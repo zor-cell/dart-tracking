@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import health, darts
@@ -17,5 +17,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(health.router)
-app.include_router(darts.router, prefix="/api")
+api_router = APIRouter(prefix="/api")
+api_router.include_router(health.router)
+api_router.include_router(darts.router)
+
+app.include_router(api_router)
