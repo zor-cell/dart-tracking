@@ -1,0 +1,4 @@
+services:
+  backend:
+    ports:
+      - "10021:8000"

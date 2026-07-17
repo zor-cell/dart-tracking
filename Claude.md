@@ -17,6 +17,14 @@ Siehe @docs/zeitplan.md — aktuell in Phase X, Fokus auf Y.
 Angular, siehe @docs/angular-best-practices.md — z. B. Signals statt
 zustandsbehafteter Services, standalone Components, kein ngClass/ngStyle.
 
+## Instruktionen
+Kommentare in Code sollen immer auf Englisch verfasst werden
+
 ## Commands
-- `npm run dev` — Frontend starten
+- `npm run start` — Frontend starten
 - `uv run uvicorn app.main:app --app-dir src --reload` — Backend starten
+- `docker compose -f compose.yaml -f compose.dev.yaml up -d --build` — Stack lokal
+  in Docker. Frontend auf 10020, das Dev-Overlay exposed zusätzlich das Backend
+  auf 10021 (Swagger, curl). Ohne `-f`-Flags läuft die Produktions-Variante:
+  Backend nur containerintern über den Nginx-Proxy erreichbar — so deployt auch
+  die CI auf dem RPi.

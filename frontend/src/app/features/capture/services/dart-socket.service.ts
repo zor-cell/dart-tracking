@@ -16,7 +16,7 @@ export class DartSocketService {
     }
 
     this.connectionStatus.set('connecting');
-    this.socket = new WebSocket(environment.wsApiUrl);
+    this.socket = new WebSocket(`${environment.wsApiUrl}/darts`);
 
     this.socket.addEventListener('open', () => this.connectionStatus.set('connected'));
     this.socket.addEventListener('error', () => this.connectionStatus.set('error'));
