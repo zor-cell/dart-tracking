@@ -1,0 +1,14 @@
+<nav class="bottom-nav" aria-label="Hauptnavigation">
+  @for (item of items; track item.path) {
+    <a
+      class="bottom-nav__item"
+      [routerLink]="item.path"
+      routerLinkActive="bottom-nav__item--active"
+      #link="routerLinkActive"
+      [attr.aria-current]="link.isActive ? 'page' : null"
+    >
+      <i class="bottom-nav__icon pi {{ item.icon }}" aria-hidden="true"></i>
+      <span class="bottom-nav__label">{{ item.label }}</span>
+    </a>
+  }
+</nav>

@@ -1,0 +1,17 @@
+:host {
+  display: block;
+}
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  /* Dynamic viewport height so the bottom nav stays put while mobile browser
+     chrome shows/hides. */
+  height: 100dvh;
+}
+
+.shell__content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}

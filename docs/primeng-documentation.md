@@ -1,0 +1,132 @@
+# PrimeNG
+
+> The Most Complete Angular UI Component Library
+
+## Guides
+
+- [Getting Started - PrimeNG](https://primeng.dev/installation): Setting up PrimeNG in an Angular CLI project.
+- [Configuration - PrimeNG](https://primeng.dev/configuration): Application wide configuration for PrimeNG.
+- [Styled Mode](https://primeng.dev/theming/styled): Choose from a variety of pre-styled themes or develop your own.
+- [Unstyled Mode](https://primeng.dev/theming/unstyled): Theming PrimeNG with alternative styling approaches.
+- [Angular Icon Library - PrimeNG](https://primeng.dev/icons): PrimeIcons is the default icon library of PrimeNG with over 250 premium icons developed by PrimeTek. PrimeIcons library is optional as PrimeNG components can use any icon with templating.
+- [Custom Icons - PrimeNG](https://primeng.dev/customicons): PrimeNG components can be used with any icon library using the templating features.
+- [PrimeNG - Pass Through](https://primeng.dev/passthrough): The Pass Through attributes is an API to customize the internal DOM Structure of the components.
+- [Tailwind CSS - PrimeNG](https://primeng.dev/tailwind): Integration between PrimeNG and Tailwind CSS.
+- [Accessibility - PrimeNG](https://primeng.dev/guides/accessibility): PrimeNG targets AA level compliance on WCAG specification, refer to the accessibility documentation of each component for detailed information.
+- [Animations - PrimeNG](https://primeng.dev/guides/animations): Various PrimeNG Components utilize native CSS animations to provide an enhanced user experience. The default animations are based on the best practices recommended by the usability experts. In case you need to customize the default animations, this documentation covers the entire set of built-in animations.
+- [RTL Support](https://primeng.dev/guides/rtl): Right-to-left direction support of PrimeNG.
+- [LLMs.txt - PrimeNG](https://primeng.dev/llms): LLM-optimized documentation endpoints for PrimeNG components.
+- [MCP Server - PrimeNG](https://primeng.dev/mcp): Give compatible AI assistants access to PrimeNG component documentation, guides, examples, and Angular API metadata.
+- [Plugin - PrimeNG](https://primeng.dev/plugin): Add PrimeNG workflow skills and the PrimeNG MCP server to your AI assistant with one installation.
+- [Migration - PrimeNG v22](https://primeng.dev/migration/v22): Migration guide to PrimeNG v22.
+- [Migration - PrimeNG v21](https://primeng.dev/migration/v21): Migration guide to PrimeNG v21.
+- [Migration - PrimeNG v20](https://primeng.dev/migration/v20): Migration guide to PrimeNG v20.
+- [Migration - PrimeNG](https://primeng.dev/migration/v19): Migration guide to PrimeNG v19
+
+## Components
+
+- [Angular Accordion Component](https://primeng.dev/accordion): Accordion groups a collection of contents in tabs.
+- [Angular Animate On Scroll Directive](https://primeng.dev/animateonscroll): AnimateOnScroll is used to apply animations to elements when entering or leaving the viewport during scrolling.
+- [Angular AutoComplete Component](https://primeng.dev/autocomplete): AutoComplete is an input component that provides real-time suggestions when being typed.
+- [Angular AutoFocus Directive](https://primeng.dev/autofocus): AutoFocus manages focus on focusable element on load.
+- [Angular Avatar Component](https://primeng.dev/avatar): Avatar represents people using icons, labels and images.
+- [Angular Badge Component](https://primeng.dev/badge): Badge is a small status indicator for another element.
+- [Angular Bind Directive](https://primeng.dev/bind): The Bind directive dynamically applies DOM element attributes using properties defined in an object.
+- [Angular BlockUI Component](https://primeng.dev/blockui): BlockUI can either block other components or the whole page.
+- [Angular Breadcrumb Component](https://primeng.dev/breadcrumb): Breadcrumb provides contextual information about page hierarchy.
+- [Angular Button Component](https://primeng.dev/button): Button is an extension to standard button element with icons and theming.
+- [Angular Card Component](https://primeng.dev/card): Card is a flexible container component.
+- [Angular Carousel Component](https://primeng.dev/carousel): Carousel is a content slider featuring various customization options.
+- [Angular CascadeSelect Component](https://primeng.dev/cascadeselect): CascadeSelect displays a nested structure of options.
+- [Angular Chart Component](https://primeng.dev/chart): Chart components are based on Charts.js 3.3.2+, an open source HTML5 based charting library.
+- [Angular Checkbox Component](https://primeng.dev/checkbox): Checkbox is an extension to standard checkbox element with theming.
+- [Angular Chip Component](https://primeng.dev/chip): Chip represents entities using icons, labels and images.
+- [Angular ClassNames Directive](https://primeng.dev/classnames): ClassNames provides extended class binding functionality that is not possible with the native Angular directives.
+- [Angular ColorPicker Component](https://primeng.dev/colorpicker): ColorPicker is an input component to select a color.
+- [Angular CommandMenu Component](https://primeng.dev/commandmenu): CommandMenu is a search-driven command palette component.
+- [Angular Compare Component](https://primeng.dev/compare): Compare two items side by side with a slider.
+- [Angular ConfirmDialog Component](https://primeng.dev/confirmdialog): ConfirmDialog is backed by a service utilizing Observables to display confirmation windows easily that can be shared by multiple actions on the same component.
+- [Angular ConfirmPopup Component](https://primeng.dev/confirmpopup): ConfirmPopup displays a confirmation overlay displayed relatively to its target.
+- [Angular ContextMenu Component](https://primeng.dev/contextmenu): ContextMenu displays an overlay menu on right click of its target.
+- [Angular DataView Component](https://primeng.dev/dataview): DataView displays data in grid grid-cols-12 gap-4 or list layout with pagination and sorting features.
+- [Angular DatePicker Component](https://primeng.dev/datepicker): DatePicker is a form component to work with dates.
+- [Angular Dialog Component](https://primeng.dev/dialog): Dialog is a container to display content in an overlay window.
+- [Angular Divider Component](https://primeng.dev/divider): Divider is used to separate contents.
+- [Angular Dock Component](https://primeng.dev/dock): Dock is a navigation component consisting of menuitems.
+- [Angular Drag and Drop Component](https://primeng.dev/dragdrop): pDraggable and pDroppable directives apply drag-drop behaviors to any element.
+- [Angular Drawer Component](https://primeng.dev/drawer): Drawer is a panel component displayed as an overlay at the edges of the screen.
+- [Angular Dynamic Dialog Component](https://primeng.dev/dynamicdialog): Dialogs can be created dynamically with any component as the content using a DialogService.
+- [Angular Editor Component](https://primeng.dev/editor): Editor is rich text editor component based on Quill.
+- [Angular Fieldset Component](https://primeng.dev/fieldset): Fieldset is a grouping component with a content toggle feature.
+- [Angular FileUpload Component](https://primeng.dev/fileupload): FileUpload is an advanced uploader with dragdrop support, multi file uploads, auto uploading, progress tracking and validations.
+- [Angular Float Label Component](https://primeng.dev/floatlabel): FloatLabel appears on top of the input field when focused.
+- [Angular Fluid Component](https://primeng.dev/fluid): Fluid is a layout component to make descendant components span full width of their container.
+- [Angular Focus Trap Component](https://primeng.dev/focustrap): Focus Trap keeps focus within a certain DOM element while tabbing.
+- [Angular Gallery Component](https://primeng.dev/gallery): Gallery is an image viewer with zoom, rotate, flip and download capabilities.
+- [Angular Gallery Component](https://primeng.dev/galleria): Galleria is an advanced content gallery component.
+- [Angular IconField Component](https://primeng.dev/iconfield): IconField wraps an input and an icon.
+- [Angular Ifta Label Component](https://primeng.dev/iftalabel): IftaLabel is used to create infield top aligned labels.
+- [Angular Image Component](https://primeng.dev/image): Displays an image with preview and tranformation options.
+- [Angular ImageCompare Component](https://primeng.dev/imagecompare): Compare two images side by side with a slider.
+- [Angular Inplace Component](https://primeng.dev/inplace): Inplace provides an easy to do editing and display at the same time where clicking the output displays the actual content.
+- [Angular InputColor Component](https://primeng.dev/inputcolor): InputColor is a composable color picker component.
+- [Angular InputGroup Component](https://primeng.dev/inputgroup): Text, icon, buttons and other content can be grouped next to an input.
+- [Angular InputMask Component](https://primeng.dev/inputmask): InputMask component is used to enter input in a certain format such as numeric, date, currency and phone.
+- [Angular InputNumber Component](https://primeng.dev/inputnumber): InputNumber is an input component to provide numerical input.
+- [Angular InputPassword Component](https://primeng.dev/inputpassword): InputPassword is an enhanced input for password entry with strength metering, mask toggling, and controlled or uncontrolled usage.
+- [Angular InputTags Component](https://primeng.dev/inputtags): InputTags is used to enter multiple tags.
+- [Angular InputText Component](https://primeng.dev/inputtext): InputText is an extension to standard input element with icons and theming.
+- [Angular KeyFilter Component](https://primeng.dev/keyfilter): KeyFilter is a directive to restrict individual key strokes. In order to restrict the whole input, use InputNumber or InputMask instead.
+- [Angular Knob Component](https://primeng.dev/knob): Knob is a form component to define number inputs with a dial.
+- [Angular Label Component](https://primeng.dev/label): Label provides accessible text labels for form controls. Use the for attribute to link the label to a form control by its id.
+- [Angular Listbox Component](https://primeng.dev/listbox): Listbox is used to select one or more values from a list of items.
+- [Angular MegaMenu Component](https://primeng.dev/megamenu): MegaMenu is navigation component that displays submenus together.
+- [Angular Menu Component](https://primeng.dev/menu): Menu is a navigation / command component that supports dynamic and static positioning.
+- [Angular Menubar Component](https://primeng.dev/menubar): Menubar is a horizontal menu component.
+- [Angular Message Component](https://primeng.dev/message): Message component is used to display inline messages.
+- [Angular MeterGroup Component](https://primeng.dev/metergroup): MeterGroup displays scalar measurements within a known range.
+- [Angular MultiSelect Component](https://primeng.dev/multiselect): MultiSelect is used to select multiple items from a collection.
+- [Angular OrderList Component](https://primeng.dev/orderlist): OrderList is used to sort a collection.
+- [Angular Organization Chart Component](https://primeng.dev/organizationchart): OrganizationChart visualizes hierarchical organization data.
+- [Angular Otp Input Component](https://primeng.dev/inputotp): Input Otp is used to enter one time passwords.
+- [Angular Paginator Component](https://primeng.dev/paginator): Paginator displays data in paged format and provides navigation between pages.
+- [Angular Panel Component](https://primeng.dev/panel): Panel is a container component with an optional content toggle feature.
+- [Angular PanelMenu Component](https://primeng.dev/panelmenu): PanelMenu is a hybrid of Accordion and Tree components.
+- [Angular PickList Component](https://primeng.dev/picklist): PickList is used to reorder items between different lists.
+- [Angular Popover Component](https://primeng.dev/popover): Popover is a container component that can overlay other components on page.
+- [Angular ProgressBar Component](https://primeng.dev/progressbar): ProgressBar is a process status indicator.
+- [Angular ProgressSpinner Component](https://primeng.dev/progressspinner): ProgressSpinner is a process status indicator that supports both determinate and indeterminate modes.
+- [Angular RadioButton Component](https://primeng.dev/radiobutton): RadioButton is an extension to standard radio button element with theming.
+- [Angular Rating Component](https://primeng.dev/rating): Rating component is a star based selection input.
+- [Angular Ripple Component](https://primeng.dev/ripple): Ripple directive adds ripple effect to the host element.
+- [Angular Scroll Area Component](https://primeng.dev/scrollarea): ScrollArea is a cross browser, lightweight and themable alternative to native browser scrollbar.
+- [Angular Scroll Panel Component](https://primeng.dev/scrollpanel): ScrollPanel is a cross browser, lightweight and skinnable alternative to native browser scrollbar.
+- [Angular Scroll Top Component](https://primeng.dev/scrolltop): ScrollTop gets displayed after a certain scroll position and used to navigates to the top of the page quickly.
+- [Angular Select Component](https://primeng.dev/select): Select is used to choose an item from a collection of options.
+- [Angular SelectButton Component](https://primeng.dev/selectbutton): SelectButton is used to choose single or multiple items from a list using buttons.
+- [Angular Sidebar Component](https://primeng.dev/sidebar): Sidebar is a compound navigation panel with collapsible icon mode, offcanvas mode, variants and optional overlay.
+- [Angular Skeleton Component](https://primeng.dev/skeleton): Skeleton is a placeholder to display instead of the actual content.
+- [Angular Slider Component](https://primeng.dev/slider): Slider is a component to provide input by dragging a handle along a track.
+- [Angular Speed Dial Component](https://primeng.dev/speeddial): SpeedDial is a floating button with a popup menu.
+- [Angular SplitButton Component](https://primeng.dev/splitbutton): SplitButton groups a set of commands in an overlay with a default action item.
+- [Angular Splitter Component](https://primeng.dev/splitter): Splitter is utilized to separate and resize panels.
+- [Angular Stepper Component](https://primeng.dev/stepper): The Stepper component displays a wizard-like workflow by guiding users through the multi-step progression.
+- [Angular StyleClass Component](https://primeng.dev/styleclass): StyleClass manages css classes declaratively to during enter/leave animations or just to toggle classes on an element.
+- [Angular Table Component](https://primeng.dev/table): Table displays data in tabular format.
+- [Angular Tabs Component](https://primeng.dev/tabs): Tabs is a container component to group content with tabs.
+- [Angular Tag Component](https://primeng.dev/tag): Tag component is used to categorize content.
+- [Angular Terminal Component](https://primeng.dev/terminal): Terminal is a text-based interface component that emulates a command line experience, enabling users to enter commands and receive responses.
+- [Angular Textarea Component](https://primeng.dev/textarea): Textarea adds styling and autoResize functionality to standard textarea element.
+- [Angular TieredMenu Component](https://primeng.dev/tieredmenu): TieredMenu displays submenus in nested overlays.
+- [Angular Timeline Component](https://primeng.dev/timeline): Timeline visualizes a series of chained events.
+- [Angular Toast Component](https://primeng.dev/toast): Toast is used to display messages in an overlay.
+- [Angular ToggleButton Component](https://primeng.dev/togglebutton): ToggleButton is used to select a boolean value using a button.
+- [Angular ToggleSwitch Component](https://primeng.dev/toggleswitch): ToggleSwitch is used to select a boolean value.
+- [Angular Toolbar Component](https://primeng.dev/toolbar): Toolbar is a grouping component for buttons and other content.
+- [Angular Tooltip Component](https://primeng.dev/tooltip): Tooltip directive provides advisory information for a component. Tooltip is integrated within various PrimeNG components.
+- [Angular Tree Component](https://primeng.dev/tree): Tree is used to display hierarchical data.
+- [Angular TreeSelect Component](https://primeng.dev/treeselect): TreeSelect is a form component to choose from hierarchical data.
+- [Angular TreeTable Component](https://primeng.dev/treetable): TreeTable is used to display hierarchical data in tabular format.
+- [Angular Virtual Scroller Component](https://primeng.dev/virtualscroller): VirtualScroller is a performance-approach to handle huge data efficiently.
+- [FilterService - PrimeNG](https://primeng.dev/filterservice): FilterService is a helper utility to filter collections against constraints.
+- [Overlay API - PrimeNG](https://primeng.dev/overlay): This API allows overlay components to be controlled from the PrimeNG. In this way, all overlay components in the application can have the same behavior.

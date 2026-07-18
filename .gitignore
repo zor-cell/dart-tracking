@@ -1,4 +1,6 @@
 .idea/
+.claude/
 .env
 __pycache__/
 .venv/
+scripts
