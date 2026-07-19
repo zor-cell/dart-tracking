@@ -1,5 +1,5 @@
 from app.api.core.dto.base import CamelModel
 
 
-class RegisterDartRequest(CamelModel):
+class RegisterDartDto(CamelModel):
     points: int

@@ -2,15 +2,10 @@
 
 from dataclasses import dataclass, field
 
+from app.api.features.game.entity.player import Player
+
 ALLOWED_MODES = (301, 501, 701)
 DARTS_PER_TURN = 3
-
-
-@dataclass
-class Player:
-    id: int
-    name: str
-    remaining: int
 
 
 @dataclass

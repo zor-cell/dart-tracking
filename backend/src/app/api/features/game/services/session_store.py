@@ -7,8 +7,8 @@ server is the source of truth, since scores originate from the vision pipeline.
 
 from uuid import uuid4
 
-from app.api.features.game.dto.game_state import GameStateResponse
-from app.api.features.game.dto.player_state import PlayerState
+from app.api.features.game.dto.game_state import GameStateDto
+from app.api.features.game.dto.player_dto import PlayerDto
 from app.api.features.game.entity.game import Game, Player
 
 
@@ -33,12 +33,12 @@ class GameStore:
 store = GameStore()
 
 
-def to_response(game: Game) -> GameStateResponse:
-    return GameStateResponse(
+def to_response(game: Game) -> GameStateDto:
+    return GameStateDto(
         id=game.id,
         mode=game.mode,
         players=[
-            PlayerState(id=player.id, name=player.name, remaining=player.remaining)
+            PlayerDto(id=player.id, name=player.name)
             for player in game.players
         ],
         current_player_index=game.current_player_index,
