@@ -141,7 +141,35 @@ hier noch nicht verifiziert — vor Übernahme in die Arbeit selbst prüfen.**
   Schätzung aus der genormten Board-Geometrie (20 Sektoren, feste Radien).
 - Suchbegriffe: *automatic dartboard calibration homography*,
   *dartboard detection opencv*, *ellipse detection dartboard*.
-- Quellen: _(hier sammeln)_
+- Quellen (Stand 07/2026, Zitierbarkeit noch prüfen):
+
+  *Dart-spezifisch:*
+  - **DeepDarts** (McNally et al., CVPR-Workshop 2021) — *peer-reviewed, Kernanker.*
+    Ein Netz findet Dart-Positionen **und vier Board-Kalibrierungspunkte** →
+    Homographie in die Board-Ebene. Konzeptionell exakt unser
+    Kalibrierungs-Schritt (nur per Deep Learning statt Hough/Kontur).
+    [arXiv](https://arxiv.org/abs/2105.09880) ·
+    [Volltext-PDF (CVF)](https://openaccess.thecvf.com/content/CVPR2021W/CVSports/papers/McNally_DeepDarts_Modeling_Keypoints_as_Objects_for_Automatic_Scorekeeping_in_Darts_CVPRW_2021_paper.pdf) ·
+    [IEEE](https://ieeexplore.ieee.org/document/9522909/)
+
+  *Open-Source-Projekte (Methoden-Referenz, nicht als Paper zitieren):*
+  - **opencv-steel-darts** (Höttinger) — klassische OpenCV-Pipeline (kein DL) auf
+    Raspberry Pi; am nächsten an unserem Hough/Kontur-Ansatz und Deploy-Target.
+    [GitHub](https://github.com/hanneshoettinger/opencv-steel-darts)
+  - **dart-sense** (bnww) — YOLOv8, Smartphone-Video, automatische Board-
+    Kalibrierung; die moderne Variante unserer Zielkonfiguration.
+    [GitHub](https://github.com/bnww/dart-sense)
+
+  *Klassische CV-Grundlagen (Board projiziert schräg → Ellipse):*
+  - [Fast Ellipse Detection Using Hough Transform](https://www.researchgate.net/publication/221367058_Fast_Ellipse_Detection_Algorithm_Using_Hough_Transform_on_the_GPU)
+  - [Robust Detection of Non-overlapping Ellipses (arXiv 2011.13849)](https://arxiv.org/pdf/2011.13849)
+    — Ellipsen-Extraktion für Kalibrierungs-Targets, übertragbar auf die Board-Ringe.
+  - Fundamente: **Hough-Transform** (Duda & Hart, 1972), **RANSAC** (Fischler &
+    Bolles, 1981), **Hartley & Zisserman „Multiple View Geometry"** (Homographie).
+
+  *Patente (nur Prior-Art/Motivation „teure Multi-Kamera-Systeme"):*
+  - [US20170307341A1](https://patents.google.com/patent/US20170307341A1/en) ·
+    [US20220341716](https://patents.justia.com/patent/20220341716)
 
 ### 6.2 Pfeil-Lokalisierung & Verdeckung
 - Techniken: Hough-Linien / Konturanalyse zur Pfeilspitze; Umgang mit partieller
@@ -156,10 +184,12 @@ hier noch nicht verifiziert — vor Übernahme in die Arbeit selbst prüfen.**
 - Quellen: _(hier sammeln)_
 
 ### 6.4 Vergleichs-/End-to-End-Ansätze
-- Lead: **„DeepDarts"** — Single-Image-Dart-Scoring per Deep Learning; taugt gut
-  als Related-Work-Anker für den kamerabasierten Ansatz. Autor/Jahr/Venue vor
-  Zitation verifizieren.
-- Quellen: _(hier sammeln)_
+- **DeepDarts** als Related-Work-Anker für den Single-Camera-Ansatz — volle
+  Angabe unter [6.1](#61-board-erkennung--kalibrierung).
+- **PEELA** (STLabs) — erweitert DeepDarts auf Dual-Kamera + YOLOv4, adressiert
+  dessen Schwächen bei schrägen Winkeln. Projekt/Report — Peer-Review prüfen.
+  [Link](https://stlabs.is/project3)
+- Quellen: _(weiter sammeln)_
 
 ---
 

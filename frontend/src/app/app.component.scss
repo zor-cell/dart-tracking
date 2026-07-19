@@ -5,9 +5,10 @@
 .shell {
   display: flex;
   flex-direction: column;
-  /* Dynamic viewport height so the bottom nav stays put while mobile browser
-     chrome shows/hides. */
   height: 100dvh;
+
+  max-width: 480px;
+  margin: 0 auto;
 }
 
 .shell__content {
