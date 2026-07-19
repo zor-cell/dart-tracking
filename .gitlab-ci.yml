@@ -1,11 +1,37 @@
 stages:
 - deploy
+- maintenance
 
 deploy:
   stage: deploy
   tags:
     - rpi5
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"'
   script:
     - docker compose up -d --build
+
+update-timetracking:
+  stage: maintenance
+  tags:
+    - rpi5
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+  variables:
+    WIKI_REPO: "https://oauth2:${TIMETRACKING_TOKEN}@gitlab.tuwien.ac.at/e12225143/dart-tracking.wiki.git"
+  script:
+    - python3 scripts/wiki_timelogs.py --out Zeiterfassung.md
+    - rm -rf wiki-repo
+    - git clone "$WIKI_REPO" wiki-repo
+    - mv -f Zeiterfassung.md wiki-repo/Zeiterfassung.md
+    - cd wiki-repo
+    - git config user.email "e12225143@student.tuwien.ac.at"
+    - git config user.name "Zorman, Philippe"
+    - git add Zeiterfassung.md
+    - |
+      if git diff --cached --quiet; then
+        echo "No time-tracking changes since last run."
+      else
+        git commit -m "chore: update time tracking from GitLab"
+        git push
+      fi
