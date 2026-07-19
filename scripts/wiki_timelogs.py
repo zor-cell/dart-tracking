@@ -27,6 +27,9 @@ PROJECT = "e12225143/dart-tracking"
 GRAPHQL_URL = f"{HOST}/api/graphql"
 WIKI_PAGE = f"{HOST}/{PROJECT}/-/wikis/Zeiterfassung"
 
+# Target hour budget for the thesis; shown next to the current total.
+MAX_HOURS = 250
+
 # Paginated over all timelogs of the project; timeSpent is in seconds, spentAt is
 # an ISO-8601 timestamp. issue can be null (e.g. time logged on a merge request).
 QUERY = """
@@ -115,16 +118,14 @@ def render(logs: list[dict]) -> str:
         bucket["seconds"] += spent
 
     lines = [
-        "# Zeiterfassung",
-        "",
-        "Aufwandsnachweis für die Bachelorarbeit: die in GitLab via `/spend`",
-        "gebuchte Zeit. Alle Angaben in Stunden.",
-        "",
         f"> Generiert am {date.today().strftime('%d.%m.%Y')} aus der GitLab-API mit",
         "> `scripts/wiki_timelogs.py`. Nicht von Hand bearbeiten — Änderungen gehen",
         "> beim nächsten Lauf verloren.",
         "",
-        f"## Gesamt: {hours(total)} Stunden",
+        "## Gesamt",
+        "",
+        f"- **Aktuell:** {hours(total)} h",
+        f"- **Maximum:** {MAX_HOURS} h",
         "",
     ]
 
@@ -138,10 +139,9 @@ def render(logs: list[dict]) -> str:
     if not per_week:
         lines.append("| | _Noch keine Zeit gebucht._ | |")
 
-    # Per issue, most time first.
+    # Per issue, ascending by issue ID.
     lines += ["", "## Pro Issue", "", "| Issue | Titel | Status | Stunden |", "|---|---|---|---:|"]
-    ranked = sorted(per_issue.items(), key=lambda kv: kv[1]["seconds"], reverse=True)
-    for iid, data in ranked:
+    for iid, data in sorted(per_issue.items()):
         state = "geschlossen" if data["state"] == "closed" else "offen"
         title = data["title"].replace("|", "\\|")
         lines.append(f"| [#{iid}]({data['web_url']}) | {title} | {state} | {hours(data['seconds'])} |")
