@@ -17,6 +17,11 @@ Siehe @docs/zeitplan.md — aktuell in Phase X, Fokus auf Y.
 Angular, siehe @docs/angular-best-practices.md — z. B. Signals statt
 zustandsbehafteter Services, standalone Components, kein ngClass/ngStyle.
 
+## Backend-Konventionen
+FastAPI, siehe @docs/backend-best-practices.md — Feature-Struktur unter `api/`
+(pro Feature `dto/`, `entity/`, `services/`), camelCase-JSON, server-seitiger
+Game-State.
+
 ## Instruktionen
 Kommentare in Code sollen immer auf Englisch verfasst werden
 

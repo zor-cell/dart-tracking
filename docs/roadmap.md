@@ -62,11 +62,11 @@ Angelehnt an die Phasen in [zeitplan.md](zeitplan.md).
 
 ### Phase 2 — MVP-Kern
 
-- [ ] Routen-Rework (`/capture` in `/game` auflösen, `/game/new` anlegen)
-- [ ] Game-Session-State via Signals (Spieler, Modus, aktueller Werfer,
-      Würfe pro Runde, Restpunkte)
-- [ ] Spiel-Setup-View (Spieler + Modus)
-- [ ] Game-View: Kamera-Layout oben, Scoreboard unten
+- [x] Routen-Rework (`/capture` in `/game` auflösen, `/game/new` anlegen)
+- [x] Game-Session-State (server-seitig; Client-Cache via Signals — Spieler,
+      Modus, aktueller Werfer, Würfe pro Runde, Restpunkte)
+- [x] Spiel-Setup-View (Spieler + Modus)
+- [ ] Game-View: Kamera-Layout oben, Scoreboard unten (Scoreboard ✓, Kamera offen)
 - [ ] Board-Kalibrierung als expliziter Schritt (Button „Board erkennen" →
       Frame ans Backend → Homographie-Matrix zurück)
 - [ ] WebSocket-Protokoll erweitern (siehe [Abschnitt 4](#4-websocket-protokoll))
@@ -94,24 +94,41 @@ Angelehnt an die Phasen in [zeitplan.md](zeitplan.md).
 
 ---
 
-## 4. WebSocket-Protokoll
+## 4. HTTP & WebSocket-Protokoll
 
-**Ist-Zustand:** Das Backend (`/api/ws/darts`) akzeptiert Frames und antwortet
-nur mit der empfangenen Byte-Anzahl — reiner Echo-Stub.
+**Aufteilung:** Der **Spielstand liegt server-seitig** (Entscheidung, siehe §7).
+HTTP führt den Session-Lebenszyklus und liefert den Zustand; der WebSocket trägt
+die Echtzeit-Vision-Pipeline **und** pusht den aktualisierten Spielstand zurück.
 
-**Soll-Zustand:** Typisierte JSON-Nachrichten in beide Richtungen. Erste
-Skizze (Contract wird beim Bau festgezurrt):
+**HTTP (REST) — Session & Zustand**
 
-| Richtung          | Typ                  | Nutzlast (Skizze)                                  |
-|-------------------|----------------------|----------------------------------------------------|
-| Client → Server   | `calibration_frame`  | JPEG-Standbild zur Board-Erkennung                 |
-| Server → Client   | `calibration_result` | Homographie-Matrix, Erfolg/Fehler                  |
-| Client → Server   | `throw_frame`        | JPEG-Standbild nach Trigger                        |
-| Server → Client   | `dart_detected`      | Board-Koordinate, Segment, Punktwert               |
-| Server → Client   | `game_state`         | aktueller Spielstand (falls Scoring serverseitig)  |
+| Methode & Pfad                     | Zweck                                            |
+|------------------------------------|--------------------------------------------------|
+| `POST /api/games`                  | Spiel anlegen (`mode`, `playerNames`) → Zustand  |
+| `GET  /api/games/{id}`             | aktuellen Zustand holen (Initial-Load & Refresh) |
+| `POST /api/games/{id}/darts`       | Dart-Score buchen (jetzt manuell; später via CV) |
+| `POST /api/games/{id}/next-player` | Runde beenden, nächster Spieler                  |
 
-Offene Frage: Wird der Spielstand im Client oder im Backend geführt? Für die
-spätere Postgres-Persistenz spricht einiges für serverseitigen Game-State.
+**WebSocket (`/api/ws/...`) — Vision-Pipeline & State-Push**
+
+Ist-Zustand: `/api/ws/darts` echot nur die Byte-Anzahl. Soll — typisierte
+JSON-Nachrichten in beide Richtungen:
+
+| Richtung        | Typ                  | Nutzlast                                    |
+|-----------------|----------------------|---------------------------------------------|
+| Client → Server | `calibration_frame`  | JPEG-Standbild zur Board-Erkennung          |
+| Server → Client | `calibration_result` | Homographie-Matrix, Erfolg/Fehler           |
+| Client → Server | `throw_frame`        | JPEG-Standbild nach Trigger                 |
+| Server → Client | `dart_detected`      | Board-Koordinate, Segment, Punktwert        |
+| Server → Client | `game_state`         | autoritativer Spielstand nach dem Wurf      |
+| Server → Client | `overlay`            | visuelle Elemente (z.B. erkannte Position)  |
+
+Kein kontinuierlicher Video-Stream: der Client sendet getriggerte Standbilder
+(Frame-Diff) plus Kalibrierungs-Frames, nicht laufendes Video — das hält die
+Latenz niedrig (siehe konzept.md §3.1).
+
+**Reconnect nach Refresh:** `gameId` in `localStorage`; nach Reload
+`GET /api/games/{id}` + WS neu verbinden. Kein Spielstand im Browser nötig.
 
 ---
 
@@ -195,6 +212,9 @@ hier noch nicht verifiziert — vor Übernahme in die Arbeit selbst prüfen.**
 
 ## 7. Offene Entscheidungen
 
-- Spielstand client- oder serverseitig führen? (Kopplung an Postgres-Frage)
+- ~~Spielstand client- oder serverseitig führen?~~ **Entschieden: serverseitig.**
+  Die Scores entstehen ohnehin in der server-seitigen CV-Pipeline, also ist der
+  Server die Source of Truth. In-Memory-Store für jetzt, Postgres später; der
+  Client hält nur einen synchronisierten Cache (Signals).
 - Board-Kalibrierung einmalig pro Session oder nachjustierbar?
 - Settings global vs. als Overlay-Panel im laufenden Spiel (fürs schnelle Testen)?
