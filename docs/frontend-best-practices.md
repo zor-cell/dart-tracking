@@ -48,7 +48,6 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 ## Styling
 - PrimeNG is used for styling components
-- PrimeNG documentation can be found in @docs/primeng-documentation.md
 
 ## Style Guide
 - Components should always be created with 3 different files for .ts, .html and .scss

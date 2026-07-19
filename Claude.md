@@ -14,13 +14,11 @@ Pfeil-Erkennung und Scoring.
 Siehe @docs/zeitplan.md — aktuell in Phase X, Fokus auf Y.
 
 ## Frontend-Konventionen
-Angular, siehe @docs/angular-best-practices.md — z. B. Signals statt
-zustandsbehafteter Services, standalone Components, kein ngClass/ngStyle.
+Angular, siehe @docs/frontend-best-practices.md
+PrimeNG für Styling, die Dokumentation siehe @docs/primeng-documentation.md
 
 ## Backend-Konventionen
-FastAPI, siehe @docs/backend-best-practices.md — Feature-Struktur unter `api/`
-(pro Feature `dto/`, `entity/`, `services/`), camelCase-JSON, server-seitiger
-Game-State.
+FastAPI, siehe @docs/backend-best-practices.md
 
 ## Instruktionen
 Kommentare in Code sollen immer auf Englisch verfasst werden
