@@ -1,8 +1,9 @@
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import health, darts
+from app.api import health
 from app.api.features.game import games
+from app.api.features.tracking import tracking
 
 app = FastAPI(
     title="Dart Tracking API",
@@ -20,7 +21,7 @@ app.add_middleware(
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(health.router)
-api_router.include_router(darts.router)
+api_router.include_router(tracking.router)
 api_router.include_router(games.router)
 
 app.include_router(api_router)
