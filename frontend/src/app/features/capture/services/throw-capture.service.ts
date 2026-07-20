@@ -1,13 +1,12 @@
 import { Injectable, inject, NgZone, signal } from '@angular/core';
 import { DisplayStatus } from '../models/types';
 import { ThrowDetector } from '../models/throw-detector';
-import { CameraService } from './camera.service';
+import { captureFrameAsJpeg } from '../models/frame-capture';
 import { DartSocketService } from './dart-socket.service';
 
 const DIFF_WIDTH = 160;
 const DIFF_HEIGHT = 90;
 const PROCESS_INTERVAL_MS = 100;
-const JPEG_QUALITY = 0.85;
 const SENT_DISPLAY_DURATION_MS = 800;
 
 // ITU-R BT.601 Luma-Gewichte (wahrgenommene Helligkeit pro Farbkanal)
@@ -23,13 +22,16 @@ const STATUS_LABELS: Record<DisplayStatus, string> = {
 };
 
 /**
- * Orchestriert die komplette Wurf-Erkennungs-Pipeline: Kamera-Frames einlesen,
- * per ThrowDetector auf Bewegung/Stabilisierung prüfen und bei Trigger ein
- * JPEG-Standbild über den DartSocketService versenden.
+ * Continuous frame-diff detection loop: reads an already-active video preview,
+ * checks per frame via ThrowDetector for motion/settling, and sends a JPEG
+ * `throw_frame` once a throw is judged complete.
+ *
+ * Assumes the camera and socket are already up (see CameraService /
+ * DartSocketService) — those outlive this loop, since they're also used for
+ * the calibration step that precedes it.
  */
 @Injectable({ providedIn: 'root' })
 export class ThrowCaptureService {
-  private readonly camera = inject(CameraService);
   private readonly socket = inject(DartSocketService);
   private readonly zone = inject(NgZone);
 
@@ -45,25 +47,21 @@ export class ThrowCaptureService {
   private diffCanvas?: HTMLCanvasElement;
   private captureCanvas?: HTMLCanvasElement;
 
-  async start(
+  startDetectionLoop(
     video: HTMLVideoElement,
     diffCanvas: HTMLCanvasElement,
     captureCanvas: HTMLCanvasElement,
-  ): Promise<void> {
+  ): void {
     this.video = video;
     this.diffCanvas = diffCanvas;
     this.captureCanvas = captureCanvas;
 
-    const stream = await this.camera.start();
-    video.srcObject = stream;
-    await video.play();
-
-    this.socket.connect();
     this.detector.reset();
+    this.setDisplayStatus('idle');
     this.zone.runOutsideAngular(() => this.scheduleNextFrame());
   }
 
-  stop(): void {
+  stopDetectionLoop(): void {
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
@@ -72,8 +70,6 @@ export class ThrowCaptureService {
       clearTimeout(this.sentDisplayTimeoutId);
       this.sentDisplayTimeoutId = null;
     }
-    this.camera.stop();
-    this.socket.disconnect();
     this.setDisplayStatus('idle');
   }
 
@@ -112,26 +108,9 @@ export class ThrowCaptureService {
     }
   }
 
-  private captureAndSendFrame(video: HTMLVideoElement): void {
-    const captureCanvas = this.captureCanvas!;
-    captureCanvas.width = video.videoWidth;
-    captureCanvas.height = video.videoHeight;
-
-    const context = captureCanvas.getContext('2d');
-    if (!context) {
-      return;
-    }
-    context.drawImage(video, 0, 0);
-
-    captureCanvas.toBlob(
-      (blob) => {
-        if (blob) {
-          this.socket.sendFrame(blob);
-        }
-      },
-      'image/jpeg',
-      JPEG_QUALITY,
-    );
+  private async captureAndSendFrame(video: HTMLVideoElement): Promise<void> {
+    const frame = await captureFrameAsJpeg(video, this.captureCanvas!);
+    await this.socket.sendFrame('throw_frame', frame);
 
     if (this.sentDisplayTimeoutId !== null) {
       clearTimeout(this.sentDisplayTimeoutId);

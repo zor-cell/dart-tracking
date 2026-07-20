@@ -3,19 +3,61 @@
 }
 
 .game__camera {
+  position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
   aspect-ratio: 4 / 3;
   border: 1px dashed var(--p-content-border-color, #d1d5db);
   border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.game__video {
+  // Taken out of flex flow so it just fills the box; otherwise it's a flex
+  // sibling of the overlay and the two compete for row space, pushing the
+  // overlay past the edge where `overflow: hidden` clips it.
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+.game__hidden-canvas {
+  display: none;
+}
+
+.game__camera-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
   color: var(--p-text-muted-color, #6b7280);
 
   i {
     font-size: 2rem;
   }
+}
+
+.game__camera-error {
+  margin: 0;
+  color: var(--p-red-500, #ef4444);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.game__camera-badge {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 60%);
+  color: #fff;
+  font-size: 0.85rem;
 }
 
 .game__winner {

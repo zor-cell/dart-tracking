@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
+import { DartSocketService } from '../../capture/services/dart-socket.service';
 import { GameStateDto } from '../dto/game-state.dto';
 import { PlayerDto } from '../dto/player.dto';
 import { TurnDto } from '../dto/turn.dto';
@@ -21,6 +22,7 @@ const STORAGE_KEY = 'dart-tracking.gameId';
 @Injectable({ providedIn: 'root' })
 export class GameService {
   private readonly http = inject(HttpClient);
+  private readonly socket = inject(DartSocketService);
   private readonly baseUrl = `${environment.httpApiUrl}/games`;
 
   private readonly _state = signal<GameStateDto | null>(null);
@@ -40,6 +42,16 @@ export class GameService {
     }
     return state.players.find((player) => player.id === state.winnerId) ?? null;
   });
+
+  constructor() {
+    //keep game state in sync on websocket updates
+    effect(() => {
+      const message = this.socket.lastMessage();
+      if (message?.type === 'game_state') {
+        this.setState(message.state);
+      }
+    });
+  }
 
   /** Create a game on the server; the caller navigates once it resolves. */
   createGame(config: GameConfigDto): Observable<GameStateDto> {

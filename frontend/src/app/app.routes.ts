@@ -20,11 +20,6 @@ export const routes: Routes = [
       import('./features/game/components/game/game.component').then((m) => m.GameComponent),
   },
   {
-    path: 'capture',
-    loadComponent: () =>
-      import('./features/capture/components/capture/capture.component').then((m) => m.CaptureComponent),
-  },
-  {
     path: 'settings',
     loadComponent: () =>
       import('./features/settings/components/settings/settings.component').then((m) => m.SettingsComponent),

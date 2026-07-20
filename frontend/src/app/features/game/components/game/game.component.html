@@ -1,9 +1,37 @@
 @if (game.state(); as state) {
   <section class="view game">
-    <!-- Camera area — live preview and dart tracking move in here in a later step. -->
     <div class="game__camera">
-      <i class="pi pi-camera" aria-hidden="true"></i>
-      <span>Kamera folgt (Kalibrierung → Tracking)</span>
+      <video #video class="game__video" [hidden]="cameraPhase() === 'idle'" muted playsinline></video>
+      <canvas #diffCanvas width="160" height="90" class="game__hidden-canvas"></canvas>
+      <canvas #captureCanvas class="game__hidden-canvas"></canvas>
+
+      @switch (cameraPhase()) {
+        @case ('idle') {
+          <div class="game__camera-overlay">
+            <i class="pi pi-camera" aria-hidden="true"></i>
+            <p-button label="Kamera starten" icon="pi pi-video" (onClick)="startCamera(state.id)" />
+            @if (cameraError(); as error) {
+              <p class="game__camera-error">{{ error }}</p>
+            }
+          </div>
+        }
+        @case ('calibrating') {
+          <div class="game__camera-overlay">
+            <p-button
+              label="Board kalibrieren"
+              icon="pi pi-crosshair"
+              [loading]="calibrationStatus() === 'pending'"
+              (onClick)="calibrateBoard()"
+            />
+            @if (calibrationStatus() === 'error') {
+              <p class="game__camera-error">Kalibrierung fehlgeschlagen — bitte erneut versuchen.</p>
+            }
+          </div>
+        }
+        @case ('tracking') {
+          <span class="game__camera-badge">{{ detectionStatusLabel() }}</span>
+        }
+      }
     </div>
 
     @if (game.winner(); as winner) {
