@@ -1,0 +1,59 @@
+<section class="view">
+  <header class="view__header">
+    <h1 class="view__title">Neues Spiel</h1>
+    <p class="view__subtitle">Spieler und Modus wählen</p>
+  </header>
+
+  <form class="setup" [formGroup]="form" (ngSubmit)="startGame()">
+    <div class="setup__field">
+      <label class="setup__label" for="mode">Modus</label>
+      <p-selectbutton
+        inputId="mode"
+        formControlName="mode"
+        [options]="modeOptions"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </div>
+
+    <div class="setup__field" formArrayName="players">
+      <span class="setup__label">Spieler</span>
+      @for (player of players.controls; track $index) {
+        <div class="setup__player">
+          <input
+            pInputText
+            class="setup__input"
+            [formControlName]="$index"
+            [attr.aria-label]="'Spieler ' + ($index + 1)"
+            placeholder="Name"
+          />
+          <p-button
+            type="button"
+            icon="pi pi-trash"
+            severity="secondary"
+            [text]="true"
+            [disabled]="players.length <= 1"
+            [ariaLabel]="'Spieler ' + ($index + 1) + ' entfernen'"
+            (onClick)="removePlayer($index)"
+          />
+        </div>
+      }
+      <p-button
+        type="button"
+        label="Spieler hinzufügen"
+        icon="pi pi-plus"
+        severity="secondary"
+        [text]="true"
+        (onClick)="addPlayer()"
+      />
+    </div>
+
+    <p-button
+      type="submit"
+      fluid
+      label="Spiel starten"
+      icon="pi pi-play"
+      [disabled]="form.invalid"
+    />
+  </form>
+</section>

@@ -1,0 +1,26 @@
+.setup {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.setup__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.setup__label {
+  font-weight: 500;
+}
+
+.setup__player {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.setup__input {
+  flex: 1;
+  min-width: 0;
+}

@@ -1,0 +1,115 @@
+.game {
+  gap: 1rem;
+}
+
+.game__camera {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  aspect-ratio: 4 / 3;
+  border: 1px dashed var(--p-content-border-color, #d1d5db);
+  border-radius: 0.75rem;
+  color: var(--p-text-muted-color, #6b7280);
+
+  i {
+    font-size: 2rem;
+  }
+}
+
+.game__winner {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--p-primary-color, #09090b);
+  color: var(--p-primary-contrast-color, #ffffff);
+  font-weight: 600;
+  text-align: center;
+}
+
+.scoreboard {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.scoreboard__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border-radius: 0.5rem;
+}
+
+.scoreboard__row--active {
+  // Tint the content background towards the primary color instead of using
+  // --p-highlight-background: that token is a *strong* fill meant to be paired
+  // with --p-highlight-color, which would make the row solid black in light
+  // mode. Mixing keeps the default text color readable in both schemes.
+  border-color: var(--p-primary-color, #09090b);
+  background: color-mix(in srgb, var(--p-primary-color, #09090b) 8%, var(--p-content-background, #ffffff));
+  box-shadow: inset 3px 0 0 0 var(--p-primary-color, #09090b);
+}
+
+.scoreboard__name {
+  font-weight: 500;
+}
+
+.scoreboard__remaining {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.turn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.turn__darts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.turn__dart {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border-radius: 0.5rem;
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.turn__dart--empty {
+  color: var(--p-text-muted-color, #6b7280);
+  font-weight: 400;
+}
+
+.turn__dart--busted {
+  text-decoration: line-through;
+  color: var(--p-text-muted-color, #6b7280);
+}
+
+.turn__bust {
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.9rem;
+}
+
+.turn__entry {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.turn__input {
+  flex: 1;
+  min-width: 0;
+}

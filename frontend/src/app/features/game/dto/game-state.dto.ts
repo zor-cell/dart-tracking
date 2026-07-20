@@ -9,5 +9,6 @@ export interface GameStateDto {
   readonly currentPlayerIndex: number;
   readonly turns: readonly TurnDto[];
   readonly dartsRemaining: number;
+  readonly canUndo: boolean;
   readonly winnerId: number | null;
 }

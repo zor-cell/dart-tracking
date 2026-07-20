@@ -1,11 +1,104 @@
-<section class="view">
-  <header class="view__header">
-    <h1 class="view__title">Spiel</h1>
-    <p class="view__subtitle">Spielstand und geworfene Darts</p>
-  </header>
+@if (game.state(); as state) {
+  <section class="view game">
+    <!-- Camera area — live preview and dart tracking move in here in a later step. -->
+    <div class="game__camera">
+      <i class="pi pi-camera" aria-hidden="true"></i>
+      <span>Kamera folgt (Kalibrierung → Tracking)</span>
+    </div>
 
-  <div class="placeholder">
-    <i class="pi pi-play-circle placeholder__icon" aria-hidden="true"></i>
-    <p>Hier entsteht der Spielverlauf: Spieler, verbleibende Punkte und Runden. Folgt in einem nächsten Schritt.</p>
-  </div>
-</section>
+    @if (game.winner(); as winner) {
+      <div class="game__winner" role="status">🎯 {{ winner.name }} gewinnt!</div>
+    }
+
+    <ul class="scoreboard">
+      @for (player of state.players; track player.id) {
+        <li
+          class="scoreboard__row"
+          [class.scoreboard__row--active]="$index === state.currentPlayerIndex"
+        >
+          <span class="scoreboard__name">{{ player.name }}</span>
+          <span class="scoreboard__remaining">{{ player.remaining }}</span>
+        </li>
+      }
+    </ul>
+
+    @if (!game.winner()) {
+      <div class="turn">
+        @if (game.currentTurn(); as turn) {
+          <ul class="turn__darts" aria-label="Darts dieser Runde">
+            @for (dart of turn.darts; track $index) {
+              <li class="turn__dart" [class.turn__dart--busted]="turn.busted">{{ dart }}</li>
+            }
+            @for (slot of emptySlots(); track $index) {
+              <li class="turn__dart turn__dart--empty" aria-hidden="true">–</li>
+            }
+          </ul>
+          @if (turn.busted) {
+            <span class="turn__bust" role="status">Überworfen — Runde zählt nicht.</span>
+          }
+        }
+
+        @if (settings.manualEntryEnabled()) {
+          <!-- Fallback entry — see settings for when this is hidden. -->
+          <div class="turn__entry">
+            <input
+              pInputText
+              type="number"
+              inputmode="numeric"
+              min="0"
+              max="60"
+              class="turn__input"
+              [formControl]="scoreControl"
+              placeholder="Punkte"
+              aria-label="Punkte des Darts"
+            />
+            <p-button
+              label="Dart"
+              icon="pi pi-plus"
+              [disabled]="state.dartsRemaining === 0"
+              (onClick)="submitScore()"
+            />
+          </div>
+        }
+
+        <p-button
+          fluid
+          label="Nächster Spieler"
+          icon="pi pi-user"
+          severity="secondary"
+          (onClick)="game.nextPlayer()"
+        />
+      </div>
+    }
+
+    <!-- Available even after a win, since correcting the winning dart is exactly
+         when this is needed. -->
+    <p-button
+      fluid
+      label="Zurück"
+      icon="pi pi-undo"
+      severity="secondary"
+      [text]="true"
+      [disabled]="!state.canUndo"
+      (onClick)="game.undo()"
+    />
+
+    <p-button
+      fluid
+      label="Spiel beenden"
+      icon="pi pi-times"
+      severity="secondary"
+      [text]="true"
+      routerLink="/start"
+      (onClick)="game.reset()"
+    />
+  </section>
+} @else {
+  <section class="view">
+    <div class="placeholder">
+      <i class="pi pi-play-circle placeholder__icon" aria-hidden="true"></i>
+      <p>Kein aktives Spiel.</p>
+      <p-button label="Neues Spiel" icon="pi pi-play-circle" routerLink="/game/new" />
+    </div>
+  </section>
+}

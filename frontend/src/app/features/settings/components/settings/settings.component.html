@@ -4,6 +4,22 @@
     <p class="view__subtitle">Parameter der Wurf-Erkennung zum schnellen Testen</p>
   </header>
 
+  <div class="setting">
+    <div class="setting__text">
+      <label class="setting__label" for="manual-entry">Manuelle Eingabe</label>
+      <p class="setting__hint" id="manual-entry-hint">
+        Zeigt im Spiel ein Eingabefeld, um Punkte von Hand zu buchen. Als
+        Rückfallebene gedacht, falls die Kameraerkennung fehlschlägt.
+      </p>
+    </div>
+    <p-toggleswitch
+      inputId="manual-entry"
+      ariaLabelledBy="manual-entry-hint"
+      [ngModel]="settings.manualEntryEnabled()"
+      (ngModelChange)="settings.setManualEntryEnabled($event)"
+    />
+  </div>
+
   <div class="placeholder">
     <i class="pi pi-sliders-h placeholder__icon" aria-hidden="true"></i>
     <p>
