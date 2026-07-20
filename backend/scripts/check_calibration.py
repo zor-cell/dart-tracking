@@ -33,12 +33,6 @@ from app.api.features.tracking.services.board_overlay import build_overlay  # no
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 OVERLAY_COLOR = (0, 255, 255)  # BGR yellow, reads against board colours
 
-# What the client actually puts on the wire, so that photos taken with a phone
-# camera are judged under the same conditions as a live frame. A 24 MP still is
-# sharper and far less compressed than a 720p video frame, and tuning against
-# one to run against the other is how you get a detector that only works in
-# testing. Mirrors CAPTURE_WIDTH/HEIGHT in camera.service.ts and
-# DEFAULT_JPEG_QUALITY in frame-capture.ts.
 CAPTURE_MAX_EDGE = 1280
 CAPTURE_JPEG_QUALITY = 85
 

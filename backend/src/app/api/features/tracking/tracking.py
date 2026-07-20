@@ -45,7 +45,7 @@ async def dart_tracking_endpoint(websocket: WebSocket, game_id: str) -> None:
                 outcome = (
                     detect_board(image)
                     if image is not None
-                    else CalibrationFailure.NO_COLOURED_REGION
+                    else CalibrationFailure.INVALID_IMAGE
                 )
                 if isinstance(outcome, CalibrationFailure):
                     response = CalibrationResultMessage.failed(outcome)

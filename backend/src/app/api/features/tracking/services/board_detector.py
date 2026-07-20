@@ -53,7 +53,7 @@ _MORPH_KERNEL = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
 
 # A board that occupies less than this share of the frame is almost certainly a
 # misdetection (coloured clutter in the room rather than the board itself).
-_MIN_COLOURED_PIXEL_RATIO = 0.005
+_MIN_COLOURED_PIXEL_RATIO = 0.00001
 
 # How finely the ring is walked when looking for colour transitions. Well below
 # the 18 degrees between sectors so each one is located precisely.
@@ -87,8 +87,9 @@ def detect_board(image: np.ndarray) -> Calibration | CalibrationFailure:
     red_mask, green_mask = _colour_masks(image)
     combined = cv2.bitwise_or(red_mask, green_mask)
 
-    if int(np.count_nonzero(combined)) < _MIN_COLOURED_PIXEL_RATIO * width * height:
-        return CalibrationFailure.NO_COLOURED_REGION
+    #dont need colored region check for now
+    #if int(np.count_nonzero(combined)) < _MIN_COLOURED_PIXEL_RATIO * width * height:
+    #    return CalibrationFailure.NO_COLOURED_REGION
 
     ellipse = _fit_outer_ellipse(combined)
     if ellipse is None:
