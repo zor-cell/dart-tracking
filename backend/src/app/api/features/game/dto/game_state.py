@@ -14,6 +14,7 @@ class GameStateDto(CamelModel):
     current_player_index: int
     turns: list[TurnDto]
     darts_remaining: int
+    can_undo: bool
     winner_id: int | None
 
     @classmethod
@@ -28,5 +29,6 @@ class GameStateDto(CamelModel):
             current_player_index=game.current_player_index,
             turns=[TurnDto.from_entity(turn) for turn in game.turns],
             darts_remaining=game.darts_remaining,
+            can_undo=game.can_undo,
             winner_id=game.winner.id if game.winner is not None else None,
         )

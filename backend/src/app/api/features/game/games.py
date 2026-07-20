@@ -32,6 +32,14 @@ def register_dart(game_id: str, body: RegisterDartDto) -> GameStateDto:
     return GameStateDto.from_entity(game)
 
 
+@router.post("/{game_id}/undo", response_model=GameStateDto)
+def undo(game_id: str) -> GameStateDto:
+    game = _get_game(game_id)
+
+    game.undo()
+    return GameStateDto.from_entity(game)
+
+
 @router.post("/{game_id}/next-player", response_model=GameStateDto)
 def next_player(game_id: str) -> GameStateDto:
     game = _get_game(game_id)

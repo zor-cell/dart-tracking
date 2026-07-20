@@ -45,6 +45,10 @@ class Game:
     def winner(self) -> Player | None:
         return next((player for player in self.players if self.remaining(player.id) == 0), None)
 
+    @property
+    def can_undo(self) -> bool:
+        return bool(self.current_turn.darts) or len(self.turns) > 1
+
     def remaining(self, player_id: int) -> int:
         """Points left for a player: the starting score minus every dart of that
         player's turns, skipping busted ones."""
@@ -64,6 +68,32 @@ class Game:
         turn.darts.append(points)
         if self.remaining(turn.player_id) < 0:
             turn.busted = True
+
+    def undo(self) -> None:
+        """Step back one action, across turn boundaries.
+
+        Removes the last dart of the open turn; if that turn has not started yet,
+        the preceding `next_player` is undone instead, which reopens the previous
+        player's turn so a further undo pops a dart from it.
+
+        Deliberately not guarded by `winner`: correcting a misrecorded winning
+        dart is exactly when undo is needed.
+        """
+        turn = self.current_turn
+        if turn.darts:
+            turn.darts.pop()
+            # A bust is always caused by the turn's last dart, so removing that
+            # dart necessarily clears it.
+            turn.busted = False
+            return
+        if len(self.turns) == 1:
+            return
+        self.turns.pop()
+        self.current_player_index = next(
+            index
+            for index, player in enumerate(self.players)
+            if player.id == self.current_turn.player_id
+        )
 
     def next_player(self) -> None:
         if self.winner is not None:
