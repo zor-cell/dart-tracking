@@ -2,7 +2,7 @@ import { Injectable, inject, NgZone, signal } from '@angular/core';
 import { DisplayStatus } from '../models/types';
 import { ThrowDetector } from '../models/throw-detector';
 import { captureFrameAsJpeg } from '../models/frame-capture';
-import { DartSocketService } from './dart-socket.service';
+import { SocketService } from './socket.service';
 
 const DIFF_WIDTH = 160;
 const DIFF_HEIGHT = 90;
@@ -32,7 +32,7 @@ const STATUS_LABELS: Record<DisplayStatus, string> = {
  */
 @Injectable({ providedIn: 'root' })
 export class ThrowCaptureService {
-  private readonly socket = inject(DartSocketService);
+  private readonly socket = inject(SocketService);
   private readonly zone = inject(NgZone);
 
   readonly displayStatus = signal<DisplayStatus>('idle');

@@ -13,10 +13,10 @@ import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {Button} from 'primeng/button';
 import {InputText} from 'primeng/inputtext';
-import {CalibrationService} from '../../../capture/services/calibration.service';
-import {CameraService} from '../../../capture/services/camera.service';
-import {DartSocketService} from '../../../capture/services/dart-socket.service';
-import {ThrowCaptureService} from '../../../capture/services/throw-capture.service';
+import {CalibrationService} from '../../../tracking/services/calibration.service';
+import {CameraService} from '../../../tracking/services/camera.service';
+import {SocketService} from '../../../tracking/services/socket.service';
+import {ThrowCaptureService} from '../../../tracking/services/throw-capture.service';
 import {SettingsService} from '../../../settings/services/settings.service';
 import {CameraPhase} from '../../models/camera-phase';
 import {GameService} from '../../services/game.service';
@@ -35,7 +35,7 @@ export class GameComponent implements OnDestroy {
   protected readonly settings = inject(SettingsService);
 
   private readonly camera = inject(CameraService);
-  private readonly socket = inject(DartSocketService);
+  private readonly socket = inject(SocketService);
   private readonly calibration = inject(CalibrationService);
   private readonly throwCapture = inject(ThrowCaptureService);
 

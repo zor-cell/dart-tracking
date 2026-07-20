@@ -3,7 +3,7 @@ import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
-import { DartSocketService } from '../../capture/services/dart-socket.service';
+import { SocketService } from '../../tracking/services/socket.service';
 import { GameStateDto } from '../dto/game-state.dto';
 import { PlayerDto } from '../dto/player.dto';
 import { TurnDto } from '../dto/turn.dto';
@@ -22,7 +22,7 @@ const STORAGE_KEY = 'dart-tracking.gameId';
 @Injectable({ providedIn: 'root' })
 export class GameService {
   private readonly http = inject(HttpClient);
-  private readonly socket = inject(DartSocketService);
+  private readonly socket = inject(SocketService);
   private readonly baseUrl = `${environment.httpApiUrl}/games`;
 
   private readonly _state = signal<GameStateDto | null>(null);

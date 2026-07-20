@@ -1,10 +1,11 @@
 import { Injectable, signal } from '@angular/core';
 import { environment } from '../../../../environments/environment';
-import { DartSocketMessage, OutgoingFrameType } from '../dto/dart-socket-message';
+import { DartSocketMessage } from '../dto/dart-socket-message';
+import { OutgoingFrameType } from '../dto/outgoing-frame-type';
 import { SocketConnectionStatus } from '../models/types';
 
 @Injectable({ providedIn: 'root' })
-export class DartSocketService {
+export class SocketService {
   readonly connectionStatus = signal<SocketConnectionStatus>('disconnected');
   readonly lastMessage = signal<DartSocketMessage | null>(null);
 

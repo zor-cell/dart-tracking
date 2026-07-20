@@ -1,6 +1,6 @@
 import { effect, inject, Injectable, signal } from '@angular/core';
 import { captureFrameAsJpeg } from '../models/frame-capture';
-import { DartSocketService } from './dart-socket.service';
+import { SocketService } from './socket.service';
 
 export type CalibrationStatus = 'idle' | 'pending' | 'success' | 'error';
 
@@ -12,7 +12,7 @@ export type CalibrationStatus = 'idle' | 'pending' | 'success' | 'error';
  */
 @Injectable({ providedIn: 'root' })
 export class CalibrationService {
-  private readonly socket = inject(DartSocketService);
+  private readonly socket = inject(SocketService);
 
   readonly status = signal<CalibrationStatus>('idle');
 
