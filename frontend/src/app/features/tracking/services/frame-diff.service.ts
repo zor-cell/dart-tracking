@@ -31,7 +31,7 @@ const STATUS_LABELS: Record<DisplayStatus, string> = {
  * the calibration step that precedes it.
  */
 @Injectable({ providedIn: 'root' })
-export class ThrowCaptureService {
+export class FrameDiffService {
   private readonly socket = inject(SocketService);
   private readonly zone = inject(NgZone);
 
@@ -44,7 +44,7 @@ export class ThrowCaptureService {
   private sentDisplayTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   private video?: HTMLVideoElement;
-  private diffCanvas?: HTMLCanvasElement;
+  private diffContext?: CanvasRenderingContext2D;
   private captureCanvas?: HTMLCanvasElement;
 
   startDetectionLoop(
@@ -53,7 +53,7 @@ export class ThrowCaptureService {
     captureCanvas: HTMLCanvasElement,
   ): void {
     this.video = video;
-    this.diffCanvas = diffCanvas;
+    this.diffContext = diffCanvas.getContext('2d', { willReadFrequently: true }) ?? undefined;
     this.captureCanvas = captureCanvas;
 
     this.detector.reset();
@@ -91,7 +91,7 @@ export class ThrowCaptureService {
       return;
     }
 
-    const diffContext = this.diffCanvas!.getContext('2d');
+    const diffContext = this.diffContext;
     if (!diffContext) {
       return;
     }

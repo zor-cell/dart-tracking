@@ -16,7 +16,7 @@ import {InputText} from 'primeng/inputtext';
 import {CalibrationService} from '../../../tracking/services/calibration.service';
 import {CameraService} from '../../../tracking/services/camera.service';
 import {SocketService} from '../../../tracking/services/socket.service';
-import {ThrowCaptureService} from '../../../tracking/services/throw-capture.service';
+import {FrameDiffService} from '../../../tracking/services/frame-diff.service';
 import {SettingsService} from '../../../settings/services/settings.service';
 import {CameraPhase} from '../../models/camera-phase';
 import {GameService} from '../../services/game.service';
@@ -37,7 +37,7 @@ export class GameComponent implements OnDestroy {
   private readonly camera = inject(CameraService);
   private readonly socket = inject(SocketService);
   private readonly calibration = inject(CalibrationService);
-  private readonly throwCapture = inject(ThrowCaptureService);
+  private readonly throwCapture = inject(FrameDiffService);
 
   private readonly videoRef = viewChild.required<ElementRef<HTMLVideoElement>>('video');
   private readonly diffCanvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('diffCanvas');
