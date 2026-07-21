@@ -20,7 +20,7 @@ update-timetracking:
   variables:
     WIKI_REPO: "https://oauth2:${TIMETRACKING_TOKEN}@gitlab.tuwien.ac.at/e12225143/dart-tracking.wiki.git"
   script:
-    - python3 scripts/wiki_timelogs.py --out Zeiterfassung.md
+    - python3 backend/scripts/wiki_timelogs.py --out Zeiterfassung.md
     - rm -rf wiki-repo
     - git clone "$WIKI_REPO" wiki-repo
     - mv -f Zeiterfassung.md wiki-repo/Zeiterfassung.md
