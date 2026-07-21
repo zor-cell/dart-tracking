@@ -13,6 +13,7 @@ import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {Button} from 'primeng/button';
 import {InputText} from 'primeng/inputtext';
+import {BoardOverlayComponent} from '../../../tracking/components/board-overlay/board-overlay.component';
 import {CalibrationService} from '../../../tracking/services/calibration.service';
 import {CameraService} from '../../../tracking/services/camera.service';
 import {SocketService} from '../../../tracking/services/socket.service';
@@ -25,7 +26,7 @@ const MAX_SINGLE_DART = 60;
 
 @Component({
   selector: 'app-game',
-  imports: [RouterLink, ReactiveFormsModule, Button, InputText],
+  imports: [RouterLink, ReactiveFormsModule, Button, InputText, BoardOverlayComponent],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,6 +47,7 @@ export class GameComponent implements OnDestroy {
   protected readonly cameraPhase = signal<CameraPhase>('idle');
   protected readonly cameraError = this.camera.error;
   protected readonly calibrationStatus = this.calibration.status;
+  protected readonly calibrationOverlay = this.calibration.overlay;
   protected readonly detectionStatusLabel = this.throwCapture.statusLabel;
 
   protected readonly scoreControl = new FormControl<number | null>(null);

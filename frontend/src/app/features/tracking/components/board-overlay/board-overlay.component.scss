@@ -1,0 +1,12 @@
+:host {
+  position: absolute;
+  inset: 0;
+  // Purely informational, so it must not swallow taps meant for the controls
+  // sitting underneath it.
+  pointer-events: none;
+}
+
+.board-overlay__canvas {
+  width: 100%;
+  height: 100%;
+}

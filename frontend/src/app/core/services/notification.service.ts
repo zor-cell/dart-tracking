@@ -2,6 +2,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { MessageService } from 'primeng/api';
 
+/** PrimeNG's own default, restated so callers can raise it per message. */
+const DEFAULT_TOAST_LIFE = 3000;
+
 /**
  * User-facing feedback. All texts are German: the HTTP status is the protocol,
  * the message is presentation. Backend `detail` payloads are deliberately not
@@ -24,6 +27,16 @@ export class NotificationService {
       summary: title,
       detail: this.describe(error),
     });
+  }
+
+  /**
+   * For failures whose text is already user-facing, unlike `showError`, which
+   * has to translate a transport-level error first. `life` is explicit because
+   * a message telling the user what to change needs longer on screen than a
+   * bare confirmation.
+   */
+  showErrorMessage(message: string, title = 'Fehler', life = DEFAULT_TOAST_LIFE) {
+    this.messageService.add({ severity: 'error', summary: title, detail: message, life });
   }
 
   showInfo(message: string, title = 'Hinweis') {

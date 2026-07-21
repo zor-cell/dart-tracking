@@ -5,6 +5,10 @@
       <canvas #diffCanvas width="160" height="90" class="game__hidden-canvas"></canvas>
       <canvas #captureCanvas class="game__hidden-canvas"></canvas>
 
+      @if (cameraPhase() !== 'idle') {
+        <app-board-overlay [polylines]="calibrationOverlay()" [video]="video" />
+      }
+
       @switch (cameraPhase()) {
         @case ('idle') {
           <div class="game__camera-overlay">
@@ -23,13 +27,21 @@
               [loading]="calibrationStatus() === 'pending'"
               (onClick)="calibrateBoard()"
             />
-            @if (calibrationStatus() === 'error') {
-              <p class="game__camera-error">Kalibrierung fehlgeschlagen — bitte erneut versuchen.</p>
-            }
           </div>
         }
         @case ('tracking') {
           <span class="game__camera-badge">{{ detectionStatusLabel() }}</span>
+          <!-- Recalibrating is a single tap: the board or camera getting
+               knocked is exactly when nobody wants a multi-step flow. -->
+          <p-button
+            class="game__recalibrate"
+            label="Neu kalibrieren"
+            icon="pi pi-crosshair"
+            severity="secondary"
+            size="small"
+            [loading]="calibrationStatus() === 'pending'"
+            (onClick)="calibrateBoard()"
+          />
         }
       }
     </div>
