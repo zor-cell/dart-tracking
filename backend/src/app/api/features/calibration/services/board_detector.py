@@ -40,7 +40,7 @@ from app.api.features.calibration.entity.board_geometry import (
 )
 from app.api.features.calibration.entity.calibration import Calibration
 from app.api.features.calibration.entity.calibration_failure import CalibrationFailure
-from app.api.features.calibration.entity.calibration_trace import CalibrationPass, CalibrationTrace
+from app.api.features.calibration.entity.calibration_trace import CalibrationTrace
 
 # HSV bounds. Red wraps around the hue axis, so it needs two ranges.
 _RED_LOWER_1 = np.array([0, 90, 60])
@@ -76,21 +76,20 @@ _SAMPLE_FRACTIONS = tuple(np.linspace(0.5, 0.98, 20))
 _CENTRE_CONVERGENCE_PX = 0.5
 _MAX_REFINEMENT_PASSES = 6
 
+# What the most recent call to `detect_board` saw at each stage.
+trace = CalibrationTrace()
 
-def detect_board(
-    image: np.ndarray, trace: CalibrationTrace | None = None
-) -> Calibration | CalibrationFailure:
+
+def detect_board(image: np.ndarray) -> Calibration | CalibrationFailure:
     """Locate the board and derive the image -> board homography.
 
     On failure returns the stage that gave up rather than a bare None, so the
     client can tell the user what to change instead of just that it did not
-    work.
-
-    Pass a `trace` to get every intermediate stage back for inspection; see
-    scripts/debug_images.py. One is always filled in either way — it holds
-    references, not copies — so recording never has to be branched around.
+    work. Every intermediate stage is recorded onto the module-level `trace`
+    for inspection.
     """
-    trace = trace if trace is not None else CalibrationTrace()
+    global trace
+    trace = CalibrationTrace()
 
     height, width = image.shape[:2]
     red_mask, green_mask = _colour_masks(image)
@@ -99,11 +98,11 @@ def detect_board(
 
     #dont need colored region check for now
     #if int(np.count_nonzero(combined)) < _MIN_COLOURED_PIXEL_RATIO * width * height:
-    #    return _record_failure(trace, CalibrationFailure.NO_COLOURED_REGION)
+    #    return _record_failure(CalibrationFailure.NO_COLOURED_REGION)
 
-    ellipse = _fit_outer_ellipse(combined, trace)
+    ellipse = _fit_outer_ellipse(combined)
     if ellipse is None:
-        return _record_failure(trace, CalibrationFailure.ELLIPSE_FIT_FAILED)
+        return _record_failure(CalibrationFailure.ELLIPSE_FIT_FAILED)
     trace.ellipse = ellipse
 
     # The first pass casts its rays from the ellipse centre, which perspective
@@ -114,22 +113,20 @@ def detect_board(
     centre = ellipse[0]
 
     for _ in range(_MAX_REFINEMENT_PASSES):
-        current = trace.begin_pass(centre)
+        trace.begin_pass(centre)
 
-        correspondences = _match_sector_wires(
-            ellipse, centre, red_mask, green_mask, current
-        )
+        correspondences = _match_sector_wires(ellipse, centre, red_mask, green_mask)
         if correspondences is None:
-            return _record_failure(trace, CalibrationFailure.SECTOR_WIRES_UNCLEAR)
-        current.correspondences = correspondences
+            return _record_failure(CalibrationFailure.SECTOR_WIRES_UNCLEAR)
+        trace.current.correspondences = correspondences
 
         homography = _fit_homography(ellipse, correspondences)
         if homography is None:
-            return _record_failure(trace, CalibrationFailure.HOMOGRAPHY_FAILED)
-        current.homography = homography
+            return _record_failure(CalibrationFailure.HOMOGRAPHY_FAILED)
+        trace.current.homography = homography
 
         refined = _project_board_centre(homography)
-        current.projected_centre = refined
+        trace.current.projected_centre = refined
 
         shift = math.dist(refined, centre)
         centre = refined
@@ -139,7 +136,7 @@ def detect_board(
     return Calibration(homography=homography, image_width=width, image_height=height)
 
 
-def _record_failure(trace: CalibrationTrace, failure: CalibrationFailure) -> CalibrationFailure:
+def _record_failure(failure: CalibrationFailure) -> CalibrationFailure:
     """Note which stage gave up, then hand the failure on unchanged."""
     trace.failure = failure
     return failure
@@ -172,7 +169,6 @@ def _colour_masks(image: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 def _fit_outer_ellipse(
     mask: np.ndarray,
-    trace: CalibrationTrace | None = None,
 ) -> tuple[tuple[float, float], tuple[float, float], float] | None:
     """Fit an ellipse to the outer boundary of the coloured region.
 
@@ -189,8 +185,7 @@ def _fit_outer_ellipse(
         return None
 
     hull = cv2.convexHull(points)
-    if trace is not None:
-        trace.hull = hull
+    trace.hull = hull
     if len(hull) < 5:
         return None
 
@@ -330,7 +325,6 @@ def _match_sector_wires(
     centre: tuple[float, float],
     red_mask: np.ndarray,
     green_mask: np.ndarray,
-    current: CalibrationPass | None = None,
 ) -> list[tuple[float, float]] | None:
     """Pair each detected colour transition with the board angle of its wire.
 
@@ -343,9 +337,8 @@ def _match_sector_wires(
     # Recorded before the count is checked: a run that finds the wrong number of
     # wires is exactly the one worth looking at, and by then it has nothing else
     # to show for itself.
-    if current is not None:
-        current.ring_colours = colours
-        current.transitions = transitions
+    trace.current.ring_colours = colours
+    trace.current.transitions = transitions
 
     # Wires are matched by counting along the sequence, which only lines up if
     # every one of them was found. A short or long sequence would silently

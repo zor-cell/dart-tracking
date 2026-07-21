@@ -170,8 +170,8 @@ def main() -> int:
     out_dir = args.out or args.image.with_name(f"{args.image.stem}_debug")
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    trace = CalibrationTrace()
-    outcome = detector.detect_board(image, trace)
+    outcome = detector.detect_board(image)
+    trace = detector.trace
 
     written = []
 

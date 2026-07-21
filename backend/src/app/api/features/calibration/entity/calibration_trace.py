@@ -34,16 +34,21 @@ class CalibrationPass:
 
 @dataclass
 class CalibrationTrace:
+    """`current` always points at the pass in progress, so the functions doing
+    the actual detection work can just write to `trace.current.whatever`
+    without board_detector having to thread a pass argument through every call.
+    """
+
     image: np.ndarray | None = None
     red_mask: np.ndarray | None = None
     green_mask: np.ndarray | None = None
     hull: np.ndarray | None = None
     ellipse: tuple[tuple[float, float], tuple[float, float], float] | None = None
     passes: list[CalibrationPass] = field(default_factory=list)
+    current: CalibrationPass | None = None
     failure: CalibrationFailure | None = None
 
-    def begin_pass(self, centre: tuple[float, float]) -> CalibrationPass:
-        """Start recording a refinement pass and return it for filling in."""
-        current = CalibrationPass(centre=centre)
-        self.passes.append(current)
-        return current
+    def begin_pass(self, centre: tuple[float, float]) -> None:
+        """Start recording a new refinement pass."""
+        self.current = CalibrationPass(centre=centre)
+        self.passes.append(self.current)
