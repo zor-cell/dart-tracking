@@ -10,6 +10,9 @@ schickt nur bei Trigger ein JPEG-Standbild per WebSocket ans Backend.
 Backend (FastAPI/Flask + OpenCV) macht Board-Kalibrierung (Homographie),
 Pfeil-Erkennung und Scoring.
 
+Die Kalibrierungs-Pipeline ist im Detail dokumentiert (Algorithmen, Parameter,
+verworfene Ansätze): @docs/kalibrierung.md
+
 ## Zeitplan / aktuelle Phase
 Siehe @docs/zeitplan.md — aktuell in Phase X, Fokus auf Y.
 

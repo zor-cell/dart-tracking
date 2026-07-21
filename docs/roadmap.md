@@ -3,6 +3,9 @@
 Lebendes Dokument zur Feature- und Ablaufplanung des Dart-Tracking-Systems.
 Ergänzt [konzept.md](konzept.md) (das *Was* und *Warum*) und
 [zeitplan.md](zeitplan.md) (die *Termine*) um das *Wie* auf Feature-Ebene.
+Für einzelne Teilsysteme gibt es eigene Detaildokumente —
+[kalibrierung.md](kalibrierung.md) beschreibt die Board-Kalibrierung auf
+Algorithmus-Ebene.
 
 > Status: Entwurf. Wird laufend verfeinert — insbesondere der Abschnitt
 > [Wissenschaftliche Grundlagen](#wissenschaftliche-grundlagen--zu-recherchierende-literatur)
@@ -68,7 +71,9 @@ Angelehnt an die Phasen in [zeitplan.md](zeitplan.md).
 - [x] Spiel-Setup-View (Spieler + Modus)
 - [ ] Game-View: Kamera-Layout oben, Scoreboard unten (Scoreboard ✓, Kamera offen)
 - [ ] Board-Kalibrierung als expliziter Schritt (Button „Board erkennen" →
-      Frame ans Backend → Homographie-Matrix zurück)
+      Frame ans Backend → Homographie-Matrix zurück). Backend-Pipeline steht,
+      siehe [kalibrierung.md](kalibrierung.md); offen ist die Anbindung der
+      Game-View
 - [ ] WebSocket-Protokoll erweitern (siehe [Abschnitt 4](#4-websocket-protokoll))
 - [ ] Threshold-Settings real an den `ThrowDetector` verdrahten
 
@@ -146,6 +151,12 @@ einstellbar werden. Quelle: `throw-detector.ts` und `throw-capture.service.ts`.
 | `PROCESS_INTERVAL_MS`    | 100            | Verarbeitungsintervall (≈10 fps Analyse)          |
 | `JPEG_QUALITY`           | 0.85           | Qualität des gesendeten Standbilds                 |
 
+Die Parameter der **Board-Kalibrierung** (HSV-Grenzen, RANSAC-Iterationen,
+Band-Toleranzen) liegen separat in `board_detector.py` und sind in
+[kalibrierung.md](kalibrierung.md) samt Begründung dokumentiert. Ob sie
+ebenfalls in die Settings-View gehören, ist offen — sie werden einmalig beim
+Kalibrieren gebraucht, nicht pro Wurf.
+
 ---
 
 ## 6. Wissenschaftliche Grundlagen / zu recherchierende Literatur
@@ -154,6 +165,13 @@ Sammelstelle für die Related-Work- und Methodik-Teile der Arbeit. **Zitationen
 hier noch nicht verifiziert — vor Übernahme in die Arbeit selbst prüfen.**
 
 ### 6.1 Board-Erkennung & Kalibrierung
+
+> **Implementiert.** Der eigene Ansatz — HSV-Segmentierung, Zwei-Ring-RANSAC
+> über Komponenten-Schwerpunkte, Ellipsen-Fit, Farbübergänge als
+> Punktkorrespondenzen — ist in [kalibrierung.md](kalibrierung.md) beschrieben,
+> inklusive der verworfenen Alternativen (u. a. `HoughCircles`, dessen
+> Kreisannahme bei schräger Perspektive nicht trägt).
+
 - Techniken: Hough-Kreis-/Ellipsen-Detektion, Konturverfolgung, Homographie-
   Schätzung aus der genormten Board-Geometrie (20 Sektoren, feste Radien).
 - Suchbegriffe: *automatic dartboard calibration homography*,
