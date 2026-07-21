@@ -1,13 +1,14 @@
 import { Injectable, signal } from '@angular/core';
 import { environment } from '../../../../environments/environment';
-import { DartSocketMessage } from '../dto/dart-socket-message';
+import { SocketMessage } from '../dto/socket-message';
 import { OutgoingFrameType } from '../dto/outgoing-frame-type';
-import { SocketConnectionStatus } from '../models/types';
+
+export type SocketConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
 @Injectable({ providedIn: 'root' })
 export class SocketService {
   readonly connectionStatus = signal<SocketConnectionStatus>('disconnected');
-  readonly lastMessage = signal<DartSocketMessage | null>(null);
+  readonly lastMessage = signal<SocketMessage | null>(null);
 
   private socket: WebSocket | null = null;
 
@@ -26,7 +27,7 @@ export class SocketService {
       this.socket = null;
     });
     this.socket.addEventListener('message', (event) => {
-      this.lastMessage.set(JSON.parse(event.data) as DartSocketMessage);
+      this.lastMessage.set(JSON.parse(event.data) as SocketMessage);
     });
   }
 

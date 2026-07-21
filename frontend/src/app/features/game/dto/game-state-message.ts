@@ -1,4 +1,4 @@
-import { GameStateDto } from '../../game/dto/game-state.dto';
+import { GameStateDto } from './game-state.dto';
 
 /**
  * Server -> client: authoritative game state.

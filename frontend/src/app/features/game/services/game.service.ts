@@ -3,11 +3,11 @@ import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
-import { SocketService } from '../../tracking/services/socket.service';
+import { SocketService } from '../../../core/socket/services/socket.service';
 import { GameStateDto } from '../dto/game-state.dto';
 import { PlayerDto } from '../dto/player.dto';
 import { TurnDto } from '../dto/turn.dto';
-import {NotificationService} from "../../../core/services/notification.service";
+import {NotificationService} from "../../../core/notification/services/notification.service";
 import {GameConfigDto} from "../dto/game-config.dto";
 
 const STORAGE_KEY = 'dart-tracking.gameId';

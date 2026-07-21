@@ -12,7 +12,7 @@ import { InputText } from 'primeng/inputtext';
 import { SelectButton } from 'primeng/selectbutton';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { GameService } from '../../services/game.service';
-import {NotificationService} from "../../../../core/services/notification.service";
+import {NotificationService} from "../../../../core/notification/services/notification.service";
 
 @Component({
   selector: 'app-game-setup',

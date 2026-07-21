@@ -1,0 +1,1 @@
+export type DisplayStatus = 'idle' | 'motion' | 'settling' | 'sent';

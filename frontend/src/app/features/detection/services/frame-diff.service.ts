@@ -1,8 +1,8 @@
 import { Injectable, inject, NgZone, signal } from '@angular/core';
-import { DisplayStatus } from '../models/types';
 import { ThrowDetector } from '../models/throw-detector';
-import { captureFrameAsJpeg } from '../models/frame-capture';
-import { SocketService } from './socket.service';
+import { captureFrameAsJpeg } from '../../camera/models/frame-capture';
+import { SocketService } from '../../../core/socket/services/socket.service';
+import {DisplayStatus} from "../models/frame-diff-status";
 
 const DIFF_WIDTH = 160;
 const DIFF_HEIGHT = 90;

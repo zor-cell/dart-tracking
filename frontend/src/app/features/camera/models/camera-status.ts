@@ -1,0 +1,1 @@
+export type CameraStatus = 'idle' | 'starting' | 'active' | 'error';

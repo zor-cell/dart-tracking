@@ -1,7 +1,7 @@
 import {HttpContext, HttpContextToken, HttpInterceptorFn} from "@angular/common/http";
 import {inject} from "@angular/core";
 import {catchError, throwError} from "rxjs";
-import {NotificationService} from "./services/notification.service";
+import {NotificationService} from "./notification/services/notification.service";
 
 /**
  * A context token for silent error handling
