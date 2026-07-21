@@ -32,6 +32,7 @@ from app.api.features.calibration.services.board_overlay import build_overlay  #
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 OVERLAY_COLOR = (0, 255, 255)  # BGR yellow, reads against board colours
+OVERLAY_SUFFIX = "_overlay.jpg"
 
 CAPTURE_MAX_EDGE = 1280
 CAPTURE_JPEG_QUALITY = 85
@@ -76,7 +77,7 @@ def measure(image: np.ndarray) -> str:
     # means the filters ate the ring itself.
     coloured = max(int(np.count_nonzero(combined)), 1)
     for label, dropped in (
-        ("isolated", trace.dropped_isolated),
+        ("off board", trace.dropped_off_board),
         ("outside ring", trace.dropped_outer),
     ):
         if dropped is not None:
@@ -154,6 +155,12 @@ def main() -> int:
     out_dir = args.out or args.images / "_results"
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    # Clear previous overlays first, or a photo that has since been renamed or
+    # that now fails leaves its old picture behind, and the folder shows a
+    # result that no longer corresponds to anything this run produced.
+    for stale in out_dir.glob(f"*{OVERLAY_SUFFIX}"):
+        stale.unlink()
+
     if not args.raw:
         print(f"replaying photos as the client sends them: max edge {CAPTURE_MAX_EDGE}px, JPEG q{CAPTURE_JPEG_QUALITY}\n")
 
@@ -173,7 +180,7 @@ def main() -> int:
             continue
 
         detected += 1
-        cv2.imwrite(str(out_dir / f"{path.stem}_overlay.jpg"), annotate(image, calibration))
+        cv2.imwrite(str(out_dir / f"{path.stem}{OVERLAY_SUFFIX}"), annotate(image, calibration))
         print(f"{path.name:<32} OK    {reason}")
 
     print(f"\n{detected}/{len(paths)} detected")

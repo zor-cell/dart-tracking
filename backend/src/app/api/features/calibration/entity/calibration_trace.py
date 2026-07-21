@@ -42,7 +42,7 @@ class CalibrationTrace:
     image: np.ndarray | None = None
     red_mask: np.ndarray | None = None
     green_mask: np.ndarray | None = None
-    dropped_isolated: np.ndarray | None = None
+    dropped_off_board: np.ndarray | None = None
     dropped_outer: np.ndarray | None = None
     kept_red: np.ndarray | None = None
     kept_green: np.ndarray | None = None

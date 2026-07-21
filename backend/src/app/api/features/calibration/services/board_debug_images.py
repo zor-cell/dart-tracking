@@ -29,7 +29,7 @@ _COLOUR_WIRE_GREEN = (0, 200, 0)
 _COLOUR_OVERLAY = (0, 255, 255)
 _COLOUR_KEPT_RED = (0, 0, 255)
 _COLOUR_KEPT_GREEN = (0, 255, 0)
-_COLOUR_DROPPED_ISOLATED = (70, 70, 70)  # grey
+_COLOUR_DROPPED_OFF_BOARD = (70, 70, 70)  # grey
 _COLOUR_DROPPED_OUTER = (170, 120, 60)  # steel blue
 
 _RING_DOT_RADIUS = 2
@@ -50,7 +50,7 @@ def write_debug_images(
         cv2.imwrite(str(path), _draw_masks(trace))
         written.append(path)
 
-    if trace.dropped_isolated is not None:
+    if trace.dropped_off_board is not None:
         path = out_dir / "02_components.jpg"
         cv2.imwrite(str(path), _draw_components(trace))
         written.append(path)
@@ -90,17 +90,17 @@ def _draw_components(trace: CalibrationTrace) -> np.ndarray:
     """Which mask components reached the ellipse fit, and what cut the others.
 
     Red and green are what survived; those pixels alone decide the fit. Grey
-    was dropped for having no neighbour of the opposite colour, so it is
-    clutter away from the board. Steel blue sat close enough to the board to
-    pass that test but outside the double ring — branding on a surround, the
-    numbers printed around the face. Comparing this against 01_masks.jpg says
-    whether a skewed ellipse came from bad segmentation or from bad filtering.
+    did not vote for the winning board hypothesis — it lies at no plausible
+    ring radius, so it is clutter, branding, or lettering. Steel blue did vote
+    but was then trimmed for sitting outside the double ring. Comparing this
+    against 01_masks.jpg says whether a skewed ellipse came from bad
+    segmentation or from bad filtering.
     """
     canvas = np.zeros_like(trace.image)
 
     # Drawn first so the survivors paint over anything they overlap.
-    if trace.dropped_isolated is not None:
-        canvas[trace.dropped_isolated > 0] = _COLOUR_DROPPED_ISOLATED
+    if trace.dropped_off_board is not None:
+        canvas[trace.dropped_off_board > 0] = _COLOUR_DROPPED_OFF_BOARD
     if trace.dropped_outer is not None:
         canvas[trace.dropped_outer > 0] = _COLOUR_DROPPED_OUTER
     if trace.kept_red is not None:

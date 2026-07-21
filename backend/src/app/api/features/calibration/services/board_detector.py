@@ -5,15 +5,16 @@ Pipeline (see docs/roadmap.md §6.1 for the literature this follows):
 1. Segment the red and green double/triple segments in HSV. They are by far the
    most distinctive feature of a board and survive poor lighting better than
    edges do.
-2. Throw away every coloured blob that is not part of the two rings, then fit
-   an ellipse to the convex hull of what is left. Under perspective a circle
-   projects to an ellipse, and the outermost coloured ring is the outer edge of
-   the double ring — a known 170 mm radius. Every point on that fitted ellipse
-   is therefore the image of a board point at exactly that radius; only *which*
-   angle each one corresponds to is still unknown. The filtering matters more
-   than it looks: the hull is an outer envelope, so a single stray blob drags
-   the whole fit, and red-ish clutter is common (furniture, warm light, the
-   numbers and branding printed around the board itself).
+2. Work out which of those blobs are actually the board, by hypothesising one
+   and seeing how many of them agree, then fit an ellipse to the convex hull of
+   the winners. This step exists because fitting alone cannot be trusted: a
+   hull is an outer envelope, so one stray blob drags the whole fit, and
+   red-ish clutter is the norm rather than the exception (furniture, warm
+   light, the numbers and branding printed around the board itself). Under
+   perspective a circle projects to an ellipse, and the outermost coloured ring
+   is the outer edge of the double ring — a known 170 mm radius. Every point on
+   the fitted ellipse is therefore the image of a board point at exactly that
+   radius; only *which* angle each one corresponds to is still unknown.
 3. Recover those angles by walking around the ring and finding the red/green
    transitions. Colours change exactly at the sector wires, whose board angles
    are known, so each transition is a true point correspondence rather than an
@@ -34,10 +35,12 @@ import cv2
 import numpy as np
 
 from app.api.features.calibration.entity.board_geometry import (
+    DOUBLE_INNER_RADIUS,
     DOUBLE_OUTER_RADIUS,
     SECTOR_ANGLE,
     SECTOR_COUNT,
     TRIPLE_INNER_RADIUS,
+    TRIPLE_OUTER_RADIUS,
     is_red_sector,
     sector_boundary_angles,
     sector_centre_angle,
@@ -80,11 +83,36 @@ _SAMPLE_FRACTIONS = tuple(np.linspace(0.5, 0.98, 20))
 _CENTRE_CONVERGENCE_PX = 0.5
 _MAX_REFINEMENT_PASSES = 6
 
-# Triple and double ring are the only things on a board that put red and green
-# side by side, so every real segment has a neighbour of the opposite colour
-# about one segment width away. Measured in units of sqrt(area) rather than
-# pixels, so the test survives any resolution and any camera distance.
-_OPPOSITE_COLOUR_DISTANCE = 3.0
+# Where the centroid of a ring segment sits, as a fraction of the double ring's
+# outer radius. A segment's centroid is mid-ring, not on its outer edge.
+_DOUBLE_BAND = (DOUBLE_INNER_RADIUS + DOUBLE_OUTER_RADIUS) / 2 / DOUBLE_OUTER_RADIUS
+_TRIPLE_BAND = (TRIPLE_INNER_RADIUS + TRIPLE_OUTER_RADIUS) / 2 / DOUBLE_OUTER_RADIUS
+
+# How far off its band a centroid may sit and still count. Generous, because the
+# ellipse centre is not the projected board centre, which spreads each band out
+# noticeably at steep viewing angles.
+_BAND_TOLERANCE = 0.10
+
+# Sampling the board hypothesis. 5 points define an ellipse; with roughly half
+# the components genuine, a few hundred draws make missing the right one
+# unlikely, and each draw costs only a fit and a pass over the centroids.
+_RANSAC_ITERATIONS = 800
+
+# Sanity bounds on a candidate. A board is not much bigger than the picture of
+# it, and it is not a sliver: without these, a degenerate ellipse sweeping half
+# the frame collects more votes than the real answer.
+_MAX_AXIS_RATIO = 4.0
+_MAX_FRAME_SHARE = 1.2
+
+# Structure a candidate has to exhibit before its votes count at all. Ring
+# segments run the whole way round, both rings are populated, and both
+# alternate red/green — that last one is what separates a board from the
+# surround it hangs in, whose branding arcs form a convincing but
+# single-coloured ring.
+_ANGULAR_SECTORS = 12
+_MIN_ANGULAR_SECTORS = 8
+_MIN_BAND_MEMBERS = 6
+_MIN_MINORITY_SHARE = 0.25
 
 # A component whose centroid sits beyond this fraction of the current ellipse is
 # outside the double ring — branding printed on a surround, the numbers around
@@ -93,8 +121,8 @@ _OPPOSITE_COLOUR_DISTANCE = 3.0
 _OUTER_BAND_LIMIT = 0.99
 _MAX_BAND_PASSES = 4
 
-# Below this a blob is speckle rather than a segment. Also keeps the neighbour
-# search from being dragged around by single-pixel noise.
+# Below this a blob is speckle rather than a segment. Also keeps single-pixel
+# noise from flooding the hypothesis sampling with useless candidates.
 _MIN_COMPONENT_AREA = 20
 
 # What the most recent call to `detect_board` saw at each stage.
@@ -117,9 +145,13 @@ def detect_board(image: np.ndarray) -> Calibration | CalibrationFailure:
     combined = cv2.bitwise_or(red_mask, green_mask)
     trace.image, trace.red_mask, trace.green_mask = image, red_mask, green_mask
 
-    red_mask, green_mask = _drop_isolated_components(red_mask, green_mask)
+    selected = _select_board_components(red_mask, green_mask, max(height, width))
+    if selected is None:
+        return _record_failure(CalibrationFailure.ELLIPSE_FIT_FAILED)
+    red_mask, green_mask = selected
+
     surviving = cv2.bitwise_or(red_mask, green_mask)
-    trace.dropped_isolated = cv2.subtract(combined, surviving)
+    trace.dropped_off_board = cv2.subtract(combined, surviving)
 
     fitted = _fit_ring_ellipse(red_mask, green_mask)
     if fitted is None:
@@ -241,44 +273,187 @@ def _keep_labels(labels: np.ndarray, kept: set[int]) -> np.ndarray:
     return np.isin(labels, list(kept)).astype(np.uint8) * 255
 
 
-def _drop_isolated_components(
-    red: np.ndarray, green: np.ndarray
-) -> tuple[np.ndarray, np.ndarray]:
-    """Keep only the components that sit next to the opposite colour.
+def _select_board_components(
+    red: np.ndarray, green: np.ndarray, frame: int
+) -> tuple[np.ndarray, np.ndarray] | None:
+    """Keep only the components that agree on one board.
 
-    The segments of both rings alternate red/green, so each one has its
-    counterpart roughly a segment away. Everything that reaches the masks by
-    accident is single-coloured � a wooden chair in the red hue range, the
-    branding arcs printed on a surround, warm light on a wall � and so has no
-    such neighbour anywhere near it. This is what keeps clutter elsewhere in
-    the room out of the ellipse; it cannot judge anything close to the board,
-    which is what the band filter below is for.
+    Fitting cannot be trusted here: an ellipse fitted through everything is
+    dragged by whatever coloured clutter happens to be in shot, because in a
+    least-squares fit every point pulls and none can be ignored. So the board is
+    *hypothesised* instead � draw five component centroids, fit an ellipse
+    through them, and count how many of the remaining centroids that ellipse
+    explains. Outliers never have to be identified up front; they simply fail to
+    vote. Whatever backed the best hypothesis is the board.
+
+    What makes this work where plain ellipse RANSAC does not is the strength of
+    the model being tested. "Points lie on this ellipse" is far too weak � the
+    triple ring offers nearly as many points as the double ring, so degenerate
+    slivers grazing both outscore the truth. A candidate here has to explain a
+    whole *board*: two concentric rings at the ratio the standard fixes, each
+    running the full way round, each alternating red and green. Voting per
+    component rather than per pixel matters too, or the fatter triple segments
+    would outweigh the double ring they are supposed to corroborate.
+
+    Returns None when nothing convincing was found, which is a better answer
+    than a confident fit to a chair.
     """
     red_labels, red_found = _components(red)
     green_labels, green_found = _components(green)
 
-    masks = []
-    for labels, found, others in (
-        (red_labels, red_found, green_found),
-        (green_labels, green_found, red_found),
-    ):
-        kept = {
-            label
-            for label, centroid, area in found
-            if _nearest_distance(centroid, others)
-            <= _OPPOSITE_COLOUR_DISTANCE * math.sqrt(area)
-        }
-        masks.append(_keep_labels(labels, kept))
+    # (centroid, colour, mask index, label) � enough to score a candidate and
+    # then rebuild the masks from whichever entries backed it.
+    entries = [(centroid, 1, 0, label) for label, centroid, _ in red_found] + [
+        (centroid, -1, 1, label) for label, centroid, _ in green_found
+    ]
+    if len(entries) < 5:
+        return None
 
-    return masks[0], masks[1]
+    # Seeded so the same photo always calibrates the same way; a detector whose
+    # answer wobbles between runs is not one you can debug.
+    generator = np.random.default_rng(0)
+    points = np.array([entry[0] for entry in entries], dtype=np.float32)
+
+    best_votes: list[int] = []
+    best_ellipse = None
+
+    for _ in range(_RANSAC_ITERATIONS):
+        sample = points[generator.choice(len(entries), 5, replace=False)]
+        try:
+            candidate = cv2.fitEllipse(sample)
+        except cv2.error:  # five points that do not describe an ellipse
+            continue
+
+        votes = _board_votes(candidate, entries, frame)
+        if len(votes) > len(best_votes):
+            best_votes, best_ellipse = votes, candidate
+
+    if not best_votes:
+        return None
+
+    best_votes = _settle_hypothesis(best_ellipse, entries, frame, best_votes)
+
+    kept: tuple[set[int], set[int]] = (set(), set())
+    for index in best_votes:
+        _, _, mask_index, label = entries[index]
+        kept[mask_index].add(label)
+
+    return _keep_labels(red_labels, kept[0]), _keep_labels(green_labels, kept[1])
 
 
-def _nearest_distance(
+def _settle_hypothesis(
+    ellipse: tuple[tuple[float, float], tuple[float, float], float],
+    entries: list[tuple[tuple[float, float], int, int, int]],
+    frame: int,
+    votes: list[int],
+) -> list[int]:
+    """Refit the winning hypothesis on its own voters and collect them again.
+
+    The winner came out of five randomly drawn points, so it is only as good as
+    that draw: close enough to out-vote every rival, but off by enough that
+    segments near the edge of the tolerance miss out. Those gaps matter later �
+    a missing double segment is a missing colour transition, and the wire
+    matching insists on all twenty. Refitting on the double-ring voters and
+    re-collecting recovers them.
+    """
+    for _ in range(_MAX_BAND_PASSES):
+        ring = [
+            entries[index][0]
+            for index in votes
+            if _band_of(ellipse, entries[index][0]) == _DOUBLE_BAND
+        ]
+        if len(ring) < 5:
+            break
+
+        # Fitted through centroids, so it lands mid-ring; scaling it out by the
+        # same fraction puts it back on the outer edge the band radii assume.
+        centre, (axis_a, axis_b), angle = cv2.fitEllipse(np.array(ring, dtype=np.float32))
+        refit = (centre, (axis_a / _DOUBLE_BAND, axis_b / _DOUBLE_BAND), angle)
+
+        settled = _board_votes(refit, entries, frame)
+        if len(settled) <= len(votes):
+            break
+        votes, ellipse = settled, refit
+
+    return votes
+
+
+def _band_of(
+    ellipse: tuple[tuple[float, float], tuple[float, float], float],
     centroid: tuple[float, float],
-    others: list[tuple[int, tuple[float, float], int]],
-) -> float:
-    """Distance to the closest of `others`, or infinity if there are none."""
-    return min((math.dist(centroid, other) for _, other, _ in others), default=math.inf)
+) -> float | None:
+    """Which ring band this centroid falls in, if any."""
+    radius = _normalised_radius(ellipse, centroid)
+    for band in (_DOUBLE_BAND, _TRIPLE_BAND):
+        if abs(radius - band) < _BAND_TOLERANCE:
+            return band
+    return None
+
+
+def _board_votes(
+    ellipse: tuple[tuple[float, float], tuple[float, float], float],
+    entries: list[tuple[tuple[float, float], int, int, int]],
+    frame: int,
+) -> list[int]:
+    """Indices of the components this candidate board explains, or none at all.
+
+    Returns an empty list the moment the candidate fails a structural test, so
+    an implausible board scores zero rather than a plausible-looking count.
+    """
+    (_, _), (axis_a, axis_b), _ = ellipse
+    if (
+        min(axis_a, axis_b) <= 0
+        or max(axis_a, axis_b) / min(axis_a, axis_b) > _MAX_AXIS_RATIO
+        or max(axis_a, axis_b) > _MAX_FRAME_SHARE * frame
+    ):
+        return []
+
+    voters: list[int] = []
+    sectors: set[int] = set()
+    bands: dict[float, list[int]] = {_DOUBLE_BAND: [], _TRIPLE_BAND: []}
+
+    for index, (centroid, colour, _, _) in enumerate(entries):
+        local_x, local_y = _unit_circle_point(ellipse, centroid)
+        radius = math.hypot(local_x, local_y)
+
+        for band in bands:
+            if abs(radius - band) < _BAND_TOLERANCE:
+                voters.append(index)
+                bands[band].append(colour)
+                angle = math.atan2(local_y, local_x) + math.pi
+                sectors.add(int(angle / (2 * math.pi) * _ANGULAR_SECTORS) % _ANGULAR_SECTORS)
+                break
+
+    if len(sectors) < _MIN_ANGULAR_SECTORS:
+        return []
+
+    for members in bands.values():
+        if len(members) < _MIN_BAND_MEMBERS:
+            return []
+        minority = min(members.count(1), members.count(-1))
+        if minority < _MIN_MINORITY_SHARE * len(members):
+            return []
+
+    return voters
+
+
+def _unit_circle_point(
+    ellipse: tuple[tuple[float, float], tuple[float, float], float],
+    point: tuple[float, float],
+) -> tuple[float, float]:
+    """Point in the ellipse's own frame, scaled so the ellipse is the unit circle.
+
+    Distance from the origin is then directly comparable to the band radii, and
+    the angle is the board angle up to the perspective skew.
+    """
+    (centre_x, centre_y), (axis_a, axis_b), angle_degrees = ellipse
+    rotation = math.radians(angle_degrees)
+    offset_x, offset_y = point[0] - centre_x, point[1] - centre_y
+
+    return (
+        (offset_x * math.cos(rotation) + offset_y * math.sin(rotation)) / (axis_a / 2),
+        (-offset_x * math.sin(rotation) + offset_y * math.cos(rotation)) / (axis_b / 2),
+    )
 
 
 
@@ -340,14 +515,7 @@ def _normalised_radius(
     semi-axis turns it into the unit circle, which makes the value comparable
     all the way around regardless of how squashed the ellipse is.
     """
-    (centre_x, centre_y), (axis_a, axis_b), angle_degrees = ellipse
-    rotation = math.radians(angle_degrees)
-    offset_x, offset_y = point[0] - centre_x, point[1] - centre_y
-
-    local_x = offset_x * math.cos(rotation) + offset_y * math.sin(rotation)
-    local_y = -offset_x * math.sin(rotation) + offset_y * math.cos(rotation)
-
-    return math.hypot(local_x / (axis_a / 2), local_y / (axis_b / 2))
+    return math.hypot(*_unit_circle_point(ellipse, point))
 
 
 def _ellipse_point(
