@@ -29,7 +29,7 @@ import math
 import cv2
 import numpy as np
 
-from app.api.features.tracking.entity.board_geometry import (
+from app.api.features.calibration.entity.board_geometry import (
     DOUBLE_OUTER_RADIUS,
     SECTOR_ANGLE,
     SECTOR_COUNT,
@@ -38,9 +38,9 @@ from app.api.features.tracking.entity.board_geometry import (
     sector_boundary_angles,
     sector_centre_angle,
 )
-from app.api.features.tracking.entity.calibration import Calibration
-from app.api.features.tracking.entity.calibration_failure import CalibrationFailure
-from app.api.features.tracking.entity.detection_trace import CalibrationPass, CalibrationTrace
+from app.api.features.calibration.entity.calibration import Calibration
+from app.api.features.calibration.entity.calibration_failure import CalibrationFailure
+from app.api.features.calibration.entity.calibration_trace import CalibrationPass, CalibrationTrace
 
 # HSV bounds. Red wraps around the hue axis, so it needs two ranges.
 _RED_LOWER_1 = np.array([0, 90, 60])

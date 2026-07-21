@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from app.api.features.tracking.entity.calibration_failure import CalibrationFailure
+from app.api.features.calibration.entity.calibration_failure import CalibrationFailure
 
 
 @dataclass

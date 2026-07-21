@@ -11,13 +11,13 @@ import math
 
 import numpy as np
 
-from app.api.features.tracking.entity.board_geometry import (
+from app.api.features.calibration.entity.board_geometry import (
     BULL_RADIUS,
     DOUBLE_OUTER_RADIUS,
     RING_RADII,
     sector_boundary_angles,
 )
-from app.api.features.tracking.entity.calibration import Calibration
+from app.api.features.calibration.entity.calibration import Calibration
 
 # Circles do not stay circles under perspective, so they are emitted as
 # polylines dense enough to look smooth.

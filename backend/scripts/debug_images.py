@@ -23,14 +23,14 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from app.api.features.tracking.entity.board_geometry import (  # noqa: E402
+from app.api.features.calibration.entity.board_geometry import (  # noqa: E402
     SECTOR_COUNT,
     is_red_sector,
 )
-from app.api.features.tracking.entity.calibration_failure import CalibrationFailure  # noqa: E402
-from app.api.features.tracking.entity.detection_trace import CalibrationTrace  # noqa: E402
-from app.api.features.tracking.services import board_detector as detector  # noqa: E402
-from app.api.features.tracking.services.board_overlay import build_overlay  # noqa: E402
+from app.api.features.calibration.entity.calibration_failure import CalibrationFailure  # noqa: E402
+from app.api.features.calibration.entity.calibration_trace import CalibrationTrace  # noqa: E402
+from app.api.features.calibration.services import board_detector as detector  # noqa: E402
+from app.api.features.calibration.services.board_overlay import build_overlay  # noqa: E402
 
 from check_calibration import as_client_would_send  # noqa: E402
 

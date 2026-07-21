@@ -7,7 +7,7 @@ camera), and it is per board setup, which is what a game is.
 Same caveats as the game store — process-local, lost on restart.
 """
 
-from app.api.features.tracking.entity.calibration import Calibration
+from app.api.features.calibration.entity.calibration import Calibration
 
 
 class CalibrationStore:

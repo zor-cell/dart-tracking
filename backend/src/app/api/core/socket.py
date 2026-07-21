@@ -1,3 +1,13 @@
+"""The single WebSocket endpoint: dispatches incoming frames to whichever
+feature's pipeline handles that message type.
+
+This is core rather than a feature because it does not own any domain logic
+itself — it only decodes the wire message and calls into calibration/game/
+detection services. Pulling in feature-specific DTOs and services here is the
+one deliberate exception to core not depending on features (mirrors the
+frontend's core/socket/dto/socket-message.ts).
+"""
+
 import base64
 import json
 
@@ -5,23 +15,23 @@ import cv2
 import numpy as np
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from app.api.core.dto.connection_established import ConnectionEstablishedMessage
+from app.api.features.calibration.dto.calibration_frame import CalibrationFrameMessage
+from app.api.features.calibration.dto.calibration_result import CalibrationResultMessage
+from app.api.features.calibration.entity.calibration_failure import CalibrationFailure
+from app.api.features.calibration.services.board_detector import detect_board
+from app.api.features.calibration.services.calibration_store import store as calibration_store
+from app.api.features.detection.dto.throw_frame import ThrowFrameMessage
+from app.api.features.detection.dto.throw_received import ThrowReceivedMessage
 from app.api.features.game.dto.game_state import GameStateDto
+from app.api.features.game.dto.game_state_message import GameStateMessage
 from app.api.features.game.services.session_store import store
-from app.api.features.tracking.dto.calibration_frame import CalibrationFrameMessage
-from app.api.features.tracking.dto.calibration_result import CalibrationResultMessage
-from app.api.features.tracking.dto.connection_established import ConnectionEstablishedMessage
-from app.api.features.tracking.dto.game_state_message import GameStateMessage
-from app.api.features.tracking.dto.throw_frame import ThrowFrameMessage
-from app.api.features.tracking.dto.throw_received import ThrowReceivedMessage
-from app.api.features.tracking.entity.calibration_failure import CalibrationFailure
-from app.api.features.tracking.services.board_detector import detect_board
-from app.api.features.tracking.services.calibration_store import store as calibration_store
 
 router = APIRouter(prefix="/ws", tags=["Tracking"])
 
 
 @router.websocket("/games/{game_id}")
-async def dart_tracking_endpoint(websocket: WebSocket, game_id: str) -> None:
+async def websocket_endpoint(websocket: WebSocket, game_id: str) -> None:
     game = store.get(game_id)
     if game is None:
         await websocket.close(code=1008)

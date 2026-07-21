@@ -14,11 +14,12 @@ src/app/
 ├─ main.py                     # app + router wiring, CORS
 └─ api/
    ├─ health.py                # trivial single-endpoint routers stay flat
-   ├─ darts.py                 # WebSocket router (vision pipeline)
-   ├─ core/                    # cross-feature building blocks (e.g. dto/base.py)
+   ├─ core/
+   │  ├─ dto/                  # cross-feature wire schemas (base.py, connection_established.py)
+   │  └─ socket.py             # the single WebSocket endpoint (vision pipeline entry point)
    └─ features/
-      └─ <feature>/            # e.g. game/
-         ├─ <feature>s.py      # APIRouter with the endpoints (e.g. games.py)
+      └─ <feature>/            # e.g. game/, calibration/, detection/
+         ├─ <feature>s.py      # APIRouter with the endpoints, if the feature has REST ones (e.g. games.py)
          ├─ dto/               # Pydantic wire schemas (request/response)
          ├─ entity/            # domain models (dataclasses) + business rules
          └─ services/          # stores and orchestration
@@ -34,6 +35,12 @@ src/app/
 - `services/` — stateful stores and orchestration.
 - Trivial single-endpoint routers (e.g. `health`) may stay as flat modules in
   `api/` until they grow into a feature.
+- `core/socket.py` owns the WebSocket endpoint but no domain logic: it decodes
+  the incoming message and dispatches to whichever feature's DTOs and services
+  handle that message type (calibration, detection, game). Importing
+  feature-specific `dto`/`services` there is the one deliberate exception to
+  `core` not depending on `features` — the same aggregation-point pattern the
+  frontend uses in `core/socket/dto/socket-message.ts`.
 - **No `__init__.py` files anywhere** — the whole tree uses implicit namespace
   packages (PEP 420, Python 3.3+). Do not add them back.
   - This works because the project is never installed as a distribution: there is

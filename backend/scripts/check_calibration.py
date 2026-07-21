@@ -24,11 +24,11 @@ import numpy as np
 # Import from src/ the same way `--app-dir src` does at runtime.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from app.api.features.tracking.entity.board_geometry import SECTOR_COUNT  # noqa: E402
-from app.api.features.tracking.entity.calibration import Calibration  # noqa: E402
-from app.api.features.tracking.entity.calibration_failure import CalibrationFailure  # noqa: E402
-from app.api.features.tracking.services import board_detector as detector  # noqa: E402
-from app.api.features.tracking.services.board_overlay import build_overlay  # noqa: E402
+from app.api.features.calibration.entity.board_geometry import SECTOR_COUNT  # noqa: E402
+from app.api.features.calibration.entity.calibration import Calibration  # noqa: E402
+from app.api.features.calibration.entity.calibration_failure import CalibrationFailure  # noqa: E402
+from app.api.features.calibration.services import board_detector as detector  # noqa: E402
+from app.api.features.calibration.services.board_overlay import build_overlay  # noqa: E402
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 OVERLAY_COLOR = (0, 255, 255)  # BGR yellow, reads against board colours

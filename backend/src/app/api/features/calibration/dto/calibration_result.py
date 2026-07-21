@@ -1,9 +1,9 @@
 from typing import Literal, Self
 
 from app.api.core.dto.base import CamelModel
-from app.api.features.tracking.entity.calibration import Calibration
-from app.api.features.tracking.entity.calibration_failure import CalibrationFailure
-from app.api.features.tracking.services.board_overlay import build_overlay
+from app.api.features.calibration.entity.calibration import Calibration
+from app.api.features.calibration.entity.calibration_failure import CalibrationFailure
+from app.api.features.calibration.services.board_overlay import build_overlay
 
 
 class CalibrationResultMessage(CamelModel):
