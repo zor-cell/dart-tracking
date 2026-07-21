@@ -42,6 +42,10 @@ class CalibrationTrace:
     image: np.ndarray | None = None
     red_mask: np.ndarray | None = None
     green_mask: np.ndarray | None = None
+    dropped_isolated: np.ndarray | None = None
+    dropped_outer: np.ndarray | None = None
+    kept_red: np.ndarray | None = None
+    kept_green: np.ndarray | None = None
     hull: np.ndarray | None = None
     ellipse: tuple[tuple[float, float], tuple[float, float], float] | None = None
     passes: list[CalibrationPass] = field(default_factory=list)

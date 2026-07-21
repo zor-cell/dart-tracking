@@ -5,11 +5,15 @@ Pipeline (see docs/roadmap.md §6.1 for the literature this follows):
 1. Segment the red and green double/triple segments in HSV. They are by far the
    most distinctive feature of a board and survive poor lighting better than
    edges do.
-2. Fit an ellipse to the convex hull of those coloured pixels. Under
-   perspective a circle projects to an ellipse, and the outermost coloured ring
-   is the outer edge of the double ring — a known 170 mm radius. Every point on
-   that fitted ellipse is therefore the image of a board point at exactly that
-   radius; only *which* angle each one corresponds to is still unknown.
+2. Throw away every coloured blob that is not part of the two rings, then fit
+   an ellipse to the convex hull of what is left. Under perspective a circle
+   projects to an ellipse, and the outermost coloured ring is the outer edge of
+   the double ring — a known 170 mm radius. Every point on that fitted ellipse
+   is therefore the image of a board point at exactly that radius; only *which*
+   angle each one corresponds to is still unknown. The filtering matters more
+   than it looks: the hull is an outer envelope, so a single stray blob drags
+   the whole fit, and red-ish clutter is common (furniture, warm light, the
+   numbers and branding printed around the board itself).
 3. Recover those angles by walking around the ring and finding the red/green
    transitions. Colours change exactly at the sector wires, whose board angles
    are known, so each transition is a true point correspondence rather than an
@@ -76,6 +80,23 @@ _SAMPLE_FRACTIONS = tuple(np.linspace(0.5, 0.98, 20))
 _CENTRE_CONVERGENCE_PX = 0.5
 _MAX_REFINEMENT_PASSES = 6
 
+# Triple and double ring are the only things on a board that put red and green
+# side by side, so every real segment has a neighbour of the opposite colour
+# about one segment width away. Measured in units of sqrt(area) rather than
+# pixels, so the test survives any resolution and any camera distance.
+_OPPOSITE_COLOUR_DISTANCE = 3.0
+
+# A component whose centroid sits beyond this fraction of the current ellipse is
+# outside the double ring — branding printed on a surround, the numbers around
+# the board. Each removal shrinks the ellipse, which pushes whatever is left
+# further out, so repeating tightens onto the ring instead of oscillating.
+_OUTER_BAND_LIMIT = 0.99
+_MAX_BAND_PASSES = 4
+
+# Below this a blob is speckle rather than a segment. Also keeps the neighbour
+# search from being dragged around by single-pixel noise.
+_MIN_COMPONENT_AREA = 20
+
 # What the most recent call to `detect_board` saw at each stage.
 trace = CalibrationTrace()
 
@@ -96,13 +117,17 @@ def detect_board(image: np.ndarray) -> Calibration | CalibrationFailure:
     combined = cv2.bitwise_or(red_mask, green_mask)
     trace.image, trace.red_mask, trace.green_mask = image, red_mask, green_mask
 
-    #dont need colored region check for now
-    #if int(np.count_nonzero(combined)) < _MIN_COLOURED_PIXEL_RATIO * width * height:
-    #    return _record_failure(CalibrationFailure.NO_COLOURED_REGION)
+    red_mask, green_mask = _drop_isolated_components(red_mask, green_mask)
+    surviving = cv2.bitwise_or(red_mask, green_mask)
+    trace.dropped_isolated = cv2.subtract(combined, surviving)
 
-    ellipse = _fit_outer_ellipse(combined)
-    if ellipse is None:
+    fitted = _fit_ring_ellipse(red_mask, green_mask)
+    if fitted is None:
         return _record_failure(CalibrationFailure.ELLIPSE_FIT_FAILED)
+    ellipse, red_mask, green_mask = fitted
+
+    trace.dropped_outer = cv2.subtract(surviving, cv2.bitwise_or(red_mask, green_mask))
+    trace.kept_red, trace.kept_green = red_mask, green_mask
     trace.ellipse = ellipse
 
     # The first pass casts its rays from the ellipse centre, which perspective
@@ -190,6 +215,139 @@ def _fit_outer_ellipse(
         return None
 
     return cv2.fitEllipse(hull)
+
+
+def _components(
+    mask: np.ndarray,
+) -> tuple[np.ndarray, list[tuple[int, tuple[float, float], int]]]:
+    """Label a mask and list its components as (label, centroid, area)."""
+    count, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, 8)
+    found = [
+        (
+            label,
+            (float(centroids[label][0]), float(centroids[label][1])),
+            int(stats[label, cv2.CC_STAT_AREA]),
+        )
+        for label in range(1, count)  # label 0 is the background
+        if stats[label, cv2.CC_STAT_AREA] >= _MIN_COMPONENT_AREA
+    ]
+    return labels, found
+
+
+def _keep_labels(labels: np.ndarray, kept: set[int]) -> np.ndarray:
+    """Rebuild a mask from the labels that survived a filter."""
+    if not kept:
+        return np.zeros(labels.shape, dtype=np.uint8)
+    return np.isin(labels, list(kept)).astype(np.uint8) * 255
+
+
+def _drop_isolated_components(
+    red: np.ndarray, green: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Keep only the components that sit next to the opposite colour.
+
+    The segments of both rings alternate red/green, so each one has its
+    counterpart roughly a segment away. Everything that reaches the masks by
+    accident is single-coloured � a wooden chair in the red hue range, the
+    branding arcs printed on a surround, warm light on a wall � and so has no
+    such neighbour anywhere near it. This is what keeps clutter elsewhere in
+    the room out of the ellipse; it cannot judge anything close to the board,
+    which is what the band filter below is for.
+    """
+    red_labels, red_found = _components(red)
+    green_labels, green_found = _components(green)
+
+    masks = []
+    for labels, found, others in (
+        (red_labels, red_found, green_found),
+        (green_labels, green_found, red_found),
+    ):
+        kept = {
+            label
+            for label, centroid, area in found
+            if _nearest_distance(centroid, others)
+            <= _OPPOSITE_COLOUR_DISTANCE * math.sqrt(area)
+        }
+        masks.append(_keep_labels(labels, kept))
+
+    return masks[0], masks[1]
+
+
+def _nearest_distance(
+    centroid: tuple[float, float],
+    others: list[tuple[int, tuple[float, float], int]],
+) -> float:
+    """Distance to the closest of `others`, or infinity if there are none."""
+    return min((math.dist(centroid, other) for _, other, _ in others), default=math.inf)
+
+
+
+def _fit_ring_ellipse(
+    red: np.ndarray, green: np.ndarray
+) -> tuple[
+    tuple[tuple[float, float], tuple[float, float], float], np.ndarray, np.ndarray
+] | None:
+    """Fit the double ring, discarding whatever still lies outside it.
+
+    Clutter close to the board survives the neighbour test — the numbers around
+    the ring and the branding on a surround do have coloured segments nearby —
+    but it always sits further out than the double ring does. So: fit, drop
+    every component whose centroid falls outside that boundary, refit. The
+    first fit is too generous precisely because the strays inflate it, which is
+    why one pass is not enough; each round shrinks the ellipse and pushes the
+    remainder further out, so the loop converges on the ring.
+
+    Returns the ellipse together with the masks it was fitted to, since
+    everything downstream should be reading the cleaned ones.
+    """
+    ellipse = _fit_outer_ellipse(cv2.bitwise_or(red, green))
+    if ellipse is None:
+        return None
+
+    for _ in range(_MAX_BAND_PASSES):
+        dropped_any = False
+        masks = []
+
+        for mask in (red, green):
+            labels, found = _components(mask)
+            kept = set()
+            for label, centroid, _ in found:
+                if _normalised_radius(ellipse, centroid) <= _OUTER_BAND_LIMIT:
+                    kept.add(label)
+                else:
+                    dropped_any = True
+            masks.append(_keep_labels(labels, kept))
+
+        red, green = masks
+        if not dropped_any:
+            break
+
+        refit = _fit_outer_ellipse(cv2.bitwise_or(red, green))
+        if refit is None:  # keep the last usable fit rather than failing outright
+            break
+        ellipse = refit
+
+    return ellipse, red, green
+
+
+def _normalised_radius(
+    ellipse: tuple[tuple[float, float], tuple[float, float], float],
+    point: tuple[float, float],
+) -> float:
+    """Where a point sits relative to the ellipse — 1.0 is exactly on it.
+
+    Rotating the ellipse back onto the axes and dividing by the matching
+    semi-axis turns it into the unit circle, which makes the value comparable
+    all the way around regardless of how squashed the ellipse is.
+    """
+    (centre_x, centre_y), (axis_a, axis_b), angle_degrees = ellipse
+    rotation = math.radians(angle_degrees)
+    offset_x, offset_y = point[0] - centre_x, point[1] - centre_y
+
+    local_x = offset_x * math.cos(rotation) + offset_y * math.sin(rotation)
+    local_y = -offset_x * math.sin(rotation) + offset_y * math.cos(rotation)
+
+    return math.hypot(local_x / (axis_a / 2), local_y / (axis_b / 2))
 
 
 def _ellipse_point(

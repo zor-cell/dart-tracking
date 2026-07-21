@@ -55,30 +55,46 @@ def as_client_would_send(image: np.ndarray) -> np.ndarray:
 
 
 def measure(image: np.ndarray) -> str:
-    """Numbers behind the verdict, for tuning the thresholds against."""
+    """Numbers behind the verdict, for tuning the thresholds against.
+
+    Read off the trace of the run that just happened rather than recomputed, so
+    these describe the masks and the ellipse detection actually used. Deriving
+    them separately would quietly drift out of step with the pipeline — and did,
+    once the component filters landed.
+    """
     height, width = image.shape[:2]
+    trace = detector.trace
 
-    red_mask, green_mask = detector._colour_masks(image)
-    combined = cv2.bitwise_or(red_mask, green_mask)
+    combined = cv2.bitwise_or(trace.red_mask, trace.green_mask)
     ratio = int(np.count_nonzero(combined)) / (width * height)
-
     parts = [
         f"red/green {ratio:.2%} of frame (min {detector._MIN_COLOURED_PIXEL_RATIO:.1%})"
     ]
 
-    ellipse = detector._fit_outer_ellipse(combined)
-    if ellipse is not None:
-        (cx, cy), (axis_a, axis_b), angle = ellipse
+    # How much of that colour the two filters threw away before the fit. A high
+    # share here is normal (clutter, branding); a high share with a bad fit
+    # means the filters ate the ring itself.
+    coloured = max(int(np.count_nonzero(combined)), 1)
+    for label, dropped in (
+        ("isolated", trace.dropped_isolated),
+        ("outside ring", trace.dropped_outer),
+    ):
+        if dropped is not None:
+            parts.append(f"{int(np.count_nonzero(dropped)) / coloured:.0%} dropped as {label}")
+
+    if trace.ellipse is not None:
+        (cx, cy), (axis_a, axis_b), angle = trace.ellipse
         parts.append(
             f"ellipse centre=({cx:.0f},{cy:.0f}) axes=({axis_a:.0f},{axis_b:.0f}) "
             f"tilt={angle:.0f}deg fills {max(axis_a, axis_b) / max(width, height):.0%}"
         )
 
-        colours = detector._walk_ring_colours(ellipse, ellipse[0], red_mask, green_mask)
-        transitions = detector._find_colour_transitions(colours)
+    if trace.passes:
+        last = trace.passes[-1]
         parts.append(
-            f"{len(transitions)}/{SECTOR_COUNT} wires, "
-            f"{colours.count(0) / len(colours):.0%} of ring samples colourless"
+            f"{len(last.transitions)}/{SECTOR_COUNT} wires, "
+            f"{last.ring_colours.count(0) / len(last.ring_colours):.0%} "
+            f"of ring samples colourless"
         )
 
     return " | ".join(parts)

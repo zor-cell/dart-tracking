@@ -27,6 +27,10 @@ _COLOUR_TRANSITION = (255, 128, 0)  # blue
 _COLOUR_WIRE_RED = (0, 0, 220)
 _COLOUR_WIRE_GREEN = (0, 200, 0)
 _COLOUR_OVERLAY = (0, 255, 255)
+_COLOUR_KEPT_RED = (0, 0, 255)
+_COLOUR_KEPT_GREEN = (0, 255, 0)
+_COLOUR_DROPPED_ISOLATED = (70, 70, 70)  # grey
+_COLOUR_DROPPED_OUTER = (170, 120, 60)  # steel blue
 
 _RING_DOT_RADIUS = 2
 _MARKER_RADIUS = 5
@@ -46,23 +50,28 @@ def write_debug_images(
         cv2.imwrite(str(path), _draw_masks(trace))
         written.append(path)
 
+    if trace.dropped_isolated is not None:
+        path = out_dir / "02_components.jpg"
+        cv2.imwrite(str(path), _draw_components(trace))
+        written.append(path)
+
     if trace.hull is not None:
-        path = out_dir / "02_hull_ellipse.jpg"
+        path = out_dir / "03_hull_ellipse.jpg"
         cv2.imwrite(str(path), _draw_hull_ellipse(trace))
         written.append(path)
 
     for index in range(len(trace.passes)):
-        path = out_dir / f"03_pass{index + 1}_wires.jpg"
+        path = out_dir / f"04_pass{index + 1}_wires.jpg"
         cv2.imwrite(str(path), _draw_pass(trace, index))
         written.append(path)
 
         if trace.passes[index].correspondences is not None:
-            path = out_dir / f"04_pass{index + 1}_correspondences.jpg"
+            path = out_dir / f"05_pass{index + 1}_correspondences.jpg"
             cv2.imwrite(str(path), _draw_correspondences(trace, index))
             written.append(path)
 
     if not isinstance(outcome, CalibrationFailure):
-        path = out_dir / "05_result.jpg"
+        path = out_dir / "06_result.jpg"
         cv2.imwrite(str(path), _draw_result(trace, outcome))
         written.append(path)
 
@@ -74,6 +83,31 @@ def _draw_masks(trace: CalibrationTrace) -> np.ndarray:
     canvas = np.zeros_like(trace.image)
     canvas[..., 2] = trace.red_mask
     canvas[..., 1] = trace.green_mask
+    return canvas
+
+
+def _draw_components(trace: CalibrationTrace) -> np.ndarray:
+    """Which mask components reached the ellipse fit, and what cut the others.
+
+    Red and green are what survived; those pixels alone decide the fit. Grey
+    was dropped for having no neighbour of the opposite colour, so it is
+    clutter away from the board. Steel blue sat close enough to the board to
+    pass that test but outside the double ring — branding on a surround, the
+    numbers printed around the face. Comparing this against 01_masks.jpg says
+    whether a skewed ellipse came from bad segmentation or from bad filtering.
+    """
+    canvas = np.zeros_like(trace.image)
+
+    # Drawn first so the survivors paint over anything they overlap.
+    if trace.dropped_isolated is not None:
+        canvas[trace.dropped_isolated > 0] = _COLOUR_DROPPED_ISOLATED
+    if trace.dropped_outer is not None:
+        canvas[trace.dropped_outer > 0] = _COLOUR_DROPPED_OUTER
+    if trace.kept_red is not None:
+        canvas[trace.kept_red > 0] = _COLOUR_KEPT_RED
+    if trace.kept_green is not None:
+        canvas[trace.kept_green > 0] = _COLOUR_KEPT_GREEN
+
     return canvas
 
 
