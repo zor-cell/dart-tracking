@@ -8,3 +8,4 @@ class CalibrationFrameMessage(CamelModel):
 
     type: Literal["calibration_frame"]
     image: str  # base64-encoded JPEG
+    debug: bool = True

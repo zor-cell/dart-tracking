@@ -10,6 +10,8 @@ frontend's core/socket/dto/socket-message.ts).
 
 import base64
 import json
+from datetime import datetime, timezone
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -18,8 +20,10 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.api.core.dto.connection_established import ConnectionEstablishedMessage
 from app.api.features.calibration.dto.calibration_frame import CalibrationFrameMessage
 from app.api.features.calibration.dto.calibration_result import CalibrationResultMessage
+from app.api.features.calibration.entity.calibration import Calibration
 from app.api.features.calibration.entity.calibration_failure import CalibrationFailure
-from app.api.features.calibration.services.board_detector import detect_board
+from app.api.features.calibration.services import board_detector
+from app.api.features.calibration.services.board_debug_images import write_debug_images
 from app.api.features.calibration.services.calibration_store import store as calibration_store
 from app.api.features.detection.dto.throw_frame import ThrowFrameMessage
 from app.api.features.detection.dto.throw_received import ThrowReceivedMessage
@@ -28,6 +32,11 @@ from app.api.features.game.dto.game_state_message import GameStateMessage
 from app.api.features.game.services.session_store import store
 
 router = APIRouter(prefix="/ws", tags=["Tracking"])
+
+# Where a `calibration_frame` with `debug: true` dumps its per-stage images.
+# Under testdata/, which is entirely gitignored — this is a local dev aid, not
+# something that ships.
+_DEBUG_OUTPUT_ROOT = Path(__file__).resolve().parents[4] / "testdata" / "calibration" / "socket_debug"
 
 
 @router.websocket("/games/{game_id}")
@@ -53,10 +62,13 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str) -> None:
                 image = _decode_jpeg(frame.image)
 
                 outcome = (
-                    detect_board(image)
+                    board_detector.detect_board(image)
                     if image is not None
                     else CalibrationFailure.INVALID_IMAGE
                 )
+                if frame.debug and image is not None:
+                    _write_debug_images(game_id, outcome)
+
                 if isinstance(outcome, CalibrationFailure):
                     response = CalibrationResultMessage.failed(outcome)
                 else:
@@ -78,6 +90,14 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str) -> None:
             await websocket.send_text(response.model_dump_json(by_alias=True))
     except WebSocketDisconnect:
         pass
+
+
+def _write_debug_images(game_id: str, outcome: Calibration | CalibrationFailure) -> None:
+    """Dump the just-finished attempt's per-stage images (see scripts/debug_images.py)."""
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
+    out_dir = _DEBUG_OUTPUT_ROOT / game_id / timestamp
+    written = write_debug_images(board_detector.trace, outcome, out_dir)
+    print(f"[calibration debug] {len(written)} image(s) in {out_dir}")
 
 
 def _decode_jpeg(encoded: str) -> np.ndarray | None:
