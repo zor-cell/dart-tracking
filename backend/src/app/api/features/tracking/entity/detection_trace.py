@@ -1,0 +1,49 @@
+"""What board detection saw at each stage, so a run can be judged by eye.
+
+`detect_board` fills one of these on every call: it only keeps references to
+values it computes anyway, so recording costs nothing and does not have to be
+switched on. Pass one in to get it back.
+
+This is deliberately data only — no drawing. Turning a trace into pictures is
+the job of scripts/debug_images.py, which keeps OpenCV rendering out of the
+service and lets the debug views change without touching detection.
+"""
+
+from dataclasses import dataclass, field
+
+import numpy as np
+
+from app.api.features.tracking.entity.calibration_failure import CalibrationFailure
+
+
+@dataclass
+class CalibrationPass:
+    """One refinement pass: the wire search from a given centre estimate.
+
+    Everything after `transitions` stays None if the pass gave up before
+    getting there, which is precisely the case worth looking at.
+    """
+
+    centre: tuple[float, float]
+    ring_colours: list[int] = field(default_factory=list)
+    transitions: list[tuple[float, bool]] = field(default_factory=list)
+    correspondences: list[tuple[float, float]] | None = None
+    homography: np.ndarray | None = None
+    projected_centre: tuple[float, float] | None = None
+
+
+@dataclass
+class CalibrationTrace:
+    image: np.ndarray | None = None
+    red_mask: np.ndarray | None = None
+    green_mask: np.ndarray | None = None
+    hull: np.ndarray | None = None
+    ellipse: tuple[tuple[float, float], tuple[float, float], float] | None = None
+    passes: list[CalibrationPass] = field(default_factory=list)
+    failure: CalibrationFailure | None = None
+
+    def begin_pass(self, centre: tuple[float, float]) -> CalibrationPass:
+        """Start recording a refinement pass and return it for filling in."""
+        current = CalibrationPass(centre=centre)
+        self.passes.append(current)
+        return current
