@@ -1,4 +1,4 @@
-import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
+import { effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { NotificationService } from '../../../core/notification/services/notification.service';
 import { CalibrationFailure } from '../dto/calibration-failure';
 import { captureFrameAsJpeg } from '../../camera/models/frame-capture';
@@ -38,16 +38,14 @@ export class CalibrationService {
 
   readonly status = signal<CalibrationStatus>('idle');
 
-  private readonly lastOverlay = signal<number[][][] | null>(null);
-
   /**
-   * The detected board as polylines in normalized image coordinates — but null
-   * while an attempt is running: the drawing describes a board position that is
-   * in the middle of being re-measured, and leaving it up would make a stale
-   * outline read as a fresh confirmation. A failed attempt brings it back,
-   * since the calibration it came from is still the one in effect.
+   * The detected board as polylines in normalized image coordinates, or null
+   * whenever there is nothing freshly confirmed to draw. Cleared the moment an
+   * attempt starts and left cleared if it fails: an outline that outlives the
+   * measurement it came from is drawn over a board nobody just verified, so it
+   * reads as a confirmation it no longer is.
    */
-  readonly overlay = computed(() => (this.status() === 'pending' ? null : this.lastOverlay()));
+  readonly overlay = signal<number[][][] | null>(null);
 
   constructor() {
     effect(() => {
@@ -57,7 +55,7 @@ export class CalibrationService {
       }
       this.status.set(message.success ? 'success' : 'error');
       if (message.success) {
-        this.lastOverlay.set(message.overlay);
+        this.overlay.set(message.overlay);
       } else {
         this.reportFailure(message.failure);
       }
@@ -66,13 +64,14 @@ export class CalibrationService {
 
   async calibrate(video: HTMLVideoElement, canvas: HTMLCanvasElement): Promise<void> {
     this.status.set('pending');
+    this.overlay.set(null);
     const frame = await captureFrameAsJpeg(video, canvas);
     await this.socket.sendFrame('calibration_frame', frame);
   }
 
   reset(): void {
     this.status.set('idle');
-    this.lastOverlay.set(null);
+    this.overlay.set(null);
   }
 
   /**
