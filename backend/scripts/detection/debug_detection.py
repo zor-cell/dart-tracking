@@ -15,8 +15,7 @@ the live pipeline does. One pair at a time, on purpose: a run already produces
 one file per stage, so pointing it at a whole folder would bury the run that
 actually needs looking at (use test_detection.py for the batch view).
 
-    uv run python scripts/detection/debug_detection.py \
-        testdata/detection/throw0_base.JPG testdata/detection/throw0_dart1.JPG
+    uv run python scripts/detection/debug_detection.py testdata/detection/throw0_base.JPG testdata/detection/throw0_dart1.JPG
     uv run python scripts/detection/debug_detection.py REF.JPG FRAME.JPG --out debug
 """
 
