@@ -8,3 +8,4 @@ class ThrowFrameMessage(CamelModel):
 
     type: Literal["throw_frame"]
     image: str  # base64-encoded JPEG
+    debug: bool = True

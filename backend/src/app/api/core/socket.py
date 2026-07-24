@@ -23,27 +23,34 @@ from app.api.features.calibration.dto.calibration_result import CalibrationResul
 from app.api.features.calibration.entity.calibration import Calibration
 from app.api.features.calibration.entity.calibration_failure import CalibrationFailure
 from app.api.features.calibration.services import board_detector
-from app.api.features.calibration.services.board_debug_images import write_debug_images
+from app.api.features.calibration.services.board_debug_images import (
+    write_debug_images as write_calibration_debug_images,
+)
 from app.api.features.calibration.services.calibration_store import store as calibration_store
 from app.api.features.detection.dto.dart_detected import DartDetectedMessage
 from app.api.features.detection.dto.throw_frame import ThrowFrameMessage
 from app.api.features.detection.entity.dart import Dart
 from app.api.features.detection.entity.detection_failure import DetectionFailure
 from app.api.features.detection.services import dart_detector
+from app.api.features.detection.services.dart_debug_images import (
+    write_debug_images as write_detection_debug_images,
+)
 from app.api.features.detection.services.frame_store import store as frame_store
 from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.dto.game_state_message import GameStateMessage
 from app.api.features.game.entity.game import Game
-from app.api.features.game.services.session_store import store
+from app.api.features.game.services.game_store import store as game_store
 
 router = APIRouter(prefix="/ws", tags=["Tracking"])
 
-_DEBUG_OUTPUT_ROOT = Path(__file__).resolve().parents[4] / "testdata" / "calibration" / "socket_debug"
+_TESTDATA_ROOT = Path(__file__).resolve().parents[4] / "testdata"
+_CALIBRATION_DEBUG_ROOT = _TESTDATA_ROOT / "calibration" / "socket_debug"
+_DETECTION_DEBUG_ROOT = _TESTDATA_ROOT / "detection" / "socket_debug"
 
 
 @router.websocket("/games/{game_id}")
 async def websocket_endpoint(websocket: WebSocket, game_id: str) -> None:
-    game = store.get(game_id)
+    game = game_store.get(game_id)
     if game is None:
         await websocket.close(code=1008)
         return
@@ -86,7 +93,7 @@ async def _handle_calibration_frame(websocket: WebSocket, game_id: str, message:
         else CalibrationFailure.INVALID_IMAGE
     )
     if frame.debug and image is not None:
-        _write_debug_images(game_id, outcome)
+        _write_calibration_debug(game_id, outcome)
 
     if isinstance(outcome, CalibrationFailure):
         response = CalibrationResultMessage.failed(outcome)
@@ -125,6 +132,8 @@ async def _handle_throw_frame(
         outcome = DetectionFailure.NOT_CALIBRATED
     else:
         outcome = dart_detector.detect_dart(reference, image, calibration)
+        if frame.debug:
+            _write_detection_debug(game_id, outcome)
 
     if isinstance(outcome, DetectionFailure):
         await websocket.send_text(
@@ -133,8 +142,6 @@ async def _handle_throw_frame(
         return
 
     game.register_dart(outcome.points)
-    # This throw is the reference for the next one. The aligned copy, not the raw
-    # frame, or the reference drifts out of the calibration's pixel grid.
     if dart_detector.trace.aligned is not None:
         frame_store.set(game_id, dart_detector.trace.aligned)
 
@@ -146,12 +153,24 @@ async def _handle_throw_frame(
     )
 
 
-def _write_debug_images(game_id: str, outcome: Calibration | CalibrationFailure) -> None:
-    """Dump the just-finished attempt's per-stage images (see scripts/debug_images.py)."""
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
-    out_dir = _DEBUG_OUTPUT_ROOT / game_id / timestamp
-    written = write_debug_images(board_detector.trace, outcome, out_dir)
+def _write_calibration_debug(game_id: str, outcome: Calibration | CalibrationFailure) -> None:
+    """Dump the just-finished board attempt's per-stage images (see scripts/calibration/debug_calibration.py)."""
+    out_dir = _CALIBRATION_DEBUG_ROOT / game_id / _timestamp()
+    written = write_calibration_debug_images(board_detector.trace, outcome, out_dir)
     print(f"[calibration debug] {len(written)} image(s) in {out_dir}")
+
+
+def _write_detection_debug(game_id: str, outcome: Dart | DetectionFailure) -> None:
+    """Dump the just-finished throw's per-stage images (see scripts/detection/debug_detection.py)."""
+    dart = outcome if isinstance(outcome, Dart) else None
+    out_dir = _DETECTION_DEBUG_ROOT / game_id / _timestamp()
+    written = write_detection_debug_images(dart_detector.trace, dart, out_dir)
+    print(f"[detection debug] {len(written)} image(s) in {out_dir}")
+
+
+def _timestamp() -> str:
+    """A filesystem-safe UTC stamp, unique per attempt, for a debug subfolder."""
+    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
 
 
 def _decode_jpeg(encoded: str) -> np.ndarray | None:
