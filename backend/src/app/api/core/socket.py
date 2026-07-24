@@ -23,19 +23,19 @@ from app.api.features.calibration.dto.calibration_result import CalibrationResul
 from app.api.features.calibration.entity.calibration import Calibration
 from app.api.features.calibration.entity.calibration_failure import CalibrationFailure
 from app.api.features.calibration.services import board_detector
-from app.api.features.calibration.services.board_debug_images import (
+from app.api.features.calibration.services.calibration_debug import (
     write_debug_images as write_calibration_debug_images,
 )
 from app.api.features.calibration.services.calibration_store import store as calibration_store
-from app.api.features.detection.dto.dart_detected import DartDetectedMessage
-from app.api.features.detection.dto.throw_frame import ThrowFrameMessage
-from app.api.features.detection.entity.dart import Dart
+from app.api.features.detection.dto.detection_result import DartDetectedMessage
+from app.api.features.detection.dto.detection_frame import ThrowFrameMessage
+from app.api.features.detection.entity.detection import Dart
 from app.api.features.detection.entity.detection_failure import DetectionFailure
 from app.api.features.detection.services import dart_detector
-from app.api.features.detection.services.dart_debug_images import (
+from app.api.features.detection.services.detection_debug import (
     write_debug_images as write_detection_debug_images,
 )
-from app.api.features.detection.services.frame_store import store as frame_store
+from app.api.features.detection.services.detection_store import store as detection_store
 from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.dto.game_state_message import GameStateMessage
 from app.api.features.game.entity.game import Game
@@ -99,7 +99,7 @@ async def _handle_calibration_frame(websocket: WebSocket, game_id: str, message:
         response = CalibrationResultMessage.failed(outcome)
     else:
         calibration_store.set(game_id, outcome)
-        frame_store.set(game_id, image)
+        detection_store.set(game_id, image)
         response = CalibrationResultMessage.from_calibration(outcome)
 
     await websocket.send_text(response.model_dump_json(by_alias=True))
@@ -124,7 +124,7 @@ async def _handle_throw_frame(
     frame = ThrowFrameMessage.model_validate(message)
     image = _decode_jpeg(frame.image)
     calibration = calibration_store.get(game_id)
-    reference = frame_store.get(game_id)
+    reference = detection_store.get(game_id)
 
     if image is None:
         outcome: Dart | DetectionFailure = DetectionFailure.INVALID_IMAGE
@@ -143,7 +143,7 @@ async def _handle_throw_frame(
 
     game.register_dart(outcome.points)
     if dart_detector.trace.aligned is not None:
-        frame_store.set(game_id, dart_detector.trace.aligned)
+        detection_store.set(game_id, dart_detector.trace.aligned)
 
     await websocket.send_text(
         DartDetectedMessage.detected(outcome).model_dump_json(by_alias=True)

@@ -11,7 +11,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from app.api.features.detection.entity.dart import Dart
+from app.api.features.detection.entity.detection import Dart
 from app.api.features.detection.entity.detection_trace import DetectionTrace
 
 _COLOUR_AXIS = (255, 0, 255)  # magenta

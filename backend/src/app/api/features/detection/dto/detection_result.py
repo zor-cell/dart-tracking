@@ -1,7 +1,7 @@
 from typing import Literal, Self
 
 from app.api.core.dto.base import CamelModel
-from app.api.features.detection.entity.dart import Dart
+from app.api.features.detection.entity.detection import Dart
 from app.api.features.detection.entity.detection_failure import DetectionFailure
 
 

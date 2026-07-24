@@ -35,7 +35,7 @@ from app.api.features.calibration.entity.calibration_failure import CalibrationF
 from app.api.features.calibration.services import board_detector  # noqa: E402
 from app.api.features.detection.entity.detection_failure import DetectionFailure  # noqa: E402
 from app.api.features.detection.services import dart_detector  # noqa: E402
-from app.api.features.detection.services.dart_debug_images import write_debug_images  # noqa: E402
+from app.api.features.detection.services.detection_debug import write_debug_images  # noqa: E402
 
 from scripts.common import load_image  # noqa: E402
 

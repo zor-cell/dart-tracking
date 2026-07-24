@@ -17,7 +17,7 @@ restart, not shared across workers.
 import numpy as np
 
 
-class FrameStore:
+class DetectionStore:
     def __init__(self) -> None:
         self._frames: dict[str, np.ndarray] = {}
 
@@ -30,4 +30,4 @@ class FrameStore:
 
 
 # Module-level singleton store.
-store = FrameStore()
+store = DetectionStore()

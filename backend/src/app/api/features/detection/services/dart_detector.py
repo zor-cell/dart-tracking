@@ -35,7 +35,7 @@ from app.api.features.calibration.entity.board_geometry import (
     segment_at,
 )
 from app.api.features.calibration.entity.calibration import Calibration
-from app.api.features.detection.entity.dart import Dart
+from app.api.features.detection.entity.detection import Dart
 from app.api.features.detection.entity.detection_failure import DetectionFailure
 from app.api.features.detection.entity.detection_trace import DetectionTrace
 
