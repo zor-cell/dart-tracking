@@ -28,7 +28,7 @@ from app.api.features.calibration.entity.calibration_failure import CalibrationF
 from app.api.features.calibration.services import board_detector as detector  # noqa: E402
 from app.api.features.calibration.services.board_debug_images import write_debug_images  # noqa: E402
 
-from check_calibration import as_client_would_send  # noqa: E402
+from test_calibration import as_client_would_send  # noqa: E402
 
 
 def main() -> int:
