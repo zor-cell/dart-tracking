@@ -20,15 +20,15 @@ import argparse
 import sys
 from pathlib import Path
 
-import cv2
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+_BACKEND = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_BACKEND))
+sys.path.insert(0, str(_BACKEND / "src"))
 
 from app.api.features.calibration.entity.calibration_failure import CalibrationFailure  # noqa: E402
 from app.api.features.calibration.services import board_detector as detector  # noqa: E402
 from app.api.features.calibration.services.board_debug_images import write_debug_images  # noqa: E402
 
-from test_calibration import as_client_would_send  # noqa: E402
+from scripts.common import load_image  # noqa: E402
 
 
 def main() -> int:
@@ -42,12 +42,10 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    image = cv2.imread(str(args.image))
+    image = load_image(args.image, args.raw)
     if image is None:
         print(f"unreadable: {args.image}")
         return 1
-    if not args.raw:
-        image = as_client_would_send(image)
 
     out_dir = args.out or args.image.with_name(f"{args.image.stem}_debug")
 

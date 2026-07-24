@@ -21,8 +21,11 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-# Import from src/ the same way `--app-dir src` does at runtime.
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+# Import app.* from src/ (as `--app-dir src` does at runtime) and scripts.* from
+# the backend root, regardless of where this script is launched from.
+_BACKEND = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_BACKEND))
+sys.path.insert(0, str(_BACKEND / "src"))
 
 from app.api.features.calibration.entity.board_geometry import SECTOR_COUNT  # noqa: E402
 from app.api.features.calibration.entity.calibration import Calibration  # noqa: E402
@@ -30,29 +33,17 @@ from app.api.features.calibration.entity.calibration_failure import CalibrationF
 from app.api.features.calibration.services import board_detector as detector  # noqa: E402
 from app.api.features.calibration.services.board_overlay import build_overlay  # noqa: E402
 
-IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
+from scripts.common import (  # noqa: E402
+    CAPTURE_JPEG_QUALITY,
+    CAPTURE_MAX_EDGE,
+    clear_overlays,
+    collect_images,
+    load_image,
+    mirrored_dir,
+)
+
 OVERLAY_COLOR = (0, 255, 255)  # BGR yellow, reads against board colours
 OVERLAY_SUFFIX = "_overlay.jpg"
-
-CAPTURE_MAX_EDGE = 1280
-CAPTURE_JPEG_QUALITY = 85
-
-
-def as_client_would_send(image: np.ndarray) -> np.ndarray:
-    """Downscale and re-encode a photo the way the browser would."""
-    height, width = image.shape[:2]
-    scale = CAPTURE_MAX_EDGE / max(height, width)
-    if scale < 1:
-        image = cv2.resize(
-            image,
-            (round(width * scale), round(height * scale)),
-            interpolation=cv2.INTER_AREA,
-        )
-
-    ok, buffer = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, CAPTURE_JPEG_QUALITY])
-    if not ok:
-        return image
-    return cv2.imdecode(buffer, cv2.IMREAD_COLOR)
 
 
 def measure(image: np.ndarray) -> str:
@@ -124,7 +115,7 @@ def annotate(image: np.ndarray, calibration) -> np.ndarray:
 
 
 def main() -> int:
-    default_images = Path(__file__).resolve().parents[1] / "testdata" / "calibration"
+    default_images = _BACKEND / "testdata" / "calibration"
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -147,41 +138,35 @@ def main() -> int:
         print("Put your photos there, or pass a path as the first argument.")
         return 1
 
-    paths = sorted(p for p in args.images.iterdir() if p.suffix.lower() in IMAGE_SUFFIXES)
+    out_dir = args.out or args.images / "_results"
+    paths = collect_images(args.images, out_dir)
     if not paths:
         print(f"no images in {args.images}")
         return 1
 
-    out_dir = args.out or args.images / "_results"
     out_dir.mkdir(parents=True, exist_ok=True)
-
-    # Clear previous overlays first, or a photo that has since been renamed or
-    # that now fails leaves its old picture behind, and the folder shows a
-    # result that no longer corresponds to anything this run produced.
-    for stale in out_dir.glob(f"*{OVERLAY_SUFFIX}"):
-        stale.unlink()
+    clear_overlays(out_dir, OVERLAY_SUFFIX)
 
     if not args.raw:
         print(f"replaying photos as the client sends them: max edge {CAPTURE_MAX_EDGE}px, JPEG q{CAPTURE_JPEG_QUALITY}\n")
 
     detected = 0
     for path in paths:
-        image = cv2.imread(str(path))
+        label = path.relative_to(args.images).as_posix()
+        image = load_image(path, args.raw)
         if image is None:
-            print(f"{path.name:<32} UNREADABLE")
+            print(f"{label:<40} UNREADABLE")
             continue
-
-        if not args.raw:
-            image = as_client_would_send(image)
 
         calibration, reason = describe(image)
         if calibration is None:
-            print(f"{path.name:<32} FAIL  {reason}")
+            print(f"{label:<40} FAIL  {reason}")
             continue
 
         detected += 1
-        cv2.imwrite(str(out_dir / f"{path.stem}{OVERLAY_SUFFIX}"), annotate(image, calibration))
-        print(f"{path.name:<32} OK    {reason}")
+        target = mirrored_dir(path, args.images, out_dir)
+        cv2.imwrite(str(target / f"{path.stem}{OVERLAY_SUFFIX}"), annotate(image, calibration))
+        print(f"{label:<40} OK    {reason}")
 
     print(f"\n{detected}/{len(paths)} detected")
     if detected:

@@ -55,9 +55,14 @@ from app.api.features.calibration.entity.calibration_failure import CalibrationF
 from app.api.features.calibration.services import board_detector  # noqa: E402
 from app.api.features.detection.entity.detection_failure import DetectionFailure  # noqa: E402
 from app.api.features.detection.services import dart_detector  # noqa: E402
-from scripts.calibration.test_calibration import as_client_would_send  # noqa: E402
 
-IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
+from scripts.common import (  # noqa: E402
+    clear_overlays,
+    collect_images,
+    load_image,
+    mirrored_dir,
+)
+
 OVERLAY_SUFFIX = "_detected.jpg"
 GROUND_TRUTH_NAME = "ground_truth.txt"
 TRUTH_TEMPLATE_NAME = "ground_truth.template.txt"
@@ -101,11 +106,7 @@ def collect_series(root: Path, out_dir: Path) -> dict[str, list[tuple[str, Path]
     since that is where this script writes its own annotated copies.
     """
     series: dict[str, list[tuple[str, Path]]] = defaultdict(list)
-    for path in sorted(root.rglob("*")):
-        if path.suffix.lower() not in IMAGE_SUFFIXES:
-            continue
-        if out_dir in path.parents:
-            continue
+    for path in collect_images(root, out_dir):
         match = FRAME_PATTERN.match(path.stem)
         if match:
             key = (path.parent.relative_to(root) / match["series"]).as_posix()
@@ -192,13 +193,7 @@ def run_series(
 
     truth = load_ground_truth(frames[0][1].parent)
 
-    def load(path: Path) -> np.ndarray | None:
-        image = cv2.imread(str(path))
-        if image is None:
-            return None
-        return image if raw else as_client_would_send(image)
-
-    reference = load(frames[0][1])
+    reference = load_image(frames[0][1], raw)
     if reference is None:
         print(f"{name}: reference {frames[0][1].name} unreadable")
         return []
@@ -219,7 +214,7 @@ def run_series(
     results: list[Result] = []
     for (_, _previous), (label, path) in zip(frames, frames[1:]):
         expected = truth.get(path.stem)
-        frame = load(path)
+        frame = load_image(path, raw)
         if frame is None:
             print(f"  {label:<6} UNREADABLE")
             results.append(Result(name, label, path, False, None, expected))
@@ -237,8 +232,7 @@ def run_series(
                 f"tip=({x:6.1f},{y:6.1f})mm  r={np.hypot(x, y):5.1f}  "
                 f"inliers {dart_detector.trace.alignment_inliers}"
             )
-            target_dir = out_dir / path.parent.relative_to(root)
-            target_dir.mkdir(parents=True, exist_ok=True)
+            target_dir = mirrored_dir(path, root, out_dir)
             cv2.imwrite(str(target_dir / f"{path.stem}{OVERLAY_SUFFIX}"), annotate(outcome))
 
         result = Result(name, label, path, located, detected, expected)
@@ -371,8 +365,7 @@ def main() -> int:
         return 1
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    for stale in out_dir.rglob(f"*{OVERLAY_SUFFIX}"):
-        stale.unlink()
+    clear_overlays(out_dir, OVERLAY_SUFFIX)
 
     all_results: list[Result] = []
     for name, frames in series.items():

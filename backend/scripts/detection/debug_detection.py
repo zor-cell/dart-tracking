@@ -23,7 +23,6 @@ import argparse
 import sys
 from pathlib import Path
 
-import cv2
 import numpy as np
 
 # Import app.* from src/ (as `--app-dir src` does at runtime) and scripts.* from
@@ -38,15 +37,7 @@ from app.api.features.detection.entity.detection_failure import DetectionFailure
 from app.api.features.detection.services import dart_detector  # noqa: E402
 from app.api.features.detection.services.dart_debug_images import write_debug_images  # noqa: E402
 
-from scripts.calibration.test_calibration import as_client_would_send  # noqa: E402
-
-
-def load(path: Path, raw: bool) -> np.ndarray | None:
-    """Read a photo, replaying the client's downscale/JPEG unless `raw`."""
-    image = cv2.imread(str(path))
-    if image is None:
-        return None
-    return image if raw else as_client_would_send(image)
+from scripts.common import load_image  # noqa: E402
 
 
 def main() -> int:
@@ -66,11 +57,11 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    reference = load(args.reference, args.raw)
+    reference = load_image(args.reference, args.raw)
     if reference is None:
         print(f"unreadable: {args.reference}")
         return 1
-    frame = load(args.frame, args.raw)
+    frame = load_image(args.frame, args.raw)
     if frame is None:
         print(f"unreadable: {args.frame}")
         return 1
