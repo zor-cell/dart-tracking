@@ -6,6 +6,7 @@ live, and write annotated copies into a `_results` tree that mirrors the input.
 Only the pipeline they run and what they report differs; everything else is here.
 """
 
+import shutil
 from pathlib import Path
 
 import cv2
@@ -72,12 +73,25 @@ def mirrored_dir(path: Path, root: Path, out_dir: Path) -> Path:
     return target
 
 
-def clear_overlays(out_dir: Path, suffix: str) -> None:
-    """Delete stale annotated copies from a previous run, recursively.
+def clear_results(out_dir: Path, root: Path) -> None:
+    """Wipe the entire results tree before a run, then leave it recreated empty.
 
-    Or a photo that has since been renamed, or that now fails, leaves its old
-    picture behind and the folder shows a result this run never produced.
+    Clearing only files of one suffix left orphans behind: a renamed or deleted
+    throw kept its old overlay, an emptied subfolder lingered, and a report from
+    a wider previous run stayed put. Removing the whole tree is the only way the
+    folder is guaranteed to show *this* run and nothing else.
+
+    Guarded against a mis-pointed `--out`: if `out_dir` is the input root or an
+    ancestor of it, wiping it would take the source photos with it, so refuse.
+    The normal case — `root/_results` — is a child of `root` and always safe.
     """
+    out_dir = out_dir.resolve()
+    root = root.resolve()
+    if out_dir == root or out_dir in root.parents:
+        raise ValueError(
+            f"refusing to clear {out_dir}: it contains the input photos ({root}). "
+            "Point --out at a dedicated results folder."
+        )
     if out_dir.is_dir():
-        for stale in out_dir.rglob(f"*{suffix}"):
-            stale.unlink()
+        shutil.rmtree(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)

@@ -57,7 +57,7 @@ from app.api.features.detection.entity.detection_failure import DetectionFailure
 from app.api.features.detection.services import dart_detector  # noqa: E402
 
 from scripts.common import (  # noqa: E402
-    clear_overlays,
+    clear_results,
     collect_images,
     load_image,
     mirrored_dir,
@@ -364,8 +364,7 @@ def main() -> int:
         print(f"no throw series in {args.images} (expected <name>_base.JPG, <name>_dart1.JPG, ...)")
         return 1
 
-    out_dir.mkdir(parents=True, exist_ok=True)
-    clear_overlays(out_dir, OVERLAY_SUFFIX)
+    clear_results(out_dir, args.images)
 
     all_results: list[Result] = []
     for name, frames in series.items():

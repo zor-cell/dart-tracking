@@ -36,7 +36,7 @@ from app.api.features.calibration.services.board_overlay import build_overlay  #
 from scripts.common import (  # noqa: E402
     CAPTURE_JPEG_QUALITY,
     CAPTURE_MAX_EDGE,
-    clear_overlays,
+    clear_results,
     collect_images,
     load_image,
     mirrored_dir,
@@ -144,8 +144,7 @@ def main() -> int:
         print(f"no images in {args.images}")
         return 1
 
-    out_dir.mkdir(parents=True, exist_ok=True)
-    clear_overlays(out_dir, OVERLAY_SUFFIX)
+    clear_results(out_dir, args.images)
 
     if not args.raw:
         print(f"replaying photos as the client sends them: max edge {CAPTURE_MAX_EDGE}px, JPEG q{CAPTURE_JPEG_QUALITY}\n")
