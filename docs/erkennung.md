@@ -31,7 +31,7 @@ Literatur-Sammelstelle: [roadmap.md §6.2](roadmap.md#62-pfeil-lokalisierung--ve
 Beide Bilder liegen bei Client-Auflösung vor (max. Kantenlänge 1280 px,
 JPEG q85), so wie sie auch die Kalibrierung bekommt.
 
-**Ausgabe:** entweder ein `Dart` oder ein `DetectionFailure`.
+**Ausgabe:** entweder ein `Dart` oder ein `DetectionFailureDto`.
 
 ```python
 @dataclass(frozen=True)
@@ -191,7 +191,7 @@ Stattdessen werden die Fragmente zu einem Pfeil zusammengefügt (`_fuse_dart_fra
    (setup1: 27 % → 67 %, §6).
 
 Bleibt nach Fläche nichts übrig oder ist der zusammengefügte Pfeil kleiner als
-`_MIN_DART_AREA_MM2 = 20 mm²` → `DetectionFailure.NO_CHANGE` (kein Wurf, oder der
+`_MIN_DART_AREA_MM2 = 20 mm²` → `DetectionFailureDto.NO_CHANGE` (kein Wurf, oder der
 Pfeil ist vor der Aufnahme wieder abgeprallt).
 
 ---
@@ -235,7 +235,7 @@ entscheidet `segment_at` rein geometrisch (Radius → Ring, Winkel → Sektor,
 ## 3. Fehlerbehandlung
 
 `detect_dart` gibt bei Misserfolg die **Stufe** zurück, die aufgegeben hat
-(`DetectionFailure`) — wie `CalibrationFailure`, damit der Client dem Nutzer
+(`DetectionFailureDto`) — wie `CalibrationFailureDto`, damit der Client dem Nutzer
 einen konkreten Rat geben kann statt bloß „nichts gefunden".
 
 | Failure | Bedeutung |

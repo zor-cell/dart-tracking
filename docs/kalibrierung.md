@@ -310,7 +310,7 @@ auf, wenn alle zwanzig gefunden wurden — deshalb:
 
 ```python
 if len(transitions) != SECTOR_COUNT:
-    return None   # CalibrationFailure.SECTOR_WIRES_UNCLEAR
+    return None   # CalibrationFailureDto.SECTOR_WIRES_UNCLEAR
 ```
 
 Eine zu kurze oder zu lange Sequenz würde die Zuordnung stillschweigend
@@ -367,7 +367,7 @@ Durchgängen, damit ein oszillierendes Bild nicht ewig dreht.
 ## 3. Fehlerbehandlung
 
 `detect_board` gibt bei Misserfolg die **Stufe** zurück, die aufgegeben hat
-(`CalibrationFailure`), nicht bloß `None` — damit der Client dem Nutzer sagen
+(`CalibrationFailureDto`), nicht bloß `None` — damit der Client dem Nutzer sagen
 kann, was er ändern soll:
 
 | Failure | Bedeutung |

@@ -13,6 +13,9 @@ Pfeil-Erkennung und Scoring.
 Die Kalibrierungs-Pipeline ist im Detail dokumentiert (Algorithmen, Parameter,
 verworfene Ansätze): @docs/kalibrierung.md
 
+Die Erkennungs-Pipeline ist im Detail dokumentiert (Algorithmen, Parameter,
+verworfene Ansätze): @docs/erkennung.md
+
 ## Zeitplan / aktuelle Phase
 Siehe @docs/zeitplan.md — aktuell in Phase X, Fokus auf Y.
 

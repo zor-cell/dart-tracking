@@ -3,7 +3,7 @@
  * `entity/detection_failure.py`. Each value names the stage that gave up, so
  * the user can be told what to change.
  */
-export type DetectionFailure =
+export type DetectionFailureDto =
   | 'invalid_image'
   | 'not_calibrated'
   | 'alignment_failed'

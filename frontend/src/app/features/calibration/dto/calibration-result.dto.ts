@@ -1,4 +1,4 @@
-import { CalibrationFailure } from './calibration-failure';
+import { CalibrationFailureDto } from './calibration-failure.dto';
 
 /**
  * Server -> client: outcome of a calibration attempt.
@@ -9,10 +9,10 @@ import { CalibrationFailure } from './calibration-failure';
  *
  * `failure` names which stage gave up, and is only set when `success` is false.
  */
-export interface CalibrationResultMessage {
+export interface CalibrationResultDto {
   readonly type: 'calibration_result';
   readonly success: boolean;
   readonly homography: number[][] | null;
   readonly overlay: number[][][] | null;
-  readonly failure: CalibrationFailure | null;
+  readonly failure: CalibrationFailureDto | null;
 }

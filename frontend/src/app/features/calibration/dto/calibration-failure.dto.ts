@@ -3,7 +3,7 @@
  * `entity/calibration_failure.py`. Each value names the stage that gave up, so
  * the user can be told what to change.
  */
-export type CalibrationFailure =
+export type CalibrationFailureDto =
   | 'invalid_image'
   | 'no_coloured_region'
   | 'ellipse_fit_failed'

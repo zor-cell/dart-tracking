@@ -6,7 +6,7 @@ from app.api.features.calibration.entity.calibration_failure import CalibrationF
 from app.api.features.calibration.services.board_overlay import build_overlay
 
 
-class CalibrationResultMessage(CamelModel):
+class CalibrationResult(CamelModel):
     """Server -> client: outcome of a calibration attempt.
 
     `overlay` holds the recognised board drawn back onto the camera picture, as

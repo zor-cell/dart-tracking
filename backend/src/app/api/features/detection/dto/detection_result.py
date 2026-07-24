@@ -5,7 +5,7 @@ from app.api.features.detection.entity.detection import Dart
 from app.api.features.detection.entity.detection_failure import DetectionFailure
 
 
-class DartDetectedMessage(CamelModel):
+class DetectionResult(CamelModel):
     """Server -> client: outcome of locating a dart in a throw frame.
 
     Mirrors `CalibrationResultMessage`: on success it carries where the dart
@@ -17,7 +17,7 @@ class DartDetectedMessage(CamelModel):
     message is the per-throw feedback, not the source of truth for the tally.
     """
 
-    type: Literal["dart_detected"] = "dart_detected"
+    type: Literal["detection_result"] = "detection_result"
     success: bool
     segment: str | None = None  # called-out form, e.g. "T20", "BULL", "MISS"
     points: int | None = None

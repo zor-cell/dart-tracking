@@ -1,12 +1,12 @@
 import { effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { NotificationService } from '../../../core/notification/services/notification.service';
-import { CalibrationFailure } from '../dto/calibration-failure';
+import { CalibrationFailureDto } from '../dto/calibration-failure.dto';
 import { captureFrameAsJpeg } from '../../camera/models/frame-capture';
 import { SocketService } from '../../../core/socket/services/socket.service';
 
 export type CalibrationStatus = 'idle' | 'pending' | 'success' | 'error';
 
-const FAILURE_MESSAGES: Record<CalibrationFailure, string> = {
+const FAILURE_MESSAGES: Record<CalibrationFailureDto, string> = {
   invalid_image: 'Das Kamerabild konnte nicht gelesen werden. Bitte erneut versuchen.',
   no_coloured_region: 'Kein Board erkannt. Näher an das Board gehen und für bessere Beleuchtung sorgen.',
   ellipse_fit_failed: 'Board-Umriss nicht erkennbar. Das gesamte Board ins Bild nehmen.',
@@ -79,7 +79,7 @@ export class CalibrationService {
    * the whole point of this screen is seeing the camera, so an advice text that
    * never leaves ends up hiding the very thing it asks the user to fix.
    */
-  private reportFailure(failure: CalibrationFailure | null): void {
+  private reportFailure(failure: CalibrationFailureDto | null): void {
     const message = (failure && FAILURE_MESSAGES[failure]) ?? UNKNOWN_FAILURE_MESSAGE;
     this.notifications.showErrorMessage(message, FAILURE_TITLE, FAILURE_TOAST_LIFE);
   }

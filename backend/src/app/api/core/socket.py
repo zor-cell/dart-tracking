@@ -19,7 +19,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.api.core.dto.connection_established import ConnectionEstablishedMessage
 from app.api.features.calibration.dto.calibration_frame import CalibrationFrameMessage
-from app.api.features.calibration.dto.calibration_result import CalibrationResultMessage
+from app.api.features.calibration.dto.calibration_result import CalibrationResult
 from app.api.features.calibration.entity.calibration import Calibration
 from app.api.features.calibration.entity.calibration_failure import CalibrationFailure
 from app.api.features.calibration.services import board_detector
@@ -27,7 +27,7 @@ from app.api.features.calibration.services.calibration_debug import (
     write_debug_images as write_calibration_debug_images,
 )
 from app.api.features.calibration.services.calibration_store import store as calibration_store
-from app.api.features.detection.dto.detection_result import DartDetectedMessage
+from app.api.features.detection.dto.detection_result import DetectionResult
 from app.api.features.detection.dto.detection_frame import ThrowFrameMessage
 from app.api.features.detection.entity.detection import Dart
 from app.api.features.detection.entity.detection_failure import DetectionFailure
@@ -44,8 +44,8 @@ from app.api.features.game.services.game_store import store as game_store
 router = APIRouter(prefix="/ws", tags=["Tracking"])
 
 _TESTDATA_ROOT = Path(__file__).resolve().parents[4] / "testdata"
-_CALIBRATION_DEBUG_ROOT = _TESTDATA_ROOT / "calibration" / "socket_debug"
-_DETECTION_DEBUG_ROOT = _TESTDATA_ROOT / "detection" / "socket_debug"
+_CALIBRATION_DEBUG_ROOT = _TESTDATA_ROOT / "calibration" / "_socket_debug"
+_DETECTION_DEBUG_ROOT = _TESTDATA_ROOT / "detection" / "_socket_debug"
 
 
 @router.websocket("/games/{game_id}")
@@ -68,7 +68,7 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str) -> None:
 
             if message.get("type") == "calibration_frame":
                 await _handle_calibration_frame(websocket, game_id, message)
-            elif message.get("type") == "throw_frame":
+            elif message.get("type") == "detection_frame":
                 await _handle_throw_frame(websocket, game, game_id, message)
     except WebSocketDisconnect:
         pass
@@ -96,11 +96,11 @@ async def _handle_calibration_frame(websocket: WebSocket, game_id: str, message:
         _write_calibration_debug(game_id, outcome)
 
     if isinstance(outcome, CalibrationFailure):
-        response = CalibrationResultMessage.failed(outcome)
+        response = CalibrationResult.failed(outcome)
     else:
         calibration_store.set(game_id, outcome)
         detection_store.set(game_id, image)
-        response = CalibrationResultMessage.from_calibration(outcome)
+        response = CalibrationResult.from_calibration(outcome)
 
     await websocket.send_text(response.model_dump_json(by_alias=True))
 
@@ -137,7 +137,7 @@ async def _handle_throw_frame(
 
     if isinstance(outcome, DetectionFailure):
         await websocket.send_text(
-            DartDetectedMessage.failed(outcome).model_dump_json(by_alias=True)
+            DetectionResult.failed(outcome).model_dump_json(by_alias=True)
         )
         return
 
@@ -146,7 +146,7 @@ async def _handle_throw_frame(
         detection_store.set(game_id, dart_detector.trace.aligned)
 
     await websocket.send_text(
-        DartDetectedMessage.detected(outcome).model_dump_json(by_alias=True)
+        DetectionResult.detected(outcome).model_dump_json(by_alias=True)
     )
     await websocket.send_text(
         GameStateMessage(state=GameStateDto.from_entity(game)).model_dump_json(by_alias=True)
@@ -170,7 +170,7 @@ def _write_detection_debug(game_id: str, outcome: Dart | DetectionFailure) -> No
 
 def _timestamp() -> str:
     """A filesystem-safe UTC stamp, unique per attempt, for a debug subfolder."""
-    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S_%f")
 
 
 def _decode_jpeg(encoded: str) -> np.ndarray | None:
