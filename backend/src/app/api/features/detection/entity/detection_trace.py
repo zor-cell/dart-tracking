@@ -24,6 +24,11 @@ class DetectionTrace:
     difference: np.ndarray | None = None  # greyscale, before thresholding
     change_mask: np.ndarray | None = None  # after threshold, morphology and ROI
     labels: np.ndarray | None = None
-    chosen_label: int | None = None
+    # Fragment fusion: which labelled components were taken for the dart, which
+    # one anchored the fit as the flight, and the line they were fused along
+    # (anchor point, unit direction).
+    flight_label: int | None = None
+    inlier_labels: list[int] | None = None
+    fitted_line: tuple[np.ndarray, np.ndarray | None] | None = None
     pixels_per_mm: float = 0.0
     failure: DetectionFailure | None = None

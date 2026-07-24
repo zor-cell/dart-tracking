@@ -62,6 +62,21 @@ _DIFFERENCE_THRESHOLD = 40
 _CLOSE_KERNEL_MM = 3.0
 _MIN_DART_AREA_MM2 = 20.0
 
+# Fragment fusion. A dark dart only shows in the difference where it crosses
+# light board, so it arrives as several disconnected fragments strung along one
+# line rather than a single blob. These control how those fragments are gathered
+# back into one dart: the smallest fragment worth considering, and how far off
+# the fitted line a fragment's centroid may sit and still count as belonging to
+# it.
+_MIN_FRAGMENT_AREA_MM2 = 5.0
+_FUSION_PERP_TOL_MM = 4.0
+# A dart is a local, bounded object: only fragments within this distance of the
+# flight can belong to the same dart. Without it, the length-based score happily
+# rewards a distant, coincidentally collinear speck (noise, a shadow across the
+# board) and stretches the fitted line clear across the frame, throwing the tip
+# far outside the scoring area. Generous — a dart's visible span foreshortens.
+_MAX_DART_LENGTH_MM = 90.0
+
 # Speckle is removed by area rather than by a morphological opening. An opening
 # cannot help here: OpenCV's smallest usable structuring element is 3x3, which
 # at the scale a phone actually frames a board (0.6-0.9 px/mm on the test set)
@@ -74,6 +89,14 @@ _MIN_SPECKLE_AREA_MM2 = 3.0
 # pixel is whatever the threshold happened to catch; a few millimetres of it is
 # stable.
 _TIP_SPAN_MM = 3.0
+
+# Band near each axis end used to gauge its width. The flight is the wide,
+# feathered end; the barrel and tip are thin. Comparing the width of the two
+# ends tells the tip end from the flight end far more reliably than "whichever
+# end is nearer the board centre" — that heuristic only holds when the flight
+# happens to project outward, and fails at exactly the steep angles (a dart high
+# on the board, flight leaning back over the centre) that this system targets.
+_FLIGHT_SPAN_MM = 12.0
 
 # What the most recent call to `detect_dart` saw at each stage.
 trace = DetectionTrace()
@@ -109,11 +132,11 @@ def detect_dart(
     mask = _change_mask(reference, aligned, region, pixels_per_mm)
     trace.change_mask = mask
 
-    blob = _largest_blob(mask, pixels_per_mm)
+    blob = _fuse_dart_fragments(mask, trace.difference, pixels_per_mm)
     if blob is None:
         return _record_failure(DetectionFailure.NO_CHANGE)
 
-    tip, far_end = _tip_and_far_end(blob, calibration.homography, pixels_per_mm)
+    tip, far_end = _tip_and_far_end(blob, pixels_per_mm)
     board_point = _to_board(calibration.homography, tip)
 
     return Dart(
@@ -254,45 +277,135 @@ def _kernel(size_mm: float, pixels_per_mm: float) -> np.ndarray:
     return cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (size, size))
 
 
-def _largest_blob(mask: np.ndarray, pixels_per_mm: float) -> np.ndarray | None:
-    """Pixel coordinates of the biggest change, or None if nothing is big enough."""
-    count, labels, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
-    minimum_area = _MIN_DART_AREA_MM2 * pixels_per_mm**2
+def _fragment_geometry(
+    pixels: np.ndarray, difference: np.ndarray
+) -> tuple[np.ndarray, float, float]:
+    """A fragment's centroid, perpendicular width and mean difference brightness.
 
-    candidates = [
+    Width is the spread across the fragment's own principal axis: the flight's
+    feathers make it wide, the barrel and shaft stay thin, so width is what tells
+    the flight from the rest.
+    """
+    centre = pixels.mean(axis=0)
+    centred = pixels - centre
+    if len(pixels) >= 2:
+        _, eigenvectors = cv2.PCACompute(pixels, mean=None, maxComponents=1)
+        axis = eigenvectors[0]
+    else:
+        axis = np.array([1.0, 0.0])
+    perpendicular = np.linalg.norm(centred - np.outer(centred @ axis, axis), axis=1)
+    width = float(np.percentile(perpendicular, 95)) if len(pixels) else 0.0
+    columns, rows = pixels[:, 0].astype(int), pixels[:, 1].astype(int)
+    brightness = float(difference[rows, columns].mean())
+    return centre, width, brightness
+
+
+def _fuse_dart_fragments(
+    mask: np.ndarray, difference: np.ndarray, pixels_per_mm: float
+) -> np.ndarray | None:
+    """Gather the dart's colour-gated fragments into one set of pixels.
+
+    A dark dart shows only where it crosses light board, so it breaks into
+    several fragments along one line. Taking the single largest throws the rest
+    away and biases the tip toward whichever fragment the light board revealed.
+    Instead: anchor on the flight (the widest fragment), then keep the line
+    through it that the most fragments agree on — the same hypothesise-and-count
+    idea as the calibration's board RANSAC, one vote per fragment so a fat flight
+    cannot outvote the thin shaft. Anchoring on the flight makes it deterministic,
+    with no random sampling to seed.
+    """
+    count, labels, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
+    minimum_area = _MIN_FRAGMENT_AREA_MM2 * pixels_per_mm**2
+    fragments = [
         label for label in range(1, count) if stats[label, cv2.CC_STAT_AREA] >= minimum_area
     ]
-    if not candidates:
+    if not fragments:
         return None
 
-    chosen = max(candidates, key=lambda label: stats[label, cv2.CC_STAT_AREA])
-    trace.labels, trace.chosen_label = labels, chosen
+    pixels = {
+        label: np.column_stack(np.where(labels == label)[::-1]).astype(np.float64)
+        for label in fragments
+    }
+    geometry = {label: _fragment_geometry(pixels[label], difference) for label in fragments}
 
-    rows, columns = np.where(labels == chosen)
-    return np.column_stack((columns, rows)).astype(np.float64)
+    # Flight = widest fragment (feathers), brightness breaking any tie.
+    flight = max(fragments, key=lambda label: (geometry[label][1], geometry[label][2]))
+    anchor = geometry[flight][0]
+    tolerance = _FUSION_PERP_TOL_MM * pixels_per_mm
+
+    # Only fragments within one dart length of the flight can be part of it.
+    reach = _MAX_DART_LENGTH_MM * pixels_per_mm
+    eligible = [
+        label for label in fragments if np.linalg.norm(geometry[label][0] - anchor) <= reach
+    ]
+
+    def collinear_support(direction: np.ndarray) -> tuple[list[int], float]:
+        """Fragments whose centroid lies on the line, and the length they cover."""
+        normal = np.array([-direction[1], direction[0]])
+        supporters = [
+            label
+            for label in eligible
+            if abs((geometry[label][0] - anchor) @ normal) <= tolerance
+        ]
+        projections = [(geometry[label][0] - anchor) @ direction for label in supporters]
+        return supporters, (max(projections) - min(projections)) if projections else 0.0
+
+    # Candidate directions: the flight's own axis, plus flight -> each fragment.
+    directions = []
+    if len(pixels[flight]) >= 2:
+        _, eigenvectors = cv2.PCACompute(pixels[flight], mean=None, maxComponents=1)
+        directions.append(eigenvectors[0])
+    for label in eligible:
+        offset = geometry[label][0] - anchor
+        distance = np.linalg.norm(offset)
+        if distance > 0:
+            directions.append(offset / distance)
+
+    inliers, best_length, best_direction = [flight], -1.0, None
+    for direction in directions:
+        supporters, length = collinear_support(direction)
+        if flight in supporters and len(supporters) >= 2 and length > best_length:
+            inliers, best_length, best_direction = supporters, length, direction
+
+    dart = np.vstack([pixels[label] for label in inliers])
+    if len(dart) < _MIN_DART_AREA_MM2 * pixels_per_mm**2:
+        return None
+
+    trace.labels = labels
+    trace.flight_label = flight
+    trace.inlier_labels = inliers
+    trace.fitted_line = (anchor, best_direction)
+    return dart
 
 
 def _tip_and_far_end(
-    points: np.ndarray, homography: np.ndarray, pixels_per_mm: float
+    points: np.ndarray, pixels_per_mm: float
 ) -> tuple[tuple[float, float], tuple[float, float]]:
     """The dart's two ends along its principal axis, tip first.
 
-    The tip is the end nearer the board centre. Everything above the board
-    surface — barrel, shaft, flight — is imaged further out than the point it
-    actually sticks in, because the camera looks at the board from the front;
-    the inner end is therefore the one in the board plane.
+    The tip is the end opposite the flight, and the flight is the wider end:
+    the feathers spread the silhouette while the barrel and point stay thin.
+    Orienting the dart by its own shape rather than by "nearest the board
+    centre" is what lets a dart high on the board — flight leaning back over the
+    bull — still be read tip-inward instead of scored off its flight.
     """
     mean, eigenvectors = cv2.PCACompute(points, mean=None, maxComponents=1)
     axis = eigenvectors[0]
-    projections = (points - mean) @ axis
+    centred = points - mean
+    projections = centred @ axis
+    # Perpendicular distance of every pixel from the axis: the width profile.
+    widths = np.linalg.norm(centred - np.outer(projections, axis), axis=1)
 
-    centre = np.array(_to_image(homography, 0.0, 0.0))
     ends = []
+    end_widths = []
     for extreme in (projections.min(), projections.max()):
+        near = np.abs(projections - extreme) <= _TIP_SPAN_MM * pixels_per_mm
         # Average a few millimetres in from the end rather than trusting the one
         # pixel that happened to be furthest out.
-        span = np.abs(projections - extreme) <= _TIP_SPAN_MM * pixels_per_mm
-        ends.append(points[span].mean(axis=0))
+        ends.append(points[near].mean(axis=0))
+        # Gauge the end's width over a wider band, robust to a few stray pixels.
+        band = np.abs(projections - extreme) <= _FLIGHT_SPAN_MM * pixels_per_mm
+        end_widths.append(float(np.percentile(widths[band], 90)))
 
-    ends.sort(key=lambda end: float(np.hypot(*(end - centre))))
-    return tuple(ends[0]), tuple(ends[1])
+    flight = int(np.argmax(end_widths))
+    return tuple(ends[1 - flight]), tuple(ends[flight])

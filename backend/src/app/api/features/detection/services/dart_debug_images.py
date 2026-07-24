@@ -17,6 +17,8 @@ from app.api.features.detection.entity.detection_trace import DetectionTrace
 _COLOUR_AXIS = (255, 0, 255)  # magenta
 _COLOUR_TIP = (0, 255, 255)  # yellow
 _COLOUR_CHOSEN = (0, 220, 0)
+_COLOUR_FLIGHT = (0, 140, 255)  # orange — the fragment that anchored the fit
+_COLOUR_LINE = (255, 200, 0)  # cyan-ish — the fused dart line
 _COLOUR_REJECTED = (140, 140, 140)
 
 
@@ -80,12 +82,32 @@ def _draw_mask(trace: DetectionTrace) -> np.ndarray | None:
 
 
 def _draw_components(trace: DetectionTrace) -> np.ndarray | None:
-    """Which blob was taken for the dart, and what else was on offer."""
+    """The fragment fusion: rejected fragments, the fused dart, the flight anchor
+    and the line they were fused along.
+
+    Held against 02_difference.jpg this is the key view: it shows whether the
+    dark dart's scattered fragments were correctly strung back onto one line, or
+    whether the fit locked onto whichever patch the light board happened to
+    reveal.
+    """
     if trace.labels is None or trace.aligned is None:
         return None
+    inliers = trace.inlier_labels or []
     canvas = trace.aligned.copy()
-    canvas[(trace.labels > 0) & (trace.labels != trace.chosen_label)] = _COLOUR_REJECTED
-    canvas[trace.labels == trace.chosen_label] = _COLOUR_CHOSEN
+    canvas[trace.labels > 0] = _COLOUR_REJECTED
+    canvas[np.isin(trace.labels, inliers)] = _COLOUR_CHOSEN
+    if trace.flight_label is not None:
+        canvas[trace.labels == trace.flight_label] = _COLOUR_FLIGHT
+
+    if trace.fitted_line is not None and trace.fitted_line[1] is not None and inliers:
+        anchor, direction = trace.fitted_line
+        # Draw the line only across the fused fragments' actual span, not to the
+        # image edges — the extent is the informative part.
+        rows, columns = np.where(np.isin(trace.labels, inliers))
+        projections = (np.column_stack((columns, rows)) - anchor) @ direction
+        start = tuple(round(v) for v in anchor + direction * projections.min())
+        end = tuple(round(v) for v in anchor + direction * projections.max())
+        cv2.line(canvas, start, end, _COLOUR_LINE, 1, cv2.LINE_AA)
     return canvas
 
 
