@@ -146,7 +146,7 @@ async def _handle_throw_frame(
         detection_store.set(game_id, dart_detector.trace.aligned)
 
     await websocket.send_text(
-        DetectionResult.detected(outcome).model_dump_json(by_alias=True)
+        DetectionResult.detected(outcome, calibration).model_dump_json(by_alias=True)
     )
     await websocket.send_text(
         GameStateMessage(state=GameStateDto.from_entity(game)).model_dump_json(by_alias=True)

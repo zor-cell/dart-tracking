@@ -16,7 +16,7 @@ IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 
 # Folders under a test tree that hold outputs, not inputs — never walked, or a
 # run would re-ingest its own annotated copies (and the socket's debug dumps).
-_EXCLUDED_DIRS = frozenset({"_results", "socket_debug"})
+_EXCLUDED_DIRS = frozenset({"_results", "_socket_debug"})
 
 # The browser captures at most this edge length and re-encodes as JPEG; replaying
 # it here keeps the tests honest about what the pipeline actually receives.

@@ -8,4 +8,5 @@ class ThrowFrameMessage(CamelModel):
 
     type: Literal["detection_frame"]
     image: str  # base64-encoded JPEG
-    debug: bool = True
+    # Off unless the client asks: on, the server dumps per-stage debug images.
+    debug: bool = False

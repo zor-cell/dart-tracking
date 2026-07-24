@@ -1,17 +1,21 @@
 from typing import Literal, Self
 
 from app.api.core.dto.base import CamelModel
+from app.api.features.calibration.entity.calibration import Calibration
 from app.api.features.detection.entity.detection import Dart
 from app.api.features.detection.entity.detection_failure import DetectionFailure
+from app.api.features.detection.services.dart_overlay import build_overlay
 
 
 class DetectionResult(CamelModel):
     """Server -> client: outcome of locating a dart in a throw frame.
 
     Mirrors `CalibrationResultMessage`: on success it carries where the dart
-    landed and what it scored so the client can show it (and, later, draw an
-    overlay); on failure it names the stage that gave up so the client can
-    advise what to change instead of only reporting that nothing was found.
+    landed and what it scored, plus an `overlay` (the dart drawn back onto the
+    camera picture, as normalized polylines) so the client can show it the same
+    way it shows the board outline; on failure it names the stage that gave up so
+    the client can advise what to change instead of only reporting that nothing
+    was found.
 
     The authoritative score still arrives separately as `game_state` — this
     message is the per-throw feedback, not the source of truth for the tally.
@@ -24,10 +28,11 @@ class DetectionResult(CamelModel):
     value: int | None = None  # sector value, 25 for the bull, 0 for a miss
     multiplier: int | None = None  # 0 miss, 1 single, 2 double, 3 triple
     tip_board: list[float] | None = None  # [x, y] in board millimetres
+    overlay: list[list[list[float]]] | None = None  # dart axis + tip, normalized
     failure: DetectionFailure | None = None
 
     @classmethod
-    def detected(cls, dart: Dart) -> Self:
+    def detected(cls, dart: Dart, calibration: Calibration) -> Self:
         return cls(
             success=True,
             segment=dart.segment.label,
@@ -35,6 +40,7 @@ class DetectionResult(CamelModel):
             value=dart.segment.value,
             multiplier=dart.segment.multiplier,
             tip_board=[dart.tip_board[0], dart.tip_board[1]],
+            overlay=build_overlay(dart, calibration),
         )
 
     @classmethod
