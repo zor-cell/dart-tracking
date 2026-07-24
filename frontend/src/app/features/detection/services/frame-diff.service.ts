@@ -1,13 +1,20 @@
 import { Injectable, inject, NgZone, signal } from '@angular/core';
 import { ThrowDetector } from '../models/throw-detector';
 import { captureFrameAsJpeg } from '../../camera/models/frame-capture';
-import { SocketService } from '../../../core/socket/services/socket.service';
+import { DetectionService } from './detection.service';
 import {DisplayStatus} from "../models/frame-diff-status";
 
 const DIFF_WIDTH = 160;
 const DIFF_HEIGHT = 90;
-const PROCESS_INTERVAL_MS = 100;
+// Faster than the eye needs, but a thrown dart is only in shot for a frame or
+// two — sampling often makes sure that transient is not missed (recall first).
+const PROCESS_INTERVAL_MS = 60;
 const SENT_DISPLAY_DURATION_MS = 800;
+// The debug numbers refresh far slower than the loop runs, so they stay readable
+// and change detection stays cheap; the mask canvas is drawn every frame.
+const DEBUG_EMIT_INTERVAL_MS = 150;
+// The peak holds then decays, so a throw's spike lingers long enough to read.
+const PEAK_DECAY = 0.9;
 
 // ITU-R BT.601 Luma-Gewichte (wahrgenommene Helligkeit pro Farbkanal)
 const RED_LUMA_WEIGHT = 0.299;
@@ -21,22 +28,46 @@ const STATUS_LABELS: Record<DisplayStatus, string> = {
   sent: 'Frame gesendet',
 };
 
+/** Snapshot of the detector for the on-screen debug panel. */
+export interface DetectionDebug {
+  readonly state: DisplayStatus;
+  readonly changedFraction: number; // this frame
+  readonly peakFraction: number; // recent high-water mark
+  readonly motionEnterFraction: number;
+  readonly settleFraction: number;
+  readonly captureCount: number;
+}
+
+const INITIAL_DEBUG: DetectionDebug = {
+  state: 'idle',
+  changedFraction: 0,
+  peakFraction: 0,
+  motionEnterFraction: 0,
+  settleFraction: 0,
+  captureCount: 0,
+};
+
 /**
  * Continuous frame-diff detection loop: reads an already-active video preview,
- * checks per frame via ThrowDetector for motion/settling, and sends a JPEG
- * `throw_frame` once a throw is judged complete.
+ * checks per frame via ThrowDetector for motion/settling, and hands the captured
+ * JPEG to DetectionService once a throw is judged complete.
  *
  * Assumes the camera and socket are already up (see CameraService /
- * DartSocketService) — those outlive this loop, since they're also used for
- * the calibration step that precedes it.
+ * SocketService) — those outlive this loop, since they're also used for the
+ * calibration step that precedes it.
+ *
+ * When a debug canvas is attached (see `setDebugCanvas`), it also paints the
+ * change mask the detector works on and exposes live numbers via `debug`, so a
+ * throw that fails to trigger can be watched and the thresholds tuned.
  */
 @Injectable({ providedIn: 'root' })
 export class FrameDiffService {
-  private readonly socket = inject(SocketService);
+  private readonly detection = inject(DetectionService);
   private readonly zone = inject(NgZone);
 
   readonly displayStatus = signal<DisplayStatus>('idle');
   readonly statusLabel = signal(STATUS_LABELS.idle);
+  readonly debug = signal<DetectionDebug>(INITIAL_DEBUG);
 
   private readonly detector = new ThrowDetector();
   private animationFrameId: number | null = null;
@@ -46,6 +77,14 @@ export class FrameDiffService {
   private video?: HTMLVideoElement;
   private diffContext?: CanvasRenderingContext2D;
   private captureCanvas?: HTMLCanvasElement;
+
+  // Debug-only state; all null/zero unless a debug canvas is attached.
+  private debugContext: CanvasRenderingContext2D | null = null;
+  private mask?: Uint8ClampedArray;
+  private maskImage?: ImageData;
+  private peakFraction = 0;
+  private captureCount = 0;
+  private lastDebugEmitAt = 0;
 
   startDetectionLoop(
     video: HTMLVideoElement,
@@ -57,6 +96,8 @@ export class FrameDiffService {
     this.captureCanvas = captureCanvas;
 
     this.detector.reset();
+    this.peakFraction = 0;
+    this.captureCount = 0;
     this.setDisplayStatus('idle');
     this.zone.runOutsideAngular(() => this.scheduleNextFrame());
   }
@@ -73,6 +114,22 @@ export class FrameDiffService {
     this.setDisplayStatus('idle');
   }
 
+  /**
+   * Attach (or detach with null) the canvas the change mask is painted onto.
+   * Backed at diff resolution and scaled up by CSS, so one dart pixel is visible.
+   */
+  setDebugCanvas(canvas: HTMLCanvasElement | null): void {
+    if (!canvas) {
+      this.debugContext = null;
+      return;
+    }
+    canvas.width = DIFF_WIDTH;
+    canvas.height = DIFF_HEIGHT;
+    this.debugContext = canvas.getContext('2d') ?? null;
+    this.mask ??= new Uint8ClampedArray(DIFF_WIDTH * DIFF_HEIGHT);
+    this.maskImage ??= new ImageData(DIFF_WIDTH, DIFF_HEIGHT);
+  }
+
   private scheduleNextFrame(): void {
     this.animationFrameId = requestAnimationFrame((timestamp) => this.onAnimationFrame(timestamp));
   }
@@ -80,12 +137,12 @@ export class FrameDiffService {
   private onAnimationFrame(timestamp: number): void {
     if (timestamp - this.lastProcessedAt >= PROCESS_INTERVAL_MS) {
       this.lastProcessedAt = timestamp;
-      this.processFrame();
+      this.processFrame(timestamp);
     }
     this.scheduleNextFrame();
   }
 
-  private processFrame(): void {
+  private processFrame(timestamp: number): void {
     const video = this.video!;
     if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
       return;
@@ -100,17 +157,23 @@ export class FrameDiffService {
     const imageData = diffContext.getImageData(0, 0, DIFF_WIDTH, DIFF_HEIGHT);
     const grayscale = toGrayscale(imageData.data);
 
-    const captured = this.detector.processFrame(grayscale);
+    const debugOn = this.debugContext !== null;
+    const captured = this.detector.processFrame(grayscale, debugOn ? this.mask : undefined);
     this.setDisplayStatus(captured ? 'sent' : this.detector.getState());
 
     if (captured) {
+      this.captureCount++;
       this.captureAndSendFrame(video);
+    }
+
+    if (debugOn) {
+      this.renderDebug(timestamp);
     }
   }
 
   private async captureAndSendFrame(video: HTMLVideoElement): Promise<void> {
     const frame = await captureFrameAsJpeg(video, this.captureCanvas!);
-    await this.socket.sendFrame('throw_frame', frame);
+    await this.detection.submitFrame(frame);
 
     if (this.sentDisplayTimeoutId !== null) {
       clearTimeout(this.sentDisplayTimeoutId);
@@ -118,6 +181,46 @@ export class FrameDiffService {
     this.sentDisplayTimeoutId = setTimeout(() => {
       this.setDisplayStatus(this.detector.getState());
     }, SENT_DISPLAY_DURATION_MS);
+  }
+
+  /** Paint the change mask (every frame) and emit throttled numbers. */
+  private renderDebug(timestamp: number): void {
+    const diagnostics = this.detector.getDiagnostics();
+    this.peakFraction = Math.max(diagnostics.changedFraction, this.peakFraction * PEAK_DECAY);
+    this.paintMask();
+
+    if (timestamp - this.lastDebugEmitAt < DEBUG_EMIT_INTERVAL_MS) {
+      return;
+    }
+    this.lastDebugEmitAt = timestamp;
+    this.debug.set({
+      state: this.displayStatus(),
+      changedFraction: diagnostics.changedFraction,
+      peakFraction: this.peakFraction,
+      motionEnterFraction: diagnostics.motionEnterFraction,
+      settleFraction: diagnostics.settleFraction,
+      captureCount: this.captureCount,
+    });
+  }
+
+  private paintMask(): void {
+    const context = this.debugContext;
+    const mask = this.mask;
+    const image = this.maskImage;
+    if (!context || !mask || !image) {
+      return;
+    }
+    const rgba = image.data;
+    for (let i = 0; i < mask.length; i++) {
+      const offset = i * 4;
+      const on = mask[i] !== 0;
+      // Changed pixels bright green on a dim backdrop, so a dart cluster pops.
+      rgba[offset] = on ? 57 : 15;
+      rgba[offset + 1] = on ? 255 : 18;
+      rgba[offset + 2] = on ? 20 : 23;
+      rgba[offset + 3] = 255;
+    }
+    context.putImageData(image, 0, 0);
   }
 
   private setDisplayStatus(status: DisplayStatus): void {
