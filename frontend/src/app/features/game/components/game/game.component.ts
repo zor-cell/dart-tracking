@@ -45,7 +45,7 @@ export class GameComponent implements OnDestroy {
   private readonly videoRef = viewChild.required<ElementRef<HTMLVideoElement>>('video');
   private readonly diffCanvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('diffCanvas');
   private readonly captureCanvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('captureCanvas');
-  // Only in the DOM while the debug panel is shown, hence optional.
+  // Only in the DOM while the debug overlay is shown, hence optional.
   private readonly detectionDebugCanvasRef =
     viewChild<ElementRef<HTMLCanvasElement>>('detectionDebugCanvas');
 
@@ -57,6 +57,11 @@ export class GameComponent implements OnDestroy {
   protected readonly detectionStatusLabel = this.throwCapture.statusLabel;
   protected readonly detectionFeedback = this.detection.feedbackLabel;
   protected readonly detectionDebug = this.throwCapture.debug;
+
+  // The frame-diff debug overlay is on only while tracking and switched on.
+  protected readonly debugActive = computed(
+    () => this.settings.debugDetection() && this.cameraPhase() === 'tracking',
+  );
 
   protected readonly scoreControl = new FormControl<number | null>(null);
 

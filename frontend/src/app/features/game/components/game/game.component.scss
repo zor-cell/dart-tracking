@@ -25,6 +25,11 @@
   background: #000;
 }
 
+// Dimmed while the debug mask is shown, so the highlighted changes stand out.
+.game__video--dimmed {
+  filter: brightness(0.4);
+}
+
 .game__hidden-canvas {
   display: none;
 }
@@ -66,47 +71,38 @@
   right: 0.5rem;
 }
 
-.detection-debug {
+// The change mask sits over the video like the board overlay; dimming the video
+// underneath lets the highlighted changes stand out.
+.game__debug-mask {
   position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  padding: 0.4rem;
-  border-radius: 0.5rem;
-  background: rgb(0 0 0 / 65%);
-  color: #fff;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
-.detection-debug__mask {
-  // Backed at diff resolution (160x90); scale up crisply so one dart pixel is
-  // visible rather than blended away.
-  width: 160px;
-  height: 90px;
-  image-rendering: pixelated;
-  border-radius: 0.25rem;
-}
-
-.detection-debug__stats {
+// A compact readout below the picture rather than a box on top of it.
+.detection-debug {
   margin: 0;
-  display: grid;
-  grid-template-columns: auto auto;
-  gap: 0.1rem 0.6rem;
-  font-size: 0.7rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 1rem;
+  font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
+  color: var(--p-text-muted-color, #6b7280);
 
   div {
-    display: contents;
+    display: flex;
+    gap: 0.3rem;
   }
 
   dt {
-    color: rgb(255 255 255 / 70%);
+    opacity: 0.7;
   }
 
   dd {
     margin: 0;
-    text-align: right;
+    font-weight: 600;
   }
 }
 

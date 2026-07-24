@@ -79,9 +79,13 @@ export class FrameDiffService {
   private captureCanvas?: HTMLCanvasElement;
 
   // Debug-only state; all null/zero unless a debug canvas is attached.
+  private debugCanvas: HTMLCanvasElement | null = null;
   private debugContext: CanvasRenderingContext2D | null = null;
   private mask?: Uint8ClampedArray;
   private maskImage?: ImageData;
+  // The mask is built at diff resolution here, then scaled onto the full-size
+  // overlay with the video's cover geometry.
+  private maskSource?: CanvasRenderingContext2D;
   private peakFraction = 0;
   private captureCount = 0;
   private lastDebugEmitAt = 0;
@@ -115,19 +119,24 @@ export class FrameDiffService {
   }
 
   /**
-   * Attach (or detach with null) the canvas the change mask is painted onto.
-   * Backed at diff resolution and scaled up by CSS, so one dart pixel is visible.
+   * Attach (or detach with null) the full-size canvas the change mask is painted
+   * onto — an overlay over the video, mapped with the same cover geometry as the
+   * board overlay so the changes sit where they are in the picture.
    */
   setDebugCanvas(canvas: HTMLCanvasElement | null): void {
+    this.debugCanvas = canvas;
+    this.debugContext = canvas?.getContext('2d') ?? null;
     if (!canvas) {
-      this.debugContext = null;
       return;
     }
-    canvas.width = DIFF_WIDTH;
-    canvas.height = DIFF_HEIGHT;
-    this.debugContext = canvas.getContext('2d') ?? null;
     this.mask ??= new Uint8ClampedArray(DIFF_WIDTH * DIFF_HEIGHT);
     this.maskImage ??= new ImageData(DIFF_WIDTH, DIFF_HEIGHT);
+    if (!this.maskSource) {
+      const source = document.createElement('canvas');
+      source.width = DIFF_WIDTH;
+      source.height = DIFF_HEIGHT;
+      this.maskSource = source.getContext('2d') ?? undefined;
+    }
   }
 
   private scheduleNextFrame(): void {
@@ -204,23 +213,60 @@ export class FrameDiffService {
   }
 
   private paintMask(): void {
+    const canvas = this.debugCanvas;
     const context = this.debugContext;
+    const source = this.maskSource;
     const mask = this.mask;
     const image = this.maskImage;
-    if (!context || !mask || !image) {
+    const video = this.video;
+    if (!canvas || !context || !source || !mask || !image || !video) {
       return;
     }
+    if (!video.videoWidth || !video.videoHeight) {
+      return;
+    }
+
+    // Changed pixels bright green, everything else transparent, so the dimmed
+    // video shows through and a dart cluster pops.
     const rgba = image.data;
     for (let i = 0; i < mask.length; i++) {
       const offset = i * 4;
       const on = mask[i] !== 0;
-      // Changed pixels bright green on a dim backdrop, so a dart cluster pops.
-      rgba[offset] = on ? 57 : 15;
-      rgba[offset + 1] = on ? 255 : 18;
-      rgba[offset + 2] = on ? 20 : 23;
-      rgba[offset + 3] = 255;
+      rgba[offset] = 57;
+      rgba[offset + 1] = 255;
+      rgba[offset + 2] = 20;
+      rgba[offset + 3] = on ? 255 : 0;
     }
-    context.putImageData(image, 0, 0);
+    source.putImageData(image, 0, 0);
+
+    // Back the canvas at device resolution, then place the diff-resolution mask
+    // onto the video with object-fit: cover geometry (fill, centre, crop the
+    // overflow) — the same mapping the board overlay uses.
+    const ratio = window.devicePixelRatio || 1;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.clearRect(0, 0, width, height);
+    context.imageSmoothingEnabled = false; // keep the diff pixels crisp
+
+    const scale = Math.max(width / video.videoWidth, height / video.videoHeight);
+    const drawWidth = video.videoWidth * scale;
+    const drawHeight = video.videoHeight * scale;
+    const offsetX = (width - drawWidth) / 2;
+    const offsetY = (height - drawHeight) / 2;
+    context.drawImage(
+      source.canvas,
+      0,
+      0,
+      DIFF_WIDTH,
+      DIFF_HEIGHT,
+      offsetX,
+      offsetY,
+      drawWidth,
+      drawHeight,
+    );
   }
 
   private setDisplayStatus(status: DisplayStatus): void {
