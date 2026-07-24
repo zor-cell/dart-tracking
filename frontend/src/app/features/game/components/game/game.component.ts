@@ -17,6 +17,7 @@ import {BoardOverlayComponent} from '../../../calibration/components/board-overl
 import {CalibrationService} from '../../../calibration/services/calibration.service';
 import {CameraService} from '../../../camera/services/camera.service';
 import {SocketService} from '../../../../core/socket/services/socket.service';
+import {DetectionService} from '../../../detection/services/detection.service';
 import {FrameDiffService} from '../../../detection/services/frame-diff.service';
 import {SettingsService} from '../../../settings/services/settings.service';
 import {CameraPhase} from '../../models/camera-phase';
@@ -39,6 +40,7 @@ export class GameComponent implements OnDestroy {
   private readonly socket = inject(SocketService);
   private readonly calibration = inject(CalibrationService);
   private readonly throwCapture = inject(FrameDiffService);
+  private readonly detection = inject(DetectionService);
 
   private readonly videoRef = viewChild.required<ElementRef<HTMLVideoElement>>('video');
   private readonly diffCanvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('diffCanvas');
@@ -48,7 +50,9 @@ export class GameComponent implements OnDestroy {
   protected readonly cameraError = this.camera.error;
   protected readonly calibrationStatus = this.calibration.status;
   protected readonly calibrationOverlay = this.calibration.overlay;
+  protected readonly detectionOverlay = this.detection.overlay;
   protected readonly detectionStatusLabel = this.throwCapture.statusLabel;
+  protected readonly detectionFeedback = this.detection.feedbackLabel;
 
   protected readonly scoreControl = new FormControl<number | null>(null);
 

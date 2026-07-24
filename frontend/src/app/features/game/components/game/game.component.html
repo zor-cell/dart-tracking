@@ -7,6 +7,12 @@
 
       @if (cameraPhase() !== 'idle') {
         <app-board-overlay [polylines]="calibrationOverlay()" [video]="video" />
+        <!-- The located dart, drawn in cyan over the yellow board outline. -->
+        <app-board-overlay
+          [polylines]="detectionOverlay()"
+          [video]="video"
+          color="rgba(56, 189, 248, 0.95)"
+        />
       }
 
       @switch (cameraPhase()) {
@@ -30,7 +36,9 @@
           </div>
         }
         @case ('tracking') {
-          <span class="game__camera-badge">{{ detectionStatusLabel() }}</span>
+          <!-- Prefer the last hit/failure when one is fresh; otherwise show the
+               live frame-diff status (Bereit / Bewegung erkannt / …). -->
+          <span class="game__camera-badge">{{ detectionFeedback() ?? detectionStatusLabel() }}</span>
           <!-- Recalibrating is a single tap: the board or camera getting
                knocked is exactly when nobody wants a multi-step flow. -->
           <p-button

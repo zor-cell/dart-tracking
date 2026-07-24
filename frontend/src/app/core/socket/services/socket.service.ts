@@ -37,13 +37,14 @@ export class SocketService {
     this.connectionStatus.set('disconnected');
   }
 
-  async sendFrame(type: OutgoingFrameType, frame: Blob): Promise<void> {
+  async sendFrame(type: OutgoingFrameType, frame: Blob, debug?: boolean): Promise<void> {
     if (this.socket?.readyState !== WebSocket.OPEN) {
       console.warn('DartSocketService: Frame verworfen, WebSocket nicht verbunden');
       return;
     }
     const image = await blobToBase64(frame);
-    this.socket.send(JSON.stringify({ type, image }));
+    const payload = debug === undefined ? { type, image } : { type, image, debug };
+    this.socket.send(JSON.stringify(payload));
   }
 }
 
