@@ -45,6 +45,9 @@ export class GameComponent implements OnDestroy {
   private readonly videoRef = viewChild.required<ElementRef<HTMLVideoElement>>('video');
   private readonly diffCanvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('diffCanvas');
   private readonly captureCanvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('captureCanvas');
+  // Only in the DOM while the debug panel is shown, hence optional.
+  private readonly detectionDebugCanvasRef =
+    viewChild<ElementRef<HTMLCanvasElement>>('detectionDebugCanvas');
 
   protected readonly cameraPhase = signal<CameraPhase>('idle');
   protected readonly cameraError = this.camera.error;
@@ -53,6 +56,7 @@ export class GameComponent implements OnDestroy {
   protected readonly detectionOverlay = this.detection.overlay;
   protected readonly detectionStatusLabel = this.throwCapture.statusLabel;
   protected readonly detectionFeedback = this.detection.feedbackLabel;
+  protected readonly detectionDebug = this.throwCapture.debug;
 
   protected readonly scoreControl = new FormControl<number | null>(null);
 
@@ -67,6 +71,14 @@ export class GameComponent implements OnDestroy {
       if (this.calibrationStatus() === 'success' && this.cameraPhase() === 'calibrating') {
         this.startTracking();
       }
+    });
+
+    // Attach the change-mask canvas whenever the debug panel is on screen, and
+    // detach it the moment it leaves — keeping the loop's debug work off unless
+    // someone is watching.
+    effect(() => {
+      const canvas = this.detectionDebugCanvasRef()?.nativeElement ?? null;
+      this.throwCapture.setDebugCanvas(this.settings.debugDetection() ? canvas : null);
     });
   }
 

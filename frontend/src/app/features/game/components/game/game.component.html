@@ -52,6 +52,24 @@
           />
         }
       }
+
+      <!-- Live view of what the frame-diff detector sees, so a throw that fails
+           to trigger can be watched and the thresholds tuned. Toggle via the
+           "Debug: Erkennung" setting. -->
+      @if (settings.debugDetection() && cameraPhase() === 'tracking') {
+        <div class="detection-debug">
+          <canvas #detectionDebugCanvas class="detection-debug__mask" aria-hidden="true"></canvas>
+          @if (detectionDebug(); as d) {
+            <dl class="detection-debug__stats">
+              <div><dt>Status</dt><dd>{{ d.state }}</dd></div>
+              <div><dt>Δ Pixel</dt><dd>{{ (d.changedFraction * 100).toFixed(3) }} %</dd></div>
+              <div><dt>Peak</dt><dd>{{ (d.peakFraction * 100).toFixed(3) }} %</dd></div>
+              <div><dt>Schwelle</dt><dd>{{ (d.motionEnterFraction * 100).toFixed(3) }} %</dd></div>
+              <div><dt>Treffer</dt><dd>{{ d.captureCount }}</dd></div>
+            </dl>
+          }
+        </div>
+      }
     </div>
 
     @if (game.winner(); as winner) {
