@@ -9,10 +9,8 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {Button} from 'primeng/button';
-import {InputText} from 'primeng/inputtext';
 import {BoardOverlayComponent} from '../../../calibration/components/board-overlay/board-overlay.component';
 import {CalibrationService} from '../../../calibration/services/calibration.service';
 import {CameraService} from '../../../camera/services/camera.service';
@@ -23,11 +21,21 @@ import {SettingsService} from '../../../settings/services/settings.service';
 import {CameraPhase} from '../../models/camera-phase';
 import {GameService} from '../../services/game.service';
 
-const MAX_SINGLE_DART = 60;
+/** Score keypad layout: four numbers per row, with the bull/miss values down
+ * the side column (top two rows have no side key). */
+type PadRow = { readonly numbers: number[]; readonly side: number | null };
+
+const PAD_ROWS: readonly PadRow[] = [
+  { numbers: [1, 2, 3, 4], side: null },
+  { numbers: [5, 6, 7, 8], side: null },
+  { numbers: [9, 10, 11, 12], side: 0 },
+  { numbers: [13, 14, 15, 16], side: 25 },
+  { numbers: [17, 18, 19, 20], side: 50 },
+];
 
 @Component({
   selector: 'app-game',
-  imports: [RouterLink, ReactiveFormsModule, Button, InputText, BoardOverlayComponent],
+  imports: [RouterLink, Button, BoardOverlayComponent],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -63,7 +71,16 @@ export class GameComponent implements OnDestroy {
     () => this.settings.debugDetection() && this.cameraPhase() === 'tracking',
   );
 
-  protected readonly scoreControl = new FormControl<number | null>(null);
+  protected readonly padRows = PAD_ROWS;
+
+  // Sticky multiplier for the keypad: pressing D/T marks every number key with a
+  // D/T so a run of doubles or triples needs no extra taps; press it again (or
+  // switch) to change it. Bull/miss keys ignore it.
+  protected readonly multiplier = signal<1 | 2 | 3>(1);
+  // Prefixed onto every number key while active, e.g. "D15" / "T15".
+  protected readonly multiplierPrefix = computed(() =>
+    this.multiplier() === 2 ? 'D' : this.multiplier() === 3 ? 'T' : '',
+  );
 
   protected readonly emptySlots = computed(() =>
     Array.from({ length: this.game.state()?.dartsRemaining ?? 0 }),
@@ -110,12 +127,22 @@ export class GameComponent implements OnDestroy {
     this.cameraPhase.set('tracking');
   }
 
-  protected submitScore(): void {
-    const score = this.scoreControl.value;
-    if (score !== null && score >= 0 && score <= MAX_SINGLE_DART) {
-      this.game.registerDart(score);
-      this.scoreControl.reset();
-    }
+  /** A 1–20 key: scored with the active multiplier, which stays set afterwards. */
+  protected enterNumber(value: number): void {
+    this.game.registerDart(value * this.multiplier());
+  }
+
+  /** A bull/miss key: its face value, unaffected by the D/T multiplier. */
+  protected enterFixed(value: number): void {
+    this.game.registerDart(value);
+  }
+
+  protected toggleDouble(): void {
+    this.multiplier.update((current) => (current === 2 ? 1 : 2));
+  }
+
+  protected toggleTriple(): void {
+    this.multiplier.update((current) => (current === 3 ? 1 : 3));
   }
 
   ngOnDestroy(): void {

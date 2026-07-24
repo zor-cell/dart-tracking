@@ -192,12 +192,70 @@
   font-size: 0.9rem;
 }
 
-.turn__entry {
-  display: flex;
-  gap: 0.5rem;
+// Dartboard keypad. Ten columns so the number/side keys span two each (five
+// across) and the Double/Triple keys span five (2.5 number widths).
+.scorepad {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.4rem;
 }
 
-.turn__input {
-  flex: 1;
-  min-width: 0;
+.scorepad__key {
+  grid-column: span 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-height: 3rem;
+  padding: 0.25rem;
+  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border-radius: 0.5rem;
+  background: var(--p-content-background, #ffffff);
+  color: var(--p-text-color, #18181b);
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--p-primary-color, #09090b) 10%, var(--p-content-background, #ffffff));
+    border-color: var(--p-primary-color, #09090b);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Fills the empty slot beside 4 and 8: side column, both top rows.
+.scorepad__undo {
+  grid-column: 9 / span 2;
+  grid-row: 1 / span 2;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+
+  i {
+    font-size: 1.1rem;
+  }
+}
+
+.scorepad__key--bull {
+  color: var(--p-primary-color, #09090b);
+}
+
+// Double / Triple span half the row each and lock filled while active.
+.scorepad__mod {
+  grid-column: span 5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.95rem;
+}
+
+.scorepad__mod--active {
+  background: var(--p-primary-color, #09090b);
+  border-color: var(--p-primary-color, #09090b);
+  color: var(--p-primary-contrast-color, #ffffff);
 }

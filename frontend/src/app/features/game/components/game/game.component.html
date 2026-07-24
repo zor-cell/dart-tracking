@@ -14,7 +14,6 @@
 
       @if (cameraPhase() !== 'idle') {
         <app-board-overlay [polylines]="calibrationOverlay()" [video]="video" />
-        <!-- The located dart, drawn in cyan over the yellow board outline. -->
         <app-board-overlay
           [polylines]="detectionOverlay()"
           [video]="video"
@@ -112,25 +111,66 @@
         }
 
         @if (settings.manualEntryEnabled()) {
-          <!-- Fallback entry — see settings for when this is hidden. -->
-          <div class="turn__entry">
-            <input
-              pInputText
-              type="number"
-              inputmode="numeric"
-              min="0"
-              max="60"
-              class="turn__input"
-              [formControl]="scoreControl"
-              placeholder="Punkte"
-              aria-label="Punkte des Darts"
-            />
-            <p-button
-              label="Dart"
-              icon="pi pi-plus"
+          <!-- Fallback score entry — a dartboard keypad. A number key scores
+               immediately with the sticky D/T multiplier; the bull/miss keys
+               take their face value. See settings for when this is hidden. -->
+          <div class="scorepad" role="group" aria-label="Punkte-Eingabe">
+            <button
+              type="button"
+              class="scorepad__key scorepad__undo"
+              [disabled]="!state.canUndo"
+              aria-label="Zurück"
+              (click)="game.undo()"
+            >
+              <i class="pi pi-undo" aria-hidden="true"></i>
+              <span>Zurück</span>
+            </button>
+
+            @for (row of padRows; track $index) {
+              @for (n of row.numbers; track n) {
+                <button
+                  type="button"
+                  class="scorepad__key"
+                  [disabled]="state.dartsRemaining === 0"
+                  [attr.aria-label]="multiplierPrefix() + n"
+                  (click)="enterNumber(n)"
+                >
+                  {{ multiplierPrefix() }}{{ n }}
+                </button>
+              }
+              @if (row.side !== null) {
+                <button
+                  type="button"
+                  class="scorepad__key scorepad__key--fixed"
+                  [class.scorepad__key--bull]="row.side !== 0"
+                  [disabled]="state.dartsRemaining === 0"
+                  (click)="enterFixed(row.side)"
+                >
+                  {{ row.side }}
+                </button>
+              }
+            }
+
+            <button
+              type="button"
+              class="scorepad__key scorepad__mod"
+              [class.scorepad__mod--active]="multiplier() === 2"
+              [attr.aria-pressed]="multiplier() === 2"
               [disabled]="state.dartsRemaining === 0"
-              (onClick)="submitScore()"
-            />
+              (click)="toggleDouble()"
+            >
+              Double
+            </button>
+            <button
+              type="button"
+              class="scorepad__key scorepad__mod"
+              [class.scorepad__mod--active]="multiplier() === 3"
+              [attr.aria-pressed]="multiplier() === 3"
+              [disabled]="state.dartsRemaining === 0"
+              (click)="toggleTriple()"
+            >
+              Triple
+            </button>
           </div>
         }
 
@@ -144,17 +184,19 @@
       </div>
     }
 
-    <!-- Available even after a win, since correcting the winning dart is exactly
-         when this is needed. -->
-    <p-button
-      fluid
-      label="Zurück"
-      icon="pi pi-undo"
-      severity="secondary"
-      [text]="true"
-      [disabled]="!state.canUndo"
-      (onClick)="game.undo()"
-    />
+    <!-- Only when the keypad's own back button isn't up (keypad hidden, or a win
+         removed it) — correcting the winning dart is exactly when this is needed. -->
+    @if (!settings.manualEntryEnabled() || game.winner()) {
+      <p-button
+        fluid
+        label="Zurück"
+        icon="pi pi-undo"
+        severity="secondary"
+        [text]="true"
+        [disabled]="!state.canUndo"
+        (onClick)="game.undo()"
+      />
+    }
 
     <p-button
       fluid
