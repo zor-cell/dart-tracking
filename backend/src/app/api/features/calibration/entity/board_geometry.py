@@ -7,6 +7,7 @@ from +x.
 """
 
 import math
+from dataclasses import dataclass
 
 # Ring radii (mm from centre). Each pair is inner/outer edge of a ring.
 BULLSEYE_RADIUS = 6.35  # the 50
@@ -56,3 +57,60 @@ def is_red_sector(index: int) -> bool:
     Detection relies on this to recover the board's rotation.
     """
     return index % 2 == 0
+
+
+@dataclass(frozen=True)
+class Segment:
+    """What a point on the board is worth.
+
+    The bull is modelled as sector value 25 at double, which is how darts
+    scoring treats it — a checkout on the bullseye is a double. That keeps
+    `points` a plain `value * multiplier` everywhere instead of needing a
+    special case per ring.
+    """
+
+    value: int  # sector value, 25 for the bull, 0 for a miss
+    multiplier: int  # 0 miss, 1 single, 2 double, 3 triple
+
+    @property
+    def points(self) -> int:
+        return self.value * self.multiplier
+
+    @property
+    def label(self) -> str:
+        """Short form as it would be called out: T20, D16, S5, BULL, 25, MISS."""
+        if self.multiplier == 0:
+            return "MISS"
+        if self.value == 25:
+            return "BULL" if self.multiplier == 2 else "25"
+        return f"{'SDT'[self.multiplier - 1]}{self.value}"
+
+
+MISS = Segment(value=0, multiplier=0)
+
+
+def segment_at(x: float, y: float) -> Segment:
+    """Which segment the board coordinate (mm) falls in.
+
+    This is the last step of scoring: the homography has already turned a pixel
+    into millimetres, and from here it is pure geometry against the standard.
+    """
+    radius = math.hypot(x, y)
+
+    if radius <= BULLSEYE_RADIUS:
+        return Segment(value=25, multiplier=2)
+    if radius <= BULL_RADIUS:
+        return Segment(value=25, multiplier=1)
+    if radius > DOUBLE_OUTER_RADIUS:
+        return MISS
+
+    # Sectors run clockwise from 20 at the top, so the angle decreases as the
+    # index grows — the same relation `sector_centre_angle` encodes, inverted.
+    index = round((FIRST_SECTOR_CENTRE_ANGLE - math.atan2(y, x)) / SECTOR_ANGLE)
+    value = SECTOR_ORDER[index % SECTOR_COUNT]
+
+    if TRIPLE_INNER_RADIUS <= radius <= TRIPLE_OUTER_RADIUS:
+        return Segment(value=value, multiplier=3)
+    if DOUBLE_INNER_RADIUS <= radius <= DOUBLE_OUTER_RADIUS:
+        return Segment(value=value, multiplier=2)
+    return Segment(value=value, multiplier=1)

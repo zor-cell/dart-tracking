@@ -1,6 +1,6 @@
 import { ConnectionEstablishedMessage } from './connection-established-message';
 import { CalibrationResultMessage } from '../../../features/calibration/dto/calibration-result-message';
-import { ThrowReceivedMessage } from '../../../features/detection/dto/throw-received-message';
+import { DartDetectedMessage } from '../../../features/detection/dto/dart-detected-message';
 import { GameStateMessage } from '../../../features/game/dto/game-state-message';
 
 /**
@@ -13,5 +13,5 @@ import { GameStateMessage } from '../../../features/game/dto/game-state-message'
 export type SocketMessage =
   | ConnectionEstablishedMessage
   | CalibrationResultMessage
-  | ThrowReceivedMessage
+  | DartDetectedMessage
   | GameStateMessage;
