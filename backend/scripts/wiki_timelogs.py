@@ -113,9 +113,16 @@ def render(logs: list[dict]) -> str:
         iid = int(issue["iid"])
         bucket = per_issue.setdefault(
             iid,
-            {"title": issue["title"], "web_url": issue["webUrl"], "state": issue["state"], "seconds": 0},
+            {
+                "title": issue["title"],
+                "web_url": issue["webUrl"],
+                "state": issue["state"],
+                "seconds": 0,
+                "per_day": defaultdict(int),
+            },
         )
         bucket["seconds"] += spent
+        bucket["per_day"][day] += spent
 
     lines = [
         f"> Generiert am {date.today().strftime('%d.%m.%Y')} aus der GitLab-API mit",
@@ -139,12 +146,18 @@ def render(logs: list[dict]) -> str:
     if not per_week:
         lines.append("| | _Noch keine Zeit gebucht._ | |")
 
-    # Per issue, ascending by issue ID.
+    # Per issue: closed issues first, then ascending by issue ID within each
+    # group. Each issue is followed by a sub-row per day that has logged time.
     lines += ["", "## Pro Issue", "", "| Issue | Titel | Status | Stunden |", "|---|---|---|---:|"]
-    for iid, data in sorted(per_issue.items()):
+    for iid, data in sorted(
+        per_issue.items(), key=lambda item: (item[1]["state"] != "closed", item[0])
+    ):
         state = "geschlossen" if data["state"] == "closed" else "offen"
         title = data["title"].replace("|", "\\|")
         lines.append(f"| [#{iid}]({data['web_url']}) | {title} | {state} | {hours(data['seconds'])} |")
+        for day in sorted(data["per_day"]):
+            span = day.strftime("%d.%m.%Y")
+            lines.append(f"| | {span} | | {hours(data['per_day'][day])} |")
     if no_issue_seconds:
         lines.append(f"| — | _ohne Issue_ | | {hours(no_issue_seconds)} |")
     if not per_issue and not no_issue_seconds:
