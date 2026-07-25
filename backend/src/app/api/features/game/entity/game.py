@@ -7,6 +7,8 @@ throw history stays available for the statistics planned in the roadmap.
 
 from dataclasses import dataclass, field
 
+from app.api.features.game.entity.checkout import checkout_route
+from app.api.features.game.entity.checkout_mode import CheckoutMode
 from app.api.features.game.entity.game_mode import GameMode
 from app.api.features.game.entity.player import Player
 from app.api.features.game.entity.turn import Turn
@@ -19,6 +21,7 @@ class Game:
     id: str
     mode: GameMode
     players: list[Player]
+    checkout_mode: CheckoutMode = CheckoutMode.DOUBLE_OUT
     current_player_index: int = 0
     turns: list[Turn] = field(default_factory=list)
 
@@ -48,6 +51,20 @@ class Game:
     @property
     def can_undo(self) -> bool:
         return bool(self.current_turn.darts) or len(self.turns) > 1
+
+    @property
+    def checkout(self) -> list[str] | None:
+        """A suggested finish for the current player within this turn's darts, or
+        None when none exists. Depends on the checkout mode: double-out routes
+        must end on a double."""
+        if self.winner is not None:
+            return None
+        route = checkout_route(
+            self.remaining(self.current_player.id),
+            self.darts_remaining,
+            self.checkout_mode is CheckoutMode.DOUBLE_OUT,
+        )
+        return list(route) if route is not None else None
 
     def remaining(self, player_id: int) -> int:
         """Points left for a player: the starting score minus every dart of that

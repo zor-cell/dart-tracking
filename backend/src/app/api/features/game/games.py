@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from app.api.features.game.dto.create_game import GameConfigDto
+from app.api.features.game.dto.game_config import GameConfigDto
 from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.dto.register_dart import RegisterDartDto
 from app.api.features.game.entity.game import Game
@@ -14,7 +14,7 @@ def create_game(body: GameConfigDto) -> GameStateDto:
     names = [stripped for name in body.player_names if (stripped := name.strip())]
     if not names:
         raise HTTPException(status_code=422, detail="at least one player is required")
-    return GameStateDto.from_entity(store.create(body.mode, names))
+    return GameStateDto.from_entity(store.create(body.mode, names, body.checkout_mode))
 
 
 @router.get("/{game_id}", response_model=GameStateDto)
