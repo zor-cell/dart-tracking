@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {Button} from 'primeng/button';
-import {BoardOverlayComponent} from '../../../calibration/components/board-overlay/board-overlay.component';
+import {OverlayComponent} from '../../../calibration/components/overlay/overlay.component';
 import {CalibrationService} from '../../../calibration/services/calibration.service';
 import {DetectionService} from '../../../detection/services/detection.service';
 import {FrameDiffService} from '../../../detection/services/frame-diff.service';
@@ -34,7 +34,7 @@ const PAD_ROWS: readonly PadRow[] = [
 
 @Component({
   selector: 'app-game',
-  imports: [RouterLink, Button, BoardOverlayComponent],
+  imports: [RouterLink, Button, OverlayComponent],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

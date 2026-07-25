@@ -13,8 +13,8 @@
       <canvas #captureCanvas class="game__hidden-canvas"></canvas>
 
       @if (cameraPhase() !== 'idle') {
-        <app-board-overlay [polylines]="calibrationOverlay()" [video]="video" />
-        <app-board-overlay
+        <app-overlay [polylines]="calibrationOverlay()" [video]="video" />
+        <app-overlay
           [polylines]="detectionOverlay()"
           [video]="video"
           color="rgba(56, 189, 248, 0.95)"

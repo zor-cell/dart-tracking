@@ -22,12 +22,12 @@ const LINE_WIDTH = 1.5;
  * however much was cropped.
  */
 @Component({
-  selector: 'app-board-overlay',
-  templateUrl: './board-overlay.component.html',
-  styleUrl: './board-overlay.component.scss',
+  selector: 'app-overlay',
+  templateUrl: './overlay.component.html',
+  styleUrl: './overlay.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BoardOverlayComponent implements OnDestroy {
+export class OverlayComponent implements OnDestroy {
   /** Polylines of [x, y] points, normalized to 0..1 of the video frame. */
   readonly polylines = input.required<number[][][] | null>();
 
