@@ -82,9 +82,15 @@ export class GameComponent implements OnDestroy {
     this.multiplier() === 2 ? 'D' : this.multiplier() === 3 ? 'T' : '',
   );
 
-  protected readonly emptySlots = computed(() =>
-    Array.from({ length: this.game.state()?.dartsRemaining ?? 0 }),
-  );
+  // One entry per dart still to throw this turn. A suggested checkout fills the
+  // leading slots (its darts are thrown next); any slot beyond the checkout —
+  // or every slot when there is no checkout — stays null and renders as "–".
+  protected readonly checkoutSlots = computed<(string | null)[]>(() => {
+    const state = this.game.state();
+    const remaining = state?.dartsRemaining ?? 0;
+    const checkout = state?.checkout ?? null;
+    return Array.from({ length: remaining }, (_, index) => checkout?.[index] ?? null);
+  });
 
   constructor() {
     this.game.restore();

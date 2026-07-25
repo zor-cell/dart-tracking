@@ -11,6 +11,7 @@ import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { SelectButton } from 'primeng/selectbutton';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
+import { CHECKOUT_MODES, CheckoutMode } from '../../models/checkout-mode';
 import { GameService } from '../../services/game.service';
 import {NotificationService} from "../../../../core/notification/services/notification.service";
 
@@ -28,9 +29,11 @@ export class GameSetupComponent {
   private readonly notification = inject(NotificationService);
 
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
+  protected readonly checkoutModeOptions = [...CHECKOUT_MODES];
 
   protected readonly form = this.fb.group({
     mode: this.fb.nonNullable.control<GameMode>(501, Validators.required),
+    checkoutMode: this.fb.nonNullable.control<CheckoutMode>('double_out', Validators.required),
     players: this.fb.array([this.createPlayer('Spieler 1'), this.createPlayer('Spieler 2')]),
   });
 
@@ -52,8 +55,8 @@ export class GameSetupComponent {
     if (this.form.invalid) {
       return;
     }
-    const { mode, players } = this.form.getRawValue();
-    this.game.createGame({ mode, playerNames: players }).subscribe(() => {
+    const { mode, checkoutMode, players } = this.form.getRawValue();
+    this.game.createGame({ mode, checkoutMode, playerNames: players }).subscribe(() => {
       this.notification.showSuccess("Spiel erstellt");
       this.router.navigate(['/game']);
     });

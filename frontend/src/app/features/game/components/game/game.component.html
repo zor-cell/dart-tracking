@@ -101,8 +101,14 @@
             @for (dart of turn.darts; track $index) {
               <li class="turn__dart" [class.turn__dart--busted]="turn.busted">{{ dart }}</li>
             }
-            @for (slot of emptySlots(); track $index) {
-              <li class="turn__dart turn__dart--empty" aria-hidden="true">–</li>
+            @for (slot of checkoutSlots(); track $index) {
+              <li
+                class="turn__dart turn__dart--empty"
+                [class.turn__dart--checkout]="slot !== null"
+                aria-hidden="true"
+              >
+                {{ slot ?? '–' }}
+              </li>
             }
           </ul>
           @if (turn.busted) {

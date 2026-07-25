@@ -16,6 +16,17 @@
       />
     </div>
 
+    <div class="setup__field">
+      <label class="setup__label" for="checkoutMode">Checkout</label>
+      <p-selectbutton
+        inputId="checkoutMode"
+        formControlName="checkoutMode"
+        [options]="checkoutModeOptions"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </div>
+
     <div class="setup__field" formArrayName="players">
       <span class="setup__label">Spieler</span>
       @for (player of players.controls; track $index) {
