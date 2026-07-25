@@ -57,7 +57,6 @@ export class GameSetupComponent {
     }
     const { mode, checkoutMode, players } = this.form.getRawValue();
     this.game.createGame({ mode, checkoutMode, playerNames: players }).subscribe(() => {
-      this.notification.showSuccess("Spiel erstellt");
       this.router.navigate(['/game']);
     });
   }

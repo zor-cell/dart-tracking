@@ -1,5 +1,4 @@
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -7,6 +6,7 @@ import {
   ElementRef,
   inject,
   OnDestroy,
+  OnInit,
   signal,
   viewChild,
 } from '@angular/core';
@@ -39,7 +39,7 @@ const PAD_ROWS: readonly PadRow[] = [
   styleUrl: './game.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GameComponent implements AfterViewInit, OnDestroy {
+export class GameComponent implements OnInit, OnDestroy {
   protected readonly game = inject(GameService);
   protected readonly settings = inject(SettingsService);
 
@@ -48,9 +48,11 @@ export class GameComponent implements AfterViewInit, OnDestroy {
   private readonly throwCapture = inject(FrameDiffService);
   private readonly detection = inject(DetectionService);
 
-  private readonly videoRef = viewChild.required<ElementRef<HTMLVideoElement>>('video');
-  private readonly diffCanvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('diffCanvas');
-  private readonly captureCanvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('captureCanvas');
+  // Optional: these live behind the "game active" gate, so they are absent until
+  // the state is (re)loaded — which after a full reload is a few ticks after init.
+  private readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('video');
+  private readonly diffCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('diffCanvas');
+  private readonly captureCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('captureCanvas');
   private readonly detectionDebugCanvasRef =
     viewChild<ElementRef<HTMLCanvasElement>>('detectionDebugCanvas');
 
@@ -90,16 +92,25 @@ export class GameComponent implements AfterViewInit, OnDestroy {
       const canvas = this.detectionDebugCanvasRef()?.nativeElement ?? null;
       this.throwCapture.setDebugCanvas(this.settings.debugDetection() ? canvas : null);
     });
+
+    // Hand the session this view's camera elements once they exist. They live
+    // behind the "game active" gate, so after a full reload — where the state is
+    // refetched first — they appear a few ticks after init, not at view init.
+    // The session then resumes an ongoing session or the phase from before.
+    effect(() => {
+      const video = this.videoRef()?.nativeElement;
+      const diffCanvas = this.diffCanvasRef()?.nativeElement;
+      const captureCanvas = this.captureCanvasRef()?.nativeElement;
+      if (video && diffCanvas && captureCanvas) {
+        this.session.attachView(video, diffCanvas, captureCanvas);
+      }
+    });
   }
 
-  ngAfterViewInit(): void {
-    // Hand the session this view's elements: it either resumes an ongoing session
-    // onto them (navigation) or, after a refresh, restores and resumes the game.
-    this.session.attachView(
-      this.videoRef().nativeElement,
-      this.diffCanvasRef().nativeElement,
-      this.captureCanvasRef().nativeElement,
-    );
+  ngOnInit(): void {
+    // Refetch the game after a full reload so the view — and with it the camera
+    // elements — can render; wiring and camera resume then happen on attach.
+    void this.session.restore();
   }
 
   protected startCamera(): Promise<void> {

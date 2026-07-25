@@ -40,9 +40,13 @@ export class GameSessionService {
   private diffCanvas?: HTMLCanvasElement;
   private captureCanvas?: HTMLCanvasElement;
 
-  // The phase from before a refresh, captured once at construction. Consumed on
-  // the first view attach to drive a resume, then cleared.
+  // The phase from before a refresh, captured once at construction. Consumed by
+  // restore() to seed pendingResumePhase.
   private persistedPhase = localStorage.getItem(PHASE_KEY) as CameraPhase | null;
+
+  // Phase to resume the camera into on the next view attach, set by restore()
+  // after a reload once the game is confirmed. Consumed once the elements exist.
+  private pendingResumePhase: CameraPhase | null = null;
 
   constructor() {
     // Calibration confirmed while on the calibrate step → start tracking.
@@ -84,7 +88,13 @@ export class GameSessionService {
       return;
     }
 
-    void this.bootstrap();
+    // First attach after a full reload: the elements now exist, so resume the
+    // camera into the phase restore() captured (if the session had one running).
+    const target = this.pendingResumePhase;
+    this.pendingResumePhase = null;
+    if (target === 'tracking' || target === 'calibrating') {
+      void this.resume(target);
+    }
   }
 
   /** Detach the game view on unmount: pause the loop only; keep camera + socket. */
@@ -122,17 +132,16 @@ export class GameSessionService {
     this.phase.set('idle');
   }
 
-  /** Load the game (after a refresh) and resume the camera session if one was
-   * running. Runs once, on the first view attach of this page load. */
-  private async bootstrap(): Promise<void> {
-    const target = this.persistedPhase;
+  /** Refetch the game when the game view initialises (called from its ngOnInit),
+   * independent of the DOM, so a full reload restores the state even before the
+   * camera elements exist. Stash the phase to resume the camera into; the resume
+   * itself happens on the following view attach. Cleared if there is no game. */
+  async restore(): Promise<void> {
+    this.pendingResumePhase = this.persistedPhase;
     this.persistedPhase = null;
 
     if (!(await this.game.ensureRestored())) {
-      return; // no game, or the server no longer knows it → stay idle
-    }
-    if (target === 'tracking' || target === 'calibrating') {
-      await this.resume(target);
+      this.pendingResumePhase = null; // no game, or the server forgot it → stay idle
     }
   }
 
