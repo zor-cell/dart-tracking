@@ -20,6 +20,12 @@ the detector reports it — `S5`, `T20`, `D16`, `BULL`, `25`, `MISS`:
     throw1_dart1 S5
     throw1_dart2 T20
     throw1_dart3 D16
+    throw1_dart1 S17?    # unsure — scored against S17 anyway, flagged in the report
+
+A trailing `?` on a label marks one you weren't sure of when annotating. It is
+stripped before comparison, so the dart is still scored against the given value;
+the uncertainty only shows up in the console (`gt=S17?`) and the report so those
+rows can be taken with a grain of salt.
 
 Blank lines and `#` comments are ignored. When any truth file is present, the run
 prints a segment-accuracy summary and writes `_results/accuracy.md` listing every
@@ -85,6 +91,7 @@ class Result:
     located: bool  # whether a dart blob was found at all
     detected: str | None  # segment label if located, else None
     expected: str | None  # ground-truth label if annotated, else None
+    uncertain: bool = False  # truth label was flagged `?` (I wasn't sure); still scored as-is
 
     @property
     def correct(self) -> bool:
@@ -117,17 +124,20 @@ def collect_series(root: Path, out_dir: Path) -> dict[str, list[tuple[str, Path]
     return dict(sorted(series.items()))
 
 
-def load_ground_truth(folder: Path) -> dict[str, str]:
-    """Read `<folder>/ground_truth.txt` into {frame stem: expected label}.
+def load_ground_truth(folder: Path) -> dict[str, tuple[str, bool]]:
+    """Read `<folder>/ground_truth.txt` into {frame stem: (expected label, uncertain)}.
 
     Format is one `<frame stem> <label>` per line (e.g. `throw1_dart1 S5`); blank
     lines and `#` comments are ignored. Labels are upper-cased so `t20` and `T20`
-    both work. Returns {} if the file is absent.
+    both work. A trailing `?` (e.g. `S17?`) marks a label I wasn't sure about when
+    annotating: the `?` is stripped so the label still scores normally against the
+    detection, and the uncertainty is only surfaced in the console/report so those
+    matches can be read with a grain of salt. Returns {} if the file is absent.
     """
     path = folder / GROUND_TRUTH_NAME
     if not path.is_file():
         return {}
-    truth: dict[str, str] = {}
+    truth: dict[str, tuple[str, bool]] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.split("#", 1)[0].strip()
         if not line:
@@ -137,8 +147,15 @@ def load_ground_truth(folder: Path) -> dict[str, str]:
             print(f"  ! {path.parent.name}/{GROUND_TRUTH_NAME}: skipping malformed line {line!r}")
             continue
         stem, label = parts
-        truth[stem] = label.upper()
+        label = label.upper()
+        uncertain = label.endswith("?")
+        truth[stem] = (label.rstrip("?"), uncertain)
     return truth
+
+
+def expected_for(truth: dict[str, tuple[str, bool]], stem: str) -> tuple[str | None, bool]:
+    """Look up a frame stem, yielding (label or None, uncertain)."""
+    return truth.get(stem, (None, False))
 
 
 def annotate(dart) -> np.ndarray:
@@ -204,20 +221,21 @@ def run_series(
         # Still report the darts as attempted-but-unlocated, so a series whose
         # reference will not calibrate counts against accuracy rather than
         # silently vanishing from the denominator.
-        return [
-            Result(name, label, path, located=False, detected=None, expected=truth.get(path.stem))
-            for label, path in frames[1:]
-        ]
+        unlocated = []
+        for label, path in frames[1:]:
+            expected, uncertain = expected_for(truth, path.stem)
+            unlocated.append(Result(name, label, path, False, None, expected, uncertain))
+        return unlocated
 
     print(f"{name}  reference {frames[0][1].name}  ({dart_detector._pixels_per_mm(calibration.homography):.2f} px/mm)")
 
     results: list[Result] = []
     for (_, _previous), (label, path) in zip(frames, frames[1:]):
-        expected = truth.get(path.stem)
+        expected, uncertain = expected_for(truth, path.stem)
         frame = load_image(path, raw)
         if frame is None:
             print(f"  {label:<6} UNREADABLE")
-            results.append(Result(name, label, path, False, None, expected))
+            results.append(Result(name, label, path, False, None, expected, uncertain))
             continue
 
         outcome = dart_detector.detect_dart(reference, frame, calibration)
@@ -235,9 +253,10 @@ def run_series(
             target_dir = mirrored_dir(path, root, out_dir)
             cv2.imwrite(str(target_dir / f"{path.stem}{OVERLAY_SUFFIX}"), annotate(outcome))
 
-        result = Result(name, label, path, located, detected, expected)
+        result = Result(name, label, path, located, detected, expected, uncertain)
         if expected is not None:
-            line += f"   gt={expected} {'OK' if result.correct else 'MISMATCH'}"
+            mark = "?" if uncertain else ""
+            line += f"   gt={expected}{mark} {'OK' if result.correct else 'MISMATCH'}"
         print(line)
         results.append(result)
 
@@ -250,42 +269,63 @@ def run_series(
     return results
 
 
+def _accuracy_table(results, key, header: str) -> list[str]:
+    """Render a `| <header> | correct | total | accuracy |` table over `results`,
+    grouped by `key(result)` and sorted by group name."""
+    groups: dict[str, list[Result]] = defaultdict(list)
+    for r in results:
+        groups[key(r)].append(r)
+
+    lines = [f"| {header} | correct | total | accuracy |", "|---|---|---|---|"]
+    for name in sorted(groups):
+        group = groups[name]
+        hits = sum(r.correct for r in group)
+        lines.append(f"| {name} | {hits} | {len(group)} | {100 * hits / len(group):.0f}% |")
+    return lines
+
+
 def write_report(results: list[Result], out_dir: Path) -> Path:
     """Write a Markdown accuracy report and return its path."""
     labelled = [r for r in results if r.expected is not None]
     correct = [r for r in labelled if r.correct]
     mismatches = [r for r in labelled if not r.correct]
+    uncertain = sum(r.uncertain for r in labelled)
 
     lines = [
         "# Detection accuracy",
         "",
         "Segment-level comparison against `ground_truth.txt`. *Located* means a dart",
         "blob was found; *correct* means its segment matched the expected label.",
+        "A `?` suffix in the truth file marks a label I wasn't sure about; it is still",
+        "scored against as-is and just flagged here.",
         "",
         f"- Pairs attempted: **{len(results)}**",
         f"- Located: **{sum(r.located for r in results)}/{len(results)}**",
         f"- Correct segment: **{len(correct)}/{len(labelled)}** "
         f"({100 * len(correct) / len(labelled):.1f}%)",
+        f"- Uncertain truth labels (`?`): **{uncertain}/{len(labelled)}**",
         "",
-        "## Per setup",
-        "",
-        "| setup | correct | total | accuracy |",
-        "|---|---|---|---|",
     ]
 
-    by_setup: dict[str, list[Result]] = defaultdict(list)
-    for r in labelled:
-        by_setup[r.series.split("/")[0] if "/" in r.series else "."].append(r)
-    for setup in sorted(by_setup):
-        group = by_setup[setup]
-        hits = sum(r.correct for r in group)
-        lines.append(f"| {setup} | {hits} | {len(group)} | {100 * hits / len(group):.0f}% |")
+    # Setup = the top-level folder of a series (e.g. `pz_setup1`); location = its
+    # prefix before the first `_` (e.g. `pz`), which is the physical dartboard, so
+    # each board's accuracy is visible across its setups.
+    def setup_of(r: Result) -> str:
+        return r.series.split("/")[0] if "/" in r.series else "."
+
+    def location_of(r: Result) -> str:
+        return setup_of(r).split("_")[0]
+
+    lines += ["## Per location (board)", ""]
+    lines += _accuracy_table(labelled, location_of, "location")
+    lines += ["", "## Per setup", ""]
+    lines += _accuracy_table(labelled, setup_of, "setup")
 
     lines += ["", f"## Mismatches ({len(mismatches)})", ""]
     if mismatches:
         lines += ["| series | frame | expected | detected |", "|---|---|---|---|"]
         lines += [
-            f"| {r.series} | {r.frame} | {r.expected} | {r.detected or 'FAIL'} |"
+            f"| {r.series} | {r.frame} | {r.expected}{'?' if r.uncertain else ''} | {r.detected or 'FAIL'} |"
             for r in mismatches
         ]
     else:
