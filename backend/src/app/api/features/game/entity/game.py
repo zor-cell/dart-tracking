@@ -76,15 +76,30 @@ class Game:
         )
         return self.mode - scored
 
+    def last_turn(self, player_id: int) -> Turn | None:
+        """The player's most recent turn that has darts — the visit score to show
+        next to them. Skips the empty turn opened when play returns to them, so a
+        completed visit's total stays visible until they actually throw again."""
+        return next(
+            (turn for turn in reversed(self.turns) if turn.player_id == player_id and turn.darts),
+            None,
+        )
+
     def register_dart(self, points: int) -> None:
         """Apply one dart to the current player's open turn. Overshooting busts
-        the whole turn; the double-out rule is not modelled yet."""
+        the whole turn; the double-out rule is not modelled yet.
+
+        The visit auto-advances to the next player once it is over — three darts
+        thrown or busted — so there is no separate "next player" step; a winning
+        dart ends the leg instead of advancing."""
         if self.winner is not None or self.darts_remaining <= 0:
             return
         turn = self.current_turn
         turn.darts.append(points)
         if self.remaining(turn.player_id) < 0:
             turn.busted = True
+        if self.darts_remaining == 0 and self.winner is None:
+            self.next_player()
 
     def undo(self) -> None:
         """Step back one action, across turn boundaries.

@@ -145,6 +145,28 @@
 
 .scoreboard__name {
   font-weight: 500;
+  // Push the round score and remaining together to the right.
+  margin-right: auto;
+}
+
+// The player's last-visit score, sitting next to the remaining total so the
+// automatic switch after the third dart is easy to verify at a glance.
+.scoreboard__last {
+  margin-right: 0.75rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--p-primary-color, #09090b) 10%, transparent);
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+// A busted visit scored nothing: strike it through to show what was thrown
+// without implying it counted.
+.scoreboard__last--busted {
+  text-decoration: line-through;
+  color: var(--p-red-500, #ef4444);
 }
 
 .scoreboard__remaining {

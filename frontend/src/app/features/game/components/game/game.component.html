@@ -89,6 +89,15 @@
           [class.scoreboard__row--active]="$index === state.currentPlayerIndex"
         >
           <span class="scoreboard__name">{{ player.name }}</span>
+          @if (player.lastTurn !== null) {
+            <span
+              class="scoreboard__last"
+              [class.scoreboard__last--busted]="player.lastTurnBusted"
+              [attr.aria-label]="'Letzte Runde: ' + player.lastTurn + (player.lastTurnBusted ? ' (überworfen)' : '')"
+            >
+              {{ player.lastTurn }}
+            </span>
+          }
           <span class="scoreboard__remaining">{{ player.remaining }}</span>
         </li>
       }
@@ -179,14 +188,6 @@
             </button>
           </div>
         }
-
-        <p-button
-          fluid
-          label="Nächster Spieler"
-          icon="pi pi-user"
-          severity="secondary"
-          (onClick)="game.nextPlayer()"
-        />
       </div>
     }
 

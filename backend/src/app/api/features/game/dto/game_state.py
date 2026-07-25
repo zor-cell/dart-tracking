@@ -29,7 +29,7 @@ class GameStateDto(CamelModel):
             mode=game.mode,
             checkout_mode=game.checkout_mode,
             players=[
-                PlayerDto.from_entity(player, game.remaining(player.id))
+                PlayerDto.from_entity(player, game.remaining(player.id), game.last_turn(player.id))
                 for player in game.players
             ],
             current_player_index=game.current_player_index,
