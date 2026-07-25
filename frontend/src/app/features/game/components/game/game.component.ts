@@ -110,12 +110,6 @@ export class GameComponent implements AfterViewInit, OnDestroy {
     return this.session.calibrate();
   }
 
-  /** End the game entirely: tear down the live session and clear the state. */
-  protected endGame(): void {
-    this.session.endSession();
-    this.game.reset();
-  }
-
   /** A 1–20 key: scored with the active multiplier, which stays set afterwards. */
   protected enterNumber(value: number): void {
     this.game.registerDart(value * this.multiplier());

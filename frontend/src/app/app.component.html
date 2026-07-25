@@ -1,4 +1,7 @@
 <div class="shell">
+  @if (game.state()) {
+    <app-game-top-bar />
+  }
   <main class="shell__content">
     <router-outlet />
   </main>
