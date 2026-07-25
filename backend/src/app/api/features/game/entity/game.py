@@ -89,17 +89,19 @@ class Game:
         """Apply one dart to the current player's open turn. Overshooting busts
         the whole turn; the double-out rule is not modelled yet.
 
-        The visit auto-advances to the next player once it is over — three darts
-        thrown or busted — so there is no separate "next player" step; a winning
-        dart ends the leg instead of advancing."""
+        Advancing to the next player is a separate, explicit step (`next_player`)
+        driven by the client, so the two input modes can differ: manual entry
+        advances on its own once the visit is full, while camera tracking waits
+        for a confirm tap — otherwise a player walking up to pull their darts
+        would be tracked as the next player's visit. A dart beyond the third (or
+        after a bust) is ignored until the advance happens, which also absorbs an
+        over-eager camera trigger."""
         if self.winner is not None or self.darts_remaining <= 0:
             return
         turn = self.current_turn
         turn.darts.append(points)
         if self.remaining(turn.player_id) < 0:
             turn.busted = True
-        if self.darts_remaining == 0 and self.winner is None:
-            self.next_player()
 
     def undo(self) -> None:
         """Step back one action, across turn boundaries.

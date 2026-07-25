@@ -67,9 +67,17 @@ export class GameService {
     if (!id) {
       return;
     }
-    this.http
-      .post<GameStateDto>(`${this.baseUrl}/${id}/darts`, { points })
-      .subscribe((state) => this.setState(state));
+    this.http.post<GameStateDto>(`${this.baseUrl}/${id}/darts`, { points }).subscribe((state) => {
+      this.setState(state);
+      // This is the manual-entry path (the only caller is the keypad; camera
+      // darts are registered server-side and mirrored via `game_state`). The
+      // server no longer auto-advances, so manual entry advances itself once the
+      // visit is full or busted — camera mode instead gates the advance behind an
+      // explicit confirm tap, which is why this lives here and not on the server.
+      if (state.dartsRemaining === 0 && state.winnerId === null) {
+        this.nextPlayer();
+      }
+    });
   }
 
   /** Step back one action — a dart, or the switch to the current player. */

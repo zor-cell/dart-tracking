@@ -149,10 +149,15 @@
   margin-right: auto;
 }
 
-// The player's last-visit score, sitting next to the remaining total so the
-// automatic switch after the third dart is easy to verify at a glance.
+// The individual darts of the last round thrown, sitting next to that player's
+// remaining total — a row of chips rather than a single visit total.
 .scoreboard__last {
+  display: inline-flex;
+  gap: 0.25rem;
   margin-right: 0.75rem;
+}
+
+.scoreboard__dart {
   padding: 0.1rem 0.5rem;
   border-radius: 999px;
   background: color-mix(in srgb, var(--p-primary-color, #09090b) 10%, transparent);
@@ -162,9 +167,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-// A busted visit scored nothing: strike it through to show what was thrown
-// without implying it counted.
-.scoreboard__last--busted {
+// A busted visit scored nothing: strike the darts through to show what was
+// thrown without implying it counted.
+.scoreboard__last--busted .scoreboard__dart {
   text-decoration: line-through;
   color: var(--p-red-500, #ef4444);
 }
@@ -181,12 +186,25 @@
   gap: 0.75rem;
 }
 
+// The dart boxes and, in camera mode, the confirm button sit on one row.
+.turn__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .turn__darts {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
+  flex: 1;
   gap: 0.5rem;
+}
+
+// Keeps its size next to the growing dart boxes.
+.turn__confirm {
+  flex-shrink: 0;
 }
 
 .turn__dart {

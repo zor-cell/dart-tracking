@@ -60,7 +60,7 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly cameraError = this.session.cameraError;
   protected readonly calibrationStatus = this.calibration.status;
   protected readonly calibrationOverlay = this.calibration.overlay;
-  protected readonly detectionOverlay = this.detection.overlay;
+  protected readonly roundDarts = this.detection.roundDarts;
   protected readonly detectionStatusLabel = this.throwCapture.statusLabel;
   protected readonly detectionFeedback = this.detection.feedbackLabel;
   protected readonly detectionDebug = this.throwCapture.debug;
@@ -76,6 +76,22 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly multiplierPrefix = computed(() =>
     this.multiplier() === 2 ? 'D' : this.multiplier() === 3 ? 'T' : '',
   );
+
+  // The most recent visit that has darts, tagged with its player — the "last
+  // round thrown". Its individual darts are shown next to that player only (not a
+  // total, and not on every row). During an active visit this is the current
+  // player's turn, so their darts fill in live; after they confirm it stays put
+  // until the next player throws.
+  protected readonly lastThrow = computed(() => {
+    const turns = this.game.state()?.turns ?? [];
+    for (let index = turns.length - 1; index >= 0; index--) {
+      const turn = turns[index];
+      if (turn.darts.length > 0) {
+        return { playerId: turn.playerId, darts: turn.darts, busted: turn.busted };
+      }
+    }
+    return null;
+  });
 
   protected readonly checkoutSlots = computed<(string | null)[]>(() => {
     const state = this.game.state();
