@@ -25,7 +25,7 @@
         @case ('idle') {
           <div class="game__camera-overlay">
             <i class="pi pi-camera" aria-hidden="true"></i>
-            <p-button label="Kamera starten" icon="pi pi-video" (onClick)="startCamera(state.id)" />
+            <p-button label="Kamera starten" icon="pi pi-video" (onClick)="startCamera()" />
             @if (cameraError(); as error) {
               <p class="game__camera-error">{{ error }}</p>
             }
@@ -211,7 +211,7 @@
       severity="secondary"
       [text]="true"
       routerLink="/start"
-      (onClick)="game.reset()"
+      (onClick)="endGame()"
     />
   </section>
 } @else {

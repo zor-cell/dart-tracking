@@ -1,4 +1,5 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -13,13 +14,11 @@ import {RouterLink} from '@angular/router';
 import {Button} from 'primeng/button';
 import {BoardOverlayComponent} from '../../../calibration/components/board-overlay/board-overlay.component';
 import {CalibrationService} from '../../../calibration/services/calibration.service';
-import {CameraService} from '../../../camera/services/camera.service';
-import {SocketService} from '../../../../core/socket/services/socket.service';
 import {DetectionService} from '../../../detection/services/detection.service';
 import {FrameDiffService} from '../../../detection/services/frame-diff.service';
 import {SettingsService} from '../../../settings/services/settings.service';
-import {CameraPhase} from '../../models/camera-phase';
 import {GameService} from '../../services/game.service';
+import {GameSessionService} from '../../services/game-session.service';
 
 /** Score keypad layout: four numbers per row, with the bull/miss values down
  * the side column (top two rows have no side key). */
@@ -40,12 +39,11 @@ const PAD_ROWS: readonly PadRow[] = [
   styleUrl: './game.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GameComponent implements OnDestroy {
+export class GameComponent implements AfterViewInit, OnDestroy {
   protected readonly game = inject(GameService);
   protected readonly settings = inject(SettingsService);
 
-  private readonly camera = inject(CameraService);
-  private readonly socket = inject(SocketService);
+  private readonly session = inject(GameSessionService);
   private readonly calibration = inject(CalibrationService);
   private readonly throwCapture = inject(FrameDiffService);
   private readonly detection = inject(DetectionService);
@@ -53,12 +51,11 @@ export class GameComponent implements OnDestroy {
   private readonly videoRef = viewChild.required<ElementRef<HTMLVideoElement>>('video');
   private readonly diffCanvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('diffCanvas');
   private readonly captureCanvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('captureCanvas');
-  // Only in the DOM while the debug overlay is shown, hence optional.
   private readonly detectionDebugCanvasRef =
     viewChild<ElementRef<HTMLCanvasElement>>('detectionDebugCanvas');
 
-  protected readonly cameraPhase = signal<CameraPhase>('idle');
-  protected readonly cameraError = this.camera.error;
+  protected readonly cameraPhase = this.session.phase;
+  protected readonly cameraError = this.session.cameraError;
   protected readonly calibrationStatus = this.calibration.status;
   protected readonly calibrationOverlay = this.calibration.overlay;
   protected readonly detectionOverlay = this.detection.overlay;
@@ -73,18 +70,11 @@ export class GameComponent implements OnDestroy {
 
   protected readonly padRows = PAD_ROWS;
 
-  // Sticky multiplier for the keypad: pressing D/T marks every number key with a
-  // D/T so a run of doubles or triples needs no extra taps; press it again (or
-  // switch) to change it. Bull/miss keys ignore it.
   protected readonly multiplier = signal<1 | 2 | 3>(1);
-  // Prefixed onto every number key while active, e.g. "D15" / "T15".
   protected readonly multiplierPrefix = computed(() =>
     this.multiplier() === 2 ? 'D' : this.multiplier() === 3 ? 'T' : '',
   );
 
-  // One entry per dart still to throw this turn. A suggested checkout fills the
-  // leading slots (its darts are thrown next); any slot beyond the checkout —
-  // or every slot when there is no checkout — stays null and renders as "–".
   protected readonly checkoutSlots = computed<(string | null)[]>(() => {
     const state = this.game.state();
     const remaining = state?.dartsRemaining ?? 0;
@@ -93,14 +83,6 @@ export class GameComponent implements OnDestroy {
   });
 
   constructor() {
-    this.game.restore();
-
-    effect(() => {
-      if (this.calibrationStatus() === 'success' && this.cameraPhase() === 'calibrating') {
-        this.startTracking();
-      }
-    });
-
     // Attach the change-mask canvas whenever the debug panel is on screen, and
     // detach it the moment it leaves — keeping the loop's debug work off unless
     // someone is watching.
@@ -110,27 +92,28 @@ export class GameComponent implements OnDestroy {
     });
   }
 
-  protected async startCamera(gameId: string): Promise<void> {
-    const video = this.videoRef().nativeElement;
-    video.srcObject = await this.camera.start();
-    await video.play();
-
-    this.socket.connect(gameId);
-    this.calibration.reset();
-    this.cameraPhase.set('calibrating');
-  }
-
-  protected async calibrateBoard(): Promise<void> {
-    await this.calibration.calibrate(this.videoRef().nativeElement, this.captureCanvasRef().nativeElement);
-  }
-
-  private startTracking(): void {
-    this.throwCapture.startDetectionLoop(
+  ngAfterViewInit(): void {
+    // Hand the session this view's elements: it either resumes an ongoing session
+    // onto them (navigation) or, after a refresh, restores and resumes the game.
+    this.session.attachView(
       this.videoRef().nativeElement,
       this.diffCanvasRef().nativeElement,
       this.captureCanvasRef().nativeElement,
     );
-    this.cameraPhase.set('tracking');
+  }
+
+  protected startCamera(): Promise<void> {
+    return this.session.startCamera();
+  }
+
+  protected calibrateBoard(): Promise<void> {
+    return this.session.calibrate();
+  }
+
+  /** End the game entirely: tear down the live session and clear the state. */
+  protected endGame(): void {
+    this.session.endSession();
+    this.game.reset();
   }
 
   /** A 1–20 key: scored with the active multiplier, which stays set afterwards. */
@@ -152,8 +135,8 @@ export class GameComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.throwCapture.stopDetectionLoop();
-    this.camera.stop();
-    this.socket.disconnect();
+    // Leaving the game screen only pauses the loop; the session (camera + socket)
+    // keeps running so returning is instant. Teardown is endGame() alone.
+    this.session.detachView();
   }
 }

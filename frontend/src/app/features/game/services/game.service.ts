@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, firstValueFrom, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
 import { SocketService } from '../../../core/socket/services/socket.service';
@@ -93,18 +93,36 @@ export class GameService {
       .subscribe((state) => this.setState(state));
   }
 
-  /** Restore a game after a page refresh from the persisted id. */
-  restore(): void {
-    const id = localStorage.getItem(STORAGE_KEY);
-    if (!id || this._state() !== null) {
-      return;
+  /** The active game's id, even before its state has been (re)fetched — read
+   * from the live state, falling back to the id persisted across refreshes. */
+  peekGameId(): string | null {
+    return this._state()?.id ?? localStorage.getItem(STORAGE_KEY);
+  }
+
+  /**
+   * Ensure the game state is loaded, refetching from the persisted id after a
+   * page refresh. Resolves to whether a game is active — false when there is no
+   * persisted id or the server no longer knows it (a stale id is cleared).
+   * Idempotent: a no-op once the state is already in hand.
+   */
+  async ensureRestored(): Promise<boolean> {
+    if (this._state() !== null) {
+      return true;
     }
-    this.http
-      .get<GameStateDto>(`${this.baseUrl}/${id}`, { context: SILENT_ERROR_CONTEXT })
-      .subscribe({
-        next: (state) => this.setState(state),
-        error: () => this.reset(),
-      });
+    const id = localStorage.getItem(STORAGE_KEY);
+    if (!id) {
+      return false;
+    }
+    try {
+      const state = await firstValueFrom(
+        this.http.get<GameStateDto>(`${this.baseUrl}/${id}`, { context: SILENT_ERROR_CONTEXT }),
+      );
+      this.setState(state);
+      return true;
+    } catch {
+      this.reset();
+      return false;
+    }
   }
 
   reset(): void {
