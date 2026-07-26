@@ -3,8 +3,9 @@
 
 Pulls every individual time log (`/spend`) via the GitLab GraphQL API — the REST
 `time_stats` endpoint only exposes per-issue totals without dates, so it cannot
-produce a weekly breakdown. Renders three sections: total time on top, time per
-ISO week, and time per issue.
+produce a weekly breakdown. Renders four sections: total time on top, time per
+ISO week, summed time per issue, and time per day (with the issue IDs touched
+that day).
 
 Usage:
     export GITLAB_TOKEN=<personal access token with read_api scope>
@@ -95,9 +96,10 @@ def hours(seconds: int) -> str:
 def render(logs: list[dict]) -> str:
     total = sum(log["timeSpent"] for log in logs)
 
-    # Aggregate per ISO week and per issue.
+    # Aggregate per ISO week, per issue and per day.
     per_week: dict[tuple[int, int], int] = defaultdict(int)
     per_issue: dict[int, dict] = {}
+    per_day: dict[date, dict] = {}
     no_issue_seconds = 0
 
     for log in logs:
@@ -106,11 +108,15 @@ def render(logs: list[dict]) -> str:
         iso_year, iso_week, _ = day.isocalendar()
         per_week[(iso_year, iso_week)] += spent
 
+        day_bucket = per_day.setdefault(day, {"seconds": 0, "iids": set()})
+        day_bucket["seconds"] += spent
+
         issue = log["issue"]
         if issue is None:
             no_issue_seconds += spent
             continue
         iid = int(issue["iid"])
+        day_bucket["iids"].add(iid)
         bucket = per_issue.setdefault(
             iid,
             {
@@ -118,11 +124,9 @@ def render(logs: list[dict]) -> str:
                 "web_url": issue["webUrl"],
                 "state": issue["state"],
                 "seconds": 0,
-                "per_day": defaultdict(int),
             },
         )
         bucket["seconds"] += spent
-        bucket["per_day"][day] += spent
 
     lines = [
         f"> Generiert am {date.today().strftime('%d.%m.%Y')} aus der GitLab-API mit",
@@ -147,7 +151,7 @@ def render(logs: list[dict]) -> str:
         lines.append("| | _Noch keine Zeit gebucht._ | |")
 
     # Per issue: closed issues first, then ascending by issue ID within each
-    # group. Each issue is followed by a sub-row per day that has logged time.
+    # group. One row per issue with its summed hours.
     lines += ["", "## Pro Issue", "", "| Issue | Titel | Status | Stunden |", "|---|---|---|---:|"]
     for iid, data in sorted(
         per_issue.items(), key=lambda item: (item[1]["state"] != "closed", item[0])
@@ -155,13 +159,22 @@ def render(logs: list[dict]) -> str:
         state = "geschlossen" if data["state"] == "closed" else "offen"
         title = data["title"].replace("|", "\\|")
         lines.append(f"| [#{iid}]({data['web_url']}) | {title} | {state} | {hours(data['seconds'])} |")
-        for day in sorted(data["per_day"]):
-            span = day.strftime("%d.%m.%Y")
-            lines.append(f"| | {span} | | {hours(data['per_day'][day])} |")
     if no_issue_seconds:
         lines.append(f"| — | _ohne Issue_ | | {hours(no_issue_seconds)} |")
     if not per_issue and not no_issue_seconds:
         lines.append("| | _Noch keine Zeit gebucht._ | | |")
+
+    # Per day, chronological: only days with logged time, their total and the
+    # issue IDs touched that day.
+    lines += ["", "## Pro Tag", "", "| Tag | Issues | Stunden |", "|---|---|---:|"]
+    for day in sorted(per_day):
+        data = per_day[day]
+        iids = ", ".join(f"[#{iid}]({HOST}/{PROJECT}/-/issues/{iid})" for iid in sorted(data["iids"]))
+        if not iids:
+            iids = "_ohne Issue_"
+        lines.append(f"| {day.strftime('%d.%m.%Y')} | {iids} | {hours(data['seconds'])} |")
+    if not per_day:
+        lines.append("| | _Noch keine Zeit gebucht._ | |")
 
     lines.append("")
     return "\n".join(lines)
@@ -175,9 +188,8 @@ def main() -> None:
     token = os.environ.get("TIMETRACKING_TOKEN")
     if not token:
         sys.exit(
-            "TIMETRACKING_TOKEN is not set. Create a personal access token with the\n"
-            "read_api scope at "
-            f"{HOST}/-/user_settings/personal_access_tokens and export it."
+            "TIMETRACKING_TOKEN is not set. A personal access token with \n"
+            "read_api scope is needed"
         )
 
     page = render(fetch_timelogs(token))
@@ -186,7 +198,6 @@ def main() -> None:
         with open(args.out, "w", encoding="utf-8", newline="\n") as handle:
             handle.write(page)
         print(f"wrote {args.out}")
-        print(f"commit it in the wiki repo, then check {WIKI_PAGE}")
     else:
         print(page)
 
