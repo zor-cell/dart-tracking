@@ -157,11 +157,23 @@ def _draw_pass(trace: CalibrationTrace, index: int) -> np.ndarray:
         cv2.circle(canvas, (round(x), round(y)), _MARKER_RADIUS, _COLOUR_TRANSITION, 2)
 
     centre_point = (round(current.centre[0]), round(current.centre[1]))
-    cv2.drawMarker(canvas, centre_point, _COLOUR_CENTRE, cv2.MARKER_CROSS, 14, 2)
+    cv2.drawMarker(canvas, centre_point, _COLOUR_CENTRE, cv2.MARKER_TILTED_CROSS, 14, 2)
 
     if current.projected_centre is not None:
         refined_point = (round(current.projected_centre[0]), round(current.projected_centre[1]))
-        cv2.drawMarker(canvas, refined_point, _COLOUR_ELLIPSE, cv2.MARKER_DIAMOND, 14, 2)
+        cv2.drawMarker(canvas, refined_point, _COLOUR_ELLIPSE, cv2.MARKER_CROSS, 14, 2)
+
+        text_position = (refined_point[0] + 5, refined_point[1] - 5)
+        cv2.putText(
+            img=canvas,
+            text="proj",
+            org=text_position,
+            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+            fontScale=0.4,
+            color=_COLOUR_ELLIPSE,
+            thickness=1,
+            lineType=cv2.LINE_AA
+        )
 
     return canvas
 

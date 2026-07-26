@@ -281,13 +281,13 @@ def _select_board_components(
     Fitting cannot be trusted here: an ellipse fitted through everything is
     dragged by whatever coloured clutter happens to be in shot, because in a
     least-squares fit every point pulls and none can be ignored. So the board is
-    *hypothesised* instead � draw five component centroids, fit an ellipse
+    *hypothesised* instead draw five component centroids, fit an ellipse
     through them, and count how many of the remaining centroids that ellipse
     explains. Outliers never have to be identified up front; they simply fail to
     vote. Whatever backed the best hypothesis is the board.
 
     What makes this work where plain ellipse RANSAC does not is the strength of
-    the model being tested. "Points lie on this ellipse" is far too weak � the
+    the model being tested. "Points lie on this ellipse" is far too weak the
     triple ring offers nearly as many points as the double ring, so degenerate
     slivers grazing both outscore the truth. A candidate here has to explain a
     whole *board*: two concentric rings at the ratio the standard fixes, each
@@ -301,7 +301,7 @@ def _select_board_components(
     red_labels, red_found = _components(red)
     green_labels, green_found = _components(green)
 
-    # (centroid, colour, mask index, label) � enough to score a candidate and
+    # (centroid, colour, mask index, label) enough to score a candidate and
     # then rebuild the masks from whichever entries backed it.
     entries = [(centroid, 1, 0, label) for label, centroid, _ in red_found] + [
         (centroid, -1, 1, label) for label, centroid, _ in green_found
@@ -309,8 +309,6 @@ def _select_board_components(
     if len(entries) < 5:
         return None
 
-    # Seeded so the same photo always calibrates the same way; a detector whose
-    # answer wobbles between runs is not one you can debug.
     generator = np.random.default_rng(0)
     points = np.array([entry[0] for entry in entries], dtype=np.float32)
 
@@ -351,7 +349,7 @@ def _settle_hypothesis(
 
     The winner came out of five randomly drawn points, so it is only as good as
     that draw: close enough to out-vote every rival, but off by enough that
-    segments near the edge of the tolerance miss out. Those gaps matter later �
+    segments near the edge of the tolerance miss out. Those gaps matter later
     a missing double segment is a missing colour transition, and the wire
     matching insists on all twenty. Refitting on the double-ring voters and
     re-collecting recovers them.
@@ -424,12 +422,16 @@ def _board_votes(
                 sectors.add(int(angle / (2 * math.pi) * _ANGULAR_SECTORS) % _ANGULAR_SECTORS)
                 break
 
+    #voters have to be distributed across multiple sectors
     if len(sectors) < _MIN_ANGULAR_SECTORS:
         return []
 
     for members in bands.values():
+        #band has to be populated
         if len(members) < _MIN_BAND_MEMBERS:
             return []
+
+        #band alternates between red and green
         minority = min(members.count(1), members.count(-1))
         if minority < _MIN_MINORITY_SHARE * len(members):
             return []
@@ -660,17 +662,10 @@ def _match_sector_wires(
     colours = _walk_ring_colours(ellipse, centre, red_mask, green_mask)
     transitions = _find_colour_transitions(colours)
 
-    # Recorded before the count is checked: a run that finds the wrong number of
-    # wires is exactly the one worth looking at, and by then it has nothing else
-    # to show for itself.
     trace.current.ring_colours = colours
     trace.current.transitions = transitions
 
-    # Wires are matched by counting along the sequence, which only lines up if
-    # every one of them was found. A short or long sequence would silently
-    # shift the assignment and calibrate the board to the wrong rotation, so it
-    # is rejected instead: a failed calibration the user can retry beats scoring
-    # every future throw against a board that is one sector out.
+    # all sectors have to be found exactly
     if len(transitions) != SECTOR_COUNT:
         return None
 
