@@ -78,10 +78,9 @@
       <dl class="detection-debug">
         <div><dt>Status</dt><dd>{{ d.displayState }}</dd></div>
         <div><dt>Δ Pixel</dt><dd>{{ (d.diagnostics.changedFraction * 100).toFixed(3) }} %</dd></div>
-        <div><dt>Peak</dt><dd>{{ (d.peakFraction * 100).toFixed(3) }} %</dd></div>
-        <div><dt>Ambient</dt><dd>{{ (d.diagnostics.ambientFraction * 100).toFixed(3) }} %</dd></div>
-        <div><dt>Schwelle</dt><dd>{{ (d.diagnostics.motionEnterFraction * 100).toFixed(3) }} %</dd></div>
         <div><dt>Blöcke</dt><dd>{{ d.diagnostics.activeBlocks }}</dd></div>
+        <div><dt>Ø Blöcke</dt><dd>{{ d.diagnostics.ambientBlocks.toFixed(1) }}</dd></div>
+        <div><dt>Peak Blöcke</dt><dd>{{ d.peakBlocks.toFixed(0) }}</dd></div>
         <div><dt>Treffer</dt><dd>{{ d.captureCount }}</dd></div>
       </dl>
     }

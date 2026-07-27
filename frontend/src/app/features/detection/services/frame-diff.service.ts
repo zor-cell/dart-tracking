@@ -38,6 +38,12 @@ export interface DetectionDebug {
   readonly diagnostics: ThrowDetectorDiagnostics;
   readonly displayState: DisplayStatus; // detector state plus the transient 'sent'
   readonly peakFraction: number; // recent high-water mark, held then decayed
+  // Recent high-water mark of active blocks, held then decayed. The key
+  // diagnostic: a dart is a one-frame blip the throttled panel would otherwise
+  // miss — if a throw shows peakBlocks 0, the front-end signal was too weak
+  // (dart too faint / fell between samples); if ≥ 1 but nothing sent, it is the
+  // trigger logic, not the signal.
+  readonly peakBlocks: number;
   readonly captureCount: number;
 }
 
@@ -45,13 +51,12 @@ const INITIAL_DEBUG: DetectionDebug = {
   diagnostics: {
     state: 'idle',
     changedFraction: 0,
-    ambientFraction: 0,
     activeBlocks: 0,
-    motionEnterFraction: 0,
-    settleFraction: 0,
+    ambientBlocks: 0,
   },
   displayState: 'idle',
   peakFraction: 0,
+  peakBlocks: 0,
   captureCount: 0,
 };
 
@@ -94,6 +99,7 @@ export class FrameDiffService {
   // overlay with the video's cover geometry.
   private maskSource?: CanvasRenderingContext2D;
   private peakFraction = 0;
+  private peakBlocks = 0;
   private captureCount = 0;
   private lastDebugEmitAt = 0;
 
@@ -108,6 +114,7 @@ export class FrameDiffService {
 
     this.detector.reset();
     this.peakFraction = 0;
+    this.peakBlocks = 0;
     this.captureCount = 0;
     this.setDisplayStatus('idle');
     this.zone.runOutsideAngular(() => this.scheduleNextFrame());
@@ -203,6 +210,7 @@ export class FrameDiffService {
   private renderDebug(timestamp: number): void {
     const diagnostics = this.detector.getDiagnostics();
     this.peakFraction = Math.max(diagnostics.changedFraction, this.peakFraction * PEAK_DECAY);
+    this.peakBlocks = Math.max(diagnostics.activeBlocks, this.peakBlocks * PEAK_DECAY);
     this.paintMask();
 
     if (timestamp - this.lastDebugEmitAt < DEBUG_EMIT_INTERVAL_MS) {
@@ -213,6 +221,7 @@ export class FrameDiffService {
       diagnostics,
       displayState: this.displayStatus(),
       peakFraction: this.peakFraction,
+      peakBlocks: this.peakBlocks,
       captureCount: this.captureCount,
     });
   }

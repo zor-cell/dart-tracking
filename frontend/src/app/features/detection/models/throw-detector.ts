@@ -3,64 +3,58 @@ export type ThrowDetectorState = 'idle' | 'motion' | 'settling';
 /** Live numbers for the debug view, so a real throw can be watched and tuned. */
 export interface ThrowDetectorDiagnostics {
   readonly state: ThrowDetectorState;
-  readonly changedFraction: number; // 0..1 — pixels that changed this frame
-  readonly ambientFraction: number; // rolling baseline: wobble / lighting level
-  readonly activeBlocks: number; // coarse-grid cells with strong change
-  readonly motionEnterFraction: number; // live arm threshold (ambient + margin)
-  readonly settleFraction: number; // live settle threshold (ambient + margin)
+  readonly changedFraction: number; // 0..1 — pixels that changed this frame (informational)
+  readonly activeBlocks: number; // localized change clusters this frame
+  readonly ambientBlocks: number; // steady baseline (wobble/light), subtracted before arming
 }
 
-// Schwellenwerte — mit der Debug-Ansicht am echten Wurf zu justieren.
-//
-// Bewusst *recall-first*: einen echten Wurf zu verpassen ist schlimmer als ein
-// Fehlauslöser (der Server kann eine falsche Antwort noch abfangen). Deshalb
-// löst der Trigger im Zweifel lieber aus.
-//
-// Kernidee: nicht die *mittlere* Diff übers ganze Bild bewerten (ein Dart sind
-// nur ein paar Pixel und geht darin unter, während eine durchs Bild laufende
-// Person sie mühelos überschreitet), sondern *wie viele* Pixel sich deutlich
-// geändert haben. Die Pro-Pixel-Schwelle PIXEL_DELTA schluckt das Sensorrauschen
-// (2–4 Graustufen), sodass die Flächenschwelle sehr niedrig liegen darf.
-const PIXEL_DELTA = 20; // ab so viel Graustufen-Änderung zählt ein Pixel als geändert
+// Per-pixel difference counting as changed, in grey levels. Sensor noise sits
+// around 2-4, so this is far above it while still catching a dark dart against a
+// dark segment. After this threshold a quiet scene has ~0 changed pixels.
+const PIXEL_DELTA = 20;
 
-// --- Wackel-Robustheit (Stativ vibriert, Kamera driftet) --------------------
+// --- Recall-first arming ----------------------------------------------------
 //
-// Zwei Bausteine gegen ein wackelndes Stativ, ohne echte Würfe zu verlieren:
+// The one rule that matters: a thrown dart must *always* produce a sent frame. A
+// false send is cheap — the backend re-checks every frame and rejects a non-dart
+// — but a missed throw is unrecoverable. So the trigger errs heavily toward
+// firing.
 //
-// 1. *Ambient-Baseline.* Ein wackelndes Stativ verschiebt das ganze Bild um
-//    ~1 px, wodurch jede Board-Kante in der Consecutive-Diff aufleuchtet — die
-//    absolute Änderungsrate ist dann dauerhaft erhöht. Mit festen Schwellen
-//    würde der Detektor entweder dauernd fälschlich auslösen oder (schlimmer)
-//    nach echtem Wurf nie mehr *unter* die Settle-Schwelle fallen und den Wurf
-//    nie als abgeschlossen erkennen. Stattdessen wird ein gleitender Mittelwert
-//    der ruhigen Änderungsrate mitgeführt (das Wackel-/Lichtniveau) und alle
-//    Schwellen *relativ* dazu gesetzt. Ausgelöst wird auf den *Ausschlag über*
-//    dieses Niveau, ruhig ist das Bild wieder bei Rückkehr *auf* das Niveau — so
-//    funktioniert das Settling auch bei Dauer-Wackeln.
+// Key insight (confirmed in the field): a dart adds *very few* changed pixels,
+// concentrated in one spot (dark, thin, on a dark board). A person walking
+// through changes *many* pixels across the whole frame. The old trigger keyed on
+// the pixel *count* crossing ~0.15 % (~22 px) — tuned for motion, but a faint
+// dart falls *below* it and was silently dropped. Wrong way round.
 //
-// 2. *Konzentration.* Wackeln/Licht verteilt die Änderung übers ganze Board,
-//    ein einschlagender Pfeil konzentriert sie an einer Stelle. Über ein grobes
-//    Raster wird gezählt, in wie vielen Zellen sich stark etwas ändert; ein
-//    Ausschlag, der über zu viele Zellen streut, gilt als globale Störung
-//    (Wackel-Schub, Lichtwechsel, Person) und fließt in die Baseline statt
-//    auszulösen — nur ein *lokalisierter* Ausschlag ist ein Wurf-Kandidat.
+// So arming keys on *localized clusters*, not on the pixel fraction:
 //
-// 3. *Timeout.* Bleibt trotz allem das Settling aus (Wackeln nimmt mitten im
-//    Wurf zu), wird nach MAX_MOTION_FRAMES trotzdem ausgelöst. Recall geht vor:
-//    lieber ein zu früher Frame, den der Server verwirft, als ein verlorener.
-const BLOCK_SIZE = 10; // Kantenlänge einer Rasterzelle in Diff-Pixeln
-const BLOCK_MIN_CHANGED = 8; // ab so vielen geänderten Pixeln gilt eine Zelle als aktiv
-const MAX_THROW_BLOCKS = 48; // darüber ist der Ausschlag global (Wackeln), kein Wurf
-const AMBIENT_ALPHA = 0.05; // Anpassungsrate der Baseline (klein = träge)
+// 1. *Block grid.* The frame is split into cells; a cell is "active" when it
+//    holds at least BLOCK_MIN_CHANGED changed pixels — i.e. a concentrated
+//    cluster, not scattered noise. A dart lights one or two cells; a person or a
+//    whole-board wobble lights many.
+// 2. *Ambient block baseline.* A wobbling tripod shifts every edge and lights
+//    cells continuously; that steady level is tracked as a baseline and
+//    subtracted. Arming needs cells *above* the steady level — a *new* cluster.
+//    So the dart's spike still fires even while the board shimmers.
+// 3. *Arm on the smallest new cluster.* ARM_BLOCK_EXCESS cells over the baseline
+//    is enough — deliberately tiny, so a faint dart is caught. Anything larger
+//    than MAX_THROW_BLOCKS is a global disturbance (person, lighting, wobble
+//    surge): folded into the baseline instead of fired, so it does not flood.
+// 4. *Timeout.* If a fired throw never settles (wobble grows mid-throw), it is
+//    captured anyway after MAX_MOTION_FRAMES.
+const BLOCK_SIZE = 10; // cell edge in diff pixels → 16×9 grid at 160×90
+const BLOCK_MIN_CHANGED = 5; // changed pixels for a cell to count as a cluster
+const MAX_THROW_BLOCKS = 48; // above this the change is global, not a dart
+const ARM_BLOCK_EXCESS = 1; // cells over the baseline that arm a throw (small = sensitive)
+const SETTLE_BLOCK_MARGIN = 1; // back to within this of the baseline counts as still
+const AMBIENT_ALPHA = 0.05; // baseline adaptation rate (small = slow)
 
-const MOTION_ENTER_MARGIN = 0.0015; // Ausschlag über Baseline → „Bewegung"
-const SETTLE_MARGIN = 0.0005; // innerhalb davon über Baseline gilt als ruhig
 const SETTLE_FRAMES_REQUIRED = 3;
-// Bei ~16 fps (PROCESS_INTERVAL_MS) etwa 1,5 s: kommt bis dahin kein sauberes
-// Settling zustande, wird der Wurf trotzdem erfasst (Recall-Sicherheitsnetz).
+// At ~16 fps (PROCESS_INTERVAL_MS) roughly 1.5 s: if no clean settle happens by
+// then, capture anyway (recall safety net).
 const MAX_MOTION_FRAMES = 25;
-// Nach einem Treffer kurz pausieren, damit die zurückweichende Hand nicht sofort
-// erneut auslöst und das Ergebnis Zeit zum Anzeigen hat.
+// Pause briefly after a capture so the retreating hand does not re-trigger and
+// the result has time to show.
 const COOLDOWN_FRAMES = 5;
 
 /**
@@ -68,13 +62,12 @@ const COOLDOWN_FRAMES = 5;
  * Erwartet Graustufen-Frames gleicher Größe (heruntergerechnete ImageData.data).
  *
  * Ein feststeckender Pfeil ist in der *aufeinanderfolgenden* Differenz nur
- * während des Fluges/Einschlags sichtbar — sobald er ruht, sind zwei Frames
- * wieder gleich. Der Auslöser fasst also diese kurze Bewegung: idle -> motion
- * (Pfeil fliegt) -> settling (Pfeil steckt, Bild wieder ruhig) -> capture.
+ * während des Einschlags sichtbar — sobald er ruht, sind zwei Frames wieder
+ * gleich. Der Auslöser fasst also diesen kurzen Moment: idle -> motion (ein neuer
+ * lokalisierter Cluster erscheint) -> settling (Bild wieder ruhig) -> capture.
  *
- * Alle Schwellen sind relativ zu einer mitgeführten Wackel-/Licht-Baseline und
- * durch einen Konzentrations- und einen Timeout-Test gegen ein wackelndes
- * Stativ abgesichert (siehe Konstanten oben).
+ * Ausgelegt auf *Recall*: jeder Wurf muss einen Frame erzeugen; ein Fehlauslöser
+ * ist billig (der Server filtert), ein verpasster Wurf nicht. Siehe Konstanten.
  */
 export class ThrowDetector {
   private previousFrame: Uint8ClampedArray | null = null;
@@ -85,14 +78,15 @@ export class ThrowDetector {
   private changedFraction = 0;
   private activeBlocks = 0;
 
-  // Gleitendes Wackel-/Licht-Niveau; alle Schwellen liegen relativ dazu.
-  private ambient = 0;
+  // Steady localized-change level (wobble/light); arming is relative to it.
+  private ambientBlocks = 0;
   private ambientPrimed = false;
 
   private readonly columns: number;
   private readonly rows: number;
   private readonly blockCounts: Int32Array;
 
+  /** @param width @param height Abmessungen der Diff-Frames (z.B. 160×90). */
   constructor(
     private readonly width: number,
     private readonly height: number,
@@ -110,10 +104,8 @@ export class ThrowDetector {
     return {
       state: this.state,
       changedFraction: this.changedFraction,
-      ambientFraction: this.ambient,
       activeBlocks: this.activeBlocks,
-      motionEnterFraction: this.ambient + MOTION_ENTER_MARGIN,
-      settleFraction: this.ambient + SETTLE_MARGIN,
+      ambientBlocks: this.ambientBlocks,
     };
   }
 
@@ -138,7 +130,7 @@ export class ThrowDetector {
     // Erste echte Messung als Baseline setzen, damit ein anfängliches Wackeln
     // nicht sofort als Ausschlag zählt.
     if (!this.ambientPrimed) {
-      this.ambient = this.changedFraction;
+      this.ambientBlocks = this.activeBlocks;
       this.ambientPrimed = true;
     }
 
@@ -150,16 +142,13 @@ export class ThrowDetector {
       return false;
     }
 
-    const armThreshold = this.ambient + MOTION_ENTER_MARGIN;
-    const settleThreshold = this.ambient + SETTLE_MARGIN;
-
     switch (this.state) {
       case 'idle':
-        return this.stepIdle(armThreshold);
+        return this.stepIdle();
       case 'motion':
-        return this.stepMotion(settleThreshold);
+        return this.stepMotion();
       case 'settling':
-        return this.stepSettling(settleThreshold);
+        return this.stepSettling();
     }
   }
 
@@ -168,19 +157,18 @@ export class ThrowDetector {
     this.cooldownFrames = 0;
     this.changedFraction = 0;
     this.activeBlocks = 0;
-    this.ambient = 0;
+    this.ambientBlocks = 0;
     this.ambientPrimed = false;
     this.resetCycle();
   }
 
-  private stepIdle(armThreshold: number): boolean {
-    // Ein *lokalisierter* Ausschlag über die Baseline ist ein Wurf-Kandidat.
-    // Alles andere — ruhiges Bild oder ein über das ganze Board gestreuter
-    // Ausschlag (Wackel-Schub, Lichtwechsel) — fließt in die Baseline, statt
-    // auszulösen, sodass Dauer-Wackeln den Trigger nicht flutet.
-    const spike = this.changedFraction > armThreshold;
-    const localized = this.activeBlocks > 0 && this.activeBlocks <= MAX_THROW_BLOCKS;
-    if (spike && localized) {
+  private stepIdle(): boolean {
+    // A *new localized cluster* over the steady level is a throw candidate. A
+    // global disturbance (person, lighting, wobble surge — too many cells) or a
+    // quiet frame instead feeds the baseline, so continuous wobble never floods.
+    const excess = this.activeBlocks - this.ambientBlocks;
+    const localizedThrow = excess >= ARM_BLOCK_EXCESS && this.activeBlocks <= MAX_THROW_BLOCKS;
+    if (localizedThrow) {
       this.state = 'motion';
       this.motionFrames = 0;
       return false;
@@ -189,9 +177,9 @@ export class ThrowDetector {
     return false;
   }
 
-  private stepMotion(settleThreshold: number): boolean {
+  private stepMotion(): boolean {
     this.motionFrames++;
-    if (this.changedFraction < settleThreshold) {
+    if (this.isStill()) {
       this.state = 'settling';
       this.stableFrameCount = 1;
       return false;
@@ -200,9 +188,9 @@ export class ThrowDetector {
     return this.motionFrames >= MAX_MOTION_FRAMES ? this.capture() : false;
   }
 
-  private stepSettling(settleThreshold: number): boolean {
+  private stepSettling(): boolean {
     this.motionFrames++;
-    if (this.changedFraction < settleThreshold) {
+    if (this.isStill()) {
       this.stableFrameCount++;
       if (this.stableFrameCount >= SETTLE_FRAMES_REQUIRED) {
         return this.capture();
@@ -216,15 +204,20 @@ export class ThrowDetector {
     return this.motionFrames >= MAX_MOTION_FRAMES ? this.capture() : false;
   }
 
+  /** The localized change has returned to the steady (wobble/light) level. */
+  private isStill(): boolean {
+    return this.activeBlocks <= this.ambientBlocks + SETTLE_BLOCK_MARGIN;
+  }
+
   private capture(): boolean {
     this.cooldownFrames = COOLDOWN_FRAMES;
     this.resetCycle();
     return true;
   }
 
-  /** Baseline träge in Richtung der aktuellen Änderungsrate nachziehen. */
+  /** Baseline träge in Richtung der aktuellen Block-Zahl nachziehen. */
   private updateAmbient(): void {
-    this.ambient += AMBIENT_ALPHA * (this.changedFraction - this.ambient);
+    this.ambientBlocks += AMBIENT_ALPHA * (this.activeBlocks - this.ambientBlocks);
   }
 
   /** Zurück in den Ruhezustand, ohne Referenz, Baseline oder Cooldown zu berühren. */
