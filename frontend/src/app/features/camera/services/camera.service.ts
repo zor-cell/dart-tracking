@@ -11,6 +11,9 @@ export class CameraService {
 
   private stream: MediaStream | null = null;
 
+  /**
+   * Start a media stream from the browsers camera
+   */
   async start(): Promise<MediaStream> {
     this.status.set('starting');
     this.error.set(null);
@@ -34,10 +37,7 @@ export class CameraService {
   }
 
   /**
-   * Point a (freshly mounted) video element at the already-running stream. Used
-   * when returning to the game screen after navigating away: the stream outlives
-   * the component, so the new `<video>` just needs to be rewired to it rather
-   * than re-requesting camera access.
+   * Point a (freshly mounted) video element at the already-running stream.
    */
   attachTo(video: HTMLVideoElement): void {
     if (this.stream) {
@@ -45,6 +45,9 @@ export class CameraService {
     }
   }
 
+  /**
+   * Stop the running media stream
+   */
   stop(): void {
     this.stream?.getTracks().forEach((track) => track.stop());
     this.stream = null;

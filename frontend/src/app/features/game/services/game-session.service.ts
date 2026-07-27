@@ -31,7 +31,6 @@ export class GameSessionService {
   private readonly game = inject(GameService);
 
   readonly phase = signal<CameraPhase>('idle');
-  // Re-exposed for the view: the last camera-access error, if any.
   readonly cameraError = this.camera.error;
 
   // The current view's elements, set by the mounted game component. Undefined
@@ -49,7 +48,6 @@ export class GameSessionService {
   private pendingResumePhase: CameraPhase | null = null;
 
   constructor() {
-    // Calibration confirmed while on the calibrate step → start tracking.
     effect(() => {
       if (this.calibration.status() === 'success' && this.phase() === 'calibrating') {
         this.startTracking();
@@ -78,10 +76,9 @@ export class GameSessionService {
     this.captureCanvas = captureCanvas;
 
     if (this.phase() !== 'idle') {
-      // Returning mid-session (navigation): the stream and socket are still up,
-      // so just point this fresh view at the running stream and resume the loop.
       this.camera.attachTo(video);
-      void video.play().catch(() => {});
+      video.play().catch(() => {});
+
       if (this.phase() === 'tracking') {
         this.runDetectionLoop();
       }
@@ -167,7 +164,6 @@ export class GameSessionService {
 
   private runDetectionLoop(): void {
     if (this.video && this.diffCanvas && this.captureCanvas) {
-      // Stop first: a re-attach must not leave a second loop running.
       this.throwCapture.stopDetectionLoop();
       this.throwCapture.startDetectionLoop(this.video, this.diffCanvas, this.captureCanvas);
     }

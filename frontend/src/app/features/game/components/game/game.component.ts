@@ -53,8 +53,7 @@ export class GameComponent implements OnInit, OnDestroy {
   private readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('video');
   private readonly diffCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('diffCanvas');
   private readonly captureCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('captureCanvas');
-  private readonly detectionDebugCanvasRef =
-    viewChild<ElementRef<HTMLCanvasElement>>('detectionDebugCanvas');
+  private readonly detectionDebugCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('detectionDebugCanvas');
 
   protected readonly cameraPhase = this.session.phase;
   protected readonly cameraError = this.session.cameraError;
@@ -64,10 +63,13 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly detectionStatusLabel = this.throwCapture.statusLabel;
   protected readonly detectionFeedback = this.detection.feedbackLabel;
   protected readonly detectionDebug = this.throwCapture.debug;
+  protected readonly detectionEvents = this.detection.events;
 
-  // The frame-diff debug overlay is on only while tracking and switched on.
+  // The client debug view (change mask, numbers, event log, sent-frame preview)
+  // is on only while tracking and switched on — separate from the server-side
+  // detection-image dump (settings.debugDetection).
   protected readonly debugActive = computed(
-    () => this.settings.debugDetection() && this.cameraPhase() === 'tracking',
+    () => this.settings.debugClientDetection() && this.cameraPhase() === 'tracking',
   );
 
   protected readonly padRows = PAD_ROWS;
@@ -106,7 +108,7 @@ export class GameComponent implements OnInit, OnDestroy {
     // someone is watching.
     effect(() => {
       const canvas = this.detectionDebugCanvasRef()?.nativeElement ?? null;
-      this.throwCapture.setDebugCanvas(this.settings.debugDetection() ? canvas : null);
+      this.throwCapture.setDebugCanvas(this.settings.debugClientDetection() ? canvas : null);
     });
 
     // Hand the session this view's camera elements once they exist. They live

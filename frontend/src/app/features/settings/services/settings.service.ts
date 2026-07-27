@@ -16,6 +16,7 @@ export class SettingsService {
   readonly manualEntryEnabled = computed(() => this._settings().manualEntryEnabled);
   readonly debugCalibration = computed(() => this._settings().debugCalibration);
   readonly debugDetection = computed(() => this._settings().debugDetection);
+  readonly debugClientDetection = computed(() => this._settings().debugClientDetection);
 
   setManualEntryEnabled(enabled: boolean): void {
     this.patch({ manualEntryEnabled: enabled });
@@ -27,6 +28,10 @@ export class SettingsService {
 
   setDebugDetection(enabled: boolean): void {
     this.patch({ debugDetection: enabled });
+  }
+
+  setDebugClientDetection(enabled: boolean): void {
+    this.patch({ debugClientDetection: enabled });
   }
 
   private patch(changes: Partial<AppSettings>): void {

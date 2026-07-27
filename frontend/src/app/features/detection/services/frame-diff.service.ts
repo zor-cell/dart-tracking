@@ -1,5 +1,5 @@
 import { Injectable, inject, NgZone, signal } from '@angular/core';
-import { ThrowDetector } from '../models/throw-detector';
+import { ThrowDetector, ThrowDetectorDiagnostics } from '../models/throw-detector';
 import { captureFrameAsJpeg } from '../../camera/models/frame-capture';
 import { DetectionService } from './detection.service';
 import {DisplayStatus} from "../models/frame-diff-status";
@@ -28,22 +28,30 @@ const STATUS_LABELS: Record<DisplayStatus, string> = {
   sent: 'Frame gesendet',
 };
 
-/** Snapshot of the detector for the on-screen debug panel. */
+/**
+ * Snapshot for the on-screen debug panel. The detector's own numbers are kept
+ * whole (`diagnostics`) rather than copied field by field; this service only
+ * adds what it owns and the detector cannot know: the loop's high-water mark,
+ * the capture tally, and the display-only `'sent'` state.
+ */
 export interface DetectionDebug {
-  readonly state: DisplayStatus;
-  readonly changedFraction: number; // this frame
-  readonly peakFraction: number; // recent high-water mark
-  readonly motionEnterFraction: number;
-  readonly settleFraction: number;
+  readonly diagnostics: ThrowDetectorDiagnostics;
+  readonly displayState: DisplayStatus; // detector state plus the transient 'sent'
+  readonly peakFraction: number; // recent high-water mark, held then decayed
   readonly captureCount: number;
 }
 
 const INITIAL_DEBUG: DetectionDebug = {
-  state: 'idle',
-  changedFraction: 0,
+  diagnostics: {
+    state: 'idle',
+    changedFraction: 0,
+    ambientFraction: 0,
+    activeBlocks: 0,
+    motionEnterFraction: 0,
+    settleFraction: 0,
+  },
+  displayState: 'idle',
   peakFraction: 0,
-  motionEnterFraction: 0,
-  settleFraction: 0,
   captureCount: 0,
 };
 
@@ -69,7 +77,7 @@ export class FrameDiffService {
   readonly statusLabel = signal(STATUS_LABELS.idle);
   readonly debug = signal<DetectionDebug>(INITIAL_DEBUG);
 
-  private readonly detector = new ThrowDetector();
+  private readonly detector = new ThrowDetector(DIFF_WIDTH, DIFF_HEIGHT);
   private animationFrameId: number | null = null;
   private lastProcessedAt = 0;
   private sentDisplayTimeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -78,7 +86,6 @@ export class FrameDiffService {
   private diffContext?: CanvasRenderingContext2D;
   private captureCanvas?: HTMLCanvasElement;
 
-  // Debug-only state; all null/zero unless a debug canvas is attached.
   private debugCanvas: HTMLCanvasElement | null = null;
   private debugContext: CanvasRenderingContext2D | null = null;
   private mask?: Uint8ClampedArray;
@@ -203,11 +210,9 @@ export class FrameDiffService {
     }
     this.lastDebugEmitAt = timestamp;
     this.debug.set({
-      state: this.displayStatus(),
-      changedFraction: diagnostics.changedFraction,
+      diagnostics,
+      displayState: this.displayStatus(),
       peakFraction: this.peakFraction,
-      motionEnterFraction: diagnostics.motionEnterFraction,
-      settleFraction: diagnostics.settleFraction,
       captureCount: this.captureCount,
     });
   }

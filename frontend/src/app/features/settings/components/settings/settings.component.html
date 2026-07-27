@@ -22,10 +22,10 @@
 
   <div class="setting">
     <div class="setting__text">
-      <label class="setting__label" for="debug-calibration">Debug: Kalibrierung</label>
+      <label class="setting__label" for="debug-calibration">Debug: Kalibrierung (Server)</label>
       <p class="setting__hint" id="debug-calibration-hint">
         Lässt den Server bei jeder Kalibrierung die Zwischenschritte als Bilder
-        ablegen (siehe Debug-Skripte). Nur zum Testen — im Normalbetrieb aus.
+        ablegen. Nur zum Testen - im Normalbetrieb aus.
       </p>
     </div>
     <p-toggleswitch
@@ -38,10 +38,10 @@
 
   <div class="setting">
     <div class="setting__text">
-      <label class="setting__label" for="debug-detection">Debug: Erkennung</label>
+      <label class="setting__label" for="debug-detection">Debug: Erkennung (Server)</label>
       <p class="setting__hint" id="debug-detection-hint">
         Lässt den Server bei jedem Wurf die Zwischenschritte der Pfeil-Erkennung
-        als Bilder ablegen. Nur zum Testen — im Normalbetrieb aus.
+        als Bilder ablegen. Nur zum Testen - im Normalbetrieb aus.
       </p>
     </div>
     <p-toggleswitch
@@ -49,6 +49,22 @@
       ariaLabelledBy="debug-detection-hint"
       [ngModel]="settings.debugDetection()"
       (ngModelChange)="settings.setDebugDetection($event)"
+    />
+  </div>
+
+  <div class="setting">
+    <div class="setting__text">
+      <label class="setting__label" for="debug-client-detection">Debug: Client-Anzeige</label>
+      <p class="setting__hint" id="debug-client-detection-hint">
+        Zeigt in der Kamera-Ansicht live, was die client-seitige Wurf-Erkennung
+        gerade tut. Betrifft nur die Anzeige auf diesem Gerät, nichts am Server.
+      </p>
+    </div>
+    <p-toggleswitch
+      inputId="debug-client-detection"
+      ariaLabelledBy="debug-client-detection-hint"
+      [ngModel]="settings.debugClientDetection()"
+      (ngModelChange)="settings.setDebugClientDetection($event)"
     />
   </div>
 </section>

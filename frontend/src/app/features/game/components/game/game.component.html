@@ -10,12 +10,22 @@
         playsinline
       ></video>
       <canvas #diffCanvas width="160" height="90" class="game__hidden-canvas"></canvas>
-      <canvas #captureCanvas class="game__hidden-canvas"></canvas>
+      <!-- The captureCanvas holds the exact frame last sent to the server. It must
+           stay in the DOM for the capture to draw into it, so it is only styled as
+           a corner thumbnail (rather than conditionally rendered) — its content
+           updates only on a send, making it a clear "a frame just went out" pulse. -->
+      <canvas
+        #captureCanvas
+        [class.game__hidden-canvas]="!debugActive()"
+        [class.game__sent-preview]="debugActive()"
+        aria-hidden="true"
+      ></canvas>
+      @if (debugActive()) {
+        <span class="game__sent-preview-label" aria-hidden="true">zuletzt gesendet</span>
+      }
 
       @if (cameraPhase() !== 'idle') {
         <app-overlay [polylines]="calibrationOverlay()" [video]="video" />
-        <!-- One overlay per located dart of the round, each in its fixed colour
-             (dart 1/2/3), so the whole visit stays on the board. -->
         @for (dart of roundDarts(); track $index) {
           <app-overlay [polylines]="dart.polylines" [video]="video" [color]="dart.color" />
         }
@@ -42,11 +52,7 @@
           </div>
         }
         @case ('tracking') {
-          <!-- Prefer the last hit/failure when one is fresh; otherwise show the
-               live frame-diff status (Bereit / Bewegung erkannt / …). -->
           <span class="game__camera-badge">{{ detectionFeedback() ?? detectionStatusLabel() }}</span>
-          <!-- Recalibrating is a single tap: the board or camera getting
-               knocked is exactly when nobody wants a multi-step flow. -->
           <p-button
             class="game__recalibrate"
             label="Neu kalibrieren"
@@ -61,7 +67,7 @@
 
       <!-- The frame-diff change mask, painted over the dimmed video with the same
            object-fit: cover mapping as the board overlay, so a throw that fails to
-           trigger can be watched. Toggle via the "Debug: Erkennung" setting. -->
+           trigger can be watched. Toggle via the "Debug: Client-Anzeige" setting. -->
       @if (debugActive()) {
         <canvas #detectionDebugCanvas class="game__debug-mask" aria-hidden="true"></canvas>
       }
@@ -70,12 +76,36 @@
     <!-- Live detector numbers, kept out of the picture below it. -->
     @if (debugActive() && detectionDebug(); as d) {
       <dl class="detection-debug">
-        <div><dt>Status</dt><dd>{{ d.state }}</dd></div>
-        <div><dt>Δ Pixel</dt><dd>{{ (d.changedFraction * 100).toFixed(3) }} %</dd></div>
+        <div><dt>Status</dt><dd>{{ d.displayState }}</dd></div>
+        <div><dt>Δ Pixel</dt><dd>{{ (d.diagnostics.changedFraction * 100).toFixed(3) }} %</dd></div>
         <div><dt>Peak</dt><dd>{{ (d.peakFraction * 100).toFixed(3) }} %</dd></div>
-        <div><dt>Schwelle</dt><dd>{{ (d.motionEnterFraction * 100).toFixed(3) }} %</dd></div>
+        <div><dt>Ambient</dt><dd>{{ (d.diagnostics.ambientFraction * 100).toFixed(3) }} %</dd></div>
+        <div><dt>Schwelle</dt><dd>{{ (d.diagnostics.motionEnterFraction * 100).toFixed(3) }} %</dd></div>
+        <div><dt>Blöcke</dt><dd>{{ d.diagnostics.activeBlocks }}</dd></div>
         <div><dt>Treffer</dt><dd>{{ d.captureCount }}</dd></div>
       </dl>
+    }
+
+    <!-- The persistent trace the badge is too quick to show: each send and the
+         server's answer, newest first, with a wall-clock stamp. -->
+    @if (debugActive()) {
+      <ol class="detection-log" aria-label="Erkennungs-Ereignisse">
+        @for (event of detectionEvents(); track event.seq) {
+          <li class="detection-log__row detection-log__row--{{ event.kind }}">
+            <span class="detection-log__time">{{ event.time }}</span>
+            <span class="detection-log__kind">
+              @switch (event.kind) {
+                @case ('sent') { ▲ gesendet }
+                @case ('hit') { ✓ Treffer }
+                @case ('rejected') { ✕ verworfen }
+              }
+            </span>
+            <span class="detection-log__detail">{{ event.label }}</span>
+          </li>
+        } @empty {
+          <li class="detection-log__empty">Noch keine Ereignisse — wirf einen Pfeil.</li>
+        }
+      </ol>
     }
 
     @if (game.winner(); as winner) {

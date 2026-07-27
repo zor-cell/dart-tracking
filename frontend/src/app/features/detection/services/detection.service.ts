@@ -1,6 +1,7 @@
 import { effect, inject, Injectable, signal } from '@angular/core';
 import { SocketService } from '../../../core/socket/services/socket.service';
 import { SettingsService } from '../../settings/services/settings.service';
+import { GameService } from '../../game/services/game.service';
 import { DetectionFailureDto } from '../dto/detection-failure.dto';
 import { DetectionResultDto } from '../dto/detection-result.dto';
 import { GameStateDto } from '../../game/dto/game-state.dto';
@@ -8,10 +9,6 @@ import { GameStateDto } from '../../game/dto/game-state.dto';
 /** How long a hit/failure line stays in the badge before it clears. */
 const FEEDBACK_DURATION_MS = 2500;
 
-// Fixed stroke colour per dart within a round — dart 1 / 2 / 3 each keep their
-// own colour so all three throws stay readable side by side on the board. Chosen
-// distinct from the board's yellow outline and from each other (cyan / pink /
-// lime are still tellable apart for the common colour-vision deficiencies).
 const DART_COLORS = [
   'rgba(56, 189, 248, 0.95)', // dart 1 — cyan
   'rgba(244, 114, 182, 0.95)', // dart 2 — pink
@@ -32,6 +29,25 @@ export interface RoundDartOverlay {
 }
 
 /**
+ * A traceable step in the detect→send→answer cycle, for the client debug log.
+ * `sent` is a frame leaving for the server (a client trigger fired); `hit` and
+ * `rejected` are what came back. Made visible because the badge flashes past too
+ * fast to tell *when* a frame actually went out and what the server made of it.
+ */
+export type DetectionEventKind = 'sent' | 'hit' | 'rejected';
+
+export interface DetectionEvent {
+  readonly seq: number; // running index, so a repeated label is still distinct
+  readonly time: string; // wall-clock HH:MM:SS.d, tenth-second resolution
+  readonly kind: DetectionEventKind;
+  readonly label: string;
+}
+
+// How many recent events the debug log keeps. Enough to see a full visit's
+// worth of triggers and answers without the list running off the screen.
+const MAX_EVENTS = 12;
+
+/**
  * The client half of dart detection: sends the triggered throw frame and tracks
  * the `detection_result` that comes back over the shared socket. Board detection
  * is server-side; this only forwards the frame and surfaces the outcome.
@@ -46,6 +62,7 @@ export interface RoundDartOverlay {
 export class DetectionService {
   private readonly socket = inject(SocketService);
   private readonly settings = inject(SettingsService);
+  private readonly game = inject(GameService);
 
   /**
    * The darts located in the current round, in throw order, each tagged with the
@@ -62,26 +79,36 @@ export class DetectionService {
   /** Transient hit ("T20 · 60") or failure hint, shown briefly in the badge. */
   readonly feedbackLabel = signal<string | null>(null);
 
+  /**
+   * Recent detect→send→answer events, newest first — the persistent trace behind
+   * the fleeting badge, shown only in the client debug view.
+   */
+  readonly events = signal<readonly DetectionEvent[]>([]);
+  private eventSeq = 0;
+
   private feedbackTimeoutId: ReturnType<typeof setTimeout> | null = null;
-  // The turn count from the last game_state, to spot a round boundary.
+  // The turn count from the last reconciled state, to spot a round boundary.
   private lastTurnCount: number | null = null;
-  // The server auto-advances the visit on its final dart, so the new turn is
-  // already open by the time that dart's game_state arrives. Clearing then would
-  // wipe the completed visit the instant it is done. Instead the boundary only
-  // arms this flag; the darts stay on screen until the *next* visit's first dart
-  // is located, and the append clears them.
-  private visitEnded = false;
 
   constructor() {
+    // Located darts arrive over the socket, one `detection_result` per throw.
     effect(() => {
       const message = this.socket.lastMessage();
-      switch (message?.type) {
-        case 'detection_result':
-          this.handleDetectionResult(message);
-          break;
-        case 'game_state':
-          this.reconcileRound(message.state.turns);
-          break;
+      if (message?.type === 'detection_result') {
+        this.handleDetectionResult(message);
+      }
+    });
+
+    // Round boundaries are reconciled off the game state itself, not the socket:
+    // confirming a visit (the camera-mode "next player" tap) is an HTTP call that
+    // updates the state without a socket push, so watching the socket alone would
+    // miss it and leave the finished visit's outlines on the board. GameService
+    // mirrors both the socket pushes and the HTTP responses, so this catches every
+    // boundary.
+    effect(() => {
+      const turns = this.game.state()?.turns;
+      if (turns) {
+        this.reconcileRound(turns);
       }
     });
   }
@@ -91,32 +118,31 @@ export class DetectionService {
       if (message.overlay) {
         this.appendDart(message.overlay);
       }
-      this.showFeedback(formatHit(message.segment, message.points));
+      const label = formatHit(message.segment, message.points);
+      this.showFeedback(label);
+      this.logEvent('hit', label);
     } else {
-      this.showFeedback(hintFor(message.failure));
+      const label = hintFor(message.failure);
+      this.showFeedback(label);
+      this.logEvent('rejected', label);
     }
   }
 
   private appendDart(polylines: number[][][]): void {
-    // The first dart after a visit ended opens a fresh set, dropping the
-    // previous visit's outlines that lingered so the player could read them.
-    const startFresh = this.visitEnded;
-    this.visitEnded = false;
     this.roundDarts.update((darts) => {
-      const base = startFresh ? [] : darts;
       // Cap the colour lookup: an over-eager trigger can land more than three
       // detections in a visit, but there are only three dart colours.
-      const color = DART_COLORS[Math.min(base.length, DART_COLORS.length - 1)];
-      return [...base, { polylines, color }];
+      const color = DART_COLORS[Math.min(darts.length, DART_COLORS.length - 1)];
+      return [...darts, { polylines, color }];
     });
   }
 
   /**
    * Keep the drawn darts in step with the authoritative turn history:
-   * - a new turn (count up) means the visit auto-advanced on its final dart —
-   *   arm the deferred clear but leave the finished visit on screen;
-   * - a removed turn (count down) is an undo back into the previous visit —
-   *   start clean, the reopened visit's darts were never tracked here;
+   * - a turn boundary (count changed) retires the outlines at once — a confirmed
+   *   visit (count up) clears the moment the round is accepted, which is what the
+   *   board should show for the next thrower; an undo across the boundary (count
+   *   down) reopens a visit whose darts were never tracked here, so also clear;
    * - same turn, fewer darts is an in-visit undo — trim to the real count. Never
    *   grow here: appending is the detection result's job, which always arrives
    *   before its game_state (see core/socket.py).
@@ -124,11 +150,8 @@ export class DetectionService {
   private reconcileRound(turns: GameStateDto['turns']): void {
     const count = turns.length;
     if (this.lastTurnCount !== null) {
-      if (count > this.lastTurnCount) {
-        this.visitEnded = true;
-      } else if (count < this.lastTurnCount) {
+      if (count !== this.lastTurnCount) {
         this.roundDarts.set([]);
-        this.visitEnded = false;
       } else {
         const dartCount = turns.at(-1)?.darts.length ?? 0;
         this.roundDarts.update((darts) =>
@@ -142,7 +165,16 @@ export class DetectionService {
   /** Send a triggered throw frame; the result arrives asynchronously. */
   async submitFrame(frame: Blob): Promise<void> {
     this.clearFeedback();
+    // Log the send *before* awaiting: this is the exact moment a client trigger
+    // turned into a frame leaving the device, which is what the log is meant to
+    // pin down. The matching `hit`/`rejected` follows when the server answers.
+    this.logEvent('sent', `${(frame.size / 1024).toFixed(0)} kB`);
     await this.socket.sendFrame('detection_frame', frame, this.settings.debugDetection());
+  }
+
+  private logEvent(kind: DetectionEventKind, label: string): void {
+    const event: DetectionEvent = { seq: this.eventSeq++, time: nowStamp(), kind, label };
+    this.events.update((events) => [event, ...events].slice(0, MAX_EVENTS));
   }
 
   private showFeedback(label: string): void {
@@ -158,6 +190,14 @@ export class DetectionService {
     }
     this.feedbackLabel.set(null);
   }
+}
+
+/** Wall-clock stamp at tenth-second resolution, e.g. "14:03:21.7". */
+function nowStamp(): string {
+  const now = new Date();
+  const pad = (value: number) => value.toString().padStart(2, '0');
+  const tenth = Math.floor(now.getMilliseconds() / 100);
+  return `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${tenth}`;
 }
 
 function formatHit(segment: string | null, points: number | null): string {
