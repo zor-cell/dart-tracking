@@ -13,11 +13,17 @@ Pipeline:
 2. Difference the two, threshold, and clean up. Whatever is left is what the
    throw added, which is a far stronger signal than the dart's own appearance:
    a dart is dark, thin and lands on a board that is mostly dark and thin.
-3. Take the largest surviving blob as the dart and fit its principal axis.
-4. Pick the end nearer the board centre as the tip. Shaft and flight stick out
-   of the board plane and therefore project *away* from the centre, so the
-   inner end is the one actually touching the board — and it is the only part
-   of the dart the homography is valid for.
+3. Fuse the surviving fragments into one dart. A dark dart only shows in the
+   difference where it crosses light board, so it arrives as several fragments
+   strung along one line rather than a single blob. Anchoring on the flight (the
+   widest fragment) and keeping the line the most fragments agree on gathers them
+   back into one set of pixels.
+4. Fit the dart's principal axis and take the tip as the end opposite the
+   flight, the flight being the wider, feathered end. Orienting by the dart's own
+   shape rather than by "nearest the board centre" keeps a dart high on the board
+   — flight leaning back over the bull — from being scored off its flight. Only
+   the tip touches the board plane, which is the only part the homography is
+   valid for.
 5. Map the tip through the homography and read off the segment.
 
 Because differencing is against the previous frame rather than an empty board,

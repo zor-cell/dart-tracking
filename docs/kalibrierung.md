@@ -310,7 +310,7 @@ auf, wenn alle zwanzig gefunden wurden — deshalb:
 
 ```python
 if len(transitions) != SECTOR_COUNT:
-    return None   # CalibrationFailureDto.SECTOR_WIRES_UNCLEAR
+    return None   # CalibrationFailure.SECTOR_WIRES_UNCLEAR
 ```
 
 Eine zu kurze oder zu lange Sequenz würde die Zuordnung stillschweigend
@@ -367,8 +367,9 @@ Durchgängen, damit ein oszillierendes Bild nicht ewig dreht.
 ## 3. Fehlerbehandlung
 
 `detect_board` gibt bei Misserfolg die **Stufe** zurück, die aufgegeben hat
-(`CalibrationFailureDto`), nicht bloß `None` — damit der Client dem Nutzer sagen
-kann, was er ändern soll:
+(`CalibrationFailure`, ein `StrEnum` aus `entity/calibration_failure.py`), nicht
+bloß `None` — damit der Client dem Nutzer sagen kann, was er ändern soll. Das DTO
+`CalibrationResult` trägt diesen Wert im Feld `failure` an den Client:
 
 | Failure | Bedeutung |
 |---|---|
@@ -385,7 +386,7 @@ kann, was er ändern soll:
 Aufzeichnen kostet also nichts und muss nicht eingeschaltet werden. Bewusst
 *ohne* Zeichenlogik, damit OpenCV-Rendering aus dem Service herausbleibt.
 
-**`board_debug_images.py`** rendert den Trace als Bildfolge:
+**`calibration_debug.py`** rendert den Trace als Bildfolge:
 
 | Datei | Inhalt |
 |---|---|
@@ -400,14 +401,14 @@ Aufzeichnen kostet also nichts und muss nicht eingeschaltet werden. Bewusst
 Debug-Frage: kam eine schiefe Ellipse von schlechter Segmentierung oder von
 schlechter Filterung?
 
-**`scripts/check_calibration.py`** — läuft über den kompletten Testdaten-Ordner,
+**`scripts/calibration/test_calibration.py`** — läuft über den kompletten Testdaten-Ordner,
 spielt jedes Foto standardmäßig durch die Client-Kette (Downscale auf 1280 px,
 JPEG q85) und schreibt annotierte Kopien. Löscht vorher alte Overlays, damit
 keine Artefakte eines früheren Laufs stehenbleiben. Die Messwerte stammen aus
 `detector.trace`, nicht aus einer Neuberechnung — letzteres war schon einmal
 still aus dem Takt geraten und beschrieb die alte Pipeline.
 
-**`scripts/debug_images.py`** — dasselbe für ein einzelnes Foto, mit vollem
+**`scripts/calibration/debug_calibration.py`** — dasselbe für ein einzelnes Foto, mit vollem
 Bilder-Satz. Denselben Trace liefert auch der Kalibrierungs-WebSocket auf
 Anfrage, es lässt sich also live debuggen.
 
