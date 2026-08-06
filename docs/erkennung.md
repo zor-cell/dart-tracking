@@ -12,9 +12,9 @@ Literatur-Sammelstelle: [roadmap.md §6.2](roadmap.md#62-pfeil-lokalisierung--ve
 
 > **Stand:** Diese Pipeline ist neuer als die Kalibrierung und noch nicht auf
 > ihrem Endstand. Es gibt inzwischen eine Ground-Truth-Evaluation (§6): aktuell
-> **61.7 % korrektes Segment** über 60 Wurf-Paare, von einer 18.3 %-Baseline aus.
-> Der Restfehler ist überwiegend Spitzen-Präzision beim schwarzen Pfeil (§6, §7).
-> Das Dokument wächst mit.
+> **63.0 % korrektes Segment** über 135 Wurf-Paare (zwei Boards, neun Setups),
+> von einer 18.3 %-Baseline aus. Der Restfehler ist überwiegend Spitzen-Präzision
+> beim schwarzen Pfeil (§6, §7). Das Dokument wächst mit.
 
 ---
 
@@ -400,15 +400,18 @@ Front-End.
 
 ## 6. Stand der Messungen
 
-Testdaten: vier Kamera-Setups (`setup1`–`setup4`), je fünf Wurfserien mit
-Basisbild + drei Pfeilen = **60 Detektions-Paare**, verschiedene Winkel und
-Distanzen (0.63–0.90 px/mm), schwarze Pfeile. Jeder Ordner trägt eine
-`ground_truth.txt` mit dem tatsächlichen Segment je Pfeil (gegen die Videos
-korrigiert). Gemessen bei Client-Auflösung mit `run_all.py`.
+Testdaten: zwei Boards (`pz`, `tz`) über neun Kamera-Setups (`pz_setup1`–`4`,
+`tz_setup1`–`5`), je fünf Wurfserien mit Basisbild + drei Pfeilen = **135
+Detektions-Paare**, verschiedene Winkel und Distanzen (0.63–0.90 px/mm), schwarze
+Pfeile. Jeder Ordner trägt eine `ground_truth.txt` mit dem tatsächlichen Segment
+je Pfeil (gegen die Videos korrigiert). Gemessen bei Client-Auflösung mit
+`run_all.py`.
 
 ### Genauigkeits-Verlauf
 
-Jeder Schritt gegen dieselbe Ground Truth, damit die Verbesserung sichtbar ist:
+Jeder Entwicklungsschritt gegen **dasselbe** ursprüngliche 60-Paar-Set gemessen
+(vier Setups eines Boards), damit der Beitrag jeder Änderung isoliert sichtbar
+ist — ein A/B-Vergleich braucht eine feste Datenbasis:
 
 | Schritt | Korrektes Segment |
 |---|---|
@@ -417,15 +420,20 @@ Jeder Schritt gegen dieselbe Ground Truth, damit die Verbesserung sichtbar ist:
 | + Fragment-Fusion (§2.3) | 29 / 60 — **48.3 %** |
 | + Längen-Cap (§2.3) | **37 / 60 — 61.7 %** |
 
-Endstand über die Setups ausgewogen: **60 – 67 %** je Setup. Ein Blob wird
-praktisch immer gefunden (60/60 „lokalisiert") — die aussagekräftige Zahl ist das
-korrekte *Segment*, nicht „irgendwo ein Pfeil".
+Seither ist das Test-Set auf **135 Paare** über zwei Boards und neun Setups
+gewachsen; die fertige Pipeline erreicht darauf **85 / 135 — 63.0 %**, pro Board
+`pz` 62 % / `tz` 64 %, je Setup **53 – 80 %**. Ein Blob wird praktisch immer
+gefunden (134/135 „lokalisiert") — die aussagekräftige Zahl ist das korrekte
+*Segment*, nicht „irgendwo ein Pfeil".
 
 ### Was den Restfehler ausmacht
 
-Von 23 verbleibenden Mismatches sind nur noch **4 echte `MISS`** (Spitze außerhalb
-170 mm); der Rest sind **Nachbar-Sektor- oder Ring-Fehler** (z.B. `S8`→`S12`,
-`S20`→`T20`) — die Spitze sitzt wenige Millimeter daneben. Ursache ist durchweg
+Von 50 Mismatches sind **11 fälschlich als `MISS` gescort** (Spitze außerhalb
+170 mm), auffällig gehäuft in einem einzigen Setup (`tz_setup5`, 6 davon — ein
+systematischer Versatz an diesem flachen Winkel, der die Spitze über die
+Double-Kante schiebt, kein zufälliger Fehler); der Rest sind **Nachbar-Sektor-
+oder Ring-Fehler** (z.B. `S8`→`S12`, `S20`→`T20`) — die Spitze sitzt wenige
+Millimeter daneben. Ursache ist durchweg
 das **farb-gegatete, fragmentierte Signal** des schwarzen Pfeils: er difft nur
 über hellen Segmenten, über schwarzen ist er ≈ unsichtbar. Wo die Fusion nur ein
 einzelnes Rand-Fragment fasst und das echte innere Signal unverbunden bleibt,
