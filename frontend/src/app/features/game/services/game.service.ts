@@ -9,6 +9,7 @@ import { PlayerDto } from '../dto/player.dto';
 import { TurnDto } from '../dto/turn.dto';
 import {NotificationService} from "../../../core/notification/services/notification.service";
 import {GameConfigDto} from "../dto/game-config.dto";
+import {SettingsService} from "../../settings/services/settings.service";
 
 const STORAGE_KEY = 'dart-tracking.gameId';
 
@@ -23,6 +24,7 @@ const STORAGE_KEY = 'dart-tracking.gameId';
 export class GameService {
   private readonly http = inject(HttpClient);
   private readonly socket = inject(SocketService);
+  private readonly settings = inject(SettingsService);
   private readonly baseUrl = `${environment.httpApiUrl}/games`;
 
   private readonly _state = signal<GameStateDto | null>(null);
@@ -49,6 +51,7 @@ export class GameService {
       const message = this.socket.lastMessage();
       if (message?.type === 'game_state') {
         this.setState(message.state);
+        this.maybeAutoAdvance(message.state);
       }
     });
   }
@@ -69,15 +72,25 @@ export class GameService {
     }
     this.http.post<GameStateDto>(`${this.baseUrl}/${id}/darts`, { points }).subscribe((state) => {
       this.setState(state);
-      // This is the manual-entry path (the only caller is the keypad; camera
-      // darts are registered server-side and mirrored via `game_state`). The
-      // server no longer auto-advances, so manual entry advances itself once the
-      // visit is full or busted — camera mode instead gates the advance behind an
-      // explicit confirm tap, which is why this lives here and not on the server.
-      if (state.dartsRemaining === 0 && state.winnerId === null) {
-        this.nextPlayer();
-      }
+      this.maybeAutoAdvance(state);
     });
+  }
+
+  /**
+   * Advance to the next player once a visit is complete — but only when the
+   * confirm button is turned off. With it on (the default) the player ends the
+   * visit by tapping confirm instead, in both entry modes. The server no longer
+   * auto-advances, so this client decision applies uniformly to manual darts
+   * (HTTP response) and camera darts (`game_state` push).
+   */
+  private maybeAutoAdvance(state: GameStateDto): void {
+    if (
+      state.dartsRemaining === 0 &&
+      state.winnerId === null &&
+      !this.settings.confirmThrowEnabled()
+    ) {
+      this.nextPlayer();
+    }
   }
 
   /** Step back one action — a dart, or the switch to the current player. */

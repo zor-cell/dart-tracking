@@ -20,6 +20,22 @@
     />
   </div>
 
+    <div class="setting">
+        <div class="setting__text">
+            <label class="setting__label" for="confirm-throw">Manuell Würfe akzeptieren</label>
+            <p class="setting__hint" id="confirm-throw-hint">
+                Zeigt im Spiel neben den Würfen die Option diese zu bestätigen.
+                Wenn nicht aktiv, wird automatisch nach 3 Würfen weitergezählt.
+            </p>
+        </div>
+        <p-toggleswitch
+                inputId="confirm-throw"
+                ariaLabelledBy="confirm-throw-hint"
+                [ngModel]="settings.confirmThrowEnabled()"
+                (ngModelChange)="settings.setConfirmThrowEnabled($event)"
+        />
+    </div>
+
   <div class="setting">
     <div class="setting__text">
       <label class="setting__label" for="debug-calibration">Debug: Kalibrierung (Server)</label>

@@ -156,11 +156,8 @@
                 </li>
               }
             </ul>
-            <!-- Camera mode only: the server no longer auto-advances, so the
-                 player confirms the visit to move on — a temporary control for
-                 testing that keeps the camera from tracking into the next turn
-                 while darts are being pulled. Manual entry advances on its own. -->
-            @if (!settings.manualEntryEnabled()) {
+
+            @if (settings.confirmThrowEnabled()) {
               <p-button
                 class="turn__confirm"
                 icon="pi pi-check"
@@ -178,9 +175,6 @@
         }
 
         @if (settings.manualEntryEnabled()) {
-          <!-- Fallback score entry — a dartboard keypad. A number key scores
-               immediately with the sticky D/T multiplier; the bull/miss keys
-               take their face value. See settings for when this is hidden. -->
           <div class="scorepad" role="group" aria-label="Punkte-Eingabe">
             <button
               type="button"
