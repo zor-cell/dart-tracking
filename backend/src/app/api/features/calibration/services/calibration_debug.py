@@ -2,7 +2,7 @@
 
 Turns a `CalibrationTrace` into pictures, one per stage, so a bad fit can be
 traced back to the stage that actually caused it instead of just the final
-overlay being off. Used both by scripts/debug_images.py (a photo on disk) and,
+overlay being off. Used both by scripts/calibration/run_debug.py (a photo on disk) and,
 when a calibration attempt asks for it, by the calibration websocket endpoint
 (a frame sent live over the socket) — the trace looks the same either way.
 """

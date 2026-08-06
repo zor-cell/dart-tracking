@@ -82,7 +82,7 @@ async def _handle_calibration_frame(websocket: WebSocket, game_id: str, message:
     differenced against, and it already sits in the pixel grid the homography
     belongs to — and reply with the recognised board. On failure: reply naming
     the stage that gave up. A frame flagged `debug` also dumps its per-stage
-    images (see `scripts/debug_images.py`).
+    images.
     """
     frame = CalibrationFrameMessage.model_validate(message)
     image = _decode_jpeg(frame.image)
@@ -154,14 +154,14 @@ async def _handle_throw_frame(
 
 
 def _write_calibration_debug(game_id: str, outcome: Calibration | CalibrationFailure) -> None:
-    """Dump the just-finished board attempt's per-stage images (see scripts/calibration/debug_calibration.py)."""
+    """Dump the just-finished board attempt's per-stage images (see scripts/calibration/run_debug.py)."""
     out_dir = _CALIBRATION_DEBUG_ROOT / game_id / _timestamp()
     written = write_calibration_debug_images(board_detector.trace, outcome, out_dir)
     print(f"[calibration debug] {len(written)} image(s) in {out_dir}")
 
 
 def _write_detection_debug(game_id: str, outcome: Dart | DetectionFailure) -> None:
-    """Dump the just-finished throw's per-stage images (see scripts/detection/debug_detection.py)."""
+    """Dump the just-finished throw's per-stage images (see scripts/detection/run_debug.py)."""
     dart = outcome if isinstance(outcome, Dart) else None
     out_dir = _DETECTION_DEBUG_ROOT / game_id / _timestamp()
     written = write_detection_debug_images(dart_detector.trace, dart, out_dir)

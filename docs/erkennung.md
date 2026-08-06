@@ -269,7 +269,7 @@ ohne Zeichenlogik.
 | `04_components.jpg` | die Fragment-Fusion: verworfene Fragmente (grau), zusammengefügter Pfeil (grün), Flight-Anker (orange), gefittete Gerade (auf die Ausdehnung begrenzt). Gegen `02_difference.jpg` gehalten die Schlüsselansicht: wurden die verstreuten Fragmente korrekt auf eine Linie gefädelt, oder hat der Fit auf einem einzelnen hellen Fleck geankert? |
 | `05_result.jpg` | gefittete Achse + gescorte Spitze |
 
-**`scripts/detection/test_detection.py`** — läuft über Ordner von Wurfserien
+**`scripts/detection/run_all.py`** — läuft über Ordner von Wurfserien
 (`<serie>_base.jpg`, `<serie>_dart1.jpg`, …), rekursiv durch Unterordner (die
 Setups). Jedes aufeinanderfolgende Paar ist eine Detektion (`base → dart1`,
 `dart1 → dart2`, …) — genau wie live, wo jeder Wurf gegen den vorigen Frame
@@ -280,7 +280,7 @@ echte **Segment-Accuracy** und schreibt `_results/accuracy.md` mit einer
 Mismatch-Liste; `--truth-template` bootstrappt diese Dateien aus den aktuellen
 Detektionen.
 
-**`scripts/detection/debug_detection.py`** — dasselbe für ein einzelnes
+**`scripts/detection/run_debug.py`** — dasselbe für ein einzelnes
 Referenz→Frame-Paar, mit vollem Bilder-Satz (`01`–`05`), um einen einzelnen
 Fehlwurf Stufe für Stufe nachzuvollziehen.
 
@@ -404,7 +404,7 @@ Testdaten: vier Kamera-Setups (`setup1`–`setup4`), je fünf Wurfserien mit
 Basisbild + drei Pfeilen = **60 Detektions-Paare**, verschiedene Winkel und
 Distanzen (0.63–0.90 px/mm), schwarze Pfeile. Jeder Ordner trägt eine
 `ground_truth.txt` mit dem tatsächlichen Segment je Pfeil (gegen die Videos
-korrigiert). Gemessen bei Client-Auflösung mit `test_detection.py`.
+korrigiert). Gemessen bei Client-Auflösung mit `run_all.py`.
 
 ### Genauigkeits-Verlauf
 

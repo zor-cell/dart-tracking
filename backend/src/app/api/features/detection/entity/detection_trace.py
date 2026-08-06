@@ -2,7 +2,7 @@
 
 Same arrangement as `CalibrationTrace`: `detect_dart` only holds on to values it
 computes anyway, so recording is free and always on. Data only — rendering is
-`services/dart_debug_images.py`.
+`services/detection_debug.py`.
 """
 
 from dataclasses import dataclass

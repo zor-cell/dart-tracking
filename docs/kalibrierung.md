@@ -401,14 +401,14 @@ Aufzeichnen kostet also nichts und muss nicht eingeschaltet werden. Bewusst
 Debug-Frage: kam eine schiefe Ellipse von schlechter Segmentierung oder von
 schlechter Filterung?
 
-**`scripts/calibration/test_calibration.py`** — läuft über den kompletten Testdaten-Ordner,
+**`scripts/calibration/run_all.py`** — läuft über den kompletten Testdaten-Ordner,
 spielt jedes Foto standardmäßig durch die Client-Kette (Downscale auf 1280 px,
 JPEG q85) und schreibt annotierte Kopien. Löscht vorher alte Overlays, damit
 keine Artefakte eines früheren Laufs stehenbleiben. Die Messwerte stammen aus
 `detector.trace`, nicht aus einer Neuberechnung — letzteres war schon einmal
 still aus dem Takt geraten und beschrieb die alte Pipeline.
 
-**`scripts/calibration/debug_calibration.py`** — dasselbe für ein einzelnes Foto, mit vollem
+**`scripts/calibration/run_debug.py`** — dasselbe für ein einzelnes Foto, mit vollem
 Bilder-Satz. Denselben Trace liefert auch der Kalibrierungs-WebSocket auf
 Anfrage, es lässt sich also live debuggen.
 

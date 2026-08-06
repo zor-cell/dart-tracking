@@ -1,9 +1,9 @@
 """Render every stage of a `detect_dart` run as separate images.
 
-Same idea as `board_debug_images.py`: a wrong score is almost never wrong at
+Same idea as `calibration_debug.py`: a wrong score is almost never wrong at
 the last step, so the useful question is which stage lost the dart —
 registration, thresholding, or the axis fit. Used by
-scripts/debug_detection.py and, later, by the detection websocket path.
+scripts/detection/run_debug.py and, later, by the detection websocket path.
 """
 
 from pathlib import Path
