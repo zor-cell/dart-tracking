@@ -12,8 +12,8 @@ Only one image at a time, on purpose: a run already produces one file per
 stage, and per refinement pass on top of that, so pointing it at a whole
 folder would bury the run that actually needs looking at.
 
-    uv run python scripts/debug_images.py testdata/calibration/center-near.jpeg
-    uv run python scripts/debug_images.py path/to/photo.jpg --out debug
+    uv run python scripts/calibration/run_debug.py testdata/calibration/center-near.jpeg
+    uv run python scripts/calibration/run_debug.py path/to/photo.jpg --out debug
 """
 
 import argparse
@@ -28,13 +28,20 @@ from app.api.features.calibration.entity.calibration_failure import CalibrationF
 from app.api.features.calibration.services import board_detector as detector  # noqa: E402
 from app.api.features.calibration.services.calibration_debug import write_debug_images  # noqa: E402
 
-from scripts.common import load_image  # noqa: E402
+from scripts.common import debug_dir, load_image  # noqa: E402
+
+_TESTDATA = _BACKEND / "testdata" / "calibration"
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("image", type=Path, help="a single photo")
-    parser.add_argument("--out", type=Path, default=None, help="output folder (default: <image>_debug next to it)")
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="output folder (default: _results_debug/<setup>/<image> under the test tree)",
+    )
     parser.add_argument(
         "--raw",
         action="store_true",
@@ -47,7 +54,7 @@ def main() -> int:
         print(f"unreadable: {args.image}")
         return 1
 
-    out_dir = args.out or args.image.with_name(f"{args.image.stem}_debug")
+    out_dir = debug_dir(args.image, _TESTDATA, args.out)
 
     outcome = detector.detect_board(image)
     written = write_debug_images(detector.trace, outcome, out_dir)

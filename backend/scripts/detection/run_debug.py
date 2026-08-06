@@ -13,10 +13,10 @@ core/socket.py); this script just points it at two photos on disk.
 The reference is calibrated once; the frame is registered onto it, exactly as
 the live pipeline does. One pair at a time, on purpose: a run already produces
 one file per stage, so pointing it at a whole folder would bury the run that
-actually needs looking at (use test_detection.py for the batch view).
+actually needs looking at (use run_all.py for the batch view).
 
-    uv run python scripts/detection/debug_detection.py testdata/detection/throw0_base.JPG testdata/detection/throw0_dart1.JPG
-    uv run python scripts/detection/debug_detection.py REF.JPG FRAME.JPG --out debug
+    uv run python scripts/detection/run_debug.py testdata/detection/throw0_base.JPG testdata/detection/throw0_dart1.JPG
+    uv run python scripts/detection/run_debug.py REF.JPG FRAME.JPG --out debug
 """
 
 import argparse
@@ -37,7 +37,9 @@ from app.api.features.detection.entity.detection_failure import DetectionFailure
 from app.api.features.detection.services import dart_detector  # noqa: E402
 from app.api.features.detection.services.detection_debug import write_debug_images  # noqa: E402
 
-from scripts.common import load_image  # noqa: E402
+from scripts.common import debug_dir, load_image  # noqa: E402
+
+_TESTDATA = _BACKEND / "testdata" / "detection"
 
 
 def main() -> int:
@@ -47,7 +49,10 @@ def main() -> int:
     parser.add_argument("reference", type=Path, help="the board before the throw")
     parser.add_argument("frame", type=Path, help="the frame to locate the dart in")
     parser.add_argument(
-        "--out", type=Path, default=None, help="output folder (default: <frame>_debug next to it)"
+        "--out",
+        type=Path,
+        default=None,
+        help="output folder (default: _results_debug/<setup>/<frame> under the test tree)",
     )
     parser.add_argument(
         "--raw",
@@ -76,7 +81,7 @@ def main() -> int:
 
     outcome = dart_detector.detect_dart(reference, frame, calibration)
 
-    out_dir = args.out or args.frame.with_name(f"{args.frame.stem}_debug")
+    out_dir = debug_dir(args.frame, _TESTDATA, args.out)
     dart = None if isinstance(outcome, DetectionFailure) else outcome
     written = write_debug_images(dart_detector.trace, dart, out_dir)
 

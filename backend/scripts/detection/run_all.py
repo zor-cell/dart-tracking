@@ -32,9 +32,9 @@ prints a segment-accuracy summary and writes `_results/accuracy.md` listing ever
 mismatch. `--truth-template` bootstraps these files from the current detections so
 you only correct the wrong ones instead of typing every dart by hand.
 
-    uv run python scripts/detection/test_detection.py
-    uv run python scripts/detection/test_detection.py path/to/images --out results
-    uv run python scripts/detection/test_detection.py --truth-template
+    uv run python scripts/detection/run_all.py
+    uv run python scripts/detection/run_all.py path/to/images --out results
+    uv run python scripts/detection/run_all.py --truth-template
 
 For every pair it prints the located segment and writes an annotated copy with
 the dart's axis and tip drawn on, so the fit can be judged by eye. The reference
@@ -66,7 +66,11 @@ from scripts.common import (  # noqa: E402
     clear_results,
     collect_images,
     load_image,
+    location_of,
     mirrored_dir,
+    rate_table,
+    setup_of,
+    write_markdown,
 )
 
 OVERLAY_SUFFIX = "_detected.jpg"
@@ -269,21 +273,6 @@ def run_series(
     return results
 
 
-def _accuracy_table(results, key, header: str) -> list[str]:
-    """Render a `| <header> | correct | total | accuracy |` table over `results`,
-    grouped by `key(result)` and sorted by group name."""
-    groups: dict[str, list[Result]] = defaultdict(list)
-    for r in results:
-        groups[key(r)].append(r)
-
-    lines = [f"| {header} | correct | total | accuracy |", "|---|---|---|---|"]
-    for name in sorted(groups):
-        group = groups[name]
-        hits = sum(r.correct for r in group)
-        lines.append(f"| {name} | {hits} | {len(group)} | {100 * hits / len(group):.0f}% |")
-    return lines
-
-
 def write_report(results: list[Result], out_dir: Path) -> Path:
     """Write a Markdown accuracy report and return its path."""
     labelled = [r for r in results if r.expected is not None]
@@ -307,19 +296,13 @@ def write_report(results: list[Result], out_dir: Path) -> Path:
         "",
     ]
 
-    # Setup = the top-level folder of a series (e.g. `pz_setup1`); location = its
-    # prefix before the first `_` (e.g. `pz`), which is the physical dartboard, so
-    # each board's accuracy is visible across its setups.
-    def setup_of(r: Result) -> str:
-        return r.series.split("/")[0] if "/" in r.series else "."
-
-    def location_of(r: Result) -> str:
-        return setup_of(r).split("_")[0]
-
+    # Grouped by the series' relative key: location is the physical board
+    # (`pz` across its setups), setup is the individual capture folder
+    # (`pz_setup1`). Both derive from the folder name in scripts/report.py.
     lines += ["## Per location (board)", ""]
-    lines += _accuracy_table(labelled, location_of, "location")
+    lines += rate_table(labelled, lambda r: location_of(r.series), lambda r: r.correct, "location", "correct")
     lines += ["", "## Per setup", ""]
-    lines += _accuracy_table(labelled, setup_of, "setup")
+    lines += rate_table(labelled, lambda r: setup_of(r.series), lambda r: r.correct, "setup", "correct")
 
     lines += ["", f"## Mismatches ({len(mismatches)})", ""]
     if mismatches:
@@ -332,9 +315,7 @@ def write_report(results: list[Result], out_dir: Path) -> Path:
         lines.append("None — every labelled dart matched.")
     lines.append("")
 
-    report = out_dir / REPORT_NAME
-    report.write_text("\n".join(lines), encoding="utf-8")
-    return report
+    return write_markdown(out_dir, REPORT_NAME, lines)
 
 
 def write_truth_templates(results: list[Result]) -> list[Path]:
