@@ -53,6 +53,23 @@ export class OverlayComponent implements OnDestroy {
       this.resizeObserver.disconnect();
       this.resizeObserver.observe(this.canvasRef().nativeElement);
     });
+
+    // `video.videoWidth`/`videoHeight` drive the cover mapping but are not
+    // reactive: when the polylines arrive before the stream has reported its
+    // intrinsic size, the first draw finds 0x0, no-ops, and nothing re-runs it —
+    // so the outline stays blank until the next calibration happens to redraw it.
+    // Redraw when the video reports or changes its dimensions, so it appears as
+    // soon as it can be mapped.
+    effect((onCleanup) => {
+      const video = this.video();
+      const redraw = () => this.draw();
+      video.addEventListener('loadedmetadata', redraw);
+      video.addEventListener('resize', redraw);
+      onCleanup(() => {
+        video.removeEventListener('loadedmetadata', redraw);
+        video.removeEventListener('resize', redraw);
+      });
+    });
   }
 
   ngOnDestroy(): void {
