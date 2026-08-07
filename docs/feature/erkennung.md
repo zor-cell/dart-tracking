@@ -280,9 +280,19 @@ echte **Segment-Accuracy** und schreibt `_results/accuracy.md` mit einer
 Mismatch-Liste; `--truth-template` bootstrappt diese Dateien aus den aktuellen
 Detektionen.
 
-**`scripts/detection/run_debug.py`** — dasselbe für ein einzelnes
-Referenz→Frame-Paar, mit vollem Bilder-Satz (`01`–`05`), um einen einzelnen
-Fehlwurf Stufe für Stufe nachzuvollziehen.
+**`scripts/detection/run_debug.py`** — dasselbe für eine einzelne Wurfserie, mit
+vollem Bilder-Satz (`01`–`05`) je Pfeil, um einen Fehlwurf Stufe für Stufe
+nachzuvollziehen. Argument ist die Serie (`pz_setup1/throw1`, oder bloß `throw1`,
+wenn eindeutig); die drei Paare werden verkettet wie live, und jeder Pfeil bekommt
+seinen eigenen Unterordner:
+
+```
+_results_debug/pz_setup1/throw1/dart1/01_alignment.jpg …
+                               /dart2/…
+                               /dart3/…
+```
+
+Zwei Pfade als Argumente laufen weiterhin nur dieses eine Referenz→Frame-Paar.
 
 ---
 

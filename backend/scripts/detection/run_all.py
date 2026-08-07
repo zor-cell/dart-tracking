@@ -1,44 +1,27 @@
 """Run dart detection over folders of throw series and report what happened.
 
-Expects photos named `<series>_base.JPG`, `<series>_dart1.JPG`, ... — the board
-before the visit, then after each dart. Every consecutive pair is one detection:
-`base -> dart1`, `dart1 -> dart2`, `dart2 -> dart3`, which is exactly what the
-live pipeline does, since each throw is differenced against the previous frame
-rather than against an empty board.
+Expects `<series>_base.JPG`, `<series>_dart1.JPG`, ... - every consecutive pair is
+one detection (`base -> dart1`, `dart1 -> dart2`, ...), as live, where each throw
+is differenced against the previous frame and not against an empty board.
+Subfolders are walked recursively and series keyed by their relative path, so
+`setup1/throw1` and `setup2/throw1` stay separate; `_results` mirrors that
+structure and holds an annotated copy (axis + tip) per dart.
 
-Subfolders are walked recursively, and series are keyed by their path relative
-to the input root — so identically named throws in different capture setups
-(e.g. `setup1/throw1`, `setup2/throw1`) stay separate. The annotated `_results`
-folder mirrors that same subfolder structure.
-
-**Ground truth (optional).** Drop a `ground_truth.txt` into any folder to score
-accuracy, not just "a dart was found somewhere". One line per dart frame,
-`<frame stem> <segment>`, where the segment is the called-out label exactly as
-the detector reports it — `S5`, `T20`, `D16`, `BULL`, `25`, `MISS`:
-
-    # setup1/ground_truth.txt
-    throw1_dart1 S5
-    throw1_dart2 T20
-    throw1_dart3 D16
-    throw1_dart1 S17?    # unsure — scored against S17 anyway, flagged in the report
-
-A trailing `?` on a label marks one you weren't sure of when annotating. It is
-stripped before comparison, so the dart is still scored against the given value;
-the uncertainty only shows up in the console (`gt=S17?`) and the report so those
-rows can be taken with a grain of salt.
-
-Blank lines and `#` comments are ignored. When any truth file is present, the run
-prints a segment-accuracy summary and writes `_results/accuracy.md` listing every
-mismatch. `--truth-template` bootstraps these files from the current detections so
-you only correct the wrong ones instead of typing every dart by hand.
-
+Usage:
     uv run python scripts/detection/run_all.py
     uv run python scripts/detection/run_all.py path/to/images --out results
     uv run python scripts/detection/run_all.py --truth-template
 
-For every pair it prints the located segment and writes an annotated copy with
-the dart's axis and tip drawn on, so the fit can be judged by eye. The reference
-frame of each series is calibrated once; the rest are registered onto it.
+Ground truth (optional): a `ground_truth.txt` in a folder scores segment accuracy
+and writes `_results/accuracy.md` with every mismatch. One `<frame stem> <segment>`
+per line, labels exactly as the detector reports them; blank lines and `#` comments
+are ignored. A trailing `?` marks a label you were unsure of - still scored as
+given, only flagged. `--truth-template` bootstraps these files from the current
+detections.
+
+    throw1_dart1 S5
+    throw1_dart2 T20
+    throw1_dart3 D16?
 """
 
 import argparse
@@ -111,10 +94,8 @@ def frame_order(name: str) -> tuple[int, int]:
 def collect_series(root: Path, out_dir: Path) -> dict[str, list[tuple[str, Path]]]:
     """Group the photos under `root` (recursively) into throw series.
 
-    Keyed by the path relative to `root` so identically named throws in
-    different subfolders stay separate (`setup1/throw1` vs `setup2/throw1`); a
-    flat folder keeps its bare series name. Anything under `out_dir` is skipped,
-    since that is where this script writes its own annotated copies.
+    Keyed by the path relative to `root`, so identically named throws in
+    different subfolders stay separate. `out_dir` is skipped.
     """
     series: dict[str, list[tuple[str, Path]]] = defaultdict(list)
     for path in collect_images(root, out_dir):
@@ -131,12 +112,8 @@ def collect_series(root: Path, out_dir: Path) -> dict[str, list[tuple[str, Path]
 def load_ground_truth(folder: Path) -> dict[str, tuple[str, bool]]:
     """Read `<folder>/ground_truth.txt` into {frame stem: (expected label, uncertain)}.
 
-    Format is one `<frame stem> <label>` per line (e.g. `throw1_dart1 S5`); blank
-    lines and `#` comments are ignored. Labels are upper-cased so `t20` and `T20`
-    both work. A trailing `?` (e.g. `S17?`) marks a label I wasn't sure about when
-    annotating: the `?` is stripped so the label still scores normally against the
-    detection, and the uncertainty is only surfaced in the console/report so those
-    matches can be read with a grain of salt. Returns {} if the file is absent.
+    Labels are upper-cased so `t20` and `T20` both work; a trailing `?` is
+    stripped and returned as the uncertainty flag. Returns {} if the file is absent.
     """
     path = folder / GROUND_TRUTH_NAME
     if not path.is_file():
@@ -163,11 +140,10 @@ def expected_for(truth: dict[str, tuple[str, bool]], stem: str) -> tuple[str | N
 
 
 def annotate(dart) -> np.ndarray:
-    """Draw the located dart onto the frame it was found in.
+    """Draw the located dart onto the aligned frame it was found in.
 
-    The aligned copy, not the reference: the dart is only visible in the newer
-    frame, and drawing on the older one would show a marker floating over bare
-    board with nothing to check it against.
+    Not the reference: the dart is only visible in the newer frame, and drawing on
+    the older one would show a marker floating over bare board.
     """
     canvas = dart_detector.trace.aligned.copy()
     if dart_detector.trace.change_mask is not None:
@@ -203,10 +179,8 @@ def run_series(
 ) -> list[Result]:
     """Detect every consecutive pair in one series. Returns one Result per dart.
 
-    Annotated copies land under `out_dir` in the same subfolder the source frame
-    sat in relative to `root`, so the results tree mirrors the input tree. If the
-    series' folder has a `ground_truth.txt`, each Result carries the expected
-    label and the console line ends in `gt=<label> OK|MISMATCH`.
+    Annotated copies land under `out_dir`, mirroring the input tree. With a
+    `ground_truth.txt` present, each console line ends in `gt=<label> OK|MISMATCH`.
     """
     if len(frames) < 2:
         print(f"{name}: only {len(frames)} frame(s), nothing to compare")
@@ -296,9 +270,8 @@ def write_report(results: list[Result], out_dir: Path) -> Path:
         "",
     ]
 
-    # Grouped by the series' relative key: location is the physical board
-    # (`pz` across its setups), setup is the individual capture folder
-    # (`pz_setup1`). Both derive from the folder name in scripts/report.py.
+    # Location is the physical board (`pz` across its setups), setup the
+    # individual capture folder (`pz_setup1`); both derived from the series key.
     lines += ["## Per location (board)", ""]
     lines += rate_table(labelled, lambda r: location_of(r.series), lambda r: r.correct, "location", "correct")
     lines += ["", "## Per setup", ""]
@@ -321,9 +294,7 @@ def write_report(results: list[Result], out_dir: Path) -> Path:
 def write_truth_templates(results: list[Result]) -> list[Path]:
     """Write a `ground_truth.template.txt` per folder, seeded with detections.
 
-    A convenience so the user corrects the wrong labels instead of typing every
-    dart. Named `.template.txt` on purpose: it is not read back as truth until
-    renamed to `ground_truth.txt`.
+    Named `.template.txt` on purpose: not read back as truth until renamed.
     """
     by_folder: dict[Path, list[Result]] = defaultdict(list)
     for r in results:
@@ -367,7 +338,7 @@ def main() -> int:
         "--raw",
         action="store_true",
         help="use the photos at full size instead of replaying them through the "
-        "client's downscale and JPEG compression (for comparison only — the "
+        "client's downscale and JPEG compression (for comparison only - the "
         "default reflects what detection actually receives)",
     )
     args = parser.parse_args()

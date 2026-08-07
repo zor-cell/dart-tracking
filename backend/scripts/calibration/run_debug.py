@@ -1,19 +1,15 @@
 """Render every stage of board detection for one photo as separate images.
 
-`detect_board` fills a `CalibrationTrace` with the intermediate state it
-computes anyway (masks, fitted ellipse, ring colours, wire correspondences,
-per-pass centre refinement). `write_debug_images` turns that trace into
-pictures, one per stage, so a bad fit can be traced back to the stage that
-actually caused it instead of just the final overlay being off. The same
-function backs the `debug` flag on a live `calibration_frame` message (see
-core/socket.py) — this script just points it at a photo on disk instead.
+One picture per pipeline stage, plus one per refinement pass, so a bad fit can be
+traced to the stage that caused it instead of just the final overlay being off.
+One photo at a time, on purpose - a whole folder would bury the run that actually
+needs looking at.
 
-Only one image at a time, on purpose: a run already produces one file per
-stage, and per refinement pass on top of that, so pointing it at a whole
-folder would bury the run that actually needs looking at.
-
+Usage:
     uv run python scripts/calibration/run_debug.py testdata/calibration/center-near.jpeg
     uv run python scripts/calibration/run_debug.py path/to/photo.jpg --out debug
+
+Images land in `_results_debug/<setup>/<image>/` unless --out says otherwise.
 """
 
 import argparse
@@ -62,7 +58,7 @@ def main() -> int:
     if isinstance(outcome, CalibrationFailure):
         print(f"FAILED at: {outcome.value}")
     else:
-        print(f"OK — {len(detector.trace.passes)} refinement pass(es)")
+        print(f"OK - {len(detector.trace.passes)} refinement pass(es)")
 
     print(f"\n{len(written)} debug image(s) in {out_dir}")
     for path in written:

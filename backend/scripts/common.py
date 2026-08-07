@@ -1,13 +1,10 @@
 """Shared plumbing for the calibration and detection scripts.
 
-Both `run_all` scripts walk a folder of photos — nested in per-setup subfolders —
-replay each through the client's downscale + JPEG so the pipeline sees what it
-would receive live, and write annotated copies plus a Markdown report into a
-`_results` tree that mirrors the input. The `run_debug` scripts write their
-per-stage images into a separate `_results_debug` tree (kept apart so a batch
-run's `_results` wipe does not take the debug dumps with it). Only the pipeline
-each runs and what it reports differs; the folder walking, the client replay, and
-the report rendering are all here.
+The folder walking, the client replay (downscale + JPEG, so the pipeline sees what
+it would receive live) and the report rendering — everything the `run_all` and
+`run_debug` scripts have in common; only the pipeline they run differs. Batch runs
+write to `_results`, debug runs to a separate `_results_debug`, kept apart so a
+batch run's wipe does not take the debug dumps with it.
 """
 
 import shutil
@@ -60,8 +57,8 @@ def load_image(path: Path, raw: bool) -> np.ndarray | None:
 def collect_images(root: Path, out_dir: Path) -> list[Path]:
     """Every input photo under `root`, recursively, in sorted order.
 
-    Skips the output tree (`out_dir`) and any results/debug folders, so a run
-    never re-ingests its own annotated copies.
+    Skips `out_dir` and the results/debug folders, so a run never re-ingests its
+    own annotated copies.
     """
     images = []
     for path in sorted(root.rglob("*")):
@@ -85,14 +82,9 @@ def mirrored_dir(path: Path, root: Path, out_dir: Path) -> Path:
 def clear_results(out_dir: Path, root: Path) -> None:
     """Wipe the entire results tree before a run, then leave it recreated empty.
 
-    Clearing only files of one suffix left orphans behind: a renamed or deleted
-    throw kept its old overlay, an emptied subfolder lingered, and a report from
-    a wider previous run stayed put. Removing the whole tree is the only way the
-    folder is guaranteed to show *this* run and nothing else.
-
-    Guarded against a mis-pointed `--out`: if `out_dir` is the input root or an
-    ancestor of it, wiping it would take the source photos with it, so refuse.
-    The normal case — `root/_results` — is a child of `root` and always safe.
+    Whole tree, not files of one suffix: otherwise a renamed throw keeps its old
+    overlay and the folder no longer shows *this* run alone. Refuses if `out_dir`
+    is the input root or an ancestor of it, which would take the photos with it.
     """
     out_dir = out_dir.resolve()
     root = root.resolve()
@@ -109,14 +101,9 @@ def clear_results(out_dir: Path, root: Path) -> None:
 def debug_dir(input_path: Path, test_root: Path, out_override: Path | None) -> Path:
     """Where a `run_debug` run writes its per-stage images for `input_path`.
 
-    Under the test tree's `_results_debug`, mirroring the input's setup subfolder,
-    so a single-image debug run keeps its dumps out of the input tree and separate
-    from the batch `_results`: `pz_setup/center.jpg` becomes
-    `_results_debug/pz_setup/center`. Kept apart from `_results` on purpose — a
-    `run_all` wipes `_results`, so sharing it would delete debug dumps on the next
-    batch. An explicit `--out` wins; an input outside the test tree falls back to
-    a `_results_debug` beside it. Both output trees are excluded from folder walks,
-    so these dumps never feed back into a later run.
+    Mirrors the input's setup subfolder under `_results_debug`, so `pz_setup/center.jpg`
+    becomes `_results_debug/pz_setup/center`. An explicit `--out` wins; an input
+    outside the test tree falls back to a `_results_debug` beside it.
     """
     if out_override is not None:
         return out_override
@@ -132,9 +119,8 @@ def debug_dir(input_path: Path, test_root: Path, out_override: Path | None) -> P
 def setup_of(key: str) -> str:
     """The capture setup a series/image belongs to: its top-level folder.
 
-    Keys are paths relative to the test root — `pz_setup1/throw1` for detection,
-    or just `pz_setup/center-near.jpeg` for the flatter calibration layout — so
-    the first path component is the setup. A key with no folder is ".".
+    Keys are paths relative to the test root, so the first component is the setup.
+    A key with no folder is ".".
     """
     return key.split("/")[0] if "/" in key else "."
 
@@ -142,10 +128,9 @@ def setup_of(key: str) -> str:
 def location_of(key: str) -> str:
     """The physical board a series/image belongs to.
 
-    A setup folder is named `<board>_setup<n>`, board first, so the part before
-    the first underscore is the board itself — the same `pz` across `pz_setup1`
-    through `pz_setup4`. This is why the board has to lead the folder name:
-    `setup1_pz` would group by setup number instead of by board.
+    A setup folder is named `<board>_setup<n>` — board first, so the part before
+    the first underscore is the board (`pz` across `pz_setup1`..`pz_setup4`).
+    `setup1_pz` would group by setup number instead, hence the naming order.
     """
     return setup_of(key).split("_")[0]
 
@@ -159,8 +144,7 @@ def rate_table(
 ) -> list[str]:
     """A `| header | hit_label | total | rate |` table, grouped by `key`, sorted.
 
-    One row per group: how many of its items satisfy `hit`, out of the group's
-    size, as a percentage.
+    One row per group: how many of its items satisfy `hit`, as a percentage.
     """
     groups: dict[str, list[T]] = defaultdict(list)
     for item in items:

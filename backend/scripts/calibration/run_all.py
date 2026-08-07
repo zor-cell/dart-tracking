@@ -1,20 +1,14 @@
 """Run board detection over a folder of photos and report what happened.
 
-Development tool for tuning detection against real footage, without a browser
-or a dartboard in front of you.
+For tuning detection against real footage, without a browser or a dartboard in
+front of you. Prints how far the pipeline got per image and writes an annotated
+copy with the board drawn on, plus `_results/results.md`: detection rate per
+board, the stage failures gave up at, and the colour signal the HSV bounds get
+tuned against.
 
+Usage:
     uv run python scripts/calibration/run_all.py
     uv run python scripts/calibration/run_all.py path/to/images --out results
-
-For every image it prints how far the pipeline got, and writes an annotated
-copy with the detected board drawn on top so the fit can be judged by eye. It
-also writes `_results/results.md` — detection rate per board, the stage failures
-gave up at, and the colour signal — the calibration counterpart to detection's
-`accuracy.md`.
-
-`detect_board` already reports which stage failed. This adds the measurements
-behind that verdict — how much colour was found, how the ellipse came out, how
-many transitions were traced — which is what the HSV bounds get tuned against.
 """
 
 import argparse
@@ -69,10 +63,9 @@ class Result:
 def measure(image: np.ndarray) -> str:
     """Numbers behind the verdict, for tuning the thresholds against.
 
-    Read off the trace of the run that just happened rather than recomputed, so
-    these describe the masks and the ellipse detection actually used. Deriving
-    them separately would quietly drift out of step with the pipeline — and did,
-    once the component filters landed.
+    Read off the trace of the run that just happened, never recomputed: deriving
+    them separately drifts out of step with the pipeline — and did, once the
+    component filters landed.
     """
     height, width = image.shape[:2]
     trace = detector.trace
@@ -115,9 +108,7 @@ def measure(image: np.ndarray) -> str:
 def metrics() -> tuple[float | None, int | None, float | None]:
     """The report figures — colour ratio, wires found, colourless ring share.
 
-    Read off the trace of the run that just happened, for the same reason
-    `measure` is: recomputing them separately would quietly drift out of step
-    with the pipeline the report is supposed to describe.
+    Read off the trace, for the same reason `measure` is.
     """
     trace = detector.trace
     if trace.red_mask is None or trace.green_mask is None:
@@ -151,11 +142,9 @@ def annotate(image: np.ndarray, calibration) -> np.ndarray:
 def write_report(results: list[Result], out_dir: Path) -> Path:
     """Write a Markdown summary: detection rate per board, failures, signal.
 
-    There is no ground-truth camera pose to score the homography against, so
-    unlike detection this cannot report accuracy. What it can report is how often
-    the board was found at all, where it broke when it wasn't, and the colour
-    signal the HSV bounds are tuned against — a few numbers to stand next to
-    detection's `accuracy.md`.
+    No ground-truth camera pose exists to score the homography against, so unlike
+    detection this reports how often the board was found and where it broke, not
+    accuracy.
     """
     detected = [r for r in results if r.detected]
     lines = [
@@ -216,7 +205,7 @@ def main() -> int:
         "--raw",
         action="store_true",
         help="use the photos at full size instead of replaying them through the "
-        "client's downscale and JPEG compression (for comparison only — the "
+        "client's downscale and JPEG compression (for comparison only - the "
         "default reflects what detection actually receives)",
     )
     args = parser.parse_args()
