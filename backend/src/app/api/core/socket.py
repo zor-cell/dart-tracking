@@ -16,6 +16,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from pydantic import ValidationError
 
 from app.api.core.dto.connection_established import ConnectionEstablishedMessage
 from app.api.core.services.game_hub import hub
@@ -39,6 +40,7 @@ from app.api.features.detection.services.detection_debug import (
 from app.api.features.detection.services.detection_store import store as detection_store
 from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.dto.game_state_message import GameStateMessage
+from app.api.features.game.dto.register_dart_message import RegisterDartMessage
 from app.api.features.game.entity.dart import Dart as ScoredDart
 from app.api.features.game.entity.game import Game
 from app.api.features.game.services.game_store import store as game_store
@@ -67,14 +69,59 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str) -> None:
             raw = await websocket.receive_text()
             message = json.loads(raw)
 
-            if message.get("type") == "calibration_frame":
-                await _handle_calibration_frame(websocket, game_id, message)
-            elif message.get("type") == "detection_frame":
-                await _handle_throw_frame(websocket, game, game_id, message)
+            try:
+                await _dispatch(websocket, game, game_id, message)
+            except ValidationError as error:
+                # One malformed message must not drop a player mid-game.
+                print(f"[socket] ignored {message.get('type')!r}: {error}")
     except WebSocketDisconnect:
         pass
     finally:
         hub.leave(game_id, websocket)
+
+
+async def _dispatch(websocket: WebSocket, game: Game, game_id: str, message: dict) -> None:
+    """Route one client message to its feature.
+
+    Frames come from the camera device only; the game commands come from any
+    device in the room — the camera phone correcting a misread, a scoreboard
+    phone entering the visit by hand.
+    """
+    match message.get("type"):
+        case "calibration_frame":
+            await _handle_calibration_frame(websocket, game_id, message)
+        case "detection_frame":
+            await _handle_throw_frame(websocket, game, game_id, message)
+        case "register_dart" | "undo" | "next_player":
+            await _handle_game_command(game, message)
+
+
+async def _handle_game_command(game: Game, message: dict) -> None:
+    """Apply one command and push the result to the room.
+
+    A command that changes nothing is not broadcast — a fourth dart in a visit,
+    an undo with nothing left to take back, or the second `next_player` when two
+    devices ended the same visit at once. The revision is what says whether
+    anything happened, and a room full of devices should not be woken for a
+    state they already hold.
+    """
+    revision = game.revision
+
+    match message.get("type"):
+        case "register_dart":
+            game.register_dart(RegisterDartMessage.model_validate(message).to_entity())
+        case "undo":
+            game.undo()
+        case "next_player":
+            game.next_player()
+
+    if game.revision != revision:
+        await _publish_state(game)
+
+
+async def _publish_state(game: Game) -> None:
+    """Push the authoritative state to every device in the game's room."""
+    await hub.broadcast(game.id, GameStateMessage(state=GameStateDto.from_entity(game)))
 
 
 async def _handle_calibration_frame(websocket: WebSocket, game_id: str, message: dict) -> None:
@@ -154,7 +201,9 @@ async def _handle_throw_frame(
         detection_store.set(game_id, dart_detector.trace.aligned)
 
     await hub.send(websocket, DetectionResult.detected(outcome, calibration))
-    await hub.broadcast(game_id, GameStateMessage(state=GameStateDto.from_entity(game)))
+    # Pushed even when the game absorbed the dart (a trigger during a full
+    # visit): the camera trims its drawn outlines against this state.
+    await _publish_state(game)
 
 
 def _write_calibration_debug(game_id: str, outcome: Calibration | CalibrationFailure) -> None:

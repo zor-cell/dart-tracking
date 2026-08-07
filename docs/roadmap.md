@@ -102,31 +102,35 @@ Angelehnt an die Phasen in [zeitplan.md](zeitplan.md).
 ## 4. HTTP & WebSocket-Protokoll
 
 **Aufteilung:** Der **Spielstand liegt server-seitig** (Entscheidung, siehe §7).
-HTTP führt den Session-Lebenszyklus und liefert den Zustand; der WebSocket trägt
-die Echtzeit-Vision-Pipeline **und** pusht den aktualisierten Spielstand zurück.
+HTTP führt nur noch den Session-Lebenszyklus; alles, was ein Spiel *ändert*,
+läuft über den WebSocket — zusammen mit der Vision-Pipeline. Grund ist das
+geteilte Spiel: eine Änderung muss auf **einem** Weg jedes Gerät im Raum
+erreichen (siehe [multi-device.md](feature/multi-device.md)).
 
-**HTTP (REST) — Session & Zustand**
+**HTTP (REST) — Session-Lebenszyklus**
 
-| Methode & Pfad                     | Zweck                                            |
-|------------------------------------|--------------------------------------------------|
-| `POST /api/games`                  | Spiel anlegen (`mode`, `playerNames`) → Zustand  |
-| `GET  /api/games/{id}`             | aktuellen Zustand holen (Initial-Load & Refresh) |
-| `POST /api/games/{id}/darts`       | Dart-Score buchen (jetzt manuell; später via CV) |
-| `POST /api/games/{id}/next-player` | Runde beenden, nächster Spieler                  |
+| Methode & Pfad         | Zweck                                                        |
+|------------------------|--------------------------------------------------------------|
+| `POST /api/games`      | Spiel anlegen (`mode`, `playerNames`) → Zustand              |
+| `GET  /api/games/{id}` | Zustand holen (Initial-Load, Refresh, Prüfung eines Join-Links) |
 
-**WebSocket (`/api/ws/...`) — Vision-Pipeline & State-Push**
+**WebSocket (`/api/ws/games/{id}`) — Vision-Pipeline, Kommandos & State-Push**
 
-Ist-Zustand: `/api/ws/darts` echot nur die Byte-Anzahl. Soll — typisierte
-JSON-Nachrichten in beide Richtungen:
+Typisierte JSON-Nachrichten in beide Richtungen:
 
 | Richtung        | Typ                  | Nutzlast                                    |
 |-----------------|----------------------|---------------------------------------------|
 | Client → Server | `calibration_frame`  | JPEG-Standbild zur Board-Erkennung          |
 | Server → Client | `calibration_result` | Homographie-Matrix, Erfolg/Fehler           |
-| Client → Server | `throw_frame`        | JPEG-Standbild nach Trigger                 |
-| Server → Client | `dart_detected`      | Board-Koordinate, Segment, Punktwert        |
-| Server → Client | `game_state`         | autoritativer Spielstand nach dem Wurf      |
-| Server → Client | `overlay`            | visuelle Elemente (z.B. erkannte Position)  |
+| Client → Server | `detection_frame`    | JPEG-Standbild nach Trigger                 |
+| Server → Client | `detection_result`   | Board-Koordinate, Segment, Punktwert        |
+| Client → Server | `register_dart`      | Dart buchen (manuell oder als Korrektur)    |
+| Client → Server | `undo`               | letzte Aktion zurücknehmen                  |
+| Client → Server | `next_player`        | Runde beenden, nächster Spieler             |
+| Server → Client | `game_state`         | autoritativer Spielstand, an **alle** Geräte |
+
+Die Frame-Antworten gehen nur an ihren Absender (ihre Overlays liegen im
+Pixelraster genau dieser Kamera), `game_state` an den ganzen Raum.
 
 Kein kontinuierlicher Video-Stream: der Client sendet getriggerte Standbilder
 (Frame-Diff) plus Kalibrierungs-Frames, nicht laufendes Video — das hält die

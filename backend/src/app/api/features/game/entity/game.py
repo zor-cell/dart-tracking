@@ -160,7 +160,15 @@ class Game:
             )
 
     def next_player(self) -> None:
-        if self.winner is not None:
+        """Hand over to the next player, ending the current visit.
+
+        A visit nobody has thrown in cannot be ended, which is what makes this
+        safe to receive twice: every device in the room decides for itself
+        whether a finished visit should advance (see the client's confirm
+        setting), so two of them can ask at once — the second ask then finds the
+        fresh, empty turn and does nothing, rather than skipping a player.
+        """
+        if self.winner is not None or not self.current_turn.darts:
             return
         self.revision += 1
         self.current_player_index = (self.current_player_index + 1) % len(self.players)
