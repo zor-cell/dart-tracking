@@ -93,7 +93,6 @@ _TIP_SPAN_MM = 4.0
 # which is what orients the dart and so decides which end is the tip.
 _FLIGHT_SPAN_MM = 12.0
 
-# What the most recent call to `detect_dart` saw at each stage.
 trace = DetectionTrace()
 
 

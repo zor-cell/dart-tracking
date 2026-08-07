@@ -57,72 +57,56 @@ _RED_UPPER_2 = np.array([180, 255, 255])
 _GREEN_LOWER = np.array([40, 60, 40])
 _GREEN_UPPER = np.array([90, 255, 255])
 
+# Cleans the colour masks before components are read off them.
 _MORPH_KERNEL = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
 
-# A board that occupies less than this share of the frame is almost certainly a
-# misdetection (coloured clutter in the room rather than the board itself).
+# Smallest share of the frame that may be red or green before the image is
+# rejected as not showing a board at all.
 _MIN_COLOURED_PIXEL_RATIO = 0.00001
 
-# How finely the ring is walked when looking for colour transitions. Well below
-# the 18 degrees between sectors so each one is located precisely.
+# Angular steps per full turn when walking the ring for colour transitions. Well
+# below the 18 degrees between sectors, so each transition is placed precisely.
 _RING_WALK_STEPS = 720
 
-# Where along the ray from the board centre out to the ring to sample colour.
-# The triple and double rings sit from about 0.58 of the way out, and they
-# carry the same colour per sector, so a generous span catches both; samples
-# landing on the black/white singles simply return no colour and are ignored.
-# Perspective stretches this parametrisation, hence the margin at both ends.
+# Where colour is sampled along the ray from the board centre out to the ring,
+# as a fraction of that ray. Spans both the triple and the double ring; samples
+# landing on the black/white singles return no colour and are ignored.
 _SAMPLE_FRACTIONS = tuple(np.linspace(0.5, 0.98, 20))
 
-# Each pass re-samples the wire angles from a better estimate of the board
-# centre, and on synthetic test frames the residual shrinks by roughly a factor
-# of three per pass (17.5 -> 6.1 -> 2.1 -> 0.5 mm worst case). Iterating to a
-# still centre rather than a fixed count keeps that from being a magic number;
-# the cap is only there so a frame that oscillates instead of settling cannot
-# spin forever.
+# Wire angles are re-sampled from an improved centre estimate until the centre
+# stops moving. The pass cap only bounds a frame that oscillates instead of
+# settling.
 _CENTRE_CONVERGENCE_PX = 0.5
 _MAX_REFINEMENT_PASSES = 6
 
-# Where the centroid of a ring segment sits, as a fraction of the double ring's
-# outer radius. A segment's centroid is mid-ring, not on its outer edge.
+# Radius at which each ring's segment centroids sit, as a fraction of the double
+# ring's outer radius, and how far off it a centroid may sit and still count.
 _DOUBLE_BAND = (DOUBLE_INNER_RADIUS + DOUBLE_OUTER_RADIUS) / 2 / DOUBLE_OUTER_RADIUS
 _TRIPLE_BAND = (TRIPLE_INNER_RADIUS + TRIPLE_OUTER_RADIUS) / 2 / DOUBLE_OUTER_RADIUS
-
-# How far off its band a centroid may sit and still count. Generous, because the
-# ellipse centre is not the projected board centre, which spreads each band out
-# noticeably at steep viewing angles.
 _BAND_TOLERANCE = 0.10
 
-# Sampling the board hypothesis. 5 points define an ellipse; with roughly half
-# the components genuine, a few hundred draws make missing the right one
-# unlikely, and each draw costs only a fit and a pass over the centroids.
+# Board hypotheses drawn, each an ellipse fitted through 5 sampled centroids.
 _RANSAC_ITERATIONS = 800
 
-# Sanity bounds on a candidate. A board is not much bigger than the picture of
-# it, and it is not a sliver: without these, a degenerate ellipse sweeping half
-# the frame collects more votes than the real answer.
+# Sanity bounds on a candidate ellipse: how elongated it may be, and how much of
+# the frame it may span.
 _MAX_AXIS_RATIO = 4.0
 _MAX_FRAME_SHARE = 1.2
 
-# Structure a candidate has to exhibit before its votes count at all. Ring
-# segments run the whole way round, both rings are populated, and both
-# alternate red/green — that last one is what separates a board from the
-# surround it hangs in, whose branding arcs form a convincing but
-# single-coloured ring.
-_ANGULAR_SECTORS = 12
-_MIN_ANGULAR_SECTORS = 8
-_MIN_BAND_MEMBERS = 6
-_MIN_MINORITY_SHARE = 0.25
+# Structure a candidate must show before its votes count. The minority share is
+# what separates a board from the surround it hangs in, whose branding arcs form
+# a convincing but single-coloured ring.
+_ANGULAR_SECTORS = 12  # bins the ring is divided into to check it is populated
+_MIN_ANGULAR_SECTORS = 8  # how many of those bins must be occupied
+_MIN_BAND_MEMBERS = 6  # centroids needed per ring band
+_MIN_MINORITY_SHARE = 0.25  # smallest share the rarer of red/green may hold
 
-# A component whose centroid sits beyond this fraction of the current ellipse is
-# outside the double ring — branding printed on a surround, the numbers around
-# the board. Each removal shrinks the ellipse, which pushes whatever is left
-# further out, so repeating tightens onto the ring instead of oscillating.
+# Centroids beyond this fraction of the current ellipse are trimmed as lying
+# outside the double ring, repeated at most this many times.
 _OUTER_BAND_LIMIT = 0.99
 _MAX_BAND_PASSES = 4
 
-# Below this a blob is speckle rather than a segment. Also keeps single-pixel
-# noise from flooding the hypothesis sampling with useless candidates.
+# Smallest mask component treated as a ring segment rather than speckle.
 _MIN_COMPONENT_AREA = 20
 
 # What the most recent call to `detect_board` saw at each stage.
