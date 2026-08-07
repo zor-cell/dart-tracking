@@ -20,11 +20,11 @@ verworfene Ansätze): @docs/erkennung.md
 Siehe @docs/zeitplan.md — aktuell in Phase X, Fokus auf Y.
 
 ## Frontend-Konventionen
-Angular, siehe @docs/frontend-best-practices.md
-PrimeNG für Styling, die Dokumentation siehe @docs/primeng-documentation.md
+Angular, siehe @docs/guidelines/frontend-best-practices.md
+PrimeNG für Styling, die Dokumentation siehe @docs/guidelines/primeng-documentation.md
 
 ## Backend-Konventionen
-FastAPI, siehe @docs/backend-best-practices.md
+FastAPI, siehe @docs/guidelines/backend-best-practices.md
 
 ## Instruktionen
 Kommentare in Code sollen immer auf Englisch verfasst werden
@@ -32,8 +32,3 @@ Kommentare in Code sollen immer auf Englisch verfasst werden
 ## Commands
 - `npm run start` — Frontend starten
 - `uv run uvicorn app.main:app --app-dir src --reload` — Backend starten
-- `docker compose -f compose.yaml -f compose.dev.yaml up -d --build` — Stack lokal
-  in Docker. Frontend auf 10020, das Dev-Overlay exposed zusätzlich das Backend
-  auf 10021 (Swagger, curl). Ohne `-f`-Flags läuft die Produktions-Variante:
-  Backend nur containerintern über den Nginx-Proxy erreichbar — so deployt auch
-  die CI auf dem RPi.

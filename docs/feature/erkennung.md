@@ -8,7 +8,7 @@ Scoring.
 
 Referenz-Implementierung:
 `backend/src/app/api/features/detection/services/dart_detector.py`.
-Literatur-Sammelstelle: [roadmap.md §6.2](roadmap.md#62-pfeil-lokalisierung--verdeckung).
+Literatur-Sammelstelle: [roadmap.md §6.2](../roadmap.md#62-pfeil-lokalisierung--verdeckung).
 
 > **Stand:** Diese Pipeline ist neuer als die Kalibrierung und noch nicht auf
 > ihrem Endstand. Es gibt inzwischen eine Ground-Truth-Evaluation (§6): aktuell
