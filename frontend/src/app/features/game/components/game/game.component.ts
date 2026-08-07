@@ -20,16 +20,24 @@ import {SettingsService} from '../../../settings/services/settings.service';
 import {GameService} from '../../services/game.service';
 import {GameSessionService} from '../../services/game-session.service';
 
-/** Score keypad layout: four numbers per row, with the bull/miss values down
- * the side column (top two rows have no side key). */
-type PadRow = { readonly numbers: number[]; readonly side: number | null };
+/** A side-column key: a fixed field, so it carries its own multiplier and is
+ * unaffected by the D/T keys. */
+type FixedKey = { readonly label: string; readonly value: number; readonly multiplier: number };
+
+const MISS: FixedKey = { label: '0', value: 0, multiplier: 0 };
+const OUTER_BULL: FixedKey = { label: '25', value: 25, multiplier: 1 };
+const BULLSEYE: FixedKey = { label: '50', value: 25, multiplier: 2 };
+
+/** Score keypad layout: four numbers per row, with the bull/miss keys down the
+ * side column (top two rows have no side key). */
+type PadRow = { readonly numbers: number[]; readonly side: FixedKey | null };
 
 const PAD_ROWS: readonly PadRow[] = [
   { numbers: [1, 2, 3, 4], side: null },
   { numbers: [5, 6, 7, 8], side: null },
-  { numbers: [9, 10, 11, 12], side: 0 },
-  { numbers: [13, 14, 15, 16], side: 25 },
-  { numbers: [17, 18, 19, 20], side: 50 },
+  { numbers: [9, 10, 11, 12], side: MISS },
+  { numbers: [13, 14, 15, 16], side: OUTER_BULL },
+  { numbers: [17, 18, 19, 20], side: BULLSEYE },
 ];
 
 @Component({
@@ -88,7 +96,12 @@ export class GameComponent implements OnInit, OnDestroy {
     for (let index = turns.length - 2; index >= 0; index--) {
       const turn = turns[index];
       if (turn.darts.length > 0) {
-        return { playerId: turn.playerId, darts: turn.darts, busted: turn.busted };
+        return {
+          playerId: turn.playerId,
+          darts: turn.darts,
+          busted: turn.busted,
+          spoken: turn.darts.map((dart) => dart.label).join(', '),
+        };
       }
     }
     return null;
@@ -138,16 +151,16 @@ export class GameComponent implements OnInit, OnDestroy {
     return this.session.calibrate();
   }
 
-  /** A 1–20 key: scored with the active multiplier, which then falls back to
+  /** A 1–20 key: booked with the active multiplier, which then falls back to
    * single — the multiplier applies to one dart, not to the rest of the visit. */
   protected enterNumber(value: number): void {
-    this.game.registerDart(value * this.multiplier());
+    this.game.registerDart(value, this.multiplier());
     this.multiplier.set(1);
   }
 
-  /** A bull/miss key: its face value, unaffected by the D/T multiplier. */
-  protected enterFixed(value: number): void {
-    this.game.registerDart(value);
+  /** A bull/miss key: its own fixed field, unaffected by the D/T multiplier. */
+  protected enterFixed(key: FixedKey): void {
+    this.game.registerDart(key.value, key.multiplier);
     this.multiplier.set(1);
   }
 

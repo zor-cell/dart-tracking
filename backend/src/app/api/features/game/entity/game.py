@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 
 from app.api.features.game.entity.checkout import checkout_route
 from app.api.features.game.entity.checkout_mode import CheckoutMode
+from app.api.features.game.entity.dart import Dart
 from app.api.features.game.entity.game_mode import GameMode
 from app.api.features.game.entity.player import Player
 from app.api.features.game.entity.turn import Turn
@@ -70,7 +71,7 @@ class Game:
         """Points left for a player: the starting score minus every dart of that
         player's turns, skipping busted ones."""
         scored = sum(
-            sum(turn.darts)
+            turn.points
             for turn in self.turns
             if turn.player_id == player_id and not turn.busted
         )
@@ -85,7 +86,7 @@ class Game:
             None,
         )
 
-    def register_dart(self, points: int) -> None:
+    def register_dart(self, dart: Dart) -> None:
         """Apply one dart to the current player's open turn. Overshooting busts
         the whole turn; the double-out rule is not modelled yet.
 
@@ -99,7 +100,7 @@ class Game:
         if self.winner is not None or self.darts_remaining <= 0:
             return
         turn = self.current_turn
-        turn.darts.append(points)
+        turn.darts.append(dart)
         if self.remaining(turn.player_id) < 0:
             turn.busted = True
 

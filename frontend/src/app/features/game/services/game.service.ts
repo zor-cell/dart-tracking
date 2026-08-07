@@ -65,15 +65,19 @@ export class GameService {
       }));
   }
 
-  registerDart(points: number): void {
+  /** Book one dart as the field it landed in — the server derives its points and
+   * the called-out label from that. */
+  registerDart(value: number, multiplier: number): void {
     const id = this._state()?.id;
     if (!id) {
       return;
     }
-    this.http.post<GameStateDto>(`${this.baseUrl}/${id}/darts`, { points }).subscribe((state) => {
-      this.setState(state);
-      this.maybeAutoAdvance(state);
-    });
+    this.http
+      .post<GameStateDto>(`${this.baseUrl}/${id}/darts`, { value, multiplier })
+      .subscribe((state) => {
+        this.setState(state);
+        this.maybeAutoAdvance(state);
+      });
   }
 
   /**

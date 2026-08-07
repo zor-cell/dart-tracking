@@ -125,10 +125,10 @@
               <span
                 class="scoreboard__last"
                 [class.scoreboard__last--busted]="last.busted"
-                [attr.aria-label]="'Letzte Runde: ' + last.darts.join(', ') + (last.busted ? ' (überworfen)' : '')"
+                [attr.aria-label]="'Letzte Runde: ' + last.spoken + (last.busted ? ' (überworfen)' : '')"
               >
                 @for (dart of last.darts; track $index) {
-                  <span class="scoreboard__dart">{{ dart }}</span>
+                  <span class="scoreboard__dart">{{ dart.label }}</span>
                 }
               </span>
             }
@@ -144,7 +144,7 @@
           <div class="turn__row">
             <ul class="turn__darts" aria-label="Darts dieser Runde">
               @for (dart of turn.darts; track $index) {
-                <li class="turn__dart" [class.turn__dart--busted]="turn.busted">{{ dart }}</li>
+                <li class="turn__dart" [class.turn__dart--busted]="turn.busted">{{ dart.label }}</li>
               }
               @for (slot of checkoutSlots(); track $index) {
                 <li
@@ -196,15 +196,15 @@
                   {{ multiplierPrefix() }}{{ n }}
                 </button>
               }
-              @if (row.side !== null) {
+              @if (row.side; as side) {
                 <button
                   type="button"
                   class="scorepad__key scorepad__key--fixed"
-                  [class.scorepad__key--bull]="row.side !== 0"
+                  [class.scorepad__key--bull]="side.value !== 0"
                   [disabled]="state.dartsRemaining === 0"
-                  (click)="enterFixed(row.side)"
+                  (click)="enterFixed(side)"
                 >
-                  {{ row.side }}
+                  {{ side.label }}
                 </button>
               }
             }

@@ -23,6 +23,6 @@ class PlayerDto(CamelModel):
             id=player.id,
             name=player.name,
             remaining=remaining,
-            last_turn=sum(last_turn.darts) if last_turn is not None else None,
+            last_turn=last_turn.points if last_turn is not None else None,
             last_turn_busted=last_turn.busted if last_turn is not None else False,
         )
