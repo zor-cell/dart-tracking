@@ -1,8 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { environment } from '../../../../environments/environment';
-import { IncomingMessage } from '../dto/incoming-message';
-import { OutgoingFrameType } from '../dto/outgoing-frame-type';
-import { OutgoingMessage } from '../dto/outgoing-message';
+import { ServerMessage } from '../dto/server-message';
+import { ClientFrame, ClientMessage } from '../dto/client-message';
 
 export type SocketConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
@@ -15,7 +14,7 @@ export type SocketConnectionStatus = 'disconnected' | 'connecting' | 'connected'
 @Injectable({ providedIn: 'root' })
 export class SocketService {
   readonly connectionStatus = signal<SocketConnectionStatus>('disconnected');
-  readonly lastMessage = signal<IncomingMessage | null>(null);
+  readonly lastMessage = signal<ServerMessage | null>(null);
 
   private socket: WebSocket | null = null;
   private gameId: string | null = null;
@@ -23,7 +22,7 @@ export class SocketService {
   // Commands issued before the socket finished opening, flushed on connect.
   // Only commands are held back: a queued frame would describe a board the game
   // has long moved past, so those are dropped instead (see `sendFrame`).
-  private pending: OutgoingMessage[] = [];
+  private pending: ClientMessage[] = [];
 
   connect(gameId: string): void {
     if (this.socket && this.gameId === gameId) {
@@ -47,7 +46,7 @@ export class SocketService {
       this.socket = null;
     });
     this.socket.addEventListener('message', (event) => {
-      this.lastMessage.set(JSON.parse(event.data) as IncomingMessage);
+      this.lastMessage.set(JSON.parse(event.data) as ServerMessage);
     });
   }
 
@@ -68,7 +67,7 @@ export class SocketService {
    * quick tap can easily beat the handshake, and a silently swallowed dart is
    * indistinguishable from a dead button.
    */
-  send(message: OutgoingMessage): void {
+  send(message: ClientMessage): void {
     if (this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify(message));
     } else if (this.socket?.readyState === WebSocket.CONNECTING) {
@@ -78,14 +77,19 @@ export class SocketService {
     }
   }
 
-  async sendFrame(type: OutgoingFrameType, frame: Blob, debug?: boolean): Promise<void> {
+  /**
+   * Send a camera frame. Unlike `send`, an unsendable frame is dropped rather
+   * than queued — by the time the socket opened it would describe a board the
+   * game has already moved past.
+   */
+  async sendFrame(type: ClientFrame['type'], frame: Blob, debug?: boolean): Promise<void> {
     if (this.socket?.readyState !== WebSocket.OPEN) {
-      console.warn('DartSocketService: Frame verworfen, WebSocket nicht verbunden');
+      console.warn('SocketService: Frame verworfen, WebSocket nicht verbunden');
       return;
     }
     const image = await blobToBase64(frame);
-    const payload = debug === undefined ? { type, image } : { type, image, debug };
-    this.socket.send(JSON.stringify(payload));
+    const message: ClientFrame = debug === undefined ? { type, image } : { type, image, debug };
+    this.socket.send(JSON.stringify(message));
   }
 
   private flush(): void {

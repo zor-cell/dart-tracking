@@ -27,7 +27,10 @@ PrimeNG für Styling, die Dokumentation siehe @docs/guidelines/primeng-documenta
 FastAPI, siehe @docs/guidelines/backend-best-practices.md
 
 ## Instruktionen
-Kommentare in Code sollen immer auf Englisch verfasst werden
+- Kommentare in Code sollen immer auf Englisch verfasst werden
+- Vermeide unnötige Kommentare, damit sind vor allem Kommentare gemeint, die sich speziell auf ein Prompt beziehen,
+wenn dieser Kontext verloren ist, sind sie unlesbar
+- Halte Kommentare kurz und prägnant
 
 ## Commands
 - `npm run start` — Frontend starten

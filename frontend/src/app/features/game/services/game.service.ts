@@ -7,7 +7,6 @@ import { SocketService } from '../../../core/socket/services/socket.service';
 import { GameStateDto } from '../dto/game-state.dto';
 import { PlayerDto } from '../dto/player.dto';
 import { TurnDto } from '../dto/turn.dto';
-import {NotificationService} from "../../../core/notification/services/notification.service";
 import {GameConfigDto} from "../dto/game-config.dto";
 import {SettingsService} from "../../settings/services/settings.service";
 
@@ -50,7 +49,8 @@ export class GameService {
   });
 
   constructor() {
-    //keep game state in sync on websocket updates
+    // The only route by which a change reaches this cache: commands are sent
+    // over the socket and answered with a push, never with a response body.
     effect(() => {
       const message = this.socket.lastMessage();
       if (message?.type === 'game_state' && this.setState(message)) {
@@ -75,32 +75,12 @@ export class GameService {
     this.socket.send({ type: 'register_dart', value, multiplier });
   }
 
-  /**
-   * Advance to the next player once a visit is complete — but only when the
-   * confirm button is turned off. With it on (the default) the player ends the
-   * visit by tapping confirm instead, in both entry modes. The server never
-   * auto-advances; it is this client decision, taken on the pushed state, that
-   * applies uniformly to manually entered and camera-tracked darts.
-   *
-   * Every device in the room sees that push and judges it on its own setting,
-   * so two of them can advance at once. The server absorbs the second command:
-   * the visit it would end is already over (see `Game.next_player`).
-   */
-  private maybeAutoAdvance(state: GameStateDto): void {
-    if (
-      state.dartsRemaining === 0 &&
-      state.winnerId === null &&
-      !this.settings.confirmThrowEnabled()
-    ) {
-      this.nextPlayer();
-    }
-  }
-
   /** Step back one action — a dart, or the switch to the current player. */
   undo(): void {
     this.socket.send({ type: 'undo' });
   }
 
+  /** Switch to the next player */
   nextPlayer(): void {
     this.socket.send({ type: 'next_player' });
   }
@@ -163,13 +143,21 @@ export class GameService {
   }
 
   /**
+   * Advance to the next player once a visit is complete — but only when the
+   * confirm button is turned off.
+   */
+  private maybeAutoAdvance(state: GameStateDto): void {
+    if (
+      state.dartsRemaining === 0 &&
+      state.winnerId === null &&
+      !this.settings.confirmThrowEnabled()
+    ) {
+      this.nextPlayer();
+    }
+  }
+
+  /**
    * Adopt a snapshot unless it is one the cache has already moved past.
-   *
-   * The same state reaches this service twice — as the answer to this device's
-   * own call and as the broadcast to the game's room — and the two can arrive in
-   * either order, so a slow response must not overwrite a newer push. The
-   * revision only orders snapshots of the *same* game; a different id is always
-   * a new game and always wins.
    *
    * Returns whether the state was taken, so a caller can skip follow-up work on
    * a snapshot it has already acted upon.

@@ -1,4 +1,4 @@
 /** Server -> client: sent once right after the WebSocket handshake. */
-export interface ConnectionEstablishedMessage {
+export interface ConnectionEstablishedDto {
   readonly type: 'connection_established';
 }
