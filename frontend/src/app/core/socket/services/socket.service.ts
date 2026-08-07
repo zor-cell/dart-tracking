@@ -2,25 +2,45 @@ import { Injectable, signal } from '@angular/core';
 import { environment } from '../../../../environments/environment';
 import { SocketMessage } from '../dto/socket-message';
 import { OutgoingFrameType } from '../dto/outgoing-frame-type';
+import { OutgoingMessage } from '../dto/outgoing-message';
 
 export type SocketConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
+/**
+ * The connection to the game's room on the server. Every device playing the
+ * same game holds one, and it carries everything that is not the session
+ * lifecycle: the camera frames of whichever device films the board, and the
+ * commands any device issues (see docs/feature/multi-device.md).
+ */
 @Injectable({ providedIn: 'root' })
 export class SocketService {
   readonly connectionStatus = signal<SocketConnectionStatus>('disconnected');
   readonly lastMessage = signal<SocketMessage | null>(null);
 
   private socket: WebSocket | null = null;
+  private gameId: string | null = null;
+
+  // Commands issued before the socket finished opening, flushed on connect.
+  // Only commands are held back: a queued frame would describe a board the game
+  // has long moved past, so those are dropped instead (see `sendFrame`).
+  private pending: OutgoingMessage[] = [];
 
   connect(gameId: string): void {
-    if (this.socket) {
+    if (this.socket && this.gameId === gameId) {
       return;
     }
+    // A different game means a different room; the old connection has nothing
+    // left to carry.
+    this.disconnect();
 
+    this.gameId = gameId;
     this.connectionStatus.set('connecting');
     this.socket = new WebSocket(`${environment.wsApiUrl}/games/${gameId}`);
 
-    this.socket.addEventListener('open', () => this.connectionStatus.set('connected'));
+    this.socket.addEventListener('open', () => {
+      this.connectionStatus.set('connected');
+      this.flush();
+    });
     this.socket.addEventListener('error', () => this.connectionStatus.set('error'));
     this.socket.addEventListener('close', () => {
       this.connectionStatus.set('disconnected');
@@ -34,7 +54,28 @@ export class SocketService {
   disconnect(): void {
     this.socket?.close();
     this.socket = null;
+    this.gameId = null;
+    this.pending = [];
     this.connectionStatus.set('disconnected');
+  }
+
+  /**
+   * Ask the server to change the game. There is no reply to await — the new
+   * state arrives as the `game_state` push that goes to the whole room.
+   *
+   * A command sent while the socket is still opening is queued rather than
+   * dropped: the game view is on screen as soon as the state is loaded, so a
+   * quick tap can easily beat the handshake, and a silently swallowed dart is
+   * indistinguishable from a dead button.
+   */
+  send(message: OutgoingMessage): void {
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify(message));
+    } else if (this.socket?.readyState === WebSocket.CONNECTING) {
+      this.pending.push(message);
+    } else {
+      console.warn('SocketService: Nachricht verworfen, WebSocket nicht verbunden', message);
+    }
   }
 
   async sendFrame(type: OutgoingFrameType, frame: Blob, debug?: boolean): Promise<void> {
@@ -45,6 +86,12 @@ export class SocketService {
     const image = await blobToBase64(frame);
     const payload = debug === undefined ? { type, image } : { type, image, debug };
     this.socket.send(JSON.stringify(payload));
+  }
+
+  private flush(): void {
+    const queued = this.pending;
+    this.pending = [];
+    queued.forEach((message) => this.socket?.send(JSON.stringify(message)));
   }
 }
 

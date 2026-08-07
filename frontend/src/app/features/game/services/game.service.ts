@@ -19,6 +19,10 @@ const STORAGE_KEY = 'dart-tracking.gameId';
  * mirrors the fetched state — it never derives scores itself. Views read `state`
  * directly; the computed signals below are id/index lookups that would otherwise
  * clutter the templates.
+ *
+ * It also owns the socket's lifetime, because the connection follows the game
+ * and not the camera: a device that only keeps score joins the same room and
+ * must see every change (see docs/feature/multi-device.md).
  */
 @Injectable({ providedIn: 'root' })
 export class GameService {
@@ -61,31 +65,26 @@ export class GameService {
       .post<GameStateDto>(this.baseUrl, config)
       .pipe(tap((state) => {
         this.setState(state);
+        this.socket.connect(state.id);
       }));
   }
 
   /** Book one dart as the field it landed in — the server derives its points and
    * the called-out label from that. */
   registerDart(value: number, multiplier: number): void {
-    const id = this._state()?.id;
-    if (!id) {
-      return;
-    }
-    this.http
-      .post<GameStateDto>(`${this.baseUrl}/${id}/darts`, { value, multiplier })
-      .subscribe((state) => {
-        if (this.setState(state)) {
-          this.maybeAutoAdvance(state);
-        }
-      });
+    this.socket.send({ type: 'register_dart', value, multiplier });
   }
 
   /**
    * Advance to the next player once a visit is complete — but only when the
    * confirm button is turned off. With it on (the default) the player ends the
-   * visit by tapping confirm instead, in both entry modes. The server no longer
-   * auto-advances, so this client decision applies uniformly to manual darts
-   * (HTTP response) and camera darts (`game_state` push).
+   * visit by tapping confirm instead, in both entry modes. The server never
+   * auto-advances; it is this client decision, taken on the pushed state, that
+   * applies uniformly to manually entered and camera-tracked darts.
+   *
+   * Every device in the room sees that push and judges it on its own setting,
+   * so two of them can advance at once. The server absorbs the second command:
+   * the visit it would end is already over (see `Game.next_player`).
    */
   private maybeAutoAdvance(state: GameStateDto): void {
     if (
@@ -99,23 +98,11 @@ export class GameService {
 
   /** Step back one action — a dart, or the switch to the current player. */
   undo(): void {
-    const id = this._state()?.id;
-    if (!id) {
-      return;
-    }
-    this.http
-      .post<GameStateDto>(`${this.baseUrl}/${id}/undo`, {})
-      .subscribe((state) => this.setState(state));
+    this.socket.send({ type: 'undo' });
   }
 
   nextPlayer(): void {
-    const id = this._state()?.id;
-    if (!id) {
-      return;
-    }
-    this.http
-      .post<GameStateDto>(`${this.baseUrl}/${id}/next-player`, {})
-      .subscribe((state) => this.setState(state));
+    this.socket.send({ type: 'next_player' });
   }
 
   /** The active game's id, even before its state has been (re)fetched — read
@@ -143,6 +130,7 @@ export class GameService {
         this.http.get<GameStateDto>(`${this.baseUrl}/${id}`, { context: SILENT_ERROR_CONTEXT }),
       );
       this.setState(state);
+      this.socket.connect(state.id);
       return true;
     } catch {
       this.reset();
@@ -150,9 +138,11 @@ export class GameService {
     }
   }
 
+  /** Leave the game entirely: the cached state goes, and with it the room. */
   reset(): void {
     this._state.set(null);
     localStorage.removeItem(STORAGE_KEY);
+    this.socket.disconnect();
   }
 
   /**

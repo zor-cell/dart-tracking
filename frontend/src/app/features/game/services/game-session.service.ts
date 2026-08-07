@@ -2,7 +2,6 @@ import { Injectable, effect, inject, signal } from '@angular/core';
 import { CalibrationService } from '../../calibration/services/calibration.service';
 import { CameraService } from '../../camera/services/camera.service';
 import { FrameDiffService } from '../../detection/services/frame-diff.service';
-import { SocketService } from '../../../core/socket/services/socket.service';
 import { CameraPhase } from '../models/camera-phase';
 import { GameService } from './game.service';
 
@@ -11,21 +10,24 @@ import { GameService } from './game.service';
 const PHASE_KEY = 'dart-tracking.cameraPhase';
 
 /**
- * Owns the live camera session (phase + the wiring of camera, socket and the
- * detection loop). It is a singleton, so the session survives route changes: the
- * game view hands it its `<video>`/canvas elements on mount (`attachView`) and
- * merely pauses the loop on unmount (`detachView`) — the stream and socket stay
- * up, so returning to the game screen is instant. Full teardown happens only on
- * `endSession` ("Spiel beenden").
+ * Owns the live camera session (phase + the wiring of camera and the detection
+ * loop). It is a singleton, so the session survives route changes: the game view
+ * hands it its `<video>`/canvas elements on mount (`attachView`) and merely
+ * pauses the loop on unmount (`detachView`) — the stream stays up, so returning
+ * to the game screen is instant. Full teardown happens only on `endSession`
+ * ("Spiel beenden").
+ *
+ * The socket is deliberately not its business: it belongs to the game, not to
+ * the camera, since a device that only keeps score holds one too (`GameService`).
+ * This service is what turns *this* device into the one that films the board.
  *
  * A page refresh is the other case: everything client-side is gone, but the
  * server keeps the game, calibration and reference frame keyed by game id, so the
- * session reconnects the socket, restarts the camera and resumes tracking.
+ * session restarts the camera and resumes tracking.
  */
 @Injectable({ providedIn: 'root' })
 export class GameSessionService {
   private readonly camera = inject(CameraService);
-  private readonly socket = inject(SocketService);
   private readonly calibration = inject(CalibrationService);
   private readonly throwCapture = inject(FrameDiffService);
   private readonly game = inject(GameService);
@@ -104,11 +106,9 @@ export class GameSessionService {
 
   /** Start the camera for a fresh session (the "Kamera starten" tap). */
   async startCamera(): Promise<void> {
-    const gameId = this.game.peekGameId();
-    if (!gameId || !(await this.acquireCamera())) {
+    if (!this.game.peekGameId() || !(await this.acquireCamera())) {
       return;
     }
-    this.socket.connect(gameId);
     this.calibration.reset();
     this.phase.set('calibrating');
   }
@@ -120,11 +120,11 @@ export class GameSessionService {
     }
   }
 
-  /** End the game: full teardown of the live session. */
+  /** End the game: full teardown of the live session. The socket goes down with
+   * the game itself (`GameService.reset`), not here. */
   endSession(): void {
     this.throwCapture.stopDetectionLoop();
     this.camera.stop();
-    this.socket.disconnect();
     this.calibration.reset();
     this.phase.set('idle');
   }
@@ -142,15 +142,13 @@ export class GameSessionService {
     }
   }
 
-  /** Reconnect the socket and restart the camera after a refresh, landing in the
-   * phase the session was in. Tracking trusts the server-side calibration; a
-   * moved camera is one "Neu kalibrieren" tap away. */
+  /** Restart the camera after a refresh, landing in the phase the session was
+   * in. Tracking trusts the server-side calibration; a moved camera is one "Neu
+   * kalibrieren" tap away. */
   private async resume(target: CameraPhase): Promise<void> {
-    const gameId = this.game.peekGameId();
-    if (!gameId || !(await this.acquireCamera())) {
+    if (!this.game.peekGameId() || !(await this.acquireCamera())) {
       return;
     }
-    this.socket.connect(gameId);
     this.phase.set(target);
     if (target === 'tracking') {
       this.runDetectionLoop();
