@@ -296,21 +296,19 @@
   text-align: center;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+
+  background: var(--p-content-hover-background, #f3f4f6);
 }
 
 .turn__dart--empty {
+  background: none;
   color: var(--p-text-muted-color, #6b7280);
   font-weight: 400;
 }
 
-// A suggested checkout dart: still an "open" slot, but highlighted so it reads
-// as a hint rather than a thrown score.
 .turn__dart--checkout {
-  color: var(--p-primary-color, #09090b);
   font-weight: 600;
-  border-color: var(--p-primary-color, #09090b);
   border-style: dashed;
-  background: color-mix(in srgb, var(--p-primary-color, #09090b) 8%, transparent);
 }
 
 .turn__dart--busted {

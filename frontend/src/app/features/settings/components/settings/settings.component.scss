@@ -1,3 +1,9 @@
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .setting {
   display: flex;
   align-items: flex-start;
