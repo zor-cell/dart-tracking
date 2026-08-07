@@ -7,17 +7,59 @@
         icon="pi pi-share-alt"
         severity="secondary"
         size="small"
-        (onClick)="share()"
+        ariaLabel="Spiel teilen"
+        (onClick)="openShareDialog()"
       />
       <p-button
         icon="pi pi-sign-out"
         severity="danger"
         outlined
         size="small"
+        ariaLabel="Spiel beenden"
         (onClick)="confirmEndGame()"
       />
     </div>
   </header>
+
+  <!-- The QR encoder is a chunk of its own, and this dialog is opened once a
+       game at most — so it is kept out of the initial bundle and fetched while
+       the app is idle, which makes the tap itself instant anyway. -->
+  @defer (when shareDialogVisible(); prefetch on idle) {
+  <p-dialog
+    header="Spiel teilen"
+    [modal]="true"
+    [draggable]="false"
+    [(visible)]="shareDialogVisible"
+    [style]="{ width: '20rem' }"
+  >
+    <div class="share">
+      <p class="share__hint">
+          Scanne den QR-Code oder kopiere den Link damit Freunde auf ihrem Gerät den Spielstand sehen können
+      </p>
+
+      <!-- White backdrop regardless of theme: a dark-on-dark QR does not scan. -->
+      <div class="share__code">
+        <qrcode [qrdata]="shareUrl()" [width]="220" [margin]="1" errorCorrectionLevel="M"
+                alt="QR-Code zum Beitreten" />
+      </div>
+
+      <code class="share__url">{{ shareUrl() }}</code>
+
+      <div class="share__actions">
+        <p-button
+          fluid
+          label="Link kopieren"
+          icon="pi pi-copy"
+          severity="secondary"
+          (onClick)="copyLink()"
+        />
+        @if (canShareNatively) {
+          <p-button fluid label="Teilen" icon="pi pi-share-alt" (onClick)="shareNatively()" />
+        }
+      </div>
+    </div>
+  </p-dialog>
+  }
 
   <p-confirmdialog />
 }

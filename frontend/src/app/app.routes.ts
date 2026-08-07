@@ -15,6 +15,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'game/join/:gameId',
+    loadComponent: () =>
+      import('./features/game/components/game-join/game-join.component').then(
+        (m) => m.GameJoinComponent,
+      ),
+  },
+  {
     path: 'game',
     loadComponent: () =>
       import('./features/game/components/game/game.component').then((m) => m.GameComponent),

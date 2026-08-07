@@ -112,6 +112,29 @@ export class GameService {
   }
 
   /**
+   * Make a game the active one on this device: fetch its state and join its
+   * room. Resolves to false when the server does not know the id — a shared
+   * link whose game has since ended, or a stale one from before a restart.
+   *
+   * This is the same operation whether the id comes from a shared link or from
+   * `localStorage` after a refresh; only what to do on failure differs.
+   */
+  async join(gameId: string): Promise<boolean> {
+    try {
+      const state = await firstValueFrom(
+        this.http.get<GameStateDto>(`${this.baseUrl}/${gameId}`, {
+          context: SILENT_ERROR_CONTEXT,
+        }),
+      );
+      this.setState(state);
+      this.socket.connect(state.id);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Ensure the game state is loaded, refetching from the persisted id after a
    * page refresh. Resolves to whether a game is active — false when there is no
    * persisted id or the server no longer knows it (a stale id is cleared).
@@ -125,17 +148,11 @@ export class GameService {
     if (!id) {
       return false;
     }
-    try {
-      const state = await firstValueFrom(
-        this.http.get<GameStateDto>(`${this.baseUrl}/${id}`, { context: SILENT_ERROR_CONTEXT }),
-      );
-      this.setState(state);
-      this.socket.connect(state.id);
+    if (await this.join(id)) {
       return true;
-    } catch {
-      this.reset();
-      return false;
     }
+    this.reset();
+    return false;
   }
 
   /** Leave the game entirely: the cached state goes, and with it the room. */
