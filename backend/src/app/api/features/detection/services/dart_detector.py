@@ -45,63 +45,52 @@ from app.api.features.detection.entity.detection import Dart
 from app.api.features.detection.entity.detection_failure import DetectionFailure
 from app.api.features.detection.entity.detection_trace import DetectionTrace
 
-# How far out from the bull to look. Beyond the scoring area on purpose: a dart
-# in the surround has to be found to be reported as a miss, otherwise it is
-# indistinguishable from no throw at all.
+# Radius a change must reach to count as a throw at all. Past the scoring area,
+# so a dart in the surround is still found and reported as a miss.
 _DETECTION_RADIUS_MM = 225.0
 
-# ORB features for registration, and how many must survive RANSAC. The test set
-# yields 340-1200 inliers on the board alone, so this is a wide margin.
+# How far past that radius a change may extend once it qualifies. Covers the
+# flight of a dart high on the board, which hangs out over the surround.
+_SEARCH_MARGIN_MM = 90.0
+
+# ORB features for registration, and how many must survive RANSAC.
 _ORB_FEATURES = 4000
 _MIN_ALIGNMENT_INLIERS = 40
 _RANSAC_REPROJECTION_PX = 2.0
 
-# Per-pixel difference counting as changed, in grey levels. Sensor noise sits
-# around 2-4, so this is far above it while still catching a dark dart against
-# a black segment.
+# Per-pixel difference counting as changed, in grey levels.
 _DIFFERENCE_THRESHOLD = 40
 
-# Structuring elements and area limits in millimetres, converted to pixels per
-# frame from the homography. The board's size in the image depends on where the
-# phone is; expressing these as lengths on the board keeps one set of numbers
-# valid at any distance.
-_CLOSE_KERNEL_MM = 3.0
-_MIN_DART_AREA_MM2 = 20.0
+# Sizes in millimetres on the board, converted to pixels per frame from the
+# homography, so one set of numbers holds at any camera distance.
+_CLOSE_KERNEL_MM = 3.0  # bridges the gaps in a dart's broken silhouette
+_MIN_DART_AREA_MM2 = 20.0  # smallest fused blob still called a dart
 
-# Fragment fusion. A dark dart only shows in the difference where it crosses
-# light board, so it arrives as several disconnected fragments strung along one
-# line rather than a single blob. These control how those fragments are gathered
-# back into one dart: the smallest fragment worth considering, and how far off
-# the fitted line a fragment's centroid may sit and still count as belonging to
-# it.
-_MIN_FRAGMENT_AREA_MM2 = 5.0
+# How far off the fitted line a fragment's centroid may sit and still be fused
+# into the same dart.
 _FUSION_PERP_TOL_MM = 4.0
-# A dart is a local, bounded object: only fragments within this distance of the
-# flight can belong to the same dart. Without it, the length-based score happily
-# rewards a distant, coincidentally collinear speck (noise, a shadow across the
-# board) and stretches the fitted line clear across the frame, throwing the tip
-# far outside the scoring area. Generous — a dart's visible span foreshortens.
+
+# Size a fragment needs to anchor the fit or vote on its direction. Smaller
+# fragments still contribute their pixels once the direction is settled.
+_MIN_CANDIDATE_AREA_MM2 = 10.0
+_MIN_CANDIDATE_AREA_PX = 15.0
+
+# Longest span fused into one dart: fragments further apart than this belong to
+# different objects. Generous, since a dart's visible span foreshortens.
 _MAX_DART_LENGTH_MM = 90.0
 
-# Speckle is removed by area rather than by a morphological opening. An opening
-# cannot help here: OpenCV's smallest usable structuring element is 3x3, which
-# at the scale a phone actually frames a board (0.6-0.9 px/mm on the test set)
-# is 3-5 mm across — wider than the dart it is meant to preserve. Measured, it
-# threw away 60 % of the dart's own pixels. Dropping components below a plain
-# area limit removes the same noise without eroding anything.
+# Smallest component kept at all; anything below is noise. Two floors because
+# board-relative area is the meaningful limit but sensor noise is a fixed number
+# of pixels, and on a distant setup the millimetre figure falls below it.
 _MIN_SPECKLE_AREA_MM2 = 3.0
+_MIN_SPECKLE_AREA_PX = 4.0
 
-# How much of the axis end to average into the tip position. A single extreme
-# pixel is whatever the threshold happened to catch; a few millimetres of it is
-# stable.
+# How much of the axis end is averaged into the tip position, rather than
+# trusting the single furthest pixel.
 _TIP_SPAN_MM = 3.0
 
-# Band near each axis end used to gauge its width. The flight is the wide,
-# feathered end; the barrel and tip are thin. Comparing the width of the two
-# ends tells the tip end from the flight end far more reliably than "whichever
-# end is nearer the board centre" — that heuristic only holds when the flight
-# happens to project outward, and fails at exactly the steep angles (a dart high
-# on the board, flight leaning back over the centre) that this system targets.
+# Band at each axis end used to measure its width. The wider end is the flight,
+# which is what orients the dart and so decides which end is the tip.
 _FLIGHT_SPAN_MM = 12.0
 
 # What the most recent call to `detect_dart` saw at each stage.
@@ -124,9 +113,22 @@ def detect_dart(
 
     pixels_per_mm = _pixels_per_mm(calibration.homography)
     trace.pixels_per_mm = pixels_per_mm
+    trace.minimum_speckle_px = _minimum_area(
+        _MIN_SPECKLE_AREA_MM2, _MIN_SPECKLE_AREA_PX, pixels_per_mm
+    )
+    trace.minimum_candidate_px = _minimum_area(
+        _MIN_CANDIDATE_AREA_MM2, _MIN_CANDIDATE_AREA_PX, pixels_per_mm
+    )
 
     region = _board_region(calibration.homography, reference.shape, _DETECTION_RADIUS_MM)
+    search = _board_region(
+        calibration.homography, reference.shape, _DETECTION_RADIUS_MM + _SEARCH_MARGIN_MM
+    )
+    trace.region, trace.search = region, search
 
+    # Registration uses the board proper, not the search area: the surround and
+    # the wall sit at a different depth, and features there pull the homography
+    # off the plane that actually matters.
     alignment, inliers = _align(frame, reference, region)
     trace.alignment, trace.alignment_inliers = alignment, inliers
     if alignment is None:
@@ -135,7 +137,7 @@ def detect_dart(
     aligned = cv2.warpPerspective(frame, alignment, reference.shape[1::-1])
     trace.aligned = aligned
 
-    mask = _change_mask(reference, aligned, region, pixels_per_mm)
+    mask = _change_mask(reference, aligned, region, search, pixels_per_mm)
     trace.change_mask = mask
 
     blob = _fuse_dart_fragments(mask, trace.difference, pixels_per_mm)
@@ -243,9 +245,13 @@ def _align(
 
 
 def _change_mask(
-    reference: np.ndarray, aligned: np.ndarray, region: np.ndarray, pixels_per_mm: float
+    reference: np.ndarray,
+    aligned: np.ndarray,
+    region: np.ndarray,
+    search: np.ndarray,
+    pixels_per_mm: float,
 ) -> np.ndarray:
-    """Binary mask of what the throw added, inside the board region.
+    """Binary mask of what the throw added, in and around the board region.
 
     Differenced per channel and maxed rather than converted to grey first: a
     dart barrel against a black segment can be nearly identical in luminance
@@ -255,26 +261,78 @@ def _change_mask(
     trace.difference = difference
 
     _, mask = cv2.threshold(difference, _DIFFERENCE_THRESHOLD, 255, cv2.THRESH_BINARY)
-    mask = cv2.bitwise_and(mask, region)
+    mask = cv2.bitwise_and(mask, search)
+    trace.raw_mask = mask
 
     # Speckle first, then bridging. The order matters: closing first would join
     # scattered noise into blobs big enough to pass the area limit, and a dart
     # is dark on a dark board, so its own silhouette arrives in pieces that only
     # the closing puts back together.
-    mask = _drop_speckle(mask, pixels_per_mm)
-    return cv2.morphologyEx(mask, cv2.MORPH_CLOSE, _kernel(_CLOSE_KERNEL_MM, pixels_per_mm))
+    despeckled = _drop_speckle(mask, pixels_per_mm)
+    trace.speckle_removed = cv2.subtract(mask, despeckled)
+
+    closed = cv2.morphologyEx(
+        despeckled, cv2.MORPH_CLOSE, _kernel(_CLOSE_KERNEL_MM, pixels_per_mm)
+    )
+
+    # Only now, with each component whole, ask whether it belongs to the board.
+    # Doing it before the closing would judge the dart on its fragments rather
+    # than on its silhouette.
+    anchored = _drop_unanchored(closed, region, pixels_per_mm)
+    trace.outside_removed = cv2.subtract(closed, anchored)
+    return anchored
+
+
+def _minimum_area(area_mm2: float, area_px: float, pixels_per_mm: float) -> float:
+    """An area floor in pixels: the board-relative limit, but never below `area_px`."""
+    return max(area_mm2 * pixels_per_mm**2, area_px)
 
 
 def _drop_speckle(mask: np.ndarray, pixels_per_mm: float) -> np.ndarray:
     """Remove components too small to be part of a dart."""
     count, labels, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
-    minimum_area = _MIN_SPECKLE_AREA_MM2 * pixels_per_mm**2
+    minimum_area = _minimum_area(_MIN_SPECKLE_AREA_MM2, _MIN_SPECKLE_AREA_PX, pixels_per_mm)
     kept = [
         label for label in range(1, count) if stats[label, cv2.CC_STAT_AREA] >= minimum_area
     ]
     if not kept:
         return np.zeros_like(mask)
     return np.isin(labels, kept).astype(np.uint8) * 255
+
+
+def _drop_unanchored(mask: np.ndarray, region: np.ndarray, pixels_per_mm: float) -> np.ndarray:
+    """Keep only components tied to the board, but keep those whole.
+
+    A component is anchored if it reaches into `region`, or if it lies within a
+    dart's length of one that does — the second case being a flight out over the
+    surround, separated from its shaft by a gap the difference cannot see
+    through. Anchored components are kept in full, including the part outside
+    `region`: that part is the flight, and the flight is what orients the dart.
+    """
+    count, labels, _, _ = cv2.connectedComponentsWithStats(mask, 8)
+    if count <= 1:
+        return mask
+
+    touching = np.unique(labels[region > 0])
+    seeded = [label for label in touching if label != 0]
+    if not seeded:
+        return np.zeros_like(mask)
+
+    # Distance from every pixel to the nearest anchored component, so a
+    # candidate's closest approach is a single min() over its own pixels.
+    seeded_mask = np.isin(labels, seeded)
+    distance = cv2.distanceTransform(
+        (~seeded_mask).astype(np.uint8) * 255, cv2.DIST_L2, cv2.DIST_MASK_PRECISE
+    )
+    reach = _MAX_DART_LENGTH_MM * pixels_per_mm
+
+    kept = set(seeded)
+    for label in range(1, count):
+        if label in kept:
+            continue
+        if distance[labels == label].min() <= reach:
+            kept.add(label)
+    return np.isin(labels, list(kept)).astype(np.uint8) * 255
 
 
 def _kernel(size_mm: float, pixels_per_mm: float) -> np.ndarray:
@@ -319,13 +377,25 @@ def _fuse_dart_fragments(
     idea as the calibration's board RANSAC, one vote per fragment so a fat flight
     cannot outvote the thin shaft. Anchoring on the flight makes it deterministic,
     with no random sampling to seed.
+
+    Only fragments above the candidate area may anchor the fit or propose and
+    vote for a direction; every fragment on the winning line contributes its
+    pixels. A speck should not get to say where the dart points, but the dart's
+    tip is itself a small fragment and dropping it shortens the axis.
     """
     count, labels, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
-    minimum_area = _MIN_FRAGMENT_AREA_MM2 * pixels_per_mm**2
-    fragments = [
-        label for label in range(1, count) if stats[label, cv2.CC_STAT_AREA] >= minimum_area
-    ]
+    trace.labels = labels
+    fragments = list(range(1, count))
     if not fragments:
+        return None
+
+    minimum_area = _minimum_area(
+        _MIN_CANDIDATE_AREA_MM2, _MIN_CANDIDATE_AREA_PX, pixels_per_mm
+    )
+    candidates = [
+        label for label in fragments if stats[label, cv2.CC_STAT_AREA] >= minimum_area
+    ]
+    if not candidates:
         return None
 
     pixels = {
@@ -334,8 +404,8 @@ def _fuse_dart_fragments(
     }
     geometry = {label: _fragment_geometry(pixels[label], difference) for label in fragments}
 
-    # Flight = widest fragment (feathers), brightness breaking any tie.
-    flight = max(fragments, key=lambda label: (geometry[label][1], geometry[label][2]))
+    # Flight = widest candidate (feathers), brightness breaking any tie.
+    flight = max(candidates, key=lambda label: (geometry[label][1], geometry[label][2]))
     anchor = geometry[flight][0]
     tolerance = _FUSION_PERP_TOL_MM * pixels_per_mm
 
@@ -344,24 +414,34 @@ def _fuse_dart_fragments(
     eligible = [
         label for label in fragments if np.linalg.norm(geometry[label][0] - anchor) <= reach
     ]
+    trace.flight_label = flight
+    trace.eligible_labels = eligible
 
-    def collinear_support(direction: np.ndarray) -> tuple[list[int], float]:
-        """Fragments whose centroid lies on the line, and the length they cover."""
+    candidate_set = set(candidates)
+
+    def collinear_support(direction: np.ndarray) -> tuple[list[int], list[int], float]:
+        """Who lies on the line: the voters, everyone, and the length they cover.
+
+        The length is measured over the voters alone. It is the tie-breaker
+        between directions, and letting a speck extend it is exactly the failure
+        the candidate floor exists to prevent.
+        """
         normal = np.array([-direction[1], direction[0]])
         supporters = [
             label
             for label in eligible
             if abs((geometry[label][0] - anchor) @ normal) <= tolerance
         ]
-        projections = [(geometry[label][0] - anchor) @ direction for label in supporters]
-        return supporters, (max(projections) - min(projections)) if projections else 0.0
+        voters = [label for label in supporters if label in candidate_set]
+        projections = [(geometry[label][0] - anchor) @ direction for label in voters]
+        return voters, supporters, (max(projections) - min(projections)) if projections else 0.0
 
-    # Candidate directions: the flight's own axis, plus flight -> each fragment.
+    # Candidate directions: the flight's own axis, plus flight -> each candidate.
     directions = []
     if len(pixels[flight]) >= 2:
         _, eigenvectors = cv2.PCACompute(pixels[flight], mean=None, maxComponents=1)
         directions.append(eigenvectors[0])
-    for label in eligible:
+    for label in candidates:
         offset = geometry[label][0] - anchor
         distance = np.linalg.norm(offset)
         if distance > 0:
@@ -369,18 +449,25 @@ def _fuse_dart_fragments(
 
     inliers, best_length, best_direction = [flight], -1.0, None
     for direction in directions:
-        supporters, length = collinear_support(direction)
-        if flight in supporters and len(supporters) >= 2 and length > best_length:
+        voters, supporters, length = collinear_support(direction)
+        if flight in voters and len(voters) >= 2 and length > best_length:
             inliers, best_length, best_direction = supporters, length, direction
+
+    if best_direction is None and len(pixels[flight]) >= 2:
+        # No second candidate agreed with the flight on anything. Fall back to
+        # the flight's own axis rather than to the flight alone: the fragments
+        # too small to vote are still strung along it, and they are usually the
+        # thin end of the dart — the end that is about to be scored.
+        _, eigenvectors = cv2.PCACompute(pixels[flight], mean=None, maxComponents=1)
+        best_direction = eigenvectors[0]
+        _, inliers, _ = collinear_support(best_direction)
+
+    trace.inlier_labels = inliers
+    trace.fitted_line = (anchor, best_direction)
 
     dart = np.vstack([pixels[label] for label in inliers])
     if len(dart) < _MIN_DART_AREA_MM2 * pixels_per_mm**2:
         return None
-
-    trace.labels = labels
-    trace.flight_label = flight
-    trace.inlier_labels = inliers
-    trace.fitted_line = (anchor, best_direction)
     return dart
 
 
@@ -414,4 +501,7 @@ def _tip_and_far_end(
         end_widths.append(float(np.percentile(widths[band], 90)))
 
     flight = int(np.argmax(end_widths))
-    return tuple(ends[1 - flight]), tuple(ends[flight])
+    tip, far_end = ends[1 - flight], ends[flight]
+    trace.axis_ends = (tip, far_end)
+    trace.end_widths = (float(end_widths[1 - flight]), float(end_widths[flight]))
+    return tuple(tip), tuple(far_end)
