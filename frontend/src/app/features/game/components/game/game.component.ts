@@ -79,14 +79,13 @@ export class GameComponent implements OnInit, OnDestroy {
     this.multiplier() === 2 ? 'D' : this.multiplier() === 3 ? 'T' : '',
   );
 
-  // The most recent visit that has darts, tagged with its player — the "last
-  // round thrown". Its individual darts are shown next to that player only (not a
-  // total, and not on every row). During an active visit this is the current
-  // player's turn, so their darts fill in live; after they confirm it stays put
-  // until the next player throws.
+  // The most recent *finished* visit, tagged with its player — shown as darts
+  // next to that player alone, never as a total. The open turn (always the last
+  // one) is skipped, so a visit in progress stays in the dart boxes below and
+  // only moves up to the scoreboard once play has passed on.
   protected readonly lastThrow = computed(() => {
     const turns = this.game.state()?.turns ?? [];
-    for (let index = turns.length - 1; index >= 0; index--) {
+    for (let index = turns.length - 2; index >= 0; index--) {
       const turn = turns[index];
       if (turn.darts.length > 0) {
         return { playerId: turn.playerId, darts: turn.darts, busted: turn.busted };
@@ -139,14 +138,17 @@ export class GameComponent implements OnInit, OnDestroy {
     return this.session.calibrate();
   }
 
-  /** A 1–20 key: scored with the active multiplier, which stays set afterwards. */
+  /** A 1–20 key: scored with the active multiplier, which then falls back to
+   * single — the multiplier applies to one dart, not to the rest of the visit. */
   protected enterNumber(value: number): void {
     this.game.registerDart(value * this.multiplier());
+    this.multiplier.set(1);
   }
 
   /** A bull/miss key: its face value, unaffected by the D/T multiplier. */
   protected enterFixed(value: number): void {
     this.game.registerDart(value);
+    this.multiplier.set(1);
   }
 
   protected toggleDouble(): void {

@@ -118,7 +118,7 @@
           [class.scoreboard__row--active]="$index === state.currentPlayerIndex"
         >
           <span class="scoreboard__name">{{ player.name }}</span>
-          <!-- Only the player who threw the last round carries a label, and it
+          <!-- Only the player whose visit just ended carries a label, and it
                lists the individual darts of that visit rather than its total. -->
           @if (lastThrow(); as last) {
             @if (last.playerId === player.id) {
