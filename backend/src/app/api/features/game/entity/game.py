@@ -104,30 +104,32 @@ class Game:
             turn.busted = True
 
     def undo(self) -> None:
-        """Step back one action, across turn boundaries.
+        """Take back the last dart thrown, across turn boundaries.
 
-        Removes the last dart of the open turn; if that turn has not started yet,
-        the preceding `next_player` is undone instead, which reopens the previous
-        player's turn so a further undo pops a dart from it.
+        When the open turn has no darts yet, the preceding `next_player` is
+        undone as part of the same step and the previous turn's last dart is
+        removed too — an empty turn holds nothing to take back, so stopping there
+        would cost a second undo to change anything.
 
         Deliberately not guarded by `winner`: correcting a misrecorded winning
         dart is exactly when undo is needed.
         """
-        turn = self.current_turn
-        if turn.darts:
-            turn.darts.pop()
-            # A bust is always caused by the turn's last dart, so removing that
-            # dart necessarily clears it.
-            turn.busted = False
-            return
-        if len(self.turns) == 1:
-            return
-        self.turns.pop()
-        self.current_player_index = next(
-            index
-            for index, player in enumerate(self.players)
-            if player.id == self.current_turn.player_id
-        )
+        while True:
+            turn = self.current_turn
+            if turn.darts:
+                turn.darts.pop()
+                # A bust is always caused by the turn's last dart, so removing
+                # that dart necessarily clears it.
+                turn.busted = False
+                return
+            if len(self.turns) == 1:
+                return
+            self.turns.pop()
+            self.current_player_index = next(
+                index
+                for index, player in enumerate(self.players)
+                if player.id == self.current_turn.player_id
+            )
 
     def next_player(self) -> None:
         if self.winner is not None:
