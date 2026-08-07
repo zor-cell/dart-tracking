@@ -10,7 +10,12 @@ structure and holds an annotated copy (axis + tip) per dart.
 Usage:
     uv run python scripts/detection/run_all.py
     uv run python scripts/detection/run_all.py path/to/images --out results
+    uv run python scripts/detection/run_all.py --only-mismatches
     uv run python scripts/detection/run_all.py --truth-template
+
+`--only-mismatches` keeps the run and the report exactly as they are but writes
+an image only where the detection disagrees with ground truth, so `_results`
+becomes a folder of just the failures instead of 165 mostly-correct overlays.
 
 Ground truth (optional): a `ground_truth.txt` in a folder scores segment accuracy
 and writes `_results/accuracy.md` with every mismatch. One `<frame stem> <segment>`
@@ -57,6 +62,7 @@ from scripts.common import (  # noqa: E402
 )
 
 OVERLAY_SUFFIX = "_detected.jpg"
+FAILURE_SUFFIX = "_failed.jpg"
 GROUND_TRUTH_NAME = "ground_truth.txt"
 TRUTH_TEMPLATE_NAME = "ground_truth.template.txt"
 REPORT_NAME = "accuracy.md"
@@ -174,13 +180,49 @@ def annotate(dart) -> np.ndarray:
     return canvas
 
 
+def annotate_failure(failure: DetectionFailure) -> np.ndarray | None:
+    """Draw what a dart that was never located left behind, if anything.
+
+    A failure has no axis and no tip to mark, so the useful content is the change
+    mask and the name of the stage that gave up. Without this, the darts that
+    went most wrong would be the only ones with no picture at all.
+    """
+    canvas = dart_detector.trace.aligned
+    if canvas is None:
+        canvas = dart_detector.trace.frame
+    if canvas is None:
+        return None
+
+    canvas = canvas.copy()
+    if dart_detector.trace.change_mask is not None:
+        canvas[dart_detector.trace.change_mask > 0] = COLOUR_MASK
+    cv2.putText(
+        canvas,
+        f"FAILED: {failure.value}",
+        (12, 28),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.6,
+        COLOUR_TIP,
+        2,
+        cv2.LINE_AA,
+    )
+    return canvas
+
+
 def run_series(
-    name: str, frames: list[tuple[str, Path]], root: Path, out_dir: Path, raw: bool
+    name: str,
+    frames: list[tuple[str, Path]],
+    root: Path,
+    out_dir: Path,
+    raw: bool,
+    only_mismatches: bool = False,
 ) -> list[Result]:
     """Detect every consecutive pair in one series. Returns one Result per dart.
 
     Annotated copies land under `out_dir`, mirroring the input tree. With a
-    `ground_truth.txt` present, each console line ends in `gt=<label> OK|MISMATCH`.
+    `ground_truth.txt` present, each console line ends in `gt=<label> OK|MISMATCH`;
+    `only_mismatches` then narrows the copies to just those, so the output folder
+    holds exactly the darts worth looking at.
     """
     if len(frames) < 2:
         print(f"{name}: only {len(frames)} frame(s), nothing to compare")
@@ -228,8 +270,6 @@ def run_series(
                 f"tip=({x:6.1f},{y:6.1f})mm  r={np.hypot(x, y):5.1f}  "
                 f"inliers {dart_detector.trace.alignment_inliers}"
             )
-            target_dir = mirrored_dir(path, root, out_dir)
-            cv2.imwrite(str(target_dir / f"{path.stem}{OVERLAY_SUFFIX}"), annotate(outcome))
 
         result = Result(name, label, path, located, detected, expected, uncertain)
         if expected is not None:
@@ -237,6 +277,18 @@ def run_series(
             line += f"   gt={expected}{mark} {'OK' if result.correct else 'MISMATCH'}"
         print(line)
         results.append(result)
+
+        # An unlabelled dart cannot be called a mismatch, so --only-mismatches
+        # drops it rather than guessing: the point of the flag is a folder where
+        # everything in it is known to be wrong.
+        if only_mismatches and (expected is None or result.correct):
+            pass
+        else:
+            image = annotate(outcome) if located else annotate_failure(outcome)
+            if image is not None:
+                suffix = OVERLAY_SUFFIX if located else FAILURE_SUFFIX
+                target_dir = mirrored_dir(path, root, out_dir)
+                cv2.imwrite(str(target_dir / f"{path.stem}{suffix}"), image)
 
         # Each dart is differenced against the frame before it, so the aligned
         # copy of this frame becomes the reference for the next one. Aligned,
@@ -329,6 +381,14 @@ def main() -> int:
     parser.add_argument("--out", type=Path, default=None, help="where to write annotated copies")
     parser.add_argument("--series", default=None, help="only run series whose name contains this")
     parser.add_argument(
+        "--only-mismatches",
+        action="store_true",
+        help="write annotated copies only for darts that disagree with "
+        f"{GROUND_TRUTH_NAME} (unlabelled darts are skipped). Every series is still "
+        "run and the accuracy report is unchanged - this only narrows the images "
+        "on disk to the ones worth looking at",
+    )
+    parser.add_argument(
         "--truth-template",
         action="store_true",
         help=f"write a {TRUTH_TEMPLATE_NAME} per folder, pre-filled with the current "
@@ -360,7 +420,9 @@ def main() -> int:
 
     all_results: list[Result] = []
     for name, frames in series.items():
-        all_results.extend(run_series(name, frames, args.images, out_dir, args.raw))
+        all_results.extend(
+            run_series(name, frames, args.images, out_dir, args.raw, args.only_mismatches)
+        )
         print()
 
     located = sum(r.located for r in all_results)
@@ -381,7 +443,10 @@ def main() -> int:
         written = write_truth_templates(all_results)
         print(f"wrote {len(written)} {TRUTH_TEMPLATE_NAME} file(s)")
 
-    if located:
+    if args.only_mismatches:
+        wrong = sum(1 for r in labelled if not r.correct)
+        print(f"{wrong} mismatch image(s) in {out_dir}" if wrong else "no mismatches to write")
+    elif located:
         print(f"annotated copies in {out_dir}")
     return 0
 
