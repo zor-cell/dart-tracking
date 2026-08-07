@@ -26,5 +26,3 @@ export interface UndoCommand {
 export interface NextPlayerCommand {
   readonly type: 'next_player';
 }
-
-export type GameCommand = RegisterDartCommand | UndoCommand | NextPlayerCommand;

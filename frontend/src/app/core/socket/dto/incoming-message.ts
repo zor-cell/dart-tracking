@@ -4,14 +4,14 @@ import { DetectionResultDto } from '../../../features/detection/dto/detection-re
 import { GameStateMessage } from '../../../features/game/dto/game-state-message';
 
 /**
- * Server -> client messages, discriminated by `type` (see docs/roadmap.md §4).
+ * Server -> client messages, discriminated by `type`.
  *
  * This union is the only thing that has to know the full set; a message whose
  * payload only means something to one feature is defined by that feature and
  * pulled in here, so the schema sits next to the code that reads it.
  */
-export type SocketMessage =
-  | ConnectionEstablishedMessage
+export type IncomingMessage =
+  ConnectionEstablishedMessage
   | CalibrationResultDto
   | DetectionResultDto
   | GameStateMessage;

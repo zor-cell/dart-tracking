@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { environment } from '../../../../environments/environment';
-import { SocketMessage } from '../dto/socket-message';
+import { IncomingMessage } from '../dto/incoming-message';
 import { OutgoingFrameType } from '../dto/outgoing-frame-type';
 import { OutgoingMessage } from '../dto/outgoing-message';
 
@@ -15,7 +15,7 @@ export type SocketConnectionStatus = 'disconnected' | 'connecting' | 'connected'
 @Injectable({ providedIn: 'root' })
 export class SocketService {
   readonly connectionStatus = signal<SocketConnectionStatus>('disconnected');
-  readonly lastMessage = signal<SocketMessage | null>(null);
+  readonly lastMessage = signal<IncomingMessage | null>(null);
 
   private socket: WebSocket | null = null;
   private gameId: string | null = null;
@@ -47,7 +47,7 @@ export class SocketService {
       this.socket = null;
     });
     this.socket.addEventListener('message', (event) => {
-      this.lastMessage.set(JSON.parse(event.data) as SocketMessage);
+      this.lastMessage.set(JSON.parse(event.data) as IncomingMessage);
     });
   }
 
