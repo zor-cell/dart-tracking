@@ -85,9 +85,9 @@ _MAX_DART_LENGTH_MM = 90.0
 _MIN_SPECKLE_AREA_MM2 = 3.0
 _MIN_SPECKLE_AREA_PX = 4.0
 
-# How much of the axis end is averaged into the tip position, rather than
-# trusting the single furthest pixel.
-_TIP_SPAN_MM = 3.0
+# Band at the axis end over which the tip's sideways position is averaged. Does
+# not affect how far out the tip sits — that is always the axis extreme.
+_TIP_SPAN_MM = 4.0
 
 # Band at each axis end used to measure its width. The wider end is the flight,
 # which is what orients the dart and so decides which end is the tip.
@@ -120,11 +120,14 @@ def detect_dart(
         _MIN_CANDIDATE_AREA_MM2, _MIN_CANDIDATE_AREA_PX, pixels_per_mm
     )
 
-    region = _board_region(calibration.homography, reference.shape, _DETECTION_RADIUS_MM)
-    search = _board_region(
-        calibration.homography, reference.shape, _DETECTION_RADIUS_MM + _SEARCH_MARGIN_MM
+    region_outline = _board_outline(calibration.homography, _DETECTION_RADIUS_MM)
+    search_outline = _board_outline(
+        calibration.homography, _DETECTION_RADIUS_MM + _SEARCH_MARGIN_MM
     )
+    region = _board_region(region_outline, reference.shape)
+    search = _board_region(search_outline, reference.shape)
     trace.region, trace.search = region, search
+    trace.region_outline, trace.search_outline = region_outline, search_outline
 
     # Registration uses the board proper, not the search area: the surround and
     # the wall sit at a different depth, and features there pull the homography
@@ -194,17 +197,24 @@ def _pixels_per_mm(homography: np.ndarray) -> float:
     return float(np.mean(distances)) / DOUBLE_OUTER_RADIUS
 
 
-def _board_region(homography: np.ndarray, shape: tuple[int, ...], radius_mm: float) -> np.ndarray:
-    """A filled mask of the board out to `radius_mm`, in image space."""
-    points = np.array(
+def _board_outline(homography: np.ndarray, radius_mm: float) -> np.ndarray:
+    """The circle of `radius_mm` on the board, mapped into image space.
+
+    A circle through a homography is a conic, so the mapped points lie on a true
+    ellipse; 360 of them approximate it to well under a pixel.
+    """
+    return np.array(
         [
             _to_image(homography, radius_mm * math.cos(angle), radius_mm * math.sin(angle))
-            for angle in np.linspace(0, 2 * math.pi, 180, endpoint=False)
-        ],
-        dtype=np.int32,
+            for angle in np.linspace(0, 2 * math.pi, 360, endpoint=False)
+        ]
     )
+
+
+def _board_region(outline: np.ndarray, shape: tuple[int, ...]) -> np.ndarray:
+    """A filled mask of everything inside `outline`, in image space."""
     mask = np.zeros(shape[:2], dtype=np.uint8)
-    cv2.fillPoly(mask, [points], 255)
+    cv2.fillPoly(mask, [outline.astype(np.int32)], 255)
     return mask
 
 
@@ -493,9 +503,14 @@ def _tip_and_far_end(
     end_widths = []
     for extreme in (projections.min(), projections.max()):
         near = np.abs(projections - extreme) <= _TIP_SPAN_MM * pixels_per_mm
-        # Average a few millimetres in from the end rather than trusting the one
-        # pixel that happened to be furthest out.
-        ends.append(points[near].mean(axis=0))
+        # Averaging the end band's *positions* would pull the end inward by half
+        # the band, because every pixel in it lies on the inward side of the
+        # extreme. So the two directions are taken from different things: along
+        # the axis the extreme itself, across it the band's mean offset. That
+        # keeps the smoothing where it helps — the tip's sideways position,
+        # which decides the sector — without shortening the dart.
+        offsets = centred[near] - np.outer(projections[near], axis)
+        ends.append(mean[0] + axis * extreme + offsets.mean(axis=0))
         # Gauge the end's width over a wider band, robust to a few stray pixels.
         band = np.abs(projections - extreme) <= _FLIGHT_SPAN_MM * pixels_per_mm
         end_widths.append(float(np.percentile(widths[band], 90)))

@@ -28,6 +28,11 @@ class DetectionTrace:
     # never looked at.
     region: np.ndarray | None = None
     search: np.ndarray | None = None
+    # The same two boundaries as exact image-space curves. The masks are what
+    # the pipeline tests against; these are what the debug images draw, so an
+    # outline is not mistaken for a rasterisation artefact of its mask.
+    region_outline: np.ndarray | None = None
+    search_outline: np.ndarray | None = None
 
     difference: np.ndarray | None = None  # greyscale, before thresholding
     # The mask as it stands after each cleanup step, so a lost dart can be

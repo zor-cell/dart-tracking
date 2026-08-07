@@ -84,12 +84,16 @@ def _caption(canvas: np.ndarray, lines: list[str]) -> np.ndarray:
     return canvas
 
 
-def _outline(canvas: np.ndarray, mask: np.ndarray | None, colour: tuple[int, int, int]) -> None:
-    """Trace a mask's boundary onto the canvas."""
-    if mask is None:
+def _outline(canvas: np.ndarray, curve: np.ndarray | None, colour: tuple[int, int, int]) -> None:
+    """Draw a boundary curve onto the canvas.
+
+    The curve itself, not the contour of its rasterised mask: the mask boundary
+    is a staircase to within a pixel and reads as a sloppy ellipse, which is the
+    one thing this outline must not suggest about the homography.
+    """
+    if curve is None:
         return
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cv2.drawContours(canvas, contours, -1, colour, 1, cv2.LINE_AA)
+    cv2.polylines(canvas, [curve.astype(np.int32)], True, colour, 1, cv2.LINE_AA)
 
 
 def _draw_region(trace: DetectionTrace) -> np.ndarray | None:
@@ -111,8 +115,8 @@ def _draw_region(trace: DetectionTrace) -> np.ndarray | None:
         # the wall are the context that says whether the framing is sane.
         outside = trace.search == 0
         canvas[outside] = (canvas[outside] * 0.35).astype(np.uint8)
-        _outline(canvas, trace.search, _COLOUR_SEARCH)
-    _outline(canvas, trace.region, _COLOUR_REGION)
+        _outline(canvas, trace.search_outline, _COLOUR_SEARCH)
+    _outline(canvas, trace.region_outline, _COLOUR_REGION)
 
     return _caption(
         canvas,
@@ -149,8 +153,8 @@ def _draw_difference(trace: DetectionTrace) -> np.ndarray | None:
     canvas = cv2.applyColorMap(
         cv2.normalize(trace.difference, None, 0, 255, cv2.NORM_MINMAX), cv2.COLORMAP_INFERNO
     )
-    _outline(canvas, trace.region, _COLOUR_REGION)
-    _outline(canvas, trace.search, _COLOUR_SEARCH)
+    _outline(canvas, trace.region_outline, _COLOUR_REGION)
+    _outline(canvas, trace.search_outline, _COLOUR_SEARCH)
     return _caption(canvas, [f"peak difference {trace.difference.max()} grey levels"])
 
 
@@ -165,7 +169,7 @@ def _draw_threshold(trace: DetectionTrace) -> np.ndarray | None:
         return None
     canvas = trace.aligned.copy()
     canvas[trace.raw_mask > 0] = _COLOUR_CHOSEN
-    _outline(canvas, trace.region, _COLOUR_REGION)
+    _outline(canvas, trace.region_outline, _COLOUR_REGION)
     return _caption(canvas, [f"{int(np.count_nonzero(trace.raw_mask))} px over threshold"])
 
 
@@ -185,7 +189,7 @@ def _draw_cleanup(trace: DetectionTrace) -> np.ndarray | None:
         canvas[trace.outside_removed > 0] = _COLOUR_UNANCHORED
     if trace.change_mask is not None:
         canvas[trace.change_mask > 0] = _COLOUR_CHOSEN
-    _outline(canvas, trace.region, _COLOUR_REGION)
+    _outline(canvas, trace.region_outline, _COLOUR_REGION)
 
     return _caption(
         canvas,
@@ -208,8 +212,8 @@ def _draw_mask(trace: DetectionTrace) -> np.ndarray | None:
     if trace.change_mask is None:
         return None
     canvas = cv2.cvtColor(trace.change_mask, cv2.COLOR_GRAY2BGR)
-    _outline(canvas, trace.region, _COLOUR_REGION)
-    _outline(canvas, trace.search, _COLOUR_SEARCH)
+    _outline(canvas, trace.region_outline, _COLOUR_REGION)
+    _outline(canvas, trace.search_outline, _COLOUR_SEARCH)
     return canvas
 
 
