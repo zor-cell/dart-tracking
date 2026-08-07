@@ -49,8 +49,7 @@ export class GameService {
     //keep game state in sync on websocket updates
     effect(() => {
       const message = this.socket.lastMessage();
-      if (message?.type === 'game_state') {
-        this.setState(message.state);
+      if (message?.type === 'game_state' && this.setState(message.state)) {
         this.maybeAutoAdvance(message.state);
       }
     });
@@ -75,8 +74,9 @@ export class GameService {
     this.http
       .post<GameStateDto>(`${this.baseUrl}/${id}/darts`, { value, multiplier })
       .subscribe((state) => {
-        this.setState(state);
-        this.maybeAutoAdvance(state);
+        if (this.setState(state)) {
+          this.maybeAutoAdvance(state);
+        }
       });
   }
 
@@ -155,8 +155,25 @@ export class GameService {
     localStorage.removeItem(STORAGE_KEY);
   }
 
-  private setState(state: GameStateDto): void {
+  /**
+   * Adopt a snapshot unless it is one the cache has already moved past.
+   *
+   * The same state reaches this service twice — as the answer to this device's
+   * own call and as the broadcast to the game's room — and the two can arrive in
+   * either order, so a slow response must not overwrite a newer push. The
+   * revision only orders snapshots of the *same* game; a different id is always
+   * a new game and always wins.
+   *
+   * Returns whether the state was taken, so a caller can skip follow-up work on
+   * a snapshot it has already acted upon.
+   */
+  private setState(state: GameStateDto): boolean {
+    const current = this._state();
+    if (current?.id === state.id && state.revision <= current.revision) {
+      return false;
+    }
     this._state.set(state);
     localStorage.setItem(STORAGE_KEY, state.id);
+    return true;
   }
 }

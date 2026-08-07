@@ -10,6 +10,8 @@ from app.api.features.game.entity.game_mode import GameMode
 
 class GameStateDto(CamelModel):
     id: str
+    # Version of this snapshot; rises with every state change (see Game).
+    revision: int
     mode: GameMode
     checkout_mode: CheckoutMode
     players: list[PlayerDto]
@@ -26,6 +28,7 @@ class GameStateDto(CamelModel):
     def from_entity(cls, game: Game) -> Self:
         return cls(
             id=game.id,
+            revision=game.revision,
             mode=game.mode,
             checkout_mode=game.checkout_mode,
             players=[

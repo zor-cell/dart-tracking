@@ -25,6 +25,10 @@ class Game:
     checkout_mode: CheckoutMode = CheckoutMode.DOUBLE_OUT
     current_player_index: int = 0
     turns: list[Turn] = field(default_factory=list)
+    # Counts the state changes applied to this game. A client is served over two
+    # paths at once — the answer to its own call and the broadcast to the room —
+    # so it needs to tell a stale snapshot from a newer one.
+    revision: int = 0
 
     def __post_init__(self) -> None:
         # Invariant: a turn is always open for the current player, so `turns` is
@@ -103,6 +107,7 @@ class Game:
         turn.darts.append(dart)
         if self._busts(dart):
             turn.busted = True
+        self.revision += 1
 
     def _busts(self, dart: Dart) -> bool:
         """Whether the dart just thrown spoils the visit, scoring it as nothing.
@@ -131,6 +136,12 @@ class Game:
         Deliberately not guarded by `winner`: correcting a misrecorded winning
         dart is exactly when undo is needed.
         """
+        # `can_undo` is exactly the condition under which the loop below changes
+        # something, so the revision can be bumped up front.
+        if not self.can_undo:
+            return
+        self.revision += 1
+
         while True:
             turn = self.current_turn
             if turn.darts:
@@ -151,6 +162,7 @@ class Game:
     def next_player(self) -> None:
         if self.winner is not None:
             return
+        self.revision += 1
         self.current_player_index = (self.current_player_index + 1) % len(self.players)
         self._start_turn()
 

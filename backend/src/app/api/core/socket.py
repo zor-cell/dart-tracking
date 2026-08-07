@@ -18,6 +18,7 @@ import numpy as np
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.api.core.dto.connection_established import ConnectionEstablishedMessage
+from app.api.core.services.game_hub import hub
 from app.api.features.calibration.dto.calibration_frame import CalibrationFrameMessage
 from app.api.features.calibration.dto.calibration_result import CalibrationResult
 from app.api.features.calibration.entity.calibration import Calibration
@@ -57,10 +58,9 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str) -> None:
         return
 
     await websocket.accept()
-    await websocket.send_text(ConnectionEstablishedMessage().model_dump_json(by_alias=True))
-    await websocket.send_text(
-        GameStateMessage(state=GameStateDto.from_entity(game)).model_dump_json(by_alias=True)
-    )
+    hub.join(game_id, websocket)
+    await hub.send(websocket, ConnectionEstablishedMessage())
+    await hub.send(websocket, GameStateMessage(state=GameStateDto.from_entity(game)))
 
     try:
         while True:
@@ -73,6 +73,8 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str) -> None:
                 await _handle_throw_frame(websocket, game, game_id, message)
     except WebSocketDisconnect:
         pass
+    finally:
+        hub.leave(game_id, websocket)
 
 
 async def _handle_calibration_frame(websocket: WebSocket, game_id: str, message: dict) -> None:
@@ -103,7 +105,7 @@ async def _handle_calibration_frame(websocket: WebSocket, game_id: str, message:
         detection_store.set(game_id, image)
         response = CalibrationResult.from_calibration(outcome)
 
-    await websocket.send_text(response.model_dump_json(by_alias=True))
+    await hub.send(websocket, response)
 
 
 async def _handle_throw_frame(
@@ -117,6 +119,9 @@ async def _handle_throw_frame(
     the per-throw `dart_detected` feedback followed by the authoritative
     `game_state`. On a failure: send `dart_detected` naming the stage that gave
     up and leave the game untouched.
+
+    The feedback goes to this camera alone (its overlay is in this camera's
+    pixel grid), the game state to every device in the room.
 
     Detection needs both the game's calibration and the frame to difference
     against; absent either (no calibration yet, or an undecodable image) it
@@ -137,9 +142,7 @@ async def _handle_throw_frame(
             _write_detection_debug(game_id, outcome)
 
     if isinstance(outcome, DetectionFailure):
-        await websocket.send_text(
-            DetectionResult.failed(outcome).model_dump_json(by_alias=True)
-        )
+        await hub.send(websocket, DetectionResult.failed(outcome))
         return
 
     # The detected segment carries the field, not just the points, so a tracked
@@ -150,12 +153,8 @@ async def _handle_throw_frame(
     if dart_detector.trace.aligned is not None:
         detection_store.set(game_id, dart_detector.trace.aligned)
 
-    await websocket.send_text(
-        DetectionResult.detected(outcome, calibration).model_dump_json(by_alias=True)
-    )
-    await websocket.send_text(
-        GameStateMessage(state=GameStateDto.from_entity(game)).model_dump_json(by_alias=True)
-    )
+    await hub.send(websocket, DetectionResult.detected(outcome, calibration))
+    await hub.broadcast(game_id, GameStateMessage(state=GameStateDto.from_entity(game)))
 
 
 def _write_calibration_debug(game_id: str, outcome: Calibration | CalibrationFailure) -> None:

@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException
 
+from app.api.core.services.game_hub import hub
 from app.api.features.game.dto.game_config import GameConfigDto
 from app.api.features.game.dto.game_state import GameStateDto
+from app.api.features.game.dto.game_state_message import GameStateMessage
 from app.api.features.game.dto.register_dart import RegisterDartDto
 from app.api.features.game.entity.game import Game
 from app.api.features.game.services.game_store import store
@@ -25,27 +27,41 @@ def get_game(game_id: str) -> GameStateDto:
 
 
 @router.post("/{game_id}/darts", response_model=GameStateDto)
-def register_dart(game_id: str, body: RegisterDartDto) -> GameStateDto:
+async def register_dart(game_id: str, body: RegisterDartDto) -> GameStateDto:
     game = _get_game(game_id)
 
     game.register_dart(body.to_entity())
-    return GameStateDto.from_entity(game)
+    return await _publish(game)
 
 
 @router.post("/{game_id}/undo", response_model=GameStateDto)
-def undo(game_id: str) -> GameStateDto:
+async def undo(game_id: str) -> GameStateDto:
     game = _get_game(game_id)
 
     game.undo()
-    return GameStateDto.from_entity(game)
+    return await _publish(game)
 
 
 @router.post("/{game_id}/next-player", response_model=GameStateDto)
-def next_player(game_id: str) -> GameStateDto:
+async def next_player(game_id: str) -> GameStateDto:
     game = _get_game(game_id)
 
     game.next_player()
-    return GameStateDto.from_entity(game)
+    return await _publish(game)
+
+
+async def _publish(game: Game) -> GameStateDto:
+    """Push the new state to every device in the game's room and hand it back for
+    the caller's own response.
+
+    Two paths carrying the same state is what makes the snapshot's `revision`
+    necessary. It goes away once these mutations move onto the socket
+    (docs/feature/multi-device.md §3); until then a scoreboard would miss every
+    manually entered dart without this.
+    """
+    state = GameStateDto.from_entity(game)
+    await hub.broadcast(game.id, GameStateMessage(state=state))
+    return state
 
 
 def _get_game(game_id: str) -> Game:
