@@ -371,10 +371,6 @@
   }
 }
 
-.scorepad__key--bull {
-  color: var(--p-primary-color, #09090b);
-}
-
 // Double / Triple span half the row each and lock filled while active.
 .scorepad__mod {
   grid-column: span 5;

@@ -28,7 +28,7 @@ def get_game(game_id: str) -> GameStateDto:
 def register_dart(game_id: str, body: RegisterDartDto) -> GameStateDto:
     game = _get_game(game_id)
 
-    game.register_dart(body.points)
+    game.register_dart(body.to_entity())
     return GameStateDto.from_entity(game)
 
 

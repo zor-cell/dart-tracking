@@ -38,6 +38,7 @@ from app.api.features.detection.services.detection_debug import (
 from app.api.features.detection.services.detection_store import store as detection_store
 from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.dto.game_state_message import GameStateMessage
+from app.api.features.game.entity.dart import Dart as ScoredDart
 from app.api.features.game.entity.game import Game
 from app.api.features.game.services.game_store import store as game_store
 
@@ -141,7 +142,11 @@ async def _handle_throw_frame(
         )
         return
 
-    game.register_dart(outcome.points)
+    # The detected segment carries the field, not just the points, so a tracked
+    # dart reaches the scoreboard in the same form as a manually entered one.
+    game.register_dart(
+        ScoredDart(value=outcome.segment.value, multiplier=outcome.segment.multiplier)
+    )
     if dart_detector.trace.aligned is not None:
         detection_store.set(game_id, dart_detector.trace.aligned)
 

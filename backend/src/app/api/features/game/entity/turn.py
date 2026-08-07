@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+from app.api.features.game.entity.dart import Dart
+
 
 @dataclass
 class Turn:
@@ -9,5 +11,9 @@ class Turn:
     """
 
     player_id: int
-    darts: list[int] = field(default_factory=list)
+    darts: list[Dart] = field(default_factory=list)
     busted: bool = False
+
+    @property
+    def points(self) -> int:
+        return sum(dart.points for dart in self.darts)
