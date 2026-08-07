@@ -7,7 +7,7 @@ from app.api.features.detection.entity.detection_failure import DetectionFailure
 from app.api.features.detection.services.dart_overlay import build_overlay
 
 
-class DetectionResult(CamelModel):
+class DetectionResultDto(CamelModel):
     """Server -> client: outcome of locating a dart in a throw frame.
 
     Mirrors `CalibrationResultMessage`: on success it carries where the dart

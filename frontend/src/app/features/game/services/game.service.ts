@@ -53,8 +53,8 @@ export class GameService {
     //keep game state in sync on websocket updates
     effect(() => {
       const message = this.socket.lastMessage();
-      if (message?.type === 'game_state' && this.setState(message.state)) {
-        this.maybeAutoAdvance(message.state);
+      if (message?.type === 'game_state' && this.setState(message)) {
+        this.maybeAutoAdvance(message);
       }
     });
   }

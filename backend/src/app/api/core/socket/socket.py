@@ -9,7 +9,6 @@ frontend's core/socket/dto/socket-message.ts).
 """
 
 import base64
-import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -18,10 +17,14 @@ import numpy as np
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 
-from app.api.core.dto.connection_established import ConnectionEstablishedMessage
-from app.api.core.services.game_hub import hub
-from app.api.features.calibration.dto.calibration_frame import CalibrationFrameMessage
-from app.api.features.calibration.dto.calibration_result import CalibrationResult
+from app.api.core.socket.dto.connection_established import ConnectionEstablishedDto
+from app.api.core.socket.dto.client_message import (
+    ClientMessage,
+    client_message_adapter,
+)
+from app.api.core.socket.services.game_hub import hub
+from app.api.features.calibration.dto.calibration_frame import CalibrationFrameDto
+from app.api.features.calibration.dto.calibration_result import CalibrationResultDto
 from app.api.features.calibration.entity.calibration import Calibration
 from app.api.features.calibration.entity.calibration_failure import CalibrationFailure
 from app.api.features.calibration.services import board_detector
@@ -29,8 +32,8 @@ from app.api.features.calibration.services.calibration_debug import (
     write_debug_images as write_calibration_debug_images,
 )
 from app.api.features.calibration.services.calibration_store import store as calibration_store
-from app.api.features.detection.dto.detection_result import DetectionResult
-from app.api.features.detection.dto.detection_frame import ThrowFrameMessage
+from app.api.features.detection.dto.detection_result import DetectionResultDto
+from app.api.features.detection.dto.detection_frame import DetectionFrameDto
 from app.api.features.detection.entity.detection import Dart
 from app.api.features.detection.entity.detection_failure import DetectionFailure
 from app.api.features.detection.services import dart_detector
@@ -39,8 +42,9 @@ from app.api.features.detection.services.detection_debug import (
 )
 from app.api.features.detection.services.detection_store import store as detection_store
 from app.api.features.game.dto.game_state import GameStateDto
-from app.api.features.game.dto.game_state_message import GameStateMessage
-from app.api.features.game.dto.register_dart_message import RegisterDartMessage
+from app.api.features.game.dto.next_player import NextPlayerDto
+from app.api.features.game.dto.register_dart import RegisterDartDto
+from app.api.features.game.dto.undo import UndoDto
 from app.api.features.game.entity.dart import Dart as ScoredDart
 from app.api.features.game.entity.game import Game
 from app.api.features.game.services.game_store import store as game_store
@@ -61,42 +65,45 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str) -> None:
 
     await websocket.accept()
     hub.join(game_id, websocket)
-    await hub.send(websocket, ConnectionEstablishedMessage())
-    await hub.send(websocket, GameStateMessage(state=GameStateDto.from_entity(game)))
+    await hub.send(websocket, ConnectionEstablishedDto())
+    await hub.send(websocket, GameStateDto.from_entity(game))
 
     try:
         while True:
             raw = await websocket.receive_text()
-            message = json.loads(raw)
 
             try:
-                await _dispatch(websocket, game, game_id, message)
+                message = client_message_adapter.validate_json(raw)
             except ValidationError as error:
-                # One malformed message must not drop a player mid-game.
-                print(f"[socket] ignored {message.get('type')!r}: {error}")
+                print(f"[socket] ignored message: {error}")
+                continue
+
+            await _dispatch(websocket, game, game_id, message)
     except WebSocketDisconnect:
         pass
     finally:
         hub.leave(game_id, websocket)
 
 
-async def _dispatch(websocket: WebSocket, game: Game, game_id: str, message: dict) -> None:
-    """Route one client message to its feature.
+async def _dispatch(
+    websocket: WebSocket, game: Game, game_id: str, message: ClientMessage
+) -> None:
+    """Route one parsed client message to its feature.
 
     Frames come from the camera device only; the game commands come from any
     device in the room — the camera phone correcting a misread, a scoreboard
     phone entering the visit by hand.
     """
-    match message.get("type"):
-        case "calibration_frame":
+    match message:
+        case CalibrationFrameDto():
             await _handle_calibration_frame(websocket, game_id, message)
-        case "detection_frame":
+        case DetectionFrameDto():
             await _handle_throw_frame(websocket, game, game_id, message)
-        case "register_dart" | "undo" | "next_player":
+        case RegisterDartDto() | UndoDto() | NextPlayerDto():
             await _handle_game_command(game, message)
 
 
-async def _handle_game_command(game: Game, message: dict) -> None:
+async def _handle_game_command(game: Game, command: ClientMessage) -> None:
     """Apply one command and push the result to the room.
 
     A command that changes nothing is not broadcast — a fourth dart in a visit,
@@ -107,12 +114,12 @@ async def _handle_game_command(game: Game, message: dict) -> None:
     """
     revision = game.revision
 
-    match message.get("type"):
-        case "register_dart":
-            game.register_dart(RegisterDartMessage.model_validate(message).to_entity())
-        case "undo":
+    match command:
+        case RegisterDartDto():
+            game.register_dart(command.to_entity())
+        case UndoDto():
             game.undo()
-        case "next_player":
+        case NextPlayerDto():
             game.next_player()
 
     if game.revision != revision:
@@ -121,10 +128,12 @@ async def _handle_game_command(game: Game, message: dict) -> None:
 
 async def _publish_state(game: Game) -> None:
     """Push the authoritative state to every device in the game's room."""
-    await hub.broadcast(game.id, GameStateMessage(state=GameStateDto.from_entity(game)))
+    await hub.broadcast(game.id, GameStateDto.from_entity(game))
 
 
-async def _handle_calibration_frame(websocket: WebSocket, game_id: str, message: dict) -> None:
+async def _handle_calibration_frame(
+    websocket: WebSocket, game_id: str, frame: CalibrationFrameDto
+) -> None:
     """Detect the board in a calibration frame, store the result, and reply.
 
     On success: store the homography for the game, seed the detection reference
@@ -134,7 +143,6 @@ async def _handle_calibration_frame(websocket: WebSocket, game_id: str, message:
     the stage that gave up. A frame flagged `debug` also dumps its per-stage
     images.
     """
-    frame = CalibrationFrameMessage.model_validate(message)
     image = _decode_jpeg(frame.image)
 
     outcome = (
@@ -146,17 +154,17 @@ async def _handle_calibration_frame(websocket: WebSocket, game_id: str, message:
         _write_calibration_debug(game_id, outcome)
 
     if isinstance(outcome, CalibrationFailure):
-        response = CalibrationResult.failed(outcome)
+        response = CalibrationResultDto.failed(outcome)
     else:
         calibration_store.set(game_id, outcome)
         detection_store.set(game_id, image)
-        response = CalibrationResult.from_calibration(outcome)
+        response = CalibrationResultDto.from_calibration(outcome)
 
     await hub.send(websocket, response)
 
 
 async def _handle_throw_frame(
-    websocket: WebSocket, game: Game, game_id: str, message: dict
+    websocket: WebSocket, game: Game, game_id: str, frame: DetectionFrameDto
 ) -> None:
     """Locate the dart in a throw frame, score it, and push the result.
 
@@ -174,7 +182,6 @@ async def _handle_throw_frame(
     against; absent either (no calibration yet, or an undecodable image) it
     reports the matching failure instead of attempting a fit.
     """
-    frame = ThrowFrameMessage.model_validate(message)
     image = _decode_jpeg(frame.image)
     calibration = calibration_store.get(game_id)
     reference = detection_store.get(game_id)
@@ -189,7 +196,7 @@ async def _handle_throw_frame(
             _write_detection_debug(game_id, outcome)
 
     if isinstance(outcome, DetectionFailure):
-        await hub.send(websocket, DetectionResult.failed(outcome))
+        await hub.send(websocket, DetectionResultDto.failed(outcome))
         return
 
     # The detected segment carries the field, not just the points, so a tracked
@@ -200,7 +207,7 @@ async def _handle_throw_frame(
     if dart_detector.trace.aligned is not None:
         detection_store.set(game_id, dart_detector.trace.aligned)
 
-    await hub.send(websocket, DetectionResult.detected(outcome, calibration))
+    await hub.send(websocket, DetectionResultDto.detected(outcome, calibration))
     # Pushed even when the game absorbed the dart (a trigger during a full
     # visit): the camera trims its drawn outlines against this state.
     await _publish_state(game)

@@ -1,4 +1,4 @@
-from typing import Self
+from typing import Literal, Self
 
 from app.api.core.dto.base import CamelModel
 from app.api.features.game.dto.player import PlayerDto
@@ -9,6 +9,14 @@ from app.api.features.game.entity.game_mode import GameMode
 
 
 class GameStateDto(CamelModel):
+    """The authoritative game state: both the answer to an HTTP call and the
+    message pushed over the socket, so it looks the same however it arrived.
+
+    Pushed right after connecting (a joining or reconnecting device is then in
+    sync) and after every change any device makes.
+    """
+
+    type: Literal["game_state"] = "game_state"
     id: str
     # Version of this snapshot; rises with every state change (see Game).
     revision: int

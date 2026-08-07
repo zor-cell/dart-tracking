@@ -15,7 +15,7 @@ Process-local, like the game store: a room spans one worker process.
 
 from fastapi import WebSocket, WebSocketDisconnect
 
-from app.api.core.dto.base import CamelModel
+from app.api.core.socket.dto.server_message import ServerMessage
 
 
 class GameHub:
@@ -33,12 +33,12 @@ class GameHub:
         if not room:
             del self._rooms[game_id]
 
-    async def send(self, websocket: WebSocket, message: CamelModel) -> None:
+    async def send(self, websocket: WebSocket, message: ServerMessage) -> None:
         """Answer one client. Serializing by alias is the wire contract, so it
         lives here rather than at every call site."""
         await websocket.send_text(message.model_dump_json(by_alias=True))
 
-    async def broadcast(self, game_id: str, message: CamelModel) -> None:
+    async def broadcast(self, game_id: str, message: ServerMessage) -> None:
         """Push a message to every device in the game's room.
 
         A device that dropped without a clean close is only noticed here, when
@@ -52,6 +52,4 @@ class GameHub:
             except (WebSocketDisconnect, RuntimeError, ConnectionError):
                 self.leave(game_id, websocket)
 
-
-# Module-level singleton hub.
 hub = GameHub()

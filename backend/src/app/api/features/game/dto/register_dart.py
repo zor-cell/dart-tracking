@@ -6,7 +6,7 @@ from app.api.core.dto.base import CamelModel
 from app.api.features.game.entity.dart import Dart
 
 
-class RegisterDartMessage(CamelModel):
+class RegisterDartDto(CamelModel):
     """Client -> server: book one dart, as the field it landed in rather than as
     points — T20 and three single 20s score the same but are not the same throw,
     and the scoreboard shows which one it was.

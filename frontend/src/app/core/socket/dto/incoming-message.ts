@@ -1,7 +1,7 @@
 import { ConnectionEstablishedMessage } from './connection-established-message';
 import { CalibrationResultDto } from '../../../features/calibration/dto/calibration-result.dto';
 import { DetectionResultDto } from '../../../features/detection/dto/detection-result.dto';
-import { GameStateMessage } from '../../../features/game/dto/game-state-message';
+import { GameStateDto } from '../../../features/game/dto/game-state.dto';
 
 /**
  * Server -> client messages, discriminated by `type`.
@@ -14,4 +14,4 @@ export type IncomingMessage =
   ConnectionEstablishedMessage
   | CalibrationResultDto
   | DetectionResultDto
-  | GameStateMessage;
+  | GameStateDto;

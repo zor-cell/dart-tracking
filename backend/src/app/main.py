@@ -2,7 +2,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import health
-from app.api.core import socket
+from app.api.core.socket import socket
 from app.api.features.game import games
 
 app = FastAPI(

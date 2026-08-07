@@ -3,7 +3,7 @@ from typing import Literal
 from app.api.core.dto.base import CamelModel
 
 
-class CalibrationFrameMessage(CamelModel):
+class CalibrationFrameDto(CamelModel):
     """Client -> server: a single still frame to calibrate the board against."""
 
     type: Literal["calibration_frame"]

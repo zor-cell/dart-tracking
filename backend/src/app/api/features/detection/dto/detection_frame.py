@@ -3,7 +3,7 @@ from typing import Literal
 from app.api.core.dto.base import CamelModel
 
 
-class ThrowFrameMessage(CamelModel):
+class DetectionFrameDto(CamelModel):
     """Client -> server: a still frame captured after the frame-diff trigger."""
 
     type: Literal["detection_frame"]

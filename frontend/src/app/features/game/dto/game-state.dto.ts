@@ -3,7 +3,13 @@ import { CheckoutMode } from '../models/checkout-mode';
 import { PlayerDto } from './player.dto';
 import { TurnDto } from './turn.dto';
 
+/**
+ * The authoritative game state — both the answer to an HTTP call and the message
+ * pushed over the socket. One schema rather than a payload wrapped in a message,
+ * so the state looks the same however it arrived.
+ */
 export interface GameStateDto {
+  readonly type: 'game_state';
   readonly id: string;
   /** Version of this snapshot; rises with every state change on the server. */
   readonly revision: number;
