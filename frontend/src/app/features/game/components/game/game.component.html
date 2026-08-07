@@ -118,21 +118,6 @@
           [class.scoreboard__row--active]="$index === state.currentPlayerIndex"
         >
           <span class="scoreboard__name">{{ player.name }}</span>
-          <!-- Only the player whose visit just ended carries a label, and it
-               lists the individual darts of that visit rather than its total. -->
-          @if (lastThrow(); as last) {
-            @if (last.playerId === player.id) {
-              <span
-                class="scoreboard__last"
-                [class.scoreboard__last--busted]="last.busted"
-                [attr.aria-label]="'Letzte Runde: ' + last.spoken + (last.busted ? ' (überworfen)' : '')"
-              >
-                @for (dart of last.darts; track $index) {
-                  <span class="scoreboard__dart">{{ dart.label }}</span>
-                }
-              </span>
-            }
-          }
           <span class="scoreboard__remaining">{{ player.remaining }}</span>
         </li>
       }

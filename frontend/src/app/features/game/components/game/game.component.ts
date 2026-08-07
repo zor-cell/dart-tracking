@@ -87,26 +87,6 @@ export class GameComponent implements OnInit, OnDestroy {
     this.multiplier() === 2 ? 'D' : this.multiplier() === 3 ? 'T' : '',
   );
 
-  // The most recent *finished* visit, tagged with its player — shown as darts
-  // next to that player alone, never as a total. The open turn (always the last
-  // one) is skipped, so a visit in progress stays in the dart boxes below and
-  // only moves up to the scoreboard once play has passed on.
-  protected readonly lastThrow = computed(() => {
-    const turns = this.game.state()?.turns ?? [];
-    for (let index = turns.length - 2; index >= 0; index--) {
-      const turn = turns[index];
-      if (turn.darts.length > 0) {
-        return {
-          playerId: turn.playerId,
-          darts: turn.darts,
-          busted: turn.busted,
-          spoken: turn.darts.map((dart) => dart.label).join(', '),
-        };
-      }
-    }
-    return null;
-  });
-
   protected readonly checkoutSlots = computed<(string | null)[]>(() => {
     const state = this.game.state();
     const remaining = state?.dartsRemaining ?? 0;

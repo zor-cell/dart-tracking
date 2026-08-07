@@ -226,33 +226,6 @@
 
 .scoreboard__name {
   font-weight: 500;
-  // Push the round score and remaining together to the right.
-  margin-right: auto;
-}
-
-// The individual darts of the last round thrown, sitting next to that player's
-// remaining total — a row of chips rather than a single visit total.
-.scoreboard__last {
-  display: inline-flex;
-  gap: 0.25rem;
-  margin-right: 0.75rem;
-}
-
-.scoreboard__dart {
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--p-primary-color, #09090b) 10%, transparent);
-  color: var(--p-text-muted-color, #6b7280);
-  font-size: 0.9rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-// A busted visit scored nothing: strike the darts through to show what was
-// thrown without implying it counted.
-.scoreboard__last--busted .scoreboard__dart {
-  text-decoration: line-through;
-  color: var(--p-red-500, #ef4444);
 }
 
 .scoreboard__remaining {
