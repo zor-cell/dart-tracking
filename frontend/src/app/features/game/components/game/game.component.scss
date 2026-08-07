@@ -316,11 +316,6 @@
   color: var(--p-text-muted-color, #6b7280);
 }
 
-.turn__bust {
-  color: var(--p-text-muted-color, #6b7280);
-  font-size: 0.9rem;
-}
-
 // Dartboard keypad. Ten columns so the number/side keys span two each (five
 // across) and the Double/Triple keys span five (2.5 number widths).
 .scorepad {

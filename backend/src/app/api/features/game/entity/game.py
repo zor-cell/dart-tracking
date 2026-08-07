@@ -87,8 +87,8 @@ class Game:
         )
 
     def register_dart(self, dart: Dart) -> None:
-        """Apply one dart to the current player's open turn. Overshooting busts
-        the whole turn; the double-out rule is not modelled yet.
+        """Apply one dart to the current player's open turn, busting it when the
+        dart breaks the checkout rule (see `_busts`).
 
         Advancing to the next player is a separate, explicit step (`next_player`)
         driven by the client, so the two input modes can differ: manual entry
@@ -101,8 +101,24 @@ class Game:
             return
         turn = self.current_turn
         turn.darts.append(dart)
-        if self.remaining(turn.player_id) < 0:
+        if self._busts(dart):
             turn.busted = True
+
+    def _busts(self, dart: Dart) -> bool:
+        """Whether the dart just thrown spoils the visit, scoring it as nothing.
+
+        Overshooting always does. Under double-out two more cases do: reaching
+        zero with anything but a double — the bullseye is the double bull, so it
+        finishes — and leaving exactly one point, which no double can finish.
+        """
+        remaining = self.remaining(self.current_turn.player_id)
+        if remaining < 0:
+            return True
+        if self.checkout_mode is not CheckoutMode.DOUBLE_OUT:
+            return False
+        if remaining == 0:
+            return dart.multiplier != 2
+        return remaining == 1
 
     def undo(self) -> None:
         """Take back the last dart thrown, across turn boundaries.
