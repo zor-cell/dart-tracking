@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from app.api.features.game.entity.dart import Dart
+from app.api.features.game.domain.dart import Dart
 
 
 @dataclass

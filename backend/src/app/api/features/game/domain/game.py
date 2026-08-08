@@ -7,12 +7,12 @@ throw history stays available for the statistics planned in the roadmap.
 
 from dataclasses import dataclass, field
 
-from app.api.features.game.entity.checkout import checkout_route
-from app.api.features.game.entity.checkout_mode import CheckoutMode
-from app.api.features.game.entity.dart import Dart
-from app.api.features.game.entity.game_mode import GameMode
-from app.api.features.game.entity.player import Player
-from app.api.features.game.entity.turn import Turn
+from app.api.features.game.domain.checkout import checkout_route
+from app.api.features.game.domain.checkout_mode import CheckoutMode
+from app.api.features.game.domain.dart import Dart
+from app.api.features.game.domain.game_mode import GameMode
+from app.api.features.game.domain.player import Player
+from app.api.features.game.domain.turn import Turn
 
 DARTS_PER_TURN = 3
 

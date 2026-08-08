@@ -3,9 +3,9 @@ from typing import Literal, Self
 from app.api.core.dto.base import CamelModel
 from app.api.features.game.dto.player import PlayerDto
 from app.api.features.game.dto.turn import TurnDto
-from app.api.features.game.entity.checkout_mode import CheckoutMode
-from app.api.features.game.entity.game import Game
-from app.api.features.game.entity.game_mode import GameMode
+from app.api.features.game.domain.checkout_mode import CheckoutMode
+from app.api.features.game.domain.game import Game
+from app.api.features.game.domain.game_mode import GameMode
 
 
 class GameStateDto(CamelModel):

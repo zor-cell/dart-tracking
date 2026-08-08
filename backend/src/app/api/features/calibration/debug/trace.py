@@ -5,15 +5,15 @@ values it computes anyway, so recording costs nothing and does not have to be
 switched on. Pass one in to get it back.
 
 This is deliberately data only — no drawing. Turning a trace into pictures is
-the job of scripts/calibration/run_debug.py, which keeps OpenCV rendering out of the
-service and lets the debug views change without touching detection.
+the job of `render.py`, which keeps OpenCV rendering out of the service and lets
+the debug views change without touching detection.
 """
 
 from dataclasses import dataclass, field
 
 import numpy as np
 
-from app.api.features.calibration.entity.calibration_failure import CalibrationFailure
+from app.api.features.calibration.domain.calibration_failure import CalibrationFailure
 
 
 @dataclass

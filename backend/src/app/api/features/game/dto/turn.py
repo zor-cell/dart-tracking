@@ -2,7 +2,7 @@ from typing import Self
 
 from app.api.core.dto.base import CamelModel
 from app.api.features.game.dto.dart import DartDto
-from app.api.features.game.entity.turn import Turn
+from app.api.features.game.domain.turn import Turn
 
 
 class TurnDto(CamelModel):

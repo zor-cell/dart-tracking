@@ -25,8 +25,8 @@ _BACKEND = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_BACKEND))
 sys.path.insert(0, str(_BACKEND / "src"))
 
-from app.api.features.calibration.entity.board_geometry import SECTOR_COUNT  # noqa: E402
-from app.api.features.calibration.entity.calibration_failure import CalibrationFailure  # noqa: E402
+from app.api.features.calibration.domain.board_geometry import SECTOR_COUNT  # noqa: E402
+from app.api.features.calibration.domain.calibration_failure import CalibrationFailure  # noqa: E402
 from app.api.features.calibration.services import board_detector as detector  # noqa: E402
 from app.api.features.calibration.services.board_overlay import build_overlay  # noqa: E402
 

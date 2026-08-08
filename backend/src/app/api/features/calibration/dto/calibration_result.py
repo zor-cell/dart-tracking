@@ -1,8 +1,8 @@
 from typing import Literal, Self
 
 from app.api.core.dto.base import CamelModel
-from app.api.features.calibration.entity.calibration import Calibration
-from app.api.features.calibration.entity.calibration_failure import CalibrationFailure
+from app.api.features.calibration.domain.calibration import Calibration
+from app.api.features.calibration.domain.calibration_failure import CalibrationFailure
 from app.api.features.calibration.services.board_overlay import build_overlay
 
 

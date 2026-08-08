@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from app.api.features.calibration.entity.board_geometry import Segment
+from app.api.features.calibration.domain.board_geometry import Segment
 
 
 @dataclass(frozen=True)

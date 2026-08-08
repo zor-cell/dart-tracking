@@ -2,14 +2,14 @@
 
 Same arrangement as `CalibrationTrace`: `detect_dart` only holds on to values it
 computes anyway, so recording is free and always on. Data only — rendering is
-`services/detection_debug.py`.
+`render.py`.
 """
 
 from dataclasses import dataclass, field
 
 import numpy as np
 
-from app.api.features.detection.entity.detection_failure import DetectionFailure
+from app.api.features.detection.domain.detection_failure import DetectionFailure
 
 
 @dataclass

@@ -1,9 +1,9 @@
 from typing import Literal, Self
 
 from app.api.core.dto.base import CamelModel
-from app.api.features.calibration.entity.calibration import Calibration
-from app.api.features.detection.entity.detection import Dart
-from app.api.features.detection.entity.detection_failure import DetectionFailure
+from app.api.features.calibration.domain.calibration import Calibration
+from app.api.features.detection.domain.detection import Dart
+from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.detection.services.dart_overlay import build_overlay
 
 

@@ -34,7 +34,7 @@ import math
 import cv2
 import numpy as np
 
-from app.api.features.calibration.entity.board_geometry import (
+from app.api.features.calibration.domain.board_geometry import (
     DOUBLE_INNER_RADIUS,
     DOUBLE_OUTER_RADIUS,
     SECTOR_ANGLE,
@@ -45,9 +45,9 @@ from app.api.features.calibration.entity.board_geometry import (
     sector_boundary_angles,
     sector_centre_angle,
 )
-from app.api.features.calibration.entity.calibration import Calibration
-from app.api.features.calibration.entity.calibration_failure import CalibrationFailure
-from app.api.features.calibration.entity.calibration_trace import CalibrationTrace
+from app.api.features.calibration.domain.calibration import Calibration
+from app.api.features.calibration.domain.calibration_failure import CalibrationFailure
+from app.api.features.calibration.debug.trace import CalibrationTrace
 
 # HSV bounds. Red wraps around the hue axis, so it needs two ranges.
 _RED_LOWER_1 = np.array([0, 90, 60])

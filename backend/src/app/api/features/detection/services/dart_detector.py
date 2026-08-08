@@ -36,14 +36,14 @@ import math
 import cv2
 import numpy as np
 
-from app.api.features.calibration.entity.board_geometry import (
+from app.api.features.calibration.domain.board_geometry import (
     DOUBLE_OUTER_RADIUS,
     segment_at,
 )
-from app.api.features.calibration.entity.calibration import Calibration
-from app.api.features.detection.entity.detection import Dart
-from app.api.features.detection.entity.detection_failure import DetectionFailure
-from app.api.features.detection.entity.detection_trace import DetectionTrace
+from app.api.features.calibration.domain.calibration import Calibration
+from app.api.features.detection.domain.detection import Dart
+from app.api.features.detection.domain.detection_failure import DetectionFailure
+from app.api.features.detection.debug.trace import DetectionTrace
 
 # Radius a change must reach to count as a throw at all. Past the scoring area,
 # so a dart in the surround is still found and reported as a miss.

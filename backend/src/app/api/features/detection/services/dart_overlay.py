@@ -12,8 +12,8 @@ image size — the same wire contract the board overlay uses, so the client draw
 both the same way.
 """
 
-from app.api.features.calibration.entity.calibration import Calibration
-from app.api.features.detection.entity.detection import Dart
+from app.api.features.calibration.domain.calibration import Calibration
+from app.api.features.detection.domain.detection import Dart
 
 # Half-length of each tip crosshair arm, in pixels. Small: it marks the scored
 # point without smothering it.

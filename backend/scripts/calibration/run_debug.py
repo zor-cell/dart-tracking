@@ -20,9 +20,9 @@ _BACKEND = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_BACKEND))
 sys.path.insert(0, str(_BACKEND / "src"))
 
-from app.api.features.calibration.entity.calibration_failure import CalibrationFailure  # noqa: E402
+from app.api.features.calibration.domain.calibration_failure import CalibrationFailure  # noqa: E402
 from app.api.features.calibration.services import board_detector as detector  # noqa: E402
-from app.api.features.calibration.services.calibration_debug import write_debug_images  # noqa: E402
+from app.api.features.calibration.debug.render import write_debug_images  # noqa: E402
 
 from scripts.common import debug_dir, load_image  # noqa: E402
 

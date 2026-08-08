@@ -29,5 +29,4 @@ class DetectionStore:
         return self._frames.get(game_id)
 
 
-# Module-level singleton store.
 store = DetectionStore()

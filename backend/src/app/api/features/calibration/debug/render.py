@@ -12,10 +12,10 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from app.api.features.calibration.entity.board_geometry import SECTOR_COUNT, is_red_sector
-from app.api.features.calibration.entity.calibration import Calibration
-from app.api.features.calibration.entity.calibration_failure import CalibrationFailure
-from app.api.features.calibration.entity.calibration_trace import CalibrationTrace
+from app.api.features.calibration.domain.board_geometry import SECTOR_COUNT, is_red_sector
+from app.api.features.calibration.domain.calibration import Calibration
+from app.api.features.calibration.domain.calibration_failure import CalibrationFailure
+from app.api.features.calibration.debug.trace import CalibrationTrace
 from app.api.features.calibration.services import board_detector
 from app.api.features.calibration.services.board_overlay import build_overlay
 

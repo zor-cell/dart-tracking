@@ -25,13 +25,13 @@ _BACKEND = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_BACKEND))
 sys.path.insert(0, str(_BACKEND / "src"))
 
-from app.api.features.calibration.entity.calibration import Calibration  # noqa: E402
-from app.api.features.calibration.entity.calibration_failure import CalibrationFailure  # noqa: E402
+from app.api.features.calibration.domain.calibration import Calibration  # noqa: E402
+from app.api.features.calibration.domain.calibration_failure import CalibrationFailure  # noqa: E402
 from app.api.features.calibration.services import board_detector  # noqa: E402
-from app.api.features.detection.entity.detection import Dart  # noqa: E402
-from app.api.features.detection.entity.detection_failure import DetectionFailure  # noqa: E402
+from app.api.features.detection.domain.detection import Dart  # noqa: E402
+from app.api.features.detection.domain.detection_failure import DetectionFailure  # noqa: E402
 from app.api.features.detection.services import dart_detector  # noqa: E402
-from app.api.features.detection.services.detection_debug import write_debug_images  # noqa: E402
+from app.api.features.detection.debug.render import write_debug_images  # noqa: E402
 
 from scripts.common import IMAGE_SUFFIXES, clear_results, debug_dir, load_image  # noqa: E402
 

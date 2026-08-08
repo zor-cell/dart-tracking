@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.api.features.game.dto.game_config import GameConfigDto
 from app.api.features.game.dto.game_state import GameStateDto
-from app.api.features.game.entity.game import Game
+from app.api.features.game.domain.game import Game
 from app.api.features.game.services.game_store import store
 
 router = APIRouter(prefix="/games", tags=["Game"])

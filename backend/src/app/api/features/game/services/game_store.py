@@ -7,10 +7,10 @@ server is the source of truth, since scores originate from the vision pipeline.
 
 from uuid import uuid4
 
-from app.api.features.game.entity.checkout_mode import CheckoutMode
-from app.api.features.game.entity.game import Game
-from app.api.features.game.entity.game_mode import GameMode
-from app.api.features.game.entity.player import Player
+from app.api.features.game.domain.checkout_mode import CheckoutMode
+from app.api.features.game.domain.game import Game
+from app.api.features.game.domain.game_mode import GameMode
+from app.api.features.game.domain.player import Player
 
 
 class GameStore:

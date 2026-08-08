@@ -1,6 +1,6 @@
 """Render every stage of a `detect_dart` run as separate images.
 
-Same idea as `calibration_debug.py`: a wrong score is almost never wrong at
+Same idea as calibration's `render.py`: a wrong score is almost never wrong at
 the last step, so the useful question is which stage lost the dart. The stages
 are ordered so that reading them top to bottom narrows that down —
 
@@ -24,8 +24,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from app.api.features.detection.entity.detection import Dart
-from app.api.features.detection.entity.detection_trace import DetectionTrace
+from app.api.features.detection.domain.detection import Dart
+from app.api.features.detection.debug.trace import DetectionTrace
 
 _COLOUR_AXIS = (255, 0, 255)  # magenta
 _COLOUR_TIP = (0, 255, 255)  # yellow

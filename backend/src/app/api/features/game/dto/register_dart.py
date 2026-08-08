@@ -3,7 +3,7 @@ from typing import Literal
 from pydantic import Field
 
 from app.api.core.dto.base import CamelModel
-from app.api.features.game.entity.dart import Dart
+from app.api.features.game.domain.dart import Dart
 
 
 class RegisterDartDto(CamelModel):

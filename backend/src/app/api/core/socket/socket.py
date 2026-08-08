@@ -25,19 +25,19 @@ from app.api.core.socket.dto.client_message import (
 from app.api.core.socket.services.game_hub import hub
 from app.api.features.calibration.dto.calibration_frame import CalibrationFrameDto
 from app.api.features.calibration.dto.calibration_result import CalibrationResultDto
-from app.api.features.calibration.entity.calibration import Calibration
-from app.api.features.calibration.entity.calibration_failure import CalibrationFailure
+from app.api.features.calibration.domain.calibration import Calibration
+from app.api.features.calibration.domain.calibration_failure import CalibrationFailure
 from app.api.features.calibration.services import board_detector
-from app.api.features.calibration.services.calibration_debug import (
+from app.api.features.calibration.debug.render import (
     write_debug_images as write_calibration_debug_images,
 )
 from app.api.features.calibration.services.calibration_store import store as calibration_store
 from app.api.features.detection.dto.detection_result import DetectionResultDto
 from app.api.features.detection.dto.detection_frame import DetectionFrameDto
-from app.api.features.detection.entity.detection import Dart
-from app.api.features.detection.entity.detection_failure import DetectionFailure
+from app.api.features.detection.domain.detection import Dart
+from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.detection.services import dart_detector
-from app.api.features.detection.services.detection_debug import (
+from app.api.features.detection.debug.render import (
     write_debug_images as write_detection_debug_images,
 )
 from app.api.features.detection.services.detection_store import store as detection_store
@@ -45,8 +45,8 @@ from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.dto.next_player import NextPlayerDto
 from app.api.features.game.dto.register_dart import RegisterDartDto
 from app.api.features.game.dto.undo import UndoDto
-from app.api.features.game.entity.dart import Dart as ScoredDart
-from app.api.features.game.entity.game import Game
+from app.api.features.game.domain.dart import Dart as ScoredDart
+from app.api.features.game.domain.game import Game
 from app.api.features.game.services.game_store import store as game_store
 
 router = APIRouter(prefix="/ws", tags=["Tracking"])

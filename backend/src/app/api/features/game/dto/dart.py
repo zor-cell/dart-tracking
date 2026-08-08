@@ -1,7 +1,7 @@
 from typing import Self
 
 from app.api.core.dto.base import CamelModel
-from app.api.features.game.entity.dart import Dart
+from app.api.features.game.domain.dart import Dart
 
 
 class DartDto(CamelModel):
