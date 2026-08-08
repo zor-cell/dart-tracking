@@ -62,8 +62,7 @@ _DETECTION_DEBUG_ROOT = _TESTDATA_ROOT / "detection" / "_socket_debug"
 async def websocket_endpoint(
     websocket: WebSocket,
     game_id: str,
-    client_id: str | None = Query(default=None, alias="clientId"),
-    role: DeviceRole | None = None,
+    client_id: str | None = Query(default=None, alias="clientId")
 ) -> None:
     """Join a game's room as a known device.
 
@@ -80,6 +79,7 @@ async def websocket_endpoint(
         await websocket.close(code=1008)
         return
 
+    role: DeviceRole = DeviceRole.CAMERA if len(hub.connections(game_id)) == 0 else DeviceRole.SCOREBOARD
     client = client_store.resolve(client_id, role)
 
     await websocket.accept()

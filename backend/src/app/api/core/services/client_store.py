@@ -15,7 +15,7 @@ class ClientStore:
     def __init__(self) -> None:
         self._clients: dict[str, Client] = {}
 
-    def resolve(self, client_id: str | None, role: DeviceRole | None) -> Client:
+    def resolve(self, client_id: str | None, role: DeviceRole) -> Client:
         """The device behind a connection: found, or created on the spot.
 
         `role` is a claim, sent only when the device has just been told what it
