@@ -30,11 +30,11 @@
     [modal]="true"
     [draggable]="false"
     [(visible)]="shareDialogVisible"
-    [style]="{ width: '20rem' }"
+    [style]="{ width: '30rem', maxWidth: '92vw' }"
   >
     <div class="share">
       <p class="share__hint">
-          Scanne den QR-Code oder kopiere den Link damit Freunde auf ihrem Gerät den Spielstand sehen können
+          Scanne den QR-Code damit du den Spielstand auf einem anderen Gerät sehen kannst
       </p>
 
       <!-- White backdrop regardless of theme: a dark-on-dark QR does not scan. -->
@@ -43,19 +43,25 @@
                 alt="QR-Code zum Beitreten" />
       </div>
 
-      <code class="share__url">{{ shareUrl() }}</code>
+      <p-divider class="share__divider" align="center">
+        <span class="share__divider-label">oder kopiere den Code</span>
+      </p-divider>
 
-      <div class="share__actions">
+      <div class="share__link">
+        <input
+          pInputText
+          readonly
+          class="share__link-input"
+          [value]="shareUrl()"
+          aria-label="Einladungslink"
+          (focus)="selectLink($event)"
+        />
         <p-button
-          fluid
-          label="Link kopieren"
           icon="pi pi-copy"
           severity="secondary"
+          ariaLabel="Link kopieren"
           (onClick)="copyLink()"
         />
-        @if (canShareNatively) {
-          <p-button fluid label="Teilen" icon="pi pi-share-alt" (onClick)="shareNatively()" />
-        }
       </div>
     </div>
   </p-dialog>

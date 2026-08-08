@@ -48,23 +48,30 @@
   border-radius: 0.5rem;
 }
 
-.share__url {
-  /* The fallback when scanning is not an option, so it must stay readable and
-     selectable even though a join URL is long. */
+.share__divider {
   width: 100%;
-  padding: 0.5rem;
-  background: var(--p-content-background, #f4f4f5);
-  border: 1px solid var(--p-content-border-color, #e5e7eb);
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
-  text-align: center;
-  overflow-wrap: anywhere;
-  user-select: all;
+  /* The surrounding column already spaces its children. */
+  margin: -0.5rem 0;
 }
 
-.share__actions {
+.share__divider-label {
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.85rem;
+}
+
+.share__link {
   display: flex;
-  flex-direction: column;
+  /* Stretch, so the input matches the button's height rather than sitting 4px
+     shorter. */
+  align-items: stretch;
   gap: 0.5rem;
   width: 100%;
+}
+
+.share__link-input {
+  /* A join URL is long: shown small and scrolling, so the row stays one line. */
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
 }

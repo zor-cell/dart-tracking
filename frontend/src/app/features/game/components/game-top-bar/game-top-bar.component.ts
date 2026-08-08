@@ -6,6 +6,8 @@ import { ConfirmationService } from 'primeng/api';
 import { Button } from 'primeng/button';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
+import { Divider } from 'primeng/divider';
+import { InputText } from 'primeng/inputtext';
 import { NotificationService } from '../../../../core/notification/services/notification.service';
 import { GameService } from '../../services/game.service';
 import { GameSessionService } from '../../services/game-session.service';
@@ -18,7 +20,7 @@ import { GameSessionService } from '../../services/game-session.service';
  */
 @Component({
   selector: 'app-game-top-bar',
-  imports: [Button, ConfirmDialog, Dialog, QRCodeComponent],
+  imports: [Button, ConfirmDialog, Dialog, Divider, InputText, QRCodeComponent],
   templateUrl: './game-top-bar.component.html',
   styleUrl: './game-top-bar.component.scss',
   // Scoped to this component so its <p-confirmdialog> shares the same instance.
@@ -46,10 +48,6 @@ export class GameTopBarComponent {
     return id ? `${this.document.location.origin}/game/join/${id}` : '';
   });
 
-  /** Web Share is the nicest hand-off where it exists (secure contexts only), so
-   * the button appears only when the browser actually has it. */
-  protected readonly canShareNatively = Boolean(this.window?.navigator.share);
-
   private get window(): (Window & typeof globalThis) | null {
     return this.document.defaultView;
   }
@@ -58,14 +56,9 @@ export class GameTopBarComponent {
     this.shareDialogVisible.set(true);
   }
 
-  /** Hand the link to the OS share sheet. A cancelled sheet rejects, which is
-   * not a failure worth reporting. */
-  protected async shareNatively(): Promise<void> {
-    try {
-      await this.window?.navigator.share({ title: 'Dart-Spiel', url: this.shareUrl() });
-    } catch {
-      // dismissed by the user
-    }
+  /** Select the whole link on focus, so copying by hand is one keystroke away. */
+  protected selectLink(event: Event): void {
+    (event.target as HTMLInputElement).select();
   }
 
   /**
