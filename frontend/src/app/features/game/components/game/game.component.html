@@ -1,8 +1,19 @@
 @if (game.state(); as state) {
   <section class="view game">
     <!-- Camera or drawn board, never both: this device either films the board or
-         watches what the filming one found (docs/feature/multi-device.md). -->
-    @if (deviceRole() === 'scoreboard') {
+         watches what the filming one found (docs/feature/multi-device.md). Which
+         one it is comes from the server with the handshake, so on a cold start
+         there is a moment where it is not known yet. -->
+    @if (deviceRole() === null) {
+      <div class="game__camera" role="status">
+        <div class="game__camera-overlay">
+          <p-progress-spinner
+            ariaLabel="Verbindung wird hergestellt"
+            [style]="{ width: '2.5rem', height: '2.5rem' }"
+          />
+        </div>
+      </div>
+    } @else if (deviceRole() === 'scoreboard') {
       <app-virtual-board [darts]="currentDarts()" [previousDarts]="previousDarts()" />
     } @else {
       <div class="game__camera">

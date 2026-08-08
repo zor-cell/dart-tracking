@@ -2,18 +2,16 @@ import { Injectable, effect, inject, signal } from '@angular/core';
 import { CalibrationService } from '../../calibration/services/calibration.service';
 import { CameraService } from '../../camera/services/camera.service';
 import { FrameDiffService } from '../../detection/services/frame-diff.service';
+import { DeviceRole } from '../../../core/socket/models/device-role';
+import { SocketService } from '../../../core/socket/services/socket.service';
 import { CameraPhase } from '../models/camera-phase';
-import { DeviceRole } from '../models/device-role';
 import { GameService } from './game.service';
 
-// Persisted so a full page refresh — which wipes the stream, socket and every
-// signal — can tell whether a live camera session was in progress and resume it.
+// Kept across a refresh — which wipes the stream, socket and every signal — so
+// the session can tell that a live camera was in progress and resume it. In
+// sessionStorage, not localStorage: a running camera belongs to this sitting,
+// not to the device for good.
 const PHASE_KEY = 'dart-tracking.cameraPhase';
-
-// The role is a property of the device, not of the game: the phone clamped in
-// front of the board keeps filming across games, the one on the table keeps
-// score. Persisted for the same reason.
-const ROLE_KEY = 'dart-tracking.deviceRole';
 
 /**
  * Owns the live camera session (phase + the wiring of camera and the detection
@@ -38,15 +36,14 @@ export class GameSessionService {
   private readonly calibration = inject(CalibrationService);
   private readonly throwCapture = inject(FrameDiffService);
   private readonly game = inject(GameService);
+  private readonly socket = inject(SocketService);
 
   readonly phase = signal<CameraPhase>('idle');
   readonly cameraError = this.camera.error;
 
-  /** What this device does in the game; defaults to filming, which is what a
-   * device that started a game on its own is there for. */
-  readonly role = signal<DeviceRole>(
-    (localStorage.getItem(ROLE_KEY) as DeviceRole | null) ?? 'camera',
-  );
+  /** What this device does in the game — the server's answer, read here to pick
+   * the view. `null` until the handshake has answered. */
+  readonly role = this.socket.role.asReadonly();
 
   // The current view's elements, set by the mounted game component. Undefined
   // while no game view is on screen.
@@ -56,7 +53,7 @@ export class GameSessionService {
 
   // The phase from before a refresh, captured once at construction. Consumed by
   // restore() to seed pendingResumePhase.
-  private persistedPhase = localStorage.getItem(PHASE_KEY) as CameraPhase | null;
+  private persistedPhase = sessionStorage.getItem(PHASE_KEY) as CameraPhase | null;
 
   // Phase to resume the camera into on the next view attach, set by restore()
   // after a reload once the game is confirmed. Consumed once the elements exist.
@@ -73,9 +70,9 @@ export class GameSessionService {
     effect(() => {
       const phase = this.phase();
       if (phase === 'idle') {
-        localStorage.removeItem(PHASE_KEY);
+        sessionStorage.removeItem(PHASE_KEY);
       } else {
-        localStorage.setItem(PHASE_KEY, phase);
+        sessionStorage.setItem(PHASE_KEY, phase);
       }
     });
   }
@@ -127,9 +124,10 @@ export class GameSessionService {
   }
 
   /**
-   * Set what this device does. Called when entering a game — from the setup, or
-   * from the join screen — and not afterwards: the role picks the view for the
-   * whole game, so it cannot change under a running camera.
+   * Set what this device does, before it connects. Called when entering a game
+   * — from the setup, or from the join screen — and not afterwards: the role
+   * picks the view for the whole game, so it cannot change under a running
+   * camera.
    *
    * Dropping the camera role still tears a live session down, because the device
    * may be carrying one over from the game before.
@@ -138,8 +136,7 @@ export class GameSessionService {
     if (role === this.role()) {
       return;
     }
-    this.role.set(role);
-    localStorage.setItem(ROLE_KEY, role);
+    this.socket.setRole(role);
     if (role === 'scoreboard') {
       this.endSession();
     }
@@ -166,7 +163,10 @@ export class GameSessionService {
    * camera elements exist. Stash the phase to resume the camera into; the resume
    * itself happens on the following view attach. Cleared if there is no game. */
   async restore(): Promise<void> {
-    this.pendingResumePhase = this.role() === 'camera' ? this.persistedPhase : null;
+    // No role check: a stored phase can only come from a device that was
+    // filming, and the resume waits for the camera elements — which exist only
+    // in the camera view.
+    this.pendingResumePhase = this.persistedPhase;
     this.persistedPhase = null;
 
     if (!(await this.game.ensureRestored())) {

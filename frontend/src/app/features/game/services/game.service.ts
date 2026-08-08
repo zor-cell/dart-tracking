@@ -72,7 +72,7 @@ export class GameService {
       .post<GameStateDto>(this.baseUrl, config)
       .pipe(tap((state) => {
         this.setState(state);
-        this.socket.connect(state.id);
+        this.connect();
       }));
   }
 
@@ -99,14 +99,15 @@ export class GameService {
   }
 
   /**
-   * Make a game the active one on this device: fetch its state and join its
-   * room. Resolves to false when the server does not know the id — a shared
-   * link whose game has since ended, or a stale one from before a restart.
+   * Adopt a game's state without joining its room yet. Resolves to false when
+   * the server does not know the id — a shared link whose game has since ended,
+   * or a stale one from before a restart.
    *
-   * This is the same operation whether the id comes from a shared link or from
-   * `localStorage` after a refresh; only what to do on failure differs.
+   * Separate from `connect()` for the join screen: it shows the game so the
+   * device can decide what it will be, and the role travels with the socket
+   * handshake, so the connection cannot be opened before that.
    */
-  async join(gameId: string): Promise<boolean> {
+  async load(gameId: string): Promise<boolean> {
     try {
       const state = await firstValueFrom(
         this.http.get<GameStateDto>(`${this.baseUrl}/${gameId}`, {
@@ -114,11 +115,31 @@ export class GameService {
         }),
       );
       this.setState(state);
-      this.socket.connect(state.id);
       return true;
     } catch {
       return false;
     }
+  }
+
+  /** Join the loaded game's room, so every device's changes arrive here. */
+  connect(): void {
+    const gameId = this.peekGameId();
+    if (gameId) {
+      this.socket.connect(gameId);
+    }
+  }
+
+  /**
+   * Make a game the active one on this device: adopt its state and join its
+   * room. This is the same operation whether the id comes from a shared link or
+   * from `localStorage` after a refresh; only what to do on failure differs.
+   */
+  async join(gameId: string): Promise<boolean> {
+    if (!(await this.load(gameId))) {
+      return false;
+    }
+    this.connect();
+    return true;
   }
 
   /**

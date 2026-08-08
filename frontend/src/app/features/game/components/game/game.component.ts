@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {Button} from 'primeng/button';
+import {ProgressSpinner} from 'primeng/progressspinner';
 import {OverlayComponent} from '../../../calibration/components/overlay/overlay.component';
 import {CalibrationService} from '../../../calibration/services/calibration.service';
 import {DetectionService} from '../../../detection/services/detection.service';
@@ -44,7 +45,7 @@ const PAD_ROWS: readonly PadRow[] = [
 
 @Component({
   selector: 'app-game',
-  imports: [RouterLink, Button, OverlayComponent, VirtualBoardComponent],
+  imports: [RouterLink, Button, ProgressSpinner, OverlayComponent, VirtualBoardComponent],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

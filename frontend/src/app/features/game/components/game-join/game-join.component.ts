@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } 
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { ProgressSpinner } from 'primeng/progressspinner';
-import { DeviceRole } from '../../models/device-role';
+import { DeviceRole } from '../../../../core/socket/models/device-role';
 import { GameService } from '../../services/game.service';
 import { GameSessionService } from '../../services/game-session.service';
 
@@ -43,14 +43,21 @@ export class GameJoinComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     const gameId = this.route.snapshot.paramMap.get('gameId');
-    const joined = gameId !== null && (await this.game.join(gameId));
-    this.status.set(joined ? 'choosing' : 'failed');
+    const loaded = gameId !== null && (await this.game.load(gameId));
+    this.status.set(loaded ? 'choosing' : 'failed');
   }
 
-  /** Take the picked role into the game view; starting the camera stays an
-   * explicit tap there, so the permission prompt is not sprung on arrival. */
+  /**
+   * Join the room as the picked kind of device and go to the game. The role is
+   * set before connecting because it travels with the handshake — which is why
+   * the screen only loaded the game so far.
+   *
+   * Starting the camera stays an explicit tap in the game view, so the
+   * permission prompt is not sprung on arrival.
+   */
   protected async enter(role: DeviceRole): Promise<void> {
     this.session.setRole(role);
+    this.game.connect();
     await this.router.navigate(['/game'], { replaceUrl: true });
   }
 }
