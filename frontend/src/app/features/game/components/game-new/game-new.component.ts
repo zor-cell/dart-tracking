@@ -19,11 +19,11 @@ import {NotificationService} from "../../../../core/notification/services/notifi
 @Component({
   selector: 'app-game-setup',
   imports: [ReactiveFormsModule, Button, InputText, SelectButton],
-  templateUrl: './game-setup.component.html',
-  styleUrl: './game-setup.component.scss',
+  templateUrl: './game-new.component.html',
+  styleUrl: './game-new.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GameSetupComponent {
+export class GameNewComponent {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly game = inject(GameService);

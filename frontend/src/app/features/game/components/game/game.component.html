@@ -14,7 +14,7 @@
         </div>
       </div>
     } @else if (deviceRole() === 'scoreboard') {
-      <app-virtual-board [darts]="currentDarts()" [previousDarts]="previousDarts()" />
+      <app-virtual-board [darts]="currentDarts()" />
     } @else {
       <div class="game__camera">
         <video

@@ -107,9 +107,6 @@ export class VirtualBoardComponent {
   /** The current visit's darts, drawn large and numbered as thrown. */
   readonly darts = input.required<readonly DartDto[]>();
 
-  /** Everything thrown before it, drawn as faint dots — the game so far. */
-  readonly previousDarts = input<readonly DartDto[]>([]);
-
   protected readonly segments = SEGMENTS;
   protected readonly sectorNumbers = SECTOR_NUMBERS;
   protected readonly bullRadius = BULL_RADIUS;
@@ -126,30 +123,10 @@ export class VirtualBoardComponent {
     }),
   );
 
-  protected readonly historyPoints = computed(() =>
-    this.previousDarts().flatMap((dart) => {
-      if (dart.position === null) {
-        return [];
-      }
-      const [x, y] = toSvg(dart.position[0], dart.position[1]);
-      return [{ x, y }];
-    }),
-  );
-
   /** Darts of this visit that were entered by hand and so cannot be placed. */
   protected readonly unplacedCount = computed(
     () => this.darts().filter((dart) => dart.position === null).length,
   );
-
-  protected readonly caption = computed(() => {
-    const placed = this.markers();
-    if (placed.length > 0) {
-      return placed.map((marker) => `${marker.ordinal}: ${marker.label}`).join('   ');
-    }
-    return this.unplacedCount() > 0
-      ? 'Diese Runde wurde von Hand eingetragen — ohne Position.'
-      : 'Noch kein Wurf erkannt.';
-  });
 
   protected readonly ariaLabel = computed(() => {
     const placed = this.markers();

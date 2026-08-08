@@ -96,11 +96,6 @@ export class GameComponent implements OnInit, OnDestroy {
     () => this.game.currentTurn()?.darts ?? [],
   );
 
-  /** Everything thrown before this visit — the last turn is the current one. */
-  protected readonly previousDarts = computed<readonly DartDto[]>(() =>
-    (this.game.state()?.turns ?? []).slice(0, -1).flatMap((turn) => [...turn.darts]),
-  );
-
   protected readonly checkoutSlots = computed<(string | null)[]>(() => {
     const state = this.game.state();
     const remaining = state?.dartsRemaining ?? 0;

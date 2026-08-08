@@ -10,8 +10,8 @@ export const routes: Routes = [
   {
     path: 'game/new',
     loadComponent: () =>
-      import('./features/game/components/game-setup/game-setup.component').then(
-        (m) => m.GameSetupComponent,
+      import('./features/game/components/game-new/game-new.component').then(
+        (m) => m.GameNewComponent,
       ),
   },
   {
