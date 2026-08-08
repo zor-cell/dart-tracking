@@ -13,6 +13,7 @@ import { SelectButton } from 'primeng/selectbutton';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { CHECKOUT_MODES, CheckoutMode } from '../../models/checkout-mode';
 import { GameService } from '../../services/game.service';
+import { GameSessionService } from '../../services/game-session.service';
 import {NotificationService} from "../../../../core/notification/services/notification.service";
 
 @Component({
@@ -26,6 +27,7 @@ export class GameSetupComponent {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly game = inject(GameService);
+  private readonly session = inject(GameSessionService);
   private readonly notification = inject(NotificationService);
 
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
@@ -56,6 +58,11 @@ export class GameSetupComponent {
       return;
     }
     const { mode, checkoutMode, players } = this.form.getRawValue();
+    // Whoever sets up the game is the one standing at the board, so this device
+    // films it. It also has to be set explicitly: the role only changes on the
+    // way into a game, and this device may have joined the last one as a
+    // scoreboard.
+    this.session.setRole('camera');
     this.game.createGame({ mode, checkoutMode, playerNames: players }).subscribe(() => {
       this.router.navigate(['/game']);
     });

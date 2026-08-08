@@ -1,0 +1,29 @@
+<svg class="board" [attr.viewBox]="viewBox" role="img" [attr.aria-label]="ariaLabel()">
+  <circle class="board__backing" cx="0" cy="0" r="190" />
+
+  @for (segment of segments; track $index) {
+    <path class="board__segment board__segment--{{ segment.tone }}" [attr.d]="segment.d" />
+  }
+
+  <circle class="board__segment board__segment--green" cx="0" cy="0" [attr.r]="bullRadius" />
+  <circle class="board__segment board__segment--red" cx="0" cy="0" [attr.r]="bullseyeRadius" />
+
+  @for (number of sectorNumbers; track number.value) {
+    <text class="board__number" [attr.x]="number.x" [attr.y]="number.y">{{ number.value }}</text>
+  }
+
+  <!-- Earlier throws stay on the board as faint dots: the visit is what matters
+       now, the rest is where this player has been landing. -->
+  @for (point of historyPoints(); track $index) {
+    <circle class="board__history" [attr.cx]="point.x" [attr.cy]="point.y" r="2.5" />
+  }
+
+  @for (marker of markers(); track $index) {
+    <g class="board__marker">
+      <circle [attr.cx]="marker.x" [attr.cy]="marker.y" r="4" />
+      <text [attr.x]="marker.x + 10" [attr.y]="marker.y - 8">{{ marker.ordinal }}</text>
+    </g>
+  }
+</svg>
+
+<p class="board__caption">{{ caption() }}</p>

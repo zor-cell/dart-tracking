@@ -1,17 +1,44 @@
 <section class="view">
-  @if (failed()) {
-    <div class="placeholder">
-      <i class="pi pi-link placeholder__icon" aria-hidden="true"></i>
-      <p>Dieses Spiel gibt es nicht mehr.</p>
-      <p class="join__hint">
-        Der Link ist abgelaufen — vielleicht wurde das Spiel beendet oder der Server neu gestartet.
-      </p>
-      <p-button label="Neues Spiel" icon="pi pi-play-circle" routerLink="/game/new" />
-    </div>
-  } @else {
-    <div class="placeholder" role="status">
-      <p-progress-spinner ariaLabel="Spiel wird geladen" [style]="{ width: '2.5rem', height: '2.5rem' }" />
-      <p>Spiel wird beigetreten …</p>
-    </div>
+  @switch (status()) {
+    @case ('resolving') {
+      <div class="placeholder" role="status">
+        <p-progress-spinner ariaLabel="Spiel wird geladen" [style]="{ width: '2.5rem', height: '2.5rem' }" />
+        <p>Spiel wird beigetreten …</p>
+      </div>
+    }
+    @case ('choosing') {
+      <div class="join">
+        <h2 class="join__title">Spiel beitreten</h2>
+        <p class="join__summary">{{ summary() }}</p>
+
+        <div class="join__options">
+          <p-button
+            fluid
+            label="Mit Kamera"
+            icon="pi pi-camera"
+            [disabled]="!cameraJoinAvailable"
+            (onClick)="enter('camera')"
+          />
+          <p-button
+            fluid
+            label="Ohne Kamera"
+            icon="pi pi-chart-pie"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="enter('scoreboard')"
+          />
+        </div>
+      </div>
+    }
+    @case ('failed') {
+      <div class="placeholder">
+        <i class="pi pi-link placeholder__icon" aria-hidden="true"></i>
+        <p>Dieses Spiel gibt es nicht mehr.</p>
+        <p class="join__hint">
+          Der Link ist abgelaufen — vielleicht wurde das Spiel beendet oder der Server neu gestartet.
+        </p>
+        <p-button label="Neues Spiel" icon="pi pi-play-circle" routerLink="/game/new" />
+      </div>
+    }
   }
 </section>

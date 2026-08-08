@@ -1,4 +1,32 @@
+.join {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.join__title {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.join__summary {
+  margin: -1rem 0 0;
+  color: var(--p-text-muted-color, #6b7280);
+  font-weight: 500;
+}
+
+.join__options {
+  display: flex;
+  gap: 0.75rem;
+
+  // Both options carry the same weight, so they share the row evenly.
+  p-button {
+    flex: 1;
+  }
+}
+
 .join__hint {
   margin: 0;
   font-size: 0.85rem;
+  color: var(--p-text-muted-color, #6b7280);
 }

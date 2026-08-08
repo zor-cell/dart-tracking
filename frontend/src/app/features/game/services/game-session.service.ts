@@ -3,11 +3,17 @@ import { CalibrationService } from '../../calibration/services/calibration.servi
 import { CameraService } from '../../camera/services/camera.service';
 import { FrameDiffService } from '../../detection/services/frame-diff.service';
 import { CameraPhase } from '../models/camera-phase';
+import { DeviceRole } from '../models/device-role';
 import { GameService } from './game.service';
 
 // Persisted so a full page refresh — which wipes the stream, socket and every
 // signal — can tell whether a live camera session was in progress and resume it.
 const PHASE_KEY = 'dart-tracking.cameraPhase';
+
+// The role is a property of the device, not of the game: the phone clamped in
+// front of the board keeps filming across games, the one on the table keeps
+// score. Persisted for the same reason.
+const ROLE_KEY = 'dart-tracking.deviceRole';
 
 /**
  * Owns the live camera session (phase + the wiring of camera and the detection
@@ -19,7 +25,8 @@ const PHASE_KEY = 'dart-tracking.cameraPhase';
  *
  * The socket is deliberately not its business: it belongs to the game, not to
  * the camera, since a device that only keeps score holds one too (`GameService`).
- * This service is what turns *this* device into the one that films the board.
+ * This service is what turns *this* device into the one that films the board —
+ * which is also why the device's role lives here.
  *
  * A page refresh is the other case: everything client-side is gone, but the
  * server keeps the game, calibration and reference frame keyed by game id, so the
@@ -34,6 +41,12 @@ export class GameSessionService {
 
   readonly phase = signal<CameraPhase>('idle');
   readonly cameraError = this.camera.error;
+
+  /** What this device does in the game; defaults to filming, which is what a
+   * device that started a game on its own is there for. */
+  readonly role = signal<DeviceRole>(
+    (localStorage.getItem(ROLE_KEY) as DeviceRole | null) ?? 'camera',
+  );
 
   // The current view's elements, set by the mounted game component. Undefined
   // while no game view is on screen.
@@ -113,6 +126,25 @@ export class GameSessionService {
     this.phase.set('calibrating');
   }
 
+  /**
+   * Set what this device does. Called when entering a game — from the setup, or
+   * from the join screen — and not afterwards: the role picks the view for the
+   * whole game, so it cannot change under a running camera.
+   *
+   * Dropping the camera role still tears a live session down, because the device
+   * may be carrying one over from the game before.
+   */
+  setRole(role: DeviceRole): void {
+    if (role === this.role()) {
+      return;
+    }
+    this.role.set(role);
+    localStorage.setItem(ROLE_KEY, role);
+    if (role === 'scoreboard') {
+      this.endSession();
+    }
+  }
+
   /** Capture the current frame for board calibration. */
   async calibrate(): Promise<void> {
     if (this.video && this.captureCanvas) {
@@ -134,7 +166,7 @@ export class GameSessionService {
    * camera elements exist. Stash the phase to resume the camera into; the resume
    * itself happens on the following view attach. Cleared if there is no game. */
   async restore(): Promise<void> {
-    this.pendingResumePhase = this.persistedPhase;
+    this.pendingResumePhase = this.role() === 'camera' ? this.persistedPhase : null;
     this.persistedPhase = null;
 
     if (!(await this.game.ensureRestored())) {

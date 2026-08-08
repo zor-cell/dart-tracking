@@ -17,8 +17,10 @@ import {CalibrationService} from '../../../calibration/services/calibration.serv
 import {DetectionService} from '../../../detection/services/detection.service';
 import {FrameDiffService} from '../../../detection/services/frame-diff.service';
 import {SettingsService} from '../../../settings/services/settings.service';
+import {DartDto} from '../../dto/dart.dto';
 import {GameService} from '../../services/game.service';
 import {GameSessionService} from '../../services/game-session.service';
+import {VirtualBoardComponent} from '../virtual-board/virtual-board.component';
 
 /** A side-column key: a fixed field, so it carries its own multiplier and is
  * unaffected by the D/T keys. */
@@ -42,7 +44,7 @@ const PAD_ROWS: readonly PadRow[] = [
 
 @Component({
   selector: 'app-game',
-  imports: [RouterLink, Button, OverlayComponent],
+  imports: [RouterLink, Button, OverlayComponent, VirtualBoardComponent],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -63,6 +65,7 @@ export class GameComponent implements OnInit, OnDestroy {
   private readonly captureCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('captureCanvas');
   private readonly detectionDebugCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('detectionDebugCanvas');
 
+  protected readonly deviceRole = this.session.role;
   protected readonly cameraPhase = this.session.phase;
   protected readonly cameraError = this.session.cameraError;
   protected readonly calibrationStatus = this.calibration.status;
@@ -85,6 +88,16 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly multiplier = signal<1 | 2 | 3>(1);
   protected readonly multiplierPrefix = computed(() =>
     this.multiplier() === 2 ? 'D' : this.multiplier() === 3 ? 'T' : '',
+  );
+
+  /** The visit being thrown, drawn on the virtual board as it fills up. */
+  protected readonly currentDarts = computed<readonly DartDto[]>(
+    () => this.game.currentTurn()?.darts ?? [],
+  );
+
+  /** Everything thrown before this visit — the last turn is the current one. */
+  protected readonly previousDarts = computed<readonly DartDto[]>(() =>
+    (this.game.state()?.turns ?? []).slice(0, -1).flatMap((turn) => [...turn.darts]),
   );
 
   protected readonly checkoutSlots = computed<(string | null)[]>(() => {
