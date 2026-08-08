@@ -14,15 +14,17 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 
+from app.api.core.domain.device_role import DeviceRole
+from app.api.core.services.client_store import store as client_store
 from app.api.core.socket.dto.connection_established import ConnectionEstablishedDto
 from app.api.core.socket.dto.client_message import (
     ClientMessage,
     client_message_adapter,
 )
-from app.api.core.socket.services.game_hub import hub
+from app.api.core.socket.services.game_hub import Connection, hub
 from app.api.features.calibration.dto.calibration_frame import CalibrationFrameDto
 from app.api.features.calibration.dto.calibration_result import CalibrationResultDto
 from app.api.features.calibration.domain.calibration import Calibration
@@ -57,16 +59,33 @@ _DETECTION_DEBUG_ROOT = _TESTDATA_ROOT / "detection" / "_socket_debug"
 
 
 @router.websocket("/games/{game_id}")
-async def websocket_endpoint(websocket: WebSocket, game_id: str) -> None:
+async def websocket_endpoint(
+    websocket: WebSocket,
+    game_id: str,
+    client_id: str | None = Query(default=None, alias="clientId"),
+    role: DeviceRole | None = None,
+) -> None:
+    """Join a game's room as a known device.
+
+    Both parameters ride on the handshake because they are settled before there
+    is anything to say. `clientId` is missing only on a device's first ever
+    connect; `role` only when the device has just been told what it is, and is
+    otherwise answered from what the server has on record.
+
+    A device that has never claimed anything counts as a scoreboard — so a
+    forgotten parameter costs a picture, never a wrong one.
+    """
     game = game_store.get(game_id)
     if game is None:
         await websocket.close(code=1008)
         return
 
+    client = client_store.resolve(client_id, role)
+
     await websocket.accept()
-    hub.join(game_id, websocket)
-    await hub.send(websocket, ConnectionEstablishedDto())
-    await hub.send(websocket, GameStateDto.from_entity(game))
+    connection = hub.join(game_id, websocket, client)
+    await hub.send(connection, ConnectionEstablishedDto.from_entity(client))
+    await hub.send(connection, GameStateDto.from_entity(game))
 
     try:
         while True:
@@ -78,7 +97,7 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str) -> None:
                 print(f"[socket] ignored message: {error}")
                 continue
 
-            await _dispatch(websocket, game, game_id, message)
+            await _dispatch(connection, game, game_id, message)
     except WebSocketDisconnect:
         pass
     finally:
@@ -86,7 +105,7 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str) -> None:
 
 
 async def _dispatch(
-    websocket: WebSocket, game: Game, game_id: str, message: ClientMessage
+    connection: Connection, game: Game, game_id: str, message: ClientMessage
 ) -> None:
     """Route one parsed client message to its feature.
 
@@ -95,10 +114,14 @@ async def _dispatch(
     phone entering the visit by hand.
     """
     match message:
+        case (CalibrationFrameDto() | DetectionFrameDto()) if (
+            connection.client.role is not DeviceRole.CAMERA
+        ):
+            print(f"[socket] ignored {message.type} from a {connection.client.role} device")
         case CalibrationFrameDto():
-            await _handle_calibration_frame(websocket, game_id, message)
+            await _handle_calibration_frame(connection, game_id, message)
         case DetectionFrameDto():
-            await _handle_throw_frame(websocket, game, game_id, message)
+            await _handle_throw_frame(connection, game, game_id, message)
         case RegisterDartDto() | UndoDto() | NextPlayerDto():
             await _handle_game_command(game, message)
 
@@ -132,7 +155,7 @@ async def _publish_state(game: Game) -> None:
 
 
 async def _handle_calibration_frame(
-    websocket: WebSocket, game_id: str, frame: CalibrationFrameDto
+    connection: Connection, game_id: str, frame: CalibrationFrameDto
 ) -> None:
     """Detect the board in a calibration frame, store the result, and reply.
 
@@ -160,11 +183,11 @@ async def _handle_calibration_frame(
         detection_store.set(game_id, image)
         response = CalibrationResultDto.from_calibration(outcome)
 
-    await hub.send(websocket, response)
+    await hub.send(connection, response)
 
 
 async def _handle_throw_frame(
-    websocket: WebSocket, game: Game, game_id: str, frame: DetectionFrameDto
+    connection: Connection, game: Game, game_id: str, frame: DetectionFrameDto
 ) -> None:
     """Locate the dart in a throw frame, score it, and push the result.
 
@@ -196,7 +219,7 @@ async def _handle_throw_frame(
             _write_detection_debug(game_id, outcome)
 
     if isinstance(outcome, DetectionFailure):
-        await hub.send(websocket, DetectionResultDto.failed(outcome))
+        await hub.send(connection, DetectionResultDto.failed(outcome))
         return
 
     # The detected segment carries the field, not just the points, so a tracked
@@ -212,7 +235,7 @@ async def _handle_throw_frame(
     if dart_detector.trace.aligned is not None:
         detection_store.set(game_id, dart_detector.trace.aligned)
 
-    await hub.send(websocket, DetectionResultDto.detected(outcome, calibration))
+    await hub.send(connection, DetectionResultDto.detected(outcome, calibration))
     # Pushed even when the game absorbed the dart (a trigger during a full
     # visit): the camera trims its drawn outlines against this state.
     await _publish_state(game)

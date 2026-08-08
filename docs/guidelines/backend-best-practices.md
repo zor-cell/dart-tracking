@@ -15,8 +15,11 @@ src/app/
 └─ api/
    ├─ health.py                # trivial single-endpoint routers stay flat
    ├─ core/
-   │  ├─ dto/                  # cross-feature wire schemas (base.py, connection_established.py)
-   │  └─ socket.py             # the single WebSocket endpoint (vision pipeline entry point)
+   │  ├─ domain/               # cross-feature domain models (client.py, device_role.py)
+   │  ├─ dto/                  # cross-feature wire schemas (base.py)
+   │  ├─ services/             # cross-feature stores (client_store.py)
+   │  └─ socket/               # the single WebSocket endpoint (vision pipeline entry point),
+   │                           # with its own dto/ and services/ (game_hub.py)
    └─ features/
       └─ <feature>/            # e.g. game/, calibration/, detection/
          ├─ <feature>s.py      # APIRouter with the endpoints, if the feature has REST ones (e.g. games.py)
