@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Observable, firstValueFrom, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
@@ -51,11 +51,18 @@ export class GameService {
   constructor() {
     // The only route by which a change reaches this cache: commands are sent
     // over the socket and answered with a push, never with a response body.
+    //
+    // The incoming message is the sole dependency; the handling is untracked.
+    // Without that, the state read inside setState() makes the effect depend on
+    // its own cache, so clearing it in reset() re-runs this with the last push
+    // still in hand and immediately restores the game that was just ended.
     effect(() => {
       const message = this.socket.lastMessage();
-      if (message?.type === 'game_state' && this.setState(message)) {
-        this.maybeAutoAdvance(message);
-      }
+      untracked(() => {
+        if (message?.type === 'game_state' && this.setState(message)) {
+          this.maybeAutoAdvance(message);
+        }
+      });
     });
   }
 

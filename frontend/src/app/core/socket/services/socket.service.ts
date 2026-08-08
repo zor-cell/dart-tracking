@@ -56,6 +56,7 @@ export class SocketService {
     this.gameId = null;
     this.pending = [];
     this.connectionStatus.set('disconnected');
+    this.lastMessage.set(null);
   }
 
   /**
