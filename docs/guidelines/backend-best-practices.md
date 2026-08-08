@@ -21,7 +21,8 @@ src/app/
       └─ <feature>/            # e.g. game/, calibration/, detection/
          ├─ <feature>s.py      # APIRouter with the endpoints, if the feature has REST ones (e.g. games.py)
          ├─ dto/               # Pydantic wire schemas (request/response)
-         ├─ entity/            # domain models (dataclasses) + business rules
+         ├─ domain/            # domain models (dataclasses) + business rules
+         ├─ debug/             # diagnostics: the run trace and its renderer (CV features only)
          └─ services/          # stores and orchestration
 ```
 
@@ -30,8 +31,22 @@ src/app/
 - `dto/` — Pydantic models that cross the wire. Serialize with camelCase aliases
   so the JSON matches the Angular DTOs (a `CamelModel` base with
   `alias_generator=to_camel`, `populate_by_name=True`).
-- `entity/` — the domain: dataclasses plus the rules that operate on them. This
-  is the source of truth for game logic (scores originate on the server).
+- `domain/` — the domain: dataclasses plus the rules that operate on them, the
+  enums that name its closed sets, and its fixed constants (`board_geometry.py`).
+  This is the source of truth for game logic (scores originate on the server).
+  Named `domain/` rather than `entity/` because nothing here is persisted — the
+  Java/JPA reading of "entity" (a row in a table) does not apply — and rather
+  than `models/`, which in a FastAPI codebase reads as the Pydantic models that
+  already live in `dto/`.
+- `debug/` — what a pipeline run saw, and how to look at it: a trace dataclass
+  the service fills as it goes, plus the renderer that turns it into one image
+  per stage. Only the CV features have one. This is **not** dev-only tooling: the
+  socket endpoint renders live when a frame arrives with `debug: true`, which is
+  what the frontend's debug switches drive. The CLI runners that replay photos
+  off disk stay in `backend/scripts/` — they are entry points, not app code.
+  - The trace is an out-parameter of the detector, so `services/` imports
+    `debug/trace.py`. That direction is deliberate; `trace.py` imports nothing
+    from `services/`, so there is no cycle.
 - `services/` — stateful stores and orchestration.
 - Trivial single-endpoint routers (e.g. `health`) may stay as flat modules in
   `api/` until they grow into a feature.
@@ -59,7 +74,7 @@ src/app/
   (camelCase) by default.
 - Raise `HTTPException` with a clear `status_code` and `detail` for error cases.
 - Validate inputs at the boundary by **typing** them, not by hand-written checks.
-  A closed set of values belongs in an `Enum` in `entity/` (see `GameMode`), used
+  A closed set of values belongs in an `Enum` in `domain/` (see `GameMode`), used
   as the field type in the DTO: pydantic then rejects anything else with a 422,
   and the value shows up as a proper `enum` in the OpenAPI schema. Reach for a
   manual `HTTPException` only for rules the type system cannot express (e.g. "at
@@ -75,13 +90,13 @@ src/app/
   lost on restart and not shared across worker processes. Persistence (Postgres)
   comes later.
 
-## DTO ↔ Entity Separation
-- Keep Pydantic wire schemas (`dto/`) separate from domain models (`entity/`).
-- The dependency points **one way only**: `dto/` may import `entity/`, never the
+## DTO ↔ Domain Separation
+- Keep Pydantic wire schemas (`dto/`) separate from domain models (`domain/`).
+- The dependency points **one way only**: `dto/` may import `domain/`, never the
   reverse. The domain must not know how it is serialized — otherwise the game
   rules end up coupled to camelCase JSON, and a second wire format (the
   WebSocket `game_state` push) would have to be modelled inside the domain too.
-- Map entity → DTO with a `from_entity()` classmethod on the DTO. Construction
+- Map domain → DTO with a `from_entity()` classmethod on the DTO. Construction
   lives next to the schema it builds, and routers read as
   `GameStateDto.from_entity(game)`.
 - Values that belong to the aggregate rather than to the mapped object are

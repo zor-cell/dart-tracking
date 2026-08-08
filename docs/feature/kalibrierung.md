@@ -25,7 +25,7 @@ Matrix auf. Die Kalibrierung ist damit der einzige Schritt, der die Kamera
 
 ### Das Board-Koordinatensystem
 
-Definiert in `entity/board_geometry.py`, nach WDF/BDO-Norm:
+Definiert in `domain/board_geometry.py`, nach WDF/BDO-Norm:
 
 | Größe | Wert |
 |---|---|
@@ -367,7 +367,7 @@ Durchgängen, damit ein oszillierendes Bild nicht ewig dreht.
 ## 3. Fehlerbehandlung
 
 `detect_board` gibt bei Misserfolg die **Stufe** zurück, die aufgegeben hat
-(`CalibrationFailure`, ein `StrEnum` aus `entity/calibration_failure.py`), nicht
+(`CalibrationFailure`, ein `StrEnum` aus `domain/calibration_failure.py`), nicht
 bloß `None` — damit der Client dem Nutzer sagen kann, was er ändern soll. Das DTO
 `CalibrationResult` trägt diesen Wert im Feld `failure` an den Client:
 
@@ -381,12 +381,12 @@ bloß `None` — damit der Client dem Nutzer sagen kann, was er ändern soll. Da
 
 ## 4. Debugging-Werkzeuge
 
-**`CalibrationTrace`** (`entity/calibration_trace.py`) — reine Datenklasse.
+**`CalibrationTrace`** (`debug/trace.py`) — reine Datenklasse.
 `detect_board` hält Referenzen auf Zwischenergebnisse, die es ohnehin berechnet;
 Aufzeichnen kostet also nichts und muss nicht eingeschaltet werden. Bewusst
 *ohne* Zeichenlogik, damit OpenCV-Rendering aus dem Service herausbleibt.
 
-**`calibration_debug.py`** rendert den Trace als Bildfolge:
+**`debug/render.py`** rendert den Trace als Bildfolge:
 
 | Datei | Inhalt |
 |---|---|

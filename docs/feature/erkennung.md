@@ -235,7 +235,7 @@ entscheidet `segment_at` rein geometrisch (Radius → Ring, Winkel → Sektor,
 ## 3. Fehlerbehandlung
 
 `detect_dart` gibt bei Misserfolg die **Stufe** zurück, die aufgegeben hat
-(`DetectionFailure`, ein `StrEnum` aus `entity/detection_failure.py`) — wie
+(`DetectionFailure`, ein `StrEnum` aus `domain/detection_failure.py`) — wie
 `CalibrationFailure`, damit der Client dem Nutzer einen konkreten Rat geben kann
 statt bloß „nichts gefunden". Das DTO `DetectionResult` trägt den Wert im Feld
 `failure` an den Client.
@@ -254,12 +254,12 @@ Fit; `ALIGNMENT_FAILED` und `NO_CHANGE` im Detektor.
 
 ## 4. Debugging-Werkzeuge
 
-**`DetectionTrace`** (`entity/detection_trace.py`) — reine Datenklasse, gleiche
+**`DetectionTrace`** (`debug/trace.py`) — reine Datenklasse, gleiche
 Idee wie `CalibrationTrace`: `detect_dart` hält ohnehin Referenzen auf seine
 Zwischenergebnisse, Aufzeichnen kostet also nichts und ist immer an. Bewusst
 ohne Zeichenlogik.
 
-**`detection_debug.py`** rendert den Trace als Bildfolge:
+**`debug/render.py`** rendert den Trace als Bildfolge:
 
 | Datei | Inhalt |
 |---|---|
