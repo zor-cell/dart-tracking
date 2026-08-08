@@ -201,8 +201,13 @@ async def _handle_throw_frame(
 
     # The detected segment carries the field, not just the points, so a tracked
     # dart reaches the scoreboard in the same form as a manually entered one.
+    # The tip comes along so devices without a camera can draw where it landed.
     game.register_dart(
-        ScoredDart(value=outcome.segment.value, multiplier=outcome.segment.multiplier)
+        ScoredDart(
+            value=outcome.segment.value,
+            multiplier=outcome.segment.multiplier,
+            position=outcome.tip_board,
+        )
     )
     if dart_detector.trace.aligned is not None:
         detection_store.set(game_id, dart_detector.trace.aligned)

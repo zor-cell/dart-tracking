@@ -11,6 +11,11 @@ class Dart:
 
     value: int  # sector value, 25 for the bull, 0 for a miss
     multiplier: int  # 0 miss, 1 single, 2 double, 3 triple
+    # Where the tip landed, in board millimetres, for a dart the camera located.
+    # None for a manually entered one: there the field is known but the point
+    # inside it is not. Carried on the game state so a device without a camera
+    # can draw the throw on a board of its own.
+    position: tuple[float, float] | None = None
 
     @property
     def points(self) -> int:

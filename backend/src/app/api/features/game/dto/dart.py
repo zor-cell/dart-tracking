@@ -9,7 +9,13 @@ class DartDto(CamelModel):
     # Called-out form ("T20"), so the client displays what was thrown without
     # having to reconstruct it from the points.
     label: str
+    # [x, y] in board millimetres, or None for a manually entered dart.
+    position: list[float] | None = None
 
     @classmethod
     def from_entity(cls, dart: Dart) -> Self:
-        return cls(points=dart.points, label=dart.label)
+        return cls(
+            points=dart.points,
+            label=dart.label,
+            position=list(dart.position) if dart.position is not None else None,
+        )
