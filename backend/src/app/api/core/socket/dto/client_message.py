@@ -13,6 +13,7 @@ from typing import Annotated
 
 from pydantic import Field, TypeAdapter
 
+from app.api.core.socket.dto.set_role import SetRoleDto
 from app.api.features.calibration.dto.calibration_frame import CalibrationFrameDto
 from app.api.features.detection.dto.detection_frame import DetectionFrameDto
 from app.api.features.game.dto.next_player import NextPlayerDto
@@ -20,7 +21,12 @@ from app.api.features.game.dto.register_dart import RegisterDartDto
 from app.api.features.game.dto.undo import UndoDto
 
 ClientMessage = Annotated[
-    CalibrationFrameDto | DetectionFrameDto | RegisterDartDto | UndoDto | NextPlayerDto,
+    CalibrationFrameDto
+    | DetectionFrameDto
+    | SetRoleDto
+    | RegisterDartDto
+    | UndoDto
+    | NextPlayerDto,
     Field(discriminator="type"),
 ]
 

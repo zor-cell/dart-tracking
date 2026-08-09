@@ -1,3 +1,4 @@
+import { SetRoleDto } from './set-role.dto';
 import { CalibrationFrameDto } from '../../../features/calibration/dto/calibration-frame.dto';
 import { DetectionFrameDto } from '../../../features/detection/dto/detection-frame.dto';
 import { NextPlayerDto } from '../../../features/game/dto/next-player.dto';
@@ -14,6 +15,7 @@ import { UndoDto } from '../../../features/game/dto/undo.dto';
 export type ClientMessage =
   | CalibrationFrameDto
   | DetectionFrameDto
+  | SetRoleDto
   | RegisterDartDto
   | UndoDto
   | NextPlayerDto;

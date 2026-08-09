@@ -15,25 +15,26 @@ class ClientStore:
     def __init__(self) -> None:
         self._clients: dict[str, Client] = {}
 
-    def resolve(self, client_id: str | None, role: DeviceRole) -> Client:
+    def resolve(self, client_id: str | None) -> Client:
         """The device behind a connection: found, or created on the spot.
 
-        `role` is a claim, sent only when the device has just been told what it
-        is (game setup, join screen). Left out on a plain reconnect, so the
-        stored role is what answers "what am I" after a reload.
+        Nothing but the id is asked for. What the device is stays whatever it
+        was — the record is the answer to "what am I" after a reload, so a
+        connect must not overwrite it. Changing it takes a `set_role` command.
 
         An id the store does not know is kept rather than replaced. It happens
         whenever the server restarted — which in development is constantly —
         and a device that loses its identity there loses everything hung off it.
         Minting only when the device brings no id keeps the server the issuer.
+
+        A device is a browser profile, not a tab: two tabs share `localStorage`
+        and therefore this record, role included.
         """
         client = self._clients.get(client_id) if client_id else None
 
         if client is None:
-            client = Client(id=client_id or uuid4().hex, role=role or DeviceRole.SCOREBOARD)
+            client = Client(id=client_id or uuid4().hex, role=DeviceRole.SCOREBOARD)
             self._clients[client.id] = client
-        elif role is not None:
-            client.role = role
 
         return client
 

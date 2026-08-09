@@ -19,7 +19,8 @@ from pydantic import ValidationError
 
 from app.api.core.domain.device_role import DeviceRole
 from app.api.core.services.client_store import store as client_store
-from app.api.core.socket.dto.connection_established import ConnectionEstablishedDto
+from app.api.core.socket.dto.client_state import ClientStateDto
+from app.api.core.socket.dto.set_role import SetRoleDto
 from app.api.core.socket.dto.client_message import (
     ClientMessage,
     client_message_adapter,
@@ -66,25 +67,24 @@ async def websocket_endpoint(
 ) -> None:
     """Join a game's room as a known device.
 
-    Both parameters ride on the handshake because they are settled before there
-    is anything to say. `clientId` is missing only on a device's first ever
-    connect; `role` only when the device has just been told what it is, and is
-    otherwise answered from what the server has on record.
+    `clientId` is the whole handshake, and is missing only on a device's first
+    ever connect. Everything else the server knows about the device hangs off
+    that id — the role included, which is why the connect answers it instead of
+    asking for it (`client_state`). Changing it is a `set_role` command.
 
-    A device that has never claimed anything counts as a scoreboard — so a
-    forgotten parameter costs a picture, never a wrong one.
+    A device that has never said otherwise counts as a scoreboard, so a
+    forgotten role costs a picture, never a wrong one.
     """
     game = game_store.get(game_id)
     if game is None:
         await websocket.close(code=1008)
         return
 
-    role: DeviceRole = DeviceRole.CAMERA if len(hub.connections(game_id)) == 0 else DeviceRole.SCOREBOARD
-    client = client_store.resolve(client_id, role)
+    client = client_store.resolve(client_id)
 
     await websocket.accept()
     connection = hub.join(game_id, websocket, client)
-    await hub.send(connection, ConnectionEstablishedDto.from_entity(client))
+    await hub.send(connection, ClientStateDto.from_entity(client))
     await hub.send(connection, GameStateDto.from_entity(game))
 
     try:
@@ -111,7 +111,8 @@ async def _dispatch(
 
     Frames come from the camera device only; the game commands come from any
     device in the room — the camera phone correcting a misread, a scoreboard
-    phone entering the visit by hand.
+    phone entering the visit by hand. `set_role` is what decides which of the
+    two a device is, and so is the one message that changes that answer.
     """
     match message:
         case (CalibrationFrameDto() | DetectionFrameDto()) if (
@@ -122,8 +123,25 @@ async def _dispatch(
             await _handle_calibration_frame(connection, game_id, message)
         case DetectionFrameDto():
             await _handle_throw_frame(connection, game, game_id, message)
+        case SetRoleDto():
+            await _handle_client_command(connection, message)
         case RegisterDartDto() | UndoDto() | NextPlayerDto():
             await _handle_game_command(game, message)
+
+
+async def _handle_client_command(connection: Connection, command: ClientMessage) -> None:
+    """Record what this device does in the game, and confirm it.
+
+    The confirmation is not redundant with the device having applied the role
+    locally: the command is issued on the way into a game, so it reaches the
+    server after the handshake already answered with the *previous* role. This
+    reply is what settles the two, and it is ordered behind that answer.
+    """
+    match command:
+        case SetRoleDto():
+            connection.client.role = command.role
+
+    await hub.send(connection, ClientStateDto.from_entity(connection.client))
 
 
 async def _handle_game_command(game: Game, command: ClientMessage) -> None:
