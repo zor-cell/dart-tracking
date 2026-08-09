@@ -20,7 +20,8 @@ from pydantic import ValidationError
 from app.api.core.domain.device_role import DeviceRole
 from app.api.core.services.client_store import store as client_store
 from app.api.core.socket.dto.client_state import ClientStateDto
-from app.api.core.socket.dto.set_role import SetRoleDto
+from app.api.core.socket.dto.command.client_command import ClientCommand
+from app.api.core.socket.dto.command.set_role import SetRoleDto
 from app.api.core.socket.dto.client_message import (
     ClientMessage,
     client_message_adapter,
@@ -45,10 +46,11 @@ from app.api.features.detection.debug.render import (
 )
 from app.api.features.detection.services.detection_store import store as detection_store
 from app.api.features.detection.services.scoring_camera import store as scoring_camera_store
+from app.api.features.game.dto.command.game_command import GameCommand
 from app.api.features.game.dto.game_state import GameStateDto
-from app.api.features.game.dto.next_player import NextPlayerDto
-from app.api.features.game.dto.register_dart import RegisterDartDto
-from app.api.features.game.dto.undo import UndoDto
+from app.api.features.game.dto.command.next_player import NextPlayerDto
+from app.api.features.game.dto.command.register_dart import RegisterDartDto
+from app.api.features.game.dto.command.undo import UndoDto
 from app.api.features.game.domain.dart import Dart as ScoredDart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.services.game_store import store as game_store
@@ -130,7 +132,7 @@ async def _dispatch(
             await _handle_game_command(game, message)
 
 
-async def _handle_client_command(connection: Connection, command: ClientMessage) -> None:
+async def _handle_client_command(connection: Connection, command: ClientCommand) -> None:
     """Record what this device does in the game, and confirm it.
 
     The confirmation is not redundant with the device having applied the role
@@ -145,7 +147,7 @@ async def _handle_client_command(connection: Connection, command: ClientMessage)
     await hub.send(connection, ClientStateDto.from_entity(connection.client))
 
 
-async def _handle_game_command(game: Game, command: ClientMessage) -> None:
+async def _handle_game_command(game: Game, command: GameCommand) -> None:
     """Apply one command and push the result to the room.
 
     A command that changes nothing is not broadcast — a fourth dart in a visit,
