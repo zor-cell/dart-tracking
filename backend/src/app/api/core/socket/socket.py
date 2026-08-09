@@ -44,6 +44,7 @@ from app.api.features.detection.debug.render import (
     write_debug_images as write_detection_debug_images,
 )
 from app.api.features.detection.services.detection_store import store as detection_store
+from app.api.features.detection.services.scoring_camera import store as scoring_camera_store
 from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.dto.next_player import NextPlayerDto
 from app.api.features.game.dto.register_dart import RegisterDartDto
@@ -177,13 +178,21 @@ async def _handle_calibration_frame(
 ) -> None:
     """Detect the board in a calibration frame, store the result, and reply.
 
-    On success: store the homography for the game, seed the detection reference
-    with this frame — it is the empty board every later throw is first
+    On success: store the homography for this camera, seed its detection
+    reference with this frame — it is the empty board every later throw is first
     differenced against, and it already sits in the pixel grid the homography
     belongs to — and reply with the recognised board. On failure: reply naming
     the stage that gave up. A frame flagged `debug` also dumps its per-stage
     images.
+
+    Both are kept per camera, not per game: a second camera films the same board
+    through a different homography, so it needs its own of each.
+
+    A successful calibration is also where a camera claims the scoring role, it
+    being the first point at which it could detect anything. Only the first
+    claim takes (see `scoring_camera`).
     """
+    client_id = connection.client.id
     image = _decode_jpeg(frame.image)
 
     outcome = (
@@ -192,13 +201,14 @@ async def _handle_calibration_frame(
         else CalibrationFailure.INVALID_IMAGE
     )
     if frame.debug and image is not None:
-        _write_calibration_debug(game_id, outcome)
+        _write_calibration_debug(game_id, client_id, outcome)
 
     if isinstance(outcome, CalibrationFailure):
         response = CalibrationResultDto.failed(outcome)
     else:
-        calibration_store.set(game_id, outcome)
-        detection_store.set(game_id, image)
+        calibration_store.set(game_id, client_id, outcome)
+        detection_store.set(game_id, client_id, image)
+        scoring_camera_store.claim(game_id, client_id)
         response = CalibrationResultDto.from_calibration(outcome)
 
     await hub.send(connection, response)
@@ -209,23 +219,33 @@ async def _handle_throw_frame(
 ) -> None:
     """Locate the dart in a throw frame, score it, and push the result.
 
-    On a hit: register the dart on the game, roll the reference frame forward to
-    the aligned copy — so the next throw is differenced against this one rather
-    than the empty board, and darts already in the board cancel out — then send
-    the per-throw `dart_detected` feedback followed by the authoritative
-    `game_state`. On a failure: send `dart_detected` naming the stage that gave
-    up and leave the game untouched.
+    On a hit: roll this camera's reference frame forward to the aligned copy —
+    so its next throw is differenced against this one rather than the empty
+    board, and darts already in the board cancel out — send the per-throw
+    `dart_detected` feedback, and, if this is the game's scoring camera,
+    register the dart and push the authoritative `game_state`. On a failure:
+    send `dart_detected` naming the stage that gave up and leave the game
+    untouched.
 
     The feedback goes to this camera alone (its overlay is in this camera's
     pixel grid), the game state to every device in the room.
 
-    Detection needs both the game's calibration and the frame to difference
-    against; absent either (no calibration yet, or an undecodable image) it
+    **Only one camera books.** Every camera that saw the throw would otherwise
+    register it, and the visit would fill at twice the rate without anything
+    reporting an error (see `scoring_camera`). The others still detect in full:
+    that is what produces two independent readings of one throw, and what a
+    later fusion would be built on. Rolling the reference forward is likewise
+    every camera's own business — skipping it for an observer would leave it
+    differencing against a board that has since gained darts.
+
+    Detection needs both this camera's calibration and its frame to difference
+    against; absent either (not calibrated yet, or an undecodable image) it
     reports the matching failure instead of attempting a fit.
     """
+    client_id = connection.client.id
     image = _decode_jpeg(frame.image)
-    calibration = calibration_store.get(game_id)
-    reference = detection_store.get(game_id)
+    calibration = calibration_store.get(game_id, client_id)
+    reference = detection_store.get(game_id, client_id)
 
     if image is None:
         outcome: Dart | DetectionFailure = DetectionFailure.INVALID_IMAGE
@@ -234,10 +254,18 @@ async def _handle_throw_frame(
     else:
         outcome = dart_detector.detect_dart(reference, image, calibration)
         if frame.debug:
-            _write_detection_debug(game_id, outcome)
+            _write_detection_debug(game_id, client_id, outcome)
 
     if isinstance(outcome, DetectionFailure):
         await hub.send(connection, DetectionResultDto.failed(outcome))
+        return
+
+    if dart_detector.trace.aligned is not None:
+        detection_store.set(game_id, client_id, dart_detector.trace.aligned)
+
+    await hub.send(connection, DetectionResultDto.detected(outcome, calibration))
+
+    if not scoring_camera_store.is_scoring(game_id, client_id):
         return
 
     # The detected segment carries the field, not just the points, so a tracked
@@ -250,26 +278,34 @@ async def _handle_throw_frame(
             position=outcome.tip_board,
         )
     )
-    if dart_detector.trace.aligned is not None:
-        detection_store.set(game_id, dart_detector.trace.aligned)
-
-    await hub.send(connection, DetectionResultDto.detected(outcome, calibration))
     # Pushed even when the game absorbed the dart (a trigger during a full
     # visit): the camera trims its drawn outlines against this state.
     await _publish_state(game)
 
 
-def _write_calibration_debug(game_id: str, outcome: Calibration | CalibrationFailure) -> None:
-    """Dump the just-finished board attempt's per-stage images (see scripts/calibration/run_debug.py)."""
-    out_dir = _CALIBRATION_DEBUG_ROOT / game_id / _timestamp()
+def _write_calibration_debug(
+    game_id: str, client_id: str, outcome: Calibration | CalibrationFailure
+) -> None:
+    """Dump the just-finished board attempt's per-stage images (see scripts/calibration/run_debug.py).
+
+    Split by camera as well as by game, so two cameras filming one board do not
+    interleave their stages into a single folder.
+    """
+    out_dir = _CALIBRATION_DEBUG_ROOT / game_id / client_id / _timestamp()
     written = write_calibration_debug_images(board_detector.trace, outcome, out_dir)
     print(f"[calibration debug] {len(written)} image(s) in {out_dir}")
 
 
-def _write_detection_debug(game_id: str, outcome: Dart | DetectionFailure) -> None:
-    """Dump the just-finished throw's per-stage images (see scripts/detection/run_debug.py)."""
+def _write_detection_debug(
+    game_id: str, client_id: str, outcome: Dart | DetectionFailure
+) -> None:
+    """Dump the just-finished throw's per-stage images (see scripts/detection/run_debug.py).
+
+    Split by camera as well as by game — with two of them running, one throw
+    leaves two traces, and telling them apart is the point.
+    """
     dart = outcome if isinstance(outcome, Dart) else None
-    out_dir = _DETECTION_DEBUG_ROOT / game_id / _timestamp()
+    out_dir = _DETECTION_DEBUG_ROOT / game_id / client_id / _timestamp()
     written = write_detection_debug_images(dart_detector.trace, dart, out_dir)
     print(f"[detection debug] {len(written)} image(s) in {out_dir}")
 
