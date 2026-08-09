@@ -103,9 +103,9 @@ export class GameService {
    * the server does not know the id — a shared link whose game has since ended,
    * or a stale one from before a restart.
    *
-   * Separate from `connect()` for the join screen: it shows the game so the
-   * device can decide what it will be, and the role travels with the socket
-   * handshake, so the connection cannot be opened before that.
+   * Separate from `connect()` for the join screen, which shows the game before
+   * asking what this device will be — and only enters the room once that is
+   * answered, so a device that turns back was never in it.
    */
   async load(gameId: string): Promise<boolean> {
     try {

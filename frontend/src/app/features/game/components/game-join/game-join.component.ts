@@ -48,16 +48,15 @@ export class GameJoinComponent implements OnInit {
   }
 
   /**
-   * Join the room as the picked kind of device and go to the game. The role is
-   * set before connecting because it travels with the handshake — which is why
-   * the screen only loaded the game so far.
+   * Join the room as the picked kind of device and go to the game. The role
+   * follows the connect, because it is sent as a command over that socket.
    *
    * Starting the camera stays an explicit tap in the game view, so the
    * permission prompt is not sprung on arrival.
    */
   protected async enter(role: DeviceRole): Promise<void> {
-    this.session.setRole(role);
     this.game.connect();
+    this.session.setRole(role);
     await this.router.navigate(['/game'], { replaceUrl: true });
   }
 }

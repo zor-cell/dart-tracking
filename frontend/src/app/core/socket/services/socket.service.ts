@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { environment } from '../../../../environments/environment';
-import { ConnectionEstablishedDto } from '../dto/connection-established.dto';
+import { ClientStateDto } from '../dto/client-state.dto';
 import { ServerMessage } from '../dto/server-message';
 import { ClientFrame, ClientMessage } from '../dto/client-message';
 import { DeviceRole } from '../models/device-role';
@@ -25,8 +25,8 @@ export class SocketService {
 
   /**
    * What this device does in the game. Owned by the server: `null` until the
-   * handshake answers, which is only visible on a cold start — picking a role
-   * sets it right away, and the confirmation follows.
+   * first `client_state` answers, which is only visible on a cold start —
+   * picking a role sets it right away, and the confirmation follows.
    */
   readonly role = signal<DeviceRole | null>(null);
 
@@ -35,27 +35,23 @@ export class SocketService {
 
   private clientId: string | null = localStorage.getItem(CLIENT_ID_KEY);
 
-  // A role the device has just been told to take, sent along with the next
-  // handshake and cleared once the server confirms it. Left unset on a plain
-  // reconnect, so the server answers with what it has on record instead.
-  private claimedRole: DeviceRole | null = null;
-
   // Commands issued before the socket finished opening, flushed on connect.
   // Only commands are held back: a queued frame would describe a board the game
   // has long moved past, so those are dropped instead (see `sendFrame`).
   private pending: ClientMessage[] = [];
 
   /**
-   * Claim a role for this device before connecting. It travels with the
-   * handshake, so it has to be settled first — which it is: it is picked on the
-   * way into a game and does not change while one is running.
+   * Tell the server what this device does in the game. Requires a socket, so it
+   * is issued on the way into a game, right after `connect()` — queued like any
+   * other command if the handshake is still in flight.
    *
-   * Applied locally straight away so the view has something to render; the
-   * server confirms it on connect.
+   * Applied locally straight away so the view has something to render. The
+   * server's confirmation is what settles it: the `client_state` of the
+   * handshake still carries the previous role and lands first.
    */
   setRole(role: DeviceRole): void {
-    this.claimedRole = role;
     this.role.set(role);
+    this.send({ type: 'set_role', role });
   }
 
   connect(gameId: string): void {
@@ -68,7 +64,7 @@ export class SocketService {
 
     this.gameId = gameId;
     this.connectionStatus.set('connecting');
-    this.socket = new WebSocket(`${environment.wsApiUrl}/games/${gameId}${this.handshakeQuery()}`);
+    this.socket = new WebSocket(`${environment.wsApiUrl}/games/${gameId}${this.identity()}`);
 
     this.socket.addEventListener('open', () => {
       this.connectionStatus.set('connected');
@@ -81,7 +77,7 @@ export class SocketService {
     });
     this.socket.addEventListener('message', (event) => {
       const message = JSON.parse(event.data) as ServerMessage;
-      if (message.type === 'connection_established') {
+      if (message.type === 'client_state') {
         this.adopt(message);
       }
       this.lastMessage.set(message);
@@ -131,26 +127,20 @@ export class SocketService {
     this.socket.send(JSON.stringify(message));
   }
 
-  /** Identify this device to the server, as far as it can. Both parts are
-   * absent on a first connect — a device with no name and no claim. */
-  private handshakeQuery(): string {
-    const params = new URLSearchParams();
-    if (this.clientId) {
-      params.set('clientId', this.clientId);
-    }
-    if (this.claimedRole) {
-      params.set('role', this.claimedRole);
-    }
-    const query = params.toString();
-    return query ? `?${query}` : '';
+  /**
+   * Name this device to the server — the whole handshake, and deliberately so:
+   * everything else it knows about the device hangs off the id, so nothing else
+   * belongs in the URL. Absent on a first connect, when there is no name yet.
+   */
+  private identity(): string {
+    return this.clientId ? `?clientId=${encodeURIComponent(this.clientId)}` : '';
   }
 
   /** Take the server's word for who this device is. */
-  private adopt(message: ConnectionEstablishedDto): void {
+  private adopt(message: ClientStateDto): void {
     this.clientId = message.clientId;
     localStorage.setItem(CLIENT_ID_KEY, message.clientId);
     this.role.set(message.role);
-    this.claimedRole = null;
   }
 
   private flush(): void {

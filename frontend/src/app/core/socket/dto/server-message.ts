@@ -1,4 +1,4 @@
-import { ConnectionEstablishedDto } from './connection-established.dto';
+import { ClientStateDto } from './client-state.dto';
 import { CalibrationResultDto } from '../../../features/calibration/dto/calibration-result.dto';
 import { DetectionResultDto } from '../../../features/detection/dto/detection-result.dto';
 import { GameStateDto } from '../../../features/game/dto/game-state.dto';
@@ -10,7 +10,7 @@ import { GameStateDto } from '../../../features/game/dto/game-state.dto';
  * knows the full set; each message is defined by the feature that reads it.
  */
 export type ServerMessage =
-  | ConnectionEstablishedDto
+  | ClientStateDto
   | CalibrationResultDto
   | DetectionResultDto
   | GameStateDto;

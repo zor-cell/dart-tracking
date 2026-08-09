@@ -124,13 +124,13 @@ export class GameSessionService {
   }
 
   /**
-   * Set what this device does, before it connects. Called when entering a game
-   * — from the setup, or from the join screen — and not afterwards: the role
-   * picks the view for the whole game, so it cannot change under a running
-   * camera.
+   * Set what this device does. Called on the way into a game — from the setup,
+   * or from the join screen — and not afterwards: the role picks the view for
+   * the whole game, so it cannot change under a running camera.
    *
-   * Dropping the camera role still tears a live session down, because the device
-   * may be carrying one over from the game before.
+   * A no-op when it already holds, so the server is only told about an actual
+   * change. Dropping the camera role still tears a live session down, because
+   * the device may be carrying one over from the game before.
    */
   setRole(role: DeviceRole): void {
     if (role === this.role()) {
