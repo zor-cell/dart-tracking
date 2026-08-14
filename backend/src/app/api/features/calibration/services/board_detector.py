@@ -26,7 +26,8 @@ Pipeline (see docs/roadmap.md §6.1 for the literature this follows):
 
 Colour alternates every sector, so it fixes the rotation only to within two
 sectors; the remaining ambiguity is resolved by the convention that sector 20
-hangs on top.
+hangs on top, asked of each candidate's own homography so that a steep viewing
+angle does not tilt the answer onto the neighbouring rotation.
 """
 
 import math
@@ -43,7 +44,6 @@ from app.api.features.calibration.domain.board_geometry import (
     TRIPLE_OUTER_RADIUS,
     is_red_sector,
     sector_boundary_angles,
-    sector_centre_angle,
 )
 from app.api.features.calibration.domain.calibration import Calibration
 from app.api.features.calibration.domain.calibration_failure import CalibrationFailure
@@ -183,10 +183,15 @@ def _record_failure(failure: CalibrationFailure) -> CalibrationFailure:
     return failure
 
 
+def _project_to_image(inverse: np.ndarray, x: float, y: float) -> tuple[float, float]:
+    """Where a board coordinate (mm) lands in the image, given inv(homography)."""
+    point = inverse @ np.array([x, y, 1.0])
+    return float(point[0] / point[2]), float(point[1] / point[2])
+
+
 def _project_board_centre(homography: np.ndarray) -> tuple[float, float]:
     """Where the board centre (the bull) lands in the image."""
-    point = np.linalg.inv(homography) @ np.array([0.0, 0.0, 1.0])
-    return float(point[0] / point[2]), float(point[1] / point[2])
+    return _project_to_image(np.linalg.inv(homography), 0.0, 0.0)
 
 
 def _colour_masks(image: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -658,7 +663,7 @@ def _match_sector_wires(
     # Transitions come out ordered by ellipse parameter. Board angles at the
     # wires decrease as the parameter grows (the two run opposite), so the
     # candidate assignments are the cyclic rotations of that reversed order.
-    best: tuple[float, list[tuple[float, float]]] | None = None
+    candidates: list[tuple[int, list[tuple[float, float]]]] = []
 
     for offset in range(SECTOR_COUNT):
         pairs = []
@@ -675,11 +680,13 @@ def _match_sector_wires(
             if is_red_sector(wire) == becomes_red:
                 agreement += 1
 
-        score = agreement / len(transitions) - 0.01 * _upright_penalty(ellipse, pairs)
-        if best is None or score > best[0]:
-            best = (score, pairs)
+        candidates.append((agreement, pairs))
 
-    return best[1] if best else None
+    # Colour decides on its own; the upright convention only separates the ten
+    # assignments colour cannot tell apart, and never outvotes a wire.
+    best_agreement = max(agreement for agreement, _ in candidates)
+    tied = [pairs for agreement, pairs in candidates if agreement == best_agreement]
+    return min(tied, key=lambda pairs: _upright_penalty(ellipse, pairs))
 
 
 def _upright_penalty(
@@ -690,20 +697,29 @@ def _upright_penalty(
 
     Colour alternation repeats every two sectors and so leaves ten equally good
     rotations; this is what picks between them.
-    """
-    (centre_x, centre_y), _, _ = ellipse
-    target = sector_centre_angle(0)  # sector 20
 
-    # Find the pair nearest to the 20 and see where it actually lands on screen.
-    parameter, board_angle = min(
-        pairs, key=lambda pair: abs(_wrap(pair[1] - target))
-    )
-    x, y = _ellipse_point(ellipse, parameter)
+    Measured through the assignment's own homography, not off the ellipse
+    directly: where a ring point *appears* in the image is not the direction it
+    has on the board. Seen from the side the projection swings that apparent
+    angle by tens of degrees, while the ten candidates sit only 36 degrees
+    apart — enough for the neighbouring rotation to look more upright than the
+    right one, which is a whole two sectors of scoring error. The homography is
+    what already knows the perspective, so asking it removes the bias instead of
+    bounding it.
+    """
+    homography = _fit_homography(ellipse, pairs)
+    if homography is None:
+        return math.pi
+
+    inverse = np.linalg.inv(homography)
+    centre_x, centre_y = _project_to_image(inverse, 0.0, 0.0)
+    # Probed at the ring radius, where the correspondences are, so the direction
+    # is read off the fit rather than extrapolated beyond it.
+    top_x, top_y = _project_to_image(inverse, 0.0, DOUBLE_OUTER_RADIUS)
 
     # Straight up in image coordinates (y grows downward) is -pi/2.
-    on_screen = math.atan2(y - centre_y, x - centre_x)
-    expected_offset = _wrap(board_angle - target)
-    return abs(_wrap(on_screen + math.pi / 2 + expected_offset))
+    on_screen = math.atan2(top_y - centre_y, top_x - centre_x)
+    return abs(_wrap(on_screen + math.pi / 2))
 
 
 def _wrap(angle: float) -> float:

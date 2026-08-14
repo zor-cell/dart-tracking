@@ -330,8 +330,47 @@ jeder künftige Wurf gegen ein falsch rotiertes Board.
    oben hängt**. Gemessen wird, wie weit die gewählte Zuordnung das Board vom
    Bildschirm-„oben" (−π/2, da y nach unten wächst) wegkippt.
 
-Score: `Farb-Übereinstimmung − 0.01 · Aufrecht-Strafe`. Die Farbe entscheidet,
-die Strafe bricht nur den Gleichstand.
+Zuerst entscheidet die Farbe allein; nur unter den Zuordnungen, die sie *nicht*
+trennen kann, wählt die Aufrecht-Strafe. Sie kann nie einen Draht überstimmen.
+
+#### Warum die Strafe über die Homographie gemessen wird
+
+Ursprünglich nahm `_upright_penalty` **einen** Ellipsenpunkt — den Draht neben
+der 20 — und verglich dessen Bildschirmwinkel `atan2` mit „oben". Das ist falsch,
+sobald die Kamera seitlich steht: **wo ein Ringpunkt im Bild erscheint, ist nicht
+die Richtung, die er auf dem Board hat.** Die Projektion dreht diesen scheinbaren
+Winkel um zweistellige Grad, die zehn Kandidaten liegen aber nur 36° auseinander
+— es reicht also, dass die *Nachbar*-Rotation aufrechter aussieht als die
+richtige. Der Fehler ist dann nicht klein, sondern volle **zwei Sektoren**.
+
+Gemessen an `pz-light_setup1` (Stativ weit seitlich, Achsenverhältnis der Ellipse
+1.73):
+
+die drei engsten der zehn Kandidaten (alle mit Farb-Übereinstimmung 1.00):
+
+| Kandidat | Strafe alt (1 Draht) | Strafe neu (Homographie) |
+|---|---|---|
+| Offset 14 (**richtig**) | 13.6° | **0.8°** |
+| Offset 16 (alt gewählt) | **9.5°** | 21.5° |
+| Offset 18 | 34.3° | 43.5° |
+
+Die alte Messung wählte 16 mit 4° Vorsprung — das Board war um 36° verdreht
+kalibriert, die 12 galt als 20, und *jeder* Wurf in diesem Setup war falsch
+(23 % Segment-Accuracy).
+
+Die Lösung nutzt, was ohnehin schon existiert: Für jeden verbliebenen Kandidaten
+wird dessen **eigene Homographie** gefittet und gefragt, wo der Board-Punkt
+`(0, 170)` — die Richtung der 20, auf Ringradius, also innerhalb der gefitteten
+Korrespondenzen und nicht extrapoliert — im Bild landet. Die Homographie kennt
+die Perspektive bereits; die Verzerrung wird damit herausgerechnet statt
+abgeschätzt. Der richtige Kandidat gewinnt jetzt mit 0.8° gegen 21.5°, also mit
+Faktor 25 statt knapp zu verlieren.
+
+Kosten: bis zu zehn zusätzliche `findHomography`-Fits pro Verfeinerungspass, à
+**0.28 ms** bei 20 Punkten — gegen eine Gesamtkalibrierung von 370–590 ms nicht
+messbar (Messreihe vorher/nachher lag innerhalb des Rauschens). Auf dem
+gesamten Testset: **69.8 % → 74.7 %**, `pz-light_setup1` 23 % → 70 %, alle 15
+anderen Setups unverändert auf die Detektion genau.
 
 ---
 
