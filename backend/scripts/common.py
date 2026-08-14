@@ -142,19 +142,24 @@ def rate_table(
     header: str,
     hit_label: str = "ok",
 ) -> list[str]:
-    """A `| header | hit_label | total | rate |` table, grouped by `key`, sorted.
+    """A `| header | hit_label | total | rate |` table, grouped by `key`.
 
     One row per group: how many of its items satisfy `hit`, as a percentage.
+    Best rate first, so the groups that need work sit at the bottom where the
+    eye lands last; name breaks ties to keep the order stable between runs.
     """
     groups: dict[str, list[T]] = defaultdict(list)
     for item in items:
         groups[key(item)].append(item)
 
-    lines = [f"| {header} | {hit_label} | total | rate |", "|---|---|---|---|"]
-    for name in sorted(groups):
-        group = groups[name]
+    rows = []
+    for name, group in groups.items():
         hits = sum(1 for item in group if hit(item))
-        lines.append(f"| {name} | {hits} | {len(group)} | {100 * hits / len(group):.0f}% |")
+        rows.append((hits / len(group), name, hits, len(group)))
+    rows.sort(key=lambda row: (-row[0], row[1]))
+
+    lines = [f"| {header} | {hit_label} | total | rate |", "|---|---|---|---|"]
+    lines += [f"| {name} | {hits} | {total} | {100 * rate:.0f}% |" for rate, name, hits, total in rows]
     return lines
 
 
