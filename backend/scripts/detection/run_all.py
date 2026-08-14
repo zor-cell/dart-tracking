@@ -18,7 +18,10 @@ an image only where the detection disagrees with ground truth, so `_results`
 becomes a folder of just the failures instead of 165 mostly-correct overlays.
 
 Ground truth (optional): a `ground_truth.txt` in a folder scores segment accuracy
-and writes `_results/accuracy.md` with every mismatch. One `<frame stem> <segment>`
+and writes `_results/accuracy.md` with every mismatch, each with how far in
+millimetres the scored tip landed from the segment it should have been in — a
+couple of millimetres is a wire's-width miss, tens of millimetres is a different
+kind of error. One `<frame stem> <segment>`
 per line, labels exactly as the detector reports them; blank lines and `#` comments
 are ignored. A trailing `?` marks a label you were unsure of - still scored as
 given, only flagged. `--truth-template` bootstraps these files from the current
@@ -45,6 +48,10 @@ _BACKEND = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_BACKEND))
 sys.path.insert(0, str(_BACKEND / "src"))
 
+from app.api.features.calibration.domain.board_geometry import (  # noqa: E402
+    distance_to_segment,
+    segment_from_label,
+)
 from app.api.features.calibration.domain.calibration_failure import CalibrationFailure  # noqa: E402
 from app.api.features.calibration.services import board_detector  # noqa: E402
 from app.api.features.detection.domain.detection_failure import DetectionFailure  # noqa: E402
@@ -69,6 +76,10 @@ REPORT_NAME = "accuracy.md"
 
 FRAME_PATTERN = re.compile(r"^(?P<series>.+?)_(?P<frame>base|dart\d+)$", re.IGNORECASE)
 
+# A mismatch closer than this to the expected segment counts as a near miss: the
+# wire between two segments is about 1 mm wide, and tip precision is a few mm.
+NEAR_MISS_MM = 5.0
+
 COLOUR_AXIS = (255, 0, 255)  # magenta
 COLOUR_TIP = (0, 255, 255)  # yellow
 COLOUR_MASK = (60, 200, 60)
@@ -84,12 +95,31 @@ class Result:
     located: bool  # whether a dart blob was found at all
     detected: str | None  # segment label if located, else None
     expected: str | None  # ground-truth label if annotated, else None
+    tip_board: tuple[float, float] | None = None  # scored tip in board mm, if located
     uncertain: bool = False  # truth label was flagged `?` (I wasn't sure); still scored as-is
 
     @property
     def correct(self) -> bool:
         """Located, annotated, and the detected segment matches the truth."""
         return self.located and self.expected is not None and self.detected == self.expected
+
+    @property
+    def off_by_mm(self) -> float | None:
+        """How far the scored tip landed from the expected segment, in millimetres.
+
+        Zero on a correct call. What it buys on a mismatch is the difference
+        between a tip a wire's width off the right segment — plausible, the
+        pipeline was essentially right — and one tens of millimetres away, which
+        means something upstream (calibration, alignment, the wrong blob) is
+        wrong rather than imprecise. None when there is nothing to measure: no
+        tip, no truth label, or a label that does not parse.
+        """
+        if self.tip_board is None or self.expected is None:
+            return None
+        segment = segment_from_label(self.expected)
+        if segment is None:
+            return None
+        return distance_to_segment(*self.tip_board, segment)
 
 
 def frame_order(name: str) -> tuple[int, int]:
@@ -244,7 +274,7 @@ def run_series(
         unlocated = []
         for label, path in frames[1:]:
             expected, uncertain = expected_for(truth, path.stem)
-            unlocated.append(Result(name, label, path, False, None, expected, uncertain))
+            unlocated.append(Result(name, label, path, False, None, expected, uncertain=uncertain))
         return unlocated
 
     print(f"{name}  reference {frames[0][1].name}  ({dart_detector._pixels_per_mm(calibration.homography):.2f} px/mm)")
@@ -255,15 +285,15 @@ def run_series(
         frame = load_image(path, raw)
         if frame is None:
             print(f"  {label:<6} UNREADABLE")
-            results.append(Result(name, label, path, False, None, expected, uncertain))
+            results.append(Result(name, label, path, False, None, expected, uncertain=uncertain))
             continue
 
         outcome = dart_detector.detect_dart(reference, frame, calibration)
         if isinstance(outcome, DetectionFailure):
-            detected, located = None, False
+            detected, located, tip_board = None, False, None
             line = f"  {label:<6} FAIL  {outcome.value}  (inliers {dart_detector.trace.alignment_inliers})"
         else:
-            detected, located = outcome.segment.label, True
+            detected, located, tip_board = outcome.segment.label, True, outcome.tip_board
             x, y = outcome.tip_board
             line = (
                 f"  {label:<6} {outcome.segment.label:<5} = {outcome.points:<3} "
@@ -271,10 +301,12 @@ def run_series(
                 f"inliers {dart_detector.trace.alignment_inliers}"
             )
 
-        result = Result(name, label, path, located, detected, expected, uncertain)
+        result = Result(name, label, path, located, detected, expected, tip_board, uncertain)
         if expected is not None:
             mark = "?" if uncertain else ""
             line += f"   gt={expected}{mark} {'OK' if result.correct else 'MISMATCH'}"
+            if not result.correct and result.off_by_mm is not None:
+                line += f" (off {result.off_by_mm:.1f}mm)"
         print(line)
         results.append(result)
 
@@ -331,9 +363,26 @@ def write_report(results: list[Result], out_dir: Path) -> Path:
 
     lines += ["", f"## Mismatches ({len(mismatches)})", ""]
     if mismatches:
-        lines += ["| series | frame | expected | detected |", "|---|---|---|---|"]
+        near = sum(1 for r in mismatches if r.off_by_mm is not None and r.off_by_mm <= NEAR_MISS_MM)
         lines += [
-            f"| {r.series} | {r.frame} | {r.expected}{'?' if r.uncertain else ''} | {r.detected or 'FAIL'} |"
+            "*off by* is the distance from the scored tip to the nearest point of the",
+            "expected segment. A few millimetres means the pipeline was essentially right",
+            "and landed on the wrong side of a wire; tens of millimetres means it was wrong",
+            "about something bigger. Sorted nearest first, unmeasurable (no tip) last.",
+            "",
+            f"- Within {NEAR_MISS_MM:.0f} mm of the expected segment: "
+            f"**{near}/{len(mismatches)}**",
+            "",
+            "| series | frame | expected | detected | off by |",
+            "|---|---|---|---|---|",
+        ]
+        # None sorts last: a dart that was never located has no distance, and it
+        # is a different kind of failure from one that landed in the wrong place.
+        mismatches.sort(key=lambda r: (r.off_by_mm is None, r.off_by_mm or 0.0))
+        lines += [
+            f"| {r.series} | {r.frame} | {r.expected}{'?' if r.uncertain else ''} "
+            f"| {r.detected or 'FAIL'} "
+            f"| {f'{r.off_by_mm:.1f} mm' if r.off_by_mm is not None else '—'} |"
             for r in mismatches
         ]
     else:

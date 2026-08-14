@@ -114,3 +114,82 @@ def segment_at(x: float, y: float) -> Segment:
     if DOUBLE_INNER_RADIUS <= radius <= DOUBLE_OUTER_RADIUS:
         return Segment(value=value, multiplier=2)
     return Segment(value=value, multiplier=1)
+
+
+def segment_from_label(label: str) -> Segment | None:
+    """Parse a label back into a Segment, or None if it is not one.
+
+    The inverse of `Segment.label`, so a written-down segment (ground truth) can
+    be compared geometrically and not just as a string.
+    """
+    label = label.strip().upper()
+    if label == "MISS":
+        return MISS
+    if label == "BULL":
+        return Segment(value=25, multiplier=2)
+    if label == "25":
+        return Segment(value=25, multiplier=1)
+    if len(label) < 2 or label[0] not in "SDT" or not label[1:].isdigit():
+        return None
+    value = int(label[1:])
+    if value not in SECTOR_ORDER:
+        return None
+    return Segment(value=value, multiplier="SDT".index(label[0]) + 1)
+
+
+def _ring_bounds(multiplier: int) -> list[tuple[float, float]]:
+    """The radius ranges (mm) a sector segment of this multiplier occupies.
+
+    A single is two disjoint rings — inside the triple and outside it — hence a
+    list rather than one pair.
+    """
+    if multiplier == 3:
+        return [(TRIPLE_INNER_RADIUS, TRIPLE_OUTER_RADIUS)]
+    if multiplier == 2:
+        return [(DOUBLE_INNER_RADIUS, DOUBLE_OUTER_RADIUS)]
+    return [(BULL_RADIUS, TRIPLE_INNER_RADIUS), (TRIPLE_OUTER_RADIUS, DOUBLE_INNER_RADIUS)]
+
+
+def _distance_to_ray(x: float, y: float, angle: float, r0: float, r1: float) -> float:
+    """Distance from a point to the radial edge from `r0` to `r1` at `angle`."""
+    ax, ay = r0 * math.cos(angle), r0 * math.sin(angle)
+    bx, by = r1 * math.cos(angle), r1 * math.sin(angle)
+    dx, dy = bx - ax, by - ay
+    t = ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)
+    t = min(max(t, 0.0), 1.0)
+    return math.hypot(x - (ax + t * dx), y - (ay + t * dy))
+
+
+def _distance_to_annular_sector(
+    x: float, y: float, r0: float, r1: float, centre_angle: float
+) -> float:
+    """Distance from a point to the wedge between `r0` and `r1` around `centre_angle`."""
+    radius = math.hypot(x, y)
+    offset = (math.atan2(y, x) - centre_angle + math.pi) % (2 * math.pi) - math.pi
+    half = SECTOR_ANGLE / 2
+    if abs(offset) <= half:
+        # Same wedge: only the radius can be off, and at most one side of it.
+        return max(r0 - radius, radius - r1, 0.0)
+    return _distance_to_ray(x, y, centre_angle + math.copysign(half, offset), r0, r1)
+
+
+def distance_to_segment(x: float, y: float, segment: Segment) -> float:
+    """Shortest distance (mm) from a board coordinate to where `segment` scores.
+
+    Zero if the point already lies in it. This separates a tip that missed by a
+    wire's width from one that landed in a different part of the board entirely.
+    """
+    radius = math.hypot(x, y)
+
+    if segment.multiplier == 0:
+        return max(0.0, DOUBLE_OUTER_RADIUS - radius)
+    if segment.value == 25:
+        if segment.multiplier == 2:
+            return max(0.0, radius - BULLSEYE_RADIUS)
+        return max(BULLSEYE_RADIUS - radius, radius - BULL_RADIUS, 0.0)
+
+    centre_angle = sector_centre_angle(SECTOR_ORDER.index(segment.value))
+    return min(
+        _distance_to_annular_sector(x, y, r0, r1, centre_angle)
+        for r0, r1 in _ring_bounds(segment.multiplier)
+    )

@@ -280,6 +280,18 @@ echte **Segment-Accuracy** und schreibt `_results/accuracy.md` mit einer
 Mismatch-Liste; `--truth-template` bootstrappt diese Dateien aus den aktuellen
 Detektionen.
 
+Jeder Mismatch trägt eine Spalte **`off by`**: der Abstand in Millimetern von der
+gescorten Spitze zum nächstgelegenen Punkt des *erwarteten* Segments
+(`distance_to_segment` in `board_geometry.py`, exakt gegen Ring-Radien und
+Sektor-Keil gerechnet, `0` wenn die Spitze drin liegt). Das trennt die zwei
+Fehlerarten, die in einer reinen Label-Liste gleich aussehen: **wenige
+Millimeter** heißt, die Pipeline lag im Kern richtig und ist nur auf der falschen
+Seite eines Drahts gelandet — Sub-Pixel-Präzision der Spitze, tolerierbar.
+**Zig Millimeter** heißt, etwas Grundlegenderes stimmt nicht (Kalibrierung,
+Alignment, falscher Blob) und ist kein Präzisionsproblem. Sortiert wird nach
+Abstand aufsteigend, damit die plausiblen Fälle oben stehen; darüber steht, wie
+viele Mismatches innerhalb von 5 mm liegen.
+
 **`scripts/detection/run_debug.py`** — dasselbe für eine einzelne Wurfserie, mit
 vollem Bilder-Satz (`01`–`05`) je Pfeil, um einen Fehlwurf Stufe für Stufe
 nachzuvollziehen. Argument ist die Serie (`pz_setup1/throw1`, oder bloß `throw1`,
