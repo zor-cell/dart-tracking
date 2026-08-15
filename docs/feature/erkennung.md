@@ -9,12 +9,15 @@ Scoring.
 Referenz-Implementierung:
 `backend/src/app/api/features/detection/services/dart_detector.py`.
 Literatur-Sammelstelle: [roadmap.md §6.2](../roadmap.md#62-pfeil-lokalisierung--verdeckung).
+Was als nächstes geändert wird und warum:
+[erkennung-verbesserungen.md](erkennung-verbesserungen.md).
 
 > **Stand:** Diese Pipeline ist neuer als die Kalibrierung und noch nicht auf
 > ihrem Endstand. Es gibt inzwischen eine Ground-Truth-Evaluation (§6): aktuell
-> **63.0 % korrektes Segment** über 135 Wurf-Paare (zwei Boards, neun Setups),
-> von einer 18.3 %-Baseline aus. Der Restfehler ist überwiegend Spitzen-Präzision
-> beim schwarzen Pfeil (§6, §7). Das Dokument wächst mit.
+> **76.5 % korrekte Wertung** über 285 Wurf-Paare (fünf Boards, 16 Setups),
+> von einer 18.3 %-Baseline aus. Der Restfehler zerfällt in Spitzen-Präzision
+> (knapp die Hälfte der Mismatches liegt unter 5 mm) und eine Handvoll
+> struktureller Ursachen (§6, §7). Das Dokument wächst mit.
 
 ---
 
@@ -137,10 +140,38 @@ sonst ist er nicht von „kein Wurf" zu unterscheiden.
 ```python
 difference = cv2.absdiff(reference, aligned).max(axis=2)   # pro Kanal, dann max
 _, mask = cv2.threshold(difference, 40, 255, cv2.THRESH_BINARY)
-mask = cv2.bitwise_and(mask, region)                       # nur Board
+mask = cv2.bitwise_and(mask, search)                       # Board + Suchrand
 mask = _drop_speckle(mask, pixels_per_mm)                  # Fläche < 3 mm²  weg
 mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)     # 3 mm, Lücken schließen
+mask = _drop_unanchored(mask, region, pixels_per_mm)       # muss das Board erreichen
 ```
+
+**Vorher wird ausgeschlossen, was der Frame gar nicht gesehen hat.**
+`cv2.warpPerspective` füllt jeden Referenz-Pixel, für den es im Quellframe keinen
+gibt, mit Schwarz — und gegen eine nicht-schwarze Referenz gehalten sind das
+200+ Graustufen, das Fünffache des Schwellwerts, als breiter Streifen am
+Bildrand. Da die Fragment-Fusion (§2.3) auf dem *breitesten* Fragment ankert,
+nimmt sie genau diesen Streifen für den Flight. Derselbe Warp auf ein weißes Bild
+angewandt liefert die Maske der tatsächlich beobachteten Pixel; um wenige Pixel
+erodiert (die Randpixel sind zwischen Bildinhalt und Füllwert interpoliert und
+gehören zu keinem von beidem) wird sie in `search` hineingeschnitten.
+
+Was davon *innerhalb* der Board-Region liegt, ist zusätzlich eine Aussage über
+das Setup: Board-Fläche, aus der die Kamera zwischen den beiden Frames
+herausgeschwenkt ist. Ein Pfeil, der dort landet, ist nicht zu sehen — das ist
+etwas anderes als „nichts gefunden" und steht deshalb im Trace
+(`unobserved_region`). Ebenso `region_clipped`: der Anteil der Board-Kontur, der
+schon im Referenzbild außerhalb des Bildes liegt (bei `pz-light_setup3` sind das
+30 % — ein Framing-Problem, das kein Algorithmus behebt).
+
+Geschnitten wird gegen `search` (Detektionsradius + 90 mm), nicht gegen `region`:
+der Flight eines hoch sitzenden Pfeils hängt über den Surround hinaus, und
+abgeschnitten wäre er genau das Merkmal, das die Spitze orientiert (§2.4). Dass
+eine Komponente *zum Board gehört*, prüft erst `_drop_unanchored` — nach dem
+Schließen, damit über die ganze Silhouette entschieden wird und nicht über
+einzelne Bruchstücke. Eine Komponente gilt als verankert, wenn sie in `region`
+hineinreicht oder in Pfeillänge (`_MAX_DART_LENGTH_MM`) neben einer liegt, die
+das tut — der zweite Fall ist der vom Schaft abgetrennte Flight.
 
 **Pro Kanal differenzieren, dann maxen — nicht erst zu Grau wandeln.** Ein
 Pfeil-Barrel vor einem schwarzen Segment kann in der *Helligkeit* fast identisch
@@ -171,8 +202,14 @@ Board-Mitte.
 
 Stattdessen werden die Fragmente zu einem Pfeil zusammengefügt (`_fuse_dart_fragments`):
 
-1. **Alle** Komponenten ≥ `_MIN_FRAGMENT_AREA_MM2 = 5 mm²` behalten. Je Fragment:
-   Schwerpunkt, Quer-Breite (über die eigene PCA), mittlere Diff-Helligkeit.
+1. **Alle** überlebenden Komponenten behalten. Je Fragment: Schwerpunkt,
+   Quer-Breite (über die eigene PCA), mittlere Diff-Helligkeit. Zwei
+   Flächengrenzen, nicht eine: unter `_MIN_SPECKLE_AREA_MM2 = 3 mm²` (bzw. 4 px,
+   je nachdem was größer ist) fliegt eine Komponente ganz raus, unter
+   `_MIN_CANDIDATE_AREA_MM2 = 10 mm²` (bzw. 15 px) darf sie den Fit weder
+   verankern noch über seine Richtung abstimmen. Ihre Pixel zählen aber mit,
+   sobald die Richtung steht — die Spitze selbst ist ein kleines Fragment, und
+   sie wegzuwerfen verkürzt die Achse genau am falschen Ende.
 2. **Flight = Anker.** Das breiteste Fragment (Helligkeit bricht Gleichstand) —
    die Federn spreizen die Silhouette, Barrel und Schaft bleiben dünn. Das ist
    das zuverlässigste Merkmal, nicht das störendste.
@@ -215,7 +252,16 @@ Orientierung an der Pfeil-*Form* statt an der Board-Mitte behebt das.
 
 Die Homographie gilt ohnehin nur für die Board-Ebene, in der die Spitze steckt —
 Barrel, Schaft und Flight ragen heraus und sind projektiv nicht gültig. Statt des
-einen äußersten Pixels werden die letzten `_TIP_SPAN_MM = 3 mm` gemittelt.
+einen äußersten Pixels wird über die letzten `_TIP_SPAN_MM = 4 mm` gemittelt, und
+zwar **nur quer zur Achse**: entlang der Achse bleibt das Extremum stehen. Würde
+man auch längs mitteln, zöge das die Spitze um eine halbe Bandbreite nach innen,
+weil jedes Pixel des Bandes innerhalb des Extremums liegt. Die Glättung sitzt so
+dort, wo sie hilft — bei der seitlichen Lage, die den Sektor entscheidet — ohne
+den Pfeil zu verkürzen.
+
+Welches Ende das breitere ist, wird über ein eigenes, breiteres Band gemessen
+(`_FLIGHT_SPAN_MM = 12 mm`, 90. Perzentil der Querabstände), damit ein paar
+Streupixel die Orientierung nicht kippen.
 
 ---
 
@@ -250,6 +296,24 @@ statt bloß „nichts gefunden". Das DTO `DetectionResult` trägt den Wert im Fe
 `INVALID_IMAGE` und `NOT_CALIBRATED` entstehen im Socket vor dem eigentlichen
 Fit; `ALIGNMENT_FAILED` und `NO_CHANGE` im Detektor.
 
+### `NO_CHANGE` ist punktemäßig ein `MISS`
+
+Ein Pfeil, der das Board getroffen hat und wieder herausgefallen ist, zählt null
+Punkte — genauso wie ein Pfeil im Surround. `NO_CHANGE` und `MISS` sind also
+dieselbe *Wertung*, nur über verschiedene Wege ermittelt. Die Auswertung
+(`run_all.py`) zählt ein `NO_CHANGE` gegen ein erwartetes `MISS` deshalb als
+**korrekt**; alle vier nicht lokalisierten Paare im Testset sind genau dieser
+Fall. `ALIGNMENT_FAILED` zählt nicht mit — das ist kein Ablesen einer Null,
+sondern die Unfähigkeit, überhaupt hinzusehen.
+
+**Nicht dasselbe wie die Live-Wertung.** Im Spiel darf `NO_CHANGE` *nicht* blind
+als null Punkte gebucht werden: die client-seitige Frame-Differenz ist auf Recall
+ausgelegt und löst auch ohne Wurf aus. Ein automatisch gebuchter Nullwurf wäre
+dann ein Phantom-Pfeil, der eine Aufnahme verbraucht. Der Detektor kann „Wurf
+fand statt, blieb aber nicht stecken" nicht von „es gab keinen Wurf"
+unterscheiden — diese Unterscheidung muss vom Client kommen (offener Punkt in
+[todo.md](../todo.md)).
+
 ---
 
 ## 4. Debugging-Werkzeuge
@@ -263,11 +327,15 @@ ohne Zeichenlogik.
 
 | Datei | Inhalt |
 |---|---|
-| `01_alignment.jpg` | Referenz rot, ausgerichteter Frame cyan — grau heißt, sie stimmen überein; farbige Säume an den Drähten = Registrierung schief (der Fehler, der überall zugleich einen Pfeil vortäuscht) |
-| `02_difference.jpg` | rohe Differenz, gespreizt — beantwortet, ob der Pfeil nie in der Differenz war oder erst weggeschwellt wurde |
-| `03_mask.jpg` | bereinigte Änderungsmaske über dem Frame |
-| `04_components.jpg` | die Fragment-Fusion: verworfene Fragmente (grau), zusammengefügter Pfeil (grün), Flight-Anker (orange), gefittete Gerade (auf die Ausdehnung begrenzt). Gegen `02_difference.jpg` gehalten die Schlüsselansicht: wurden die verstreuten Fragmente korrekt auf eine Linie gefädelt, oder hat der Fit auf einem einzelnen hellen Fleck geankert? |
-| `05_result.jpg` | gefittete Achse + gescorte Spitze |
+| `01_region.jpg` | wo die Pipeline überhaupt suchen darf: Seed-Radius (gelb), Suchradius (orange), Board-Fläche die dieser Frame nicht abgedeckt hat (magenta), plus eine Warnzeile, wenn das Board aus dem Bild ragt |
+| `02_alignment.jpg` | Referenz rot, ausgerichteter Frame cyan — grau heißt, sie stimmen überein; farbige Säume an den Drähten = Registrierung schief (der Fehler, der überall zugleich einen Pfeil vortäuscht) |
+| `03_difference.jpg` | rohe Differenz, gespreizt — beantwortet, ob der Pfeil nie in der Differenz war oder erst weggeschwellt wurde |
+| `04_threshold.jpg` | alles über dem Schwellwert, vor jeder Bereinigung. Das Rohmaterial: ist der Pfeil hier schon Krümel, liegt es am Schwellwert, ist er hier ein Streifen und später Krümel, an der Bereinigung |
+| `05_cleanup.jpg` | was die Bereinigung verworfen hat und warum — rot: unter der Flächengrenze, blau: erreicht das Board nie, grün: behalten |
+| `06_mask.jpg` | die bereinigte Änderungsmaske für sich, ohne Board darunter |
+| `07_components.jpg` | die Fragment-Fusion: außer Reichweite (dunkelgrau), abgelehnt (hellgrau), zusammengefügter Pfeil (grün), Flight-Anker (orange), gefittete Gerade. Gegen `03_difference.jpg` gehalten die Schlüsselansicht: wurden die verstreuten Fragmente korrekt auf eine Linie gefädelt, oder hat der Fit auf einem einzelnen hellen Fleck geankert? |
+| `08_axis.jpg` | welches Ende für den Flight gehalten wurde, mit beiden Breiten in Pixeln — die einzige Ansicht, in der eine knappe Entscheidung als knapp erkennbar ist |
+| `09_result.jpg` | gefittete Achse + gescorte Spitze |
 
 **`scripts/detection/run_all.py`** — läuft über Ordner von Wurfserien
 (`<serie>_base.jpg`, `<serie>_dart1.jpg`, …), rekursiv durch Unterordner (die
@@ -279,6 +347,15 @@ einem Ordner eine `ground_truth.txt` (Zeilen `throw1_dart1 S5`), misst das Scrip
 echte **Segment-Accuracy** und schreibt `_results/accuracy.md` mit einer
 Mismatch-Liste; `--truth-template` bootstrappt diese Dateien aus den aktuellen
 Detektionen.
+
+Jedes annotierte Bild trägt zusätzlich das **Board-Modell**, das die Homographie
+impliziert (Ringe + Sektordrähte, in cyan, aus `board_overlay.build_overlay`).
+Das ist der Unterschied zwischen einer Sichtprüfung und einem Ratespiel: sitzt
+die Spitze ein Segment daneben, ist das ein Kalibrierungsfehler, wenn die cyan
+Ringe *neben* den echten liegen, und ein Detektionsfehler, wenn sie *auf* ihnen
+liegen. Ohne das Modell im Bild sehen beide gleich aus. Dazu die gemessene
+**Kamerabewegung** zwischen den beiden Frames (`trace.alignment_shift_px`), die
+sich ebenfalls nicht ansehen lässt.
 
 Jeder Mismatch trägt eine Spalte **`off by`**: der Abstand in Millimetern von der
 gescorten Spitze zum nächstgelegenen Punkt des *erwarteten* Segments
@@ -377,8 +454,8 @@ verwerfen entfernt dasselbe Rauschen, ohne irgendetwas zu erodieren.
 *Idee:* Das äußerste Achsen-Pixel direkt als Spitze nehmen.
 
 *Warum verworfen:* Dieses eine Pixel ist, was der Schwellwert zufällig gefasst
-hat — instabil. Über `_TIP_SPAN_MM = 3 mm` Achsenende gemittelt sitzt die Spitze
-ruhig.
+hat — instabil. Über `_TIP_SPAN_MM = 4 mm` Achsenende quer gemittelt sitzt die
+Spitze ruhig.
 
 ### 5.8 „Größter Blob" als Pfeil
 
@@ -422,12 +499,18 @@ Front-End.
 
 ## 6. Stand der Messungen
 
-Testdaten: zwei Boards (`pz`, `tz`) über neun Kamera-Setups (`pz_setup1`–`4`,
-`tz_setup1`–`5`), je fünf Wurfserien mit Basisbild + drei Pfeilen = **135
-Detektions-Paare**, verschiedene Winkel und Distanzen (0.63–0.90 px/mm), schwarze
-Pfeile. Jeder Ordner trägt eine `ground_truth.txt` mit dem tatsächlichen Segment
-je Pfeil (gegen die Videos korrigiert). Gemessen bei Client-Auflösung mit
-`run_all.py`.
+Testdaten: fünf Boards (`cc`, `fh`, `pz`, `pz-light`, `tz`) über 16 Kamera-Setups,
+je fünf bis zehn Wurfserien mit Basisbild + drei Pfeilen = **285 Detektions-Paare**,
+verschiedene Winkel, Distanzen (0.63–1.69 px/mm) und Lichtverhältnisse. Jeder
+Ordner trägt eine `ground_truth.txt` mit dem tatsächlichen Segment je Pfeil (gegen
+die Videos korrigiert). Gemessen bei Client-Auflösung mit `run_all.py`.
+
+Die Serien mit schwarzen Pfeilen (`pz`, `tz`) und die mit den späteren
+Wolfram-Pfeilen (weiße Flights) liegen im selben Set. Die beiden sind
+**gegenläufige** Fehlerfälle und heben sich in einer Gesamtzahl teilweise auf:
+der schwarze Pfeil verschwindet über schwarzen Betten, der weiße Flight über den
+beigen. Für eine Aussage über einen einzelnen Änderungsschritt ist deshalb die
+Aufschlüsselung pro Board aussagekräftiger als der Gesamtwert.
 
 ### Genauigkeits-Verlauf
 
@@ -442,25 +525,66 @@ ist — ein A/B-Vergleich braucht eine feste Datenbasis:
 | + Fragment-Fusion (§2.3) | 29 / 60 — **48.3 %** |
 | + Längen-Cap (§2.3) | **37 / 60 — 61.7 %** |
 
-Seither ist das Test-Set auf **135 Paare** über zwei Boards und neun Setups
-gewachsen; die fertige Pipeline erreicht darauf **85 / 135 — 63.0 %**, pro Board
-`pz` 62 % / `tz` 64 %, je Setup **53 – 80 %**. Ein Blob wird praktisch immer
-gefunden (134/135 „lokalisiert") — die aussagekräftige Zahl ist das korrekte
-*Segment*, nicht „irgendwo ein Pfeil".
+Die folgenden Schritte werden gegen das gewachsene 285-Paar-Set gemessen, und
+zwar unter der Regel `NO_CHANGE` = `MISS` (§3) — auch rückwirkend, damit die
+Zeilen vergleichbar bleiben:
+
+| Schritt | Korrekt |
+|---|---|
+| Stand bei 285 Paaren | 216 / 285 — 75.8 % |
+| + Warp-Gültigkeitsmaske (§2.2) | **218 / 285 — 76.5 %** |
+
+Zwei Pfeile — weit weniger als erwartet. Die Maske entfernt ein Artefakt, das gar
+keine Bildänderung ist, aber der Warp-Rand war nur *eine* Quelle breiter, heller
+Fremdfragmente; die anderen bleiben. Aufschlüsselung in
+[erkennung-verbesserungen.md](erkennung-verbesserungen.md#1-warp-gültigkeitsmaske).
+
+Nebenbei deckte der Schritt einen Zufallstreffer auf: ein Pfeil, der als `MISS`
+korrekt gezählt wurde, weil die Pipeline den Randstreifen für einen Pfeil
+außerhalb der Scoring-Fläche hielt. Ein gutes Beispiel dafür, warum eine reine
+Label-Quote als einzige Metrik nicht reicht — ein Fehler kann sich als Treffer
+tarnen, und nur die `off by`-Spalte und das Board-Modell im Bild (§4) zeigen das.
+
+Seither ist das Test-Set auf **285 Paare** über fünf Boards und 16 Setups
+gewachsen; die Pipeline erreicht darauf **218 / 285 — 76.5 %**, pro Board
+71 – 82 %, je Setup **60 – 90 %**. Ein Blob wird praktisch immer gefunden
+(281/285 „lokalisiert"), und die vier Ausnahmen sind allesamt Pfeile, die gar
+nicht steckenblieben (§3) — die aussagekräftige Zahl ist die korrekte *Wertung*,
+nicht „irgendwo ein Pfeil".
 
 ### Was den Restfehler ausmacht
 
-Von 50 Mismatches sind **11 fälschlich als `MISS` gescort** (Spitze außerhalb
-170 mm), auffällig gehäuft in einem einzigen Setup (`tz_setup5`, 6 davon — ein
-systematischer Versatz an diesem flachen Winkel, der die Spitze über die
-Double-Kante schiebt, kein zufälliger Fehler); der Rest sind **Nachbar-Sektor-
-oder Ring-Fehler** (z.B. `S8`→`S12`, `S20`→`T20`) — die Spitze sitzt wenige
-Millimeter daneben. Ursache ist durchweg
-das **farb-gegatete, fragmentierte Signal** des schwarzen Pfeils: er difft nur
-über hellen Segmenten, über schwarzen ist er ≈ unsichtbar. Wo die Fusion nur ein
-einzelnes Rand-Fragment fasst und das echte innere Signal unverbunden bleibt,
-ankert der Fit falsch. Kein Schwellwert holt das zurück (§5.10) — der Deckel ist
-das Front-End-Signal, nicht der Algorithmus.
+Die `off by`-Spalte (§4) trennt die 67 Mismatches in zwei Populationen, und die
+sind unterschiedlich zu behandeln:
+
+| Abstand zum erwarteten Segment | Anzahl | Charakter |
+|---|---|---|
+| ≤ 5 mm | 32 | Spitzen-Präzision, auf der falschen Seite eines Drahts |
+| 5 – 20 mm | 12 | Achse leicht verdreht oder Spitze am Farbrand abgeschnitten |
+| > 20 mm | 23 | strukturell: falsch verankerter Fit |
+
+Die **32 unter 5 mm** sind die Präzisionsgrenze — bei einem Draht von rund 1 mm
+Breite und einer Spitzenlage auf wenige Millimeter genau ist das kein Fehler, den
+ein besserer Algorithmus wegräumt. Die **23 über 20 mm** dagegen haben jeweils
+eine benennbare Ursache und sind das eigentliche Ziel; sie werden in
+[erkennung-verbesserungen.md](erkennung-verbesserungen.md) einzeln aufgeschlüsselt.
+Jeder verbliebene Mismatch hat eine gescorte Spitze — es gibt keine
+unauswertbaren Fälle mehr.
+
+Zwei wiederkehrende Muster stechen heraus:
+
+- **Breite, helle Fremdfragmente gewinnen die Flight-Wahl.** Die Fusion ankert
+  auf dem breitesten Fragment; alles Breite und Helle, das kein Pfeil ist,
+  entführt damit den ganzen Fit. Der Warp-Rand war davon der krasseste Fall und
+  ist behoben (§2.2), aber nicht der einzige: der Sub-Pixel-Rest der
+  Registrierung lässt die weißen Board-Zahlen im Surround aufleuchten, und die
+  sind ebenfalls breit und hell. Das erklärt die 18 Fälle über 50 mm.
+- **Farb-gegatetes Signal, in beide Richtungen.** Der schwarze Pfeil difft nur
+  über hellen Segmenten und ist über schwarzen ≈ unsichtbar (§5.10). Bei den
+  neuen Pfeilen mit weißen Flights ist es gespiegelt: über einem beigen Bett
+  liegt die größte BGR-Kanaldifferenz bei etwa 14, unter dem Schwellwert von 40.
+  In der **Sättigung** sind es rund 29 — der Kanal, der die neuen Flights trägt,
+  wird also gar nicht ausgewertet. Schritt 3.
 
 Die Laufzeit pro Detektion ist noch nicht systematisch gemessen.
 
@@ -468,12 +592,19 @@ Die Laufzeit pro Detektion ist noch nicht systematisch gemessen.
 
 ## 7. Offene Punkte
 
-- **Signal statt Algorithmus — nicht-verblendende Pfeile.** Die stärkste offene
-  Stellschraube ist das Front-End: schwarze Pfeile sind ein pathologischer Fall
-  (§5.10, §6). Ein Setup mit helleren/reflektierenden Pfeilen oder besserer
-  Ausleuchtung aufnehmen und dagegen messen — das isoliert, wie viel Restfehler
-  Signal und wie viel Algorithmus ist, und ist als „Bedingungen, unter denen die
-  Methode trägt" ein eigenständiges Ergebnis.
+Die konkret geplanten Schritte mit Befund, Fix und erwartetem Hebel stehen in
+[erkennung-verbesserungen.md](erkennung-verbesserungen.md). Hier bleiben die
+längerfristigen Punkte:
+
+- **Signal statt Algorithmus — teilweise beantwortet.** Die These war, das
+  Front-End sei die stärkste Stellschraube: schwarze Pfeile ein pathologischer
+  Fall (§5.10). Inzwischen gibt es Serien mit Wolfram-Spitzen und weißen Flights
+  (`cc`, `fh`, `pz-light`) zum Vergleich. Ergebnis: die Spitzenerkennung wird
+  deutlich besser, aber der weiße Flight erzeugt über beigen Betten sein eigenes
+  Loch (§6). „Helleres Pfeilmaterial" allein ist also keine Lösung, sondern
+  verschiebt nur, *welche* Betten blind sind — das Front-End braucht einen
+  Kanal, der beide Fälle trägt. Als „Bedingungen, unter denen die Methode trägt"
+  ist das ein eigenständiges Ergebnis für die Arbeit.
 - **Spitzen-Präzision / Fragment-Ankerung.** Wo die Fusion auf dem falschen
   Fragment ankert, hilft ein besserer Anker (z.B. Kombination aus Breite,
   Helligkeit und Board-Radius) oder das kantenbasierte Front-End (strukturelle

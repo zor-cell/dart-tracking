@@ -5,7 +5,12 @@ one detection (`base -> dart1`, `dart1 -> dart2`, ...), as live, where each thro
 is differenced against the previous frame and not against an empty board.
 Subfolders are walked recursively and series keyed by their relative path, so
 `setup1/throw1` and `setup2/throw1` stay separate; `_results` mirrors that
-structure and holds an annotated copy (axis + tip) per dart.
+structure and holds an annotated copy per dart: the change mask, the fitted axis
+and tip, and — in cyan — the board model the calibration's homography implies.
+The model is what makes the picture readable: a tip a segment away from the truth
+is a calibration bug if the cyan rings sit beside the real rings, and a detection
+bug if they sit on them. Each copy is captioned with how far the camera moved
+between the two frames, which is the other thing that cannot be seen by looking.
 
 Usage:
     uv run python scripts/detection/run_all.py
@@ -16,6 +21,9 @@ Usage:
 `--only-mismatches` keeps the run and the report exactly as they are but writes
 an image only where the detection disagrees with ground truth, so `_results`
 becomes a folder of just the failures instead of 165 mostly-correct overlays.
+
+A `NO_CHANGE` failure against an expected `MISS` is scored as correct: both are
+worth zero points, so they are the same call, not a disagreement.
 
 Ground truth (optional): a `ground_truth.txt` in a folder scores segment accuracy
 and writes `_results/accuracy.md` with every mismatch, each with how far in
@@ -53,7 +61,9 @@ from app.api.features.calibration.domain.board_geometry import (  # noqa: E402
     segment_from_label,
 )
 from app.api.features.calibration.domain.calibration_failure import CalibrationFailure  # noqa: E402
+from app.api.features.calibration.domain.calibration import Calibration  # noqa: E402
 from app.api.features.calibration.services import board_detector  # noqa: E402
+from app.api.features.calibration.services.board_overlay import build_overlay  # noqa: E402
 from app.api.features.detection.domain.detection_failure import DetectionFailure  # noqa: E402
 from app.api.features.detection.services import dart_detector  # noqa: E402
 
@@ -83,6 +93,11 @@ NEAR_MISS_MM = 5.0
 COLOUR_AXIS = (255, 0, 255)  # magenta
 COLOUR_TIP = (0, 255, 255)  # yellow
 COLOUR_MASK = (60, 200, 60)
+COLOUR_MODEL = (255, 255, 0)  # cyan — the board model the homography implies
+
+# Camera movement between two frames, in pixels, past which the registration's
+# sub-pixel remainder starts producing apparent change of its own.
+SHAKE_WARN_PX = 8.0
 
 
 @dataclass
@@ -97,11 +112,30 @@ class Result:
     expected: str | None  # ground-truth label if annotated, else None
     tip_board: tuple[float, float] | None = None  # scored tip in board mm, if located
     uncertain: bool = False  # truth label was flagged `?` (I wasn't sure); still scored as-is
+    shift_px: float = 0.0  # how far the camera moved between reference and frame
+    failure: DetectionFailure | None = None  # which stage gave up, if none was located
+
+    @property
+    def scored_miss(self) -> bool:
+        """Whether finding nothing was the right answer here.
+
+        `NO_CHANGE` means nothing new near the board — the dart hit and dropped
+        out, or never stuck. That is worth zero points, which is exactly what
+        `MISS` is worth, so the two are the same call and counting one as a
+        failure of the other would overstate the error rate. Only `NO_CHANGE`
+        qualifies: `ALIGNMENT_FAILED` is not a reading of the board, it is the
+        pipeline being unable to look at it.
+        """
+        return self.failure is DetectionFailure.NO_CHANGE and self.expected == "MISS"
 
     @property
     def correct(self) -> bool:
-        """Located, annotated, and the detected segment matches the truth."""
-        return self.located and self.expected is not None and self.detected == self.expected
+        """The pipeline awarded what the throw was actually worth."""
+        if self.expected is None:
+            return False
+        if self.located:
+            return self.detected == self.expected
+        return self.scored_miss
 
     @property
     def off_by_mm(self) -> float | None:
@@ -175,7 +209,24 @@ def expected_for(truth: dict[str, tuple[str, bool]], stem: str) -> tuple[str | N
     return truth.get(stem, (None, False))
 
 
-def annotate(dart) -> np.ndarray:
+def draw_board_model(canvas: np.ndarray, calibration: Calibration) -> None:
+    """Draw the board the homography implies: ring circles and sector wires.
+
+    The scored millimetres are only ever as good as this mapping, so a tip that
+    sits a segment away is two different bugs depending on whether these lines
+    sit on the real wires or beside them. Without the model in the picture, a
+    calibration error and a detection error look exactly alike.
+
+    Drawn on the aligned frame, which shares the reference's pixel grid — the
+    grid the calibration belongs to.
+    """
+    height, width = canvas.shape[:2]
+    for polyline in build_overlay(calibration):
+        points = np.array([[x * width, y * height] for x, y in polyline])
+        cv2.polylines(canvas, [points.astype(np.int32)], False, COLOUR_MODEL, 1, cv2.LINE_AA)
+
+
+def annotate(dart, calibration: Calibration) -> np.ndarray:
     """Draw the located dart onto the aligned frame it was found in.
 
     Not the reference: the dart is only visible in the newer frame, and drawing on
@@ -184,6 +235,7 @@ def annotate(dart) -> np.ndarray:
     canvas = dart_detector.trace.aligned.copy()
     if dart_detector.trace.change_mask is not None:
         canvas[dart_detector.trace.change_mask > 0] = COLOUR_MASK
+    draw_board_model(canvas, calibration)
 
     tip, far_end = dart.axis_image
     cv2.line(
@@ -207,10 +259,30 @@ def annotate(dart) -> np.ndarray:
         2,
         cv2.LINE_AA,
     )
+    return caption(canvas, model_caption())
+
+
+def model_caption() -> list[str]:
+    """The two numbers needed to read the board model drawn over the frame."""
+    trace = dart_detector.trace
+    shake = f"camera moved {trace.alignment_shift_px:.1f} px"
+    if trace.alignment_shift_px > SHAKE_WARN_PX:
+        shake += "  (!)"
+    return [f"cyan: board model at {trace.pixels_per_mm:.2f} px/mm", shake]
+
+
+def caption(canvas: np.ndarray, lines: list[str]) -> np.ndarray:
+    """Stamp lines into the top-left corner, dark stroke under light text."""
+    for index, line in enumerate(lines):
+        origin = (8, 20 + index * 18)
+        cv2.putText(canvas, line, origin, cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 0), 3, cv2.LINE_AA)
+        cv2.putText(
+            canvas, line, origin, cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1, cv2.LINE_AA
+        )
     return canvas
 
 
-def annotate_failure(failure: DetectionFailure) -> np.ndarray | None:
+def annotate_failure(failure: DetectionFailure, calibration: Calibration) -> np.ndarray | None:
     """Draw what a dart that was never located left behind, if anything.
 
     A failure has no axis and no tip to mark, so the useful content is the change
@@ -226,17 +298,11 @@ def annotate_failure(failure: DetectionFailure) -> np.ndarray | None:
     canvas = canvas.copy()
     if dart_detector.trace.change_mask is not None:
         canvas[dart_detector.trace.change_mask > 0] = COLOUR_MASK
-    cv2.putText(
-        canvas,
-        f"FAILED: {failure.value}",
-        (12, 28),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.6,
-        COLOUR_TIP,
-        2,
-        cv2.LINE_AA,
-    )
-    return canvas
+    # Only once the frames were aligned is the model in the right grid; before
+    # that it would be drawn against a frame it does not belong to.
+    if dart_detector.trace.aligned is not None:
+        draw_board_model(canvas, calibration)
+    return caption(canvas, [f"FAILED: {failure.value}"] + model_caption())
 
 
 def run_series(
@@ -289,7 +355,10 @@ def run_series(
             continue
 
         outcome = dart_detector.detect_dart(reference, frame, calibration)
-        if isinstance(outcome, DetectionFailure):
+        shift = dart_detector.trace.alignment_shift_px
+        shake = "!" if shift > SHAKE_WARN_PX else " "
+        failure = outcome if isinstance(outcome, DetectionFailure) else None
+        if failure is not None:
             detected, located, tip_board = None, False, None
             line = f"  {label:<6} FAIL  {outcome.value}  (inliers {dart_detector.trace.alignment_inliers})"
         else:
@@ -300,11 +369,17 @@ def run_series(
                 f"tip=({x:6.1f},{y:6.1f})mm  r={np.hypot(x, y):5.1f}  "
                 f"inliers {dart_detector.trace.alignment_inliers}"
             )
+        line += f"  shift {shift:5.1f}px{shake}"
 
-        result = Result(name, label, path, located, detected, expected, tip_board, uncertain)
+        result = Result(
+            name, label, path, located, detected, expected, tip_board, uncertain, shift, failure
+        )
         if expected is not None:
             mark = "?" if uncertain else ""
-            line += f"   gt={expected}{mark} {'OK' if result.correct else 'MISMATCH'}"
+            verdict = "OK" if result.correct else "MISMATCH"
+            if result.scored_miss:
+                verdict = "OK (nothing there = 0 points = MISS)"
+            line += f"   gt={expected}{mark} {verdict}"
             if not result.correct and result.off_by_mm is not None:
                 line += f" (off {result.off_by_mm:.1f}mm)"
         print(line)
@@ -316,7 +391,11 @@ def run_series(
         if only_mismatches and (expected is None or result.correct):
             pass
         else:
-            image = annotate(outcome) if located else annotate_failure(outcome)
+            image = (
+                annotate(outcome, calibration)
+                if located
+                else annotate_failure(outcome, calibration)
+            )
             if image is not None:
                 suffix = OVERLAY_SUFFIX if located else FAILURE_SUFFIX
                 target_dir = mirrored_dir(path, root, out_dir)
@@ -331,6 +410,33 @@ def run_series(
     return results
 
 
+SHAKE_BUCKETS = ((2.0, "< 2 px (still)"), (5.0, "2 - 5 px"), (10.0, "5 - 10 px"), (1e9, "> 10 px"))
+
+
+def shake_table(labelled: list[Result]) -> list[str]:
+    """Accuracy against how far the camera moved between the two frames.
+
+    Registration is supposed to make this irrelevant, so a rate that falls off
+    with movement says the sub-pixel remainder is costing segments — which is a
+    different fix from a better fit, and worth being able to see rather than
+    argue about.
+    """
+    rows = ["| camera movement | correct | total | rate | mean off by |", "|---|---|---|---|---|"]
+    for limit, label in SHAKE_BUCKETS:
+        lower = max((l for l, _ in SHAKE_BUCKETS if l < limit), default=0.0)
+        bucket = [r for r in labelled if lower <= r.shift_px < limit]
+        if not bucket:
+            continue
+        correct = sum(r.correct for r in bucket)
+        offsets = [r.off_by_mm for r in bucket if r.off_by_mm is not None]
+        mean_off = f"{sum(offsets) / len(offsets):.1f} mm" if offsets else "—"
+        rows.append(
+            f"| {label} | {correct} | {len(bucket)} | "
+            f"{100 * correct / len(bucket):.0f}% | {mean_off} |"
+        )
+    return rows
+
+
 def write_report(results: list[Result], out_dir: Path) -> Path:
     """Write a Markdown accuracy report and return its path."""
     labelled = [r for r in results if r.expected is not None]
@@ -338,18 +444,25 @@ def write_report(results: list[Result], out_dir: Path) -> Path:
     mismatches = [r for r in labelled if not r.correct]
     uncertain = sum(r.uncertain for r in labelled)
 
+    scored_miss = [r for r in labelled if r.scored_miss]
     lines = [
         "# Detection accuracy",
         "",
         "Segment-level comparison against `ground_truth.txt`. *Located* means a dart",
-        "blob was found; *correct* means its segment matched the expected label.",
+        "blob was found; *correct* means the pipeline awarded what the throw was worth.",
         "A `?` suffix in the truth file marks a label I wasn't sure about; it is still",
         "scored against as-is and just flagged here.",
         "",
+        "`NO_CHANGE` against an expected `MISS` counts as **correct**: nothing new near",
+        "the board means the dart bounced out or never stuck, which is worth zero points,",
+        "and so is a `MISS`. They are the same call. `ALIGNMENT_FAILED` does not count —",
+        "that is the pipeline failing to look, not reading a zero.",
+        "",
         f"- Pairs attempted: **{len(results)}**",
         f"- Located: **{sum(r.located for r in results)}/{len(results)}**",
-        f"- Correct segment: **{len(correct)}/{len(labelled)}** "
+        f"- Correct: **{len(correct)}/{len(labelled)}** "
         f"({100 * len(correct) / len(labelled):.1f}%)",
+        f"- of those, `NO_CHANGE` scored as `MISS`: **{len(scored_miss)}**",
         f"- Uncertain truth labels (`?`): **{uncertain}/{len(labelled)}**",
         "",
     ]
@@ -360,6 +473,9 @@ def write_report(results: list[Result], out_dir: Path) -> Path:
     lines += rate_table(labelled, lambda r: location_of(r.series), lambda r: r.correct, "location", "correct")
     lines += ["", "## Per setup", ""]
     lines += rate_table(labelled, lambda r: setup_of(r.series), lambda r: r.correct, "setup", "correct")
+
+    lines += ["", "## Per camera movement", ""]
+    lines += shake_table(labelled)
 
     lines += ["", f"## Mismatches ({len(mismatches)})", ""]
     if mismatches:
@@ -373,16 +489,17 @@ def write_report(results: list[Result], out_dir: Path) -> Path:
             f"- Within {NEAR_MISS_MM:.0f} mm of the expected segment: "
             f"**{near}/{len(mismatches)}**",
             "",
-            "| series | frame | expected | detected | off by |",
-            "|---|---|---|---|---|",
+            "| series | frame | expected | detected | off by | camera moved |",
+            "|---|---|---|---|---|---|",
         ]
         # None sorts last: a dart that was never located has no distance, and it
         # is a different kind of failure from one that landed in the wrong place.
         mismatches.sort(key=lambda r: (r.off_by_mm is None, r.off_by_mm or 0.0))
         lines += [
             f"| {r.series} | {r.frame} | {r.expected}{'?' if r.uncertain else ''} "
-            f"| {r.detected or 'FAIL'} "
-            f"| {f'{r.off_by_mm:.1f} mm' if r.off_by_mm is not None else '—'} |"
+            f"| {r.detected or (r.failure.value if r.failure else 'FAIL')} "
+            f"| {f'{r.off_by_mm:.1f} mm' if r.off_by_mm is not None else '—'} "
+            f"| {r.shift_px:.1f} px{' !' if r.shift_px > SHAKE_WARN_PX else ''} |"
             for r in mismatches
         ]
     else:
@@ -480,7 +597,10 @@ def main() -> int:
     labelled = [r for r in all_results if r.expected is not None]
     if labelled:
         correct = sum(r.correct for r in labelled)
-        print(f"{correct}/{len(labelled)} correct segment ({100 * correct / len(labelled):.1f}%)")
+        scored_miss = sum(r.scored_miss for r in labelled)
+        print(f"{correct}/{len(labelled)} correct ({100 * correct / len(labelled):.1f}%)")
+        if scored_miss:
+            print(f"  ({scored_miss} of them NO_CHANGE against an expected MISS)")
         print(f"accuracy report: {write_report(all_results, out_dir)}")
     else:
         print(
