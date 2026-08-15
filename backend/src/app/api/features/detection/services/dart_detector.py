@@ -10,6 +10,8 @@ Pipeline:
    the registration does — board and wall sit at different depths, so once the
    camera translates no single homography fits both, and an unmasked fit
    happily locks onto the wall and leaves the board misaligned.
+   The warp only covers part of the reference once the camera has moved; the
+   rest is fill, not board, and is excluded before anything is differenced.
 2. Difference the two, threshold, and clean up. Whatever is left is what the
    throw added, which is a far stronger signal than the dart's own appearance:
    a dart is dark, thin and lands on a board that is mostly dark and thin.
@@ -93,6 +95,11 @@ _TIP_SPAN_MM = 4.0
 # which is what orients the dart and so decides which end is the tip.
 _FLIGHT_SPAN_MM = 12.0
 
+# How far the warp's valid area is pulled in from its own edge. Bilinear
+# interpolation blends the fill value into the last row of real pixels, so the
+# boundary itself is neither wholly valid nor wholly fill.
+_WARP_MARGIN_PX = 3
+
 trace = DetectionTrace()
 
 
@@ -127,6 +134,7 @@ def detect_dart(
     search = _board_region(search_outline, reference.shape)
     trace.region, trace.search = region, search
     trace.region_outline, trace.search_outline = region_outline, search_outline
+    trace.region_clipped = _outside_image(region_outline, reference.shape)
 
     # Registration uses the board proper, not the search area: the surround and
     # the wall sit at a different depth, and features there pull the homography
@@ -138,6 +146,13 @@ def detect_dart(
 
     aligned = cv2.warpPerspective(frame, alignment, reference.shape[1::-1])
     trace.aligned = aligned
+
+    trace.alignment_shift_px = _alignment_shift(alignment, region_outline)
+
+    observed = _warp_coverage(frame.shape, alignment, reference.shape)
+    search = cv2.bitwise_and(search, observed)
+    trace.observed, trace.search = observed, search
+    trace.unobserved_region = cv2.subtract(region, observed)
 
     mask = _change_mask(reference, aligned, region, search, pixels_per_mm)
     trace.change_mask = mask
@@ -215,6 +230,62 @@ def _board_region(outline: np.ndarray, shape: tuple[int, ...]) -> np.ndarray:
     mask = np.zeros(shape[:2], dtype=np.uint8)
     cv2.fillPoly(mask, [outline.astype(np.int32)], 255)
     return mask
+
+
+def _outside_image(outline: np.ndarray, shape: tuple[int, ...]) -> float:
+    """Fraction of an outline's points that fall outside the frame.
+
+    Non-zero means the board is not fully in shot, which no amount of processing
+    can fix — worth telling apart from a detection that merely went wrong.
+    """
+    height, width = shape[:2]
+    inside = (
+        (outline[:, 0] >= 0)
+        & (outline[:, 0] < width)
+        & (outline[:, 1] >= 0)
+        & (outline[:, 1] < height)
+    )
+    return 1.0 - float(inside.mean())
+
+
+def _alignment_shift(alignment: np.ndarray, outline: np.ndarray) -> float:
+    """How far the camera moved, in pixels, averaged over the board outline.
+
+    Not a failure on its own — registration is there precisely to absorb it. It
+    is a diagnostic: the leftover after warping scales with this times the local
+    image gradient, so a large shift is what turns wires and printed numbers
+    into apparent change, and it is the quantity a re-calibration prompt would
+    have to trigger on.
+    """
+    points = np.hstack([outline, np.ones((len(outline), 1))]).T
+    mapped = alignment @ points
+    w = np.where(np.abs(mapped[2]) < 1e-9, 1e-9, mapped[2])
+    moved = np.column_stack((mapped[0] / w, mapped[1] / w))
+    return float(np.linalg.norm(moved - outline, axis=1).mean())
+
+
+def _warp_coverage(
+    frame_shape: tuple[int, ...], alignment: np.ndarray, reference_shape: tuple[int, ...]
+) -> np.ndarray:
+    """Which reference pixels the warped frame actually observed.
+
+    `warpPerspective` fills everything the source does not cover with black, and
+    against a reference that is not black there, the difference reads 200+ grey
+    levels — five times the threshold, in a long wide streak along the frame
+    edge. Fragment fusion then takes that streak for the flight, because it
+    anchors on the widest fragment, and the fit leaves the board entirely.
+
+    So the same warp is applied to a white image: what comes back white is real,
+    the rest is fill. Eroded by `_WARP_MARGIN_PX`, since the boundary pixels are
+    interpolated between the two and belong to neither.
+    """
+    covered = cv2.warpPerspective(
+        np.full(frame_shape[:2], 255, dtype=np.uint8), alignment, reference_shape[1::-1]
+    )
+    kernel = cv2.getStructuringElement(
+        cv2.MORPH_ELLIPSE, (2 * _WARP_MARGIN_PX + 1, 2 * _WARP_MARGIN_PX + 1)
+    )
+    return cv2.erode(covered, kernel)
 
 
 def _align(

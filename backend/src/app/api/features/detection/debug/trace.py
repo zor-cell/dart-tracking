@@ -21,6 +21,10 @@ class DetectionTrace:
     aligned: np.ndarray | None = None
     alignment: np.ndarray | None = None
     alignment_inliers: int = 0
+    # How far the camera moved between the two frames, in pixels of board
+    # outline. Registration absorbs it, but its sub-pixel remainder is what
+    # lights up wires and printed numbers, so it belongs next to the result.
+    alignment_shift_px: float = 0.0
 
     # The two radii the difference is judged against. `region` is the seed area a
     # change must reach to be believed; `search` is the wider area a dart may
@@ -33,6 +37,18 @@ class DetectionTrace:
     # outline is not mistaken for a rasterisation artefact of its mask.
     region_outline: np.ndarray | None = None
     search_outline: np.ndarray | None = None
+    # Fraction of the seed outline that falls outside the frame. Non-zero means
+    # the board is not fully in shot — a framing problem, not an algorithm one.
+    region_clipped: float = 0.0
+
+    # Which reference pixels the warped frame actually covered. Everything else
+    # is `warpPerspective`'s black fill, which differences as a bright streak
+    # along the frame edge and is not a change at all.
+    observed: np.ndarray | None = None
+    # The part of `region` the incoming frame did not reach. Board area the
+    # camera moved out of shot between the two frames — a dart landing there
+    # cannot be seen, so it is worth telling apart from finding nothing.
+    unobserved_region: np.ndarray | None = None
 
     difference: np.ndarray | None = None  # greyscale, before thresholding
     # The mask as it stands after each cleanup step, so a lost dart can be

@@ -38,6 +38,7 @@ _COLOUR_REGION = (0, 255, 255)  # the seed radius
 _COLOUR_SEARCH = (0, 160, 255)  # the outer radius a dart may extend to
 _COLOUR_SPECKLE = (0, 0, 255)  # dropped as noise
 _COLOUR_UNANCHORED = (255, 80, 80)  # dropped for never reaching the board
+_COLOUR_UNOBSERVED = (255, 0, 255)  # board the incoming frame did not cover
 
 _LABEL_FONT = cv2.FONT_HERSHEY_SIMPLEX
 
@@ -116,16 +117,25 @@ def _draw_region(trace: DetectionTrace) -> np.ndarray | None:
         outside = trace.search == 0
         canvas[outside] = (canvas[outside] * 0.35).astype(np.uint8)
         _outline(canvas, trace.search_outline, _COLOUR_SEARCH)
+    # Board area the incoming frame did not cover, before anything else is drawn
+    # over it: this is the strip that used to arrive as a bright false change.
+    if trace.unobserved_region is not None:
+        canvas[trace.unobserved_region > 0] = _COLOUR_UNOBSERVED
     _outline(canvas, trace.region_outline, _COLOUR_REGION)
 
-    return _caption(
-        canvas,
-        [
-            f"{trace.pixels_per_mm:.2f} px/mm",
-            "yellow: seed radius (must reach in)",
-            "orange: search radius (may extend to)",
-        ],
-    )
+    lines = [
+        f"{trace.pixels_per_mm:.2f} px/mm",
+        "yellow: seed radius (must reach in)",
+        "orange: search radius (may extend to)",
+    ]
+    if trace.unobserved_region is not None and np.any(trace.unobserved_region):
+        lines.append(
+            f"magenta: board not covered by this frame "
+            f"({int(np.count_nonzero(trace.unobserved_region))} px)"
+        )
+    if trace.region_clipped > 0:
+        lines.append(f"! board {100 * trace.region_clipped:.0f}% outside the frame")
+    return _caption(canvas, lines)
 
 
 def _draw_alignment(trace: DetectionTrace) -> np.ndarray | None:
@@ -139,7 +149,13 @@ def _draw_alignment(trace: DetectionTrace) -> np.ndarray | None:
     reference = cv2.cvtColor(trace.reference, cv2.COLOR_BGR2GRAY)
     aligned = cv2.cvtColor(trace.aligned, cv2.COLOR_BGR2GRAY)
     canvas = cv2.merge([aligned, aligned, reference])
-    return _caption(canvas, [f"{trace.alignment_inliers} RANSAC inliers"])
+    return _caption(
+        canvas,
+        [
+            f"{trace.alignment_inliers} RANSAC inliers",
+            f"camera moved {trace.alignment_shift_px:.1f} px",
+        ],
+    )
 
 
 def _draw_difference(trace: DetectionTrace) -> np.ndarray | None:
