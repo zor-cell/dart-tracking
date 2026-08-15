@@ -483,6 +483,64 @@ Flight, §2.4) ist formbasiert statt lagebasiert und behebt genau diese steilen
 Fälle. Isoliert gemessen: **18.3 % → 21.7 %** (der Rest des Sprungs kommt aus der
 Fusion, die beiden greifen ineinander).
 
+### 5.11 Gradientenabhängiger Schwellwert gegen Registrierungs-Reste
+
+*Idee:* Die Registrierung ist nie pixelgenau, und was übrig bleibt, verteilt sich
+nicht gleichmäßig: eine Verschiebung um δ ändert einen Pixel um etwa **|∇I|·δ**.
+Ein flaches Bett (∇I≈0) bleibt ruhig, ein Draht oder eine gedruckte Zahl schlägt
+um zig Graustufen aus — und diese Reste sind breit, hell und am Rand, also genau
+das, was die Fragment-Fusion für einen Flight hält. Also den Schwellwert
+mitwachsen lassen: `40 + Toleranz · |∇Referenz|`.
+
+Der Zusammenhang ist belegt (`pz-light_setup2/throw5/dart1`, Suchbereich ohne den
+Pfeil, 341 246 px): die mittlere Differenz steigt vom untersten Gradienten-Dezil
+(0.6) zum obersten (12.4), und die Pixel über einem flachen Schwellwert von 40
+haben im Mittel einen Gradienten von 52 Graustufen pro Pixel. Nach Helligkeit
+sortiert gibt es keinen vergleichbaren Trend, und die beiden Frames unterscheiden
+sich global nur um 1.4 % — es ist Verschiebung, keine Belichtung. **Nicht** aber
+Kamerawackeln: der gemessene Versatz beträgt hier 0.2 px, der Rest ist *lokal*
+(JPEG, Objektivverzeichnung, Tiefenunterschied Board/Surround).
+
+*Zwei Varianten gemessen:*
+
+1. **Direkt damit schwellen.** 218 → 173 von 285 (**76.5 % → 60.7 %**), bei
+   gleichzeitig *besseren* Abständen (Mittel 35.3 → 25.3 mm, Maximum 220 → 135 mm)
+   und mehr Fällen unter 5 mm (32 → 51). Die strukturellen Ausreißer verschwinden,
+   aber der Pfeil verliert Pixel: seine **Spitze** ist klein, kontrastarm und liegt
+   oft direkt neben einem Draht — genau dort, wo der Schwellwert angehoben wird.
+   Eine verkürzte Achse setzt die Spitze auf die falsche Seite eines Rings.
+2. **Als Seed-Kriterium** (Canny-Hysterese-Idee): der flache Schwellwert baut die
+   Maske und bestimmt die Ausdehnung, der strenge erzeugt eine Seed-Maske, und
+   eine Komponente wird nur geglaubt, wenn ≥ 25 % ihrer Pixel darin liegen. Ein
+   Draht ist auf ganzer Länge Kante und fliegt ganz raus; ein Pfeil liegt auf
+   flachem Bett, übersteht und behält seine volle Ausdehnung. Das funktioniert:
+   218 → **221 (77.5 %)**, >50 mm-Fälle von 18 auf 13, Maximum 220 → 167 mm.
+   `pz-light_setup3/throw7/dart1` ging von 74 Komponenten auf 4 und von `MISS`
+   (220 mm daneben) auf das korrekte `S7`.
+
+*Warum trotzdem verworfen:* drei Pfeile über 285 Paare sind zu wenig für den
+Preis. Der Gewinn kommt ausschließlich von den Boards *mit* strukturellen
+Fehlern (`tz` +2, `pz` +2, `pz-light` +1); **`fh` verliert zwei** und `cc` steht
+still. Beide hatten vorher *null* Mismatches über 20 mm (mittlere Abweichung 4.2
+bzw. 3.4 mm) — dort gibt es nichts zu gewinnen, und `fh` ist zugleich das
+dunkelste Setup (Bett-Helligkeit 171–176 gegen 225 bei `pz-light`), sodass eher
+eine echte Pfeil-Komponente unter den Seed-Anteil rutscht. Ein Verfahren, das auf
+schwach ausgeleuchteten Aufnahmen Genauigkeit kostet, ist für unbekannte Setups
+das falsche Risiko.
+
+Als Bedingung formuliert und damit ein eigenständiges Ergebnis: **das Gate hilft
+nur, wo das Front-End-Signal stark genug ist, dass Kanten-Residuen die einzige
+Verwechslungsgefahr sind.** Bei schwachem Signal überwiegt der Verlust.
+
+*Nebenbefund:* Komponenten, die in die Scoring-Fläche (170 mm) reichen, vom
+Seed-Test auszunehmen — auf die Theorie hin, dass die Störer auf dem bedruckten
+Rand sitzen — kostet weitere drei Pfeile. Die Sektordrähte laufen bis in die
+Mitte, ihre Residuen erreichen die Scoring-Fläche also genauso leicht wie ein
+Pfeil.
+
+Vollständige Sweeps in
+[erkennung-verbesserungen.md](erkennung-verbesserungen.md#2-gradientenabhängiger-schwellwert-verworfen).
+
 ### 5.10 Schwellwert senken, um das Schwarz-Signal zu heben
 
 *Idee:* Wenn der schwarze Pfeil über schwarzen Segmenten kaum difft, dann eben
@@ -533,11 +591,36 @@ Zeilen vergleichbar bleiben:
 |---|---|
 | Stand bei 285 Paaren | 216 / 285 — 75.8 % |
 | + Warp-Gültigkeitsmaske (§2.2) | **218 / 285 — 76.5 %** |
+| (Gradienten-Seeds — gemessen, wieder entfernt, §5.11) | 221 / 285 — 77.5 % |
 
 Zwei Pfeile — weit weniger als erwartet. Die Maske entfernt ein Artefakt, das gar
 keine Bildänderung ist, aber der Warp-Rand war nur *eine* Quelle breiter, heller
-Fremdfragmente; die anderen bleiben. Aufschlüsselung in
-[erkennung-verbesserungen.md](erkennung-verbesserungen.md#1-warp-gültigkeitsmaske).
+Fremdfragmente; die anderen bleiben. Der Versuch, auch die zu fassen, brachte
+drei weitere Pfeile, kostete aber auf dem dunkelsten Board zwei und ist deshalb
+nicht Teil der Pipeline (§5.11). Aufschlüsselung in
+[erkennung-verbesserungen.md](erkennung-verbesserungen.md).
+
+Die Fehler*verteilung* bewegt sich deutlicher als die Quote, und das ist die
+interessantere Zahl:
+
+| | ≤5 mm | 5–20 | 20–50 | >50 | Mittel | Max |
+|---|---|---|---|---|---|---|
+| Ausgangsstand | 33 | 12 | 6 | 18 | 35.2 | 227.4 |
+| nach beiden Schritten | 29 | 12 | 9 | 13 | 28.1 | 166.6 |
+
+Der strukturelle Schwanz schrumpft (>50 mm von 18 auf 13, Maximum von 227 auf
+167 mm), ohne dass die Präzision leidet. Genau das war das Ziel: die Fälle, in
+denen der Fit auf etwas anderem als dem Pfeil ankert.
+
+**Ein Preis ist dabei belegt.** Pro Board: `tz` 54→56, `pz` 44→46, `pz-light`
+74→75, `cc` 23→23, **`fh` 23→21**. `fh` und `cc` hatten vorher **null**
+Mismatches über 20 mm (mittlere Abweichung 4.2 bzw. 3.4 mm) — dort gibt es kein
+strukturelles Problem, das Gate kann also nur schaden. `fh` ist zugleich das
+dunkelste Setup (Bett-Helligkeit 171–176 gegen 225 bei `pz-light`), das
+Pfeil-Signal insgesamt schwächer, sodass eher eine Komponente unter den
+Seed-Anteil rutscht. Als Bedingung formuliert: **das Gate hilft, wo das
+Front-End-Signal stark genug ist, dass Kanten-Residuen die einzige
+Verwechslungsgefahr sind** — bei schwachem Signal überwiegt der Verlust.
 
 Nebenbei deckte der Schritt einen Zufallstreffer auf: ein Pfeil, der als `MISS`
 korrekt gezählt wurde, weil die Pipeline den Randstreifen für einen Pfeil
