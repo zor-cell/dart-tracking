@@ -63,28 +63,47 @@ class GameHub:
         lives here rather than at every call site."""
         await connection.websocket.send_text(message.model_dump_json(by_alias=True))
 
+    async def send_to_client(
+        self, game_id: str, client_id: str, message: ServerMessage
+    ) -> None:
+        """Reach one device by name rather than by the connection in hand.
+
+        For a message whose recipient is not the sender: the device that asked
+        for a recalibration is not the one that carries it out. A device that
+        has since left the room is simply not reached — what it was waiting on
+        stopped mattering when it left.
+        """
+        connection = next(
+            (c for c in self.connections(game_id) if c.client.id == client_id), None
+        )
+        if connection is not None:
+            await self._deliver(game_id, connection, message.model_dump_json(by_alias=True))
+
     async def broadcast(
         self, game_id: str, message: ServerMessage, *, role: DeviceRole | None = None
     ) -> None:
         """Push a message to every device in the game's room.
 
         `role` narrows it to the devices doing one job — a recalibration request
-        concerns the cameras and nobody else. That is a middle ground between
-        the two existing paths, not a third one: `send` answers the device whose
-        picture a reply belongs to, this reaches everyone it applies to.
-
-        A device that dropped without a clean close is only noticed here, when
-        the send fails; it is removed from the room so one dead phone cannot
-        block the others.
+        concerns the cameras and nobody else.
         """
         payload = message.model_dump_json(by_alias=True)
         for connection in self.connections(game_id):
             if role is not None and connection.client.role is not role:
                 continue
-            try:
-                await connection.websocket.send_text(payload)
-            except (WebSocketDisconnect, RuntimeError, ConnectionError):
-                self.leave(game_id, connection.websocket)
+            await self._deliver(game_id, connection, payload)
+
+    async def _deliver(self, game_id: str, connection: Connection, payload: str) -> None:
+        """Send to a device that is not the one being answered right now.
+
+        A device that dropped without a clean close is only noticed here, when
+        the send fails; it is removed from the room so one dead phone cannot
+        block the others.
+        """
+        try:
+            await connection.websocket.send_text(payload)
+        except (WebSocketDisconnect, RuntimeError, ConnectionError):
+            self.leave(game_id, connection.websocket)
 
 
 hub = GameHub()

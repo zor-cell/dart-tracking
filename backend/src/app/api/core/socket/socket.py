@@ -42,6 +42,9 @@ from app.api.features.calibration.services import board_detector
 from app.api.features.calibration.debug.render import (
     write_debug_images as write_calibration_debug_images,
 )
+from app.api.features.calibration.services.calibration_request_store import (
+    store as calibration_request_store,
+)
 from app.api.features.calibration.services.calibration_store import store as calibration_store
 from app.api.features.detection.dto.detection_result import DetectionResultDto
 from app.api.features.detection.dto.detection_frame import DetectionFrameDto
@@ -137,7 +140,7 @@ async def _dispatch(
         case DetectionFrameDto():
             await _handle_throw_frame(connection, game, game_id, message)
         case RequestCalibrationDto():
-            await _request_calibration(game_id)
+            await _request_calibration(game_id, requester=connection.client.id)
         case SetRoleDto():
             await _handle_client_command(connection, message)
         case RegisterDartDto() | UndoDto() | NextPlayerDto():
@@ -181,7 +184,7 @@ async def _handle_game_command(game: Game, command: GameCommand) -> None:
     if game.revision != revision:
         await _publish_state(game)
         if isinstance(command, NextPlayerDto):
-            await _request_calibration(game.id)
+            await _request_calibration(game.id, requester=None)
 
 
 async def _publish_state(game: Game) -> None:
@@ -189,7 +192,7 @@ async def _publish_state(game: Game) -> None:
     await hub.broadcast(game.id, GameStateDto.from_entity(game))
 
 
-async def _request_calibration(game_id: str) -> None:
+async def _request_calibration(game_id: str, *, requester: str | None) -> None:
     """Ask every camera in the room to calibrate again from a fresh frame.
 
     Two things ask for this: a device without a camera of its own, and the end
@@ -201,8 +204,16 @@ async def _request_calibration(game_id: str) -> None:
 
     Only the trigger fans out. A `calibration_result` cannot: its overlay lives
     in the pixel grid of the camera that produced it, so every camera answers
-    its own and the room hears the outcome as `calibration_status`.
+    its own.
+
+    `requester` is the device waiting to hear whether it worked, and is `None`
+    for the automatic one, where nobody is (see `calibration_request_store`).
     """
+    if requester is None:
+        calibration_request_store.clear(game_id)
+    else:
+        calibration_request_store.set(game_id, requester)
+
     await hub.broadcast(game_id, CalibrationRequestedDto(), role=DeviceRole.CAMERA)
 
 
@@ -225,10 +236,11 @@ async def _handle_calibration_frame(
     being the first point at which it could detect anything. Only the first
     claim takes (see `scoring_camera`).
 
-    The outcome additionally goes to the whole room as `calibration_status`,
-    stripped of the overlay that only this camera can place. That is what makes
-    a recalibration asked for from elsewhere — the scoreboard's button, the end
-    of a visit — answerable at all.
+    If another device asked for this calibration, the outcome also goes to that
+    one as `calibration_status`, stripped of the overlay only this camera can
+    place. It goes there and nowhere else — least of all back to this camera,
+    which would then receive two messages for one attempt and, the client
+    holding only the latest, act on the wrong one.
     """
     client_id = connection.client.id
     image = _decode_jpeg(frame.image)
@@ -250,7 +262,12 @@ async def _handle_calibration_frame(
         response = CalibrationResultDto.from_calibration(outcome)
 
     await hub.send(connection, response)
-    await hub.broadcast(game_id, CalibrationStatusDto.from_result(client_id, response))
+
+    requester = calibration_request_store.get(game_id)
+    if requester is not None and requester != client_id:
+        await hub.send_to_client(
+            game_id, requester, CalibrationStatusDto.from_result(client_id, response)
+        )
 
 
 async def _handle_throw_frame(

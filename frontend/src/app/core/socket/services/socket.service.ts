@@ -30,15 +30,10 @@ export class SocketService {
    */
   readonly role = signal<DeviceRole | null>(null);
 
-  /**
-   * What the server calls this device. Read outside this service to tell a
-   * room-wide message about *a* camera from one about this one; null only
-   * before the first ever connect has been answered.
-   */
-  readonly clientId = signal<string | null>(localStorage.getItem(CLIENT_ID_KEY));
-
   private socket: WebSocket | null = null;
   private gameId: string | null = null;
+
+  private clientId: string | null = localStorage.getItem(CLIENT_ID_KEY);
 
   // Commands issued before the socket finished opening, flushed on connect.
   // Only commands are held back: a queued frame would describe a board the game
@@ -138,13 +133,12 @@ export class SocketService {
    * belongs in the URL. Absent on a first connect, when there is no name yet.
    */
   private identity(): string {
-    const clientId = this.clientId();
-    return clientId ? `?clientId=${encodeURIComponent(clientId)}` : '';
+    return this.clientId ? `?clientId=${encodeURIComponent(this.clientId)}` : '';
   }
 
   /** Take the server's word for who this device is. */
   private adopt(message: ClientStateDto): void {
-    this.clientId.set(message.clientId);
+    this.clientId = message.clientId;
     localStorage.setItem(CLIENT_ID_KEY, message.clientId);
     this.role.set(message.role);
   }

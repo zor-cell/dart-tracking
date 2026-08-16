@@ -115,13 +115,14 @@ Spielstand also in derselben Form, egal auf welchem Weg er ankam.
 | `game_state` | alle im Room | der geteilte Spielstand |
 | `client_state` | nur der Sender | wer *dieses* Gerät ist: `clientId` und Rolle (§5) |
 | `calibration_result` | nur der Sender | gehört zu *dessen* Kamerabild |
-| `calibration_status` | alle im Room | dass eine Kamera kalibriert ist — ohne das Overlay, das nur sie platzieren kann (§5c) |
+| `calibration_status` | nur das Gerät, das die Rekalibrierung angefordert hat | es wartet auf die Antwort, und niemand darf zu einem Versuch zwei Nachrichten bekommen (§5c) |
 | `calibration_requested` | alle **Kameras** im Room | nur wer ein Bild hat, kann die Aufforderung beantworten (§5c) |
 | `detection_result` | nur der Sender | Overlay-Polylines liegen im Pixelraster dieser Kamera |
 | `presence` | alle im Room | wie viele Geräte, welche Rollen (optional) |
 
-Damit gibt es drei Zustellwege statt zwei: `send` an genau ein Gerät, `broadcast`
-an den Raum, und `broadcast(role=…)` an alle, die eine Aufgabe teilen.
+Damit gibt es vier Zustellwege statt zwei: `send` an das Gerät, dessen Nachricht
+gerade beantwortet wird, `send_to_client` an ein *anderes*, namentlich genanntes,
+`broadcast` an den Raum und `broadcast(role=…)` an alle, die eine Aufgabe teilen.
 
 ---
 
@@ -420,13 +421,40 @@ aktuellen Frame und läuft den normalen Kalibrierungspfad.
 `calibration_result` kann den Weg nicht zurückgehen: sein Overlay liegt im
 Pixelraster der Kamera, die es erzeugt hat (§3). Jede Kamera bekommt also ihr
 eigenes — und damit das anfordernde Gerät überhaupt erfährt, ob etwas passiert
-ist, geht zusätzlich ein `calibration_status` an den Raum: `clientId`, Erfolg,
-Fehlergrund, kein Overlay.
+ist, geht ein `calibration_status` an **genau dieses eine Gerät**: `clientId`,
+Erfolg, Fehlergrund, kein Overlay. Wer das ist, hält
+`calibration_request_store` fest, denn der Antwortende ist nicht der Fragende.
 
-Wie das aufbereitet wird, hängt daran, wer gefragt hat: **Fehlschläge** werden
-immer gemeldet — ab dem Moment wird nichts mehr korrekt gewertet, unabhängig von
-der Ursache. Ein **Erfolg** dagegen nur dem Gerät, das gerade getippt hat; sonst
-wäre jeder Rundenwechsel ein Toast.
+### Warum der Status nicht an den Raum geht
+
+Der erste Wurf war ein Broadcast, und der hat die Kalibrierung auf dem
+Kamera-Handy zuverlässig aufgehängt: Der Ladebalken drehte endlos, weil die
+Kamera **zwei** Nachrichten für einen Versuch bekam — erst ihr
+`calibration_result`, unmittelbar danach den Broadcast.
+
+Der Client hält den Socket in einem **Signal** (`SocketService.lastMessage`),
+nicht in einem Stream. Ein Signal trägt den letzten Wert, keine Warteschlange,
+und die App läuft zoneless: Effects laufen nicht pro Zuweisung, sondern beim
+nächsten geplanten Tick. Zwei Nachrichten innerhalb eines Frames werden damit zu
+*einem* Effect-Lauf zusammengefasst, der nur die zweite sieht. Das
+`calibration_result` wurde also nie beobachtet und `status` blieb auf
+`'pending'`.
+
+Daraus die Regel, die das Protokoll seitdem einhält: **kein Gerät bekommt zu
+einem Versuch mehr als eine Nachricht.** Die Kamera ihr Ergebnis, der Anfragende
+seinen Status, sonst niemand. Das ist ohnehin die richtige Adressierung — der
+Status beantwortet eine Frage, und nur wer sie gestellt hat, wartet auf die
+Antwort.
+
+> Dieselbe Falle steht im Detection-Pfad noch offen: `detection_result` und
+> `game_state` gehen unmittelbar nacheinander an die buchende Kamera. Solange
+> `lastMessage` ein Signal ist, ist jedes solche Paar anfällig.
+
+Wie der Status aufbereitet wird: **Fehlschläge** immer — ab dem Moment wird
+nichts mehr korrekt gewertet. Ein **Erfolg** nur als Antwort auf einen eigenen
+Tap; sonst wäre jeder Rundenwechsel ein Toast. Die automatische Rekalibrierung
+verschickt gar keinen Status: niemand hat gefragt, und die Kamera meldet ihren
+Fehlschlag ohnehin auf dem Gerät, an dem auch nachjustiert werden muss.
 
 ### Zwei Auslöser, ein Mechanismus
 
@@ -481,6 +509,12 @@ Referenz, die die gezogenen Pfeile noch enthält.
 - **Doppelbuchung durch zwei Personen.** Tippen beide manuell denselben Wurf,
   zählt er doppelt. Server-seitig nicht lösbar; wird über die Rollen-UI
   entschärft, nicht verhindert.
+- **`lastMessage` ist ein Signal, kein Stream.** Ein Signal hält den letzten
+  Wert, und zoneless laufen Effects erst beim nächsten Tick — zwei Nachrichten
+  in einem Frame ergeben einen Lauf, der nur die zweite sieht. Das Protokoll
+  weicht dem aus (§5c), aber das ist Disziplin, keine Absicherung: der Server
+  darf zu einem Vorgang nie zwei Nachrichten an dasselbe Gerät schicken. Robust
+  wäre, den Socket im Client als Stream zu führen und pro Nachricht zuzustellen.
 
 ---
 

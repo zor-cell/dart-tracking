@@ -79,8 +79,9 @@ export class CalibrationService {
 
     // How a device learns about a calibration that was not its own — the only
     // route for one without a camera, since `calibration_result` goes to the
-    // camera that produced it alone (docs/feature/multi-device.md §3). Failures
-    // are always surfaced: from here on nothing is scored, whoever asked.
+    // camera that produced it alone (docs/feature/multi-device.md §3). Reaches
+    // the device that asked for the recalibration and no other, so no attempt
+    // is ever reported twice here.
     effect(() => {
       const message = this.socket.lastMessage();
       if (message?.type !== 'calibration_status') {
@@ -122,15 +123,15 @@ export class CalibrationService {
     this.notifications.showErrorMessage(message, FAILURE_TITLE, FAILURE_TOAST_LIFE);
   }
 
-  /** Report another camera's attempt. Skipped for this device's own, which the
-   * full `calibration_result` above has already reported in more detail. */
+  /**
+   * Report a camera's attempt to the device that asked for it. Failures always:
+   * from here on nothing is scored on that camera. Success only in answer to a
+   * tap of our own — the ones a round change fires would be a toast per visit.
+   */
   private reportRemoteStatus(status: CalibrationStatusDto): void {
     const requested = this.awaitingRequest;
     this.awaitingRequest = false;
 
-    if (status.clientId === this.socket.clientId()) {
-      return;
-    }
     if (!status.success) {
       this.notifications.showErrorMessage(
         REMOTE_FAILURE_MESSAGE,
