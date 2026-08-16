@@ -31,6 +31,7 @@ FastAPI, siehe @docs/guidelines/backend-best-practices.md
 - Vermeide unnötige Kommentare, damit sind vor allem Kommentare gemeint, die sich speziell auf ein Prompt beziehen,
 wenn dieser Kontext verloren ist, sind sie unlesbar
 - Halte Kommentare kurz und prägnant
+- Wenn du Arbeit in einem Feature machst, sollst du keine Kommentare hinzufügen, nur weil es eine Änderung gab, das führt zu Kommentar-Explosion
 
 ## Commands
 - `npm run start` — Frontend starten

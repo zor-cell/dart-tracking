@@ -556,5 +556,9 @@ Ellipsen-Fit sitzt.
   fallen komplett durch (siehe §6).
 - **Objektivverzeichnung.** Aktuell unmodelliert. Ob eine
   Kamera-Vorkalibrierung den Randfehler nennenswert senkt, ist ungeprüft.
-- **Re-Kalibrierung.** `H` gilt nur für eine feste Kamerapose. Ein Erkennen von
-  Verschiebungen zur Laufzeit existiert noch nicht.
+- **Re-Kalibrierung.** `H` gilt nur für eine feste Kamerapose. Ausgelöst wird
+  sie inzwischen an jedem Rundenwechsel und auf Anforderung eines beliebigen
+  Geräts im Raum ([multi-device.md §5c](multi-device.md#5c-rekalibrierung-anfordern)).
+  Was fehlt, ist das *Erkennen* einer Verschiebung zur Laufzeit — die Zahl dafür
+  liegt bereits vor (`alignment_shift_px` aus der Detection-Registrierung), sie
+  löst nur noch nichts aus.

@@ -22,7 +22,3 @@ class Calibration:
     def inverse(self) -> np.ndarray:
         """Board millimetres -> image pixels."""
         return np.linalg.inv(self.homography)
-
-    def to_list(self) -> list[list[float]]:
-        """Row-major form for the wire."""
-        return self.homography.tolist()

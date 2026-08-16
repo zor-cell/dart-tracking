@@ -77,9 +77,19 @@ zwischen den Würfen kommt, entscheidet `core/socket.py` über einen
 
 So sieht die Pipeline pro Wurf immer nur genau den neu hinzugekommenen Pfeil.
 
-**Grenze:** Werden die Pfeile aus dem Board gezogen (Rundenende), driftet dieses
-Prinzip — die nächste Differenz zeigt das *Entfernen* dreier Pfeile als große
-Änderung. Ein „Board geleert"-Signal existiert noch nicht (siehe §7).
+**Board geleert:** Werden die Pfeile aus dem Board gezogen, gilt die rollende
+Referenz nicht mehr — die nächste Differenz zeigte sonst das *Entfernen* dreier
+Pfeile als große Änderung, und die Fusion ankert auf dem breitesten Fragment,
+also womöglich auf der Silhouette eines gezogenen Pfeils. Das Signal dafür ist
+der **Rundenwechsel**: `next_player` schickt allen Kameras ein
+`calibration_requested`, die daraufhin einen frischen Frame kalibrieren und
+damit die Referenz auf das leere Board neu setzen (siehe
+[multi-device.md §5c](multi-device.md#5c-rekalibrierung-anfordern)).
+
+Das setzt voraus, dass der Rundenwechsel *nach* dem Ziehen der Pfeile ausgelöst
+wird — was er tut, wenn er bestätigt wird („Wurf bestätigen"). Steht die
+Einstellung auf automatisches Weiterschalten, kommt er direkt nach dem dritten
+Dart und damit zu früh; die Kalibrierung sieht dann ein Board mit drei Pfeilen.
 
 ---
 
@@ -698,9 +708,11 @@ längerfristigen Punkte:
   schneiden. Bricht die Kalibrierung nicht, baut auf ihr auf — Ausblick.
 - **Gelernter Tip-Detektor.** Robustester Endzustand gegen schwarz-auf-schwarz;
   die Ground-Truth-Infrastruktur (§6) ist der erste Schritt zu Trainingsdaten.
-- **Board-Clear / Re-Base.** Der rollende Referenz-Frame kennt kein Signal, wann
-  die Pfeile gezogen werden. Für echtes Mehr-Runden-Spiel muss ein geleertes
-  Board die Referenz neu seeden (z.B. erneutes `calibration_frame`).
+- **Board-Clear bei Auto-Weiterschaltung.** Das Re-Base am Rundenwechsel (§1)
+  hängt daran, dass der Wechsel bestätigt wird, also nach dem Ziehen kommt. Ohne
+  Bestätigung feuert er direkt nach dem dritten Dart. Sauber wäre ein Signal aus
+  dem Bild selbst — die Frame-Differenz sieht das Ziehen als Bewegung, und ein
+  danach ruhiges Bild ließe sich gegen das ursprüngliche Leer-Board prüfen.
 - **Verdeckung.** Aktuell nur implizit gelöst (neuer Pfeil verdeckt alten →
   Problem; drei nebeneinander → kein Problem). Das Linien-Modell hilft bei
   Teilverdeckung mehr als ein Schwerpunkt-Ansatz, der explizite Umgang ist aber
