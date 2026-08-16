@@ -1,11 +1,11 @@
 mögliche todos:
 
 Wenig Aufwand:
+- das svg board des scoreboard users flickert bei erstellen von game (oder joinen)
+- logs in socket.py für nachverfolgen welche socket requests von wo kommen
 - detection linien sind sehr falsch derzeit, ich glaub es werden auch welche geschickt, wenn nicht erkannt wurde
-- readme updaten mit deployment info auch etc und link zu prod
 - testdaten erstellung während eines spiels, dann komm ich locker auf 500+ pfeile
 - socket.py cleanen, die debug writes wirken dort fehl am platz
-- das svg board des scoreboard users flickert bei erstellen von game (oder joinen)
 
 Viel Aufwand:
 - client diff löst ja derzeit öfter aus, fokus auf recall, das backend muss da was checken (ist das überhaupt möglich), weil

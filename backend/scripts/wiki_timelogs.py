@@ -8,7 +8,7 @@ ISO week, summed time per issue, and time per day (with the issue IDs touched
 that day).
 
 Usage:
-    export GITLAB_TOKEN=<personal access token with read_api scope>
+    export TIMETRACKING_TOKEN=<personal access token with read_api scope>
     python scripts/wiki_timelogs.py --out ../dart-tracking.wiki/Zeiterfassung.md
 
 Without --out the page is printed to stdout.

@@ -1,93 +1,163 @@
-# dart-tracking
+# Dart-Tracking-System
 
+Automatisches Dart-Scoring mit einer handelsüblichen Smartphone-Kamera statt
+teurer Multi-Kamera-Hardware. Bachelorarbeit an der TU Wien (Philippe Zorman,
+Matrikelnummer 12225143).
 
+Ein Handy wird auf das Dartboard gerichtet, weitere Geräte können als
+Scoreboard demselben Spiel beitreten. Das System erkennt geworfene Pfeile,
+berechnet die Punkte und führt ein 501-Spiel ohne manuelles Mitzählen.
 
-## Getting started
+## Wie es funktioniert
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+Hybrid-Architektur, um kontinuierliches Video-Streaming zu vermeiden:
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+1. **Kalibrierung (Server).** Aus einem Standbild wird das Board erkannt — rote
+   und grüne Segmente in HSV, Ellipsen-Fit auf den Doppelring, Sektordrähte über
+   Farbwechsel — und daraus eine Homographie von Bildpixeln nach
+   Board-Millimetern berechnet.
+2. **Wurf-Erkennung (Client).** Der Browser rechnet per Canvas API eine
+   Frame-Differenz und erkennt, wann ein neuer Pfeil im Bild zur Ruhe kommt.
+   Erst dann geht ein einzelnes JPEG über den WebSocket ans Backend.
+3. **Pfeil-Lokalisierung und Scoring (Server).** Der Frame wird auf den
+   Referenz-Frame registriert, die Differenz zu einem Pfeil zusammengesetzt, die
+   Spitze bestimmt und über die Homographie in ein Board-Segment übersetzt.
+4. **Spielstand (Server).** Der Punktestand ist server-autoritativ und wird per
+   WebSocket an alle Geräte im Raum gepusht.
 
-## Add your files
+**Stack:** Angular 21 + PrimeNG 21 (Frontend), FastAPI + OpenCV + NumPy
+(Backend), Docker Compose, nginx als Reverse Proxy.
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## Dokumentation
+
+| Dokument | Inhalt |
+|---|---|
+| [docs/konzept.md](docs/konzept.md) | Ausgangslage, MVP-Umfang, technische Herausforderungen |
+| [docs/feature/kalibrierung.md](docs/feature/kalibrierung.md) | Board-Erkennung: Algorithmen, Parameter, verworfene Ansätze |
+| [docs/feature/erkennung.md](docs/feature/erkennung.md) | Pfeil-Erkennung: Pipeline, Fehlerbehandlung, Messungen |
+| [docs/feature/multi-device.md](docs/feature/multi-device.md) | Geteilte Session, Geräte-Rollen, Socket-Protokoll |
+| [docs/feature/client-diff-verbesserungen.md](docs/feature/client-diff-verbesserungen.md) | Trigger-Zuverlässigkeit der Frame-Differenz |
+| [docs/roadmap.md](docs/roadmap.md) | Umsetzungsstand und geplante Schritte |
+| [docs/zeitplan.md](docs/zeitplan.md) | Phasenplan bis zur Einreichung |
+
+Konventionen für Beiträge stehen in [CLAUDE.md](CLAUDE.md) und
+[docs/guidelines/](docs/guidelines/).
+
+## Lokale Entwicklung
+
+**Voraussetzungen:** Node.js 22, Python 3.12, [uv](https://docs.astral.sh/uv/),
+Docker (optional).
+
+Backend, aus `backend/` (läuft auf `:8000`):
+
+```bash
+uv run uvicorn app.main:app --app-dir src --reload
+```
+
+Frontend, aus `frontend/` (läuft auf `:4200`):
+
+```bash
+npm run start
+```
+
+Das Backend erlaubt CORS nur für `localhost:4200` und `127.0.0.1:4200` — im
+Dev-Setup greift das Frontend also direkt zu, in Produktion ist alles
+gleichursprünglich hinter nginx und CORS spielt keine Rolle.
+
+**Kamerazugriff braucht einen sicheren Kontext.** `getUserMedia` funktioniert nur
+über HTTPS oder auf `localhost`. Ein Handy im LAN, das auf die Dev-Maschine
+zeigt, bekommt daher kein Kamerabild — dafür die deployte Instanz benutzen.
+
+### CV-Pipelines gegen Testdaten laufen lassen
+
+Die Runner spielen Fotos aus `backend/testdata/` durch dieselbe Pipeline wie der
+Live-Betrieb und schreiben annotierte Kopien plus einen Genauigkeitsbericht
+zurück (Zielordner über `--out`). Ebenfalls aus `backend/`:
+
+```bash
+uv run python scripts/calibration/run_all.py
+```
+
+```bash
+uv run python scripts/detection/run_all.py
+```
+
+`run_debug.py` in beiden Ordnern macht dasselbe für ein einzelnes Bild.
+
+## Deployment
+
+Deployt wird auf einen **Raspberry Pi 5** im Heimnetz. Von außen erreichbar ist
+er über einen **Cloudflare Tunnel**, nicht über Portfreigaben im Router.
+
+**Produktion:** [https://darts.zorphy.net/](https://darts.zorphy.net/)
+
+### Ablauf
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.tuwien.ac.at/e12225143/dart-tracking.git
-git branch -M main
-git push -uf origin main
+git push (main)
+   → GitLab CI, Stage "deploy"
+   → self-hosted Runner mit Tag "rpi5" (läuft auf dem Pi)
+   → docker compose up -d --build
+   → frontend-Container (nginx) auf Host-Port 10020
+   → cloudflared auf dem Pi → öffentliche Domain
 ```
 
-## Integrate with your tools
+Definiert in [.gitlab-ci.yml](.gitlab-ci.yml). Der Job läuft nur auf `main` und
+nur, wenn die Pipeline kein Schedule ist. Es gibt keinen Build-Artefakt-Transfer:
+der Runner steht auf derselben Maschine wie Docker, gebaut wird direkt dort.
 
-* [Set up project integrations](https://gitlab.tuwien.ac.at/e12225143/dart-tracking/-/settings/integrations)
+### Was Docker Compose aufsetzt
 
-## Collaborate with your team
+[compose.yaml](compose.yaml) startet zwei Container, beide mit
+`restart: unless-stopped`:
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+| Container | Image | Ports |
+|---|---|---|
+| `backend_container` | `python:3.12-slim` + uv, uvicorn auf `:8000` | keine Host-Freigabe |
+| `frontend_container` | `nginx:1.25-alpine` mit dem gebauten Angular-Bundle | `10020:80` |
 
-## Test and Deploy
+Das Backend ist **bewusst nicht nach außen freigegeben**. Erreichbar ist nur
+nginx, der laut [frontend/default.conf](frontend/default.conf) `/api/` an
+`backend:8000` weiterreicht — inklusive `Upgrade`/`Connection`-Headern für den
+WebSocket und 3600 s Timeouts, damit eine ruhende Verbindung während eines
+Spiels nicht abgeräumt wird.
 
-Use the built-in continuous integration in GitLab.
+Weil Frontend und API damit dieselbe Origin teilen, leitet das Frontend seine
+URLs zur Laufzeit ab ([environment.ts](frontend/src/environments/environment.ts)):
+`/api` für HTTP, `wss://<host>/api/ws` für den Socket. Der Tunnel muss also nur
+einen einzigen Port veröffentlichen, und es ist keine Domain im Build hartkodiert.
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+Für lokales Testen des Prod-Builds legt [compose.dev.yaml](compose.dev.yaml) das
+Backend zusätzlich auf `10021` offen:
 
-***
+```bash
+docker compose -f compose.yaml -f compose.dev.yaml up -d --build
+```
 
-# Editing this README
+### Cloudflare Tunnel
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+Der Tunnel läuft als `cloudflared`-Dienst **auf dem Pi und ist nicht Teil dieses
+Repos** — er wird einmalig eingerichtet und überlebt Deployments, weil er nur auf
+`localhost:10020` zeigt und die Container darunter ausgetauscht werden.
 
-## Suggestions for a good README
+Er erfüllt hier zwei Zwecke über die Erreichbarkeit hinaus:
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+- **HTTPS ohne eigenes Zertifikat.** Cloudflare terminiert TLS. Ohne das gäbe es
+  keinen Kamerazugriff, weil `getUserMedia` einen sicheren Kontext verlangt.
+- **Keine offenen Ports.** Der Pi baut die Verbindung ausgehend auf; im Router
+  muss nichts weitergeleitet werden.
 
-## Name
-Choose a self-explaining name for your project.
+Ändert sich der Host-Port in `compose.yaml`, muss die Tunnel-Konfiguration auf
+dem Pi mitgezogen werden — der Zusammenhang ist an keiner Stelle automatisiert.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+### Zeiterfassung (zweite Pipeline)
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+Die Stage `maintenance` in `.gitlab-ci.yml` läuft ausschließlich per Schedule,
+nicht bei Pushes. Sie erzeugt mit [backend/scripts/wiki_timelogs.py](backend/scripts/wiki_timelogs.py)
+eine `Zeiterfassung.md` aus den GitLab-Timelogs und committet sie ins Wiki des
+Projekts.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Dafür braucht es die CI-Variable `TIMETRACKING_TOKEN`. Sie wird zweimal
+verwendet: vom Skript für die GraphQL-Abfrage (`read_api`) und im Job für den
+`git push` ins Wiki-Repository (`write_repository`) — der Token muss also beide
+Scopes tragen.
