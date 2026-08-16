@@ -5,15 +5,10 @@ import { GameService } from '../../game/services/game.service';
 import { DetectionFailureDto } from '../dto/detection-failure.dto';
 import { DetectionResultDto } from '../dto/detection-result.dto';
 import { GameStateDto } from '../../game/dto/game-state.dto';
+import { dartColor } from '../../game/models/dart-colors';
 
 /** How long a hit/failure line stays in the badge before it clears. */
 const FEEDBACK_DURATION_MS = 2500;
-
-const DART_COLORS = [
-  'rgba(56, 189, 248, 0.95)', // dart 1 — cyan
-  'rgba(244, 114, 182, 0.95)', // dart 2 — pink
-  'rgba(74, 222, 128, 0.95)', // dart 3 — lime
-] as const;
 
 const FAILURE_HINTS: Record<DetectionFailureDto, string> = {
   invalid_image: 'Bild nicht lesbar',
@@ -129,12 +124,10 @@ export class DetectionService {
   }
 
   private appendDart(polylines: number[][][]): void {
-    this.roundDarts.update((darts) => {
-      // Cap the colour lookup: an over-eager trigger can land more than three
-      // detections in a visit, but there are only three dart colours.
-      const color = DART_COLORS[Math.min(darts.length, DART_COLORS.length - 1)];
-      return [...darts, { polylines, color }];
-    });
+    this.roundDarts.update((darts) => [
+      ...darts,
+      { polylines, color: dartColor(darts.length) },
+    ]);
   }
 
   /**

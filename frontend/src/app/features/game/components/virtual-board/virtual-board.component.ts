@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { DartDto } from '../../dto/dart.dto';
+import { dartColor } from '../../models/dart-colors';
 import {
   BULLSEYE_RADIUS,
   BULL_RADIUS,
@@ -35,6 +36,8 @@ interface DartMarker {
   readonly label: string;
   /** Position within the visit (1–3), the tie to the dart boxes above. */
   readonly ordinal: number;
+  /** The colour of this dart's outline on the camera phone (`dartColor`). */
+  readonly color: string;
 }
 
 /** Where the sector values sit, far enough out to clear the double ring. */
@@ -119,7 +122,7 @@ export class VirtualBoardComponent {
         return [];
       }
       const [x, y] = toSvg(dart.position[0], dart.position[1]);
-      return [{ x, y, label: dart.label, ordinal: index + 1 }];
+      return [{ x, y, label: dart.label, ordinal: index + 1, color: dartColor(index) }];
     }),
   );
 
