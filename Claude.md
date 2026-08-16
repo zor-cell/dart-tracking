@@ -59,9 +59,10 @@ weil etwas geändert wurde. Ein Kommentar, der sich auf den Prompt oder den Diff
 bezieht ("now also handles …", "changed so that …"), ist ohne diesen Kontext
 unlesbar und daher verboten.
 
-**Selbstprüfung vor dem Abschluss:** Bei jeder Datei, die du angefasst hast, die
-Kommentarzeilen zählen. Über ~15 % Kommentaranteil ist es zu viel — kürzen, bevor
-du fertig meldest.
+**Selbstprüfung vor dem Abschluss:** Maßgeblich sind die Zeilengrenzen oben —
+die gelten immer. Zusätzlich als Geruchsprobe, aber nur bei Dateien ab ca. 100
+Zeilen: über ~15 % Kommentaranteil ist es zu viel. Bei kleinen Dateien ist der
+Prozentsatz aussagelos, weil ein einzelner Modul-Docstring schon 20 % ausmacht.
 
 ## Commands
 - `npm run start` — Frontend starten

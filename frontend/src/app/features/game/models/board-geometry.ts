@@ -1,11 +1,7 @@
 /**
- * Canonical dartboard geometry, in millimetres from the centre, in the same
- * board plane the server scores in: origin at the bullseye, x right, y **up**,
- * angles counter-clockwise from +x.
- *
- * Mirrors the server's `calibration/domain/board_geometry.py`. It is duplicated
- * rather than fetched because it is a fixed standard, and because it is used
- * here only to draw — the scoring stays server-side.
+ * Canonical dartboard geometry in millimetres: origin at the bullseye, x right,
+ * y **up**, angles counter-clockwise from +x. Used only to draw; scoring stays
+ * server-side in `calibration/domain/board_geometry.py`, which this mirrors.
  */
 
 export const BULLSEYE_RADIUS = 6.35; // the 50
@@ -31,19 +27,13 @@ export function sectorCentreAngle(index: number): number {
   return FIRST_SECTOR_CENTRE_ANGLE - index * SECTOR_ANGLE;
 }
 
-/**
- * Whether the double/triple ring of sector `index` is red rather than green —
- * the colours alternate, and sector 20 is red. Its single beds are the dark
- * ones, so this decides both.
- */
+/** Whether sector `index` is a red/dark one rather than green/light — the
+ * colours alternate, and sector 20 is red. */
 export function isRedSector(index: number): boolean {
   return index % 2 === 0;
 }
 
-/**
- * Board millimetres to SVG user units. Only the y axis changes: board y points
- * up, SVG y points down, so the drawing keeps the orientation of the real board.
- */
+/** Board millimetres to SVG user units: board y points up, SVG y down. */
 export function toSvg(x: number, y: number): readonly [number, number] {
   return [x, -y];
 }

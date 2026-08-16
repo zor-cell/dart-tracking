@@ -439,9 +439,13 @@ aktuellen Frame und läuft den normalen Kalibrierungspfad.
 `calibration_result` kann den Weg nicht zurückgehen: sein Overlay liegt im
 Pixelraster der Kamera, die es erzeugt hat (§3). Jede Kamera bekommt also ihr
 eigenes — und damit das anfordernde Gerät überhaupt erfährt, ob etwas passiert
-ist, geht ein `calibration_status` an **genau dieses eine Gerät**: `clientId`,
-Erfolg, Fehlergrund, kein Overlay. Wer das ist, hält
-`calibration_request_store` fest, denn der Antwortende ist nicht der Fragende.
+ist, geht ein `calibration_status` an **genau dieses eine Gerät**: nur Erfolg
+ja/nein, kein Overlay. Wer das ist, hält `calibration_request_store` fest, denn
+der Antwortende ist nicht der Fragende.
+
+> Der Status trug ursprünglich auch `clientId` und den Fehlergrund. Beides hat
+> das Frontend nie gelesen und wurde entfernt; bei mehreren Kameras (§5a) kommt
+> `clientId` zurück, sobald der Empfänger sie auseinanderhalten muss.
 
 ### Warum der Status nicht an den Raum geht
 
