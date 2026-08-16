@@ -1,9 +1,5 @@
 @if (game.state(); as state) {
   <section class="view game">
-    <!-- Camera or drawn board, never both: this device either films the board or
-         watches what the filming one found (docs/feature/multi-device.md). Which
-         one it is comes from the server with the handshake, so on a cold start
-         there is a moment where it is not known yet. -->
     @if (deviceRole() === null) {
       <div class="game__camera" role="status">
         <div class="game__camera-overlay">
@@ -14,7 +10,18 @@
         </div>
       </div>
     } @else if (deviceRole() === 'scoreboard') {
-      <app-virtual-board [darts]="currentDarts()" />
+      <div class="game__board">
+        <app-virtual-board [darts]="currentDarts()" />
+        <p-button
+          class="game__recalibrate"
+          icon="pi pi-sync"
+          [rounded]="true"
+          severity="primary"
+          size="small"
+          ariaLabel="Rekalibrieren"
+          (onClick)="requestCalibration()"
+        />
+      </div>
     } @else {
       <div class="game__camera">
         <video
@@ -26,10 +33,6 @@
           playsinline
         ></video>
         <canvas #diffCanvas width="160" height="90" class="game__hidden-canvas"></canvas>
-        <!-- The captureCanvas holds the exact frame last sent to the server. It must
-             stay in the DOM for the capture to draw into it, so it is only styled as
-             a corner thumbnail (rather than conditionally rendered) — its content
-             updates only on a send, making it a clear "a frame just went out" pulse. -->
         <canvas
           #captureCanvas
           [class.game__hidden-canvas]="!debugActive()"

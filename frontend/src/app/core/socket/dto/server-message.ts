@@ -1,5 +1,7 @@
 import { ClientStateDto } from './client-state.dto';
+import { CalibrationRequestedDto } from '../../../features/calibration/dto/calibration-requested.dto';
 import { CalibrationResultDto } from '../../../features/calibration/dto/calibration-result.dto';
+import { CalibrationStatusDto } from '../../../features/calibration/dto/calibration-status.dto';
 import { DetectionResultDto } from '../../../features/detection/dto/detection-result.dto';
 import { GameStateDto } from '../../../features/game/dto/game-state.dto';
 
@@ -11,6 +13,8 @@ import { GameStateDto } from '../../../features/game/dto/game-state.dto';
  */
 export type ServerMessage =
   | ClientStateDto
+  | CalibrationRequestedDto
   | CalibrationResultDto
+  | CalibrationStatusDto
   | DetectionResultDto
   | GameStateDto;

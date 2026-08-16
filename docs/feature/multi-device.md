@@ -18,6 +18,9 @@ Verbindungsmodell.
 > Spiel bucht. Im Join-Screen ist „Mit Kamera" weiterhin deaktiviert — das ist
 > nur noch ein Frontend-Schritt. Die Fusion zweier Ansichten zu *einer*
 > Schätzung ist hergeleitet, aber nicht gebaut (§5b).
+>
+> **Rekalibrierung** kann seit §5c jedes Gerät im Raum anstoßen — auch eines
+> ohne Kamera — und der Rundenwechsel tut es von selbst.
 
 ---
 
@@ -112,8 +115,13 @@ Spielstand also in derselben Form, egal auf welchem Weg er ankam.
 | `game_state` | alle im Room | der geteilte Spielstand |
 | `client_state` | nur der Sender | wer *dieses* Gerät ist: `clientId` und Rolle (§5) |
 | `calibration_result` | nur der Sender | gehört zu *dessen* Kamerabild |
+| `calibration_status` | alle im Room | dass eine Kamera kalibriert ist — ohne das Overlay, das nur sie platzieren kann (§5c) |
+| `calibration_requested` | alle **Kameras** im Room | nur wer ein Bild hat, kann die Aufforderung beantworten (§5c) |
 | `detection_result` | nur der Sender | Overlay-Polylines liegen im Pixelraster dieser Kamera |
 | `presence` | alle im Room | wie viele Geräte, welche Rollen (optional) |
+
+Damit gibt es drei Zustellwege statt zwei: `send` an genau ein Gerät, `broadcast`
+an den Raum, und `broadcast(role=…)` an alle, die eine Aufgabe teilen.
 
 ---
 
@@ -397,6 +405,56 @@ Die Rechnung ist klein. Was fehlt, ist der Apparat drumherum:
    auf die zweite zu warten, mit Timeout auf den Einzelkamera-Fall.
 
 Punkt 2 und 3 sind der Grund für die Vertagung, nicht die Geometrie.
+
+---
+
+## 5c. Rekalibrierung anfordern
+
+Kalibrieren kann nur, wer ein Bild hat. Ein Scoreboard-Handy hat keines — es
+kann also nur **anfordern**, und genau das ist `request_calibration`: ein
+Kommando ohne Inhalt, das der Server an jede Kamera im Raum als
+`calibration_requested` weiterreicht. Jede Kamera greift daraufhin ihren
+aktuellen Frame und läuft den normalen Kalibrierungspfad.
+
+**Es fächert sich der Auslöser auf, nicht das Ergebnis.** Ein
+`calibration_result` kann den Weg nicht zurückgehen: sein Overlay liegt im
+Pixelraster der Kamera, die es erzeugt hat (§3). Jede Kamera bekommt also ihr
+eigenes — und damit das anfordernde Gerät überhaupt erfährt, ob etwas passiert
+ist, geht zusätzlich ein `calibration_status` an den Raum: `clientId`, Erfolg,
+Fehlergrund, kein Overlay.
+
+Wie das aufbereitet wird, hängt daran, wer gefragt hat: **Fehlschläge** werden
+immer gemeldet — ab dem Moment wird nichts mehr korrekt gewertet, unabhängig von
+der Ursache. Ein **Erfolg** dagegen nur dem Gerät, das gerade getippt hat; sonst
+wäre jeder Rundenwechsel ein Toast.
+
+### Zwei Auslöser, ein Mechanismus
+
+1. **Der Button auf dem Scoreboard** — der Fall, für den das Kommando existiert.
+2. **Das Rundenende.** `next_player` fordert dieselbe Rekalibrierung an. Das ist
+   der wichtigere der beiden: am Rundenende werden die Pfeile aus dem Board
+   gezogen, und das ist zugleich der Moment, in dem ein frisches Leer-Board als
+   Referenz aufgenommen werden kann (siehe [erkennung.md §1](erkennung.md)) und
+   der, in dem am ehesten gegen Board oder Kamera gestoßen wurde.
+
+Der zweite Auslöser hängt an einer Annahme: dass der Rundenwechsel **nach** dem
+Ziehen der Pfeile ausgelöst wird. Bei bestätigtem Wechsel („Wurf bestätigen")
+stimmt das — der Spieler holt die Pfeile und tippt dann. Bei automatischer
+Weiterschaltung nicht: die kommt direkt nach dem dritten Dart, und die
+Kalibrierung sieht ein volles Board. Deshalb ist hier bewusst keine weitere
+Logik eingebaut (kein Warten auf ein ruhiges Bild, keine Leer-Prüfung): der
+Bestätigungs-Tap *ist* die Aussage „Board ist leer", und eine zweite Quelle
+derselben Information hätte nur eigene Fehlerfälle.
+
+Ein dritter Auslöser ist vorgezeichnet, aber nicht gebaut: die
+Detection-Registrierung misst mit `alignment_shift_px` bereits, wie weit sich die
+Kamera bewegt hat — ein Schwellwert darauf würde eine verrutschte Kamera selbst
+melden.
+
+**Fehlschlag ist folgenlos für den Bestand:** Der Server überschreibt
+Homographie und Referenzbild nur bei Erfolg. Eine misslungene Rekalibrierung
+lässt die alte stehen, die Erkennung läuft also weiter — nur eben gegen eine
+Referenz, die die gezogenen Pfeile noch enthält.
 
 ---
 

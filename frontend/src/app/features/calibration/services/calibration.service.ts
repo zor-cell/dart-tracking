@@ -1,6 +1,7 @@
 import { effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { NotificationService } from '../../../core/notification/services/notification.service';
 import { CalibrationFailureDto } from '../dto/calibration-failure.dto';
+import { CalibrationStatusDto } from '../dto/calibration-status.dto';
 import { captureFrameAsJpeg } from '../../camera/models/frame-capture';
 import { SocketService } from '../../../core/socket/services/socket.service';
 import { SettingsService } from '../../settings/services/settings.service';
@@ -22,6 +23,12 @@ const UNKNOWN_FAILURE_MESSAGE = 'Bitte erneut versuchen.';
 const FAILURE_TITLE = 'Kalibrierung fehlgeschlagen';
 const FAILURE_TOAST_LIFE = 8000;
 
+// What a device without a camera is told about another device's attempt: it
+// cannot see the board, so the advice above ("get closer", "avoid shadows") is
+// addressed to someone else and only the fact belongs here.
+const REMOTE_FAILURE_MESSAGE = 'Die Kamera konnte das Board nicht erkennen.';
+const REMOTE_SUCCESS_MESSAGE = 'Board neu kalibriert.';
+
 /**
  * Board calibration: capture the current video frame, send it as a
  * `calibration_frame` and track the `calibration_result` that comes back over
@@ -30,7 +37,8 @@ const FAILURE_TOAST_LIFE = 8000;
  *
  * Can be run again at any time — the server replaces the stored calibration —
  * which is how the user recovers after the board or camera is knocked out of
- * place.
+ * place. It need not be this device that decides so: `requestCalibration` asks
+ * the game's cameras, and the end of a visit does the same server-side.
  */
 @Injectable({ providedIn: 'root' })
 export class CalibrationService {
@@ -49,6 +57,12 @@ export class CalibrationService {
    */
   readonly overlay = signal<number[][][] | null>(null);
 
+  // Whether this device asked for the recalibration that is currently out.
+  // Only then is a *successful* one worth a toast: it is the answer to a tap
+  // that otherwise looks like it did nothing. The ones the round change fires
+  // would be a toast per visit.
+  private awaitingRequest = false;
+
   constructor() {
     effect(() => {
       const message = this.socket.lastMessage();
@@ -62,6 +76,28 @@ export class CalibrationService {
         this.reportFailure(message.failure);
       }
     });
+
+    // How a device learns about a calibration that was not its own — the only
+    // route for one without a camera, since `calibration_result` goes to the
+    // camera that produced it alone (docs/feature/multi-device.md §3). Failures
+    // are always surfaced: from here on nothing is scored, whoever asked.
+    effect(() => {
+      const message = this.socket.lastMessage();
+      if (message?.type !== 'calibration_status') {
+        return;
+      }
+      untracked(() => this.reportRemoteStatus(message));
+    });
+  }
+
+  /**
+   * Ask the game's cameras to calibrate again. What a device without a picture
+   * of its own has instead of the calibrate button; each camera answers from
+   * its own frame, and what comes back here is `calibration_status`.
+   */
+  requestCalibration(): void {
+    this.awaitingRequest = true;
+    this.socket.send({ type: 'request_calibration' });
   }
 
   async calibrate(video: HTMLVideoElement, canvas: HTMLCanvasElement): Promise<void> {
@@ -84,5 +120,25 @@ export class CalibrationService {
   private reportFailure(failure: CalibrationFailureDto | null): void {
     const message = (failure && FAILURE_MESSAGES[failure]) ?? UNKNOWN_FAILURE_MESSAGE;
     this.notifications.showErrorMessage(message, FAILURE_TITLE, FAILURE_TOAST_LIFE);
+  }
+
+  /** Report another camera's attempt. Skipped for this device's own, which the
+   * full `calibration_result` above has already reported in more detail. */
+  private reportRemoteStatus(status: CalibrationStatusDto): void {
+    const requested = this.awaitingRequest;
+    this.awaitingRequest = false;
+
+    if (status.clientId === this.socket.clientId()) {
+      return;
+    }
+    if (!status.success) {
+      this.notifications.showErrorMessage(
+        REMOTE_FAILURE_MESSAGE,
+        FAILURE_TITLE,
+        FAILURE_TOAST_LIFE,
+      );
+    } else if (requested) {
+      this.notifications.showSuccess(REMOTE_SUCCESS_MESSAGE);
+    }
   }
 }

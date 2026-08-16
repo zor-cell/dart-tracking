@@ -65,6 +65,16 @@
   font-size: 0.85rem;
 }
 
+// Anchors the recalibrate button the same way the camera box does, so it sits
+// in the same corner whichever of the two this device shows. The board is a
+// circle in a square box, so that corner is empty — but only for the icon-only
+// button; a labelled one is wide enough to reach the sector numbers.
+.game__board {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
 .game__recalibrate {
   position: absolute;
   top: 0.5rem;

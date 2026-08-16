@@ -1,4 +1,4 @@
-import { Injectable, effect, inject, signal } from '@angular/core';
+import { Injectable, effect, inject, signal, untracked } from '@angular/core';
 import { CalibrationService } from '../../calibration/services/calibration.service';
 import { CameraService } from '../../camera/services/camera.service';
 import { FrameDiffService } from '../../detection/services/frame-diff.service';
@@ -63,6 +63,17 @@ export class GameSessionService {
     effect(() => {
       if (this.calibration.status() === 'success' && this.phase() === 'calibrating') {
         this.startTracking();
+      }
+    });
+
+    // A recalibration asked for elsewhere: the scoreboard's button, or the end
+    // of a visit, when the darts have just come out of the board. The server
+    // sends it to camera devices only; the phase is what says whether this one
+    // has a running picture to answer it with.
+    effect(() => {
+      const message = this.socket.lastMessage();
+      if (message?.type === 'calibration_requested' && untracked(this.phase) !== 'idle') {
+        void untracked(() => this.calibrate());
       }
     });
 

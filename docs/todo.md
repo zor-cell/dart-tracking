@@ -1,8 +1,6 @@
 mögliche todos:
 
 Wenig Aufwand:
-- kalibrierung auf jeden fall nach ok spieler change neu machen
-- kalibrierung auch von scoreboard handy machen können
 - detection linien sind sehr falsch derzeit, ich glaub es werden auch welche geschickt, wenn nicht erkannt wurde
 - readme updaten mit deployment info auch etc und link zu prod
 - testdaten erstellung während eines spiels, dann komm ich locker auf 500+ pfeile

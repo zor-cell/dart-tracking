@@ -140,6 +140,12 @@ export class GameComponent implements OnInit, OnDestroy {
     return this.session.calibrate();
   }
 
+  /** Scoreboard counterpart to `calibrateBoard`: this device has no picture, so
+   * it asks the game's cameras to take one. */
+  protected requestCalibration(): void {
+    this.calibration.requestCalibration();
+  }
+
   /** A 1–20 key: booked with the active multiplier, which then falls back to
    * single — the multiplier applies to one dart, not to the rest of the visit. */
   protected enterNumber(value: number): void {
