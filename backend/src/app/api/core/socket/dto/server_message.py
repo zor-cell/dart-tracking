@@ -6,10 +6,19 @@ hub, so a schema outside the protocol cannot be pushed to a device.
 """
 
 from app.api.core.socket.dto.client_state import ClientStateDto
+from app.api.features.calibration.dto.calibration_requested import (
+    CalibrationRequestedDto,
+)
 from app.api.features.calibration.dto.calibration_result import CalibrationResultDto
+from app.api.features.calibration.dto.calibration_status import CalibrationStatusDto
 from app.api.features.detection.dto.detection_result import DetectionResultDto
 from app.api.features.game.dto.game_state import GameStateDto
 
 ServerMessage = (
-    ClientStateDto | CalibrationResultDto | DetectionResultDto | GameStateDto
+    ClientStateDto
+    | CalibrationRequestedDto
+    | CalibrationResultDto
+    | CalibrationStatusDto
+    | DetectionResultDto
+    | GameStateDto
 )

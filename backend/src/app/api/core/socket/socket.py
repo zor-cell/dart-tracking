@@ -28,7 +28,14 @@ from app.api.core.socket.dto.client_message import (
 )
 from app.api.core.socket.services.game_hub import Connection, hub
 from app.api.features.calibration.dto.calibration_frame import CalibrationFrameDto
+from app.api.features.calibration.dto.calibration_requested import (
+    CalibrationRequestedDto,
+)
 from app.api.features.calibration.dto.calibration_result import CalibrationResultDto
+from app.api.features.calibration.dto.calibration_status import CalibrationStatusDto
+from app.api.features.calibration.dto.command.request_calibration import (
+    RequestCalibrationDto,
+)
 from app.api.features.calibration.domain.calibration import Calibration
 from app.api.features.calibration.domain.calibration_failure import CalibrationFailure
 from app.api.features.calibration.services import board_detector
@@ -116,6 +123,9 @@ async def _dispatch(
     device in the room — the camera phone correcting a misread, a scoreboard
     phone entering the visit by hand. `set_role` is what decides which of the
     two a device is, and so is the one message that changes that answer.
+
+    `request_calibration` is likewise open to any device: it is what a phone
+    without a picture of its own has instead of the calibrate button.
     """
     match message:
         case (CalibrationFrameDto() | DetectionFrameDto()) if (
@@ -126,6 +136,8 @@ async def _dispatch(
             await _handle_calibration_frame(connection, game_id, message)
         case DetectionFrameDto():
             await _handle_throw_frame(connection, game, game_id, message)
+        case RequestCalibrationDto():
+            await _request_calibration(game_id)
         case SetRoleDto():
             await _handle_client_command(connection, message)
         case RegisterDartDto() | UndoDto() | NextPlayerDto():
@@ -168,11 +180,30 @@ async def _handle_game_command(game: Game, command: GameCommand) -> None:
 
     if game.revision != revision:
         await _publish_state(game)
+        if isinstance(command, NextPlayerDto):
+            await _request_calibration(game.id)
 
 
 async def _publish_state(game: Game) -> None:
     """Push the authoritative state to every device in the game's room."""
     await hub.broadcast(game.id, GameStateDto.from_entity(game))
+
+
+async def _request_calibration(game_id: str) -> None:
+    """Ask every camera in the room to calibrate again from a fresh frame.
+
+    Two things ask for this: a device without a camera of its own, and the end
+    of a visit. The visit is the interesting one — it is when the darts come out
+    of the board, so it is both the moment a fresh empty-board reference frame
+    can be taken and the moment the board is most likely to have been knocked.
+    Without it the reference still holds the three darts that were pulled, and
+    their absence reads as change on the next throw.
+
+    Only the trigger fans out. A `calibration_result` cannot: its overlay lives
+    in the pixel grid of the camera that produced it, so every camera answers
+    its own and the room hears the outcome as `calibration_status`.
+    """
+    await hub.broadcast(game_id, CalibrationRequestedDto(), role=DeviceRole.CAMERA)
 
 
 async def _handle_calibration_frame(
@@ -193,6 +224,11 @@ async def _handle_calibration_frame(
     A successful calibration is also where a camera claims the scoring role, it
     being the first point at which it could detect anything. Only the first
     claim takes (see `scoring_camera`).
+
+    The outcome additionally goes to the whole room as `calibration_status`,
+    stripped of the overlay that only this camera can place. That is what makes
+    a recalibration asked for from elsewhere — the scoreboard's button, the end
+    of a visit — answerable at all.
     """
     client_id = connection.client.id
     image = _decode_jpeg(frame.image)
@@ -214,6 +250,7 @@ async def _handle_calibration_frame(
         response = CalibrationResultDto.from_calibration(outcome)
 
     await hub.send(connection, response)
+    await hub.broadcast(game_id, CalibrationStatusDto.from_result(client_id, response))
 
 
 async def _handle_throw_frame(

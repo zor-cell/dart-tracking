@@ -15,11 +15,15 @@ from pydantic import Field, TypeAdapter
 
 from app.api.core.socket.dto.command.set_role import SetRoleDto
 from app.api.features.calibration.dto.calibration_frame import CalibrationFrameDto
+from app.api.features.calibration.dto.command.request_calibration import (
+    RequestCalibrationDto,
+)
 from app.api.features.detection.dto.detection_frame import DetectionFrameDto
 from app.api.features.game.dto.command.game_command import GameCommand
 
 ClientMessage = Annotated[
     CalibrationFrameDto
+    | RequestCalibrationDto
     | DetectionFrameDto
     | SetRoleDto
     | GameCommand,

@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from fastapi import WebSocket, WebSocketDisconnect
 
 from app.api.core.domain.client import Client
+from app.api.core.domain.device_role import DeviceRole
 from app.api.core.socket.dto.server_message import ServerMessage
 
 
@@ -62,8 +63,15 @@ class GameHub:
         lives here rather than at every call site."""
         await connection.websocket.send_text(message.model_dump_json(by_alias=True))
 
-    async def broadcast(self, game_id: str, message: ServerMessage) -> None:
+    async def broadcast(
+        self, game_id: str, message: ServerMessage, *, role: DeviceRole | None = None
+    ) -> None:
         """Push a message to every device in the game's room.
+
+        `role` narrows it to the devices doing one job — a recalibration request
+        concerns the cameras and nobody else. That is a middle ground between
+        the two existing paths, not a third one: `send` answers the device whose
+        picture a reply belongs to, this reaches everyone it applies to.
 
         A device that dropped without a clean close is only noticed here, when
         the send fails; it is removed from the room so one dead phone cannot
@@ -71,6 +79,8 @@ class GameHub:
         """
         payload = message.model_dump_json(by_alias=True)
         for connection in self.connections(game_id):
+            if role is not None and connection.client.role is not role:
+                continue
             try:
                 await connection.websocket.send_text(payload)
             except (WebSocketDisconnect, RuntimeError, ConnectionError):
