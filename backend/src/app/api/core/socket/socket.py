@@ -130,6 +130,8 @@ async def _dispatch(
     `request_calibration` is likewise open to any device: it is what a phone
     without a picture of its own has instead of the calibrate button.
     """
+    print(f"[socket] {message.type} from {connection.client.id} ({connection.client.role})")
+
     match message:
         case (CalibrationFrameDto() | DetectionFrameDto()) if (
             connection.client.role is not DeviceRole.CAMERA

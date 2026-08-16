@@ -40,16 +40,20 @@ export class SocketService {
   // has long moved past, so those are dropped instead (see `sendFrame`).
   private pending: ClientMessage[] = [];
 
+  // A role asked for but not yet confirmed. The handshake answers with the role
+  // the device had *before* the command, which must not overwrite the new one.
+  private requestedRole: DeviceRole | null = null;
+
   /**
    * Tell the server what this device does in the game. Requires a socket, so it
    * is issued on the way into a game, right after `connect()` — queued like any
    * other command if the handshake is still in flight.
    *
-   * Applied locally straight away so the view has something to render. The
-   * server's confirmation is what settles it: the `client_state` of the
-   * handshake still carries the previous role and lands first.
+   * Applied locally straight away so the view has something to render, and held
+   * against the handshake's answer until the server confirms it (see `adopt`).
    */
   setRole(role: DeviceRole): void {
+    this.requestedRole = role;
     this.role.set(role);
     this.send({ type: 'set_role', role });
   }
@@ -89,6 +93,7 @@ export class SocketService {
     this.socket = null;
     this.gameId = null;
     this.pending = [];
+    this.requestedRole = null;
     this.connectionStatus.set('disconnected');
     this.lastMessage.set(null);
   }
@@ -136,10 +141,17 @@ export class SocketService {
     return this.clientId ? `?clientId=${encodeURIComponent(this.clientId)}` : '';
   }
 
-  /** Take the server's word for who this device is. */
+  /** Take the server's word for who this device is, except while a role change
+   * is in flight: its confirmation is the message that clears the request, and
+   * anything before it still carries the old role. */
   private adopt(message: ClientStateDto): void {
     this.clientId = message.clientId;
     localStorage.setItem(CLIENT_ID_KEY, message.clientId);
+
+    if (this.requestedRole !== null && message.role !== this.requestedRole) {
+      return;
+    }
+    this.requestedRole = null;
     this.role.set(message.role);
   }
 

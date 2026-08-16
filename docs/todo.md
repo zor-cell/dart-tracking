@@ -1,8 +1,6 @@
-mögliche todos:
+TODOs:
 
 Wenig Aufwand:
-- das svg board des scoreboard users flickert bei erstellen von game (oder joinen)
-- logs in socket.py für nachverfolgen welche socket requests von wo kommen
 - detection linien sind sehr falsch derzeit, ich glaub es werden auch welche geschickt, wenn nicht erkannt wurde
 - testdaten erstellung während eines spiels, dann komm ich locker auf 500+ pfeile
 - socket.py cleanen, die debug writes wirken dort fehl am platz
