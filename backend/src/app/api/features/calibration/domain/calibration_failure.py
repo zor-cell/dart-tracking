@@ -13,10 +13,6 @@ class CalibrationFailure(StrEnum):
     #: Image cannot be read
     INVALID_IMAGE = "invalid_image"
 
-    #: Barely any red or green in frame — board out of shot, too far away, or
-    #: too dimly lit for the segments to register.
-    NO_COLOURED_REGION = "no_coloured_region"
-
     #: Colour was found but no ellipse could be fitted to it, so whatever was
     #: found is not board-shaped.
     ELLIPSE_FIT_FAILED = "ellipse_fit_failed"

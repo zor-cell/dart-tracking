@@ -47,9 +47,9 @@ src/app/
   socket endpoint renders live when a frame arrives with `debug: true`, which is
   what the frontend's debug switches drive. The CLI runners that replay photos
   off disk stay in `backend/scripts/` — they are entry points, not app code.
-  - The trace is an out-parameter of the detector, so `services/` imports
-    `debug/trace.py`. That direction is deliberate; `trace.py` imports nothing
-    from `services/`, so there is no cycle.
+  - The detector owns a module-level `trace` that it replaces on each run, so
+    `services/` imports `debug/trace.py`. That direction is deliberate;
+    `trace.py` imports nothing from `services/`, so there is no cycle.
 - `services/` — stateful stores and orchestration.
 - Trivial single-endpoint routers (e.g. `health`) may stay as flat modules in
   `api/` until they grow into a feature.

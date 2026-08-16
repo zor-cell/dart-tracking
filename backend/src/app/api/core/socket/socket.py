@@ -5,7 +5,7 @@ This is core rather than a feature because it does not own any domain logic
 itself — it only decodes the wire message and calls into calibration/game/
 detection services. Pulling in feature-specific DTOs and services here is the
 one deliberate exception to core not depending on features (mirrors the
-frontend's core/socket/dto/socket-message.ts).
+frontend's core/socket/dto/client-message.ts).
 """
 
 import base64
@@ -266,7 +266,7 @@ async def _handle_calibration_frame(
     requester = calibration_request_store.get(game_id)
     if requester is not None and requester != client_id:
         await hub.send_to_client(
-            game_id, requester, CalibrationStatusDto.from_result(client_id, response)
+            game_id, requester, CalibrationStatusDto.from_result(response)
         )
 
 

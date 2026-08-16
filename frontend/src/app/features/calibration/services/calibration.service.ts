@@ -10,7 +10,6 @@ export type CalibrationStatus = 'idle' | 'pending' | 'success' | 'error';
 
 const FAILURE_MESSAGES: Record<CalibrationFailureDto, string> = {
   invalid_image: 'Das Kamerabild konnte nicht gelesen werden. Bitte erneut versuchen.',
-  no_coloured_region: 'Kein Board erkannt. Näher an das Board gehen und für bessere Beleuchtung sorgen.',
   ellipse_fit_failed: 'Board-Umriss nicht erkennbar. Das gesamte Board ins Bild nehmen.',
   sector_wires_unclear:
     'Board nur teilweise erkannt. Verdeckungen und starke Schatten auf dem Board vermeiden.',
@@ -33,7 +32,7 @@ const REMOTE_SUCCESS_MESSAGE = 'Board neu kalibriert.';
  * Board calibration: capture the current video frame, send it as a
  * `calibration_frame` and track the `calibration_result` that comes back over
  * the shared socket. Board detection itself is server-side (see
- * backend/src/app/api/features/tracking/services/board_detector.py).
+ * backend/src/app/api/features/calibration/services/board_detector.py).
  *
  * Can be run again at any time — the server replaces the stored calibration —
  * which is how the user recovers after the board or camera is knocked out of

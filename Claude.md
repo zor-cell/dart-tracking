@@ -11,10 +11,10 @@ Backend (FastAPI/Flask + OpenCV) macht Board-Kalibrierung (Homographie),
 Pfeil-Erkennung und Scoring.
 
 Die Kalibrierungs-Pipeline ist im Detail dokumentiert (Algorithmen, Parameter,
-verworfene Ansätze): @docs/kalibrierung.md
+verworfene Ansätze): @docs/feature/kalibrierung.md
 
 Die Erkennungs-Pipeline ist im Detail dokumentiert (Algorithmen, Parameter,
-verworfene Ansätze): @docs/erkennung.md
+verworfene Ansätze): @docs/feature/erkennung.md
 
 ## Zeitplan / aktuelle Phase
 Siehe @docs/zeitplan.md — aktuell in Phase X, Fokus auf Y.
@@ -26,12 +26,42 @@ PrimeNG für Styling, die Dokumentation siehe @docs/guidelines/primeng-documenta
 ## Backend-Konventionen
 FastAPI, siehe @docs/guidelines/backend-best-practices.md
 
-## Instruktionen
-- Kommentare in Code sollen immer auf Englisch verfasst werden
-- Vermeide unnötige Kommentare, damit sind vor allem Kommentare gemeint, die sich speziell auf ein Prompt beziehen,
-wenn dieser Kontext verloren ist, sind sie unlesbar
-- Halte Kommentare kurz und prägnant
-- Wenn du Arbeit in einem Feature machst, sollst du keine Kommentare hinzufügen, nur weil es eine Änderung gab, das führt zu Kommentar-Explosion
+## Kommentar-Regeln
+Diese Regeln gelten für **alle** Fließtext-Zeilen im Code: `#`, `//`, `<!-- -->`,
+Python-Docstrings und TSDoc-Blöcke. Docstrings sind hier ausdrücklich keine
+Ausnahme — dort sammelt sich der meiste überflüssige Text an.
+
+**Harte Obergrenzen** (bei Überschreitung: kürzen oder nach `docs/feature/`
+verschieben, nicht "begründen"):
+- Modul-Docstring / Datei-Kopf: max. **3 Zeilen**
+- Funktions- oder Methoden-Docstring: max. **3 Zeilen**
+- Inline-Kommentar über einer Konstante, einem Feld oder einem Statement:
+  max. **2 Zeilen**
+- Kommentar im HTML-Template: max. **1 Zeile**, und nur wenn das Markup die
+  Absicht wirklich nicht zeigt
+
+**Inhalt:** Ein Kommentar sagt, *was* die Sache tut oder welche Einheit ein Wert
+hat. Er sagt nicht:
+- warum das früher anders war ("the old trigger keyed on the pixel count …")
+- welcher Bug dazu geführt hat
+- welche Alternative verworfen wurde
+- was gemessen wurde
+- wie andere Teile des Systems reagieren, wenn man es ändert
+
+Das alles gehört nach `docs/feature/<feature>.md`. Diese Dateien existieren genau
+dafür. Wenn ein Kommentar länger werden will als die Grenze oben: ein Satz im
+Code, der Rest als Absatz in `docs/feature/`.
+
+**Sprache:** Kommentare immer auf Englisch.
+
+**Bei Änderungen an bestehendem Code:** keine neuen Kommentare hinzufügen, nur
+weil etwas geändert wurde. Ein Kommentar, der sich auf den Prompt oder den Diff
+bezieht ("now also handles …", "changed so that …"), ist ohne diesen Kontext
+unlesbar und daher verboten.
+
+**Selbstprüfung vor dem Abschluss:** Bei jeder Datei, die du angefasst hast, die
+Kommentarzeilen zählen. Über ~15 % Kommentaranteil ist es zu viel — kürzen, bevor
+du fertig meldest.
 
 ## Commands
 - `npm run start` — Frontend starten

@@ -126,11 +126,6 @@ export class VirtualBoardComponent {
     }),
   );
 
-  /** Darts of this visit that were entered by hand and so cannot be placed. */
-  protected readonly unplacedCount = computed(
-    () => this.darts().filter((dart) => dart.position === null).length,
-  );
-
   protected readonly ariaLabel = computed(() => {
     const placed = this.markers();
     return placed.length === 0

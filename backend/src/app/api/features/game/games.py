@@ -6,7 +6,7 @@ restore after a refresh, and the check that a shared link still points at a live
 game — a 404 says it plainly).
 
 Everything that *changes* a game runs over the WebSocket instead, so one
-mutation reaches every device in the room on one path (core/socket.py,
+mutation reaches every device in the room on one path (core/socket/socket.py,
 docs/feature/multi-device.md §3).
 """
 

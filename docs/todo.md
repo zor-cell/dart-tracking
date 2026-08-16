@@ -5,6 +5,7 @@ Wenig Aufwand:
 - readme updaten mit deployment info auch etc und link zu prod
 - testdaten erstellung während eines spiels, dann komm ich locker auf 500+ pfeile
 - socket.py cleanen, die debug writes wirken dort fehl am platz
+- das svg board des scoreboard users flickert bei erstellen von game (oder joinen)
 
 Viel Aufwand:
 - client diff löst ja derzeit öfter aus, fokus auf recall, das backend muss da was checken (ist das überhaupt möglich), weil

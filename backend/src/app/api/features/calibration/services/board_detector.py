@@ -60,10 +60,6 @@ _GREEN_UPPER = np.array([90, 255, 255])
 # Cleans the colour masks before components are read off them.
 _MORPH_KERNEL = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
 
-# Smallest share of the frame that may be red or green before the image is
-# rejected as not showing a board at all.
-_MIN_COLOURED_PIXEL_RATIO = 0.00001
-
 # Angular steps per full turn when walking the ring for colour transitions. Well
 # below the 18 degrees between sectors, so each transition is placed precisely.
 _RING_WALK_STEPS = 720

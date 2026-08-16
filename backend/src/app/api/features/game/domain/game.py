@@ -81,15 +81,6 @@ class Game:
         )
         return self.mode - scored
 
-    def last_turn(self, player_id: int) -> Turn | None:
-        """The player's most recent turn that has darts — the visit score to show
-        next to them. Skips the empty turn opened when play returns to them, so a
-        completed visit's total stays visible until they actually throw again."""
-        return next(
-            (turn for turn in reversed(self.turns) if turn.player_id == player_id and turn.darts),
-            None,
-        )
-
     def register_dart(self, dart: Dart) -> None:
         """Apply one dart to the current player's open turn, busting it when the
         dart breaks the checkout rule (see `_busts`).

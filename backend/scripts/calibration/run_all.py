@@ -72,9 +72,7 @@ def measure(image: np.ndarray) -> str:
 
     combined = cv2.bitwise_or(trace.red_mask, trace.green_mask)
     ratio = int(np.count_nonzero(combined)) / (width * height)
-    parts = [
-        f"red/green {ratio:.2%} of frame (min {detector._MIN_COLOURED_PIXEL_RATIO:.1%})"
-    ]
+    parts = [f"red/green {ratio:.2%} of frame"]
 
     # How much of that colour the two filters threw away before the fit. A high
     # share here is normal (clutter, branding); a high share with a bad fit

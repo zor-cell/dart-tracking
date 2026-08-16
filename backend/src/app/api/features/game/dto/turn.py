@@ -6,14 +6,12 @@ from app.api.features.game.domain.turn import Turn
 
 
 class TurnDto(CamelModel):
-    player_id: int
     darts: list[DartDto]
     busted: bool
 
     @classmethod
     def from_entity(cls, turn: Turn) -> Self:
         return cls(
-            player_id=turn.player_id,
             darts=[DartDto.from_entity(dart) for dart in turn.darts],
             busted=turn.busted,
         )

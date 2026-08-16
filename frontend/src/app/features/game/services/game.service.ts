@@ -33,11 +33,6 @@ export class GameService {
   private readonly _state = signal<GameStateDto | null>(null);
   readonly state = this._state.asReadonly();
 
-  readonly currentPlayer = computed<PlayerDto | null>(() => {
-    const state = this._state();
-    return state ? (state.players[state.currentPlayerIndex] ?? null) : null;
-  });
-
   readonly currentTurn = computed<TurnDto | null>(() => this._state()?.turns.at(-1) ?? null);
 
   readonly winner = computed<PlayerDto | null>(() => {

@@ -38,9 +38,6 @@ class ClientStore:
 
         return client
 
-    def get(self, client_id: str) -> Client | None:
-        return self._clients.get(client_id)
-
 
 # Module-level singleton store.
 store = ClientStore()

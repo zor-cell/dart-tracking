@@ -1,12 +1,8 @@
 """What board detection saw at each stage, so a run can be judged by eye.
 
-`detect_board` fills one of these on every call: it only keeps references to
-values it computes anyway, so recording costs nothing and does not have to be
-switched on. Pass one in to get it back.
-
-This is deliberately data only — no drawing. Turning a trace into pictures is
-the job of `render.py`, which keeps OpenCV rendering out of the service and lets
-the debug views change without touching detection.
+`detect_board` replaces the module-level `board_detector.trace` on every call,
+keeping only references to values it computes anyway. Data only — rendering is
+`render.py`.
 """
 
 from dataclasses import dataclass, field
