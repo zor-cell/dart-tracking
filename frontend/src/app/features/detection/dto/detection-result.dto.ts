@@ -10,15 +10,18 @@ import { DetectionFailureDto } from './detection-failure.dto';
  *
  * The authoritative score arrives separately as `game_state` — this is the
  * per-throw feedback, not the source of truth for the tally.
+ *
+ * Everything here is in this camera's image space, and only that. Where the
+ * dart landed on the board comes as board millimetres on `DartDto.position`
+ * instead, which is camera-independent and so drawable by every device in the
+ * room (docs/feature/multi-device.md §4a). The two look alike as pairs of
+ * numbers and may never be mixed, so they do not share a message.
  */
 export interface DetectionResultDto {
   readonly type: 'detection_result';
   readonly success: boolean;
   readonly segment: string | null; // called-out form, e.g. 'T20', 'BULL', 'MISS'
   readonly points: number | null;
-  readonly value: number | null; // sector value, 25 for the bull, 0 for a miss
-  readonly multiplier: number | null; // 0 miss, 1 single, 2 double, 3 triple
-  readonly tipBoard: number[] | null; // [x, y] in board millimetres
   readonly overlay: number[][][] | null; // dart axis + tip, normalized to 0..1
   readonly failure: DetectionFailureDto | null;
 }

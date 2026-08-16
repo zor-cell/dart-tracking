@@ -19,15 +19,19 @@ class DetectionResultDto(CamelModel):
 
     The authoritative score still arrives separately as `game_state` — this
     message is the per-throw feedback, not the source of truth for the tally.
+
+    Everything here is in **this camera's image space**, and deliberately only
+    that. Where the dart landed on the board travels in board millimetres on
+    `DartDto.position` instead: that is camera-independent, so every device in
+    the room can draw it (docs/feature/multi-device.md §4a). Carrying both here
+    would put two coordinate systems in one message, whose numbers look alike
+    and may never be mixed.
     """
 
     type: Literal["detection_result"] = "detection_result"
     success: bool
     segment: str | None = None  # called-out form, e.g. "T20", "BULL", "MISS"
     points: int | None = None
-    value: int | None = None  # sector value, 25 for the bull, 0 for a miss
-    multiplier: int | None = None  # 0 miss, 1 single, 2 double, 3 triple
-    tip_board: list[float] | None = None  # [x, y] in board millimetres
     overlay: list[list[list[float]]] | None = None  # dart axis + tip, normalized
     failure: DetectionFailure | None = None
 
@@ -37,9 +41,6 @@ class DetectionResultDto(CamelModel):
             success=True,
             segment=dart.segment.label,
             points=dart.points,
-            value=dart.segment.value,
-            multiplier=dart.segment.multiplier,
-            tip_board=[dart.tip_board[0], dart.tip_board[1]],
             overlay=build_overlay(dart, calibration),
         )
 

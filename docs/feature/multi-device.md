@@ -193,6 +193,24 @@ nur an die sendende Kamera und liegt in deren Pixelraster (§3). Board-Millimete
 sind dagegen kameraunabhängig — jedes Gerät im Room kann sie zeichnen, und mit
 einer zweiten Kamera ändert sich daran nichts.
 
+Und zwar **ausschließlich** dort. `detection_result` trug die Position anfangs
+zusätzlich als `tipBoard` mit, ungelesen; das ist entfernt. Damit spricht jede
+Nachricht genau ein Koordinatensystem:
+
+| | Raum | Frage | wer zeichnet |
+|---|---|---|---|
+| `detection_result.overlay` | 0..1 der Bildgröße | wo im Bild *dieser* Kamera | Overlay übers Video |
+| `DartDto.position` | Board-Millimeter ab Bull | wo auf dem physischen Board | virtuelle Scheibe, jedes Gerät |
+
+Die naheliegende Vereinheitlichung — auch die Board-Position auf 0..1 — wäre
+schlechter. Millimeter ist die Einheit, in der die Zahl etwas bedeutet: die
+Radien in `board_geometry.py` sind mm, und die geplante Heatmap-Auswertung
+(konzept.md §5) ist eine mm-Auswertung. Vor allem aber hieße `[0.5, 0.5]` dann
+im einen Fall „Bildmitte" und im anderen „Bullseye" — zwei Werte, die aussehen
+als wären sie austauschbar, obwohl sie es nie sind. Die virtuelle Scheibe
+verbraucht die mm ohnehin direkt: ihre `viewBox` ist `-200 -200 400 400`, und
+`toSvg` ist nur ein y-Flip.
+
 Die Geometrie (Radien, Sektorreihenfolge, Farbwechsel) ist im Frontend
 gespiegelt, weil gezeichnet wird, nicht gerechnet — gewertet wird weiterhin
 ausschließlich serverseitig.
