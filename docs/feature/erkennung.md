@@ -302,9 +302,15 @@ statt bloß „nichts gefunden". Das DTO `DetectionResult` trägt den Wert im Fe
 | `NOT_CALIBRATED` | keine Kalibrierung / kein Referenz-Frame für dieses Spiel |
 | `ALIGNMENT_FAILED` | Frames nicht in eine gemeinsame Sicht zu bringen — Kamera zu weit bewegt oder Board weitgehend verdeckt |
 | `NO_CHANGE` | nichts Neues nahe dem Board — kein Wurf, oder Pfeil abgeprallt |
+| `IMPLAUSIBLE_SHAPE` | etwas hat sich geändert, ist aber viel zu groß für einen Pfeil — jemand steht vor dem Board |
 
 `INVALID_IMAGE` und `NOT_CALIBRATED` entstehen im Socket vor dem eigentlichen
-Fit; `ALIGNMENT_FAILED` und `NO_CHANGE` im Detektor.
+Fit; die übrigen drei im Detektor.
+
+`IMPLAUSIBLE_SHAPE` ist bewusst von `NO_CHANGE` getrennt, obwohl beide „kein
+Pfeil gefunden" heißen: `NO_CHANGE` bedeutet, dass der Wurf null Punkte wert war
+(siehe unten), `IMPLAUSIBLE_SHAPE` dagegen, dass das Bild überhaupt keinen Wurf
+zeigte. Nur das erste darf je als Null gebucht werden.
 
 ### `NO_CHANGE` ist punktemäßig ein `MISS`
 
@@ -321,8 +327,8 @@ als null Punkte gebucht werden: die client-seitige Frame-Differenz ist auf Recal
 ausgelegt und löst auch ohne Wurf aus. Ein automatisch gebuchter Nullwurf wäre
 dann ein Phantom-Pfeil, der eine Aufnahme verbraucht. Der Detektor kann „Wurf
 fand statt, blieb aber nicht stecken" nicht von „es gab keinen Wurf"
-unterscheiden — diese Unterscheidung muss vom Client kommen (offener Punkt in
-[todo.md](../todo.md)).
+unterscheiden — diese Unterscheidung muss vom Client kommen (Arbeitsplan in
+[client-diff-verbesserungen.md](client-diff-verbesserungen.md)).
 
 ---
 
@@ -710,9 +716,13 @@ längerfristigen Punkte:
   die Ground-Truth-Infrastruktur (§6) ist der erste Schritt zu Trainingsdaten.
 - **Board-Clear bei Auto-Weiterschaltung.** Das Re-Base am Rundenwechsel (§1)
   hängt daran, dass der Wechsel bestätigt wird, also nach dem Ziehen kommt. Ohne
-  Bestätigung feuert er direkt nach dem dritten Dart. Sauber wäre ein Signal aus
-  dem Bild selbst — die Frame-Differenz sieht das Ziehen als Bewegung, und ein
-  danach ruhiges Bild ließe sich gegen das ursprüngliche Leer-Board prüfen.
+  Bestätigung feuert er direkt nach dem dritten Dart. Siehe
+  [client-diff-verbesserungen.md §3](client-diff-verbesserungen.md#3-auto-advance-vom-kameramodus-entkoppeln).
+- **Größen-Ablehnung nur grob.** `IMPLAUSIBLE_SHAPE` fängt seit
+  [client-diff-verbesserungen.md §1](client-diff-verbesserungen.md#1-plausibilitätsgrenze-auf-dem-blob-server)
+  ab, was klar zu groß ist (>250 mm lang oder >8000 mm²). Die Grenzen liegen weit
+  oben, weil ein echter Pfeil im Testsatz bis 177 mm lang wird — der Bereich
+  dazwischen ist ungeprüft und braucht ein anderes Merkmal als die reine Größe.
 - **Verdeckung.** Aktuell nur implizit gelöst (neuer Pfeil verdeckt alten →
   Problem; drei nebeneinander → kein Problem). Das Linien-Modell hilft bei
   Teilverdeckung mehr als ein Schwerpunkt-Ansatz, der explizite Umgang ist aber

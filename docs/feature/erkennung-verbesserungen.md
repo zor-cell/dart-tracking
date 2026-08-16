@@ -7,6 +7,13 @@ Begründungen eine Session überdauern. Erledigte Schritte wandern inhaltlich na
 [erkennung.md](erkennung.md) und bleiben hier nur als Zeile in der Statustabelle
 stehen.
 
+Es geht hier ausschließlich um die **Genauigkeit** der Pipeline: gegeben ein
+Frame mit einem Pfeil, wie genau wird die Spitze getroffen. Ob überhaupt ein
+sinnvoller Frame ankommt, plant
+[client-diff-verbesserungen.md](client-diff-verbesserungen.md) — dort liegt auch
+die fehlende Größen-Ablehnung, die zwar im Detektor sitzt, aber ein
+Trigger-Problem löst.
+
 **Ausgangslage:** das Testset enthält jetzt zwei gegenläufige Pfeil-Typen —
 die alten dunklen (`pz`, `tz`) und die neuen mit Wolfram-Spitzen und **einfarbig
 weißen Flights** (`cc`, `fh`, `pz-light`). 285 Paare über fünf Boards / 16 Setups.

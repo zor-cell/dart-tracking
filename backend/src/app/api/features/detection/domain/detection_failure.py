@@ -12,3 +12,4 @@ class DetectionFailure(StrEnum):
     NOT_CALIBRATED = "not_calibrated"
     ALIGNMENT_FAILED = "alignment_failed"
     NO_CHANGE = "no_change"
+    IMPLAUSIBLE_SHAPE = "implausible_shape"

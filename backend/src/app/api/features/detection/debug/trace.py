@@ -68,6 +68,14 @@ class DetectionTrace:
     inlier_labels: list[int] = field(default_factory=list)
     fitted_line: tuple[np.ndarray, np.ndarray | None] | None = None
 
+    # The fused blob's own dimensions in board millimetres: its extent along the
+    # principal axis, across it, and its area. These are what tell a dart from
+    # something merely in the way — a player fetching their darts covers the
+    # board with a blob the fit is otherwise happy to call a dart.
+    dart_length_mm: float = 0.0
+    dart_width_mm: float = 0.0
+    dart_area_mm2: float = 0.0
+
     # The axis fit on the fused blob: both ends (tip first) and the width
     # measured at each, which is what decided which end is the flight. A tip on
     # the wrong end of an otherwise perfect blob shows up here and nowhere else.

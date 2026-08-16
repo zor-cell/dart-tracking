@@ -20,13 +20,18 @@ Pipeline:
    strung along one line rather than a single blob. Anchoring on the flight (the
    widest fragment) and keeping the line the most fragments agree on gathers them
    back into one set of pixels.
-4. Fit the dart's principal axis and take the tip as the end opposite the
+4. Check the blob is dart-sized before believing it. Nothing up to here has an
+   upper bound, and the fit lays an axis through whatever it is given —
+   including a player standing in front of the board to pull their darts, which
+   the client's trigger sends and cannot itself rule out (see
+   docs/feature/client-diff-verbesserungen.md).
+5. Fit the dart's principal axis and take the tip as the end opposite the
    flight, the flight being the wider, feathered end. Orienting by the dart's own
    shape rather than by "nearest the board centre" keeps a dart high on the board
    — flight leaning back over the bull — from being scored off its flight. Only
    the tip touches the board plane, which is the only part the homography is
    valid for.
-5. Map the tip through the homography and read off the segment.
+6. Map the tip through the homography and read off the segment.
 
 Because differencing is against the previous frame rather than an empty board,
 darts already in the board cancel out. Occlusion only matters when a new dart
@@ -79,7 +84,17 @@ _MIN_CANDIDATE_AREA_PX = 15.0
 
 # Longest span fused into one dart: fragments further apart than this belong to
 # different objects. Generous, since a dart's visible span foreshortens.
+# Measured between fragment *centroids*, so the fused blob itself reaches well
+# past it — see `_MAX_BLOB_LENGTH_MM`.
 _MAX_DART_LENGTH_MM = 90.0
+
+# Size past which the fused blob is not a dart but something in the way: a player
+# fetching their darts, a hand reaching in. Both are far above anything a real
+# dart produced across the 214 correct detections of the test set (longest
+# 177 mm, largest 3726 mm²) and far below what an object covering the board does,
+# the change mask being clipped to a disc of 315 mm radius.
+_MAX_BLOB_LENGTH_MM = 250.0
+_MAX_BLOB_AREA_MM2 = 8000.0
 
 # Smallest component kept at all; anything below is noise. Two floors because
 # board-relative area is the meaningful limit but sensor noise is a fixed number
@@ -160,6 +175,10 @@ def detect_dart(
     blob = _fuse_dart_fragments(mask, trace.difference, pixels_per_mm)
     if blob is None:
         return _record_failure(DetectionFailure.NO_CHANGE)
+
+    _measure_blob(blob, pixels_per_mm)
+    if trace.dart_length_mm > _MAX_BLOB_LENGTH_MM or trace.dart_area_mm2 > _MAX_BLOB_AREA_MM2:
+        return _record_failure(DetectionFailure.IMPLAUSIBLE_SHAPE)
 
     tip, far_end = _tip_and_far_end(blob, pixels_per_mm)
     board_point = _to_board(calibration.homography, tip)
@@ -549,6 +568,26 @@ def _fuse_dart_fragments(
     if len(dart) < _MIN_DART_AREA_MM2 * pixels_per_mm**2:
         return None
     return dart
+
+
+def _measure_blob(points: np.ndarray, pixels_per_mm: float) -> None:
+    """Record the fused blob's size in board millimetres.
+
+    Length is its extent along its own principal axis, width the spread across
+    that axis, area its pixel count. All three are what a dart is small in and
+    an obstruction is not, which is what makes them worth measuring separately
+    from the fit that follows.
+    """
+    mean, eigenvectors = cv2.PCACompute(points, mean=None, maxComponents=1)
+    axis = eigenvectors[0]
+    centred = points - mean
+    projections = centred @ axis
+    perpendicular = np.linalg.norm(centred - np.outer(projections, axis), axis=1)
+
+    trace.dart_length_mm = float(projections.max() - projections.min()) / pixels_per_mm
+    # Doubled: the percentile is a distance from the axis, so it is a half-width.
+    trace.dart_width_mm = 2.0 * float(np.percentile(perpendicular, 95)) / pixels_per_mm
+    trace.dart_area_mm2 = len(points) / pixels_per_mm**2
 
 
 def _tip_and_far_end(

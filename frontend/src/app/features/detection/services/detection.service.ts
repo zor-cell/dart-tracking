@@ -15,6 +15,7 @@ const FAILURE_HINTS: Record<DetectionFailureDto, string> = {
   not_calibrated: 'Erst kalibrieren',
   alignment_failed: 'Kamera hat sich bewegt',
   no_change: 'Kein Wurf erkannt',
+  implausible_shape: 'Board verdeckt',
 };
 
 /** One located dart to draw: its polylines plus the colour for its round index. */

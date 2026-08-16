@@ -7,4 +7,5 @@ export type DetectionFailureDto =
   | 'invalid_image'
   | 'not_calibrated'
   | 'alignment_failed'
-  | 'no_change';
+  | 'no_change'
+  | 'implausible_shape';

@@ -25,6 +25,7 @@ import cv2
 import numpy as np
 
 from app.api.features.detection.domain.detection import Dart
+from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.detection.debug.trace import DetectionTrace
 
 _COLOUR_AXIS = (255, 0, 255)  # magenta
@@ -267,14 +268,21 @@ def _draw_components(trace: DetectionTrace) -> np.ndarray | None:
         end = tuple(round(v) for v in anchor + direction * projections.max())
         cv2.line(canvas, start, end, _COLOUR_LINE, 1, cv2.LINE_AA)
 
-    return _caption(
-        canvas,
-        [
-            f"candidate floor {trace.minimum_candidate_px:.0f} px (to vote)",
-            f"{int(trace.labels.max())} components, "
-            f"{len(trace.eligible_labels)} in reach, {len(trace.inlier_labels)} fused",
-        ],
-    )
+    lines = [
+        f"candidate floor {trace.minimum_candidate_px:.0f} px (to vote)",
+        f"{int(trace.labels.max())} components, "
+        f"{len(trace.eligible_labels)} in reach, {len(trace.inlier_labels)} fused",
+    ]
+    # The size the blob was judged on. Printed even when it passed, because the
+    # margin to the limit is what says whether a rejection was close.
+    if trace.dart_length_mm:
+        lines.append(
+            f"blob {trace.dart_length_mm:.0f} x {trace.dart_width_mm:.0f} mm, "
+            f"{trace.dart_area_mm2:.0f} mm2"
+        )
+    if trace.failure is DetectionFailure.IMPLAUSIBLE_SHAPE:
+        lines.append("REJECTED: too big for a dart")
+    return _caption(canvas, lines)
 
 
 def _draw_axis(trace: DetectionTrace) -> np.ndarray | None:
