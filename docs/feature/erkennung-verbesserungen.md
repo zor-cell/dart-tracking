@@ -17,7 +17,7 @@ Trigger-Problem löst.
 **Ausgangslage:** das Testset enthält jetzt zwei gegenläufige Pfeil-Typen —
 die alten dunklen (`pz`, `tz`) und die neuen mit Wolfram-Spitzen und **einfarbig
 weißen Flights** (`cc`, `fh`, `pz-light`). 285 Paare über fünf Boards / 16 Setups.
-Ausgangsstand **216/285 = 75.8 %**, aktueller Stand **218/285 = 76.5 %**
+Ausgangsstand **216/285 = 75.8 %**, aktueller Stand **227/285 = 79.6 %**
 (Metrik: `NO_CHANGE` gegen ein erwartetes `MISS` zählt als korrekt, siehe
 [erkennung.md §3](erkennung.md#no_change-ist-punktemäßig-ein-miss)).
 
@@ -34,10 +34,11 @@ strukturellen Ursache. Dieser Plan zielt ausschließlich auf die zweite Klasse.
 |---|---|---|---|
 | 1 | [Warp-Gültigkeitsmaske](#1-warp-gültigkeitsmaske) | S | **erledigt** — 75.8 % → 76.5 % |
 | 2 | [Gradientenabhängiger Schwellwert](#2-gradientenabhängiger-schwellwert-verworfen) | S | **verworfen** — brachte 77.5 %, kostete aber auf dem dunkelsten Board zwei Pfeile; Code wieder entfernt, Messungen bleiben hier |
-| 3 | [Ortsabhängiger Schwellwert, HSV für helle Betten](#3-ortsabhängiger-schwellwert-hsv-für-helle-betten) | M | **offen — als nächstes, größter erwarteter Hebel** (Vormessung erledigt) |
+| 3 | [Ortsabhängiger Schwellwert, HSV für helle Betten](#3-ortsabhängiger-schwellwert-hsv-für-helle-betten) | M | **geteilt** — Schwellwert **verworfen** (monoton schlechter, 4 Varianten); S-Kanal **erledigt**, 76.5 % → 77.9 %. Beides in [erkennung-blob.md](erkennung-blob.md) |
 | 4 | [Extrapolation in schwarze Segmente](#4-extrapolation-in-schwarze-segmente) | M | offen |
 | 5 | [Homographie-Residuum messen](#5-homographie-residuum-messen) | M | teilweise (Overlay + Kameraversatz erledigt) |
 | 6 | [Ambiguitäts-Guard](#6-ambiguitäts-guard) | S | offen |
+| 7 | [Der Pfeil muss als ein Blob ankommen](erkennung-blob.md) | L | **in Arbeit — das eigentliche Ziel**, dem die Schritte oben zuarbeiten. Blob-Metriken (§6.5) und Fusions-Reichweite (§6.1b) erledigt, 77.9 % → **79.6 %**; Anker-Umsortierung (§6.1) verworfen |
 
 Nach jedem Schritt `scripts/detection/run_all.py` laufen lassen und die
 Accuracy-Tabelle in [erkennung.md §6](erkennung.md#6-stand-der-messungen)
@@ -513,6 +514,29 @@ ankommt, werden Fusion, Anker-Wahl und Spitzen-Präzision alle gleichzeitig
 einfacher. Zugleich ist es der Schritt mit dem größten Rückschlag-Risiko: eine
 gelockerte Schwelle lässt auch mehr Rauschen durch, und Schritt 2 hat gezeigt,
 wie schnell breite Fremdfragmente den ganzen Fit entführen.
+
+### Ergebnis: das Risiko ist eingetreten, der zweite Teil trägt
+
+Der Schritt zerfällt in seine beiden Hälften, und sie gehen in verschiedene
+Richtungen — beides ausgemessen in [erkennung-blob.md §3](erkennung-blob.md#3-was-dieser-lauf-gemessen-hat).
+
+**Ortsabhängiger Schwellwert: verworfen.** Vier Varianten (roh / mit
+Seed-Hysterese / nur in der Scoring-Fläche / nur für dunkler werdende Pixel), je
+drei Werte, **alle unter der Baseline von 218**, und in jeder Variante fällt die
+Quote monoton mit der Lockerung — das Optimum ist jedes Mal „aus". Die dunklen
+Pfeile gewinnen dabei genau das Erwartete (`pz` bis zu +6, 73 % → 83 %), die
+Wolfram-Boards verlieren mehr. Die Ursache ist nicht der Wert, sondern die
+Fläche: die Lockerung galt über die gesamte Suchfläche, und dort gewinnt ein
+breites Fremdfragment die Anker-Wahl.
+
+**S-Kanal auf hellen Betten: übernommen.** Als zweiter Kanal neben `max|ΔBGR|`,
+mit einem Gate auf helle Betten (dieselbe Bett-Selbstkalibrierung) und
+`ΔS > 30`: **218 → 222/285, 76.5 % → 77.9 %**, und **kein Board verliert**. Die
+Kontrolle bei `ΔS > 45` reproduziert die Baseline pro Board exakt.
+
+Die Erwartung „wenn der Pfeil als ein Blob ankommt, wird alles einfacher" bleibt
+richtig — sie ist nur nicht über den Schwellwert zu erreichen. Der Arbeitsplan
+dafür steht jetzt in [erkennung-blob.md §6](erkennung-blob.md#6-arbeitsplan).
 
 ---
 

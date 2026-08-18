@@ -31,6 +31,7 @@ from app.api.features.detection.debug.trace import DetectionTrace
 _COLOUR_AXIS = (255, 0, 255)  # magenta
 _COLOUR_TIP = (0, 255, 255)  # yellow
 _COLOUR_CHOSEN = (0, 220, 0)
+_COLOUR_SATURATION = (0, 255, 255)  # yellow — only the saturation channel saw it
 _COLOUR_FLIGHT = (0, 140, 255)  # orange — the fragment that anchored the fit
 _COLOUR_LINE = (255, 200, 0)  # cyan-ish — the fused dart line
 _COLOUR_REJECTED = (140, 140, 140)
@@ -186,8 +187,18 @@ def _draw_threshold(trace: DetectionTrace) -> np.ndarray | None:
         return None
     canvas = trace.aligned.copy()
     canvas[trace.raw_mask > 0] = _COLOUR_CHOSEN
+    if trace.saturation_only is not None:
+        canvas[trace.saturation_only > 0] = _COLOUR_SATURATION
     _outline(canvas, trace.region_outline, _COLOUR_REGION)
-    return _caption(canvas, [f"{int(np.count_nonzero(trace.raw_mask))} px over threshold"])
+
+    lines = [f"{int(np.count_nonzero(trace.raw_mask))} px over threshold"]
+    # Which channel carried the change: a white flight on a cream bed is
+    # invisible in intensity and shows here as saturation alone.
+    if trace.saturation_only is not None:
+        lines.append(
+            f"yellow: saturation alone ({int(np.count_nonzero(trace.saturation_only))} px)"
+        )
+    return _caption(canvas, lines)
 
 
 def _draw_cleanup(trace: DetectionTrace) -> np.ndarray | None:

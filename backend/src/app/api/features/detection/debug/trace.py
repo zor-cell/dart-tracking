@@ -37,6 +37,8 @@ class DetectionTrace:
     unobserved_region: np.ndarray | None = None
 
     difference: np.ndarray | None = None  # greyscale, before thresholding
+    # Pixels the saturation channel contributed that intensity did not reach.
+    saturation_only: np.ndarray | None = None
     # The mask after each cleanup step.
     raw_mask: np.ndarray | None = None  # threshold + search clip, nothing else
     speckle_removed: np.ndarray | None = None  # components below the area floor
@@ -50,6 +52,13 @@ class DetectionTrace:
     eligible_labels: list[int] = field(default_factory=list)  # within one dart length
     inlier_labels: list[int] = field(default_factory=list)
     fitted_line: tuple[np.ndarray, np.ndarray | None] | None = None
+
+    # How well the dart arrived as one object: how many components it was fused
+    # from, and what share of its pixels sit in the largest of them.
+    fragment_count: int = 0
+    largest_fragment_share: float = 0.0
+    # Distance from the anchoring fragment to the scored tip, in board mm.
+    anchor_to_tip_mm: float = 0.0
 
     # The fused blob's dimensions in board millimetres.
     dart_length_mm: float = 0.0

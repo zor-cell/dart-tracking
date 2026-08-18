@@ -42,8 +42,10 @@ detections.
 
 import argparse
 import re
+import statistics
 import sys
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -114,6 +116,9 @@ class Result:
     uncertain: bool = False  # truth label was flagged `?` (I wasn't sure); still scored as-is
     shift_px: float = 0.0  # how far the camera moved between reference and frame
     failure: DetectionFailure | None = None  # which stage gave up, if none was located
+    fragments: int = 0  # components the scored blob was fused from
+    largest_share: float = 0.0  # share of the blob's pixels in its largest component
+    anchor_to_tip_mm: float = 0.0  # distance from the anchoring fragment to the tip
 
     @property
     def scored_miss(self) -> bool:
@@ -372,7 +377,10 @@ def run_series(
         line += f"  shift {shift:5.1f}px{shake}"
 
         result = Result(
-            name, label, path, located, detected, expected, tip_board, uncertain, shift, failure
+            name, label, path, located, detected, expected, tip_board, uncertain, shift, failure,
+            dart_detector.trace.fragment_count,
+            dart_detector.trace.largest_fragment_share,
+            dart_detector.trace.anchor_to_tip_mm,
         )
         if expected is not None:
             mark = "?" if uncertain else ""
@@ -437,6 +445,55 @@ def shake_table(labelled: list[Result]) -> list[str]:
     return rows
 
 
+FRAGMENT_BUCKETS = ((1, "1 (one blob)"), (2, "2"), (4, "3 - 4"), (10**9, "5+"))
+
+
+def median(values: Iterable[float]) -> float:
+    """Middle value, or 0.0 if there is nothing to take a middle of."""
+    ordered = list(values)
+    return statistics.median(ordered) if ordered else 0.0
+
+
+def cohesion_table(labelled: list[Result]) -> list[str]:
+    """Accuracy against how many components the scored dart was fused from.
+
+    The goal in docs/feature/erkennung-blob.md §1 is one component per dart, and
+    the segment rate alone cannot say whether a change moved towards it. This
+    can: it counts the fusing itself, and shows what each extra piece costs.
+    """
+    located = [r for r in labelled if r.located]
+    if not located:
+        return []
+
+    whole = [r for r in located if r.fragments == 1]
+    right = [r for r in located if r.correct]
+    wrong = [r for r in located if not r.correct]
+    rows = [
+        f"- Arrived as one component: **{len(whole)}/{len(located)}** "
+        f"({100 * len(whole) / len(located):.0f}%)",
+        f"- Median share of the blob in its largest component: "
+        f"**{100 * median(r.largest_share for r in located):.0f}%**",
+        f"- Median anchor-to-tip distance: **{median(r.anchor_to_tip_mm for r in right):.0f} mm** "
+        f"on correct calls, **{median(r.anchor_to_tip_mm for r in wrong):.0f} mm** on mismatches",
+        "",
+        "| fragments | correct | total | rate | mean off by |",
+        "|---|---|---|---|---|",
+    ]
+    for limit, label in FRAGMENT_BUCKETS:
+        lower = max((l for l, _ in FRAGMENT_BUCKETS if l < limit), default=0)
+        bucket = [r for r in located if lower < r.fragments <= limit]
+        if not bucket:
+            continue
+        correct = sum(r.correct for r in bucket)
+        offsets = [r.off_by_mm for r in bucket if r.off_by_mm is not None]
+        mean_off = f"{sum(offsets) / len(offsets):.1f} mm" if offsets else "—"
+        rows.append(
+            f"| {label} | {correct} | {len(bucket)} | "
+            f"{100 * correct / len(bucket):.0f}% | {mean_off} |"
+        )
+    return rows
+
+
 def write_report(results: list[Result], out_dir: Path) -> Path:
     """Write a Markdown accuracy report and return its path."""
     labelled = [r for r in results if r.expected is not None]
@@ -477,6 +534,18 @@ def write_report(results: list[Result], out_dir: Path) -> Path:
     lines += ["", "## Per camera movement", ""]
     lines += shake_table(labelled)
 
+    lines += [
+        "",
+        "## Per blob cohesion",
+        "",
+        "How many components the scored dart had to be fused from. One is the goal:",
+        "the dart reached the fit as a single object instead of as pieces the fusion",
+        "had to guess back together. The anchor-to-tip distance says the same thing from",
+        "the other end: an anchor far from the tip it produced was not part of that dart.",
+        "",
+    ]
+    lines += cohesion_table(labelled)
+
     lines += ["", f"## Mismatches ({len(mismatches)})", ""]
     if mismatches:
         near = sum(1 for r in mismatches if r.off_by_mm is not None and r.off_by_mm <= NEAR_MISS_MM)
@@ -489,8 +558,9 @@ def write_report(results: list[Result], out_dir: Path) -> Path:
             f"- Within {NEAR_MISS_MM:.0f} mm of the expected segment: "
             f"**{near}/{len(mismatches)}**",
             "",
-            "| series | frame | expected | detected | off by | camera moved |",
-            "|---|---|---|---|---|---|",
+            "| series | frame | expected | detected | off by | fragments | anchor to tip "
+            "| camera moved |",
+            "|---|---|---|---|---|---|---|---|",
         ]
         # None sorts last: a dart that was never located has no distance, and it
         # is a different kind of failure from one that landed in the wrong place.
@@ -499,6 +569,8 @@ def write_report(results: list[Result], out_dir: Path) -> Path:
             f"| {r.series} | {r.frame} | {r.expected}{'?' if r.uncertain else ''} "
             f"| {r.detected or (r.failure.value if r.failure else 'FAIL')} "
             f"| {f'{r.off_by_mm:.1f} mm' if r.off_by_mm is not None else '—'} "
+            f"| {r.fragments or '—'} "
+            f"| {f'{r.anchor_to_tip_mm:.0f} mm' if r.located else '—'} "
             f"| {r.shift_px:.1f} px{' !' if r.shift_px > SHAKE_WARN_PX else ''} |"
             for r in mismatches
         ]

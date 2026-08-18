@@ -14,7 +14,9 @@ Pipeline:
    rest is fill, not board, and is excluded before anything is differenced.
 2. Difference the two, threshold, and clean up. Whatever is left is what the
    throw added, which is a far stronger signal than the dart's own appearance:
-   a dart is dark, thin and lands on a board that is mostly dark and thin.
+   a dart is dark, thin and lands on a board that is mostly dark and thin. A
+   white flight over a cream bed is the one thing intensity cannot see, so on the
+   light beds a change in saturation counts too.
 3. Fuse the surviving fragments into one dart. A dark dart only shows in the
    difference where it crosses light board, so it arrives as several fragments
    strung along one line rather than a single blob. Anchoring on the flight (the
@@ -46,6 +48,7 @@ import numpy as np
 from app.api.features.calibration.domain.board_geometry import (
     DOUBLE_OUTER_RADIUS,
     segment_at,
+    single_bed_centres,
 )
 from app.api.features.calibration.domain.calibration import Calibration
 from app.api.features.detection.domain.detection import Dart
@@ -68,6 +71,21 @@ _RANSAC_REPROJECTION_PX = 2.0
 # Per-pixel difference counting as changed, in grey levels.
 _DIFFERENCE_THRESHOLD = 40
 
+# The same for a change in saturation, which is read only where the board is
+# bright enough for a hue to mean anything — `S = (max-min)/max` is mostly noise
+# over a black bed. The level is the fraction of the way from the black beds to
+# the cream ones a pixel must sit.
+_SATURATION_THRESHOLD = 30
+_SATURATION_BED_LEVEL = 0.6
+
+# Blur applied to the reference before its brightness gates that channel, so a
+# wire acts over its own neighbourhood instead of at one pixel.
+_BED_BLUR_MM = 3.0
+
+# Contrast the two bed classes must show before their levels are trusted to
+# anchor the scale; below it the saturation channel stays off.
+_MIN_BED_CONTRAST = 30.0
+
 # Sizes in millimetres on the board, converted to pixels per frame from the
 # homography, so one set of numbers holds at any camera distance.
 _CLOSE_KERNEL_MM = 3.0  # bridges the gaps in a dart's broken silhouette
@@ -82,11 +100,9 @@ _FUSION_PERP_TOL_MM = 4.0
 _MIN_CANDIDATE_AREA_MM2 = 10.0
 _MIN_CANDIDATE_AREA_PX = 15.0
 
-# Longest span fused into one dart: fragments further apart than this belong to
-# different objects. Generous, since a dart's visible span foreshortens.
-# Measured between fragment *centroids*, so the fused blob itself reaches well
-# past it — see `_MAX_BLOB_LENGTH_MM`.
-_MAX_DART_LENGTH_MM = 90.0
+# Longest span fused into one dart, between fragment *centroids*: the flight
+# stands out of the board plane, so the homography magnifies it.
+_MAX_DART_LENGTH_MM = 110.0
 
 # Size past which the fused blob is not a dart but something in the way: a player
 # fetching their darts, a hand reaching in. Both are far above anything a real
@@ -169,7 +185,9 @@ def detect_dart(
     trace.observed, trace.search = observed, search
     trace.unobserved_region = cv2.subtract(region, observed)
 
-    mask = _change_mask(reference, aligned, region, search, pixels_per_mm)
+    mask = _change_mask(
+        reference, aligned, calibration.homography, region, search, pixels_per_mm
+    )
     trace.change_mask = mask
 
     blob = _fuse_dart_fragments(mask, trace.difference, pixels_per_mm)
@@ -181,6 +199,7 @@ def detect_dart(
         return _record_failure(DetectionFailure.IMPLAUSIBLE_SHAPE)
 
     tip, far_end = _tip_and_far_end(blob, pixels_per_mm)
+    trace.anchor_to_tip_mm = _anchor_distance(tip, pixels_per_mm)
     board_point = _to_board(calibration.homography, tip)
 
     return Dart(
@@ -189,6 +208,15 @@ def detect_dart(
         tip_board=board_point,
         segment=segment_at(*board_point),
     )
+
+
+def _anchor_distance(tip: tuple[float, float], pixels_per_mm: float) -> float:
+    """How far the scored tip ended up from the fragment the fit anchored on, in mm.
+
+    Large means the anchor was not part of the dart that was scored.
+    """
+    anchor = trace.fitted_line[0]
+    return float(np.linalg.norm(np.array(tip) - anchor)) / pixels_per_mm
 
 
 def _record_failure(failure: DetectionFailure) -> DetectionFailure:
@@ -343,9 +371,58 @@ def _align(
     return homography, inliers
 
 
+def _bed_level(
+    brightness: np.ndarray, homography: np.ndarray, points: list[tuple[float, float]]
+) -> float | None:
+    """Median brightness of the board points in `points`, or None if none are in shot."""
+    height, width = brightness.shape[:2]
+    values = []
+    for x, y in points:
+        column, row = (int(round(v)) for v in _to_image(homography, x, y))
+        if 0 <= column < width and 0 <= row < height:
+            values.append(brightness[row, column])
+    return float(np.median(values)) if values else None
+
+
+def _saturation_thresholds(
+    reference: np.ndarray, homography: np.ndarray, pixels_per_mm: float
+) -> np.ndarray:
+    """Per-pixel threshold on the saturation difference: finite only on light beds.
+
+    Where the bed sits between black and cream is read off this frame's own board
+    through the homography. See docs/feature/erkennung.md §2.2.
+    """
+    size = _odd_size(_BED_BLUR_MM, pixels_per_mm)
+    brightness = cv2.GaussianBlur(reference.max(axis=2).astype(np.float32), (size, size), 0)
+    off = np.full(brightness.shape, 255.0, np.float32)
+
+    black_points, cream_points = single_bed_centres()
+    black = _bed_level(brightness, homography, black_points)
+    cream = _bed_level(brightness, homography, cream_points)
+    if black is None or cream is None or cream - black < _MIN_BED_CONTRAST:
+        return off
+
+    level = (brightness - black) / (cream - black)
+    thresholds = np.where(level > _SATURATION_BED_LEVEL, float(_SATURATION_THRESHOLD), off)
+    # Blurred so the channel fades in across a bed edge rather than switching on
+    # at one, which would put a step in the mask along every wire.
+    return cv2.GaussianBlur(thresholds, (size, size), 0)
+
+
+def _over(difference: np.ndarray, threshold: np.ndarray | float) -> np.ndarray:
+    """Binary mask of the pixels above a threshold, per-pixel or flat."""
+    return (difference > threshold).astype(np.uint8) * 255
+
+
+def _saturation(image: np.ndarray) -> np.ndarray:
+    """The HSV saturation channel of a BGR image."""
+    return cv2.cvtColor(image, cv2.COLOR_BGR2HSV)[:, :, 1]
+
+
 def _change_mask(
     reference: np.ndarray,
     aligned: np.ndarray,
+    homography: np.ndarray,
     region: np.ndarray,
     search: np.ndarray,
     pixels_per_mm: float,
@@ -355,13 +432,19 @@ def _change_mask(
     Differenced per channel and maxed rather than converted to grey first: a
     dart barrel against a black segment can be nearly identical in luminance
     while still differing in colour, and collapsing to grey throws that away.
+    A white flight over a cream bed defeats even that, differing by about 14 grey
+    levels but some 29 in saturation, so that channel is read alongside it.
     """
     difference = cv2.absdiff(reference, aligned).max(axis=2)
     trace.difference = difference
 
-    _, mask = cv2.threshold(difference, _DIFFERENCE_THRESHOLD, 255, cv2.THRESH_BINARY)
-    mask = cv2.bitwise_and(mask, search)
+    saturation = cv2.absdiff(_saturation(reference), _saturation(aligned))
+    thresholds = _saturation_thresholds(reference, homography, pixels_per_mm)
+
+    intensity = _over(difference, _DIFFERENCE_THRESHOLD)
+    mask = cv2.bitwise_and(cv2.bitwise_or(intensity, _over(saturation, thresholds)), search)
     trace.raw_mask = mask
+    trace.saturation_only = cv2.subtract(mask, intensity)
 
     # Speckle first, then bridging. The order matters: closing first would join
     # scattered noise into blobs big enough to pass the area limit, and a dart
@@ -434,10 +517,16 @@ def _drop_unanchored(mask: np.ndarray, region: np.ndarray, pixels_per_mm: float)
     return np.isin(labels, list(kept)).astype(np.uint8) * 255
 
 
+def _odd_size(size_mm: float, pixels_per_mm: float) -> int:
+    """A kernel edge length in pixels for a size on the board: odd, at least 3."""
+    return max(3, int(round(size_mm * pixels_per_mm)) | 1)
+
+
 def _kernel(size_mm: float, pixels_per_mm: float) -> np.ndarray:
     """An elliptical structuring element of a given size on the board."""
-    size = max(3, int(round(size_mm * pixels_per_mm)) | 1)  # odd, at least 3
-    return cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (size, size))
+    return cv2.getStructuringElement(
+        cv2.MORPH_ELLIPSE, (_odd_size(size_mm, pixels_per_mm),) * 2
+    )
 
 
 def _fragment_geometry(
@@ -563,6 +652,10 @@ def _fuse_dart_fragments(
 
     trace.inlier_labels = inliers
     trace.fitted_line = (anchor, best_direction)
+
+    sizes = [len(pixels[label]) for label in inliers]
+    trace.fragment_count = len(inliers)
+    trace.largest_fragment_share = max(sizes) / sum(sizes)
 
     dart = np.vstack([pixels[label] for label in inliers])
     if len(dart) < _MIN_DART_AREA_MM2 * pixels_per_mm**2:

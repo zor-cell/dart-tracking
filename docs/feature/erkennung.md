@@ -14,10 +14,15 @@ Was als nächstes geändert wird und warum:
 
 > **Stand:** Diese Pipeline ist neuer als die Kalibrierung und noch nicht auf
 > ihrem Endstand. Es gibt inzwischen eine Ground-Truth-Evaluation (§6): aktuell
-> **76.5 % korrekte Wertung** über 285 Wurf-Paare (fünf Boards, 16 Setups),
+> **79.6 % korrekte Wertung** über 285 Wurf-Paare (fünf Boards, 16 Setups),
 > von einer 18.3 %-Baseline aus. Der Restfehler zerfällt in Spitzen-Präzision
 > (knapp die Hälfte der Mismatches liegt unter 5 mm) und eine Handvoll
-> struktureller Ursachen (§6, §7). Das Dokument wächst mit.
+> struktureller Ursachen (§6, §7). Die strukturelle Hälfte hat eine gemeinsame
+> Wurzel — der Pfeil kommt nicht als ein Blob an — und ein eigenes Dokument:
+> [erkennung-blob.md](erkennung-blob.md). Dort ist sie seit §6.5 auch direkt
+> gemessen und nicht mehr nur erschlossen: **nur ein Drittel der Pfeile erreicht
+> die Auswertung als eine Komponente**, und die Quote fällt mit jeder weiteren.
+> Das Dokument wächst mit.
 
 ---
 
@@ -188,6 +193,19 @@ Pfeil-Barrel vor einem schwarzen Segment kann in der *Helligkeit* fast identisch
 sein und sich trotzdem in der *Farbe* unterscheiden. Das Kollabieren auf Grau
 würde genau das wegwerfen.
 
+**Zweiter Kanal: Sättigung, aber nur auf hellen Betten.** Ein weißer Flight über
+einem beigen Bett unterscheidet sich in BGR um etwa 14 Grauwerte und ist damit
+unsichtbar; in der Sättigung sind es rund 29. `absdiff` läuft deshalb zusätzlich
+über den S-Kanal, verodert mit der Intensitätsmaske, Schwelle `_SATURATION_THRESHOLD = 30`.
+Belastbar ist S nur, wo das Bett hell ist — über schwarzem Bett bläst
+`S = (max−min)/max` das Sensorrauschen auf (Verhältnis 2.4× gegen 13.3× auf hellem
+Bett). Wo ein Pixel zwischen den Betten steht, sagt das Board selbst: die
+Homographie liefert die Mittelpunkte aller schwarzen und beigen Single-Betten
+(`single_bed_centres`), dort wird die Referenz-Helligkeit gemessen, und der Kanal
+zählt ab 60 % des Weges vom schwarzen zum beigen Niveau. Eine feste Grenze wäre
+ausgeschlossen: die Bett-Sättigung streut über die 16 Setups um mehr als das
+Doppelte. Messung: 218 → **222 / 285**, ohne Verlust auf irgendeinem Board.
+
 **Schwellwert 40 Grauwerte:** Sensorrauschen liegt bei 2–4, der Schwellwert also
 weit darüber, aber niedrig genug, um einen dunklen Pfeil vor einem schwarzen
 Segment noch zu fassen.
@@ -230,12 +248,23 @@ Stattdessen werden die Fragmente zu einem Pfeil zusammengefügt (`_fuse_dart_fra
    Board-RANSAC der Kalibrierung — **eine Stimme pro Fragment**, damit der fette
    Flight die dünne Schaft-Richtung nicht überstimmt. Durch die Verankerung am
    Flight ist es deterministisch, ohne Zufalls-Sampling.
-4. **Längen-Cap** (`_MAX_DART_LENGTH_MM = 90 mm`): nur Fragmente in Pfeillänge um
+4. **Längen-Cap** (`_MAX_DART_LENGTH_MM = 110 mm`): nur Fragmente in Pfeillänge um
    den Flight zählen mit. Ohne das belohnt die Längen-Bewertung ein weit
    entferntes, zufällig kollineares Fragment (Rauschen, ein Schatten quer übers
    Board) und streckt die Gerade quer durchs Bild — die Spitze landet dann weit
    außerhalb der Scoring-Fläche. Dieser Cap war der größte Einzel-Hebel
    (setup1: 27 % → 67 %, §6).
+
+   Der Wert ist nach oben genauso heikel wie nach unten. Er stand zunächst auf
+   90 mm, mit der Begründung, die sichtbare Ausdehnung eines Pfeils verkürze
+   sich perspektivisch — das hat **das falsche Vorzeichen**: der Flight ragt aus
+   der Board-Ebene zur Kamera hin heraus und wird von der Homographie deshalb
+   *vergrößert* abgebildet. Korrekt gewertete Pfeile spannen im Testset bis
+   148 mm. Bei 90 mm fielen Schaft und Barrel aus der Reichweite und die Achse
+   lag durch den Flight allein. Gemessen über die 285 Paare: 90 → 222,
+   **110 → 227**, 130 → 227, 150 → 219, 180 → 217 — ein Optimum im Inneren, und
+   der Grund, warum 110 und nicht mehr. Aufschlüsselung in
+   [erkennung-blob.md §6.1b](erkennung-blob.md#61b-fusions-reichweite-der-deckel-war-zu-eng).
 
 Bleibt nach Fläche nichts übrig oder ist der zusammengefügte Pfeil kleiner als
 `_MIN_DART_AREA_MM2 = 20 mm²` → `DetectionFailure.NO_CHANGE` (kein Wurf, oder der
@@ -385,17 +414,37 @@ Alignment, falscher Blob) und ist kein Präzisionsproblem. Sortiert wird nach
 Abstand aufsteigend, damit die plausiblen Fälle oben stehen; darüber steht, wie
 viele Mismatches innerhalb von 5 mm liegen.
 
+Dazu der Abschnitt **Per blob cohesion**: aus wie vielen Komponenten der
+gewertete Pfeil zusammengesetzt werden musste, aufgeschlüsselt gegen die Quote.
+Das misst das Ziel aus [erkennung-blob.md §1](erkennung-blob.md#1-die-ausgangsthese)
+direkt — „eine Detektion = eine Komponente" — statt es aus der Segment-Quote zu
+erschließen, die von zu vielem anderen abhängt. Aktuell erreichen **96 von 280**
+Pfeilen (34 %) die Auswertung als ein Stück, und die Quote fällt von 81 % bei
+einer Komponente auf 69 % bei drei bis vier.
+
 **`scripts/detection/run_debug.py`** — dasselbe für eine einzelne Wurfserie, mit
-vollem Bilder-Satz (`01`–`05`) je Pfeil, um einen Fehlwurf Stufe für Stufe
-nachzuvollziehen. Argument ist die Serie (`pz_setup1/throw1`, oder bloß `throw1`,
-wenn eindeutig); die drei Paare werden verkettet wie live, und jeder Pfeil bekommt
-seinen eigenen Unterordner:
+vollem Bilder-Satz (`01`–`09`, Tabelle oben) je Pfeil, um einen Fehlwurf Stufe für
+Stufe nachzuvollziehen. Argument ist die Serie (`pz_setup1/throw1`, oder bloß
+`throw1`, wenn eindeutig); die drei Paare werden verkettet wie live, und jeder
+Pfeil bekommt seinen eigenen Unterordner:
 
 ```
-_results_debug/pz_setup1/throw1/dart1/01_alignment.jpg …
+_results_debug/pz_setup1/throw1/dart1/01_region.jpg …
                                /dart2/…
                                /dart3/…
 ```
+
+Je Pfeil steht zusätzlich eine **Fusions-Zeile** in der Konsole — wie viele
+Komponenten es überhaupt gab, wie viele davon in Reichweite lagen und gefused
+wurden, welchen Anteil die größte hält, und wie groß der Blob geworden ist:
+
+```
+dart1  S17 = 17   fused 2 of 2 components (2 in reach), largest holds 77% of the blob, blob 146 x 41 mm
+```
+
+Das ist genau die Ansicht, die `07_components.jpg` gibt, nur ohne ein Bild öffnen
+und graue Flecken zählen zu müssen — und die Zeile, an der die zu enge
+Fusions-Reichweite aufgefallen ist (§2.3).
 
 Zwei Pfade als Argumente laufen weiterhin nur dieses eine Referenz→Frame-Paar.
 
@@ -557,6 +606,46 @@ Pfeil.
 Vollständige Sweeps in
 [erkennung-verbesserungen.md](erkennung-verbesserungen.md#2-gradientenabhängiger-schwellwert-verworfen).
 
+### 5.12 Bettskalierter Schwellwert  *(verworfen)*
+
+*Idee:* Der Schwellwert von 40 ist auf schwarzem Bett zu streng — dort kommen nur
+38 % der Pfeil-Pixel darüber, gegen 90 % auf hellem. Also eine Schwellwert-Karte,
+deren Enden pro Frame vom Board selbst abgelesen werden (schwarze Betten locker,
+beige unverändert 40), interpoliert über die geglättete Referenz-Helligkeit.
+
+*Warum verworfen:* Vier Varianten — roh, mit Seed-Hysterese, nur innerhalb der
+Scoring-Fläche, nur für dunkler werdende Pixel — mit je drei Werten, **alle unter
+der Baseline**, und in jeder fällt die Quote **monoton** mit der Lockerung. Es
+gibt kein Optimum im Inneren. Die dunklen Pfeile gewinnen dabei genau das
+Vorhergesagte (`pz` bis +6), die Wolfram-Boards verlieren mehr. Der Grund ist die
+Fläche, nicht der Wert: eine über die ganze Suchfläche gelockerte Schwelle kauft
+ein paar hundert echte Pfeil-Pixel gegen zehntausende Fremdpixel, und weil die
+Fusion auf dem *breitesten* Fragment ankert, genügt eines davon, um den Fit zu
+entführen. Vollständige Tabellen und die Konsequenz daraus in
+[erkennung-blob.md](erkennung-blob.md).
+
+### 5.13 Anker nach Überzeugungskraft statt nach Breite  *(verworfen)*
+
+*Idee:* Die Fusion ankert auf dem **breitesten** Fragment und nennt es Flight.
+Jedes breite, helle Fremdfragment konkurriert damit um den Anker, und der Anker
+entscheidet den ganzen Fit. Also nicht das breiteste, sondern das
+*überzeugendste* Fragment wählen — Fläche, Diff-Helligkeit, Kombinationen daraus.
+
+*Warum verworfen:* Sechs Regeln über die vollen 285 Paare, Spanne **219 – 223**
+gegen eine Baseline von 222. Breite, Fläche und Fläche × Helligkeit liefern
+**identische** Ergebnisse, bis in die Aufschlüsselung pro Board — das breiteste
+Fragment ist fast immer auch das größte, die Umsortierung wählt also dasselbe
+Fragment. Die verbleibende Streuung ist Rauschen.
+
+*Was der Fehlschlag zeigt:* Die Anker-Entführung ist real
+(`pz_setup1/throw5/dart1`: der Fit ankert auf dem Registrierungs-Rest der
+aufgedruckten Board-Zahlen und scort `MISS` bei r = 214 mm), aber der Störer ist
+nach **jedem** Erscheinungsmerkmal überzeugender als der Pfeil: breit, hell,
+flächig. Ihn trennt vom Pfeil nur, **wo** er liegt — im Surround, wo keine Spitze
+stecken kann. Ein tragfähiger Anker-Test braucht also Board-Geometrie, keine
+Pixelstatistik. Vollständige Tabelle in
+[erkennung-blob.md §6.1](erkennung-blob.md#61-anker-entkoppeln-s-als-umsortierung-verworfen).
+
 ### 5.10 Schwellwert senken, um das Schwarz-Signal zu heben
 
 *Idee:* Wenn der schwarze Pfeil über schwarzen Segmenten kaum difft, dann eben
@@ -606,8 +695,12 @@ Zeilen vergleichbar bleiben:
 | Schritt | Korrekt |
 |---|---|
 | Stand bei 285 Paaren | 216 / 285 — 75.8 % |
-| + Warp-Gültigkeitsmaske (§2.2) | **218 / 285 — 76.5 %** |
+| + Warp-Gültigkeitsmaske (§2.2) | 218 / 285 — 76.5 % |
 | (Gradienten-Seeds — gemessen, wieder entfernt, §5.11) | 221 / 285 — 77.5 % |
+| (Bettskalierter Schwellwert — gemessen, verworfen, §5.12) | ≤ 217 / 285 |
+| + Sättigungskanal auf hellen Betten (§2.2) | 222 / 285 — 77.9 % |
+| (Anker-Umsortierung — sechs Regeln gemessen, verworfen, §5.13) | 219 – 223 / 285 |
+| + Fusions-Reichweite 90 → 110 mm (§2.3) | **227 / 285 — 79.6 %** |
 
 Zwei Pfeile — weit weniger als erwartet. Die Maske entfernt ein Artefakt, das gar
 keine Bildänderung ist, aber der Warp-Rand war nur *eine* Quelle breiter, heller
@@ -645,30 +738,36 @@ Label-Quote als einzige Metrik nicht reicht — ein Fehler kann sich als Treffer
 tarnen, und nur die `off by`-Spalte und das Board-Modell im Bild (§4) zeigen das.
 
 Seither ist das Test-Set auf **285 Paare** über fünf Boards und 16 Setups
-gewachsen; die Pipeline erreicht darauf **218 / 285 — 76.5 %**, pro Board
-71 – 82 %, je Setup **60 – 90 %**. Ein Blob wird praktisch immer gefunden
-(281/285 „lokalisiert"), und die vier Ausnahmen sind allesamt Pfeile, die gar
-nicht steckenblieben (§3) — die aussagekräftige Zahl ist die korrekte *Wertung*,
-nicht „irgendwo ein Pfeil".
+gewachsen; die Pipeline erreicht darauf **227 / 285 — 79.6 %**, pro Board
+73 – 87 %. Ein Blob wird praktisch immer gefunden (280/285 „lokalisiert"), und
+die Ausnahmen sind Pfeile, die gar nicht steckenblieben (§3) — die
+aussagekräftige Zahl ist die korrekte *Wertung*, nicht „irgendwo ein Pfeil".
 
 ### Was den Restfehler ausmacht
 
-Die `off by`-Spalte (§4) trennt die 67 Mismatches in zwei Populationen, und die
+Die `off by`-Spalte (§4) trennt die 58 Mismatches in zwei Populationen, und die
 sind unterschiedlich zu behandeln:
 
 | Abstand zum erwarteten Segment | Anzahl | Charakter |
 |---|---|---|
-| ≤ 5 mm | 32 | Spitzen-Präzision, auf der falschen Seite eines Drahts |
+| ≤ 5 mm | 29 | Spitzen-Präzision, auf der falschen Seite eines Drahts |
 | 5 – 20 mm | 12 | Achse leicht verdreht oder Spitze am Farbrand abgeschnitten |
-| > 20 mm | 23 | strukturell: falsch verankerter Fit |
+| > 20 mm | 16 | strukturell: falsch verankerter Fit |
+| nicht messbar | 1 | `IMPLAUSIBLE_SHAPE`, also keine gescorte Spitze |
 
-Die **32 unter 5 mm** sind die Präzisionsgrenze — bei einem Draht von rund 1 mm
+Die **29 unter 5 mm** sind die Präzisionsgrenze — bei einem Draht von rund 1 mm
 Breite und einer Spitzenlage auf wenige Millimeter genau ist das kein Fehler, den
-ein besserer Algorithmus wegräumt. Die **23 über 20 mm** dagegen haben jeweils
+ein besserer Algorithmus wegräumt. Die **16 über 20 mm** dagegen haben jeweils
 eine benennbare Ursache und sind das eigentliche Ziel; sie werden in
 [erkennung-verbesserungen.md](erkennung-verbesserungen.md) einzeln aufgeschlüsselt.
-Jeder verbliebene Mismatch hat eine gescorte Spitze — es gibt keine
-unauswertbaren Fälle mehr.
+
+**Der strukturelle Teil ist der, der sich bewegt.** Über 20 mm waren es 23, jetzt
+16 — die Fusions-Reichweite (§2.3) hat sieben Fälle geräumt, in denen der Fit auf
+einem Teilstück des Pfeils saß. Die Präzisionsklasse darunter bleibt praktisch
+unverändert (32 → 29), wie es sein soll: an ihr wurde nichts geändert. Sichtbar
+ist derselbe Effekt in der Kohäsions-Tabelle (§4) — die mittlere Abweichung der
+einkomponentigen Blobs fällt von 4.8 mm auf **2.4 mm**, weil die Achse jetzt auf
+der ganzen Pfeillänge sitzt statt auf einem abgeschnittenen Stück.
 
 Zwei wiederkehrende Muster stechen heraus:
 
@@ -677,13 +776,19 @@ Zwei wiederkehrende Muster stechen heraus:
   entführt damit den ganzen Fit. Der Warp-Rand war davon der krasseste Fall und
   ist behoben (§2.2), aber nicht der einzige: der Sub-Pixel-Rest der
   Registrierung lässt die weißen Board-Zahlen im Surround aufleuchten, und die
-  sind ebenfalls breit und hell. Das erklärt die 18 Fälle über 50 mm.
+  sind ebenfalls breit und hell. Das erklärt die verbliebenen 14 Fälle über
+  50 mm. Der naheliegende Gegenzug — den Anker nach anderen Merkmalen wählen —
+  ist gemessen und **trägt nicht** (§5.13): der Störer ist nach jedem
+  Erscheinungsmerkmal überzeugender als der Pfeil. Was ihn trennt, ist seine
+  **Lage** auf dem Board, nicht sein Aussehen.
 - **Farb-gegatetes Signal, in beide Richtungen.** Der schwarze Pfeil difft nur
   über hellen Segmenten und ist über schwarzen ≈ unsichtbar (§5.10). Bei den
   neuen Pfeilen mit weißen Flights ist es gespiegelt: über einem beigen Bett
   liegt die größte BGR-Kanaldifferenz bei etwa 14, unter dem Schwellwert von 40.
-  In der **Sättigung** sind es rund 29 — der Kanal, der die neuen Flights trägt,
-  wird also gar nicht ausgewertet. Schritt 3.
+  In der **Sättigung** sind es rund 29 — dieser Kanal wird seit §2.2 mit
+  ausgewertet und war vier Pfeile wert. Die gespiegelte Hälfte, der dunkle Pfeil
+  auf schwarzem Bett, ist damit **nicht** gelöst: dort ist S numerisch
+  unbrauchbar, und ein gelockerter Schwellwert ist es auch (§5.12).
 
 Die Laufzeit pro Detektion ist noch nicht systematisch gemessen.
 
@@ -704,10 +809,14 @@ längerfristigen Punkte:
   verschiebt nur, *welche* Betten blind sind — das Front-End braucht einen
   Kanal, der beide Fälle trägt. Als „Bedingungen, unter denen die Methode trägt"
   ist das ein eigenständiges Ergebnis für die Arbeit.
-- **Spitzen-Präzision / Fragment-Ankerung.** Wo die Fusion auf dem falschen
-  Fragment ankert, hilft ein besserer Anker (z.B. Kombination aus Breite,
-  Helligkeit und Board-Radius) oder das kantenbasierte Front-End (strukturelle
-  statt Intensitäts-Differenz), um mehr Schaft-Signal zu gewinnen.
+- **Fragment-Ankerung, jetzt eingegrenzt.** Eine Umsortierung des Ankers nach
+  Breite, Fläche und Helligkeit ist über sechs Regeln gemessen und bringt nichts
+  (§5.13) — die drei stärksten liefern sogar identische Ergebnisse, weil sie
+  dasselbe Fragment wählen. Offen bleibt damit genau die eine Variante, die noch
+  nicht probiert ist: ein Anker-Test über die **Board-Geometrie** (Radius des
+  Fragment-Schwerpunkts durch die Homographie), der den Surround ausschließt, wo
+  keine Spitze stecken kann. Alternativ das kantenbasierte Front-End
+  (strukturelle statt Intensitäts-Differenz), um mehr Schaft-Signal zu gewinnen.
 - **3D-lite Extrapolation.** Mit Kamera-Intrinsics (einmalige Vorkalibrierung)
   liefert die Homographie die volle Pose (`H = K·[r₁ r₂ t]`); eine bekannte
   Pfeillänge auf der Bild-Geraden ließe sich dann exakt mit der Board-Ebene

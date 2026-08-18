@@ -1,8 +1,18 @@
-"""Render every stage of dart detection (`01_alignment` .. `05_result`) as images.
+"""Render every stage of dart detection as images, one folder per dart.
+
+    01_region        where the pipeline is even allowed to look
+    02_alignment     did the two frames line up
+    03_difference    is the dart in the raw difference at all
+    04_threshold     did it survive the threshold (yellow: saturation alone)
+    05_cleanup       did a cleanup step throw it away
+    06_mask          what fragment fusion actually receives
+    07_components    which fragments were fused, and along which line
+    08_axis          which end was taken for the flight
+    09_result        the tip that was scored
 
 A whole visit is chained like the live pipeline (`base -> dart1 -> dart2 ->
-dart3`), each dart differenced against the frame before it, one folder of stage
-images per dart. Two paths instead run that single reference->frame pair.
+dart3`), each dart differenced against the frame before it. Two paths instead
+run that single reference->frame pair.
 
 Usage:
     uv run python scripts/detection/run_debug.py pz_setup1/throw1
@@ -32,6 +42,7 @@ from app.api.features.detection.domain.detection import Dart  # noqa: E402
 from app.api.features.detection.domain.detection_failure import DetectionFailure  # noqa: E402
 from app.api.features.detection.services import dart_detector  # noqa: E402
 from app.api.features.detection.debug.render import write_debug_images  # noqa: E402
+from app.api.features.detection.debug.trace import DetectionTrace  # noqa: E402
 
 from scripts.common import IMAGE_SUFFIXES, clear_results, debug_dir, load_image  # noqa: E402
 
@@ -135,6 +146,23 @@ def describe(outcome: Dart | DetectionFailure) -> str:
     )
 
 
+def fusion_summary(trace: DetectionTrace) -> str:
+    """How the dart came together, the goal being one component (erkennung-blob.md §1).
+
+    In the console because it is the number a run is judged on now, and reading
+    it off 07_components.jpg means opening an image to count grey patches.
+    """
+    components = int(trace.labels.max()) if trace.labels is not None else 0
+    if not trace.fragment_count:
+        return f"no blob fused ({components} components)"
+    return (
+        f"fused {trace.fragment_count} of {components} components "
+        f"({len(trace.eligible_labels)} in reach), "
+        f"largest holds {100 * trace.largest_fragment_share:.0f}% of the blob, "
+        f"blob {trace.dart_length_mm:.0f} x {trace.dart_width_mm:.0f} mm"
+    )
+
+
 def debug_one(
     reference: np.ndarray, frame: np.ndarray, calibration: Calibration, out_dir: Path
 ) -> Dart | DetectionFailure:
@@ -144,6 +172,7 @@ def debug_one(
     written = write_debug_images(dart_detector.trace, dart, out_dir)
 
     print(f"  inliers {dart_detector.trace.alignment_inliers}  {describe(outcome)}")
+    print(f"  {fusion_summary(dart_detector.trace)}")
     print(f"  {len(written)} image(s) -> {out_dir}")
     return outcome
 

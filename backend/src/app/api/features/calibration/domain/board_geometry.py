@@ -59,6 +59,25 @@ def is_red_sector(index: int) -> bool:
     return index % 2 == 0
 
 
+def single_bed_centres() -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
+    """Mid-bed points of every single, split into the black beds and the cream ones.
+
+    Beds alternate with the sectors, the black ones being those whose double and
+    triple are red. Two per sector: inside the triple ring and outside it.
+    """
+    radii = (
+        (BULL_RADIUS + TRIPLE_INNER_RADIUS) / 2,
+        (TRIPLE_OUTER_RADIUS + DOUBLE_INNER_RADIUS) / 2,
+    )
+    black: list[tuple[float, float]] = []
+    cream: list[tuple[float, float]] = []
+    for index in range(SECTOR_COUNT):
+        angle = sector_centre_angle(index)
+        bed = black if is_red_sector(index) else cream
+        bed += [(radius * math.cos(angle), radius * math.sin(angle)) for radius in radii]
+    return black, cream
+
+
 @dataclass(frozen=True)
 class Segment:
     """What a point on the board is worth.
