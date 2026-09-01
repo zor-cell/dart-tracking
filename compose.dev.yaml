@@ -2,3 +2,9 @@ services:
   backend:
     ports:
       - "10021:8000"
+  postgres:
+    ports:
+      - "10022:5432"
+  redis:
+    ports:
+      - "10023:6379"

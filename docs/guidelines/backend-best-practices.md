@@ -11,7 +11,11 @@ under `src/app/api/` that owns everything for that feature, grouped by type:
 
 ```
 src/app/
-├─ main.py                     # app + router wiring, CORS
+├─ main.py                     # app + router wiring, CORS, lifespan
+├─ infrastructure/             # process plumbing; knows nothing about darts
+│  ├─ config.py                # Settings (pydantic-settings), reads the root .env
+│  ├─ database.py              # async SQLAlchemy engine, session factory, Base
+│  └─ redis_client.py          # async Redis client
 └─ api/
    ├─ health.py                # trivial single-endpoint routers stay flat
    ├─ core/
@@ -29,6 +33,13 @@ src/app/
          └─ services/          # stores and orchestration
 ```
 
+- `infrastructure/` — configuration and the connections the process owns, opened
+  and closed by `main.lifespan`. Sits outside `api/` because it carries no
+  domain, no wire schema and no feature; `api/` imports from it, never the
+  reverse. Deliberately not called `core/`: that name is already taken one level
+  down by `api/core/`, and two different `core`s would be a permanent source of
+  confusion. Not `config/` either — an engine with a connection pool is not
+  configuration.
 - A **feature** gets its own folder under `api/features/` as soon as it needs
   more than a single router file.
 - `dto/` — Pydantic models that cross the wire. Serialize with camelCase aliases

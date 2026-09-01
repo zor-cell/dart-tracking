@@ -5,9 +5,18 @@ description = "Backend for automatic dart-tracking"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    # web
     "fastapi>=0.139.0",
-    "numpy>=2.5.1",
-    "opencv-python-headless>=5.0.0.93",
     "uvicorn[standard]>=0.50.2",
     "websockets>=16.0",
+    # computer vision
+    "opencv-python-headless>=5.0.0.93",
+    "numpy>=2.5.1",
+    # persistence
+    "asyncpg>=0.31.0",
+    "alembic>=1.19.1",
+    "redis>=5",
+    "sqlalchemy[asyncio]>=2.0",
+    # config
+    "pydantic-settings>=2.15.0",
 ]

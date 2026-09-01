@@ -496,13 +496,16 @@ Kamera translatiert, passt keine Homographie auf beide — der Fit rastet auf de
 Wand ein und lässt das Board misaligned. Die Features werden deshalb auf die
 Board-Region maskiert (§2.1).
 
-### 5.5 Grauwert-Differenz statt Farbkanäle
+### 5.5 Grauwert-Differenz statt Farbkanäle  *(inzwischen gemessen)*
 
 *Idee:* Vor dem Differenzieren zu Grau wandeln (schneller, ein Kanal).
 
 *Warum verworfen:* Ein Pfeil-Barrel vor einem schwarzen Segment ist in der
 Helligkeit fast identisch, unterscheidet sich aber in der Farbe. Grau wirft das
 weg. Deshalb `absdiff` pro Kanal, dann Maximum.
+
+*Nachträglich belegt* über die Variante ΔV = `|max(B,G,R)_ref − max(B,G,R)_neu|`
+(§5.14). Das Argument war ursprünglich nur plausibel; es ist jetzt eine Zahl.
 
 ### 5.6 Morphologisches Opening gegen Speckle
 
@@ -645,6 +648,61 @@ flächig. Ihn trennt vom Pfeil nur, **wo** er liegt — im Surround, wo keine Sp
 stecken kann. Ein tragfähiger Anker-Test braucht also Board-Geometrie, keine
 Pixelstatistik. Vollständige Tabelle in
 [erkennung-blob.md §6.1](erkennung-blob.md#61-anker-entkoppeln-s-als-umsortierung-verworfen).
+
+### 5.14 Anderer Differenz-Kanal: ΔV statt max|ΔBGR|  *(verworfen)*
+
+*Idee:* Eine Vormessung mit Kontrolle auf leerem Board (Median über korrekt
+gewertete Würfe, Band entlang der gefitteten Achse) verglich fünf Kandidaten für
+den skalaren Differenzwert. **ΔV = `|max(B,G,R)_ref − max(B,G,R)_neu|` gewann
+jedes einzelne Feld** im Signal-zu-Untergrund-Verhältnis:
+
+| Pfeilteil | Bett | max\|ΔBGR\| | ΔV | ΔS | ΔE(Lab) | ΔC(ab) |
+|---|---|---|---|---|---|---|
+| Spitze | schwarz | 13.0× | **18.5×** | 4.0× | 8.9× | 4.3× |
+| Spitze | creme | 19.8× | **37.0×** | 8.3× | 17.5× | 5.4× |
+| Schaft | schwarz | 16.0× | **29.0×** | 2.9× | 9.4× | 4.5× |
+| Schaft | creme | 15.0× | **20.5×** | 11.0× | 13.3× | 5.4× |
+| Flight | schwarz | 40.5× | **79.0×** | 3.5× | 27.0× | 6.3× |
+| Flight | creme | 24.2× | **31.0×** | 16.5× | 22.7× | 9.6× |
+
+Der Grund ist der Untergrund: `max|ΔBGR|` maximiert über drei *unabhängig*
+verrauschte Kanaldifferenzen und gibt dem Rauschen drei Chancen (Kontrolle 3–4),
+ΔV bildet erst das Maximum und differenziert dann (Kontrolle 1–2).
+
+*Warum trotzdem verworfen:* Über die vollen 285 Paare **schlechter auf jedem
+Wert**, und monoton fallend mit der Lockerung:
+
+| Kanal @ Schwelle | korrekt |
+|---|---|
+| max\|ΔBGR\| @ 40 (Baseline) | **227** |
+| ΔV @ 40 | 218 |
+| ΔV @ 30 | 217 |
+| ΔV @ 25 | 196 |
+| ΔV @ 20 | 155 |
+| max(beide) @ 30 | 206 |
+| max(beide) @ 25 | 173 |
+
+*Zwei Lehren, beide übertragbar:*
+
+1. **Das Verhältnis war die falsche Kennzahl.** ΔV verliert schon bei
+   *gleichem* Schwellwert neun Pfeile — es ist keine Schwellwertfrage. Die
+   Absolutwerte liegen in jeder Zeile niedriger, auf cremefarbenem Bett drastisch
+   (Schaft 60 → 41, Flight 97 → 62). Bei einem festen Schnitt bei 40 zählt der
+   Absolutwert, nicht das Verhältnis. Damit ist §5.5 nachträglich belegt: `V` ist
+   eine helligkeitsartige Größe, und eine Farbänderung ohne Helligkeitsänderung
+   fällt heraus.
+2. **Es wurde das falsche Rauschen gemessen.** Die Argumentation „halber
+   Untergrund, also halbe Schwelle gleich teuer" setzt voraus, dass die 40 durch
+   Sensorrauschen gesetzt sind. Sie sind es nicht — sie sind durch
+   **Registrierungs-Reste an Kanten** gesetzt (§5.11: mittlerer Gradient 52
+   Grauwerte/Pixel bei den Pixeln über 40). Eine sub-pixelig verschobene Kante
+   ändert `max(B,G,R)` genauso stark. ΔV senkt das Sensorrauschen und lässt die
+   eigentliche Störquelle unberührt.
+
+*Was gültig bleibt:* die Diagnose derselben Messung — **die Pfeilspitze liegt auf
+schwarzem Bett im Median bei 39.0, bei einer Schwelle von 40**. Die Hälfte der
+Spitzenpixel geht verloren, und die Spitze ist der einzige Teil, der fürs Scoring
+zählt. Das Problem ist real; nur über den Kanal ist es nicht zu lösen.
 
 ### 5.10 Schwellwert senken, um das Schwarz-Signal zu heben
 

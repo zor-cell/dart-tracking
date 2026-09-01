@@ -1,4 +1,5 @@
 name: dart-tracking
+
 services:
   backend:
     build:
@@ -6,6 +7,24 @@ services:
       dockerfile: Dockerfile
     container_name: backend_container
     restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?missing in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?missing in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?missing in .env}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?missing in .env}
+
+      CORS_ORIGINS: "[]" # nginx serves the app and /api under one origin, so nothing here is ever cross-origin
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   frontend:
     build:
       context: ./frontend
@@ -14,3 +33,40 @@ services:
     restart: unless-stopped
     ports:
       - "10020:80"
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: postgres_container
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?missing in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?missing in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?missing in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    container_name: redis_container
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?missing in .env}
+    # Read from the environment rather than passed as an argument, so the
+    # password stays out of the container's process list.
+    command: ["sh", "-c", "exec redis-server --requirepass \"$$REDIS_PASSWORD\""]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  redis_data:

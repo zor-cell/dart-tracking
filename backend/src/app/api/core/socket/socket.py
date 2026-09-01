@@ -8,6 +8,7 @@ one deliberate exception to core not depending on features (mirrors the
 frontend's core/socket/dto/client-message.ts).
 """
 
+import asyncio
 import base64
 from datetime import datetime, timezone
 from pathlib import Path
@@ -70,6 +71,10 @@ router = APIRouter(prefix="/ws", tags=["Tracking"])
 _TESTDATA_ROOT = Path(__file__).resolve().parents[4] / "testdata"
 _CALIBRATION_DEBUG_ROOT = _TESTDATA_ROOT / "calibration" / "_socket_debug"
 _DETECTION_DEBUG_ROOT = _TESTDATA_ROOT / "detection" / "_socket_debug"
+
+# Both detectors keep their trace in a module global, so two runs at once would
+# read each other's. Holds until the trace has been read out.
+_detector_lock = asyncio.Lock()
 
 
 @router.websocket("/games/{game_id}")
@@ -247,13 +252,13 @@ async def _handle_calibration_frame(
     client_id = connection.client.id
     image = _decode_jpeg(frame.image)
 
-    outcome = (
-        board_detector.detect_board(image)
-        if image is not None
-        else CalibrationFailure.INVALID_IMAGE
-    )
-    if frame.debug and image is not None:
-        _write_calibration_debug(game_id, client_id, outcome)
+    if image is None:
+        outcome: Calibration | CalibrationFailure = CalibrationFailure.INVALID_IMAGE
+    else:
+        async with _detector_lock:
+            outcome = await asyncio.to_thread(board_detector.detect_board, image)
+            if frame.debug:
+                _write_calibration_debug(game_id, client_id, outcome)
 
     if isinstance(outcome, CalibrationFailure):
         response = CalibrationResultDto.failed(outcome)
@@ -305,21 +310,27 @@ async def _handle_throw_frame(
     calibration = calibration_store.get(game_id, client_id)
     reference = detection_store.get(game_id, client_id)
 
+    aligned: np.ndarray | None = None
+
     if image is None:
         outcome: Dart | DetectionFailure = DetectionFailure.INVALID_IMAGE
     elif calibration is None or reference is None:
         outcome = DetectionFailure.NOT_CALIBRATED
     else:
-        outcome = dart_detector.detect_dart(reference, image, calibration)
-        if frame.debug:
-            _write_detection_debug(game_id, client_id, outcome)
+        async with _detector_lock:
+            outcome = await asyncio.to_thread(
+                dart_detector.detect_dart, reference, image, calibration
+            )
+            if frame.debug:
+                _write_detection_debug(game_id, client_id, outcome)
+            aligned = dart_detector.trace.aligned
 
     if isinstance(outcome, DetectionFailure):
         await hub.send(connection, DetectionResultDto.failed(outcome))
         return
 
-    if dart_detector.trace.aligned is not None:
-        detection_store.set(game_id, client_id, dart_detector.trace.aligned)
+    if aligned is not None:
+        detection_store.set(game_id, client_id, aligned)
 
     await hub.send(connection, DetectionResultDto.detected(outcome, calibration))
 
