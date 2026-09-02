@@ -9,7 +9,7 @@ deploy:
   rules:
     - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE != "schedule"'
   script:
-    - docker compose up -d --build
+    - docker compose up -d --build --wait
 
 update-timetracking:
   stage: maintenance

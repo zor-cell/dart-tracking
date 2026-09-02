@@ -18,4 +18,5 @@ RUN uv sync --frozen --no-dev
 
 EXPOSE 8000
 
-CMD ["uv", "run", "uvicorn", "app.main:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000"]
+# run migration before serving the app
+CMD ["sh", "-c", "uv run alembic upgrade head && exec uv run uvicorn app.main:app --app-dir src --host 0.0.0.0 --port 8000"]
