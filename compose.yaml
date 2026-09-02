@@ -5,7 +5,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: backend_container
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?missing in .env}
@@ -29,14 +28,12 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: frontend_container
     restart: unless-stopped
     ports:
       - "10020:80"
 
   postgres:
     image: postgres:17-alpine
-    container_name: postgres_container
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?missing in .env}
@@ -52,7 +49,6 @@ services:
 
   redis:
     image: redis:8-alpine
-    container_name: redis_container
     restart: unless-stopped
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?missing in .env}
