@@ -19,8 +19,10 @@ config.set_main_option("sqlalchemy.url", get_settings().database_url)
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Table models must be imported before this line to be registered on the
-# metadata; autogenerate sees nothing else.
+# Registers every table on the metadata; without it autogenerate sees no tables
+# and writes a migration that drops them all.
+from app.api import tables  # noqa: F401
+
 target_metadata = Base.metadata
 
 
