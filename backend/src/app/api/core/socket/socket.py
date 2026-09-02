@@ -98,7 +98,7 @@ async def websocket_endpoint(
         await websocket.close(code=1008)
         return
 
-    client = client_store.resolve(client_id)
+    client = await client_store.resolve(client_id)
 
     await websocket.accept()
     connection = hub.join(game_id, websocket, client)
@@ -161,10 +161,14 @@ async def _handle_client_command(connection: Connection, command: ClientCommand)
     locally: the command is issued on the way into a game, so it reaches the
     server after the handshake already answered with the *previous* role. This
     reply is what settles the two, and it is ordered behind that answer.
+
+    The connection's own copy is updated as well as the store: the room filters
+    broadcasts by role off that object (`hub.broadcast(role=...)`).
     """
     match command:
         case SetRoleDto():
             connection.client.role = command.role
+            await client_store.save(connection.client)
 
     await hub.send(connection, ClientStateDto.from_entity(connection.client))
 
@@ -217,9 +221,9 @@ async def _request_calibration(game_id: str, *, requester: str | None) -> None:
     for the automatic one, where nobody is (see `calibration_request_store`).
     """
     if requester is None:
-        calibration_request_store.clear(game_id)
+        await calibration_request_store.clear(game_id)
     else:
-        calibration_request_store.set(game_id, requester)
+        await calibration_request_store.set(game_id, requester)
 
     await hub.broadcast(game_id, CalibrationRequestedDto(), role=DeviceRole.CAMERA)
 
@@ -263,14 +267,14 @@ async def _handle_calibration_frame(
     if isinstance(outcome, CalibrationFailure):
         response = CalibrationResultDto.failed(outcome)
     else:
-        calibration_store.set(game_id, client_id, outcome)
+        await calibration_store.set(game_id, client_id, outcome)
         detection_store.set(game_id, client_id, image)
-        scoring_camera_store.claim(game_id, client_id)
+        await scoring_camera_store.claim(game_id, client_id)
         response = CalibrationResultDto.from_calibration(outcome)
 
     await hub.send(connection, response)
 
-    requester = calibration_request_store.get(game_id)
+    requester = await calibration_request_store.get(game_id)
     if requester is not None and requester != client_id:
         await hub.send_to_client(
             game_id, requester, CalibrationStatusDto.from_result(response)
@@ -307,7 +311,7 @@ async def _handle_throw_frame(
     """
     client_id = connection.client.id
     image = _decode_jpeg(frame.image)
-    calibration = calibration_store.get(game_id, client_id)
+    calibration = await calibration_store.get(game_id, client_id)
     reference = detection_store.get(game_id, client_id)
 
     aligned: np.ndarray | None = None
@@ -334,7 +338,7 @@ async def _handle_throw_frame(
 
     await hub.send(connection, DetectionResultDto.detected(outcome, calibration))
 
-    if not scoring_camera_store.is_scoring(game_id, client_id):
+    if not await scoring_camera_store.is_scoring(game_id, client_id):
         return
 
     # The detected segment carries the field, not just the points, so a tracked

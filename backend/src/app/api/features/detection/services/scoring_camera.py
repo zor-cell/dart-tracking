@@ -18,23 +18,37 @@ scoring over mid-visit would let a flapping connection book the throw in flight
 twice. The cost is that a game whose scoring camera never returns stops being
 scored automatically, exactly as a single-camera game would.
 
-Process-local, lost on restart, like every other store here.
+Redis-backed, so the claim also survives a server restart.
 """
+
+from app.infrastructure import redis_client
+
+# Matches the calibration's lifetime: the claim is made on a calibration and is
+# worthless without one. Renewed on every read.
+_TTL_SECONDS = 24 * 60 * 60
+
+
+def _key(game_id: str) -> str:
+    return f"game:{game_id}:scoring_camera"
 
 
 class ScoringCameraStore:
-    def __init__(self) -> None:
-        self._cameras: dict[str, str] = {}
-
-    def claim(self, game_id: str, client_id: str) -> bool:
+    async def claim(self, game_id: str, client_id: str) -> bool:
         """Try to become the game's scoring camera; whether this device now is.
 
-        Idempotent for the holder, so re-calibrating or reconnecting keeps it.
+        `SET NX` is the atomic form of the old dict `setdefault`: exactly one of
+        two cameras calibrating at the same moment can win, even across
+        processes. Idempotent for the holder, so re-calibrating or reconnecting
+        keeps it.
         """
-        return self._cameras.setdefault(game_id, client_id) == client_id
+        claimed = await redis_client.client().set(
+            _key(game_id), client_id, nx=True, ex=_TTL_SECONDS
+        )
+        return bool(claimed) or await self.is_scoring(game_id, client_id)
 
-    def is_scoring(self, game_id: str, client_id: str) -> bool:
-        return self._cameras.get(game_id) == client_id
+    async def is_scoring(self, game_id: str, client_id: str) -> bool:
+        holder = await redis_client.client().getex(_key(game_id), ex=_TTL_SECONDS)
+        return holder is not None and holder.decode() == client_id
 
 
 store = ScoringCameraStore()
