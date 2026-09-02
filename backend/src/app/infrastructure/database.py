@@ -5,6 +5,7 @@ held in a module global like the other stores here.
 """
 
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
@@ -41,12 +42,20 @@ async def close() -> None:
     _sessions = None
 
 
-async def session() -> AsyncIterator[AsyncSession]:
-    """FastAPI dependency handing out one session per request."""
+@asynccontextmanager
+async def session_scope() -> AsyncIterator[AsyncSession]:
+    """One session and one transaction: commits on a clean exit, rolls back on
+    an exception. Used directly rather than as a FastAPI dependency so the
+    WebSocket handlers, which have no request scope, open one the same way."""
     if _sessions is None:
         raise RuntimeError("database not initialised")
     async with _sessions() as active:
-        yield active
+        try:
+            yield active
+            await active.commit()
+        except Exception:
+            await active.rollback()
+            raise
 
 
 async def ping() -> bool:

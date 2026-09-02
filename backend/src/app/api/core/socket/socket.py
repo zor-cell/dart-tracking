@@ -10,6 +10,7 @@ frontend's core/socket/dto/client-message.ts).
 
 import asyncio
 import base64
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -64,7 +65,8 @@ from app.api.features.game.dto.command.register_dart import RegisterDartDto
 from app.api.features.game.dto.command.undo import UndoDto
 from app.api.features.game.domain.dart import Dart as ScoredDart
 from app.api.features.game.domain.game import Game
-from app.api.features.game.services.game_store import store as game_store
+from app.api.features.game.persistence.game_repository import repository as game_repository
+from app.infrastructure import database
 
 router = APIRouter(prefix="/ws", tags=["Tracking"])
 
@@ -93,7 +95,9 @@ async def websocket_endpoint(
     A device that has never said otherwise counts as a scoreboard, so a
     forgotten role costs a picture, never a wrong one.
     """
-    game = game_store.get(game_id)
+    async with database.session_scope() as session:
+        game = await game_repository.get(session, game_id)
+
     if game is None:
         await websocket.close(code=1008)
         return
@@ -115,7 +119,7 @@ async def websocket_endpoint(
                 print(f"[socket] ignored message: {error}")
                 continue
 
-            await _dispatch(connection, game, game_id, message)
+            await _dispatch(connection, game_id, message)
     except WebSocketDisconnect:
         pass
     finally:
@@ -123,9 +127,13 @@ async def websocket_endpoint(
 
 
 async def _dispatch(
-    connection: Connection, game: Game, game_id: str, message: ClientMessage
+    connection: Connection, game_id: str, message: ClientMessage
 ) -> None:
     """Route one parsed client message to its feature.
+
+    The game itself is not carried along: every handler that changes it reads it
+    fresh under a row lock (`_apply`), because a game now outlives the process
+    and is shared across connections.
 
     Frames come from the camera device only; the game commands come from any
     device in the room — the camera phone correcting a misread, a scoreboard
@@ -145,13 +153,13 @@ async def _dispatch(
         case CalibrationFrameDto():
             await _handle_calibration_frame(connection, game_id, message)
         case DetectionFrameDto():
-            await _handle_throw_frame(connection, game, game_id, message)
+            await _handle_throw_frame(connection, game_id, message)
         case RequestCalibrationDto():
             await _request_calibration(game_id, requester=connection.client.id)
         case SetRoleDto():
             await _handle_client_command(connection, message)
         case RegisterDartDto() | UndoDto() | NextPlayerDto():
-            await _handle_game_command(game, message)
+            await _handle_game_command(game_id, message)
 
 
 async def _handle_client_command(connection: Connection, command: ClientCommand) -> None:
@@ -173,7 +181,33 @@ async def _handle_client_command(connection: Connection, command: ClientCommand)
     await hub.send(connection, ClientStateDto.from_entity(connection.client))
 
 
-async def _handle_game_command(game: Game, command: GameCommand) -> None:
+async def _apply(
+    game_id: str, mutate: Callable[[Game], None]
+) -> tuple[Game, bool] | None:
+    """Run one mutation on the game under a row lock: the state afterwards and
+    whether anything changed, or None if the game is gone.
+
+    The lock is what makes a visit safe to end twice. The domain relies on
+    read-modify-write being uninterrupted — two devices ending the same visit,
+    the second finding a fresh empty turn and doing nothing — and that used to
+    come free from the event loop holding one shared object. Across
+    transactions it does not, so `SELECT … FOR UPDATE` restores it.
+    """
+    async with database.session_scope() as session:
+        game = await game_repository.lock(session, game_id)
+        if game is None:
+            return None
+
+        revision = game.revision
+        mutate(game)
+        changed = game.revision != revision
+        if changed:
+            await game_repository.save(session, game)
+
+    return game, changed
+
+
+async def _handle_game_command(game_id: str, command: GameCommand) -> None:
     """Apply one command and push the result to the room.
 
     A command that changes nothing is not broadcast — a fourth dart in a visit,
@@ -181,18 +215,25 @@ async def _handle_game_command(game: Game, command: GameCommand) -> None:
     devices ended the same visit at once. The revision is what says whether
     anything happened, and a room full of devices should not be woken for a
     state they already hold.
+
+    Broadcasting happens after the transaction commits, so no device is ever
+    shown a state that is not yet durable.
     """
-    revision = game.revision
+    def mutate(game: Game) -> None:
+        match command:
+            case RegisterDartDto():
+                game.register_dart(command.to_entity())
+            case UndoDto():
+                game.undo()
+            case NextPlayerDto():
+                game.next_player()
 
-    match command:
-        case RegisterDartDto():
-            game.register_dart(command.to_entity())
-        case UndoDto():
-            game.undo()
-        case NextPlayerDto():
-            game.next_player()
+    applied = await _apply(game_id, mutate)
+    if applied is None:
+        return
 
-    if game.revision != revision:
+    game, changed = applied
+    if changed:
         await _publish_state(game)
         if isinstance(command, NextPlayerDto):
             await _request_calibration(game.id, requester=None)
@@ -282,7 +323,7 @@ async def _handle_calibration_frame(
 
 
 async def _handle_throw_frame(
-    connection: Connection, game: Game, game_id: str, frame: DetectionFrameDto
+    connection: Connection, game_id: str, frame: DetectionFrameDto
 ) -> None:
     """Locate the dart in a throw frame, score it, and push the result.
 
@@ -344,16 +385,18 @@ async def _handle_throw_frame(
     # The detected segment carries the field, not just the points, so a tracked
     # dart reaches the scoreboard in the same form as a manually entered one.
     # The tip comes along so devices without a camera can draw where it landed.
-    game.register_dart(
-        ScoredDart(
-            value=outcome.segment.value,
-            multiplier=outcome.segment.multiplier,
-            position=outcome.tip_board,
-        )
+    dart = ScoredDart(
+        value=outcome.segment.value,
+        multiplier=outcome.segment.multiplier,
+        position=outcome.tip_board,
     )
+    applied = await _apply(game_id, lambda game: game.register_dart(dart))
+    if applied is None:
+        return
+
     # Pushed even when the game absorbed the dart (a trigger during a full
     # visit): the camera trims its drawn outlines against this state.
-    await _publish_state(game)
+    await _publish_state(applied[0])
 
 
 def _write_calibration_debug(
