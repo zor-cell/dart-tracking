@@ -54,5 +54,6 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - A feature should be structured with the following folders in src/app/features:
   - components/: contains the components for this feature
   - dto/: contains dto .ts interfaces that are sent to the server (one file for each dto)
+  - guards/: route guards belonging to this feature, if it has any
   - models/: contains other .ts files that are used for this feature but not simply network data wrappers
   - services/: the services used for this feature

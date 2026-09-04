@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './features/auth/guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'start' },
@@ -25,6 +26,26 @@ export const routes: Routes = [
     path: 'game',
     loadComponent: () =>
       import('./features/game/components/game/game.component').then((m) => m.GameComponent),
+  },
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./features/auth/components/login/login.component').then((m) => m.LoginComponent),
+  },
+  {
+    path: 'register',
+    loadComponent: () =>
+      import('./features/auth/components/register/register.component').then(
+        (m) => m.RegisterComponent,
+      ),
+  },
+  {
+    path: 'account',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/auth/components/account/account.component').then(
+        (m) => m.AccountComponent,
+      ),
   },
   {
     path: 'settings',
