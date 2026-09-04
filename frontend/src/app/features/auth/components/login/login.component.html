@@ -1,0 +1,42 @@
+<section class="view">
+  <header class="view__header">
+    <h1 class="view__title">Anmelden</h1>
+    <p class="view__subtitle">Für Spielverlauf und Statistiken</p>
+  </header>
+
+  <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="auth-form__field">
+      <label class="auth-form__label" for="email">E-Mail</label>
+      <input pInputText id="email" type="email" formControlName="email" autocomplete="email" fluid />
+    </div>
+
+    <div class="auth-form__field">
+      <label class="auth-form__label" for="password">Passwort</label>
+      <input
+        pInputText
+        id="password"
+        type="password"
+        formControlName="password"
+        autocomplete="current-password"
+        fluid
+      />
+    </div>
+
+    @if (error(); as message) {
+      <p-message severity="error" [text]="message" />
+    }
+
+    <p-button
+      type="submit"
+      fluid
+      label="Anmelden"
+      icon="pi pi-sign-in"
+      [loading]="busy()"
+      [disabled]="form.invalid"
+    />
+  </form>
+
+  <p class="auth-switch">
+    Noch kein Konto? <a routerLink="/register">Registrieren</a>
+  </p>
+</section>

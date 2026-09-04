@@ -1,0 +1,32 @@
+<section class="view">
+  <header class="view__header">
+    <h1 class="view__title">Konto</h1>
+    <p class="view__subtitle">Angemeldet auf diesem Gerät</p>
+  </header>
+
+  @if (user(); as account) {
+    <dl class="account">
+      <div class="account__row">
+        <dt class="account__label">Benutzername</dt>
+        <dd class="account__value">{{ account.username }}</dd>
+      </div>
+      <div class="account__row">
+        <dt class="account__label">E-Mail</dt>
+        <dd class="account__value">{{ account.email }}</dd>
+      </div>
+      <div class="account__row">
+        <dt class="account__label">Registriert</dt>
+        <dd class="account__value">{{ account.createdAt | date: 'dd.MM.yyyy' }}</dd>
+      </div>
+    </dl>
+
+    <p-button
+      fluid
+      label="Abmelden"
+      icon="pi pi-sign-out"
+      severity="secondary"
+      [loading]="busy()"
+      (onClick)="logout()"
+    />
+  }
+</section>

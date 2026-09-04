@@ -1,0 +1,59 @@
+<section class="view">
+  <header class="view__header">
+    <h1 class="view__title">Konto erstellen</h1>
+    <p class="view__subtitle">Spiele bleiben deinem Profil zugeordnet</p>
+  </header>
+
+  <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="auth-form__field">
+      <label class="auth-form__label" for="email">E-Mail</label>
+      <input pInputText id="email" type="email" formControlName="email" autocomplete="email" fluid />
+    </div>
+
+    <div class="auth-form__field">
+      <label class="auth-form__label" for="username">Benutzername</label>
+      <input
+        pInputText
+        id="username"
+        formControlName="username"
+        autocomplete="username"
+        aria-describedby="username-hint"
+        fluid
+      />
+      <small class="auth-form__hint" id="username-hint">
+        3–32 Zeichen, Buchstaben, Ziffern, Punkt, Bindestrich oder Unterstrich.
+      </small>
+    </div>
+
+    <div class="auth-form__field">
+      <label class="auth-form__label" for="password">Passwort</label>
+      <input
+        pInputText
+        id="password"
+        type="password"
+        formControlName="password"
+        autocomplete="new-password"
+        aria-describedby="password-hint"
+        fluid
+      />
+      <small class="auth-form__hint" id="password-hint">Mindestens 8 Zeichen.</small>
+    </div>
+
+    @if (error(); as message) {
+      <p-message severity="error" [text]="message" />
+    }
+
+    <p-button
+      type="submit"
+      fluid
+      label="Konto erstellen"
+      icon="pi pi-user-plus"
+      [loading]="busy()"
+      [disabled]="form.invalid"
+    />
+  </form>
+
+  <p class="auth-switch">
+    Schon ein Konto? <a routerLink="/login">Anmelden</a>
+  </p>
+</section>
