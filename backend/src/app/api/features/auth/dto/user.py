@@ -1,0 +1,20 @@
+from datetime import datetime
+
+from app.api.core.dto.base import CamelModel
+from app.api.features.auth.domain.user import User
+
+
+class UserDto(CamelModel):
+    id: str
+    email: str
+    username: str
+    created_at: datetime
+
+    @classmethod
+    def from_entity(cls, user: User) -> "UserDto":
+        return cls(
+            id=user.id,
+            email=user.email,
+            username=user.username,
+            created_at=user.created_at,
+        )

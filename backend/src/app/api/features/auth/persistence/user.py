@@ -6,7 +6,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.infrastructure.database import Base
+from app.infrastructure.database import Base, uuid_primary_key
 
 
 class UserTable(Base):
@@ -15,7 +15,7 @@ class UserTable(Base):
 
     __tablename__ = "users"
 
-    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    id: Mapped[str] = uuid_primary_key()
     email: Mapped[str] = mapped_column(String(320), unique=True)
     username: Mapped[str] = mapped_column(String(32), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))

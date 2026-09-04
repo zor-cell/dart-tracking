@@ -11,13 +11,13 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.infrastructure.database import Base
+from app.infrastructure.database import Base, uuid_primary_key
 
 
 class PlayerTable(Base):
     __tablename__ = "players"
 
-    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    id: Mapped[str] = uuid_primary_key()
     display_name: Mapped[str] = mapped_column(String(64))
     user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), default=None)
     owner_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), default=None)

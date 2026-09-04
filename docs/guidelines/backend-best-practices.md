@@ -30,6 +30,7 @@ src/app/
          ├─ dto/               # Pydantic wire schemas (request/response)
          ├─ domain/            # domain models (dataclasses) + business rules
          ├─ debug/             # diagnostics: the run trace and its renderer (CV features only)
+         ├─ persistence/       # SQLAlchemy tables (one file each) + the repository
          └─ services/          # stores and orchestration
 ```
 
@@ -48,10 +49,13 @@ src/app/
 - `domain/` — the domain: dataclasses plus the rules that operate on them, the
   enums that name its closed sets, and its fixed constants (`board_geometry.py`).
   This is the source of truth for game logic (scores originate on the server).
-  Named `domain/` rather than `entity/` because nothing here is persisted — the
-  Java/JPA reading of "entity" (a row in a table) does not apply — and rather
-  than `models/`, which in a FastAPI codebase reads as the Pydantic models that
-  already live in `dto/`.
+  Named `domain/` rather than `entity/` because the mapped row is a *different*
+  class and lives in `persistence/`: "entity" in its Java/JPA reading (a row in
+  a table) would point at the wrong one. And rather than `models/`, which in a
+  FastAPI codebase reads as the Pydantic models that already live in `dto/`.
+  For a feature without rules the domain class is a bare frozen dataclass, and
+  that is fine — it is what keeps `dto/` from importing `persistence/`, and it
+  is the object that provably cannot carry a `password_hash`.
 - `debug/` — what a pipeline run saw, and how to look at it: a trace dataclass
   the service fills as it goes, plus the renderer that turns it into one image
   per stage. Only the CV features have one. This is **not** dev-only tooling: the
@@ -61,6 +65,13 @@ src/app/
   - The detector owns a module-level `trace` that it replaces on each run, so
     `services/` imports `debug/trace.py`. That direction is deliberate;
     `trace.py` imports nothing from `services/`, so there is no cycle.
+- `persistence/` — the database side of a feature: one file per table, named
+  after the concept, the class after the layer (`persistence/player.py` →
+  `PlayerTable`), plus the repository that maps rows to `domain/` and back. The
+  dependency runs `persistence/` → `domain/` and never back: the domain must not
+  know how it is stored, the same rule that keeps Pydantic out of it. Every table
+  module is listed in `api/tables.py`, which Alembic and the repositories import
+  — a table that nobody imports is a foreign key pointing at nothing.
 - `services/` — stateful stores and orchestration.
 - Trivial single-endpoint routers (e.g. `health`) may stay as flat modules in
   `api/` until they grow into a feature.
@@ -100,9 +111,14 @@ src/app/
 ## State & Persistence
 - Game/session state is server-authoritative (see roadmap §4 and §7); the client
   holds only a synchronized cache.
-- In-memory stores (module-level singletons) are fine for now, but note: state is
-  lost on restart and not shared across worker processes. Persistence (Postgres)
-  comes later.
+- Games live in Postgres, the hot game-scoped state (clients, calibrations,
+  scoring claim) in Redis with a TTL. Process-local dicts remain only for what
+  cannot leave the process — the WebSocket hub — or is large and cheap to rebuild
+  (the reference frame). Which store a new piece of state belongs in is decided
+  in [persistenz.md §2](../feature/persistenz.md).
+- Auth is optional on the HTTP endpoints: `CurrentUser` may be None, and an
+  anonymous game still works. A token that is *sent* but does not hold up is a
+  401, never a fallback to anonymous.
 
 ## DTO ↔ Domain Separation
 - Keep Pydantic wire schemas (`dto/`) separate from domain models (`domain/`).

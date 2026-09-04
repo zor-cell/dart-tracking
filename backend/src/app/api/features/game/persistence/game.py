@@ -5,13 +5,13 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.infrastructure.database import Base
+from app.infrastructure.database import Base, uuid_primary_key
 
 
 class GameTable(Base):
     __tablename__ = "games"
 
-    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    id: Mapped[str] = uuid_primary_key()
     mode: Mapped[int] = mapped_column(Integer)
     checkout_mode: Mapped[str] = mapped_column(String(16))
     status: Mapped[str] = mapped_column(String(16))
