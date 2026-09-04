@@ -16,6 +16,7 @@ from app.api.features.auth.persistence.user_repository import repository
 from app.api.features.auth.services import access_tokens, passwords
 from app.api.features.auth.services.current_user import AuthenticatedUser
 from app.api.features.auth.services.refresh_store import store as refresh_store
+from app.api.features.player.persistence.player_repository import repository as players
 from app.infrastructure import database
 from app.infrastructure.config import get_settings
 
@@ -72,6 +73,11 @@ async def register(body: RegisterDto, response: Response) -> SessionDto:
             raise HTTPException(status_code=409, detail=f"{taken} already in use")
         user = await repository.create(
             session, email, username, passwords.hash_password(body.password)
+        )
+        # The account's own entry in its address book, so the first game can be
+        # set up without typing one's own name (§4.1).
+        await players.create(
+            session, username, owner_user_id=user.id, user_id=user.id
         )
 
     return await _begin_session(response, user)

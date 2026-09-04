@@ -21,6 +21,7 @@ from app.api.features.game.persistence.dart import DartTable
 from app.api.features.game.persistence.game import GameTable
 from app.api.features.game.persistence.game_player import GamePlayerTable
 from app.api.features.game.persistence.turn import TurnTable
+from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.persistence.player import PlayerTable
 
 # Games carry a foreign key to `users`, so that table has to be registered too.
@@ -32,20 +33,20 @@ class GameRepository:
         self,
         session: AsyncSession,
         mode: GameMode,
-        player_names: list[str],
+        identities: list[PlayerIdentity],
         checkout_mode: CheckoutMode,
         owner_user_id: str | None = None,
     ) -> Game:
-        """Names are expected to be validated and non-empty (see the router).
-
-        Every participant gets a `players` row, guests included — without one
-        there would be nothing for the address book to complete later (§4.1).
-        """
+        """The identities are resolved by the router, which owns the rules about
+        who may take a seat. Here they are only seated, in the order given."""
         # The id is only known after the flush below — Postgres generates it.
         game = Game(
             id="",
             mode=mode,
-            players=[Player(id=seat, name=name) for seat, name in enumerate(player_names)],
+            players=[
+                Player(id=seat, name=identity.display_name)
+                for seat, identity in enumerate(identities)
+            ],
             checkout_mode=checkout_mode,
         )
 
@@ -58,17 +59,14 @@ class GameRepository:
             owner_user_id=owner_user_id,
         )
         session.add(row)
-        players = [PlayerTable(display_name=name) for name in player_names]
-        session.add_all(players)
-        # Flush the rows `game_players` points at before adding it: no
-        # relationships are declared, so the unit of work does not order the
-        # inserts by foreign key on its own. It is also where the server-side
-        # ids arrive.
+        # Flush before adding `game_players`: no relationships are declared, so
+        # the unit of work does not order the inserts by foreign key on its own.
+        # It is also where the server-side id arrives.
         await session.flush()
 
         session.add_all(
-            GamePlayerTable(game_id=row.id, player_index=index, player_id=player.id)
-            for index, player in enumerate(players)
+            GamePlayerTable(game_id=row.id, player_index=index, player_id=identity.id)
+            for index, identity in enumerate(identities)
         )
         await session.flush()
 
