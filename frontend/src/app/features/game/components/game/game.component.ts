@@ -21,6 +21,7 @@ import {SettingsService} from '../../../settings/services/settings.service';
 import {DartDto} from '../../dto/dart.dto';
 import {GameService} from '../../services/game.service';
 import {GameSessionService} from '../../services/game-session.service';
+import {GameTopBarComponent} from '../game-top-bar/game-top-bar.component';
 import {VirtualBoardComponent} from '../virtual-board/virtual-board.component';
 
 /** A side-column key: a fixed field, so it carries its own multiplier and is
@@ -45,7 +46,14 @@ const PAD_ROWS: readonly PadRow[] = [
 
 @Component({
   selector: 'app-game',
-  imports: [RouterLink, Button, ProgressSpinner, OverlayComponent, VirtualBoardComponent],
+  imports: [
+    RouterLink,
+    Button,
+    ProgressSpinner,
+    OverlayComponent,
+    VirtualBoardComponent,
+    GameTopBarComponent,
+  ],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

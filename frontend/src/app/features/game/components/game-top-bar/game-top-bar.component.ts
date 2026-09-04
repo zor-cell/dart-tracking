@@ -13,10 +13,9 @@ import { GameService } from '../../services/game.service';
 import { GameSessionService } from '../../services/game-session.service';
 
 /**
- * Chrome shown at the top of the shell while a game is active (gated on
- * `game.state()` in the app shell). Holds game-scoped actions that do not belong
- * to the scoreboard itself — sharing the game and leaving it. Per-turn actions
- * (undo, recalibrate) stay in the game view where they are used.
+ * Header of the game view, holding the game-scoped actions that do not belong to
+ * the scoreboard itself — sharing the game and leaving it. Per-turn actions
+ * (undo, recalibrate) stay in the view below, where they are used.
  */
 @Component({
   selector: 'app-game-top-bar',

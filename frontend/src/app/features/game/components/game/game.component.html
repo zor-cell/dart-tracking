@@ -1,4 +1,6 @@
 @if (game.state(); as state) {
+  <app-game-top-bar />
+
   <section class="view game">
     @if (deviceRole() === null) {
       <div class="game__camera" role="status">

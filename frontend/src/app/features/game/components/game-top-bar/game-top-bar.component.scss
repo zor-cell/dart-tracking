@@ -1,5 +1,10 @@
 :host {
-  flex: none;
+  display: block;
+  /* Sits inside the scrolling view, so it pins itself rather than relying on
+     being a fixed-height row of the shell. */
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .top-bar {

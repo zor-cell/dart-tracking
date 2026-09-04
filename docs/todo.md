@@ -7,7 +7,6 @@ Wenig Aufwand:
   -> Plan: docs/feature/testdaten-aufnahme.md
 - socket.py cleanen, die debug writes wirken dort fehl am platz
 - socket messages am client können verloren gehen, muss als queue drinnen sein wahrscheinlich
-- uuid7 benutzen über db server
 
 Viel Aufwand:
 - client diff löst ja derzeit öfter aus, fokus auf recall, das backend muss da was checken (ist das überhaupt möglich), weil
