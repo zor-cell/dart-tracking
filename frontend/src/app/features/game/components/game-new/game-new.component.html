@@ -27,37 +27,62 @@
       />
     </div>
 
-    <div class="setup__field" formArrayName="players">
-      <span class="setup__label">Spieler</span>
-      @for (player of players.controls; track $index) {
-        <div class="setup__player">
-          <input
-            pInputText
-            class="setup__input"
-            [formControlName]="$index"
-            [attr.aria-label]="'Spieler ' + ($index + 1)"
-            placeholder="Name"
-          />
-          <p-button
-            type="button"
-            icon="pi pi-trash"
-            severity="secondary"
-            [text]="true"
-            [disabled]="players.length <= 1"
-            [ariaLabel]="'Spieler ' + ($index + 1) + ' entfernen'"
-            (onClick)="removePlayer($index)"
-          />
-        </div>
-      }
-      <p-button
-        type="button"
-        label="Spieler hinzufügen"
-        icon="pi pi-plus"
-        severity="secondary"
-        [text]="true"
-        (onClick)="addPlayer()"
-      />
-    </div>
+    @if (sessionResolved()) {
+      <div class="setup__field" formArrayName="players">
+        <span class="setup__label">Spieler</span>
+        @for (seat of seats.controls; track $index) {
+          <div class="setup__player">
+            @if (signedIn()) {
+              <p-autocomplete
+                class="setup__input"
+                [formControlName]="$index"
+                [suggestions]="suggestions()"
+                (completeMethod)="completeSeat($event)"
+                optionLabel="name"
+                appendTo="body"
+                [dropdown]="true"
+                [showEmptyMessage]="false"
+                [ariaLabel]="'Spieler ' + ($index + 1)"
+                placeholder="Name wählen oder eintippen"
+                fluid
+              >
+                <ng-template #item let-identity>
+                  <span>{{ identity.name }}</span>
+                  @if (identity.isSelf) {
+                    <span class="setup__self">du</span>
+                  }
+                </ng-template>
+              </p-autocomplete>
+            } @else {
+              <input
+                pInputText
+                class="setup__input"
+                [formControlName]="$index"
+                [attr.aria-label]="'Spieler ' + ($index + 1)"
+                placeholder="Name"
+              />
+            }
+            <p-button
+              type="button"
+              icon="pi pi-trash"
+              severity="secondary"
+              [text]="true"
+              [disabled]="seats.length <= 1"
+              [ariaLabel]="'Spieler ' + ($index + 1) + ' entfernen'"
+              (onClick)="removePlayer($index)"
+            />
+          </div>
+        }
+        <p-button
+          type="button"
+          label="Spieler hinzufügen"
+          icon="pi pi-plus"
+          severity="secondary"
+          [text]="true"
+          (onClick)="addPlayer()"
+        />
+      </div>
+    }
 
     <p-button
       type="submit"
