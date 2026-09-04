@@ -17,6 +17,8 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?missing in .env}
 
+      JWT_SECRET: ${JWT_SECRET:?missing in .env}
+      COOKIE_SECURE: true
       CORS_ORIGINS: "[]" # nginx serves the app and /api under one origin, so nothing here is ever cross-origin
     depends_on:
       postgres:

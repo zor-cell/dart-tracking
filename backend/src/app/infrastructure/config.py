@@ -35,6 +35,11 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = ["http://localhost:4200", "http://127.0.0.1:4200"]
 
+    jwt_secret: str
+    access_token_minutes: int = 15
+    refresh_token_days: int = 30
+    cookie_secure: bool = False
+
     @property
     def database_url(self) -> str:
         user = quote_plus(self.postgres_user)
