@@ -34,6 +34,7 @@ class GameRepository:
         mode: GameMode,
         player_names: list[str],
         checkout_mode: CheckoutMode,
+        owner_user_id: str | None = None,
     ) -> Game:
         """Names are expected to be validated and non-empty (see the router).
 
@@ -55,6 +56,7 @@ class GameRepository:
                 status=GameStatus.ACTIVE.value,
                 current_player_index=game.current_player_index,
                 revision=game.revision,
+                owner_user_id=owner_user_id,
             )
         )
         entries = [

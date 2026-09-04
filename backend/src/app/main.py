@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import health
 from app.api.core.socket import socket
+from app.api.features.auth import auth
 from app.api.features.game import games
 from app.infrastructure import database, redis_client
 from app.infrastructure.config import get_settings
@@ -42,5 +43,6 @@ api_router = APIRouter(prefix="/api")
 api_router.include_router(health.router)
 api_router.include_router(socket.router)
 api_router.include_router(games.router)
+api_router.include_router(auth.router)
 
 app.include_router(api_router)

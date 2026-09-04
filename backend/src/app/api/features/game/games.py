@@ -12,6 +12,7 @@ docs/feature/multi-device.md §3).
 
 from fastapi import APIRouter, HTTPException
 
+from app.api.features.auth.services.current_user import CurrentUser
 from app.api.features.game.dto.game_config import GameConfigDto
 from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.persistence.game_repository import repository
@@ -21,13 +22,17 @@ router = APIRouter(prefix="/games", tags=["Game"])
 
 
 @router.post("", response_model=GameStateDto, status_code=201)
-async def create_game(body: GameConfigDto) -> GameStateDto:
+async def create_game(body: GameConfigDto, user: CurrentUser) -> GameStateDto:
     names = [stripped for name in body.player_names if (stripped := name.strip())]
     if not names:
         raise HTTPException(status_code=422, detail="at least one player is required")
 
+    owner_id = user.id if user else None
+
     async with database.session_scope() as session:
-        game = await repository.create(session, body.mode, names, body.checkout_mode)
+        game = await repository.create(
+            session, body.mode, names, body.checkout_mode, owner_user_id=owner_id
+        )
 
     return GameStateDto.from_entity(game)
 
