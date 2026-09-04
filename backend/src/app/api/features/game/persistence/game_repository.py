@@ -5,7 +5,7 @@ each command and written back inside the same transaction (see
 docs/feature/persistenz.md §5.1/§5.2).
 """
 
-from uuid import uuid4
+from uuid import UUID
 
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,41 +41,38 @@ class GameRepository:
         Every participant gets a `players` row, guests included — without one
         there would be nothing for the address book to complete later (§4.1).
         """
+        # The id is only known after the flush below — Postgres generates it.
         game = Game(
-            id=uuid4().hex,
+            id="",
             mode=mode,
             players=[Player(id=seat, name=name) for seat, name in enumerate(player_names)],
             checkout_mode=checkout_mode,
         )
 
-        session.add(
-            GameTable(
-                id=game.id,
-                mode=int(mode),
-                checkout_mode=checkout_mode.value,
-                status=GameStatus.ACTIVE.value,
-                current_player_index=game.current_player_index,
-                revision=game.revision,
-                owner_user_id=owner_user_id,
-            )
+        row = GameTable(
+            mode=int(mode),
+            checkout_mode=checkout_mode.value,
+            status=GameStatus.ACTIVE.value,
+            current_player_index=game.current_player_index,
+            revision=game.revision,
+            owner_user_id=owner_user_id,
         )
-        entries = [
-            (index, uuid4().hex, name) for index, name in enumerate(player_names)
-        ]
-        session.add_all(
-            PlayerTable(id=player_id, display_name=name) for _, player_id, name in entries
-        )
+        session.add(row)
+        players = [PlayerTable(display_name=name) for name in player_names]
+        session.add_all(players)
         # Flush the rows `game_players` points at before adding it: no
         # relationships are declared, so the unit of work does not order the
-        # inserts by foreign key on its own.
+        # inserts by foreign key on its own. It is also where the server-side
+        # ids arrive.
         await session.flush()
 
         session.add_all(
-            GamePlayerTable(game_id=game.id, player_index=index, player_id=player_id)
-            for index, player_id, _ in entries
+            GamePlayerTable(game_id=row.id, player_index=index, player_id=player.id)
+            for index, player in enumerate(players)
         )
         await session.flush()
 
+        game.id = row.id
         await self.save(session, game)
         return game
 
@@ -139,6 +136,13 @@ class GameRepository:
         await session.flush()
 
     async def _load(self, session: AsyncSession, game_id: str, *, lock: bool) -> Game | None:
+        # Ids reach this from a url, a shared link and a socket path, so one
+        # that is not a uuid at all is an ordinary miss rather than a 500.
+        try:
+            UUID(game_id)
+        except ValueError:
+            return None
+
         statement = select(GameTable).where(GameTable.id == game_id)
         if lock:
             statement = statement.with_for_update()

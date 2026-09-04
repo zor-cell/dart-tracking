@@ -1,9 +1,9 @@
 """One thrown dart."""
 
-from sqlalchemy import Float, ForeignKeyConstraint, Integer, String
+from sqlalchemy import Float, ForeignKeyConstraint, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.infrastructure.database import Base
+from app.infrastructure.database import Base, UuidText
 
 
 class DartTable(Base):
@@ -19,7 +19,7 @@ class DartTable(Base):
         ),
     )
 
-    game_id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    game_id: Mapped[str] = mapped_column(UuidText, primary_key=True)
     turn_index: Mapped[int] = mapped_column(Integer, primary_key=True)
     dart_index: Mapped[int] = mapped_column(Integer, primary_key=True)
     value: Mapped[int] = mapped_column(Integer)
