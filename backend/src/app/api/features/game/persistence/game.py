@@ -21,6 +21,11 @@ class GameTable(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+    # Touched on every write, so a game that nobody has come back to can be told
+    # from one still being played (docs/feature/persistenz.md §4.5).
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
     finished_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), default=None
     )

@@ -7,14 +7,15 @@ docs/feature/persistenz.md §5.1/§5.2).
 
 from uuid import UUID
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import case, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.game_mode import GameMode
-from app.api.features.game.domain.game_status import GameStatus
+from app.api.features.game.domain.game_status import GameStatus, effective_status
+from app.api.features.game.domain.game_summary import GameSummary, GameSummaryPlayer
 from app.api.features.game.domain.player import Player
 from app.api.features.game.domain.turn import Turn
 from app.api.features.game.persistence.dart import DartTable
@@ -92,14 +93,21 @@ class GameRepository:
         form costs a few milliseconds and has no edge cases around undo.
         """
         finished = game.winner is not None
+        derived = (GameStatus.FINISHED if finished else GameStatus.ACTIVE).value
         await session.execute(
             update(GameTable)
             .where(GameTable.id == game.id)
             .values(
                 current_player_index=game.current_player_index,
                 revision=game.revision,
-                status=(GameStatus.FINISHED if finished else GameStatus.ACTIVE).value,
+                # `discarded` is a judgement about the game, not a consequence of
+                # the score, so deriving the status must not overwrite it.
+                status=case(
+                    (GameTable.status == GameStatus.DISCARDED.value, GameTable.status),
+                    else_=derived,
+                ),
                 finished_at=func.now() if finished else None,
+                updated_at=func.now(),
             )
         )
 
@@ -132,6 +140,147 @@ class GameRepository:
             for dart_index, dart in enumerate(turn.darts)
         )
         await session.flush()
+
+
+    async def summaries(
+        self, session: AsyncSession, user_id: str, *, limit: int, offset: int
+    ) -> list[GameSummary]:
+        """The games this account took part in or wrote down, newest first.
+
+        Both branches are needed: a game set up by a fellow player belongs in my
+        history too, and one I only kept score for has no seat for me at all
+        (docs/feature/persistenz.md §4.2).
+        """
+        mine = (
+            select(GamePlayerTable.game_id)
+            .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
+            .where(PlayerTable.user_id == user_id)
+        )
+        rows = (
+            await session.execute(
+                select(GameTable)
+                .where(
+                    or_(
+                        GameTable.owner_user_id == user_id,
+                        GameTable.id.in_(mine),
+                    )
+                )
+                .order_by(GameTable.updated_at.desc())
+                .limit(limit)
+                .offset(offset)
+            )
+        ).scalars().all()
+        if not rows:
+            return []
+
+        ids = [row.id for row in rows]
+        seats = (
+            await session.execute(
+                select(
+                    GamePlayerTable.game_id,
+                    GamePlayerTable.player_index,
+                    PlayerTable.display_name,
+                    PlayerTable.user_id,
+                )
+                .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
+                .where(GamePlayerTable.game_id.in_(ids))
+                .order_by(GamePlayerTable.game_id, GamePlayerTable.player_index)
+            )
+        ).all()
+
+        # Points and darts per seat in one aggregate: the score is what the
+        # busted flag lets through, the dart count is every dart thrown.
+        tallies = (
+            await session.execute(
+                select(
+                    TurnTable.game_id,
+                    TurnTable.player_index,
+                    func.count(DartTable.dart_index).label("darts"),
+                    func.coalesce(
+                        func.sum(
+                            case(
+                                (
+                                    TurnTable.busted.is_(False),
+                                    DartTable.value * DartTable.multiplier,
+                                ),
+                                else_=0,
+                            )
+                        ),
+                        0,
+                    ).label("scored"),
+                )
+                .join(
+                    DartTable,
+                    (DartTable.game_id == TurnTable.game_id)
+                    & (DartTable.turn_index == TurnTable.turn_index),
+                )
+                .where(TurnTable.game_id.in_(ids))
+                .group_by(TurnTable.game_id, TurnTable.player_index)
+            )
+        ).all()
+
+        scored = {(t.game_id, t.player_index): t.scored for t in tallies}
+        thrown = {(t.game_id, t.player_index): t.darts for t in tallies}
+
+        summaries: list[GameSummary] = []
+        for row in rows:
+            entries = [seat for seat in seats if seat.game_id == row.id]
+            players = [
+                GameSummaryPlayer(
+                    name=seat.display_name,
+                    remaining=row.mode - scored.get((row.id, seat.player_index), 0),
+                    is_me=seat.user_id == user_id,
+                )
+                for seat in entries
+            ]
+            own = next(
+                (
+                    thrown.get((row.id, seat.player_index), 0)
+                    for seat in entries
+                    if seat.user_id == user_id
+                ),
+                0,
+            )
+            summaries.append(
+                GameSummary(
+                    id=row.id,
+                    mode=GameMode(row.mode),
+                    checkout_mode=CheckoutMode(row.checkout_mode),
+                    status=effective_status(GameStatus(row.status), row.updated_at),
+                    players=players,
+                    winner_index=next(
+                        (
+                            index
+                            for index, player in enumerate(players)
+                            if player.remaining == 0
+                        ),
+                        None,
+                    ),
+                    dart_count=sum(
+                        thrown.get((row.id, seat.player_index), 0) for seat in entries
+                    ),
+                    own_darts=own,
+                    created_at=row.created_at,
+                )
+            )
+        return summaries
+
+    async def set_status(
+        self, session: AsyncSession, game_id: str, user_id: str, status: GameStatus
+    ) -> bool:
+        """Mark a game discarded, or take that back. Scoped to the owner, so one
+        account cannot rewrite another's history. Returns whether a row matched."""
+        try:
+            UUID(game_id)
+        except ValueError:
+            return False
+
+        result = await session.execute(
+            update(GameTable)
+            .where(GameTable.id == game_id, GameTable.owner_user_id == user_id)
+            .values(status=status.value)
+        )
+        return result.rowcount > 0
 
     async def _load(self, session: AsyncSession, game_id: str, *, lock: bool) -> Game | None:
         # Ids reach this from a url, a shared link and a socket path, so one
