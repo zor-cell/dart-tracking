@@ -1,5 +1,5 @@
 <svg class="board" [attr.viewBox]="viewBox" role="img" [attr.aria-label]="ariaLabel()">
-  <circle class="board__backing" cx="0" cy="0" r="200" />
+  <circle class="board__backing" cx="0" cy="0" [attr.r]="backingRadius" />
 
   @for (segment of segments; track $index) {
     <path class="board__segment board__segment--{{ segment.tone }}" [attr.d]="segment.d" />

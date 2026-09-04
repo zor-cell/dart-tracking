@@ -1,0 +1,37 @@
+.heatmap {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.heatmap__backing {
+  fill: var(--p-content-background, #ffffff);
+}
+
+.heatmap__segment {
+  stroke: #1f1f1f;
+  stroke-width: 0.6;
+
+  &--dark { fill: #17171a; }
+  &--light { fill: #efe6cf; }
+  &--red { fill: #c0392b; }
+  &--green { fill: #1e8449; }
+}
+
+.heatmap__number {
+  fill: var(--p-text-color, #18181b);
+  font-size: 16px;
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+/* Translucent, so overlapping throws darken the spot they share — that
+   accumulation is the whole point of the plot. */
+.heatmap__mark {
+  fill: #38bdf8;
+  fill-opacity: 0.45;
+  stroke: #0284c7;
+  stroke-width: 0.8;
+  stroke-opacity: 0.5;
+}

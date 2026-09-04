@@ -1,0 +1,141 @@
+.figures {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border-radius: 0.5rem;
+}
+
+/* The headline number gets the full row. */
+.figure--wide {
+  grid-column: 1 / -1;
+
+  .figure__value {
+    font-size: 2.25rem;
+  }
+}
+
+.figure__label {
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.8rem;
+}
+
+.figure__value {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.figure__hint {
+  margin: 0;
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.panel__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.panel__hint {
+  margin: 0;
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.85rem;
+}
+
+.game-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border-radius: 0.5rem;
+}
+
+/* A game that does not count is still shown, just visibly set aside. */
+.game-row--muted {
+  opacity: 0.55;
+}
+
+.game-row__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.game-row__mode {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.game-row__status {
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: var(--p-content-hover-background, #f3f4f6);
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.75rem;
+}
+
+.game-row__date {
+  margin-left: auto;
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.8rem;
+}
+
+.game-row__players {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.game-row__player {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.game-row__player--me {
+  font-weight: 600;
+}
+
+.game-row__player--winner .game-row__remaining {
+  color: var(--p-primary-color, #09090b);
+  font-weight: 700;
+}
+
+.game-row__remaining {
+  font-variant-numeric: tabular-nums;
+}
+
+.game-row__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.game-row__darts {
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}

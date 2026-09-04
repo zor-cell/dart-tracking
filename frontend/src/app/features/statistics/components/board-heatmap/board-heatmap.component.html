@@ -1,0 +1,23 @@
+<svg
+  class="heatmap"
+  [attr.viewBox]="viewBox"
+  role="img"
+  [attr.aria-label]="'Dartscheibe mit ' + marks().length + ' erkannten Treffern'"
+>
+  <circle class="heatmap__backing" cx="0" cy="0" [attr.r]="backingRadius" />
+
+  @for (segment of segments; track $index) {
+    <path class="heatmap__segment heatmap__segment--{{ segment.tone }}" [attr.d]="segment.d" />
+  }
+
+  <circle class="heatmap__segment heatmap__segment--green" cx="0" cy="0" [attr.r]="bullRadius" />
+  <circle class="heatmap__segment heatmap__segment--red" cx="0" cy="0" [attr.r]="bullseyeRadius" />
+
+  @for (number of sectorNumbers; track number.value) {
+    <text class="heatmap__number" [attr.x]="number.x" [attr.y]="number.y">{{ number.value }}</text>
+  }
+
+  @for (mark of marks(); track $index) {
+    <circle class="heatmap__mark" [attr.cx]="mark.x" [attr.cy]="mark.y" r="5" />
+  }
+</svg>

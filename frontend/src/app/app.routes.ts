@@ -48,6 +48,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'stats',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/statistics/components/statistics/statistics.component').then(
+        (m) => m.StatisticsComponent,
+      ),
+  },
+  {
     path: 'settings',
     loadComponent: () =>
       import('./features/settings/components/settings/settings.component').then((m) => m.SettingsComponent),
