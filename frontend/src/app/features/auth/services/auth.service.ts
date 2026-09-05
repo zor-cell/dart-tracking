@@ -11,7 +11,7 @@ import { UserDto } from '../dto/user.dto';
 /**
  * The signed-in account, if there is one — accounts are optional. The access
  * token is held in memory, the durable half of the session is the httpOnly
- * refresh cookie (docs/feature/persistenz.md §8.4).
+ * refresh cookie (docs/feature/done/persistenz.md §8.4).
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {

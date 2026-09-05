@@ -16,7 +16,7 @@ const CLIENT_ID_KEY = 'dart-tracking.clientId';
  * The connection to the game's room on the server. Every device playing the
  * same game holds one, and it carries everything that is not the session
  * lifecycle: the camera frames of whichever device films the board, and the
- * commands any device issues (see docs/feature/multi-device.md).
+ * commands any device issues (see docs/feature/done/multi-device.md).
  */
 @Injectable({ providedIn: 'root' })
 export class SocketService {

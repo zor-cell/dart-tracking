@@ -1,7 +1,7 @@
 """Per-game WebSocket rooms.
 
 A game is played across devices: the phone aimed at the board runs the camera,
-further phones join as scoreboards (see docs/feature/multi-device.md). Their
+further phones join as scoreboards (see docs/feature/done/multi-device.md). Their
 connections are held together in a room per game so every state change reaches
 all of them.
 

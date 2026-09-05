@@ -1,6 +1,6 @@
 """What a player's throws add up to. The rules live here rather than in SQL:
 bust and checkout are decided in the game domain, and a second copy of them in a
-query would be a second truth (docs/feature/persistenz.md §8.7)."""
+query would be a second truth (docs/feature/done/persistenz.md §8.7)."""
 
 from dataclasses import dataclass, field
 

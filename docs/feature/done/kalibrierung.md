@@ -6,7 +6,7 @@ welche Ansätze auf dem Weg dorthin verworfen wurden.
 
 Referenz-Implementierung:
 `backend/src/app/api/features/calibration/services/board_detector.py`.
-Literatur-Sammelstelle: [roadmap.md §6.1](../roadmap.md#61-board-erkennung--kalibrierung).
+Literatur-Sammelstelle: [roadmap.md §6.1](../../roadmap.md#61-board-erkennung--kalibrierung).
 
 ---
 

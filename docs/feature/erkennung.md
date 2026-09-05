@@ -3,7 +3,7 @@
 Dokumentation der serverseitigen Detektions-Pipeline: was sie tut, welche
 OpenCV-Algorithmen dabei zum Einsatz kommen, warum sie so aufgebaut ist und
 welche Ansätze auf dem Weg dorthin verworfen wurden. Baut auf der fertigen
-Kalibrierung auf ([kalibrierung.md](kalibrierung.md)) — ohne Homographie kein
+Kalibrierung auf ([kalibrierung.md](done/kalibrierung.md)) — ohne Homographie kein
 Scoring.
 
 Referenz-Implementierung:
@@ -89,7 +89,7 @@ also womöglich auf der Silhouette eines gezogenen Pfeils. Das Signal dafür ist
 der **Rundenwechsel**: `next_player` schickt allen Kameras ein
 `calibration_requested`, die daraufhin einen frischen Frame kalibrieren und
 damit die Referenz auf das leere Board neu setzen (siehe
-[multi-device.md §5c](multi-device.md#5c-rekalibrierung-anfordern)).
+[multi-device.md §5c](done/multi-device.md#5c-rekalibrierung-anfordern)).
 
 Das setzt voraus, dass der Rundenwechsel *nach* dem Ziehen der Pfeile ausgelöst
 wird — was er tut, wenn er bestätigt wird („Wurf bestätigen"). Steht die

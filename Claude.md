@@ -11,7 +11,7 @@ Backend (FastAPI/Flask + OpenCV) macht Board-Kalibrierung (Homographie),
 Pfeil-Erkennung und Scoring.
 
 Die Kalibrierungs-Pipeline ist im Detail dokumentiert (Algorithmen, Parameter,
-verworfene Ansätze): @docs/feature/kalibrierung.md
+verworfene Ansätze): @docs/feature/done/kalibrierung.md
 
 Die Erkennungs-Pipeline ist im Detail dokumentiert (Algorithmen, Parameter,
 verworfene Ansätze): @docs/feature/erkennung.md
@@ -25,6 +25,13 @@ PrimeNG für Styling, die Dokumentation siehe @docs/guidelines/primeng-documenta
 
 ## Backend-Konventionen
 FastAPI, siehe @docs/guidelines/backend-best-practices.md
+
+## Doku-Struktur
+- `docs/feature/` — Features, an denen noch gearbeitet wird.
+- `docs/feature/done/` — abgeschlossen oder bewusst nicht weiter verfolgt.
+  Wird ein Feature fertig, wandert seine Datei hierher; Links in den anderen
+  Dokumenten und in Code-Kommentaren mitziehen.
+- `docs/status/` — Stichwortsammlungen zum jeweiligen Zwischenstand.
 
 ## Kommentar-Regeln
 Diese Regeln gelten für **alle** Fließtext-Zeilen im Code: `#`, `//`, `<!-- -->`,

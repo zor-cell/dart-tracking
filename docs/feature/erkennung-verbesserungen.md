@@ -424,7 +424,7 @@ Schwellwert eher höher liegen.
 
 Die Hoffnung war, dass HSV das Problem löst, weil es bei der Kalibrierung mit
 Rot und Grün gut funktioniert
-([kalibrierung.md §2.1](kalibrierung.md#21-farbsegmentierung-im-hsv-raum)):
+([kalibrierung.md §2.1](done/kalibrierung.md#21-farbsegmentierung-im-hsv-raum)):
 Helligkeit steckt im V-Kanal und ist vom Farbton getrennt, also überlebt ein
 Schwellwert auf H und S wechselnde Beleuchtung, was er in BGR nicht tut.
 

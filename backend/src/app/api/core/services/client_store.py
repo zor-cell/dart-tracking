@@ -1,7 +1,7 @@
 """Redis-backed store of the devices the server knows.
 
 Survives a restart, expires after a month of silence.
-See docs/feature/multi-device.md §5.
+See docs/feature/done/multi-device.md §5.
 """
 
 from uuid import uuid4

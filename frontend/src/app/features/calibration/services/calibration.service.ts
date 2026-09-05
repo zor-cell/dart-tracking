@@ -78,7 +78,7 @@ export class CalibrationService {
 
     // How a device learns about a calibration that was not its own — the only
     // route for one without a camera, since `calibration_result` goes to the
-    // camera that produced it alone (docs/feature/multi-device.md §3). Reaches
+    // camera that produced it alone (docs/feature/done/multi-device.md §3). Reaches
     // the device that asked for the recalibration and no other, so no attempt
     // is ever reported twice here.
     effect(() => {

@@ -7,7 +7,7 @@ game — a 404 says it plainly).
 
 Everything that *changes* a game runs over the WebSocket instead, so one
 mutation reaches every device in the room on one path (core/socket/socket.py,
-docs/feature/multi-device.md §3).
+docs/feature/done/multi-device.md §3).
 """
 
 from fastapi import APIRouter, HTTPException, Query
@@ -63,7 +63,7 @@ async def create_game(body: GameConfigDto, user: CurrentUser) -> GameStateDto:
         raise HTTPException(status_code=422, detail="at least one player is required")
 
     # Anonymous play stays possible: without an account the game simply has no
-    # owner, and every seat is a fresh guest (docs/feature/persistenz.md §4.4).
+    # owner, and every seat is a fresh guest (docs/feature/done/persistenz.md §4.4).
     owner_id = user.id if user else None
 
     async with database.session_scope() as session:
@@ -79,7 +79,7 @@ async def create_game(body: GameConfigDto, user: CurrentUser) -> GameStateDto:
 async def list_games(
     user: AuthenticatedUser, limit: int = Query(20, ge=1, le=100), offset: int = Query(0, ge=0)
 ) -> list[GameSummaryDto]:
-    """My games — played in or written down (docs/feature/persistenz.md §4.2)."""
+    """My games — played in or written down (docs/feature/done/persistenz.md §4.2)."""
     async with database.session_scope() as session:
         summaries = await repository.summaries(session, user.id, limit=limit, offset=offset)
 

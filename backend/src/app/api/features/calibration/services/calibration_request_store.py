@@ -1,6 +1,6 @@
 """Who asked the game's cameras to recalibrate, and is waiting to hear back.
 
-Redis-backed. See docs/feature/multi-device.md §5c.
+Redis-backed. See docs/feature/done/multi-device.md §5c.
 """
 
 from app.infrastructure import redis_client

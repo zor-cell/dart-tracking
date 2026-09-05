@@ -4,7 +4,7 @@ Lebendes Dokument zur Feature- und Ablaufplanung des Dart-Tracking-Systems.
 Ergänzt [konzept.md](konzept.md) (das *Was* und *Warum*) und
 [zeitplan.md](zeitplan.md) (die *Termine*) um das *Wie* auf Feature-Ebene.
 Für einzelne Teilsysteme gibt es eigene Detaildokumente —
-[kalibrierung.md](feature/kalibrierung.md) beschreibt die Board-Kalibrierung auf
+[kalibrierung.md](feature/done/kalibrierung.md) beschreibt die Board-Kalibrierung auf
 Algorithmus-Ebene.
 
 > Status: Entwurf. Wird laufend verfeinert — insbesondere der Abschnitt
@@ -72,7 +72,7 @@ Angelehnt an die Phasen in [zeitplan.md](zeitplan.md).
 - [ ] Game-View: Kamera-Layout oben, Scoreboard unten (Scoreboard ✓, Kamera offen)
 - [ ] Board-Kalibrierung als expliziter Schritt (Button „Board erkennen" →
       Frame ans Backend → Homographie-Matrix zurück). Backend-Pipeline steht,
-      siehe [kalibrierung.md](feature/kalibrierung.md); offen ist die Anbindung der
+      siehe [kalibrierung.md](feature/done/kalibrierung.md); offen ist die Anbindung der
       Game-View
 - [ ] WebSocket-Protokoll erweitern (siehe [Abschnitt 4](#4-websocket-protokoll))
 - [ ] Threshold-Settings real an den `ThrowDetector` verdrahten
@@ -105,7 +105,7 @@ Angelehnt an die Phasen in [zeitplan.md](zeitplan.md).
 HTTP führt nur noch den Session-Lebenszyklus; alles, was ein Spiel *ändert*,
 läuft über den WebSocket — zusammen mit der Vision-Pipeline. Grund ist das
 geteilte Spiel: eine Änderung muss auf **einem** Weg jedes Gerät im Raum
-erreichen (siehe [multi-device.md](feature/multi-device.md)).
+erreichen (siehe [multi-device.md](feature/done/multi-device.md)).
 
 **HTTP (REST) — Session-Lebenszyklus**
 
@@ -157,7 +157,7 @@ einstellbar werden. Quelle: `throw-detector.ts` und `throw-capture.service.ts`.
 
 Die Parameter der **Board-Kalibrierung** (HSV-Grenzen, RANSAC-Iterationen,
 Band-Toleranzen) liegen separat in `board_detector.py` und sind in
-[kalibrierung.md](feature/kalibrierung.md) samt Begründung dokumentiert. Ob sie
+[kalibrierung.md](feature/done/kalibrierung.md) samt Begründung dokumentiert. Ob sie
 ebenfalls in die Settings-View gehören, ist offen — sie werden einmalig beim
 Kalibrieren gebraucht, nicht pro Wurf.
 
@@ -172,7 +172,7 @@ hier noch nicht verifiziert — vor Übernahme in die Arbeit selbst prüfen.**
 
 > **Implementiert.** Der eigene Ansatz — HSV-Segmentierung, Zwei-Ring-RANSAC
 > über Komponenten-Schwerpunkte, Ellipsen-Fit, Farbübergänge als
-> Punktkorrespondenzen — ist in [kalibrierung.md](feature/kalibrierung.md) beschrieben,
+> Punktkorrespondenzen — ist in [kalibrierung.md](feature/done/kalibrierung.md) beschrieben,
 > inklusive der verworfenen Alternativen (u. a. `HoughCircles`, dessen
 > Kreisannahme bei schräger Perspektive nicht trägt).
 

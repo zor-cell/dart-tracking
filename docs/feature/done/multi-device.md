@@ -3,7 +3,7 @@
 Plan für das Teilen einer laufenden Session mit weiteren Geräten: ein zweites
 Handy tritt bei, zeigt den Spielstand und kann Würfe buchen — während das
 Kamera-Handy unberührt bleibt (jede Berührung verwackelt die Kalibrierung).
-Ergänzt [roadmap.md §4](../roadmap.md#4-http--websocket-protokoll) um das
+Ergänzt [roadmap.md §4](../../roadmap.md#4-http--websocket-protokoll) um das
 Verbindungsmodell.
 
 > **Stand:** Schritte 1–5 aus §7 sind umgesetzt: Room-Registry mit Broadcast,
@@ -324,7 +324,7 @@ Skizze des Verfahrens, mit dem zwei Kameras zu *einem* Ergebnis kämen, statt zu
 zwei, zwischen denen niemand entscheiden kann. Nicht implementiert; hier
 festgehalten, weil die Herleitung erklärt, wo die Grenze des Einzelkamera-
 Ansatzes liegt (vgl. PEELA,
-[roadmap.md §6.4](../roadmap.md#64-vergleichs--end-to-end-ansätze)).
+[roadmap.md §6.4](../../roadmap.md#64-vergleichs--end-to-end-ansätze)).
 
 ### Der Restfehler ist kein Projektionsfehler
 
@@ -484,7 +484,7 @@ Fehlschlag ohnehin auf dem Gerät, an dem auch nachjustiert werden muss.
 2. **Das Rundenende.** `next_player` fordert dieselbe Rekalibrierung an. Das ist
    der wichtigere der beiden: am Rundenende werden die Pfeile aus dem Board
    gezogen, und das ist zugleich der Moment, in dem ein frisches Leer-Board als
-   Referenz aufgenommen werden kann (siehe [erkennung.md §1](erkennung.md)) und
+   Referenz aufgenommen werden kann (siehe [erkennung.md §1](../erkennung.md)) und
    der, in dem am ehesten gegen Board oder Kamera gestoßen wurde.
 
 Der zweite Auslöser hängt an einer Annahme: dass der Rundenwechsel **nach** dem

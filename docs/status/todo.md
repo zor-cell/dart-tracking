@@ -4,7 +4,7 @@ Wenig Aufwand:
 - nicht (closed) in wiki_timelogs
 - detection linien sind sehr falsch derzeit, ich glaub es werden auch welche geschickt, wenn nicht erkannt wurde
 - testdaten erstellung während eines spiels, dann komm ich locker auf 500+ pfeile
-  -> Plan: docs/feature/testdaten-aufnahme.md
+  -> Plan: docs/feature/done/testdaten-aufnahme.md
 - socket.py cleanen, die debug writes wirken dort fehl am platz
 - socket messages am client können verloren gehen, muss als queue drinnen sein wahrscheinlich
 

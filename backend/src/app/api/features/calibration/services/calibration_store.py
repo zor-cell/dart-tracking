@@ -4,7 +4,7 @@ Kept alongside the game rather than on the WebSocket connection: a calibration
 outlives any single socket (a reconnecting client must not have to re-aim the
 camera). It is per **camera in a position**, though, not per game — two phones
 filming the same board from two angles have nothing in common to share, so the
-client id is part of the key (see docs/feature/multi-device.md §5).
+client id is part of the key (see docs/feature/done/multi-device.md §5).
 
 Stored as JSON rather than pickled: readable in `redis-cli`, and a shared store
 must never be a source of arbitrary objects to unpickle.

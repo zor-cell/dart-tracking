@@ -1,6 +1,6 @@
 """The address book: the people this account has played with. Scoped to the
 caller on purpose — a global player search would be a user-enumeration endpoint
-(docs/feature/persistenz.md §4.3)."""
+(docs/feature/done/persistenz.md §4.3)."""
 
 from fastapi import APIRouter, Query
 

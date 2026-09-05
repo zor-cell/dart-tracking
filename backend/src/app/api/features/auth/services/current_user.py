@@ -1,6 +1,6 @@
 """Who is calling, if anyone. Auth is optional by design, so there are two
 dependencies: `CurrentUser` may be None, `AuthenticatedUser` answers 401
-(docs/feature/persistenz.md §6)."""
+(docs/feature/done/persistenz.md §6)."""
 
 from typing import Annotated
 

@@ -1,6 +1,6 @@
 """A person one plays with, account or not. Called an identity because the game
 feature's `Player` is the seat at the oche — this is who sits in it
-(docs/feature/persistenz.md §4.1)."""
+(docs/feature/done/persistenz.md §4.1)."""
 
 from dataclasses import dataclass
 

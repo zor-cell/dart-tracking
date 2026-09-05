@@ -2,7 +2,7 @@
 
 The server is the source of truth for every score, so a game is read fresh for
 each command and written back inside the same transaction (see
-docs/feature/persistenz.md §5.1/§5.2).
+docs/feature/done/persistenz.md §5.1/§5.2).
 """
 
 from uuid import UUID
@@ -149,7 +149,7 @@ class GameRepository:
 
         Both branches are needed: a game set up by a fellow player belongs in my
         history too, and one I only kept score for has no seat for me at all
-        (docs/feature/persistenz.md §4.2).
+        (docs/feature/done/persistenz.md §4.2).
         """
         mine = (
             select(GamePlayerTable.game_id)

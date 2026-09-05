@@ -103,7 +103,7 @@ folgende Wurf differenziert wird. Da das Weiterrollen nur bei Erfolg passiert,
 verhindert eine Ablehnung in Schritt 1 das automatisch mit.
 
 Im Bestätigungsmodus begrenzt die Rundenwechsel-Rekalibrierung
-([multi-device.md §5c](multi-device.md#5c-rekalibrierung-anfordern)) das Fenster
+([multi-device.md §5c](done/multi-device.md#5c-rekalibrierung-anfordern)) das Fenster
 auf eine Runde. Bei Auto-Advance nicht — siehe Schritt 3.
 
 **Erwartung.** Der beobachtete Fall verschwindet vollständig, unabhängig davon,
@@ -247,7 +247,7 @@ Personen-Blob wird als **Dart 1 des nächsten Spielers** regulär gebucht.
 
 Derselbe Schalter entscheidet über die Korrektheit der
 Rundenwechsel-Rekalibrierung: die verlässt sich darauf, dass der Wechsel *nach*
-dem Ziehen der Pfeile kommt ([multi-device.md §5c](multi-device.md#5c-rekalibrierung-anfordern)).
+dem Ziehen der Pfeile kommt ([multi-device.md §5c](done/multi-device.md#5c-rekalibrierung-anfordern)).
 Bei Auto-Advance kalibriert sie gegen ein volles Board.
 
 **Fix.** Wenn das Gerät filmt — oder allgemeiner: solange das Spiel eine
@@ -343,7 +343,7 @@ Abprallern, mit Wahrheit. Erst danach lässt sich die Regel überhaupt belegen.
 
 Solange das offen ist, bleibt der Abpraller ein Fall für die manuelle Korrektur
 am Scoreboard — was ausdrücklich einer der Gründe für dessen Eingabefeld ist
-([multi-device.md §1](multi-device.md#1-ziel)).
+([multi-device.md §1](done/multi-device.md#1-ziel)).
 
 ---
 

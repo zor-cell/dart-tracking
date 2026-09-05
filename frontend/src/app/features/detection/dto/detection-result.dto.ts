@@ -14,7 +14,7 @@ import { DetectionFailureDto } from './detection-failure.dto';
  * Everything here is in this camera's image space, and only that. Where the
  * dart landed on the board comes as board millimetres on `DartDto.position`
  * instead, which is camera-independent and so drawable by every device in the
- * room (docs/feature/multi-device.md §4a). The two look alike as pairs of
+ * room (docs/feature/done/multi-device.md §4a). The two look alike as pairs of
  * numbers and may never be mixed, so they do not share a message.
  */
 export interface DetectionResultDto {

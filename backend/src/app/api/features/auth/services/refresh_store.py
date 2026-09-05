@@ -1,6 +1,6 @@
 """Redis-backed refresh tokens, one key per active session. Redis for the same
 reason as the other hot stores: the TTL is the expiry, so nothing has to be
-cleaned up (docs/feature/persistenz.md §2.2)."""
+cleaned up (docs/feature/done/persistenz.md §2.2)."""
 
 import hashlib
 import secrets

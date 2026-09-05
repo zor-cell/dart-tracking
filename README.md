@@ -30,15 +30,35 @@ Hybrid-Architektur, um kontinuierliches Video-Streaming zu vermeiden:
 
 ## Dokumentation
 
+**Rahmen der Arbeit**
+
 | Dokument | Inhalt |
 |---|---|
 | [docs/konzept.md](docs/konzept.md) | Ausgangslage, MVP-Umfang, technische Herausforderungen |
-| [docs/feature/kalibrierung.md](docs/feature/kalibrierung.md) | Board-Erkennung: Algorithmen, Parameter, verworfene Ansätze |
-| [docs/feature/erkennung.md](docs/feature/erkennung.md) | Pfeil-Erkennung: Pipeline, Fehlerbehandlung, Messungen |
-| [docs/feature/multi-device.md](docs/feature/multi-device.md) | Geteilte Session, Geräte-Rollen, Socket-Protokoll |
-| [docs/feature/client-diff-verbesserungen.md](docs/feature/client-diff-verbesserungen.md) | Trigger-Zuverlässigkeit der Frame-Differenz |
 | [docs/roadmap.md](docs/roadmap.md) | Umsetzungsstand und geplante Schritte |
 | [docs/zeitplan.md](docs/zeitplan.md) | Phasenplan bis zur Einreichung |
+| [docs/todo.md](docs/todo.md) | Lose Sammlung offener Punkte |
+
+**Features in Arbeit** — `docs/feature/`
+
+| Dokument | Inhalt |
+|---|---|
+| [erkennung.md](docs/feature/erkennung.md) | Pfeil-Erkennung: Pipeline, Fehlerbehandlung, Messungen |
+| [erkennung-verbesserungen.md](docs/feature/erkennung-verbesserungen.md) | Geplante Einzelschritte an der Erkennung, mit Befund und Hebel |
+| [erkennung-blob.md](docs/feature/erkennung-blob.md) | „Der Pfeil muss als ein Blob ankommen" — die strukturelle Fehlerhälfte |
+| [client-diff-verbesserungen.md](docs/feature/client-diff-verbesserungen.md) | Trigger-Zuverlässigkeit der Frame-Differenz |
+
+**Abgeschlossen oder nicht weiter verfolgt** — `docs/feature/done/`
+
+| Dokument | Inhalt |
+|---|---|
+| [kalibrierung.md](docs/feature/done/kalibrierung.md) | Board-Erkennung: Algorithmen, Parameter, verworfene Ansätze |
+| [multi-device.md](docs/feature/done/multi-device.md) | Geteilte Session, Geräte-Rollen, Socket-Protokoll |
+| [persistenz.md](docs/feature/done/persistenz.md) | Was wo gespeichert wird: Postgres, Redis, Prozessspeicher |
+| [testdaten-aufnahme.md](docs/feature/done/testdaten-aufnahme.md) | Plan für Testdaten aus dem laufenden Spiel — nicht umgesetzt |
+
+**Zwischenstände** — `docs/status/`: Stichwortsammlungen für die Besprechungen
+mit dem Betreuer.
 
 Konventionen für Beiträge stehen in [CLAUDE.md](CLAUDE.md) und
 [docs/guidelines/](docs/guidelines/).
