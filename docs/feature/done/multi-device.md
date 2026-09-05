@@ -208,12 +208,32 @@ Radien in `board_geometry.py` sind mm, und die geplante Heatmap-Auswertung
 (konzept.md §5) ist eine mm-Auswertung. Vor allem aber hieße `[0.5, 0.5]` dann
 im einen Fall „Bildmitte" und im anderen „Bullseye" — zwei Werte, die aussehen
 als wären sie austauschbar, obwohl sie es nie sind. Die virtuelle Scheibe
-verbraucht die mm ohnehin direkt: ihre `viewBox` ist `-200 -200 400 400`, und
-`toSvg` ist nur ein y-Flip.
+verbraucht die mm ohnehin direkt: `toSvg` ist nur ein y-Flip, und die `viewBox`
+ist in denselben Einheiten aufgespannt.
 
 Die Geometrie (Radien, Sektorreihenfolge, Farbwechsel) ist im Frontend
 gespiegelt, weil gezeichnet wird, nicht gerechnet — gewertet wird weiterhin
 ausschließlich serverseitig.
+
+### Würfe, die neben dem Board gelandet sind
+
+Die Detektion sucht bis 225 mm hinaus, damit ein Pfeil im Surround überhaupt
+*gefunden* wird ([erkennung.md §2.1](../erkennung.md)) — die gezeichnete Scheibe
+reicht aber nur bis 200 mm. Ein Punkt darüber hinaus lag deshalb am Rand oder
+ganz außerhalb: teils angeschnitten, teils gar nicht sichtbar.
+
+Statt ihn zu verwerfen oder auf den Rand zu klemmen, zeigt die Ansicht für einen
+Treffer jenseits der Scheibe einen **Pfeil auf einem Randring** (Radius 202),
+gedreht in die Richtung, in die der Wurf gegangen ist, mit derselben Ziffer und
+Farbe wie ein normaler Marker. Über die 20 geworfen heißt also: kleiner Pfeil
+über der 20, nach oben zeigend. Die Richtung ist das, was von so einem Wurf
+übrig bleibt und noch etwas aussagt; der genaue Abstand nicht.
+
+Damit dieser Ring und die Beschriftungen am Rand nicht angeschnitten werden, ist
+die `viewBox` von der Scheibe entkoppelt: die Scheibe bleibt bei Radius 200, die
+`viewBox` spannt ±216. Das ist auch der Grund, warum die Randmarkierungen
+mittig auf ihrem Punkt sitzen statt wie die inneren an einer Ecke zu hängen — an
+einer Textgrundlinie aufgehängt ragen sie über den Rand hinaus.
 
 ---
 

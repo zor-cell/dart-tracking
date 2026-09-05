@@ -6,18 +6,29 @@ import {
   BOARD_SECTOR_NUMBERS,
   BOARD_SEGMENTS,
   BOARD_VIEW_BOX,
+  OFF_BOARD_MARKER_RADIUS,
 } from '../../models/board-face';
 import { BULLSEYE_RADIUS, BULL_RADIUS, toSvg } from '../../models/board-geometry';
 
-/** A dart drawn where its tip was located. */
+/** How far the ordinal sits from the arrow, across the direction it points. */
+const OFF_BOARD_LABEL_OFFSET = 15;
+
+/** An arrowhead pointing along +x, aimed by the marker's own rotation. */
+const ARROW_PATH = 'M 8 0 L -4 -6 L -4 6 Z';
+
+/** A dart drawn where its tip was located, or aimed off the board. */
 interface DartMarker {
   readonly x: number;
   readonly y: number;
+  readonly labelX: number;
+  readonly labelY: number;
   readonly label: string;
   /** Position within the visit (1–3), the tie to the dart boxes above. */
   readonly ordinal: number;
   /** The colour of this dart's outline on the camera phone (`dartColor`). */
   readonly color: string;
+  /** Places and aims the arrow; null for a tip that is on the board. */
+  readonly arrowTransform: string | null;
 }
 
 /**
@@ -46,13 +57,38 @@ export class VirtualBoardComponent {
   protected readonly backingRadius = BOARD_BACKING_RADIUS;
   protected readonly viewBox = BOARD_VIEW_BOX;
 
+  protected readonly arrowPath = ARROW_PATH;
+
   protected readonly markers = computed<DartMarker[]>(() =>
-    this.darts().flatMap((dart, index) => {
+    this.darts().flatMap((dart, index): DartMarker[] => {
       if (dart.position === null) {
         return [];
       }
       const [x, y] = toSvg(dart.position[0], dart.position[1]);
-      return [{ x, y, label: dart.label, ordinal: index + 1, color: dartColor(index) }];
+      const shared = { label: dart.label, ordinal: index + 1, color: dartColor(index) };
+      const radius = Math.hypot(x, y);
+
+      if (radius <= BOARD_BACKING_RADIUS) {
+        return [{ ...shared, x, y, labelX: x + 10, labelY: y - 8, arrowTransform: null }];
+      }
+
+      // Off the board there is nothing to point at, so the marker keeps only the
+      // direction: an arrow on the margin ring, aimed the way the dart flew.
+      const unitX = x / radius;
+      const unitY = y / radius;
+      const markerX = unitX * OFF_BOARD_MARKER_RADIUS;
+      const markerY = unitY * OFF_BOARD_MARKER_RADIUS;
+      const angle = (Math.atan2(unitY, unitX) * 180) / Math.PI;
+      return [
+        {
+          ...shared,
+          x: markerX,
+          y: markerY,
+          labelX: markerX - unitY * OFF_BOARD_LABEL_OFFSET,
+          labelY: markerY + unitX * OFF_BOARD_LABEL_OFFSET,
+          arrowTransform: `translate(${markerX.toFixed(2)} ${markerY.toFixed(2)}) rotate(${angle.toFixed(2)})`,
+        },
+      ];
     }),
   );
 
@@ -61,6 +97,8 @@ export class VirtualBoardComponent {
     return placed.length === 0
       ? 'Virtuelle Dartscheibe, keine erkannten Treffer dieser Runde'
       : `Virtuelle Dartscheibe mit ${placed.length} erkannten Treffern dieser Runde: ` +
-          placed.map((marker) => marker.label).join(', ');
+          placed
+            .map((marker) => (marker.arrowTransform === null ? marker.label : `${marker.label}, daneben`))
+            .join(', ');
   });
 }

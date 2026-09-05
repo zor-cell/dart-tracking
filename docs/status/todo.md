@@ -1,7 +1,8 @@
 TODOs:
 
 Wenig Aufwand:
-- detection linien sind sehr falsch derzeit, ich glaub es werden auch welche geschickt, wenn nicht erkannt wurde
+- checkout boxes fixen, die fomratieren sich komscih
+- spieler anzeige im spiel view sollte ein karoussel sein, damit alles auf die phone view passt
 
 Viel Aufwand:
 - client diff löst ja derzeit öfter aus, fokus auf recall, das backend muss da was checken (ist das überhaupt möglich), weil

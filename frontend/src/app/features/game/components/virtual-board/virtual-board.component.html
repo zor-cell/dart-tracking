@@ -16,8 +16,17 @@
        darts in, so one throw is one colour on both screens. -->
   @for (marker of markers(); track $index) {
     <g class="board__marker">
-      <circle [attr.cx]="marker.x" [attr.cy]="marker.y" r="4" [attr.fill]="marker.color" />
-      <text [attr.x]="marker.x + 10" [attr.y]="marker.y - 8" [attr.fill]="marker.color">
+      @if (marker.arrowTransform === null) {
+        <circle [attr.cx]="marker.x" [attr.cy]="marker.y" r="4" [attr.fill]="marker.color" />
+      } @else {
+        <path [attr.d]="arrowPath" [attr.fill]="marker.color" [attr.transform]="marker.arrowTransform" />
+      }
+      <text
+        [class.board__marker--aimed]="marker.arrowTransform !== null"
+        [attr.x]="marker.labelX"
+        [attr.y]="marker.labelY"
+        [attr.fill]="marker.color"
+      >
         {{ marker.ordinal }}
       </text>
     </g>

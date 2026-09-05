@@ -33,11 +33,16 @@ export interface SectorNumber {
 /** Where the sector values sit, far enough out to clear the double ring. */
 const NUMBER_RADIUS = 186;
 
-/** Half of the drawn area's edge length, leaving room for the numbers. */
-const VIEW_EXTENT = 200;
+/** The drawn board disc; a tip beyond it has no place on the face. */
+export const BOARD_BACKING_RADIUS = 200;
+
+/** Where a dart that landed off the board is marked, in the margin around it. */
+export const OFF_BOARD_MARKER_RADIUS = 202;
+
+/** Half the drawn area's edge length: the board plus the off-board margin. */
+const VIEW_EXTENT = 216;
 
 export const BOARD_VIEW_BOX = `${-VIEW_EXTENT} ${-VIEW_EXTENT} ${VIEW_EXTENT * 2} ${VIEW_EXTENT * 2}`;
-export const BOARD_BACKING_RADIUS = VIEW_EXTENT;
 
 /**
  * Builds one ring band of one sector as an SVG path: along the inner arc,
