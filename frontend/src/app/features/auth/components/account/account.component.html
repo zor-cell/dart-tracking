@@ -1,7 +1,13 @@
 <section class="view">
   <header class="view__header">
     <h1 class="view__title">Konto</h1>
-    <p class="view__subtitle">Angemeldet auf diesem Gerät</p>
+    <p class="view__subtitle">
+      @if (user()) {
+        Angemeldet auf diesem Gerät
+      } @else {
+        Nicht angemeldet
+      }
+    </p>
   </header>
 
   @if (user(); as account) {
@@ -19,12 +25,49 @@
         <dd class="account__value">{{ account.createdAt | date: 'dd.MM.yyyy' }}</dd>
       </div>
     </dl>
+  } @else {
+    <div class="view__actions">
+      <p-button fluid label="Anmelden" icon="pi pi-sign-in" routerLink="/login" />
+      <p-button
+        fluid
+        label="Registrieren"
+        icon="pi pi-user-plus"
+        severity="secondary"
+        [outlined]="true"
+        routerLink="/register"
+      />
+    </div>
+  }
 
+  <nav class="pages" aria-label="Weitere Seiten">
+    @if (user()) {
+      <a class="pages__link" routerLink="/account/stats">
+        <i class="pages__icon pi pi-chart-bar" aria-hidden="true"></i>
+        <span class="pages__text">
+          <span class="pages__label">Statistik</span>
+          <span class="pages__hint">Average, Checkout-Quote und Spielverlauf</span>
+        </span>
+        <i class="pages__chevron pi pi-chevron-right" aria-hidden="true"></i>
+      </a>
+    }
+
+    <a class="pages__link" routerLink="/account/settings">
+      <i class="pages__icon pi pi-cog" aria-hidden="true"></i>
+      <span class="pages__text">
+        <span class="pages__label">Einstellungen</span>
+        <span class="pages__hint">Gelten nur auf diesem Gerät</span>
+      </span>
+      <i class="pages__chevron pi pi-chevron-right" aria-hidden="true"></i>
+    </a>
+  </nav>
+
+  @if (user()) {
     <p-button
       fluid
       label="Abmelden"
       icon="pi pi-sign-out"
       severity="secondary"
+      [text]="true"
       [loading]="busy()"
       (onClick)="logout()"
     />

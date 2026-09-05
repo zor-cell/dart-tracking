@@ -64,6 +64,13 @@ die gelten immer. Zusätzlich als Geruchsprobe, aber nur bei Dateien ab ca. 100
 Zeilen: über ~15 % Kommentaranteil ist es zu viel. Bei kleinen Dateien ist der
 Prozentsatz aussagelos, weil ein einzelner Modul-Docstring schon 20 % ausmacht.
 
+## Git
+**Neu angelegte Dateien immer mit `git add` in den Index legen**, sobald sie
+fertig sind — auch Migrationen, Doku und Testskripte.
+
+**Nur `git add`.** Kein `git commit`, kein `git push`, kein Branch- oder
+Stash-Kommando — wann und was committet wird, entscheide ich.
+
 ## Commands
 - `npm run start` — Frontend starten
 - `uv run uvicorn app.main:app --app-dir src --reload` — Backend starten

@@ -41,14 +41,13 @@ export const routes: Routes = [
   },
   {
     path: 'account',
-    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/auth/components/account/account.component').then(
         (m) => m.AccountComponent,
       ),
   },
   {
-    path: 'stats',
+    path: 'account/stats',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/statistics/components/statistics/statistics.component').then(
@@ -56,9 +55,11 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'settings',
+    path: 'account/settings',
     loadComponent: () =>
-      import('./features/settings/components/settings/settings.component').then((m) => m.SettingsComponent),
+      import('./features/settings/components/settings/settings.component').then(
+        (m) => m.SettingsComponent,
+      ),
   },
   { path: '**', redirectTo: 'start' },
 ];

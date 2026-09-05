@@ -13,8 +13,6 @@ export class BottomNavComponent {
   protected readonly items: readonly NavItem[] = [
     { path: '/start', label: 'Start', icon: 'pi-home' },
     { path: '/game', label: 'Spiel', icon: 'pi-play-circle' },
-    { path: '/settings', label: 'Einstellungen', icon: 'pi-cog' },
-    { path: '/stats', label: 'Statistik', icon: 'pi-chart-bar' },
     { path: '/account', label: 'Konto', icon: 'pi-user' },
   ];
 }

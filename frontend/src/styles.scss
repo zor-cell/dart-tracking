@@ -56,6 +56,12 @@ body {
   font-size: 0.95rem;
 }
 
+/* Back link sitting above a view title; shrinks to its own label. */
+.view__back {
+  align-self: flex-start;
+  margin-left: -0.75rem;
+}
+
 .view__actions {
   display: flex;
   flex-direction: column;

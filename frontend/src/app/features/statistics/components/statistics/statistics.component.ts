@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { GameSummaryDto, GameStatus } from '../../../game/dto/game-summary.dto';
 import { GameHistoryService } from '../../../game/services/game-history.service';
@@ -19,7 +20,7 @@ const STATUS_LABELS: Record<GameStatus, string> = {
 
 @Component({
   selector: 'app-statistics',
-  imports: [Button, BoardHeatmapComponent, DatePipe, DecimalPipe],
+  imports: [Button, BoardHeatmapComponent, DatePipe, DecimalPipe, RouterLink],
   templateUrl: './statistics.component.html',
   styleUrl: './statistics.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
