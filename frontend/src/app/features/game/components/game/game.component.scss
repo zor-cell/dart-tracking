@@ -1,13 +1,34 @@
+// The game view is the one screen that must not scroll: every correction during
+// a visit would otherwise start with hunting for the keypad. The host fills the
+// shell's content box exactly, and the two blocks that can take any size — the
+// picture and the keypad — absorb whatever is left over.
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+// `.view`'s auto side margins suppress the flex stretch that would otherwise
+// size these to the shell, so the width is stated outright.
+:host > .view {
+  width: 100%;
 }
 
 .game {
-  gap: 1rem;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  gap: 0.6rem;
+  padding: 0.75rem;
 }
 
 .game__camera {
   position: relative;
+  // Asks for its 4/3 shape and gives way from there, like the board does; the
+  // video is `object-fit: cover`, so a shorter box crops rather than distorts.
+  flex: 0 1 auto;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -73,10 +94,16 @@
 // in the same corner whichever of the two this device shows. The board is a
 // circle in a square box, so that corner is empty — but only for the icon-only
 // button; a labelled one is wide enough to reach the sector numbers.
+// Asks for the board's full size and gives way from there: surplus height goes
+// to the keypad's tap targets rather than to empty space around a square, and
+// on a short screen the board is what shrinks.
 .game__board {
   position: relative;
+  flex: 0 1 16rem;
+  min-height: 0;
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 
 .game__recalibrate {
@@ -156,6 +183,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+  flex: 0 1 auto;
   max-height: 9rem;
   overflow-y: auto;
   border: 1px solid var(--p-content-border-color, #e5e7eb);
@@ -289,10 +317,14 @@
   font-variant-numeric: tabular-nums;
 }
 
+// No `min-height: 0` here or on the keypad, deliberately: their automatic
+// minimum is what stops flex from shrinking them past the last key row and
+// letting it be clipped. The picture above absorbs the shortfall instead.
 .turn {
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 // The dart boxes and, in camera mode, the confirm button sit on one row.
@@ -347,8 +379,12 @@
 // Dartboard keypad. Ten columns so the number/side keys span two each (five
 // across) and the Double/Triple keys span five (2.5 number widths).
 .scorepad {
+  flex: 1 1 auto;
   display: grid;
   grid-template-columns: repeat(10, 1fr);
+  // Rows share the height left over instead of each claiming a fixed 3rem, so
+  // the pad gives way on a short screen rather than pushing itself off it.
+  grid-auto-rows: minmax(2.25rem, 1fr);
   gap: 0.4rem;
 }
 
@@ -358,7 +394,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.15rem;
-  min-height: 3rem;
+  min-height: 0; // the row track sets the height; 2.25rem is its floor
   padding: 0.25rem;
   border: 1px solid var(--p-content-border-color, #e5e7eb);
   border-radius: 0.5rem;
