@@ -44,6 +44,7 @@ sondern eine fehlende Prüfung.
 | 5 | [Diff auf die Board-Region beschränken](#5-diff-auf-die-board-region-beschränken-client) | Client | M | offen |
 | 6 | [Der abgefallene Pfeil ist eine Null](#6-der-abgefallene-pfeil-ist-eine-null) | beide | L | offen, ungelöst |
 | 7 | [Darts jenseits des dritten verwerfen](#7-darts-jenseits-des-dritten-verwerfen-verworfen) | Server | – | **verworfen** — existiert bereits und hilft nicht |
+| 8 | [Kein Frame, solange die Runde keinen Dart annimmt](#8-kein-frame-solange-die-runde-keinen-dart-annimmt-client) | Client | S | **erledigt** — vierte Wurflinie im Bestätigungsmodus |
 
 **Messdisziplin.** Schritt 1 wird wie die Server-Schritte mit
 `scripts/detection/run_all.py` gegen den Testsatz belegt: die Grenze darf keinen
@@ -372,6 +373,54 @@ camera trigger"*. Es ist also nichts zu bauen, und es hilft trotzdem nicht:
 
 Die Regel behandelt ein Symptom auf der Ebene der Spielregeln, während die
 Ursache eine Ebene tiefer liegt.
+
+Den zweiten dieser Einwände hat inzwischen Schritt 8 erledigt — allerdings von
+der anderen Seite: nicht indem der Server den Dart verwirft, sondern indem der
+Client den Frame gar nicht erst schickt.
+
+---
+
+## 8. Kein Frame, solange die Runde keinen Dart annimmt *(Client)*
+
+**Befund.** Im Bestätigungsmodus bleibt die Schleife nach dem dritten Dart voll
+aktiv. Der Spieler geht zum Board, der Trigger feuert, der Server erkennt einen
+„Pfeil" — und über den drei echten erscheint eine **vierte** Wurflinie.
+
+Die dafür vorgesehene Selbstheilung greift nicht. `_handle_throw_frame` pusht den
+`game_state` bewusst auch dann, wenn das Spiel den Dart geschluckt hat, damit
+*„the camera trims its drawn outlines against this state"*. Nur erhöht
+`register_dart` beim vierten Dart die `revision` nicht — der Client verwirft den
+Push in `GameService.setState` als veraltet, der `reconcileRound`-Effect läuft
+nie, und die vierte Linie bleibt stehen.
+
+**Fix.** Zwei Stellen, beide im Client:
+
+1. `DetectionService.acceptsThrows` spiegelt die Vorbedingung des Servers
+   (`winner is None and darts_remaining > 0`). Die Schleife in
+   `frame-diff.service.ts` sendet nur, solange sie wahr ist. Der Zustandsautomat
+   läuft weiter, damit er im Takt des Bildes bleibt — zurückgehalten wird nur
+   der Frame.
+2. `appendDart` zeichnet nichts, wenn die Runde keinen Dart mehr annimmt. Das
+   fängt den Frame ab, der beim Schließen des Tors schon unterwegs war:
+   Kodierung, Netz und Detektion dauern länger als das 60-ms-Raster der
+   Schleife.
+
+Weil das Tor aus dem Spielstand abgeleitet ist, öffnet **Zurück** es von selbst
+wieder — der Undo hebt `darts_remaining` zurück auf 1. Ein Bust schließt es
+ebenso, weil `darts_remaining` dort 0 ist; auch das deckt sich mit dem Server.
+
+**Verhältnis zu Schritt 7.** Dort ging es darum, dass der *Server* überzählige
+Darts verwirft — das tut er längst. Einer der Einwände war, dass der
+Referenz-Frame trotzdem auf das Personenbild weiterrollt: `_handle_throw_frame`
+setzt ihn, bevor überhaupt gebucht wird. Genau das behebt das Tor, ein nie
+gesendeter Frame kann den Referenz-Frame nicht verschieben. Die beiden anderen
+Einwände bleiben und gehören woanders hin: bei **Auto-Advance** ist die Runde
+sofort wieder leer und das Tor damit offen (→ Schritt 3), und ein Fehlauslöser
+**innerhalb** einer Runde wird davon gar nicht berührt (→ Schritte 2, 4, 5).
+
+**Nebeneffekt.** Die Badge zeigt „Tracking pausiert" statt „Bereit", solange
+nichts gesendet wird. Ohne das sieht ein bewusst ignorierter Wurf aus wie ein
+übersehener.
 
 ---
 

@@ -1,4 +1,4 @@
-import { effect, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SocketService } from '../../../core/socket/services/socket.service';
 import { SettingsService } from '../../settings/services/settings.service';
@@ -77,6 +77,16 @@ export class DetectionService {
   readonly feedbackLabel = signal<string | null>(null);
 
   /**
+   * Whether a tracked throw could still be booked. Mirrors the precondition in
+   * the server's `Game.register_dart`, so the two cannot disagree about what a
+   * full, busted or won visit accepts.
+   */
+  readonly acceptsThrows = computed(() => {
+    const state = this.game.state();
+    return state !== null && state.winnerId === null && state.dartsRemaining > 0;
+  });
+
+  /**
    * Recent detect→send→answer events, newest first — the persistent trace behind
    * the fleeting badge, shown only in the client debug view.
    */
@@ -124,6 +134,11 @@ export class DetectionService {
   }
 
   private appendDart(polylines: number[][][]): void {
+    // A result for a visit that can take no more darts is a phantom trigger:
+    // someone walking up to the board while the confirm tap is pending.
+    if (!this.acceptsThrows()) {
+      return;
+    }
     this.roundDarts.update((darts) => [
       ...darts,
       { polylines, color: dartColor(darts.length) },

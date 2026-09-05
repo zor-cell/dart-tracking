@@ -26,6 +26,7 @@ const STATUS_LABELS: Record<DisplayStatus, string> = {
   motion: 'Bewegung erkannt',
   settling: 'Wird stabilisiert…',
   sent: 'Frame gesendet',
+  paused: 'Tracking pausiert',
 };
 
 /**
@@ -182,9 +183,12 @@ export class FrameDiffService {
 
     const debugOn = this.debugContext !== null;
     const captured = this.detector.processFrame(grayscale, debugOn ? this.mask : undefined);
-    this.setDisplayStatus(captured ? 'sent' : this.detector.getState());
+    // The detector keeps running while the visit is closed, so it stays in step
+    // with the picture; only the frame is held back.
+    const sending = captured && this.detection.acceptsThrows();
+    this.setDisplayStatus(sending ? 'sent' : this.restingStatus());
 
-    if (captured) {
+    if (sending) {
       this.captureCount++;
       this.captureAndSendFrame(video);
     }
@@ -202,8 +206,13 @@ export class FrameDiffService {
       clearTimeout(this.sentDisplayTimeoutId);
     }
     this.sentDisplayTimeoutId = setTimeout(() => {
-      this.setDisplayStatus(this.detector.getState());
+      this.setDisplayStatus(this.restingStatus());
     }, SENT_DISPLAY_DURATION_MS);
+  }
+
+  /** What to show while no frame is going out. */
+  private restingStatus(): DisplayStatus {
+    return this.detection.acceptsThrows() ? this.detector.getState() : 'paused';
   }
 
   /** Paint the change mask (every frame) and emit throttled numbers. */
