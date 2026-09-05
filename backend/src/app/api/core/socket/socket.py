@@ -10,6 +10,7 @@ frontend's core/socket/dto/client-message.ts).
 
 import asyncio
 import base64
+import logging
 from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
@@ -70,6 +71,8 @@ from app.infrastructure import database
 
 router = APIRouter(prefix="/ws", tags=["Tracking"])
 
+logger = logging.getLogger(__name__)
+
 _TESTDATA_ROOT = Path(__file__).resolve().parents[4] / "testdata"
 _CALIBRATION_DEBUG_ROOT = _TESTDATA_ROOT / "calibration" / "_socket_debug"
 _DETECTION_DEBUG_ROOT = _TESTDATA_ROOT / "detection" / "_socket_debug"
@@ -116,7 +119,7 @@ async def websocket_endpoint(
             try:
                 message = client_message_adapter.validate_json(raw)
             except ValidationError as error:
-                print(f"[socket] ignored message: {error}")
+                logger.warning("[socket] ignored malformed message: %s", error)
                 continue
 
             await _dispatch(connection, game_id, message)
@@ -143,13 +146,22 @@ async def _dispatch(
     `request_calibration` is likewise open to any device: it is what a phone
     without a picture of its own has instead of the calibrate button.
     """
-    print(f"[socket] {message.type} from {connection.client.id} ({connection.client.role})")
+    logger.info(
+        "[socket] %s from %s (%s)",
+        message.type,
+        connection.client.id,
+        connection.client.role,
+    )
 
     match message:
         case (CalibrationFrameDto() | DetectionFrameDto()) if (
             connection.client.role is not DeviceRole.CAMERA
         ):
-            print(f"[socket] ignored {message.type} from a {connection.client.role} device")
+            logger.warning(
+                "[socket] ignored %s from a %s device",
+                message.type,
+                connection.client.role,
+            )
         case CalibrationFrameDto():
             await _handle_calibration_frame(connection, game_id, message)
         case DetectionFrameDto():
@@ -408,7 +420,7 @@ def _write_calibration_debug(
     """
     out_dir = _CALIBRATION_DEBUG_ROOT / game_id / client_id / _timestamp()
     written = write_calibration_debug_images(board_detector.trace, outcome, out_dir)
-    print(f"[calibration debug] {len(written)} image(s) in {out_dir}")
+    logger.info("[calibration debug] %d image(s) in %s", len(written), out_dir)
 
 
 def _write_detection_debug(
@@ -422,7 +434,7 @@ def _write_detection_debug(
     dart = outcome if isinstance(outcome, Dart) else None
     out_dir = _DETECTION_DEBUG_ROOT / game_id / client_id / _timestamp()
     written = write_detection_debug_images(dart_detector.trace, dart, out_dir)
-    print(f"[detection debug] {len(written)} image(s) in {out_dir}")
+    logger.info("[detection debug] %d image(s) in %s", len(written), out_dir)
 
 
 def _timestamp() -> str:

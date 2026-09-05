@@ -15,6 +15,7 @@ src/app/
 ├─ infrastructure/             # process plumbing; knows nothing about darts
 │  ├─ config.py                # Settings (pydantic-settings), reads the root .env
 │  ├─ database.py              # async SQLAlchemy engine, session factory, Base
+│  ├─ logging_config.py        # routes the `app` logger through uvicorn's handlers
 │  └─ redis_client.py          # async Redis client
 └─ api/
    ├─ health.py                # trivial single-endpoint routers stay flat
@@ -107,6 +108,16 @@ src/app/
 - Prefer `IntEnum`/`StrEnum` when the value carries meaning (`GameMode` *is* the
   starting score): arithmetic keeps working and the JSON stays a plain number, so
   the wire format does not change.
+
+## Logging
+- Use `logging.getLogger(__name__)` in app code, never `print()`. The `app`
+  logger tree is wired onto uvicorn's handlers in `main.lifespan`
+  (`infrastructure/logging_config.py`), so records appear in the server's format
+  and follow its `--log-level`.
+- Pass values as arguments (`logger.info("%s from %s", a, b)`) rather than
+  f-strings, so the formatting is skipped when the level is off.
+- The CLI runners in `backend/scripts/` keep `print()`: there the output *is*
+  the program's result, not a diagnostic.
 
 ## State & Persistence
 - Game/session state is server-authoritative (see roadmap §4 and §7); the client

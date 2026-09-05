@@ -12,6 +12,7 @@ from app.api.features.player import players
 from app.api.features.statistics import statistics
 from app.infrastructure import database, redis_client
 from app.infrastructure.config import get_settings
+from app.infrastructure.logging import configure_logging
 
 settings = get_settings()
 
@@ -19,6 +20,7 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Hold the database and Redis connections for the lifetime of the app."""
+    configure_logging()
     database.init(settings.database_url)
     redis_client.init(settings.redis_url)
     yield
