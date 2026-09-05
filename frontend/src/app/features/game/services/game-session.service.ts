@@ -1,4 +1,5 @@
-import { Injectable, effect, inject, signal, untracked } from '@angular/core';
+import { Injectable, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CalibrationService } from '../../calibration/services/calibration.service';
 import { CameraService } from '../../camera/services/camera.service';
 import { FrameDiffService } from '../../detection/services/frame-diff.service';
@@ -70,12 +71,14 @@ export class GameSessionService {
     // of a visit, when the darts have just come out of the board. The server
     // sends it to camera devices only; the phase is what says whether this one
     // has a running picture to answer it with.
-    effect(() => {
-      const message = this.socket.lastMessage();
-      if (message?.type === 'calibration_requested' && untracked(this.phase) !== 'idle') {
-        void untracked(() => this.calibrate());
-      }
-    });
+    this.socket
+      .on('calibration_requested')
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.phase() !== 'idle') {
+          void this.calibrate();
+        }
+      });
 
     // Mirror the live phase into storage so a refresh can resume from it.
     effect(() => {

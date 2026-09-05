@@ -1,4 +1,5 @@
 import { effect, inject, Injectable, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SocketService } from '../../../core/socket/services/socket.service';
 import { SettingsService } from '../../settings/services/settings.service';
 import { GameService } from '../../game/services/game.service';
@@ -88,12 +89,10 @@ export class DetectionService {
 
   constructor() {
     // Located darts arrive over the socket, one `detection_result` per throw.
-    effect(() => {
-      const message = this.socket.lastMessage();
-      if (message?.type === 'detection_result') {
-        this.handleDetectionResult(message);
-      }
-    });
+    this.socket
+      .on('detection_result')
+      .pipe(takeUntilDestroyed())
+      .subscribe((result) => this.handleDetectionResult(result));
 
     // Round boundaries are reconciled off the game state itself, not the socket:
     // confirming a visit (the camera-mode "next player" tap) is an HTTP call that

@@ -454,23 +454,17 @@ Kamera-Handy zuverlässig aufgehängt: Der Ladebalken drehte endlos, weil die
 Kamera **zwei** Nachrichten für einen Versuch bekam — erst ihr
 `calibration_result`, unmittelbar danach den Broadcast.
 
-Der Client hält den Socket in einem **Signal** (`SocketService.lastMessage`),
-nicht in einem Stream. Ein Signal trägt den letzten Wert, keine Warteschlange,
-und die App läuft zoneless: Effects laufen nicht pro Zuweisung, sondern beim
-nächsten geplanten Tick. Zwei Nachrichten innerhalb eines Frames werden damit zu
-*einem* Effect-Lauf zusammengefasst, der nur die zweite sieht. Das
-`calibration_result` wurde also nie beobachtet und `status` blieb auf
+Die Ursache lag im Client und ist inzwischen behoben (§6a): der Socket führte
+die ankommenden Nachrichten in einem Signal, das nur den letzten Wert trägt, und
+zwei Nachrichten in einem Frame ergaben einen Effect-Lauf, der nur die zweite
+sah. Das `calibration_result` wurde nie beobachtet, `status` blieb auf
 `'pending'`.
 
-Daraus die Regel, die das Protokoll seitdem einhält: **kein Gerät bekommt zu
-einem Versuch mehr als eine Nachricht.** Die Kamera ihr Ergebnis, der Anfragende
-seinen Status, sonst niemand. Das ist ohnehin die richtige Adressierung — der
-Status beantwortet eine Frage, und nur wer sie gestellt hat, wartet auf die
-Antwort.
-
-> Dieselbe Falle steht im Detection-Pfad noch offen: `detection_result` und
-> `game_state` gehen unmittelbar nacheinander an die buchende Kamera. Solange
-> `lastMessage` ein Signal ist, ist jedes solche Paar anfällig.
+Die Adressierung ist trotzdem geblieben, weil sie unabhängig davon richtig ist:
+die Kamera bekommt ihr Ergebnis, der Anfragende seinen Status, sonst niemand.
+Der Status beantwortet eine Frage, und nur wer sie gestellt hat, wartet auf die
+Antwort. Weggefallen ist nur der *Zwang* — das Protokoll dürfte inzwischen zwei
+Nachrichten an ein Gerät schicken, es hat hier bloß keinen Grund dazu.
 
 Wie der Status aufbereitet wird: **Fehlschläge** immer — ab dem Moment wird
 nichts mehr korrekt gewertet. Ein **Erfolg** nur als Antwort auf einen eigenen
@@ -531,12 +525,74 @@ Referenz, die die gezogenen Pfeile noch enthält.
 - **Doppelbuchung durch zwei Personen.** Tippen beide manuell denselben Wurf,
   zählt er doppelt. Server-seitig nicht lösbar; wird über die Rollen-UI
   entschärft, nicht verhindert.
-- **`lastMessage` ist ein Signal, kein Stream.** Ein Signal hält den letzten
-  Wert, und zoneless laufen Effects erst beim nächsten Tick — zwei Nachrichten
-  in einem Frame ergeben einen Lauf, der nur die zweite sieht. Das Protokoll
-  weicht dem aus (§5c), aber das ist Disziplin, keine Absicherung: der Server
-  darf zu einem Vorgang nie zwei Nachrichten an dasselbe Gerät schicken. Robust
-  wäre, den Socket im Client als Stream zu führen und pro Nachricht zuzustellen.
+
+---
+
+## 6a. Nachrichten als Stream, nicht als Signal
+
+`SocketService` hielt die zuletzt eingetroffene Server-Nachricht in einem Signal
+(`lastMessage`), und die fünf Konsumenten lasen es je in einem `effect()`. Das
+ist die Ursache hinter dem Aufhänger aus §5c — kein Einzelfall, sondern ein
+struktureller Fehler in der Transportschicht.
+
+**Warum das Nachrichten verliert.** Ein Signal ist eine Zustandszelle, kein
+Stream: es trägt den letzten Wert, keine Warteschlange. Effects laufen nicht
+synchron pro Zuweisung, sondern gebündelt beim nächsten Change-Detection-Lauf.
+Die App ist zoneless (Angular 21, kein `zone.js` in den Dependencies, kein
+`provideZoneChangeDetection`), der Scheduler feuert also über einen
+`requestAnimationFrame`/`setTimeout`-Race — bis zu ~16 ms später. Beide
+`message`-Events sind in dieser Zeit längst durchgelaufen; der Effect sieht nur
+den zweiten Wert, der erste wurde nie beobachtet.
+
+Wichtig für die Einordnung: **auf der Socket-Ebene geht nichts verloren.**
+WebSocket läuft über TCP, ist geordnet und zuverlässig, und der Listener feuert
+auch zweimal. Der Verlust entsteht erst danach, im Client.
+
+**Wo es zuschlug.** Drei Stellen im Backend schicken zwei Nachrichten
+unmittelbar hintereinander an dasselbe Gerät:
+
+| Auslöser | Nachrichten | verschluckt wurde |
+|---|---|---|
+| `next_player` | `game_state`, dann `calibration_requested` | `game_state` auf dem Kamera-Gerät |
+| Wurf-Frame | `detection_result`, dann `game_state` | `detection_result` |
+| Handshake | `client_state`, dann `game_state` | nichts — `client_state` wird synchron im Listener gelesen, nicht in einem Effect |
+
+Der erste ist der auffällige: Nach „Weiter" auf dem Scoreboard rekalibrierte die
+Kamera, ihr Spielstand blieb aber einen Visit zurück — und weil
+`DetectionService` die Rundengrenze aus `game.state()?.turns` liest, blieben
+zusätzlich die Outlines des beendeten Visits stehen. Der zweite traf jeden
+getrackten Wurf und kostete das Wurf-Feedback samt Overlay.
+
+**Warum es intermittierend wirkte.** Zwischen den beiden Sends steht jeweils ein
+`await` mit echter Latenz — ein Redis-Roundtrip (`calibration_request_store`)
+beziehungsweise ein DB-Commit. Fällt der zufällig über eine Frame-Grenze, kommen
+beide Effects einzeln dran und alles funktioniert. Deshalb sah der Fehler beim
+Testen sporadisch aus statt reproduzierbar.
+
+**Der Fix.** Der Nachrichteneingang ist ein `Subject<ServerMessage>`, und
+`SocketService.on(type)` liefert den gefilterten, typ-verengten Stream:
+
+```ts
+this.socket
+  .on('game_state')
+  .pipe(takeUntilDestroyed())
+  .subscribe((state) => { /* ... */ });
+```
+
+Jede Nachricht wird genau einmal zugestellt, in Ankunftsreihenfolge, unabhängig
+davon wie viele das Backend hintereinander schickt. Der *Zustand* bleibt in
+Signals (`game.state()`, `calibration.status()`) — nur der Eingang ist keiner
+mehr, denn ein ankommendes Event ist kein Zustand.
+
+Nebeneffekt: In `GameService` fiel die `untracked()`-Konstruktion weg. Sie war
+ein zweiter Ausläufer derselben Wurzel — der Effect hing über `setState()` an
+seinem eigenen Cache, sodass `reset()` ihn mit der letzten Nachricht in der Hand
+erneut auslöste und das gerade beendete Spiel wiederherstellte. Mit einem Stream
+existiert das Problem nicht.
+
+Nicht umgestellt wurden die Effects, die echte *Signale* beobachten
+(`calibration.status()`, `game.state()?.turns`, `phase()`). Die sind richtig als
+Effect: dort interessiert der aktuelle Wert, nicht jede Zwischenstufe.
 
 ---
 

@@ -290,9 +290,8 @@ async def _handle_calibration_frame(
 
     If another device asked for this calibration, the outcome also goes to that
     one as `calibration_status`, stripped of the overlay only this camera can
-    place. It goes there and nowhere else — least of all back to this camera,
-    which would then receive two messages for one attempt and, the client
-    holding only the latest, act on the wrong one.
+    place. It goes there and nowhere else: the status answers a question, and
+    only the device that asked is waiting on it.
     """
     client_id = connection.client.id
     image = _decode_jpeg(frame.image)

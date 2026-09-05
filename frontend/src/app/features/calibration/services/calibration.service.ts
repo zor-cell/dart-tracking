@@ -1,4 +1,5 @@
-import { effect, inject, Injectable, signal, untracked } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NotificationService } from '../../../core/notification/services/notification.service';
 import { CalibrationFailureDto } from '../dto/calibration-failure.dto';
 import { CalibrationStatusDto } from '../dto/calibration-status.dto';
@@ -63,31 +64,30 @@ export class CalibrationService {
   private awaitingRequest = false;
 
   constructor() {
-    effect(() => {
-      const message = this.socket.lastMessage();
-      if (message?.type !== 'calibration_result' || untracked(this.status) !== 'pending') {
-        return;
-      }
-      this.status.set(message.success ? 'success' : 'error');
-      if (message.success) {
-        this.overlay.set(message.overlay);
-      } else {
-        this.reportFailure(message.failure);
-      }
-    });
+    this.socket
+      .on('calibration_result')
+      .pipe(takeUntilDestroyed())
+      .subscribe((result) => {
+        if (this.status() !== 'pending') {
+          return;
+        }
+        this.status.set(result.success ? 'success' : 'error');
+        if (result.success) {
+          this.overlay.set(result.overlay);
+        } else {
+          this.reportFailure(result.failure);
+        }
+      });
 
     // How a device learns about a calibration that was not its own — the only
     // route for one without a camera, since `calibration_result` goes to the
     // camera that produced it alone (docs/feature/done/multi-device.md §3). Reaches
     // the device that asked for the recalibration and no other, so no attempt
     // is ever reported twice here.
-    effect(() => {
-      const message = this.socket.lastMessage();
-      if (message?.type !== 'calibration_status') {
-        return;
-      }
-      untracked(() => this.reportRemoteStatus(message));
-    });
+    this.socket
+      .on('calibration_status')
+      .pipe(takeUntilDestroyed())
+      .subscribe((status) => this.reportRemoteStatus(status));
   }
 
   /**

@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { Observable, Subject, filter } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ClientStateDto } from '../dto/client-state.dto';
 import { ServerMessage } from '../dto/server-message';
@@ -21,7 +22,6 @@ const CLIENT_ID_KEY = 'dart-tracking.clientId';
 @Injectable({ providedIn: 'root' })
 export class SocketService {
   readonly connectionStatus = signal<SocketConnectionStatus>('disconnected');
-  readonly lastMessage = signal<ServerMessage | null>(null);
 
   /**
    * What this device does in the game. Owned by the server: `null` until the
@@ -32,6 +32,8 @@ export class SocketService {
 
   private socket: WebSocket | null = null;
   private gameId: string | null = null;
+
+  private readonly messages = new Subject<ServerMessage>();
 
   private clientId: string | null = localStorage.getItem(CLIENT_ID_KEY);
 
@@ -84,7 +86,7 @@ export class SocketService {
       if (message.type === 'client_state') {
         this.adopt(message);
       }
-      this.lastMessage.set(message);
+      this.messages.next(message);
     });
   }
 
@@ -95,7 +97,17 @@ export class SocketService {
     this.pending = [];
     this.requestedRole = null;
     this.connectionStatus.set('disconnected');
-    this.lastMessage.set(null);
+  }
+
+  /**
+   * The stream of one kind of server message, in arrival order. Deliberately not
+   * a signal: two messages arriving back to back would collapse into one value,
+   * and the first would never be observed (docs/feature/done/multi-device.md §6a).
+   */
+  on<T extends ServerMessage['type']>(type: T): Observable<Extract<ServerMessage, { type: T }>> {
+    return this.messages.pipe(
+      filter((message): message is Extract<ServerMessage, { type: T }> => message.type === type),
+    );
   }
 
   /**
