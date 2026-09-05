@@ -210,20 +210,55 @@
   text-align: center;
 }
 
+// A horizontal row rather than a stacked list: the players cost one card's
+// height whatever their number, which is what keeps the board, the darts and
+// the keypad on one phone screen.
 .scoreboard {
+  --gap: 0.5rem;
+  --visible-cards: 3;
+
   list-style: none;
   margin: 0;
   padding: 0;
+  position: relative; // the offsetParent the centring in game.component.ts measures against
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--gap);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// Everyone shares the width up to three; past that the row scrolls and the
+// thrower is held in the middle, one player either side.
+.scoreboard[data-visible='1'] {
+  --visible-cards: 1;
+}
+
+.scoreboard[data-visible='2'] {
+  --visible-cards: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scoreboard {
+    scroll-behavior: auto;
+  }
 }
 
 .scoreboard__row {
+  flex: 0 0 calc((100% - (var(--visible-cards) - 1) * var(--gap)) / var(--visible-cards));
+  min-width: 0;
+  scroll-snap-align: center;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
+  gap: 0.15rem;
+  padding: 0.6rem 0.5rem;
   border: 1px solid var(--p-content-border-color, #e5e7eb);
   border-radius: 0.5rem;
 }
@@ -235,11 +270,17 @@
   // mode. Mixing keeps the default text color readable in both schemes.
   border-color: var(--p-primary-color, #09090b);
   background: color-mix(in srgb, var(--p-primary-color, #09090b) 8%, var(--p-content-background, #ffffff));
-  box-shadow: inset 3px 0 0 0 var(--p-primary-color, #09090b);
+  box-shadow: inset 0 3px 0 0 var(--p-primary-color, #09090b);
 }
 
+// Long names shorten rather than widen the card, which would break the sharing.
 .scoreboard__name {
   font-weight: 500;
+  font-size: 0.85rem;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .scoreboard__remaining {

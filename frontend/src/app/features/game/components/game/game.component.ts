@@ -74,6 +74,7 @@ export class GameComponent implements OnInit, OnDestroy {
   private readonly diffCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('diffCanvas');
   private readonly captureCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('captureCanvas');
   private readonly detectionDebugCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('detectionDebugCanvas');
+  private readonly scoreboardRef = viewChild<ElementRef<HTMLUListElement>>('scoreboard');
 
   protected readonly deviceRole = this.session.role;
   protected readonly cameraPhase = this.session.phase;
@@ -106,6 +107,14 @@ export class GameComponent implements OnInit, OnDestroy {
   );
 
   /**
+   * How many player cards share the row's width. Up to three, so the thrower
+   * keeps a neighbour on each side; beyond that the row scrolls.
+   */
+  protected readonly visiblePlayers = computed(() =>
+    Math.min(this.game.state()?.players.length ?? 1, 3),
+  );
+
+  /**
    * The slots after the darts already thrown, carrying the checkout route where
    * there is one. Sized off the darts thrown rather than `dartsRemaining`: a
    * busted visit has none remaining, which would drop the boxes from the row.
@@ -117,6 +126,20 @@ export class GameComponent implements OnInit, OnDestroy {
   });
 
   constructor() {
+    // Follow play along the row, so the thrower stays in the middle and the two
+    // around them stay in view. A no-op while everyone fits.
+    effect(() => {
+      const index = this.game.state()?.currentPlayerIndex;
+      const list = this.scoreboardRef()?.nativeElement;
+      if (list === undefined || index === undefined) {
+        return;
+      }
+      const card = list.children.item(index) as HTMLElement | null;
+      if (card !== null) {
+        list.scrollTo({ left: card.offsetLeft + card.offsetWidth / 2 - list.clientWidth / 2 });
+      }
+    });
+
     // Attach the change-mask canvas whenever the debug panel is on screen, and
     // detach it the moment it leaves — keeping the loop's debug work off unless
     // someone is watching.

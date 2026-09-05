@@ -133,11 +133,18 @@
       <div class="game__winner" role="status">🎯 {{ winner.name }} gewinnt!</div>
     }
 
-    <ul class="scoreboard">
+    <ul
+      #scoreboard
+      class="scoreboard"
+      tabindex="0"
+      aria-label="Spielstand, horizontal scrollbar"
+      [attr.data-visible]="visiblePlayers()"
+    >
       @for (player of state.players; track player.id) {
         <li
           class="scoreboard__row"
           [class.scoreboard__row--active]="$index === state.currentPlayerIndex"
+          [attr.aria-current]="$index === state.currentPlayerIndex ? 'true' : null"
         >
           <span class="scoreboard__name">{{ player.name }}</span>
           <span class="scoreboard__remaining">{{ player.remaining }}</span>

@@ -1,8 +1,6 @@
 TODOs:
 
 Wenig Aufwand:
-- spieler anzeige im spiel view sollte ein karoussel sein, damit alles auf die phone view passt
-optimal wäre wenn es den spieler der dran ist in der mitte anzeigt und dann halt links den davor, rechts den danach also maximal 3 spieler werden gezeigt ,wenns nur 2 gibt nehmen die halt die volle breite ein
 
 Viel Aufwand:
 - client diff löst ja derzeit öfter aus, fokus auf recall, das backend muss da was checken (ist das überhaupt möglich), weil
