@@ -19,6 +19,7 @@ import {DetectionService} from '../../../detection/services/detection.service';
 import {FrameDiffService} from '../../../detection/services/frame-diff.service';
 import {SettingsService} from '../../../settings/services/settings.service';
 import {DartDto} from '../../dto/dart.dto';
+import {DARTS_PER_TURN} from '../../models/visit';
 import {GameService} from '../../services/game.service';
 import {GameSessionService} from '../../services/game-session.service';
 import {GameTopBarComponent} from '../game-top-bar/game-top-bar.component';
@@ -104,11 +105,15 @@ export class GameComponent implements OnInit, OnDestroy {
     () => this.game.currentTurn()?.darts ?? [],
   );
 
+  /**
+   * The slots after the darts already thrown, carrying the checkout route where
+   * there is one. Sized off the darts thrown rather than `dartsRemaining`: a
+   * busted visit has none remaining, which would drop the boxes from the row.
+   */
   protected readonly checkoutSlots = computed<(string | null)[]>(() => {
-    const state = this.game.state();
-    const remaining = state?.dartsRemaining ?? 0;
-    const checkout = state?.checkout ?? null;
-    return Array.from({ length: remaining }, (_, index) => checkout?.[index] ?? null);
+    const thrown = this.game.currentTurn()?.darts.length ?? 0;
+    const checkout = this.game.state()?.checkout ?? null;
+    return Array.from({ length: DARTS_PER_TURN - thrown }, (_, index) => checkout?.[index] ?? null);
   });
 
   constructor() {
