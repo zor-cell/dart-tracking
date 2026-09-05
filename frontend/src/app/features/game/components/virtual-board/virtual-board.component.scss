@@ -13,13 +13,19 @@ $board-wire: #9aa0a6;
   align-items: center;
   gap: 0.5rem;
   width: 100%;
+  min-height: 0;
+  max-height: 100%;
 }
 
+// Capped by height as well as width, so the board gives way on a short screen.
+// The drawing stays square inside whatever box that leaves — `preserveAspectRatio`
+// centres it — rather than being stretched.
 .board {
   display: block;
   width: 100%;
   max-width: 20rem;
   height: auto;
+  max-height: 100%;
 }
 
 .board__backing {
