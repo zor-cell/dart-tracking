@@ -5,6 +5,7 @@ import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { SelectButton } from 'primeng/selectbutton';
+import { Skeleton } from 'primeng/skeleton';
 import { AuthService } from '../../../auth/services/auth.service';
 import { PlayerIdentityDto } from '../../../player/dto/player-identity.dto';
 import { PlayerService } from '../../../player/services/player.service';
@@ -19,7 +20,7 @@ type Seat = PlayerIdentityDto | string;
 
 @Component({
   selector: 'app-game-setup',
-  imports: [ReactiveFormsModule, AutoComplete, Button, InputText, SelectButton],
+  imports: [ReactiveFormsModule, AutoComplete, Button, InputText, SelectButton, Skeleton],
   templateUrl: './game-new.component.html',
   styleUrl: './game-new.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,6 +37,10 @@ export class GameNewComponent {
   protected readonly checkoutModeOptions = [...CHECKOUT_MODES];
 
   protected readonly signedIn = this.auth.isAuthenticated;
+  /** One placeholder row per seat `restoreSeats` will open. */
+  protected readonly skeletonSeats = [0, 1];
+  /** Rendered height of a seat's input and buttons, so the placeholders take the same space. */
+  protected readonly seatRowHeight = '2.4375rem';
   /** Whether the session is known yet. The seats depend on it, so they are only
    * rendered once it is — otherwise they fill with the wrong default and
    * visibly change under the user. */

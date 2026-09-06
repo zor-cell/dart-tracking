@@ -27,9 +27,9 @@
       />
     </div>
 
-    @if (sessionResolved()) {
-      <div class="setup__field" formArrayName="players">
-        <span class="setup__label">Spieler</span>
+    <div class="setup__field" formArrayName="players">
+      <span class="setup__label">Spieler</span>
+      @if (sessionResolved()) {
         @for (seat of seats.controls; track $index) {
           <div class="setup__player">
             @if (signedIn()) {
@@ -81,8 +81,17 @@
           [text]="true"
           (onClick)="addPlayer()"
         />
-      </div>
-    }
+      } @else {
+        <!-- Placeholder seats while the address book answers, so the form does not jump. -->
+        @for (row of skeletonSeats; track $index) {
+          <div class="setup__player">
+            <p-skeleton class="setup__input" [height]="seatRowHeight" />
+            <p-skeleton width="2.5rem" [height]="seatRowHeight" />
+          </div>
+        }
+        <p-skeleton width="11.5rem" [height]="seatRowHeight" />
+      }
+    </div>
 
     <p-button
       type="submit"
