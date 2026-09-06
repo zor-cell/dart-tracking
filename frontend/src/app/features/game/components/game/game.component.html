@@ -262,6 +262,66 @@
       />
     }
   </section>
+} @else if (restoring()) {
+  <header class="loading-bar">
+    <p-skeleton width="1.75rem" height="1.3125rem" />
+    <div class="loading-bar__actions">
+      <p-skeleton width="2rem" height="2.0625rem" borderRadius="0.5rem" />
+      <p-skeleton width="2rem" height="2.0625rem" borderRadius="0.5rem" />
+    </div>
+  </header>
+
+  <section class="view game" aria-busy="true" aria-label="Spiel wird geladen">
+    <!-- Spinner rather than a skeleton: this box holds a live picture, not text. -->
+    <div class="game__camera">
+      <div class="game__camera-overlay">
+        <p-progress-spinner
+          ariaLabel="Spiel wird geladen"
+          [style]="{ width: '2.5rem', height: '2.5rem' }"
+        />
+      </div>
+    </div>
+
+    <ul class="scoreboard" data-visible="2">
+      @for (player of skeletonPlayers; track $index) {
+        <li class="scoreboard__row">
+          <p-skeleton width="4rem" height="1.0625rem" />
+          <p-skeleton width="3rem" height="1.6875rem" />
+        </li>
+      }
+    </ul>
+
+    <div class="turn">
+      <div class="turn__row">
+        <ul class="turn__darts">
+          @for (dart of skeletonDarts; track $index) {
+            <li class="turn__dart turn__dart--empty">
+              <p-skeleton height="1.3125rem" />
+            </li>
+          }
+        </ul>
+        @if (settings.confirmThrowEnabled()) {
+          <p-skeleton width="2.5rem" height="2.5rem" shape="circle" />
+        }
+      </div>
+
+      @if (settings.manualEntryEnabled()) {
+        <div class="scorepad">
+          <p-skeleton class="scorepad__slot scorepad__slot--undo" height="100%" borderRadius="0.5rem" />
+          @for (row of padRows; track $index) {
+            @for (n of row.numbers; track n) {
+              <p-skeleton class="scorepad__slot" height="100%" borderRadius="0.5rem" />
+            }
+            @if (row.side) {
+              <p-skeleton class="scorepad__slot" height="100%" borderRadius="0.5rem" />
+            }
+          }
+          <p-skeleton class="scorepad__slot scorepad__slot--mod" height="100%" borderRadius="0.5rem" />
+          <p-skeleton class="scorepad__slot scorepad__slot--mod" height="100%" borderRadius="0.5rem" />
+        </div>
+      }
+    </div>
+  </section>
 } @else {
   <section class="view">
     <div class="placeholder">

@@ -13,6 +13,7 @@ import {
 import {RouterLink} from '@angular/router';
 import {Button} from 'primeng/button';
 import {ProgressSpinner} from 'primeng/progressspinner';
+import {Skeleton} from 'primeng/skeleton';
 import {OverlayComponent} from '../../../calibration/components/overlay/overlay.component';
 import {CalibrationService} from '../../../calibration/services/calibration.service';
 import {DetectionService} from '../../../detection/services/detection.service';
@@ -51,6 +52,7 @@ const PAD_ROWS: readonly PadRow[] = [
     RouterLink,
     Button,
     ProgressSpinner,
+    Skeleton,
     OverlayComponent,
     VirtualBoardComponent,
     GameTopBarComponent,
@@ -95,6 +97,14 @@ export class GameComponent implements OnInit, OnDestroy {
   );
 
   protected readonly padRows = PAD_ROWS;
+
+  /** Whether the game is still being fetched — the placeholder below the view is
+   * for "no game", which is a different answer from "not yet known". */
+  protected readonly restoring = signal(true);
+
+  /** Placeholder rows while the state is on its way: two, the smallest game. */
+  protected readonly skeletonPlayers = [0, 1];
+  protected readonly skeletonDarts = [0, 1, 2];
 
   protected readonly multiplier = signal<1 | 2 | 3>(1);
   protected readonly multiplierPrefix = computed(() =>
@@ -165,7 +175,7 @@ export class GameComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Refetch the game after a full reload so the view — and with it the camera
     // elements — can render; wiring and camera resume then happen on attach.
-    void this.session.restore();
+    void this.session.restore().finally(() => this.restoring.set(false));
   }
 
   protected startCamera(): Promise<void> {

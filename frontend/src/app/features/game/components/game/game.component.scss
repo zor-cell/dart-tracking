@@ -451,3 +451,35 @@
   border-color: var(--p-primary-color, #09090b);
   color: var(--p-primary-contrast-color, #ffffff);
 }
+
+// Stand-ins shown while the game is being fetched. They reuse the real blocks'
+// classes above; only what has no counterpart there is defined here.
+.loading-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  padding-top: calc(0.5rem + env(safe-area-inset-top));
+  border-bottom: 1px solid var(--p-content-border-color, #e5e7eb);
+}
+
+.loading-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+// The keypad's grid spans, without the key's own border and padding.
+.scorepad__slot {
+  grid-column: span 2;
+}
+
+.scorepad__slot--undo {
+  grid-column: 9 / span 2;
+  grid-row: 1 / span 2;
+}
+
+.scorepad__slot--mod {
+  grid-column: span 5;
+}

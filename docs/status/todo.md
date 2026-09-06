@@ -1,7 +1,6 @@
 TODOs:
 
 Wenig Aufwand:
-- auch auf der game page, wenn das spiel erst lädt, entweder loading spinner oder auch skeleton
 
 Viel Aufwand:
 - client diff löst ja derzeit öfter aus, fokus auf recall, das backend muss da was checken (ist das überhaupt möglich), weil
