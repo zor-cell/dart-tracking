@@ -1,8 +1,6 @@
 TODOs:
 
 Wenig Aufwand:
-- die größe auf großen screen passt noch nicht so ganz. die tastatur soll eine maximal größe haben, dann kann
-die kamera den rest einnehmen.
 - rpi5 zugang von laptop aus anderem netzwerk
 - debug history in app anzeigen können, also den report basically
 
