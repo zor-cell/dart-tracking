@@ -68,7 +68,16 @@ Kennzahlen des Detektors (`fragment_count`, `dart_length_mm`,
 **Atomar mit dem Zustand.** Der Event wird in derselben Transaktion angehängt,
 in der die Spieländerung committet (`_apply(game_id, mutate, record)` in
 `core/socket.py`). Ein Log, das gegenüber dem Zustand driftet, wäre als Messgerät
-wertlos.
+wertlos. Preis dieser Kopplung: ein Fehler beim Schreiben des Events rollt den
+Wurf mit zurück. Deshalb castet `recorder.metrics_of` jeden Wert auf `float` —
+ein numpy-Skalar aus dem Trace wäre in JSONB nicht serialisierbar und würde
+nicht bloß die Messung, sondern den Dart kosten.
+
+**Eine Tür für den Socket.** Alles, was der Socket dafür tun muss, steht in
+`services/recorder.py`: welche Events ein Kommando hinterlässt, welche Fehlschläge
+zählen, wann Frames geschrieben werden. `socket.py` kennt davon nur den Namen
+`recorder` — die Auswertung ist damit an einer Stelle abschaltbar und an einer
+Stelle zu lesen, statt über zwölf Aufrufstellen verteilt.
 
 **Immer an.** Ein paar hundert Zeilen pro Spiel, wenige Kilobyte — der Schalter
 in den Einstellungen betrifft nur die Bilder (§4). Ein vergessener Schalter darf
@@ -155,6 +164,14 @@ kein einziger Trigger kam — sonst wäre der schlimmste Recall-Fall unsichtbar.
   Die Zahl bleibt richtig, nur die Bilder fehlen.
 - `MANUAL` ist nicht von „Korrektur" zu unterscheiden, wenn jemand ohnehin
   von Hand mitschreibt. Deshalb die Kamera-Bedingung oben.
+- **Die Behauptungsliste ist kumulativ.** Nach einem Undo ist der Platz im Visit
+  wieder frei, die Kamera bucht also erneut hinein — die Liste wird länger als
+  drei. Das ist gewollt (jede Fehlbuchung soll gezählt werden), heißt aber: liest
+  die Kamera denselben Pfeil nach einer Korrektur ein zweites Mal richtig, zählt
+  dieser zweite Versuch als `correct`. Im ersten echten Testlauf trat das nicht
+  auf — dort waren die überzähligen Buchungen echte Fehltrigger vor dem Wurf
+  (Visit 0 von `01a07b48`: dreimal `MISS` plus ein `implausible_shape`, danach
+  die drei echten Pfeile korrekt).
 
 ---
 
@@ -239,9 +256,14 @@ Testset-Zahlen nebeneinander lesbar sind:
 
 ## 7. Offene Punkte
 
-- **Noch keine echten Daten.** Verifiziert ist der Weg (Log → Replay →
-  Alignment → Report) gegen die Datenbank, mit einem synthetischen Spiel. Die
-  erste Messreihe kommt aus dem Praxis-Testlauf.
+- **`NO_CHANGE` gegen erwartetes `MISS` zählt hier als Fehler, offline als
+  Treffer.** `run_all.py` wertet „nichts gefunden" gegen ein erwartetes `MISS`
+  bewusst als korrekt: beide sind null Punkte, also dieselbe Wertung
+  ([erkennung.md §3](erkennung.md)). Die Live-Auswertung zählt denselben Fall als
+  `missed`, weil sie den Trigger-Recall messen will. Solange das so steht, sind
+  die beiden Prozentzahlen **nicht** direkt vergleichbar — im ersten Testlauf
+  betrifft es einen Pfeil (`01a07657/turn004/dart4`). Zu entscheiden, welche der
+  beiden Konventionen die Arbeit durchgängig verwendet.
 - **Kein Setup-Begriff.** Offline gruppiert die Auswertung nach Board und Setup
   (`pz_setup1`); live ist ein Spiel die kleinste Einheit. Solange ein Abend =
   ein Kamera-Aufbau ist, deckt sich das; sonst braucht es ein Feld dafür.

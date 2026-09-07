@@ -20,6 +20,14 @@ class TrackingEventKind(StrEnum):
 
 
 @dataclass(frozen=True)
+class VisitPosition:
+    """Which visit was open, and whose it was, before a command was applied."""
+
+    turn_index: int
+    player_index: int
+
+
+@dataclass(frozen=True)
 class TrackingEvent:
     """What happened, and to which visit.
 

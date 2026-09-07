@@ -59,16 +59,8 @@ from app.api.features.detection.debug.render import (
 )
 from app.api.features.detection.services.detection_store import store as detection_store
 from app.api.features.detection.services.scoring_camera import store as scoring_camera_store
-from app.api.features.evaluation.domain.tracking_event import (
-    TrackingEvent,
-    TrackingEventKind,
-)
 from app.api.features.evaluation.dto.command.set_evaluation import SetEvaluationDto
-from app.api.features.evaluation.persistence.evaluation_repository import (
-    repository as evaluation_repository,
-)
-from app.api.features.evaluation.services import event_log
-from app.api.features.evaluation.services.frame_buffer import store as frame_buffer
+from app.api.features.evaluation.services import recorder
 from app.api.features.game.dto.command.game_command import GameCommand
 from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.dto.command.next_player import NextPlayerDto
@@ -90,24 +82,6 @@ _DETECTION_DEBUG_ROOT = _TESTDATA_ROOT / "detection" / "_socket_debug"
 # Both detectors keep their trace in a module global, so two runs at once would
 # read each other's. Holds until the trace has been read out.
 _detector_lock = asyncio.Lock()
-
-# Which kind of tracking event a game command leaves behind.
-_KINDS = {
-    RegisterDartDto: TrackingEventKind.MANUAL,
-    UndoDto: TrackingEventKind.UNDO,
-    NextPlayerDto: TrackingEventKind.NEXT_PLAYER,
-}
-
-# Failures worth logging for the evaluation: the ones the fit itself reached. An
-# undecodable frame or a missing calibration says nothing about tracking.
-_FIT_FAILURES = frozenset(
-    {
-        DetectionFailure.ALIGNMENT_FAILED,
-        DetectionFailure.NO_CHANGE,
-        DetectionFailure.IMPLAUSIBLE_SHAPE,
-    }
-)
-
 
 @router.websocket("/games/{game_id}")
 async def websocket_endpoint(
@@ -225,13 +199,13 @@ async def _handle_client_command(connection: Connection, command: ClientCommand)
 async def _apply(
     game_id: str,
     mutate: Callable[[Game], None],
-    record: Callable[[Game, bool], TrackingEvent | None] | None = None,
+    record: recorder.Recording | None = None,
 ) -> tuple[Game, bool] | None:
     """Run one mutation on the game under a row lock: the state afterwards and
     whether anything changed, or None if the game is gone.
 
-    `record` builds the tracking event for what just happened, appended in the
-    same transaction so the log cannot drift from it.
+    `record` describes what just happened for the evaluation, appended in the
+    same transaction so its log cannot drift from the state it records.
 
     The lock is what makes a visit safe to end twice. The domain relies on
     read-modify-write being uninterrupted — two devices ending the same visit,
@@ -244,6 +218,7 @@ async def _apply(
         if game is None:
             return None
 
+        at = recorder.position_of(game)
         revision = game.revision
         mutate(game)
         changed = game.revision != revision
@@ -251,9 +226,7 @@ async def _apply(
             await game_repository.save(session, game)
 
         if record is not None:
-            event = record(game, changed)
-            if event is not None:
-                evaluation_repository.append(session, game_id, event)
+            recorder.append(session, game_id, record(at, changed))
 
     return game, changed
 
@@ -270,16 +243,9 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
     Broadcasting happens after the transaction commits, so no device is ever
     shown a state that is not yet durable.
     """
-    # Which visit the command acted on, read before the mutation moves it on.
-    turn_index = 0
-    player_index = 0
-    armed = await _scoring_camera_present(game_id)
+    armed = await recorder.camera_armed(game_id)
 
     def mutate(game: Game) -> None:
-        nonlocal turn_index, player_index
-        turn_index = len(game.turns) - 1
-        player_index = game.current_player_index
-
         match command:
             case RegisterDartDto():
                 game.register_dart(command.to_entity())
@@ -288,19 +254,7 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
             case NextPlayerDto():
                 game.next_player()
 
-    def record(game: Game, changed: bool) -> TrackingEvent:
-        booked = command if isinstance(command, RegisterDartDto) else None
-        return TrackingEvent(
-            kind=_KINDS[type(command)],
-            turn_index=turn_index,
-            player_index=player_index,
-            accepted=changed,
-            camera_armed=armed,
-            value=booked.value if booked else None,
-            multiplier=booked.multiplier if booked else None,
-        )
-
-    applied = await _apply(game_id, mutate, record)
+    applied = await _apply(game_id, mutate, recorder.for_command(command, camera_armed=armed))
     if applied is None:
         return
 
@@ -311,34 +265,13 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
     # An undo or a hand-entered dart is a correction; the handover settles the
     # visit those corrections belonged to.
     if isinstance(command, NextPlayerDto):
-        _settle_visit(game, turn_index)
+        recorder.settle_visit(game)
     else:
-        frame_buffer.mark_corrected(game_id)
+        recorder.note_correction(game_id)
 
     await _publish_state(game)
     if isinstance(command, NextPlayerDto):
         await _request_calibration(game.id, requester=None)
-
-
-def _settle_visit(game: Game, turn_index: int) -> None:
-    """Close the visit the players just signed off on.
-
-    Its frames are kept only if they corrected it: an accepted visit is one the
-    tracker got right (docs/feature/auswertung.md §4).
-    """
-    if game.evaluation_enabled and frame_buffer.was_corrected(game.id):
-        frame_buffer.flush(game.id, turn_index)
-    else:
-        frame_buffer.discard(game.id)
-
-
-async def _scoring_camera_present(game_id: str) -> bool:
-    """Whether the camera that books this game's throws is in the room — what
-    separates a visit the tracker missed entirely from one nobody filmed."""
-    holder = await scoring_camera_store.holder(game_id)
-    return holder is not None and any(
-        connection.client.id == holder for connection in hub.connections(game_id)
-    )
 
 
 async def _handle_set_evaluation(game_id: str, command: SetEvaluationDto) -> None:
@@ -421,9 +354,7 @@ async def _handle_calibration_frame(
         await calibration_store.set(game_id, client_id, outcome)
         detection_store.set(game_id, client_id, image)
         if await scoring_camera_store.claim(game_id, client_id):
-            # The empty board this camera just saw is the base image of the
-            # throw series the next visit may leave behind.
-            frame_buffer.remember(game_id, raw)
+            recorder.remember_frame(game_id, raw)
         response = CalibrationResultDto.from_calibration(outcome)
 
     await hub.send(connection, response)
@@ -487,14 +418,14 @@ async def _handle_throw_frame(
             # Both read under the lock: the trace is a module global that the
             # next run replaces.
             aligned = dart_detector.trace.aligned
-            metrics = event_log.metrics_of(dart_detector.trace)
+            metrics = recorder.metrics_of(dart_detector.trace)
 
     scoring = await scoring_camera_store.is_scoring(game_id, client_id)
 
     if isinstance(outcome, DetectionFailure):
         await hub.send(connection, DetectionResultDto.failed(outcome))
-        if scoring and outcome in _FIT_FAILURES:
-            await _record_detection_failure(game_id, client_id, outcome, metrics)
+        if scoring:
+            await recorder.note_failure(game_id, client_id, outcome, metrics)
         return
 
     if aligned is not None:
@@ -507,7 +438,7 @@ async def _handle_throw_frame(
 
     # Only frames the fit reached: a failed detection leaves the reference where
     # it was, and a series holding it would chain differently offline.
-    frame_buffer.add_throw(game_id, raw)
+    recorder.note_throw(game_id, raw)
 
     # The detected segment carries the field, not just the points, so a tracked
     # dart reaches the scoreboard in the same form as a manually entered one.
@@ -518,21 +449,11 @@ async def _handle_throw_frame(
         position=outcome.tip_board,
     )
 
-    def record(game: Game, changed: bool) -> TrackingEvent:
-        return TrackingEvent(
-            kind=TrackingEventKind.DETECTED,
-            turn_index=len(game.turns) - 1,
-            player_index=game.current_player_index,
-            accepted=changed,
-            camera_armed=True,
-            client_id=client_id,
-            value=dart.value,
-            multiplier=dart.multiplier,
-            position=dart.position,
-            metrics=metrics,
-        )
-
-    applied = await _apply(game_id, lambda game: game.register_dart(dart), record)
+    applied = await _apply(
+        game_id,
+        lambda game: game.register_dart(dart),
+        recorder.for_detection(dart, client_id, metrics),
+    )
     if applied is None:
         return
 
@@ -540,30 +461,6 @@ async def _handle_throw_frame(
     # visit): the camera trims its drawn outlines against this state.
     await _publish_state(applied[0])
 
-
-async def _record_detection_failure(
-    game_id: str, client_id: str, failure: DetectionFailure, metrics: dict[str, float]
-) -> None:
-    """Note that the scoring camera looked and came back empty-handed. Its own
-    transaction: nothing changed about the game, so there is none to join."""
-    async with database.session_scope() as session:
-        game = await game_repository.get(session, game_id)
-    if game is None:
-        return
-
-    await event_log.record(
-        game_id,
-        TrackingEvent(
-            kind=TrackingEventKind.DETECTION_FAILED,
-            turn_index=len(game.turns) - 1,
-            player_index=game.current_player_index,
-            accepted=False,
-            camera_armed=True,
-            client_id=client_id,
-            failure=failure.value,
-            metrics=metrics,
-        ),
-    )
 
 
 def _write_calibration_debug(
