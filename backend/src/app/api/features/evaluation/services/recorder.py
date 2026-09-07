@@ -16,9 +16,9 @@ from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.detection.services.scoring_camera import (
     store as scoring_camera_store,
 )
-from app.api.features.evaluation.domain.tracking_event import (
-    TrackingEvent,
-    TrackingEventKind,
+from app.api.features.evaluation.domain.game_event import (
+    GameEvent,
+    GameEventKind,
     VisitPosition,
 )
 from app.api.features.evaluation.persistence.evaluation_repository import (
@@ -36,11 +36,11 @@ from app.infrastructure import database
 
 logger = logging.getLogger(__name__)
 
-# Which kind of tracking event a game command leaves behind.
+# Which kind of event a game command leaves behind.
 _KINDS = {
-    RegisterDartDto: TrackingEventKind.MANUAL,
-    UndoDto: TrackingEventKind.UNDO,
-    NextPlayerDto: TrackingEventKind.NEXT_PLAYER,
+    RegisterDartDto: GameEventKind.MANUAL,
+    UndoDto: GameEventKind.UNDO,
+    NextPlayerDto: GameEventKind.NEXT_PLAYER,
 }
 
 # Failures worth keeping: the ones the fit itself reached. An undecodable frame
@@ -55,7 +55,7 @@ _FIT_FAILURES = frozenset(
 
 # What a caller hands to the game's write step: the event describing a change,
 # given where the game stood before it and whether it was taken.
-type Recording = Callable[[VisitPosition, bool], TrackingEvent | None]
+type Recording = Callable[[VisitPosition, bool], GameEvent | None]
 
 
 def position_of(game: Game) -> VisitPosition:
@@ -65,7 +65,7 @@ def position_of(game: Game) -> VisitPosition:
     )
 
 
-def append(session: AsyncSession, game_id: str, event: TrackingEvent | None) -> None:
+def append(session: AsyncSession, game_id: str, event: GameEvent | None) -> None:
     """Queue an event in the transaction that carries the change it describes."""
     if event is not None:
         events.append(session, game_id, event)
@@ -74,9 +74,9 @@ def append(session: AsyncSession, game_id: str, event: TrackingEvent | None) -> 
 def for_command(command: GameCommand, *, camera_armed: bool) -> Recording:
     """The event one game command leaves behind."""
 
-    def record(at: VisitPosition, accepted: bool) -> TrackingEvent:
+    def record(at: VisitPosition, accepted: bool) -> GameEvent:
         booked = command if isinstance(command, RegisterDartDto) else None
-        return TrackingEvent(
+        return GameEvent(
             kind=_KINDS[type(command)],
             turn_index=at.turn_index,
             player_index=at.player_index,
@@ -92,9 +92,9 @@ def for_command(command: GameCommand, *, camera_armed: bool) -> Recording:
 def for_detection(dart: Dart, client_id: str, metrics: dict[str, float]) -> Recording:
     """The event one located throw leaves behind."""
 
-    def record(at: VisitPosition, accepted: bool) -> TrackingEvent:
-        return TrackingEvent(
-            kind=TrackingEventKind.DETECTED,
+    def record(at: VisitPosition, accepted: bool) -> GameEvent:
+        return GameEvent(
+            kind=GameEventKind.DETECTED,
             turn_index=at.turn_index,
             player_index=at.player_index,
             accepted=accepted,
@@ -159,8 +159,8 @@ async def note_failure(
             events.append(
                 session,
                 game_id,
-                TrackingEvent(
-                    kind=TrackingEventKind.DETECTION_FAILED,
+                GameEvent(
+                    kind=GameEventKind.DETECTION_FAILED,
                     turn_index=at.turn_index,
                     player_index=at.player_index,
                     accepted=False,

@@ -10,7 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.infrastructure.database import Base, UuidText
 
 
-class TrackingEventTable(Base):
+class GameEventTable(Base):
     """A plain sequence for the primary key, unlike the uuid ids elsewhere: the
     replay depends on the exact order the rows were written in."""
 

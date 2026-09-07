@@ -11,7 +11,7 @@ from enum import StrEnum
 from app.api.features.calibration.domain.board_geometry import Segment
 
 
-class TrackingEventKind(StrEnum):
+class GameEventKind(StrEnum):
     DETECTED = "detected"  # the camera booked a dart
     DETECTION_FAILED = "detection_failed"  # the camera looked and found nothing
     MANUAL = "manual"  # a device booked a dart by hand
@@ -28,14 +28,14 @@ class VisitPosition:
 
 
 @dataclass(frozen=True)
-class TrackingEvent:
+class GameEvent:
     """What happened, and to which visit.
 
     `turn_index` is the slot of the open visit, not an id: undo can drop a visit
     and a later handover reopens that same slot for the same throws.
     """
 
-    kind: TrackingEventKind
+    kind: GameEventKind
     turn_index: int
     player_index: int
     # Whether the game took the action. A dart past the third is absorbed, and

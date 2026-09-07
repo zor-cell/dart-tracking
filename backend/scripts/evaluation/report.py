@@ -39,7 +39,7 @@ from app.api.features.evaluation.domain.alignment import (  # noqa: E402
     align,
     outcome_of,
 )
-from app.api.features.evaluation.domain.tracking_event import TrackingEvent  # noqa: E402
+from app.api.features.evaluation.domain.game_event import GameEvent  # noqa: E402
 from app.api.features.evaluation.domain.visit_replay import Visit, replay  # noqa: E402
 from app.api.features.evaluation.persistence.evaluation_repository import (  # noqa: E402
     repository as evaluation_repository,
@@ -79,7 +79,7 @@ class Judgement:
     turn_index: int
     position: int  # place within the visit, 1-based
     outcome: DartOutcome
-    tracked: TrackingEvent | None
+    tracked: GameEvent | None
     expected_label: str | None
 
     @property
@@ -316,7 +316,7 @@ def build_report(
 
 async def gather(
     game_ids: list[str] | None, evaluation_only: bool
-) -> dict[str, list[TrackingEvent]]:
+) -> dict[str, list[GameEvent]]:
     """Read the event logs of the games asked for."""
     database.init(get_settings().database_url)
     try:

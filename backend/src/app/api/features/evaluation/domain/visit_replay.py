@@ -8,9 +8,9 @@ from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
-from app.api.features.evaluation.domain.tracking_event import (
-    TrackingEvent,
-    TrackingEventKind,
+from app.api.features.evaluation.domain.game_event import (
+    GameEvent,
+    GameEventKind,
 )
 
 
@@ -22,8 +22,8 @@ class Visit:
 
     turn_index: int
     player_index: int
-    claimed: list[TrackingEvent] = field(default_factory=list)
-    accepted: list[TrackingEvent] = field(default_factory=list)
+    claimed: list[GameEvent] = field(default_factory=list)
+    accepted: list[GameEvent] = field(default_factory=list)
     attempts: int = 0  # detections tried, successful or not
     corrected: bool = False
     camera_armed: bool = False
@@ -35,14 +35,14 @@ class Visit:
         return self.camera_armed or self.attempts > 0 or bool(self.claimed)
 
 
-def replay(events: Iterable[TrackingEvent]) -> list[Visit]:
+def replay(events: Iterable[GameEvent]) -> list[Visit]:
     """The visits of one game, in order.
 
     Addressed by slot, not identity: undoing across a handover drops the open
     visit, and the next handover reopens that slot for the same throws.
     """
-    claimed: dict[int, list[TrackingEvent]] = defaultdict(list)
-    accepted: dict[int, list[TrackingEvent]] = defaultdict(list)
+    claimed: dict[int, list[GameEvent]] = defaultdict(list)
+    accepted: dict[int, list[GameEvent]] = defaultdict(list)
     attempts: dict[int, int] = defaultdict(int)
     corrected: dict[int, bool] = defaultdict(bool)
     armed: dict[int, bool] = defaultdict(bool)
@@ -53,20 +53,20 @@ def replay(events: Iterable[TrackingEvent]) -> list[Visit]:
         players.setdefault(open_index, event.player_index)
 
         match event.kind:
-            case TrackingEventKind.DETECTION_FAILED:
+            case GameEventKind.DETECTION_FAILED:
                 attempts[open_index] += 1
-            case TrackingEventKind.DETECTED:
+            case GameEventKind.DETECTED:
                 attempts[open_index] += 1
                 if event.accepted:
                     claimed[open_index].append(event)
                     accepted[open_index].append(event)
-            case TrackingEventKind.MANUAL:
+            case GameEventKind.MANUAL:
                 if event.accepted:
                     accepted[open_index].append(event)
                     corrected[open_index] = True
-            case TrackingEventKind.UNDO if event.accepted:
+            case GameEventKind.UNDO if event.accepted:
                 open_index = _undo(accepted, corrected, open_index)
-            case TrackingEventKind.NEXT_PLAYER if event.accepted:
+            case GameEventKind.NEXT_PLAYER if event.accepted:
                 # The event carries the player who just finished, so the
                 # new slot's owner is left to the first event that lands in it.
                 open_index += 1
@@ -87,7 +87,7 @@ def replay(events: Iterable[TrackingEvent]) -> list[Visit]:
 
 
 def _undo(
-    accepted: dict[int, list[TrackingEvent]], corrected: dict[int, bool], open_index: int
+    accepted: dict[int, list[GameEvent]], corrected: dict[int, bool], open_index: int
 ) -> int:
     """Take back the last dart, across visit boundaries — `Game.undo`'s rule:
     an empty visit holds nothing to take back, so it is dropped and the previous

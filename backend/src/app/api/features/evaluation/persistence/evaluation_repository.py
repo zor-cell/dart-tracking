@@ -1,24 +1,24 @@
-"""Reads and writes the tracking event log."""
+"""Reads and writes the game event log."""
 
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.features.evaluation.domain.tracking_event import (
-    TrackingEvent,
-    TrackingEventKind,
+from app.api.features.evaluation.domain.game_event import (
+    GameEvent,
+    GameEventKind,
 )
-from app.api.features.evaluation.persistence.tracking_event import TrackingEventTable
+from app.api.features.evaluation.persistence.game_event import GameEventTable
 from app.api.features.game.persistence.game import GameTable
 
 
 class EvaluationRepository:
-    def append(self, session: AsyncSession, game_id: str, event: TrackingEvent) -> None:
+    def append(self, session: AsyncSession, game_id: str, event: GameEvent) -> None:
         """Queue one event. Flushed with the transaction it was recorded in, so
         an event and the state change it describes commit together."""
         session.add(
-            TrackingEventTable(
+            GameEventTable(
                 game_id=game_id,
                 kind=event.kind.value,
                 turn_index=event.turn_index,
@@ -35,7 +35,7 @@ class EvaluationRepository:
             )
         )
 
-    async def events(self, session: AsyncSession, game_id: str) -> list[TrackingEvent]:
+    async def events(self, session: AsyncSession, game_id: str) -> list[GameEvent]:
         """The whole log of one game, in the order it was written."""
         try:
             UUID(game_id)
@@ -44,15 +44,15 @@ class EvaluationRepository:
 
         rows = (
             await session.execute(
-                select(TrackingEventTable)
-                .where(TrackingEventTable.game_id == game_id)
-                .order_by(TrackingEventTable.id)
+                select(GameEventTable)
+                .where(GameEventTable.game_id == game_id)
+                .order_by(GameEventTable.id)
             )
         ).scalars().all()
 
         return [
-            TrackingEvent(
-                kind=TrackingEventKind(row.kind),
+            GameEvent(
+                kind=GameEventKind(row.kind),
                 turn_index=row.turn_index,
                 player_index=row.player_index,
                 accepted=row.accepted,
@@ -77,7 +77,7 @@ class EvaluationRepository:
         # DISTINCT whose ORDER BY names a column that is not in the list.
         statement = (
             select(GameTable.id, GameTable.created_at)
-            .join(TrackingEventTable, TrackingEventTable.game_id == GameTable.id)
+            .join(GameEventTable, GameEventTable.game_id == GameTable.id)
             .order_by(GameTable.created_at)
             .distinct()
         )
