@@ -850,6 +850,49 @@ Zwei wiederkehrende Muster stechen heraus:
 
 Die Laufzeit pro Detektion ist noch nicht systematisch gemessen.
 
+### Ein Confound im Testset: die doppelte JPEG-Generation
+
+`as_client_would_send` (`scripts/common.py`) bildet die Client-Kette nach, damit
+der Offline-Lauf den Detektor mit demselben Material füttert wie der Betrieb:
+auf 1280 px verkleinern, einmal JPEG q85. Das Verkleinern war bedingt, das
+Encodieren nicht — ein Foto, das schon innerhalb der Aufnahmegröße lag, bekam
+also eine **zweite** Kompressionsgeneration, die es live nie sieht.
+
+Betroffen waren nicht verstreute Einzelbilder, sondern **80 von 380
+Eingabefotos, und zwar genau `cc_setup1/2` und `fh_setup1/2`** — zwei ganze
+Boards von fünf. Auf den live aufgezeichneten Serien
+([auswertung.md](auswertung.md)) kostete derselbe Effekt 81.8 % → 54.5 %.
+
+Der Fix ist eine Bedingung: ein Bild innerhalb der Aufnahmegröße wird
+unverändert durchgereicht. Gemessen über die vollen 285 Paare, vorher/nachher:
+
+| | vorher | nachher |
+|---|---|---|
+| Korrekt | 227 / 285 | **227 / 285** |
+| `cc` | 22 / 30 | **24 / 30** |
+| `fh` | 23 / 30 | **21 / 30** |
+| `pz`, `pz-light`, `tz` | 46 / 78 / 58 | unverändert |
+| Mittlere Abweichung der Mismatches | 32.8 mm | 34.8 mm |
+
+**Die Gesamtquote bewegt sich nicht.** Die drei unbetroffenen Boards sind
+bitgleich — die erwartete Kontrolle, denn ihre Fotos liegen alle über 1280 px
+und laufen durch denselben Code wie zuvor. Bei den beiden betroffenen heben sich
+die Änderungen auf: `cc` gewinnt fünf Würfe, die vorher grob danebenlagen
+(S7 statt S16, S15 statt Bull), `fh` und `cc` verlieren zusammen fünf, von denen
+vier nur um 0.9 – 1.0 mm auf der falschen Drahtseite liegen.
+
+Ein Fall kippt strukturell: `fh_setup1/throw5/dart3` geht von `S5` (6.8 mm
+daneben, 2 Fragmente) auf `MISS` (126.6 mm, **3** Fragmente). Ohne die zweite
+Kompression kommt der Pfeil zerstückelter an — plausibel, weil q85 tiefpassfiltert
+und `fh` das dunkelste Setup mit dem schwächsten Signal ist (§6). Die beiden
+Pfeile dieser Serie tragen allerdings unsichere Truth-Labels (`D5?`, `S20?`), der
+Einzelfall trägt also wenig.
+
+**Was das Ergebnis wert ist:** nicht eine bessere Quote, sondern eine ehrlichere.
+Die 79.6 % maßen vorher zu einem Fünftel Pipeline *plus Artefakt*; sie messen
+jetzt nur die Pipeline — und kommen auf denselben Wert. Damit ist die Zahl
+gegen diesen Confound nachweislich robust, statt es nur zu sein.
+
 ### Messung im laufenden Spiel
 
 Neben dem festen Testset misst sich die Pipeline seit neuestem auch beim

@@ -31,15 +31,21 @@ CAPTURE_JPEG_QUALITY = 85
 
 
 def as_client_would_send(image: np.ndarray) -> np.ndarray:
-    """Downscale and re-encode a photo the way the browser would."""
+    """Downscale and re-encode a photo the way the browser would.
+
+    One already within the capture size is handed back untouched: it is what the
+    client sends, and a second q85 pass is loss the pipeline never sees live.
+    """
     height, width = image.shape[:2]
     scale = CAPTURE_MAX_EDGE / max(height, width)
-    if scale < 1:
-        image = cv2.resize(
-            image,
-            (round(width * scale), round(height * scale)),
-            interpolation=cv2.INTER_AREA,
-        )
+    if scale >= 1:
+        return image
+
+    image = cv2.resize(
+        image,
+        (round(width * scale), round(height * scale)),
+        interpolation=cv2.INTER_AREA,
+    )
     ok, buffer = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, CAPTURE_JPEG_QUALITY])
     if not ok:
         return image
