@@ -176,9 +176,9 @@ darts(game_id, turn_index, dart_index, value, multiplier,
 
 **Zu den Namen.** `player_index` ist die Position im Spiel — dasselbe, was das
 Domain `Player.id` nennt und das DTO als `currentPlayerIndex` überträgt. Auf
-`turns` sagt es, *wer* geworfen hat, nicht *welche* Runde; das ist `turn_index`.
-Die Runde hängt bewusst am Index und nicht an `players.id`: wer auf Position 1
-sitzt, ist eine Eigenschaft des Spiels, die `game_players` auflöst.
+`game_turns` sagt es, *wer* geworfen hat, nicht *welche* Runde; das ist
+`turn_index`. Die Runde hängt bewusst am Index und nicht an `players.id`: wer
+auf Position 1 sitzt, ist eine Eigenschaft des Spiels, die `game_players` auflöst.
 
 Runden und Würfe haben **natürliche zusammengesetzte Schlüssel** statt
 Surrogat-IDs. Die Domain adressiert sie ohnehin über ihre Position, und der
@@ -603,8 +603,9 @@ absorbiert; `pg_stat_database.deadlocks` bleibt bei 0.
 
 **Warten ja, Deadlock nein.** Ein Deadlock braucht einen Zyklus im Wartegraph.
 Der kann hier nicht entstehen: jede Transaktion fasst genau *ein* Spiel an,
-nimmt immer zuerst die `games`-Zeile und danach deren `turns`/`darts`, und wer
-am `FOR UPDATE` blockiert, hält zu diesem Zeitpunkt noch **gar keine** Sperre —
+nimmt immer zuerst die `games`-Zeile und danach deren
+`game_turns`/`game_darts`, und wer am `FOR UPDATE` blockiert, hält zu diesem
+Zeitpunkt noch **gar keine** Sperre —
 ohne gehaltene Sperre kein Zyklus. Zwei Transaktionen auf verschiedenen Spielen
 berühren disjunkte Zeilen.
 
@@ -635,8 +636,8 @@ zurücknimmt. Die Delta-Variante bleibt die Optimierung, falls sie je nötig wir
 **Zwei Fallen beim Schreiben, beide real aufgetreten:**
 
 1. *SQLAlchemy sortiert INSERTs nicht nach Fremdschlüssel*, solange keine
-   `relationship()` deklariert ist — `game_players` lief vor `games`, `darts`
-   wäre vor `turns` gelaufen. Beide Stellen haben jetzt eine explizite
+   `relationship()` deklariert ist — `game_players` lief vor `games`, `game_darts`
+   wäre vor `game_turns` gelaufen. Beide Stellen haben jetzt eine explizite
    `flush()`-Grenze zwischen den Abhängigkeitsebenen.
 2. *Ein nicht importiertes Tabellenmodul ist zur Laufzeit kein Fehler, sondern
    ein unauflösbarer Fremdschlüssel* (`NoReferencedTableError` beim ersten
@@ -975,8 +976,8 @@ endet, wenn der Erste auscheckt — rund 7–9 Aufnahmen je Spieler:
 
 | | pro Spiel | 500 Spiele | 10.000 Spiele |
 |---|---|---|---|
-| `turns` | ~25 | 12.500 | 250.000 |
-| `darts` | ~70 | 35.000 | 700.000 |
+| `game_turns` | ~25 | 12.500 | 250.000 |
+| `game_darts` | ~70 | 35.000 | 700.000 |
 
 Eine indizierte Heatmap-Abfrage über 700.000 Dart-Zeilen liegt im einstelligen
 Millisekundenbereich. Datenmenge ist hier kein Argument, in keine Richtung.
@@ -1004,7 +1005,7 @@ Millisekundenbereich. Datenmenge ist hier kein Argument, in keine Richtung.
 
 *Plan B, falls das Mapping in M2 zur Plage wird:* JSONB als **Schreibmodell**
 während des Spiels, und beim Setzen von `finished_at` einmal nach
-`turns`/`darts` projizieren. Das ist ausdrücklich nicht der doppelte
+`game_turns`/`game_darts` projizieren. Das ist ausdrücklich nicht der doppelte
 Live-Zustand aus §9.2 — die Projektion läuft einmal, in eine Richtung, aus der
 autoritativen Quelle, und ist aus den Dokumenten jederzeit neu aufbaubar. Kosten:
 eine Repräsentation mehr im Code und keine Statistik über laufende Spiele.

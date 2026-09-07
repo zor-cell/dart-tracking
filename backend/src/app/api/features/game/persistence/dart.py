@@ -10,11 +10,11 @@ class DartTable(Base):
     """`pos_x`/`pos_y` are board millimetres and stay NULL for a manually
     entered dart — they are the heatmap's raw data."""
 
-    __tablename__ = "darts"
+    __tablename__ = "game_darts"
     __table_args__ = (
         ForeignKeyConstraint(
             ["game_id", "turn_index"],
-            ["turns.game_id", "turns.turn_index"],
+            ["game_turns.game_id", "game_turns.turn_index"],
             ondelete="CASCADE",
         ),
     )

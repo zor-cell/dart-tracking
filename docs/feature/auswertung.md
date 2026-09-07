@@ -47,9 +47,9 @@ bleibt. Sie tut es heute nicht:
 - `GameRepository.save` schreibt Turns und Darts bei jedem Zug **komplett neu**
   (`DELETE` + Insert).
 
-Nach der Korrektur steht in `turns`/`darts` nur noch das Ergebnis. Deshalb ein
-zweiter, **append-only** Kanal: `tracking_events`, eine Zeile pro Schritt, nie
-aktualisiert, nie gelöscht.
+Nach der Korrektur steht in `game_turns`/`game_darts` nur noch das Ergebnis.
+Deshalb ein zweiter, **append-only** Kanal: `game_events`, eine Zeile pro
+Schritt, nie aktualisiert, nie gelöscht.
 
 | Kind | Wann |
 |---|---|

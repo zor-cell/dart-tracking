@@ -14,7 +14,7 @@ class TrackingEventTable(Base):
     """A plain sequence for the primary key, unlike the uuid ids elsewhere: the
     replay depends on the exact order the rows were written in."""
 
-    __tablename__ = "tracking_events"
+    __tablename__ = "game_events"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     game_id: Mapped[str] = mapped_column(

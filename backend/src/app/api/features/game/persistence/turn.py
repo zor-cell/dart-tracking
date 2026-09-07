@@ -11,7 +11,7 @@ class TurnTable(Base):
     threw this one — the position, not the player identity, which is what
     `game_players` resolves."""
 
-    __tablename__ = "turns"
+    __tablename__ = "game_turns"
 
     game_id: Mapped[str] = mapped_column(
         ForeignKey("games.id", ondelete="CASCADE"), primary_key=True
