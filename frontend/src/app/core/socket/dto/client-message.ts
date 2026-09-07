@@ -4,6 +4,7 @@ import { RequestCalibrationDto } from '../../../features/calibration/dto/request
 import { DetectionFrameDto } from '../../../features/detection/dto/detection-frame.dto';
 import { NextPlayerDto } from '../../../features/game/dto/next-player.dto';
 import { RegisterDartDto } from '../../../features/game/dto/register-dart.dto';
+import { SetEvaluationDto } from '../../../features/game/dto/set-evaluation.dto';
 import { UndoDto } from '../../../features/game/dto/undo.dto';
 
 /**
@@ -19,6 +20,7 @@ export type ClientMessage =
   | DetectionFrameDto
   | SetRoleDto
   | RegisterDartDto
+  | SetEvaluationDto
   | UndoDto
   | NextPlayerDto;
 

@@ -47,8 +47,13 @@ class ScoringCameraStore:
         return bool(claimed) or await self.is_scoring(game_id, client_id)
 
     async def is_scoring(self, game_id: str, client_id: str) -> bool:
+        holder = await self.holder(game_id)
+        return holder is not None and holder == client_id
+
+    async def holder(self, game_id: str) -> str | None:
+        """Which camera scores this game, if one has claimed it."""
         holder = await redis_client.client().getex(_key(game_id), ex=_TTL_SECONDS)
-        return holder is not None and holder.decode() == client_id
+        return None if holder is None else holder.decode()
 
 
 store = ScoringCameraStore()

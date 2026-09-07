@@ -83,6 +83,12 @@ export class GameService {
     this.socket.send({ type: 'next_player' });
   }
 
+  /** Mark the running game as a tracking test run, or stop. Game-wide: it is
+   * the game that is measured, not the device saying so. */
+  setEvaluation(enabled: boolean): void {
+    this.socket.send({ type: 'set_evaluation', enabled });
+  }
+
   /** The active game's id, even before its state has been (re)fetched — read
    * from the live state, falling back to the id persisted across refreshes. */
   peekGameId(): string | null {

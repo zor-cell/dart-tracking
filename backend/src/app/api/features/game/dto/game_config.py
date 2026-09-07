@@ -8,3 +8,4 @@ class GameConfigDto(CamelModel):
     mode: GameMode
     players: list[PlayerSlotDto]
     checkout_mode: CheckoutMode = CheckoutMode.DOUBLE_OUT
+    evaluation_enabled: bool = False

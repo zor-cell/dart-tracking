@@ -6,4 +6,5 @@ export interface GameConfigDto {
   readonly players: readonly PlayerSlotDto[];
   readonly mode: GameMode;
   readonly checkoutMode: CheckoutMode;
+  readonly evaluationEnabled: boolean;
 }

@@ -37,6 +37,7 @@ class GameRepository:
         identities: list[PlayerIdentity],
         checkout_mode: CheckoutMode,
         owner_user_id: str | None = None,
+        evaluation_enabled: bool = False,
     ) -> Game:
         """The identities are resolved by the router, which owns the rules about
         who may take a seat. Here they are only seated, in the order given."""
@@ -49,6 +50,7 @@ class GameRepository:
                 for seat, identity in enumerate(identities)
             ],
             checkout_mode=checkout_mode,
+            evaluation_enabled=evaluation_enabled,
         )
 
         row = GameTable(
@@ -57,6 +59,7 @@ class GameRepository:
             status=GameStatus.ACTIVE.value,
             current_player_index=game.current_player_index,
             revision=game.revision,
+            evaluation_enabled=evaluation_enabled,
             owner_user_id=owner_user_id,
         )
         session.add(row)
@@ -100,6 +103,7 @@ class GameRepository:
             .values(
                 current_player_index=game.current_player_index,
                 revision=game.revision,
+                evaluation_enabled=game.evaluation_enabled,
                 # `discarded` is a judgement about the game, not a consequence of
                 # the score, so deriving the status must not overwrite it.
                 status=case(
@@ -335,6 +339,7 @@ class GameRepository:
             mode=GameMode(row.mode),
             players=[Player(id=index, name=name) for index, name in entries],
             checkout_mode=CheckoutMode(row.checkout_mode),
+            evaluation_enabled=row.evaluation_enabled,
             current_player_index=row.current_player_index,
             turns=[
                 Turn(

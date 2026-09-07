@@ -69,7 +69,12 @@ async def create_game(body: GameConfigDto, user: CurrentUser) -> GameStateDto:
     async with database.session_scope() as session:
         identities = await _resolve_players(session, body.players, owner_id)
         game = await repository.create(
-            session, body.mode, identities, body.checkout_mode, owner_user_id=owner_id
+            session,
+            body.mode,
+            identities,
+            body.checkout_mode,
+            owner_user_id=owner_id,
+            evaluation_enabled=body.evaluation_enabled,
         )
 
     return GameStateDto.from_entity(game)

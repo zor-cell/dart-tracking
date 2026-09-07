@@ -19,6 +19,7 @@ from app.api.features.calibration.dto.command.request_calibration import (
     RequestCalibrationDto,
 )
 from app.api.features.detection.dto.detection_frame import DetectionFrameDto
+from app.api.features.evaluation.dto.command.set_evaluation import SetEvaluationDto
 from app.api.features.game.dto.command.game_command import GameCommand
 
 ClientMessage = Annotated[
@@ -26,6 +27,7 @@ ClientMessage = Annotated[
     | RequestCalibrationDto
     | DetectionFrameDto
     | SetRoleDto
+    | SetEvaluationDto
     | GameCommand,
     Field(discriminator="type"),
 ]

@@ -23,11 +23,9 @@ class Game:
     mode: GameMode
     players: list[Player]
     checkout_mode: CheckoutMode = CheckoutMode.DOUBLE_OUT
+    evaluation_enabled: bool = False
     current_player_index: int = 0
     turns: list[Turn] = field(default_factory=list)
-    # Counts the state changes applied to this game. A client is served over two
-    # paths at once — the answer to its own call and the broadcast to the room —
-    # so it needs to tell a stale snapshot from a newer one.
     revision: int = 0
 
     def __post_init__(self) -> None:
@@ -164,6 +162,14 @@ class Game:
         self.revision += 1
         self.current_player_index = (self.current_player_index + 1) % len(self.players)
         self._start_turn()
+
+    def set_evaluation(self, enabled: bool) -> None:
+        """Turn the test run on or off. Bumps the revision so the room is told,
+        the switch being shown on every device."""
+        if self.evaluation_enabled == enabled:
+            return
+        self.evaluation_enabled = enabled
+        self.revision += 1
 
     def _start_turn(self) -> None:
         self.turns.append(Turn(player_id=self.current_player.id))

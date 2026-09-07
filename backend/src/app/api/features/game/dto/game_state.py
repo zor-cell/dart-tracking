@@ -18,7 +18,6 @@ class GameStateDto(CamelModel):
 
     type: Literal["game_state"] = "game_state"
     id: str
-    # Version of this snapshot; rises with every state change (see Game).
     revision: int
     mode: GameMode
     checkout_mode: CheckoutMode
@@ -28,9 +27,8 @@ class GameStateDto(CamelModel):
     darts_remaining: int
     can_undo: bool
     winner_id: int | None
-    # Suggested finish for the current player this turn, ordered as thrown, or
-    # None when there is none within the remaining darts.
     checkout: list[str] | None
+    evaluation_enabled: bool
 
     @classmethod
     def from_entity(cls, game: Game) -> Self:
@@ -49,4 +47,5 @@ class GameStateDto(CamelModel):
             can_undo=game.can_undo,
             winner_id=game.winner.id if game.winner is not None else None,
             checkout=game.checkout,
+            evaluation_enabled=game.evaluation_enabled,
         )

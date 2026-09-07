@@ -15,6 +15,7 @@ export class SettingsService {
 
   readonly manualEntryEnabled = computed(() => this._settings().manualEntryEnabled);
   readonly confirmThrowEnabled = computed(() => this._settings().confirmThrowEnabled);
+  readonly evaluationEnabled = computed(() => this._settings().evaluationEnabled);
   readonly debugCalibration = computed(() => this._settings().debugCalibration);
   readonly debugDetection = computed(() => this._settings().debugDetection);
   readonly debugClientDetection = computed(() => this._settings().debugClientDetection);
@@ -25,6 +26,10 @@ export class SettingsService {
 
   setConfirmThrowEnabled(enabled: boolean): void {
     this.patch({ confirmThrowEnabled: enabled });
+  }
+
+  setEvaluationEnabled(enabled: boolean): void {
+    this.patch({ evaluationEnabled: enabled });
   }
 
   setDebugCalibration(enabled: boolean): void {

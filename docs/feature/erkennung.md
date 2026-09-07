@@ -850,6 +850,16 @@ Zwei wiederkehrende Muster stechen heraus:
 
 Die Laufzeit pro Detektion ist noch nicht systematisch gemessen.
 
+### Messung im laufenden Spiel
+
+Neben dem festen Testset misst sich die Pipeline seit neuestem auch beim
+normalen Spielen: was die Kamera bucht, wird gegen das gehalten, was die Spieler
+am Ende übernehmen. Weil eine verpasste Erkennung mehrere Korrekturen kostet,
+werden die beiden Sequenzen je Visit *ausgerichtet* statt Korrekturen gezählt —
+Verfahren, Kennzahlen und Grenzen in [auswertung.md](auswertung.md). Korrigierte
+Runden legen ihre Kamerabilder als Wurfserie ab und wachsen damit ins Testset
+hinein.
+
 ---
 
 ## 7. Offene Punkte

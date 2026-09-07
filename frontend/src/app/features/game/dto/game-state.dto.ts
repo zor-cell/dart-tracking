@@ -11,7 +11,6 @@ import { TurnDto } from './turn.dto';
 export interface GameStateDto {
   readonly type: 'game_state';
   readonly id: string;
-  /** Version of this snapshot; rises with every state change on the server. */
   readonly revision: number;
   readonly mode: GameMode;
   readonly checkoutMode: CheckoutMode;
@@ -22,4 +21,5 @@ export interface GameStateDto {
   readonly canUndo: boolean;
   readonly winnerId: number | null;
   readonly checkout: readonly string[] | null;
+  readonly evaluationEnabled: boolean;
 }

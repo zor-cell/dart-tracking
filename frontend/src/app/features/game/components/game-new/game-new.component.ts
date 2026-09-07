@@ -9,6 +9,7 @@ import { Skeleton } from 'primeng/skeleton';
 import { AuthService } from '../../../auth/services/auth.service';
 import { PlayerIdentityDto } from '../../../player/dto/player-identity.dto';
 import { PlayerService } from '../../../player/services/player.service';
+import { SettingsService } from '../../../settings/services/settings.service';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { CHECKOUT_MODES, CheckoutMode } from '../../models/checkout-mode';
 import { PlayerSlotDto } from '../../dto/player-slot.dto';
@@ -32,6 +33,7 @@ export class GameNewComponent {
   private readonly session = inject(GameSessionService);
   private readonly auth = inject(AuthService);
   private readonly players = inject(PlayerService);
+  private readonly settings = inject(SettingsService);
 
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
   protected readonly checkoutModeOptions = [...CHECKOUT_MODES];
@@ -96,10 +98,17 @@ export class GameNewComponent {
       typeof seat === 'string' ? { name: seat.trim() } : { playerId: seat.id },
     );
 
-    this.game.createGame({ mode, checkoutMode, players: seats }).subscribe(() => {
-      this.session.setRole('camera');
-      this.router.navigate(['/game']);
-    });
+    this.game
+      .createGame({
+        mode,
+        checkoutMode,
+        players: seats,
+        evaluationEnabled: this.settings.evaluationEnabled(),
+      })
+      .subscribe(() => {
+        this.session.setRole('camera');
+        this.router.navigate(['/game']);
+      });
   }
 
   /** Seat the account itself first — the one player who is always there. */

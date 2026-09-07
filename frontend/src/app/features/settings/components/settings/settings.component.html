@@ -52,6 +52,31 @@
       </p-accordion-content>
     </p-accordion-panel>
 
+    <p-accordion-panel value="evaluation">
+      <p-accordion-header>Auswertung</p-accordion-header>
+      <p-accordion-content>
+        <div class="setting-group">
+          <div class="setting">
+            <div class="setting__text">
+              <label class="setting__label" for="evaluation">Testlauf aufzeichnen</label>
+              <p class="setting__hint" id="evaluation-hint">
+                Markiert neue Spiele - und das gerade laufende - als Testlauf: von
+                jeder Runde, die ihr korrigiert, werden die Kamerabilder als
+                Wurfserie gespeichert. Die Trefferquote selbst wird immer
+                mitgeschrieben, dafür braucht es den Schalter nicht.
+              </p>
+            </div>
+            <p-toggleswitch
+              inputId="evaluation"
+              ariaLabelledBy="evaluation-hint"
+              [ngModel]="evaluationEnabled()"
+              (ngModelChange)="setEvaluationEnabled($event)"
+            />
+          </div>
+        </div>
+      </p-accordion-content>
+    </p-accordion-panel>
+
     <p-accordion-panel value="debug">
       <p-accordion-header>Debug-Einstellungen</p-accordion-header>
       <p-accordion-content>

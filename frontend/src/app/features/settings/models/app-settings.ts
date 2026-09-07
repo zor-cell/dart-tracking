@@ -2,6 +2,7 @@
 export interface AppSettings {
   readonly manualEntryEnabled: boolean;
   readonly confirmThrowEnabled: boolean;
+  readonly evaluationEnabled: boolean;
   readonly debugCalibration: boolean;
   readonly debugDetection: boolean;
   readonly debugClientDetection: boolean;
@@ -10,6 +11,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   manualEntryEnabled: true,
   confirmThrowEnabled: true,
+  evaluationEnabled: false,
   debugCalibration: false,
   debugDetection: false,
   debugClientDetection: false,

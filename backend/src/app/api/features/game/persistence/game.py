@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database import Base, uuid_primary_key
@@ -17,6 +17,7 @@ class GameTable(Base):
     status: Mapped[str] = mapped_column(String(16))
     current_player_index: Mapped[int] = mapped_column(Integer)
     revision: Mapped[int] = mapped_column(Integer)
+    evaluation_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     owner_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

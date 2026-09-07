@@ -7,5 +7,6 @@ first flush). Add a line here whenever a feature gains a table.
 """
 
 from app.api.features.auth.persistence import user  # noqa: F401
+from app.api.features.evaluation.persistence import tracking_event  # noqa: F401
 from app.api.features.game.persistence import dart, game, game_player, turn  # noqa: F401
 from app.api.features.player.persistence import player  # noqa: F401
