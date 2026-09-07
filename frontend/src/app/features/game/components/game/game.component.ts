@@ -26,24 +26,28 @@ import {GameSessionService} from '../../services/game-session.service';
 import {GameTopBarComponent} from '../game-top-bar/game-top-bar.component';
 import {VirtualBoardComponent} from '../virtual-board/virtual-board.component';
 
-/** A side-column key: a fixed field, so it carries its own multiplier and is
- * unaffected by the D/T keys. */
-type FixedKey = { readonly label: string; readonly value: number; readonly multiplier: number };
+/** A side-column key: a fixed field. `doubles` marks the bull, the one field the
+ * D key applies to — T has no bull, so it never does. */
+type FixedKey = {
+  readonly label: string;
+  readonly value: number;
+  readonly multiplier: number;
+  readonly doubles: boolean;
+};
 
-const MISS: FixedKey = { label: '0', value: 0, multiplier: 0 };
-const OUTER_BULL: FixedKey = { label: '25', value: 25, multiplier: 1 };
-const BULLSEYE: FixedKey = { label: '50', value: 25, multiplier: 2 };
+const MISS: FixedKey = { label: '0', value: 0, multiplier: 0, doubles: false };
+const BULL: FixedKey = { label: '25', value: 25, multiplier: 1, doubles: true };
 
 /** Score keypad layout: four numbers per row, with the bull/miss keys down the
- * side column (top two rows have no side key). */
+ * side column (top three rows have no side key). */
 type PadRow = { readonly numbers: number[]; readonly side: FixedKey | null };
 
 const PAD_ROWS: readonly PadRow[] = [
   { numbers: [1, 2, 3, 4], side: null },
   { numbers: [5, 6, 7, 8], side: null },
-  { numbers: [9, 10, 11, 12], side: MISS },
-  { numbers: [13, 14, 15, 16], side: OUTER_BULL },
-  { numbers: [17, 18, 19, 20], side: BULLSEYE },
+  { numbers: [9, 10, 11, 12], side: null },
+  { numbers: [13, 14, 15, 16], side: MISS },
+  { numbers: [17, 18, 19, 20], side: BULL },
 ];
 
 @Component({
@@ -199,10 +203,19 @@ export class GameComponent implements OnInit, OnDestroy {
     this.multiplier.set(1);
   }
 
-  /** A bull/miss key: its own fixed field, unaffected by the D/T multiplier. */
+  /** The face a side key currently shows: the bull reads 50 while D is held. */
+  protected fixedLabel(key: FixedKey): string {
+    return this.isDoubled(key) ? '50' : key.label;
+  }
+
+  /** A bull/miss key: its own fixed field, so only the bull follows D. */
   protected enterFixed(key: FixedKey): void {
-    this.game.registerDart(key.value, key.multiplier);
+    this.game.registerDart(key.value, this.isDoubled(key) ? 2 : key.multiplier);
     this.multiplier.set(1);
+  }
+
+  private isDoubled(key: FixedKey): boolean {
+    return key.doubles && this.multiplier() === 2;
   }
 
   protected toggleDouble(): void {

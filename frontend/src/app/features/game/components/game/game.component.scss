@@ -431,10 +431,10 @@
   }
 }
 
-// Fills the empty slot beside 4 and 8: side column, both top rows.
+// Fills the empty slot beside 4, 8 and 12: side column, the top three rows.
 .scorepad__undo {
   grid-column: 9 / span 2;
-  grid-row: 1 / span 2;
+  grid-row: 1 / span 3;
   flex-direction: column;
   gap: 0.3rem;
   font-size: 0.85rem;
@@ -483,7 +483,7 @@
 
 .scorepad__slot--undo {
   grid-column: 9 / span 2;
-  grid-row: 1 / span 2;
+  grid-row: 1 / span 3;
 }
 
 .scorepad__slot--mod {
