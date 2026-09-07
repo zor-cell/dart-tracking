@@ -9,6 +9,8 @@ from app.api.core.socket import socket
 from app.api.features.auth import auth
 from app.api.features.game import games
 from app.api.features.player import players
+# Aliased: `settings` is already the process configuration below.
+from app.api.features.settings import settings as user_settings
 from app.api.features.statistics import statistics
 from app.infrastructure import database, redis_client
 from app.infrastructure.config import get_settings
@@ -50,5 +52,6 @@ api_router.include_router(games.router)
 api_router.include_router(auth.router)
 api_router.include_router(players.router)
 api_router.include_router(statistics.router)
+api_router.include_router(user_settings.router)
 
 app.include_router(api_router)

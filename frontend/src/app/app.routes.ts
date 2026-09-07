@@ -56,6 +56,7 @@ export const routes: Routes = [
   },
   {
     path: 'account/settings',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/settings/components/settings/settings.component').then(
         (m) => m.SettingsComponent,

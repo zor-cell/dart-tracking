@@ -5,10 +5,9 @@ Wenig Aufwand:
 - die größe auf großen screen passt noch nicht so ganz. die tastatur soll eine maximal größe haben, dann kann
 die kamera den rest einnehmen.
 - rpi5 zugang von laptop aus anderem netzwerk
-- settings pro profil (und halt default for anony users)
+- debug history in app anzeigen können, also den report basically
 
 Viel Aufwand:
-- debug history für praxis test
 - client diff löst ja derzeit öfter aus, fokus auf recall, das backend muss da was checken (ist das überhaupt möglich), weil
   wenn ein pfeil abgefallen ist, gabs bewegung, frame war aber leer, dh das müsste als 0 erkannt werden, obwohl frame leer ist, wahrscheinlich
   muss die client diff doch nochmal besser werden. ganz wichtiger punkt!

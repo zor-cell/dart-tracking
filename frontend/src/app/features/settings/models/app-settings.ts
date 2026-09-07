@@ -1,14 +1,8 @@
-/** Technical settings, persisted locally and shared across features. */
-export interface AppSettings {
-  readonly manualEntryEnabled: boolean;
-  readonly confirmThrowEnabled: boolean;
-  readonly evaluationEnabled: boolean;
-  readonly debugCalibration: boolean;
-  readonly debugDetection: boolean;
-  readonly debugClientDetection: boolean;
-}
+import { AppSettingsDto } from '../dto/app-settings.dto';
 
-export const DEFAULT_SETTINGS: AppSettings = {
+/** What a session runs on until the server says otherwise, and what an
+ * anonymous one runs on for good. Mirrors the server's `AppSettings` defaults. */
+export const DEFAULT_SETTINGS: AppSettingsDto = {
   manualEntryEnabled: true,
   confirmThrowEnabled: true,
   evaluationEnabled: false,

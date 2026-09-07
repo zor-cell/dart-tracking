@@ -1,0 +1,23 @@
+"""How a signed-in account wants the app to behave.
+
+Server-owned so the choices follow the account across devices; an anonymous
+session gets `DEFAULTS` and cannot change them.
+"""
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class AppSettings:
+    """Defaults are the safe reading of each switch: the fallbacks that keep a
+    game playable are on, the diagnostics are off."""
+
+    manual_entry_enabled: bool = True
+    confirm_throw_enabled: bool = True
+    evaluation_enabled: bool = False
+    debug_calibration: bool = False
+    debug_detection: bool = False
+    debug_client_detection: bool = False
+
+
+DEFAULTS = AppSettings()

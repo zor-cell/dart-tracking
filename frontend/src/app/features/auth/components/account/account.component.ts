@@ -18,6 +18,12 @@ export class AccountComponent {
   protected readonly user = this.auth.user;
   protected readonly busy = signal(false);
 
+  constructor() {
+    // This page is what it shows: everything on it hangs off `user()`, and
+    // nothing else on this route asks for the session to be restored first.
+    void this.auth.ready;
+  }
+
   protected async logout(): Promise<void> {
     this.busy.set(true);
     try {
