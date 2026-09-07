@@ -1,7 +1,6 @@
 TODOs:
 
 Wenig Aufwand:
-- rpi5 zugang von laptop aus anderem netzwerk
 - debug history in app anzeigen können, also den report basically
 
 Viel Aufwand:
@@ -14,5 +13,5 @@ Viel Aufwand:
 
 Zukunft:
 - Players ansicht im konto profil. dort muss man player löschen können. man muss auch einen existierenden user
-seine games zuschreiben könnnen, der muss halt akzeptieren. 
-- statistiken nach datum sortieren können, die defualt ansicht einfach letzten monat (eher letzte 30 tage montasübergreifend)
+seine games zuschreiben können, der muss halt akzeptieren. 
+- statistiken nach datum sortieren können, die default ansicht einfach letzten monat (eher letzte 30 tage montasübergreifend)
