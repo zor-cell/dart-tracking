@@ -10,9 +10,9 @@ Usage:
     uv run python scripts/evaluation/report.py <game-id> ...
     uv run python scripts/evaluation/report.py --out results/evening-1
 
-Writes `accuracy.md` to `testdata/detection/_results_live` and, into each game's
-frame folder, the `ground_truth.txt` the offline runner reads - so a corrected
-visit becomes a test case without being labelled by hand.
+Writes `accuracy.md` to `testdata/evaluation/_report` and, into each game's frame
+folder, the `ground_truth.txt` the offline runner reads - so a corrected visit
+becomes a test case without being labelled by hand.
 """
 
 import argparse
@@ -44,15 +44,18 @@ from app.api.features.evaluation.domain.visit_replay import Visit, replay  # noq
 from app.api.features.evaluation.persistence.evaluation_repository import (  # noqa: E402
     repository as evaluation_repository,
 )
-from app.api.features.evaluation.services.frame_buffer import folder_of  # noqa: E402
+from app.api.features.evaluation.services.frame_buffer import (  # noqa: E402
+    folder_of,
+    series_name,
+)
 from app.infrastructure import database  # noqa: E402
 from app.infrastructure.config import get_settings  # noqa: E402
 
 from scripts.common import rate_table, write_markdown  # noqa: E402
 
-# Beside the offline runner's `_results`, and named like it, so the two reports
-# do not land in the same folder.
-REPORT_DIR = _BACKEND / "testdata" / "detection" / "_results_live"
+# Not `_results`: that is where `run_all.py` writes when pointed at this tree,
+# and it wipes the folder before each run.
+REPORT_DIR = _BACKEND / "testdata" / "evaluation" / "_report"
 REPORT_NAME = "accuracy.md"
 GROUND_TRUTH_NAME = "ground_truth.txt"
 
@@ -81,7 +84,7 @@ class Judgement:
 
     @property
     def key(self) -> str:
-        return f"{self.game_id[:8]}/turn{self.turn_index:03d}/dart{self.position}"
+        return f"{self.game_id[:8]}/throw{self.turn_index}/dart{self.position}"
 
     @property
     def expected_segment(self) -> Segment | None:
@@ -142,7 +145,7 @@ def write_ground_truth(game_id: str, visits: list[Visit]) -> Path | None:
         "# Labels are what the players accepted, aligned onto the frames kept.",
     ]
     for visit in visits:
-        series = f"turn{visit.turn_index:03d}"
+        series = series_name(visit.turn_index)
         if not (folder / f"{series}_base.jpg").exists():
             continue
         tracked = [event.label for event in visit.claimed]

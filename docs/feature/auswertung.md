@@ -182,9 +182,34 @@ Kalibrierungsbild des leeren Boards als `base`, dann jeden gescorten Wurf. Bei
 `next_player`:
 
 - **korrigiert** und das Spiel ist als Testlauf markiert → die Serie wird nach
-  `backend/testdata/detection/live_<game-id>/` geschrieben, als
-  `turnNNN_base.jpg` + `turnNNN_dartK.jpg`;
+  `backend/testdata/evaluation/game_<game-id>/` geschrieben, als
+  `throwN_base.jpg` + `throwN_dartK.jpg`;
 - **unverändert übernommen** → verworfen.
+
+Das `game_`-Präfix sagt, wofür die UUID steht, und fällt zugleich mit der
+`<board>_setup<n>`-Aufteilung des Offline-Runners zusammen: alle aufgezeichneten
+Setups gruppieren dort unter dem „Board" `game`.
+
+`N` ist der Visit-Index aus dem Event-Log, nicht durchnummeriert: `throw3` ist
+die vierte Runde des Spiels, und dass `throw2` fehlt heißt, dass sie unverändert
+übernommen wurde. So lässt sich eine Bilderserie ohne Umweg der Zeile im Log
+zuordnen. Den Namen vergibt `frame_buffer.series_name`, die auch der Report
+benutzt — die beiden dürfen nicht auseinanderlaufen.
+
+**Eigener Baum, kein Unterordner von `detection/`.** Diese Serien sind
+aufgezeichnet, nicht kuratiert. `run_all.py` nimmt den zu durchlaufenden Ordner
+als Argument, liest das Format aber unverändert:
+
+```bash
+uv run python scripts/detection/run_all.py testdata/evaluation
+```
+
+Kein `--raw` nötig: die Frames liegen schon so vor, wie der Client sie sendet
+(max. 1280 px, JPEG q85), und `as_client_would_send` reicht ein Bild innerhalb
+der Aufnahmegröße unverändert durch. Vorher komprimierte es blind ein zweites
+Mal, was auf diesen elf Pfeilen **81.8 % → 54.5 %** kostete — siehe
+[erkennung.md §6](erkennung.md), wo derselbe Effekt auf dem kuratierten Testset
+gemessen ist.
 
 Das ist der Grund für die Aufteilung des Schalters: die akzeptierten Visits sind
 die, die der Tracker schon kann, und sie machen den Großteil aus. Bei ~10 %
@@ -228,10 +253,10 @@ uv run python scripts/evaluation/report.py --all-games  # alle geloggten Spiele
 uv run python scripts/evaluation/report.py <game-id>
 ```
 
-Schreibt `accuracy.md` nach `testdata/detection/_results_live/` und je Spiel dessen
-`ground_truth.txt` in den Bilderordner. Der Ordnername folgt der Konvention des
-Offline-Runners (`<board>_setup<n>`): alle Live-Aufnahmen gruppieren unter dem
-„Board" `live`, jedes Spiel ist ein eigenes Setup.
+Schreibt `accuracy.md` nach `testdata/evaluation/_report/` und je Spiel dessen
+`ground_truth.txt` in den Bilderordner. Bewusst nicht nach `_results`: dorthin
+schreibt `run_all.py`, wenn man es auf denselben Baum ansetzt, und es leert den
+Ordner vor jedem Lauf.
 Der Aufbau folgt bewusst dem Offline-Report (`erkennung.md §4`), damit Live- und
 Testset-Zahlen nebeneinander lesbar sind:
 

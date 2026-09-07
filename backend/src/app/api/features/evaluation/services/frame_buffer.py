@@ -10,15 +10,23 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Among the recorded test data, so `scripts/detection/run_all.py` walks it. One
-# folder per game, named for the runner's `<board>_setup<n>` convention: every
-# live capture groups under the board `live`, each game its own setup.
-_LIVE_ROOT = Path(__file__).resolve().parents[6] / "testdata" / "detection"
+# A tree of its own beside the recorded test data: these series are captured,
+# not curated, and `scripts/detection/run_all.py` takes the folder to walk as an
+# argument. One subfolder per game, which is what a setup is here.
+_EVALUATION_ROOT = Path(__file__).resolve().parents[6] / "testdata" / "evaluation"
 
 
 def folder_of(game_id: str) -> Path:
-    """Where a game's kept throw series live."""
-    return _LIVE_ROOT / f"live_{game_id}"
+    """Where a game's kept throw series live. The prefix names what the id is,
+    and doubles as the runner's `<board>_setup<n>` split, so every recorded
+    setup groups under `game`."""
+    return _EVALUATION_ROOT / f"game_{game_id}"
+
+
+def series_name(turn_index: int) -> str:
+    """What one visit's frames are called. Shared with the report, which has to
+    label the very same files."""
+    return f"throw{turn_index}"
 
 
 @dataclass
@@ -70,7 +78,7 @@ class FrameBuffer:
         self.discard(game_id)
 
     def flush(self, game_id: str, turn_index: int) -> Path | None:
-        """Write the open visit as `turnNNN_base.jpg` + `turnNNN_dartK.jpg` and
+        """Write the open visit as `throwN_base.jpg` + `throwN_dartK.jpg` and
         clear it. Returns the folder, or None when there was nothing to write.
 
         The `ground_truth.txt` is the report script's job: which frame carries
@@ -84,7 +92,7 @@ class FrameBuffer:
         folder = folder_of(game_id)
         try:
             folder.mkdir(parents=True, exist_ok=True)
-            series = f"turn{turn_index:03d}"
+            series = series_name(turn_index)
             (folder / f"{series}_base.jpg").write_bytes(visit.base)
             for index, throw in enumerate(visit.throws, start=1):
                 (folder / f"{series}_dart{index}.jpg").write_bytes(throw)
