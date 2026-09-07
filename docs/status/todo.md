@@ -1,7 +1,6 @@
 TODOs:
 
 Wenig Aufwand:
-- ein spieler anzeige in game soll nur so breit sein wie bei 2 spielern, zentriert
 - die größe auf großen screen passt noch nicht so ganz. die tastatur soll eine maximal größe haben, dann kann
 die kamera den rest einnehmen.
 - rpi5 zugang von laptop aus anderem netzwerk

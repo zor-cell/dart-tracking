@@ -271,7 +271,9 @@
 // Everyone shares the width up to three; past that the row scrolls and the
 // thrower is held in the middle, one player either side.
 .scoreboard[data-visible='1'] {
-  --visible-cards: 1;
+  // A lone player keeps the two-card width; stretched across the row it looks off.
+  --visible-cards: 2;
+  justify-content: center;
 }
 
 .scoreboard[data-visible='2'] {
