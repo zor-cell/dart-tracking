@@ -103,8 +103,9 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly padRows = PAD_ROWS;
 
   /** Whether the game is still being fetched — the placeholder below the view is
-   * for "no game", which is a different answer from "not yet known". */
-  protected readonly restoring = signal(true);
+   * for "no game", which is a different answer from "not yet known". Without a
+   * persisted id there is nothing to fetch, so the answer is known at once. */
+  protected readonly restoring = signal(this.game.peekGameId() !== null);
 
   /** Placeholder rows while the state is on its way: two, the smallest game. */
   protected readonly skeletonPlayers = [0, 1];
