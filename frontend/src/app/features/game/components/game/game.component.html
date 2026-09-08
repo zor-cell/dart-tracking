@@ -9,6 +9,7 @@
             ariaLabel="Verbindung wird hergestellt"
             [style]="{ width: '2.5rem', height: '2.5rem' }"
           />
+          <p>Verbindung wird hergestellt …</p>
         </div>
       </div>
     } @else if (deviceRole() === 'scoreboard') {
@@ -279,6 +280,7 @@
           ariaLabel="Spiel wird geladen"
           [style]="{ width: '2.5rem', height: '2.5rem' }"
         />
+        <p>Spiel wird geladen …</p>
       </div>
     </div>
 
@@ -323,10 +325,9 @@
     </div>
   </section>
 } @else {
-  <section class="view">
+  <section class="view view--empty">
     <div class="placeholder">
-      <i class="pi pi-play-circle placeholder__icon" aria-hidden="true"></i>
-      <p>Kein aktives Spiel.</p>
+      <div>Kein aktives Spiel.</div>
       <p-button label="Neues Spiel" icon="pi pi-play-circle" routerLink="/game/new" />
     </div>
   </section>

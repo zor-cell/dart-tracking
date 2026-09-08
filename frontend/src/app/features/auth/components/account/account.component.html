@@ -1,15 +1,15 @@
 <section class="view">
   <header class="view__header">
     <h1 class="view__title">Konto</h1>
-    <p class="view__subtitle">
-      @if (restoring()) {
-        Sitzung wird geprüft
-      } @else if (user()) {
-        Angemeldet auf diesem Gerät
-      } @else {
-        Nicht angemeldet
-      }
-    </p>
+    @if (!restoring()) {
+      <p class="view__subtitle">
+        @if (user()) {
+          Angemeldet auf diesem Gerät
+        } @else {
+          Nicht angemeldet
+        }
+      </p>
+    }
   </header>
 
   @if (restoring()) {
@@ -18,6 +18,7 @@
         ariaLabel="Sitzung wird geprüft"
         [style]="{ width: '2.5rem', height: '2.5rem' }"
       />
+      <p>Sitzung wird geprüft …</p>
     </div>
   } @else {
     @if (user(); as account) {
