@@ -208,7 +208,7 @@
                 <button
                   type="button"
                   class="scorepad__key"
-                  [disabled]="state.dartsRemaining === 0"
+                  [disabled]="!game.acceptsDarts()"
                   [attr.aria-label]="multiplierPrefix() + n"
                   (click)="enterNumber(n)"
                 >
@@ -220,7 +220,7 @@
                   type="button"
                   class="scorepad__key scorepad__key--fixed"
                   [class.scorepad__key--bull]="side.value !== 0"
-                  [disabled]="state.dartsRemaining === 0"
+                  [disabled]="!game.acceptsDarts()"
                   (click)="enterFixed(side)"
                 >
                   {{ fixedLabel(side) }}
@@ -233,7 +233,7 @@
               class="scorepad__key scorepad__mod"
               [class.scorepad__mod--active]="multiplier() === 2"
               [attr.aria-pressed]="multiplier() === 2"
-              [disabled]="state.dartsRemaining === 0"
+              [disabled]="!game.acceptsDarts()"
               (click)="toggleDouble()"
             >
               Double
@@ -243,7 +243,7 @@
               class="scorepad__key scorepad__mod"
               [class.scorepad__mod--active]="multiplier() === 3"
               [attr.aria-pressed]="multiplier() === 3"
-              [disabled]="state.dartsRemaining === 0"
+              [disabled]="!game.acceptsDarts()"
               (click)="toggleTriple()"
             >
               Triple
@@ -253,9 +253,24 @@
       </div>
     }
 
-    <!-- Only when the keypad's own back button isn't up (keypad hidden, or a win
-         removed it) — correcting the winning dart is exactly when this is needed. -->
-    @if (!settings.manualEntryEnabled() || game.settledWinner()) {
+    <!-- Takes over the input's slot so the picture above keeps its height and the
+         player cards stay put. Where the post-game actions go. -->
+    @if (game.settledWinner()) {
+      <div class="finish" [class.finish--reserved]="settings.manualEntryEnabled()">
+        <p-button
+          fluid
+          label="Zurück"
+          icon="pi pi-undo"
+          severity="secondary"
+          [text]="true"
+          [disabled]="!state.canUndo"
+          (onClick)="game.undo()"
+        />
+      </div>
+    }
+
+    <!-- No keypad on this device, so its back button is missing too. -->
+    @if (!settings.manualEntryEnabled() && !game.settledWinner()) {
       <p-button
         fluid
         label="Zurück"
