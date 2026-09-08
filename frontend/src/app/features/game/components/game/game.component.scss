@@ -52,7 +52,7 @@
   align-items: center;
   justify-content: center;
   aspect-ratio: 4 / 3;
-  border: 1px dashed var(--p-content-border-color, #d1d5db);
+  border: 1px solid var(--p-content-border-color, #e5e7eb);
   border-radius: 0.75rem;
   overflow: hidden;
 }
