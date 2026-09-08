@@ -56,6 +56,8 @@ from scripts.common import rate_table, write_markdown  # noqa: E402
 REPORT_DIR = _BACKEND / "testdata" / "evaluation" / "_report"
 REPORT_NAME = "accuracy.md"
 GROUND_TRUTH_NAME = "ground_truth.txt"
+# What a frame holding no new dart is called in the offline runner's truth files.
+NO_CHANGE_LABEL = "NO_CHANGE"
 
 # A mismatch closer than this to the expected segment is a wire's-width miss
 # rather than a structural failure - the same cut the offline runner makes.
@@ -64,7 +66,8 @@ NEAR_MISS_MM = 5.0
 def write_ground_truth(game_id: str, visits: list[Visit]) -> Path | None:
     """Label the frames kept for this game, in the offline runner's format.
 
-    Only a booked dart left a frame behind; those get the settled label.
+    Only a booked dart left a frame behind. A frame the alignment matched to no
+    accepted dart is a phantom: nothing new is in it, so the label is NO_CHANGE.
     """
     folder = folder_of(game_id)
     if not folder.is_dir():
@@ -87,7 +90,7 @@ def write_ground_truth(game_id: str, visits: list[Visit]) -> Path | None:
             frame += 1
             lines.append(
                 f"{series}_dart{frame} "
-                f"{expected[right] if right is not None else 'MISS'}"
+                f"{expected[right] if right is not None else NO_CHANGE_LABEL}"
             )
 
     path = folder / GROUND_TRUTH_NAME
