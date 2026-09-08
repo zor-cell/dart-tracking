@@ -130,8 +130,9 @@
       </ol>
     }
 
-    @if (game.winner(); as winner) {
-      <div class="game__winner" role="status">🎯 {{ winner.name }} gewinnt!</div>
+    <!-- The win is shown on the player card; this only voices it. -->
+    @if (game.settledWinner(); as winner) {
+      <p class="game__winner-status" role="status">{{ winner.name }} gewinnt!</p>
     }
 
     <ul
@@ -145,15 +146,18 @@
         <li
           class="scoreboard__row"
           [class.scoreboard__row--active]="$index === state.currentPlayerIndex"
+          [class.scoreboard__row--winner]="player.id === game.settledWinner()?.id"
           [attr.aria-current]="$index === state.currentPlayerIndex ? 'true' : null"
         >
-          <span class="scoreboard__name">{{ player.name }}</span>
+          <span class="scoreboard__name">
+            {{ player.name }}
+          </span>
           <span class="scoreboard__remaining">{{ player.remaining }}</span>
         </li>
       }
     </ul>
 
-    @if (!game.winner()) {
+    @if (!game.settledWinner()) {
       <div class="turn">
         @if (game.currentTurn(); as turn) {
           <div class="turn__row">
@@ -178,15 +182,15 @@
                 icon="pi pi-check"
                 [rounded]="true"
                 severity="success"
-                ariaLabel="Runde bestätigen — nächster Spieler"
+                [ariaLabel]="confirmLabel()"
                 [disabled]="turn.darts.length === 0"
-                (onClick)="game.nextPlayer()"
+                (onClick)="confirmTurn()"
               />
             }
           </div>
         }
 
-        @if (settings.manualEntryEnabled()) {
+        @if (settings.manualEntryEnabled() && !game.settledWinner()) {
           <div class="scorepad" role="group" aria-label="Punkte-Eingabe">
             <button
               type="button"
@@ -251,7 +255,7 @@
 
     <!-- Only when the keypad's own back button isn't up (keypad hidden, or a win
          removed it) — correcting the winning dart is exactly when this is needed. -->
-    @if (!settings.manualEntryEnabled() || game.winner()) {
+    @if (!settings.manualEntryEnabled() || game.settledWinner()) {
       <p-button
         fluid
         label="Zurück"

@@ -76,15 +76,9 @@ export class DetectionService {
   /** Transient hit ("T20 · 60") or failure hint, shown briefly in the badge. */
   readonly feedbackLabel = signal<string | null>(null);
 
-  /**
-   * Whether a tracked throw could still be booked. Mirrors the precondition in
-   * the server's `Game.register_dart`, so the two cannot disagree about what a
-   * full, busted or won visit accepts.
-   */
-  readonly acceptsThrows = computed(() => {
-    const state = this.game.state();
-    return state !== null && state.winnerId === null && state.dartsRemaining > 0;
-  });
+  /** Whether a tracked throw could still be booked — the same rule the keypad
+   * greys its keys out by. */
+  readonly acceptsThrows = this.game.acceptsDarts;
 
   /**
    * Recent detect→send→answer events, newest first — the persistent trace behind

@@ -111,6 +111,11 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly skeletonPlayers = [0, 1];
   protected readonly skeletonDarts = [0, 1, 2];
 
+  /** Reads as the handover for a normal visit and as the win for the last one. */
+  protected readonly confirmLabel = computed(() =>
+    this.game.winPending() ? 'Sieg bestätigen' : 'Runde bestätigen — nächster Spieler',
+  );
+
   protected readonly multiplier = signal<1 | 2 | 3>(1);
   protected readonly multiplierPrefix = computed(() =>
     this.multiplier() === 2 ? 'D' : this.multiplier() === 3 ? 'T' : '',
@@ -195,6 +200,16 @@ export class GameComponent implements OnInit, OnDestroy {
    * it asks the game's cameras to take one. */
   protected requestCalibration(): void {
     this.calibration.requestCalibration();
+  }
+
+  /** End the visit — or, on the dart that finishes the game, take the win. The
+   * server has no handover left to apply once someone is out. */
+  protected confirmTurn(): void {
+    if (this.game.winner() !== null) {
+      this.game.confirmWin();
+    } else {
+      this.game.nextPlayer();
+    }
   }
 
   /** A 1–20 key: booked with the active multiplier, which then falls back to

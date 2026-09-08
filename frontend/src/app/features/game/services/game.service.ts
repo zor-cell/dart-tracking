@@ -34,6 +34,8 @@ export class GameService {
   private readonly _state = signal<GameStateDto | null>(null);
   readonly state = this._state.asReadonly();
 
+  private readonly _winConfirmed = signal(false);
+
   readonly currentTurn = computed<TurnDto | null>(() => this._state()?.turns.at(-1) ?? null);
 
   readonly winner = computed<PlayerDto | null>(() => {
@@ -43,6 +45,29 @@ export class GameService {
     }
     return state.players.find((player) => player.id === state.winnerId) ?? null;
   });
+
+  /**
+   * Whether another dart could still be booked. Mirrors the precondition in the
+   * server's `Game.register_dart`, so the two cannot disagree about what a full,
+   * busted or won visit accepts. Reaching zero closes the visit at once — that
+   * is the score, not the confirmation, so `winner` and not `settledWinner`.
+   */
+  readonly acceptsDarts = computed(() => {
+    const state = this._state();
+    return state !== null && state.winnerId === null && state.dartsRemaining > 0;
+  });
+
+  /** A win that still waits for the confirm tap, the same gate every other visit
+   * passes through. Never pending while confirming is off. */
+  readonly winPending = computed(
+    () => this.winner() !== null && this.settings.confirmThrowEnabled() && !this._winConfirmed(),
+  );
+
+  /** The winner once the win is settled — what the view shows the game as over
+   * by. `winner` alone is only the score reading it rests on. */
+  readonly settledWinner = computed<PlayerDto | null>(() =>
+    this.winPending() ? null : this.winner(),
+  );
 
   constructor() {
     // The only route by which a change reaches this cache: commands are sent
@@ -81,6 +106,12 @@ export class GameService {
   /** Switch to the next player */
   nextPlayer(): void {
     this.socket.send({ type: 'next_player' });
+  }
+
+  /** Take the winning dart as thrown. Local to this device: the server has
+   * nothing left to apply, and confirming is a per-device setting. */
+  confirmWin(): void {
+    this._winConfirmed.set(true);
   }
 
   /** Mark the running game as a tracking test run, or stop. Game-wide: it is
@@ -193,6 +224,11 @@ export class GameService {
       return false;
     }
     this._state.set(state);
+    // An undo past the winning dart puts the game back in play, so the next win
+    // is asked about again.
+    if (state.winnerId === null) {
+      this._winConfirmed.set(false);
+    }
     localStorage.setItem(ACTIVE_GAME_KEY, state.id);
     return true;
   }
