@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
+import { ProgressSpinner } from 'primeng/progressspinner';
 import { GameSummaryDto, GameStatus } from '../../../game/dto/game-summary.dto';
 import { GameHistoryService } from '../../../game/services/game-history.service';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
@@ -20,7 +21,7 @@ const STATUS_LABELS: Record<GameStatus, string> = {
 
 @Component({
   selector: 'app-statistics',
-  imports: [Button, BoardHeatmapComponent, DatePipe, DecimalPipe, RouterLink],
+  imports: [Button, BoardHeatmapComponent, DatePipe, DecimalPipe, ProgressSpinner, RouterLink],
   templateUrl: './statistics.component.html',
   styleUrl: './statistics.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,6 +32,8 @@ export class StatisticsComponent {
 
   protected readonly totals = signal<PlayerStatisticsDto | null>(null);
   protected readonly games = signal<GameSummaryDto[]>([]);
+  /** The first load only: a later refresh keeps the page and reports itself on
+   * the row that triggered it. */
   protected readonly loading = signal(true);
   protected readonly moreAvailable = signal(false);
   protected readonly busyGameId = signal<string | null>(null);
@@ -40,9 +43,7 @@ export class StatisticsComponent {
   /** Legs won out of legs that reached a finishable score at least once. */
   protected readonly checkoutRate = computed(() => {
     const totals = this.totals();
-    return !totals || totals.checkoutChances === 0
-      ? null
-      : totals.legsWon / totals.checkoutChances;
+    return !totals || totals.checkoutChances === 0 ? null : totals.legsWon / totals.checkoutChances;
   });
 
   /** Darts that finished a leg, out of darts thrown while on a double. */
@@ -75,7 +76,6 @@ export class StatisticsComponent {
   }
 
   private async reload(): Promise<void> {
-    this.loading.set(true);
     try {
       const [totals, page] = await Promise.all([
         this.statistics.load(),

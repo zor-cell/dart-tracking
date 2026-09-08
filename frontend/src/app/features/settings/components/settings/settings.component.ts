@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Accordion, AccordionContent, AccordionHeader, AccordionPanel } from 'primeng/accordion';
 import { Button } from 'primeng/button';
+import { ProgressSpinner } from 'primeng/progressspinner';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 import { GameService } from '../../../game/services/game.service';
 import { SettingsService } from '../../services/settings.service';
@@ -13,6 +14,7 @@ import { SettingsService } from '../../services/settings.service';
     FormsModule,
     RouterLink,
     Button,
+    ProgressSpinner,
     ToggleSwitch,
     Accordion,
     AccordionPanel,

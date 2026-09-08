@@ -15,8 +15,11 @@
   </header>
 
   @if (loading()) {
-    <div class="placeholder">
-      <i class="pi pi-spin pi-spinner placeholder__icon" aria-hidden="true"></i>
+    <div class="loading" role="status">
+      <p-progress-spinner
+        ariaLabel="Auswertung wird geladen"
+        [style]="{ width: '2.5rem', height: '2.5rem' }"
+      />
       <p>Lade Auswertung …</p>
     </div>
   } @else if (games().length === 0) {

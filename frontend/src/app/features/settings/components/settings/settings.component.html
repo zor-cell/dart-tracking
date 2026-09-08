@@ -12,124 +12,139 @@
     <p class="view__subtitle">Parameter der Wurf-Erkennung zum schnellen Testen</p>
   </header>
 
-  <p-accordion [multiple]="true" [(value)]="openSections">
-    <p-accordion-panel value="game">
-      <p-accordion-header>Spiel-Einstellungen</p-accordion-header>
-      <p-accordion-content>
-        <div class="setting-group">
-          <div class="setting">
-            <div class="setting__text">
-              <label class="setting__label" for="manual-entry">Manuelle Eingabe</label>
-              <p class="setting__hint" id="manual-entry-hint">
-                Zeigt im Spiel ein Eingabefeld, um Punkte von Hand zu buchen. Als
-                Rückfallebene gedacht, falls die Kameraerkennung fehlschlägt.
-              </p>
+  @if (settings.loading()) {
+    <div class="loading" role="status">
+      <p-progress-spinner
+        ariaLabel="Einstellungen werden geladen"
+        [style]="{ width: '2.5rem', height: '2.5rem' }"
+      />
+    </div>
+  } @else {
+    <p-accordion [multiple]="true" [(value)]="openSections">
+      <p-accordion-panel value="game">
+        <p-accordion-header>Spiel-Einstellungen</p-accordion-header>
+        <p-accordion-content>
+          <div class="setting-group">
+            <div class="setting">
+              <div class="setting__text">
+                <label class="setting__label" for="manual-entry">Manuelle Eingabe</label>
+                <p class="setting__hint" id="manual-entry-hint">
+                  Zeigt im Spiel ein Eingabefeld, um Punkte von Hand zu buchen. Als Rückfallebene
+                  gedacht, falls die Kameraerkennung fehlschlägt.
+                </p>
+              </div>
+              <p-toggleswitch
+                inputId="manual-entry"
+                ariaLabelledBy="manual-entry-hint"
+                [ngModel]="settings.manualEntryEnabled()"
+                (ngModelChange)="settings.setManualEntryEnabled($event)"
+              />
             </div>
-            <p-toggleswitch
-              inputId="manual-entry"
-              ariaLabelledBy="manual-entry-hint"
-              [ngModel]="settings.manualEntryEnabled()"
-              (ngModelChange)="settings.setManualEntryEnabled($event)"
-            />
-          </div>
 
-          <div class="setting">
-            <div class="setting__text">
-              <label class="setting__label" for="confirm-throw">Manuell Würfe akzeptieren</label>
-              <p class="setting__hint" id="confirm-throw-hint">
-                Zeigt im Spiel neben den Würfen die Option diese zu bestätigen.
-                Wenn nicht aktiv, wird automatisch nach 3 Würfen weitergezählt.
-              </p>
+            <div class="setting">
+              <div class="setting__text">
+                <label class="setting__label" for="confirm-throw">Manuell Würfe akzeptieren</label>
+                <p class="setting__hint" id="confirm-throw-hint">
+                  Zeigt im Spiel neben den Würfen die Option diese zu bestätigen. Wenn nicht aktiv,
+                  wird automatisch nach 3 Würfen weitergezählt.
+                </p>
+              </div>
+              <p-toggleswitch
+                inputId="confirm-throw"
+                ariaLabelledBy="confirm-throw-hint"
+                [ngModel]="settings.confirmThrowEnabled()"
+                (ngModelChange)="settings.setConfirmThrowEnabled($event)"
+              />
             </div>
-            <p-toggleswitch
-              inputId="confirm-throw"
-              ariaLabelledBy="confirm-throw-hint"
-              [ngModel]="settings.confirmThrowEnabled()"
-              (ngModelChange)="settings.setConfirmThrowEnabled($event)"
-            />
           </div>
-        </div>
-      </p-accordion-content>
-    </p-accordion-panel>
+        </p-accordion-content>
+      </p-accordion-panel>
 
-    <p-accordion-panel value="evaluation">
-      <p-accordion-header>Auswertung</p-accordion-header>
-      <p-accordion-content>
-        <div class="setting-group">
-          <div class="setting">
-            <div class="setting__text">
-              <label class="setting__label" for="evaluation">Testlauf aufzeichnen</label>
-              <p class="setting__hint" id="evaluation-hint">
-                Markiert neue Spiele - und das gerade laufende - als Testlauf: von
-                jeder Runde, die ihr korrigiert, werden die Kamerabilder als
-                Wurfserie gespeichert. Die Trefferquote selbst wird immer
-                mitgeschrieben, dafür braucht es den Schalter nicht.
-              </p>
+      <p-accordion-panel value="evaluation">
+        <p-accordion-header>Auswertung</p-accordion-header>
+        <p-accordion-content>
+          <div class="setting-group">
+            <div class="setting">
+              <div class="setting__text">
+                <label class="setting__label" for="evaluation">Testlauf aufzeichnen</label>
+                <p class="setting__hint" id="evaluation-hint">
+                  Markiert neue Spiele - und das gerade laufende - als Testlauf: von jeder Runde,
+                  die ihr korrigiert, werden die Kamerabilder als Wurfserie gespeichert. Die
+                  Trefferquote selbst wird immer mitgeschrieben, dafür braucht es den Schalter
+                  nicht.
+                </p>
+              </div>
+              <p-toggleswitch
+                inputId="evaluation"
+                ariaLabelledBy="evaluation-hint"
+                [ngModel]="evaluationEnabled()"
+                (ngModelChange)="setEvaluationEnabled($event)"
+              />
             </div>
-            <p-toggleswitch
-              inputId="evaluation"
-              ariaLabelledBy="evaluation-hint"
-              [ngModel]="evaluationEnabled()"
-              (ngModelChange)="setEvaluationEnabled($event)"
-            />
           </div>
-        </div>
-      </p-accordion-content>
-    </p-accordion-panel>
+        </p-accordion-content>
+      </p-accordion-panel>
 
-    <p-accordion-panel value="debug">
-      <p-accordion-header>Debug-Einstellungen</p-accordion-header>
-      <p-accordion-content>
-        <div class="setting-group">
-          <div class="setting">
-            <div class="setting__text">
-              <label class="setting__label" for="debug-calibration">Debug: Kalibrierung (Server)</label>
-              <p class="setting__hint" id="debug-calibration-hint">
-                Lässt den Server bei jeder Kalibrierung die Zwischenschritte als Bilder
-                ablegen. Nur zum Testen - im Normalbetrieb aus.
-              </p>
+      <p-accordion-panel value="debug">
+        <p-accordion-header>Debug-Einstellungen</p-accordion-header>
+        <p-accordion-content>
+          <div class="setting-group">
+            <div class="setting">
+              <div class="setting__text">
+                <label class="setting__label" for="debug-calibration"
+                  >Debug: Kalibrierung (Server)</label
+                >
+                <p class="setting__hint" id="debug-calibration-hint">
+                  Lässt den Server bei jeder Kalibrierung die Zwischenschritte als Bilder ablegen.
+                  Nur zum Testen - im Normalbetrieb aus.
+                </p>
+              </div>
+              <p-toggleswitch
+                inputId="debug-calibration"
+                ariaLabelledBy="debug-calibration-hint"
+                [ngModel]="settings.debugCalibration()"
+                (ngModelChange)="settings.setDebugCalibration($event)"
+              />
             </div>
-            <p-toggleswitch
-              inputId="debug-calibration"
-              ariaLabelledBy="debug-calibration-hint"
-              [ngModel]="settings.debugCalibration()"
-              (ngModelChange)="settings.setDebugCalibration($event)"
-            />
-          </div>
 
-          <div class="setting">
-            <div class="setting__text">
-              <label class="setting__label" for="debug-detection">Debug: Erkennung (Server)</label>
-              <p class="setting__hint" id="debug-detection-hint">
-                Lässt den Server bei jedem Wurf die Zwischenschritte der Pfeil-Erkennung
-                als Bilder ablegen. Nur zum Testen - im Normalbetrieb aus.
-              </p>
+            <div class="setting">
+              <div class="setting__text">
+                <label class="setting__label" for="debug-detection"
+                  >Debug: Erkennung (Server)</label
+                >
+                <p class="setting__hint" id="debug-detection-hint">
+                  Lässt den Server bei jedem Wurf die Zwischenschritte der Pfeil-Erkennung als
+                  Bilder ablegen. Nur zum Testen - im Normalbetrieb aus.
+                </p>
+              </div>
+              <p-toggleswitch
+                inputId="debug-detection"
+                ariaLabelledBy="debug-detection-hint"
+                [ngModel]="settings.debugDetection()"
+                (ngModelChange)="settings.setDebugDetection($event)"
+              />
             </div>
-            <p-toggleswitch
-              inputId="debug-detection"
-              ariaLabelledBy="debug-detection-hint"
-              [ngModel]="settings.debugDetection()"
-              (ngModelChange)="settings.setDebugDetection($event)"
-            />
-          </div>
 
-          <div class="setting">
-            <div class="setting__text">
-              <label class="setting__label" for="debug-client-detection">Debug: Client-Anzeige</label>
-              <p class="setting__hint" id="debug-client-detection-hint">
-                Zeigt in der Kamera-Ansicht live, was die client-seitige Wurf-Erkennung
-                gerade tut. Betrifft nur die Anzeige auf diesem Gerät, nichts am Server.
-              </p>
+            <div class="setting">
+              <div class="setting__text">
+                <label class="setting__label" for="debug-client-detection"
+                  >Debug: Client-Anzeige</label
+                >
+                <p class="setting__hint" id="debug-client-detection-hint">
+                  Zeigt in der Kamera-Ansicht live, was die client-seitige Wurf-Erkennung gerade
+                  tut. Betrifft nur die Anzeige auf diesem Gerät, nichts am Server.
+                </p>
+              </div>
+              <p-toggleswitch
+                inputId="debug-client-detection"
+                ariaLabelledBy="debug-client-detection-hint"
+                [ngModel]="settings.debugClientDetection()"
+                (ngModelChange)="settings.setDebugClientDetection($event)"
+              />
             </div>
-            <p-toggleswitch
-              inputId="debug-client-detection"
-              ariaLabelledBy="debug-client-detection-hint"
-              [ngModel]="settings.debugClientDetection()"
-              (ngModelChange)="settings.setDebugClientDetection($event)"
-            />
           </div>
-        </div>
-      </p-accordion-content>
-    </p-accordion-panel>
-  </p-accordion>
+        </p-accordion-content>
+      </p-accordion-panel>
+    </p-accordion>
+  }
 </section>

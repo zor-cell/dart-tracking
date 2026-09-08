@@ -2,7 +2,9 @@
   <header class="view__header">
     <h1 class="view__title">Konto</h1>
     <p class="view__subtitle">
-      @if (user()) {
+      @if (restoring()) {
+        Sitzung wird geprüft
+      } @else if (user()) {
         Angemeldet auf diesem Gerät
       } @else {
         Nicht angemeldet
@@ -10,77 +12,86 @@
     </p>
   </header>
 
-  @if (user(); as account) {
-    <dl class="account">
-      <div class="account__row">
-        <dt class="account__label">Benutzername</dt>
-        <dd class="account__value">{{ account.username }}</dd>
-      </div>
-      <div class="account__row">
-        <dt class="account__label">E-Mail</dt>
-        <dd class="account__value">{{ account.email }}</dd>
-      </div>
-      <div class="account__row">
-        <dt class="account__label">Registriert</dt>
-        <dd class="account__value">{{ account.createdAt | date: 'dd.MM.yyyy' }}</dd>
-      </div>
-    </dl>
-  } @else {
-    <div class="view__actions">
-      <p-button fluid label="Anmelden" icon="pi pi-sign-in" routerLink="/login" />
-      <p-button
-        fluid
-        label="Registrieren"
-        icon="pi pi-user-plus"
-        severity="secondary"
-        [outlined]="true"
-        routerLink="/register"
+  @if (restoring()) {
+    <div class="loading" role="status">
+      <p-progress-spinner
+        ariaLabel="Sitzung wird geprüft"
+        [style]="{ width: '2.5rem', height: '2.5rem' }"
       />
     </div>
-  }
+  } @else {
+    @if (user(); as account) {
+      <dl class="account">
+        <div class="account__row">
+          <dt class="account__label">Benutzername</dt>
+          <dd class="account__value">{{ account.username }}</dd>
+        </div>
+        <div class="account__row">
+          <dt class="account__label">E-Mail</dt>
+          <dd class="account__value">{{ account.email }}</dd>
+        </div>
+        <div class="account__row">
+          <dt class="account__label">Registriert</dt>
+          <dd class="account__value">{{ account.createdAt | date: 'dd.MM.yyyy' }}</dd>
+        </div>
+      </dl>
+    } @else {
+      <div class="view__actions">
+        <p-button fluid label="Anmelden" icon="pi pi-sign-in" routerLink="/login" />
+        <p-button
+          fluid
+          label="Registrieren"
+          icon="pi pi-user-plus"
+          severity="secondary"
+          [outlined]="true"
+          routerLink="/register"
+        />
+      </div>
+    }
 
-  <nav class="pages" aria-label="Weitere Seiten">
+    <nav class="pages" aria-label="Weitere Seiten">
+      @if (user()) {
+        <a class="pages__link" routerLink="/account/stats">
+          <i class="pages__icon pi pi-chart-bar" aria-hidden="true"></i>
+          <span class="pages__text">
+            <span class="pages__label">Statistik</span>
+            <span class="pages__hint">Average, Checkout-Quote und Spielverlauf</span>
+          </span>
+          <i class="pages__chevron pi pi-chevron-right" aria-hidden="true"></i>
+        </a>
+
+        <a class="pages__link" routerLink="/account/settings">
+          <i class="pages__icon pi pi-cog" aria-hidden="true"></i>
+          <span class="pages__text">
+            <span class="pages__label">Einstellungen</span>
+            <span class="pages__hint">Gelten für dein Konto, auf allen Geräten</span>
+          </span>
+          <i class="pages__chevron pi pi-chevron-right" aria-hidden="true"></i>
+        </a>
+      }
+
+      @if (isAdmin()) {
+        <a class="pages__link" routerLink="/account/evaluation">
+          <i class="pages__icon pi pi-bullseye" aria-hidden="true"></i>
+          <span class="pages__text">
+            <span class="pages__label">Auswertung</span>
+            <span class="pages__hint">Trefferquote der Kameraerkennung</span>
+          </span>
+          <i class="pages__chevron pi pi-chevron-right" aria-hidden="true"></i>
+        </a>
+      }
+    </nav>
+
     @if (user()) {
-      <a class="pages__link" routerLink="/account/stats">
-        <i class="pages__icon pi pi-chart-bar" aria-hidden="true"></i>
-        <span class="pages__text">
-          <span class="pages__label">Statistik</span>
-          <span class="pages__hint">Average, Checkout-Quote und Spielverlauf</span>
-        </span>
-        <i class="pages__chevron pi pi-chevron-right" aria-hidden="true"></i>
-      </a>
-
-      <a class="pages__link" routerLink="/account/settings">
-        <i class="pages__icon pi pi-cog" aria-hidden="true"></i>
-        <span class="pages__text">
-          <span class="pages__label">Einstellungen</span>
-          <span class="pages__hint">Gelten für dein Konto, auf allen Geräten</span>
-        </span>
-        <i class="pages__chevron pi pi-chevron-right" aria-hidden="true"></i>
-      </a>
+      <p-button
+        fluid
+        label="Abmelden"
+        icon="pi pi-sign-out"
+        severity="secondary"
+        [text]="true"
+        [loading]="busy()"
+        (onClick)="logout()"
+      />
     }
-
-    @if (isAdmin()) {
-      <a class="pages__link" routerLink="/account/evaluation">
-        <i class="pages__icon pi pi-bullseye" aria-hidden="true"></i>
-        <span class="pages__text">
-          <span class="pages__label">Auswertung</span>
-          <span class="pages__hint">Trefferquote der Kameraerkennung</span>
-        </span>
-        <i class="pages__chevron pi pi-chevron-right" aria-hidden="true"></i>
-      </a>
-    }
-  </nav>
-
-  @if (user()) {
-    <p-button
-      fluid
-      label="Abmelden"
-      icon="pi pi-sign-out"
-      severity="secondary"
-      [text]="true"
-      [loading]="busy()"
-      (onClick)="logout()"
-    />
   }
 </section>

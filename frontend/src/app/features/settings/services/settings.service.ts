@@ -22,7 +22,11 @@ export class SettingsService {
   private readonly url = `${environment.httpApiUrl}/settings`;
 
   private readonly _settings = signal<AppSettingsDto>(DEFAULT_SETTINGS);
+  private readonly _loading = signal(true);
   readonly settings = this._settings.asReadonly();
+  /** True while the server's answer is still outstanding — until then the
+   * signals below hold defaults, not this account's choices. */
+  readonly loading = this._loading.asReadonly();
 
   readonly manualEntryEnabled = computed(() => this._settings().manualEntryEnabled);
   readonly confirmThrowEnabled = computed(() => this._settings().confirmThrowEnabled);
@@ -41,9 +45,11 @@ export class SettingsService {
 
     effect(() => {
       if (this.auth.user()) {
+        this._loading.set(true);
         void this.reload();
       } else {
         this._settings.set(DEFAULT_SETTINGS);
+        this._loading.set(false);
       }
     });
   }
@@ -102,6 +108,8 @@ export class SettingsService {
       );
     } catch {
       this._settings.set(DEFAULT_SETTINGS);
+    } finally {
+      this._loading.set(false);
     }
   }
 }

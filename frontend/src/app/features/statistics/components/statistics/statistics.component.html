@@ -12,125 +12,134 @@
     <p class="view__subtitle">Deine Würfe aus gewerteten Spielen</p>
   </header>
 
-  @if (totals(); as totals) {
-    @if (totals.legs === 0) {
-      <div class="placeholder">
-        <i class="pi pi-chart-bar placeholder__icon" aria-hidden="true"></i>
-        <p>Noch keine gewerteten Spiele.</p>
-        <p>Ein Spiel zählt, sobald es beendet ist.</p>
-      </div>
-    } @else {
-      <dl class="figures">
-        <div class="figure figure--wide">
-          <dt class="figure__label">3-Dart-Average</dt>
-          <dd class="figure__value">{{ totals.average | number: '1.2-2' }}</dd>
+  @if (loading()) {
+    <div class="loading" role="status">
+      <p-progress-spinner
+        ariaLabel="Statistik wird geladen"
+        [style]="{ width: '2.5rem', height: '2.5rem' }"
+      />
+    </div>
+  } @else {
+    @if (totals(); as totals) {
+      @if (totals.legs === 0) {
+        <div class="placeholder">
+          <i class="pi pi-chart-bar placeholder__icon" aria-hidden="true"></i>
+          <p>Noch keine gewerteten Spiele.</p>
+          <p>Ein Spiel zählt, sobald es beendet ist.</p>
         </div>
-        <div class="figure">
-          <dt class="figure__label">Legs gewonnen</dt>
-          <dd class="figure__value">{{ totals.legsWon }} / {{ totals.legs }}</dd>
-        </div>
-        <div class="figure">
-          <dt class="figure__label">Darts geworfen</dt>
-          <dd class="figure__value">{{ totals.darts }}</dd>
-        </div>
-        <div class="figure">
-          <dt class="figure__label">Checkout-Quote</dt>
-          <dd class="figure__value">
-            @if (checkoutRate(); as rate) {
-              {{ rate * 100 | number: '1.0-0' }} %
-            } @else {
-              &ndash;
-            }
-          </dd>
-          <dd class="figure__hint">{{ totals.legsWon }} von {{ totals.checkoutChances }} Legs</dd>
-        </div>
-        <div class="figure">
-          <dt class="figure__label">Doppel-Quote</dt>
-          <dd class="figure__value">
-            @if (doubleRate(); as rate) {
-              {{ rate * 100 | number: '1.0-0' }} %
-            } @else {
-              &ndash;
-            }
-          </dd>
-          <dd class="figure__hint">
-            {{ totals.doubleHits }} von {{ totals.doubleAttempts }} Darts
-          </dd>
-        </div>
-        <div class="figure">
-          <dt class="figure__label">Bestes Visit</dt>
-          <dd class="figure__value">{{ totals.bestVisit }}</dd>
-        </div>
-        <div class="figure">
-          <dt class="figure__label">180er &middot; 100+</dt>
-          <dd class="figure__value">{{ totals.visits180 }} &middot; {{ totals.visits100Plus }}</dd>
-        </div>
-      </dl>
+      } @else {
+        <dl class="figures">
+          <div class="figure figure--wide">
+            <dt class="figure__label">3-Dart-Average</dt>
+            <dd class="figure__value">{{ totals.average | number: '1.2-2' }}</dd>
+          </div>
+          <div class="figure">
+            <dt class="figure__label">Legs gewonnen</dt>
+            <dd class="figure__value">{{ totals.legsWon }} / {{ totals.legs }}</dd>
+          </div>
+          <div class="figure">
+            <dt class="figure__label">Darts geworfen</dt>
+            <dd class="figure__value">{{ totals.darts }}</dd>
+          </div>
+          <div class="figure">
+            <dt class="figure__label">Checkout-Quote</dt>
+            <dd class="figure__value">
+              @if (checkoutRate(); as rate) {
+                {{ rate * 100 | number: '1.0-0' }} %
+              } @else {
+                &ndash;
+              }
+            </dd>
+            <dd class="figure__hint">{{ totals.legsWon }} von {{ totals.checkoutChances }} Legs</dd>
+          </div>
+          <div class="figure">
+            <dt class="figure__label">Doppel-Quote</dt>
+            <dd class="figure__value">
+              @if (doubleRate(); as rate) {
+                {{ rate * 100 | number: '1.0-0' }} %
+              } @else {
+                &ndash;
+              }
+            </dd>
+            <dd class="figure__hint">
+              {{ totals.doubleHits }} von {{ totals.doubleAttempts }} Darts
+            </dd>
+          </div>
+          <div class="figure">
+            <dt class="figure__label">Bestes Visit</dt>
+            <dd class="figure__value">{{ totals.bestVisit }}</dd>
+          </div>
+          <div class="figure">
+            <dt class="figure__label">180er &middot; 100+</dt>
+            <dd class="figure__value">
+              {{ totals.visits180 }} &middot; {{ totals.visits100Plus }}
+            </dd>
+          </div>
+        </dl>
 
-      <section class="panel">
-        <h2 class="panel__title">Trefferbild</h2>
-        @if (totals.heatmap.length > 0) {
-          <app-board-heatmap [points]="totals.heatmap" />
-          <p class="panel__hint">{{ totals.heatmap.length }} erkannte Treffer</p>
-        } @else {
-          <p class="panel__hint">
-            Noch keine erkannten Treffer. Nur von der Kamera gefundene Darts haben eine
-            Position &mdash; von Hand gebuchte zählen mit, lassen sich aber nicht platzieren.
-          </p>
-        }
-      </section>
-    }
-  }
-
-  <section class="panel">
-    <h2 class="panel__title">Meine Spiele</h2>
-    @for (game of games(); track game.id) {
-      <article class="game-row" [class.game-row--muted]="!game.counted">
-        <div class="game-row__head">
-          <span class="game-row__mode">{{ game.mode }}</span>
-          <span class="game-row__status">{{ statusLabels[game.status] }}</span>
-          <span class="game-row__date">{{ game.createdAt | date: 'dd.MM.yy' }}</span>
-        </div>
-        <ul class="game-row__players">
-          @for (player of game.players; track $index) {
-            <li
-              class="game-row__player"
-              [class.game-row__player--winner]="$index === game.winnerIndex"
-              [class.game-row__player--me]="player.isMe"
-            >
-              <span>{{ player.name }}</span>
-              <span class="game-row__remaining">{{ player.remaining }}</span>
-            </li>
+        <section class="panel">
+          <h2 class="panel__title">Trefferbild</h2>
+          @if (totals.heatmap.length > 0) {
+            <app-board-heatmap [points]="totals.heatmap" />
+            <p class="panel__hint">{{ totals.heatmap.length }} erkannte Treffer</p>
+          } @else {
+            <p class="panel__hint">
+              Noch keine erkannten Treffer. Nur von der Kamera gefundene Darts haben eine Position
+              &mdash; von Hand gebuchte zählen mit, lassen sich aber nicht platzieren.
+            </p>
           }
-        </ul>
-        <div class="game-row__foot">
-          <span class="game-row__darts">{{ game.dartCount }} Darts</span>
-          <p-button
-            size="small"
-            [text]="true"
-            severity="secondary"
-            [loading]="busyGameId() === game.id"
-            [label]="game.counted ? 'Nicht werten' : 'Werten'"
-            [icon]="game.counted ? 'pi pi-eye-slash' : 'pi pi-eye'"
-            (onClick)="toggleCounted(game)"
-          />
-        </div>
-      </article>
-    } @empty {
-      @if (!loading()) {
-        <p class="panel__hint">Noch keine Spiele.</p>
+        </section>
       }
     }
 
-    @if (moreAvailable()) {
-      <p-button
-        fluid
-        [text]="true"
-        severity="secondary"
-        label="Mehr laden"
-        icon="pi pi-angle-down"
-        (onClick)="loadMore()"
-      />
-    }
-  </section>
+    <section class="panel">
+      <h2 class="panel__title">Meine Spiele</h2>
+      @for (game of games(); track game.id) {
+        <article class="game-row" [class.game-row--muted]="!game.counted">
+          <div class="game-row__head">
+            <span class="game-row__mode">{{ game.mode }}</span>
+            <span class="game-row__status">{{ statusLabels[game.status] }}</span>
+            <span class="game-row__date">{{ game.createdAt | date: 'dd.MM.yy' }}</span>
+          </div>
+          <ul class="game-row__players">
+            @for (player of game.players; track $index) {
+              <li
+                class="game-row__player"
+                [class.game-row__player--winner]="$index === game.winnerIndex"
+                [class.game-row__player--me]="player.isMe"
+              >
+                <span>{{ player.name }}</span>
+                <span class="game-row__remaining">{{ player.remaining }}</span>
+              </li>
+            }
+          </ul>
+          <div class="game-row__foot">
+            <span class="game-row__darts">{{ game.dartCount }} Darts</span>
+            <p-button
+              size="small"
+              [text]="true"
+              severity="secondary"
+              [loading]="busyGameId() === game.id"
+              [label]="game.counted ? 'Nicht werten' : 'Werten'"
+              [icon]="game.counted ? 'pi pi-eye-slash' : 'pi pi-eye'"
+              (onClick)="toggleCounted(game)"
+            />
+          </div>
+        </article>
+      } @empty {
+        <p class="panel__hint">Noch keine Spiele.</p>
+      }
+
+      @if (moreAvailable()) {
+        <p-button
+          fluid
+          [text]="true"
+          severity="secondary"
+          label="Mehr laden"
+          icon="pi pi-angle-down"
+          (onClick)="loadMore()"
+        />
+      }
+    </section>
+  }
 </section>

@@ -1,8 +1,11 @@
 <section class="view">
   @switch (status()) {
     @case ('resolving') {
-      <div class="placeholder" role="status">
-        <p-progress-spinner ariaLabel="Spiel wird geladen" [style]="{ width: '2.5rem', height: '2.5rem' }" />
+      <div class="loading" role="status">
+        <p-progress-spinner
+          ariaLabel="Spiel wird geladen"
+          [style]="{ width: '2.5rem', height: '2.5rem' }"
+        />
         <p>Spiel wird beigetreten …</p>
       </div>
     }

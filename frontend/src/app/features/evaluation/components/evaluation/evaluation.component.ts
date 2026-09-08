@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
+import { ProgressSpinner } from 'primeng/progressspinner';
 import { Select } from 'primeng/select';
 import { AccuracySummaryDto, GameAccuracyDto } from '../../dto/accuracy.dto';
 import { EvaluationService } from '../../services/evaluation.service';
@@ -22,7 +23,7 @@ interface ScopeOption {
 
 @Component({
   selector: 'app-evaluation',
-  imports: [Button, DecimalPipe, FormsModule, RouterLink, Select],
+  imports: [Button, DecimalPipe, FormsModule, ProgressSpinner, RouterLink, Select],
   templateUrl: './evaluation.component.html',
   styleUrl: './evaluation.component.scss',
   providers: [DatePipe],
