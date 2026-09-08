@@ -1,7 +1,6 @@
 TODOs:
 
 Wenig Aufwand:
-- debug history in app anzeigen können, also den report basically
 
 Viel Aufwand:
 - client diff löst ja derzeit öfter aus, fokus auf recall, das backend muss da was checken (ist das überhaupt möglich), weil
