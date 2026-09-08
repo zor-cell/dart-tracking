@@ -1,6 +1,6 @@
-"""Who is calling, if anyone. Auth is optional by design, so there are two
-dependencies: `CurrentUser` may be None, `AuthenticatedUser` answers 401
-(docs/feature/done/persistenz.md §6)."""
+"""Who is calling, if anyone. Auth is optional by design, so there are three
+dependencies: `CurrentUser` may be None, `AuthenticatedUser` answers 401,
+`AdminUser` answers 403 (docs/feature/done/persistenz.md §6)."""
 
 from typing import Annotated
 
@@ -50,5 +50,13 @@ async def _required_user(user: Annotated[User | None, Depends(_optional_user)]) 
     return user
 
 
+async def _required_admin(user: Annotated[User, Depends(_required_user)]) -> User:
+    """403 rather than 404: the caller is known, the route is not theirs."""
+    if not user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="admin only")
+    return user
+
+
 CurrentUser = Annotated[User | None, Depends(_optional_user)]
 AuthenticatedUser = Annotated[User, Depends(_required_user)]
+AdminUser = Annotated[User, Depends(_required_admin)]

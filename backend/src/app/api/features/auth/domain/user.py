@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from datetime import datetime
 
+from app.api.features.auth.domain.user_role import UserRole
+
 
 @dataclass(frozen=True)
 class User:
@@ -10,3 +12,8 @@ class User:
     email: str
     username: str
     created_at: datetime
+    role: UserRole = UserRole.USER
+
+    @property
+    def is_admin(self) -> bool:
+        return self.role is UserRole.ADMIN

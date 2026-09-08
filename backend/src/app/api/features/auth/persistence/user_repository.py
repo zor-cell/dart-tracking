@@ -4,12 +4,17 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.auth.domain.user import User
+from app.api.features.auth.domain.user_role import UserRole
 from app.api.features.auth.persistence.user import UserTable
 
 
 def _to_domain(row: UserTable) -> User:
     return User(
-        id=row.id, email=row.email, username=row.username, created_at=row.created_at
+        id=row.id,
+        email=row.email,
+        username=row.username,
+        created_at=row.created_at,
+        role=UserRole(row.role),
     )
 
 

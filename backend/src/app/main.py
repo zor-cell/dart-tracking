@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import health
 from app.api.core.socket import socket
 from app.api.features.auth import auth
+from app.api.features.evaluation import evaluation
 from app.api.features.game import games
 from app.api.features.player import players
 # Aliased: `settings` is already the process configuration below.
@@ -51,6 +52,7 @@ api_router.include_router(socket.router)
 api_router.include_router(games.router)
 api_router.include_router(auth.router)
 api_router.include_router(players.router)
+api_router.include_router(evaluation.router)
 api_router.include_router(statistics.router)
 api_router.include_router(user_settings.router)
 

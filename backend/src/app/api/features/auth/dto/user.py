@@ -2,6 +2,7 @@ from datetime import datetime
 
 from app.api.core.dto.base import CamelModel
 from app.api.features.auth.domain.user import User
+from app.api.features.auth.domain.user_role import UserRole
 
 
 class UserDto(CamelModel):
@@ -9,6 +10,7 @@ class UserDto(CamelModel):
     email: str
     username: str
     created_at: datetime
+    role: UserRole
 
     @classmethod
     def from_entity(cls, user: User) -> "UserDto":
@@ -17,4 +19,5 @@ class UserDto(CamelModel):
             email=user.email,
             username=user.username,
             created_at=user.created_at,
+            role=user.role,
         )
