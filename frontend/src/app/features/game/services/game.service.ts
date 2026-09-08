@@ -10,8 +10,8 @@ import { PlayerDto } from '../dto/player.dto';
 import { TurnDto } from '../dto/turn.dto';
 import {GameConfigDto} from "../dto/game-config.dto";
 import {SettingsService} from "../../settings/services/settings.service";
+import { ACTIVE_GAME_KEY } from "./active-game";
 
-const STORAGE_KEY = 'dart-tracking.gameId';
 
 /**
  * Client-side cache of the server-authoritative game state. The server owns the
@@ -92,7 +92,7 @@ export class GameService {
   /** The active game's id, even before its state has been (re)fetched — read
    * from the live state, falling back to the id persisted across refreshes. */
   peekGameId(): string | null {
-    return this._state()?.id ?? localStorage.getItem(STORAGE_KEY);
+    return this._state()?.id ?? localStorage.getItem(ACTIVE_GAME_KEY);
   }
 
   /**
@@ -149,7 +149,7 @@ export class GameService {
     if (this._state() !== null) {
       return true;
     }
-    const id = localStorage.getItem(STORAGE_KEY);
+    const id = localStorage.getItem(ACTIVE_GAME_KEY);
     if (!id) {
       return false;
     }
@@ -163,7 +163,7 @@ export class GameService {
   /** Leave the game entirely: the cached state goes, and with it the room. */
   reset(): void {
     this._state.set(null);
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(ACTIVE_GAME_KEY);
     this.socket.disconnect();
   }
 
@@ -193,7 +193,7 @@ export class GameService {
       return false;
     }
     this._state.set(state);
-    localStorage.setItem(STORAGE_KEY, state.id);
+    localStorage.setItem(ACTIVE_GAME_KEY, state.id);
     return true;
   }
 }

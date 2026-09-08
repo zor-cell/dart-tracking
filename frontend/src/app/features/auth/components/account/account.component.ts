@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { AuthService } from '../../services/auth.service';
@@ -14,7 +14,6 @@ import { AuthService } from '../../services/auth.service';
 })
 export class AccountComponent {
   private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
 
   protected readonly user = this.auth.user;
   protected readonly isAdmin = this.auth.isAdmin;
@@ -31,7 +30,6 @@ export class AccountComponent {
     this.busy.set(true);
     try {
       await this.auth.logout();
-      await this.router.navigateByUrl('/start');
     } finally {
       this.busy.set(false);
     }

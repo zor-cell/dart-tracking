@@ -1,9 +1,10 @@
 import { Routes } from '@angular/router';
+import { hasActiveGame } from './features/game/services/active-game';
 import { adminGuard } from './features/auth/guards/admin.guard';
 import { authGuard } from './features/auth/guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'start' },
+  { path: '', pathMatch: 'full', redirectTo: () => (hasActiveGame() ? '/game' : '/start') },
   {
     path: 'start',
     loadComponent: () =>
