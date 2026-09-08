@@ -279,7 +279,67 @@ Testset-Zahlen nebeneinander lesbar sind:
 
 ---
 
-## 7. Offene Punkte
+## 7. Die Seite in der App
+
+Der Report aus §6 beantwortet dieselbe Frage wie die Seite unter
+`/account/evaluation`, nur mit einem Datenbank-Zugang und einem Terminal davor.
+Beim Spielen ist genau das der Bruch: die Zahl entsteht am Abend, angesehen wird
+sie am nächsten Tag. Die Seite zeigt sie sofort.
+
+Referenz-Implementierung: `backend/src/app/api/features/evaluation/`,
+Frontend `frontend/src/app/features/evaluation/`.
+
+### 7a. Eine Rechnung, zwei Ausgaben
+
+Skript und Seite dürfen nicht getrennt rechnen — zwei Quoten, die auseinander
+laufen, sind schlimmer als keine. Die Rechnung liegt deshalb in
+`domain/accuracy.py` und wird von beiden benutzt:
+
+| Schicht | Was sie beisteuert |
+|---|---|
+| `domain/alignment.py` | Paarung getrackt ↔ akzeptiert (§3) |
+| `domain/visit_replay.py` | Visits aus dem Event-Log |
+| `domain/accuracy.py` | `judge` je Visit, `summarise` über eine Menge davon |
+| `services/accuracy.py` | liest die Logs, fasst je Spiel und gesamt zusammen |
+| `scripts/evaluation/report.py` | rendert Markdown, schreibt `ground_truth.txt` |
+| `dto/accuracy.py` + `evaluation.py` | dieselben Zahlen als JSON |
+
+`report.py` behält, was nur dort Sinn ergibt: die Mismatch-Liste, die
+Kohäsions-Tabelle, die Failure-Zählung und das Schreiben der Ground Truth. Die
+Seite zeigt Kopfzahlen, Fehleraufschlüsselung und Abstands-Buckets.
+
+### 7b. Umfang: gesamt und pro Spiel
+
+`GET /api/evaluation/accuracy` liefert beides in einer Antwort — die Totale und
+jedes Spiel für sich, neuestes zuerst. Der Umschalter auf der Seite fragt den
+Server also nicht erneut. Das ist tragbar, weil ein Spiel nur rund fünfzehn
+Zahlen beiträgt; die Rechnung für die Totale ist ohnehin die Summe der
+Einzelspiele, ein „nur die Liste"-Modus würde nichts sparen.
+
+**Einbezogen sind alle geloggten Spiele**, nicht nur die mit gesetztem
+Testlauf-Schalter. Der Schalter aus §5 steuert das Ablegen der Bilder in
+`testdata/evaluation/`, nicht die Messung: Events schreibt der Recorder immer.
+Spiele ohne gefilmten Visit fallen heraus (`Visit.tracked`), sonst läsen sie
+sich als Pfeile, die die Kamera nicht gesehen hat.
+
+### 7c. Warum eine Admin-Rolle
+
+Die Seite berichtet über **fremde** Spiele — jedes Log in der Datenbank, egal
+wer gespielt hat. Das ist der Unterschied zur Statistik-Seite, die nur das
+eigene Konto auswertet, und der Grund für `users.role`
+(`UserRole` = `user` | `admin`, Default `user`): `AdminUser` antwortet einem
+angemeldeten Nicht-Admin mit **403**, nicht mit 404 — der Aufrufer ist bekannt,
+die Route ist nur nicht seine. Im Frontend hängt derselbe Test am
+`adminGuard` und daran, ob der Link auf der Konto-Seite überhaupt erscheint;
+maßgeblich bleibt der Server.
+
+Vergeben wird die Rolle in der Migration `f4a1c7d2e903`, die eine Adresse auf
+`admin` setzt. Weitere Admins per SQL — ein Konto zu befördern ist kein
+Vorgang, der eine Oberfläche braucht.
+
+---
+
+## 8. Offene Punkte
 
 - **`NO_CHANGE` gegen erwartetes `MISS` zählt hier als Fehler, offline als
   Treffer.** `run_all.py` wertet „nichts gefunden" gegen ein erwartetes `MISS`

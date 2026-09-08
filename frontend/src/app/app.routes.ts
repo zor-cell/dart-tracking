@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from './features/auth/guards/admin.guard';
 import { authGuard } from './features/auth/guards/auth.guard';
 
 export const routes: Routes = [
@@ -60,6 +61,14 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/settings/components/settings/settings.component').then(
         (m) => m.SettingsComponent,
+      ),
+  },
+  {
+    path: 'account/evaluation',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./features/evaluation/components/evaluation/evaluation.component').then(
+        (m) => m.EvaluationComponent,
       ),
   },
   { path: '**', redirectTo: 'start' },

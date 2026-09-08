@@ -17,10 +17,8 @@ becomes a test case without being labelled by hand.
 
 import argparse
 import asyncio
-import statistics
 import sys
 from collections import Counter
-from dataclasses import dataclass
 from pathlib import Path
 
 # Import app.* from src/ (as `--app-dir src` does at runtime) and scripts.* from
@@ -29,15 +27,15 @@ _BACKEND = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_BACKEND))
 sys.path.insert(0, str(_BACKEND / "src"))
 
-from app.api.features.calibration.domain.board_geometry import (  # noqa: E402
-    Segment,
-    distance_to_segment,
-    segment_from_label,
+from app.api.features.evaluation.domain.accuracy import (  # noqa: E402
+    Accuracy,
+    Judgement,
+    judge,
+    summarise,
 )
 from app.api.features.evaluation.domain.alignment import (  # noqa: E402
     DartOutcome,
     align,
-    outcome_of,
 )
 from app.api.features.evaluation.domain.game_event import GameEvent  # noqa: E402
 from app.api.features.evaluation.domain.visit_replay import Visit, replay  # noqa: E402
@@ -62,74 +60,6 @@ GROUND_TRUTH_NAME = "ground_truth.txt"
 # A mismatch closer than this to the expected segment is a wire's-width miss
 # rather than a structural failure - the same cut the offline runner makes.
 NEAR_MISS_MM = 5.0
-
-_DISTANCE_BUCKETS = (
-    ("<= 5 mm", 5.0),
-    ("5 - 20 mm", 20.0),
-    ("20 - 50 mm", 50.0),
-    ("> 50 mm", float("inf")),
-)
-
-
-@dataclass(frozen=True)
-class Judgement:
-    """One aligned dart: what the camera said, and what it should have said."""
-
-    game_id: str
-    turn_index: int
-    position: int  # place within the visit, 1-based
-    outcome: DartOutcome
-    tracked: GameEvent | None
-    expected_label: str | None
-
-    @property
-    def key(self) -> str:
-        return f"{self.game_id[:8]}/throw{self.turn_index}/dart{self.position}"
-
-    @property
-    def expected_segment(self) -> Segment | None:
-        if self.expected_label is None:
-            return None
-        return segment_from_label(self.expected_label)
-
-    @property
-    def off_by_mm(self) -> float | None:
-        """How far the scored tip landed from the segment it belonged in. Only
-        for a booked and located dart: a missed one has no tip."""
-        segment = self.expected_segment
-        if self.outcome is not DartOutcome.WRONG or self.tracked is None:
-            return None
-        if self.tracked.position is None or segment is None:
-            return None
-        return distance_to_segment(*self.tracked.position, segment)
-
-    @property
-    def fragments(self) -> int | None:
-        metrics = (self.tracked.metrics or {}) if self.tracked else {}
-        count = metrics.get("fragment_count")
-        return None if count is None else int(count)
-
-
-def judge(game_id: str, visit: Visit) -> list[Judgement]:
-    """Align one visit's claimed darts against the ones the players accepted."""
-    tracked = [event.label for event in visit.claimed]
-    expected = [event.label for event in visit.accepted]
-
-    return [
-        Judgement(
-            game_id=game_id,
-            turn_index=visit.turn_index,
-            position=position,
-            outcome=outcome_of(
-                tracked[left] if left is not None else None,
-                expected[right] if right is not None else None,
-            ),
-            tracked=visit.claimed[left] if left is not None else None,
-            expected_label=expected[right] if right is not None else None,
-        )
-        for position, (left, right) in enumerate(align(tracked, expected), start=1)
-    ]
-
 
 def write_ground_truth(game_id: str, visits: list[Visit]) -> Path | None:
     """Label the frames kept for this game, in the offline runner's format.
@@ -165,40 +95,28 @@ def write_ground_truth(game_id: str, visits: list[Visit]) -> Path | None:
     return path
 
 
-def error_table(judgements: list[Judgement]) -> list[str]:
+def error_table(accuracy: Accuracy) -> list[str]:
     """Counts and shares per outcome, over every judged dart."""
-    counts = Counter(judgement.outcome for judgement in judgements)
-    total = max(len(judgements), 1)
+    total = max(sum(accuracy.outcomes.values()), 1)
     lines = ["| outcome | darts | share |", "|---|---|---|"]
-    for outcome in DartOutcome:
-        lines.append(
-            f"| {outcome.value} | {counts[outcome]} "
-            f"| {100 * counts[outcome] / total:.1f}% |"
-        )
+    for outcome, count in accuracy.outcomes.items():
+        lines.append(f"| {outcome.value} | {count} | {100 * count / total:.1f}% |")
     return lines
 
 
-def distance_table(judgements: list[Judgement]) -> list[str]:
+def distance_table(accuracy: Accuracy) -> list[str]:
     """How far the mis-scored darts landed from where they belonged: a few
     millimetres is the wrong side of a wire, tens of millimetres a fit that
     anchored on something else."""
-    distances = [
-        judgement.off_by_mm
-        for judgement in judgements
-        if judgement.off_by_mm is not None
-    ]
-    if not distances:
+    if not accuracy.distances:
         return ["No mis-scored dart carried a located tip."]
 
     lines = ["| off by | darts |", "|---|---|"]
-    low = 0.0
-    for name, high in _DISTANCE_BUCKETS:
-        lines.append(f"| {name} | {sum(1 for d in distances if low < d <= high)} |")
-        low = high
+    lines += [f"| {band.label} | {band.darts} |" for band in accuracy.bands]
     return lines + [
         "",
-        f"Mean {statistics.fmean(distances):.1f} mm, median "
-        f"{statistics.median(distances):.1f} mm, worst {max(distances):.1f} mm.",
+        f"Mean {accuracy.mean_off_by:.1f} mm, median "
+        f"{accuracy.median_off_by:.1f} mm, worst {accuracy.worst_off_by:.1f} mm.",
     ]
 
 
@@ -257,14 +175,8 @@ def failure_table(failures: Counter) -> list[str]:
 
 
 def build_report(
-    per_game: dict[str, list[Visit]], judgements: list[Judgement], failures: Counter
+    accuracy: Accuracy, judgements: list[Judgement], failures: Counter
 ) -> list[str]:
-    counts = Counter(judgement.outcome for judgement in judgements)
-    thrown = len(judgements) - counts[DartOutcome.PHANTOM]
-    booked = len(judgements) - counts[DartOutcome.MISSED]
-    visits = [visit for game in per_game.values() for visit in game]
-    clean = sum(1 for visit in visits if not visit.corrected)
-
     return [
         "# Tracking accuracy",
         "",
@@ -273,20 +185,21 @@ def build_report(
         "right segment; *missed* is a dart thrown that the camera never booked,",
         "*phantom* one it booked with no dart behind it.",
         "",
-        f"- Games: **{len(per_game)}**, visits judged: **{len(visits)}**",
-        f"- Darts thrown: **{thrown}**, booked by the camera: **{booked}**",
-        f"- Correct segment: **{counts[DartOutcome.CORRECT]} / {thrown} - "
-        f"{100 * counts[DartOutcome.CORRECT] / max(thrown, 1):.1f}%**",
-        f"- Visits accepted without a correction: **{clean} / {len(visits)} - "
-        f"{100 * clean / max(len(visits), 1):.1f}%**",
+        f"- Games: **{accuracy.games}**, visits judged: **{accuracy.visits}**",
+        f"- Darts thrown: **{accuracy.darts_thrown}**, booked by the camera: "
+        f"**{accuracy.darts_booked}**",
+        f"- Correct segment: **{accuracy.correct} / {accuracy.darts_thrown} - "
+        f"{100 * accuracy.accuracy:.1f}%**",
+        f"- Visits accepted without a correction: **{accuracy.clean_visits} / "
+        f"{accuracy.visits} - {100 * accuracy.clean_visit_rate:.1f}%**",
         "",
         "## Error breakdown",
         "",
-        *error_table(judgements),
+        *error_table(accuracy),
         "",
         "## Distance from the expected segment",
         "",
-        *distance_table(judgements),
+        *distance_table(accuracy),
         "",
         "## Per game",
         "",
@@ -321,9 +234,12 @@ async def gather(
     database.init(get_settings().database_url)
     try:
         async with database.session_scope() as session:
-            ids = game_ids or await evaluation_repository.logged_games(
-                session, evaluation_only=evaluation_only
-            )
+            ids = game_ids or [
+                game.id
+                for game in await evaluation_repository.logged_games(
+                    session, evaluation_only=evaluation_only
+                )
+            ]
             return {
                 game_id: await evaluation_repository.events(session, game_id)
                 for game_id in ids
@@ -350,7 +266,8 @@ def main() -> int:
         print("no logged games found - play one with the test run switch on")
         return 1
 
-    per_game: dict[str, list[Visit]] = {}
+    games = 0
+    all_visits: list[Visit] = []
     judgements: list[Judgement] = []
     failures: Counter = Counter()
 
@@ -358,7 +275,8 @@ def main() -> int:
         visits = [visit for visit in replay(events) if visit.tracked]
         if not visits:
             continue
-        per_game[game_id] = visits
+        games += 1
+        all_visits += visits
         for visit in visits:
             judgements += judge(game_id, visit)
         for event in events:
@@ -373,16 +291,15 @@ def main() -> int:
         print("no filmed visit in the logs - was a camera scoring?")
         return 1
 
+    accuracy = summarise(games, all_visits, judgements)
     args.out.mkdir(parents=True, exist_ok=True)
     path = write_markdown(
-        args.out, REPORT_NAME, build_report(per_game, judgements, failures)
+        args.out, REPORT_NAME, build_report(accuracy, judgements, failures)
     )
 
-    correct = sum(1 for j in judgements if j.outcome is DartOutcome.CORRECT)
-    thrown = sum(1 for j in judgements if j.outcome is not DartOutcome.PHANTOM)
     print(
-        f"{len(per_game)} game(s), {thrown} darts, {correct} correct "
-        f"({100 * correct / max(thrown, 1):.1f}%)"
+        f"{accuracy.games} game(s), {accuracy.darts_thrown} darts, "
+        f"{accuracy.correct} correct ({100 * accuracy.accuracy:.1f}%)"
     )
     print(f"report: {path}")
     return 0

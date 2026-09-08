@@ -16,6 +16,7 @@ export class AccountComponent {
   private readonly router = inject(Router);
 
   protected readonly user = this.auth.user;
+  protected readonly isAdmin = this.auth.isAdmin;
   protected readonly busy = signal(false);
 
   constructor() {

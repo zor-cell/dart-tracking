@@ -26,6 +26,7 @@ export class AuthService {
   readonly user = this._user.asReadonly();
   readonly accessToken = this._accessToken.asReadonly();
   readonly isAuthenticated = computed(() => this._user() !== null);
+  readonly isAdmin = computed(() => this._user()?.role === 'admin');
 
   /** Resolves once the cookie has been traded for a session, or found absent.
    * Started on first read, not in the constructor: the call runs through the

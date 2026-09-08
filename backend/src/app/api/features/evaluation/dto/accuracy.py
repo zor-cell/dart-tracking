@@ -1,0 +1,91 @@
+from datetime import datetime
+from typing import Self
+
+from app.api.core.dto.base import CamelModel
+from app.api.features.evaluation.domain.accuracy import (
+    Accuracy,
+    AccuracyOverview,
+    GameAccuracy,
+)
+from app.api.features.evaluation.domain.alignment import DartOutcome
+
+
+class DistanceBandDto(CamelModel):
+    label: str
+    darts: int
+
+
+class AccuracySummaryDto(CamelModel):
+    games: int
+    visits: int
+    clean_visits: int
+    darts_thrown: int
+    darts_booked: int
+    correct: int
+    wrong: int
+    missed: int
+    phantom: int
+    # Off-by distances in millimetres, over the mis-scored darts that carried a
+    # located tip.
+    bands: list[DistanceBandDto]
+    mean_off_by: float | None
+    median_off_by: float | None
+    worst_off_by: float | None
+
+    @classmethod
+    def from_entity(cls, accuracy: Accuracy) -> Self:
+        return cls(
+            games=accuracy.games,
+            visits=accuracy.visits,
+            clean_visits=accuracy.clean_visits,
+            darts_thrown=accuracy.darts_thrown,
+            darts_booked=accuracy.darts_booked,
+            correct=accuracy.outcomes[DartOutcome.CORRECT],
+            wrong=accuracy.outcomes[DartOutcome.WRONG],
+            missed=accuracy.outcomes[DartOutcome.MISSED],
+            phantom=accuracy.outcomes[DartOutcome.PHANTOM],
+            bands=[
+                DistanceBandDto(label=band.label, darts=band.darts)
+                for band in accuracy.bands
+            ],
+            mean_off_by=_rounded(accuracy.mean_off_by),
+            median_off_by=_rounded(accuracy.median_off_by),
+            worst_off_by=_rounded(accuracy.worst_off_by),
+        )
+
+
+class GameAccuracyDto(CamelModel):
+    game_id: str
+    mode: int
+    created_at: datetime
+    evaluation_enabled: bool
+    summary: AccuracySummaryDto
+
+    @classmethod
+    def from_entity(cls, judged: GameAccuracy) -> Self:
+        return cls(
+            game_id=judged.game.id,
+            mode=judged.game.mode,
+            created_at=judged.game.created_at,
+            evaluation_enabled=judged.game.evaluation_enabled,
+            summary=AccuracySummaryDto.from_entity(judged.accuracy),
+        )
+
+
+class AccuracyReportDto(CamelModel):
+    """Totals plus every game on its own, so the page switches without asking
+    the server again."""
+
+    total: AccuracySummaryDto
+    games: list[GameAccuracyDto]
+
+    @classmethod
+    def from_entity(cls, overview: AccuracyOverview) -> Self:
+        return cls(
+            total=AccuracySummaryDto.from_entity(overview.total),
+            games=[GameAccuracyDto.from_entity(game) for game in overview.games],
+        )
+
+
+def _rounded(value: float | None) -> float | None:
+    return None if value is None else round(value, 1)

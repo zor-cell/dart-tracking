@@ -5,6 +5,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.features.evaluation.domain.accuracy import LoggedGame
 from app.api.features.evaluation.domain.game_event import (
     GameEvent,
     GameEventKind,
@@ -70,20 +71,34 @@ class EvaluationRepository:
 
     async def logged_games(
         self, session: AsyncSession, *, evaluation_only: bool
-    ) -> list[str]:
+    ) -> list[LoggedGame]:
         """Games that have a log, oldest first. `evaluation_only` narrows it to
         the ones marked as a test run."""
         # `created_at` is selected as well as ordered on: Postgres rejects a
         # DISTINCT whose ORDER BY names a column that is not in the list.
         statement = (
-            select(GameTable.id, GameTable.created_at)
+            select(
+                GameTable.id,
+                GameTable.mode,
+                GameTable.created_at,
+                GameTable.evaluation_enabled,
+            )
             .join(GameEventTable, GameEventTable.game_id == GameTable.id)
             .order_by(GameTable.created_at)
             .distinct()
         )
         if evaluation_only:
             statement = statement.where(GameTable.evaluation_enabled.is_(True))
-        return [row.id for row in (await session.execute(statement)).all()]
+
+        return [
+            LoggedGame(
+                id=row.id,
+                mode=row.mode,
+                created_at=row.created_at,
+                evaluation_enabled=row.evaluation_enabled,
+            )
+            for row in (await session.execute(statement)).all()
+        ]
 
 
 repository = EvaluationRepository()
