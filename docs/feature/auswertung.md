@@ -173,6 +173,56 @@ kein einziger Trigger kam — sonst wäre der schlimmste Recall-Fall unsichtbar.
   (Visit 0 von `01a07b48`: dreimal `MISS` plus ein `implausible_shape`, danach
   die drei echten Pfeile korrekt).
 
+### 3a. Die gelesene Null zählt nicht
+
+Ein `no_change` heißt: die Kamera hat hingesehen und nichts Neues am Board
+gefunden — der Pfeil ist abgeprallt oder blieb nicht stecken. Das ist
+punktemäßig dasselbe wie ein `MISS`, und offline zählt `run_all.py` es deshalb
+als korrekt ([erkennung.md §3](erkennung.md)). **Live nicht.** Ein `no_change`
+zählt als `missed`.
+
+Der Weg dorthin ging über zwei verworfene Varianten, beide lehrreich.
+
+**Verworfen: der Detektor gibt null Punkte zurück.** Dann bräuchte es beim
+Judging keine Sonderregel — es stünde eine gebuchte Null im Log. Es geht aber
+nicht: die client-seitige Frame-Differenz ist auf Recall ausgelegt und löst auch
+ohne Wurf aus. Der Detektor kann „Wurf fand statt, blieb nicht stecken" nicht von
+„es gab keinen Wurf" unterscheiden, und eine automatisch gebuchte Null wäre ein
+Phantom-Pfeil, der eine Aufnahme verbraucht. Im Log steht das Gegenbeispiel: in
+`01a07b67`, Visit 8, sitzt ein `no_change` mitten in einer Serie mit drei echten
+Pfeilen. Deshalb bucht der Server nichts, und wer einen abgeprallten Pfeil hat,
+trägt die Null von Hand ein.
+
+**Verworfen: beim Judging rückwirkend gutschreiben.** Buchen die Spieler im
+selben Visit eine Null, ist ja belegt, dass ein Wurf stattfand — man könnte das
+`missed`-Paar also nachträglich zu `correct` machen. Das war kurzzeitig
+implementiert und hob die Quote von 40 auf 41 von 54 (74.1 % → 75.9 %).
+
+*Warum trotzdem verworfen:* die Quote beantwortet „wie oft wertet das System
+selbst richtig". Ein `no_change` wertet nichts — ein Mensch musste die Null
+eintippen. Es gutzuschreiben schönt genau die Größe, um die es geht, und zwar in
+die angenehme Richtung. Dass die Wertung am Ende stimmt, ist ein Verdienst des
+Spielers, nicht des Trackers.
+
+**Offline zählt derselbe Vorgang anders — und das ist richtig so.** Zwei
+verschiedene Fragen:
+
+| | Frage | Bei leerem Board |
+|---|---|---|
+| `run_all.py` (offline) | Hat die Pipeline dieses Frame-Paar richtig *gelesen*? | `NO_CHANGE` ist die richtige Lesung → **korrekt** |
+| `report.py` (live) | Hat das System selbst *gewertet*? | Es hat nichts gewertet, die Null kam von Hand → **`missed`** |
+
+Es ist also kein Schlamperei-Unterschied, den man wegvereinheitlichen müsste,
+sondern folgt aus dem, was jede Zahl beantwortet. Wer eine der beiden Quoten
+nennt, muss nur sagen, welche Frage sie beantwortet.
+
+Was daran *doch* zu reparieren war, lag woanders: offline trugen „nichts zu
+sehen" und „Pfeil steckt im Surround" beide das Label `MISS`, sodass eine
+verpasste Detektion einen Treffer bekam, sobald der Pfeil außerhalb der Wertung
+steckte. Seit `NO_CHANGE` ein eigenes Ground-Truth-Label ist, ist das getrennt
+([erkennung.md §3](erkennung.md)); die Offline-Quote fiel dadurch von 227 auf
+**226 / 285** — ein Pfeil, der vorher zu Unrecht als Treffer galt.
+
 ---
 
 ## 4. Bilder: nur die Fehlerfälle
@@ -341,14 +391,12 @@ Vorgang, der eine Oberfläche braucht.
 
 ## 8. Offene Punkte
 
-- **`NO_CHANGE` gegen erwartetes `MISS` zählt hier als Fehler, offline als
-  Treffer.** `run_all.py` wertet „nichts gefunden" gegen ein erwartetes `MISS`
-  bewusst als korrekt: beide sind null Punkte, also dieselbe Wertung
-  ([erkennung.md §3](erkennung.md)). Die Live-Auswertung zählt denselben Fall als
-  `missed`, weil sie den Trigger-Recall messen will. Solange das so steht, sind
-  die beiden Prozentzahlen **nicht** direkt vergleichbar — im ersten Testlauf
-  betrifft es einen Pfeil (`01a07657/turn004/dart4`). Zu entscheiden, welche der
-  beiden Konventionen die Arbeit durchgängig verwendet.
+- **Mehrfach-Trigger ohne Wurf bleiben ungezählt.** Löst die Kamera ohne Wurf
+  aus und findet nichts, entsteht gar kein Judgement — weder auf der
+  Behauptungs- noch auf der Wahrheitsseite steht etwas. Diese Fälle erscheinen
+  nur in der Failure-Tabelle. Ob Trigger-Qualität in die Genauigkeitszahl
+  gehört, ist bewusst offen; sie steckt heute in
+  [client-diff-verbesserungen.md](client-diff-verbesserungen.md).
 - **Kein Setup-Begriff.** Offline gruppiert die Auswertung nach Board und Setup
   (`pz_setup1`); live ist ein Spiel die kleinste Einheit. Solange ein Abend =
   ein Kamera-Aufbau ist, deckt sich das; sonst braucht es ein Feld dafür.

@@ -182,8 +182,9 @@ def build_report(
         "",
         "What the camera booked against what the players accepted, aligned per",
         "visit (docs/feature/auswertung.md). *Correct* is a dart booked in the",
-        "right segment; *missed* is a dart thrown that the camera never booked,",
-        "*phantom* one it booked with no dart behind it.",
+        "right segment; *missed* is a dart thrown that the camera never booked -",
+        "a detection that came back empty included, since nothing was scored.",
+        "*Phantom* is one it booked with no dart behind it.",
         "",
         f"- Games: **{accuracy.games}**, visits judged: **{accuracy.visits}**",
         f"- Darts thrown: **{accuracy.darts_thrown}**, booked by the camera: "

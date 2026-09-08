@@ -14,7 +14,7 @@ Was als nächstes geändert wird und warum:
 
 > **Stand:** Diese Pipeline ist neuer als die Kalibrierung und noch nicht auf
 > ihrem Endstand. Es gibt inzwischen eine Ground-Truth-Evaluation (§6): aktuell
-> **79.6 % korrekte Wertung** über 285 Wurf-Paare (fünf Boards, 16 Setups),
+> **79.3 % korrekte Wertung** über 285 Wurf-Paare (fünf Boards, 16 Setups),
 > von einer 18.3 %-Baseline aus. Der Restfehler zerfällt in Spitzen-Präzision
 > (knapp die Hälfte der Mismatches liegt unter 5 mm) und eine Handvoll
 > struktureller Ursachen (§6, §7). Die strukturelle Hälfte hat eine gemeinsame
@@ -341,15 +341,28 @@ Pfeil gefunden" heißen: `NO_CHANGE` bedeutet, dass der Wurf null Punkte wert wa
 (siehe unten), `IMPLAUSIBLE_SHAPE` dagegen, dass das Bild überhaupt keinen Wurf
 zeigte. Nur das erste darf je als Null gebucht werden.
 
-### `NO_CHANGE` ist punktemäßig ein `MISS`
+### `NO_CHANGE` ist eine eigene Ground Truth
 
-Ein Pfeil, der das Board getroffen hat und wieder herausgefallen ist, zählt null
-Punkte — genauso wie ein Pfeil im Surround. `NO_CHANGE` und `MISS` sind also
-dieselbe *Wertung*, nur über verschiedene Wege ermittelt. Die Auswertung
-(`run_all.py`) zählt ein `NO_CHANGE` gegen ein erwartetes `MISS` deshalb als
-**korrekt**; alle vier nicht lokalisierten Paare im Testset sind genau dieser
-Fall. `ALIGNMENT_FAILED` zählt nicht mit — das ist kein Ablesen einer Null,
-sondern die Unfähigkeit, überhaupt hinzusehen.
+Ein Pfeil, der das Board getroffen hat und wieder herausgefallen ist, und ein
+Pfeil im Surround sind punktemäßig dasselbe: null. Als *Detektionsaufgabe* sind
+sie es nicht. Im ersten Fall ist nichts zu sehen und `NO_CHANGE` die richtige
+Antwort; im zweiten steckt ein Pfeil im Bild, den die Pipeline finden soll.
+
+Anfangs trugen beide das Label `MISS`, und `run_all.py` zählte ein `NO_CHANGE`
+dagegen als korrekt. Das gab einer verpassten Detektion einen Treffer, sobald
+der Pfeil zufällig außerhalb der Wertung steckte — nachgesehen an den drei
+betroffenen Paaren traf das auf eines zu (`pz-light_setup1/throw8/dart2`: der
+Pfeil ist im Bild sichtbar, am rechten Rand angeschnitten, r ≈ 214 mm).
+
+Deshalb gibt es jetzt **zwei Labels**:
+
+| Label | Bedeutung | Richtige Antwort |
+|---|---|---|
+| `NO_CHANGE` | im Bild ist kein neuer Pfeil | `NO_CHANGE` |
+| `MISS` | Pfeil steckt, aber außerhalb der 170 mm | die Spitze lokalisieren |
+
+`ALIGNMENT_FAILED` zählt nie mit — das ist kein Ablesen des Boards, sondern die
+Unfähigkeit, überhaupt hinzusehen.
 
 **Nicht dasselbe wie die Live-Wertung.** Im Spiel darf `NO_CHANGE` *nicht* blind
 als null Punkte gebucht werden: die client-seitige Frame-Differenz ist auf Recall
@@ -358,6 +371,13 @@ dann ein Phantom-Pfeil, der eine Aufnahme verbraucht. Der Detektor kann „Wurf
 fand statt, blieb aber nicht stecken" nicht von „es gab keinen Wurf"
 unterscheiden — diese Unterscheidung muss vom Client kommen (Arbeitsplan in
 [client-diff-verbesserungen.md](client-diff-verbesserungen.md)).
+
+Die Live-Auswertung zählt ein `no_change` dagegen immer als `missed`, auch bei
+leerem Board ([auswertung.md §3a](auswertung.md#3a-die-gelesene-null-zählt-nicht)).
+Das ist kein Widerspruch, sondern eine andere Frage: offline wird gemessen, ob
+die Pipeline das Frame-Paar richtig *gelesen* hat, live, ob das System selbst
+*gewertet* hat. Bei leerem Board hat es richtig gelesen und trotzdem nichts
+gewertet — die Null kam von Hand.
 
 ---
 
@@ -758,7 +778,15 @@ Zeilen vergleichbar bleiben:
 | (Bettskalierter Schwellwert — gemessen, verworfen, §5.12) | ≤ 217 / 285 |
 | + Sättigungskanal auf hellen Betten (§2.2) | 222 / 285 — 77.9 % |
 | (Anker-Umsortierung — sechs Regeln gemessen, verworfen, §5.13) | 219 – 223 / 285 |
-| + Fusions-Reichweite 90 → 110 mm (§2.3) | **227 / 285 — 79.6 %** |
+| + Fusions-Reichweite 90 → 110 mm (§2.3) | 227 / 285 — 79.6 % |
+| + `NO_CHANGE` als eigenes Truth-Label (§3) | **226 / 285 — 79.3 %** |
+
+Die letzte Zeile ist **kein Rückschritt der Pipeline**, sondern eine Verschärfung
+des Maßstabs: an der Erkennung hat sich nichts geändert, nur zählt ein
+`NO_CHANGE` auf einem Bild mit sichtbarem Pfeil nicht mehr als Treffer (§3). Alle
+Zeilen darüber sind unter der alten Konvention gemessen und untereinander
+vergleichbar; wer sie mit der heutigen Zahl vergleicht, muss diesen einen Pfeil
+mitrechnen.
 
 Zwei Pfeile — weit weniger als erwartet. Die Maske entfernt ein Artefakt, das gar
 keine Bildänderung ist, aber der Warp-Rand war nur *eine* Quelle breiter, heller
@@ -796,8 +824,8 @@ Label-Quote als einzige Metrik nicht reicht — ein Fehler kann sich als Treffer
 tarnen, und nur die `off by`-Spalte und das Board-Modell im Bild (§4) zeigen das.
 
 Seither ist das Test-Set auf **285 Paare** über fünf Boards und 16 Setups
-gewachsen; die Pipeline erreicht darauf **227 / 285 — 79.6 %**, pro Board
-73 – 87 %. Ein Blob wird praktisch immer gefunden (280/285 „lokalisiert"), und
+gewachsen; die Pipeline erreicht darauf **226 / 285 — 79.3 %**, pro Board
+73 – 87 %. Ein Blob wird praktisch immer gefunden (281/285 „lokalisiert"), und
 die Ausnahmen sind Pfeile, die gar nicht steckenblieben (§3) — die
 aussagekräftige Zahl ist die korrekte *Wertung*, nicht „irgendwo ein Pfeil".
 

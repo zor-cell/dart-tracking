@@ -1,6 +1,9 @@
 TODOs:
 
 Wenig Aufwand:
+- nicht immer auf home geleitet werden, sondern bei game zb dort bleiben
+- statistik empty state, remove ein spiel zählt..., auswertung empty state remove sobald eine ka...
+- in prod passwort ändern von admin user
 
 Viel Aufwand:
 - client diff löst ja derzeit öfter aus, fokus auf recall, das backend muss da was checken (ist das überhaupt möglich), weil

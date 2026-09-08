@@ -22,8 +22,9 @@ Usage:
 an image only where the detection disagrees with ground truth, so `_results`
 becomes a folder of just the failures instead of 165 mostly-correct overlays.
 
-A `NO_CHANGE` failure against an expected `MISS` is scored as correct: both are
-worth zero points, so they are the same call, not a disagreement.
+A `NO_CHANGE` failure is correct only against the label `NO_CHANGE`, which means
+the frame shows no new dart at all — it bounced out or never stuck. `MISS` is a
+dart sitting in the surround, which the pipeline is expected to find.
 
 Ground truth (optional): a `ground_truth.txt` in a folder scores segment accuracy
 and writes `_results/accuracy.md` with every mismatch, each with how far in
@@ -38,6 +39,7 @@ detections.
     throw1_dart1 S5
     throw1_dart2 T20
     throw1_dart3 D16?
+    throw1_dart4 NO_CHANGE
 """
 
 import argparse
@@ -83,6 +85,9 @@ from scripts.common import (  # noqa: E402
 OVERLAY_SUFFIX = "_detected.jpg"
 FAILURE_SUFFIX = "_failed.jpg"
 GROUND_TRUTH_NAME = "ground_truth.txt"
+# Truth label for a frame that shows no new dart at all — distinct from `MISS`,
+# which is a dart sitting in the surround.
+NO_CHANGE_LABEL = "NO_CHANGE"
 TRUTH_TEMPLATE_NAME = "ground_truth.template.txt"
 REPORT_NAME = "accuracy.md"
 
@@ -121,17 +126,19 @@ class Result:
     anchor_to_tip_mm: float = 0.0  # distance from the anchoring fragment to the tip
 
     @property
-    def scored_miss(self) -> bool:
+    def read_empty(self) -> bool:
         """Whether finding nothing was the right answer here.
 
-        `NO_CHANGE` means nothing new near the board — the dart hit and dropped
-        out, or never stuck. That is worth zero points, which is exactly what
-        `MISS` is worth, so the two are the same call and counting one as a
-        failure of the other would overstate the error rate. Only `NO_CHANGE`
-        qualifies: `ALIGNMENT_FAILED` is not a reading of the board, it is the
-        pipeline being unable to look at it.
+        Only against the label `NO_CHANGE`, which says the frame holds no new
+        dart. A `MISS` is a dart in the surround and has to be found: scoring it
+        the same would credit a failed detection for landing on zero points.
+        `ALIGNMENT_FAILED` never qualifies — that is the pipeline unable to look,
+        not a reading of the board.
         """
-        return self.failure is DetectionFailure.NO_CHANGE and self.expected == "MISS"
+        return (
+            self.failure is DetectionFailure.NO_CHANGE
+            and self.expected == NO_CHANGE_LABEL
+        )
 
     @property
     def correct(self) -> bool:
@@ -140,7 +147,7 @@ class Result:
             return False
         if self.located:
             return self.detected == self.expected
-        return self.scored_miss
+        return self.read_empty
 
     @property
     def off_by_mm(self) -> float | None:
@@ -385,8 +392,8 @@ def run_series(
         if expected is not None:
             mark = "?" if uncertain else ""
             verdict = "OK" if result.correct else "MISMATCH"
-            if result.scored_miss:
-                verdict = "OK (nothing there = 0 points = MISS)"
+            if result.read_empty:
+                verdict = "OK (frame holds no new dart)"
             line += f"   gt={expected}{mark} {verdict}"
             if not result.correct and result.off_by_mm is not None:
                 line += f" (off {result.off_by_mm:.1f}mm)"
@@ -501,7 +508,7 @@ def write_report(results: list[Result], out_dir: Path) -> Path:
     mismatches = [r for r in labelled if not r.correct]
     uncertain = sum(r.uncertain for r in labelled)
 
-    scored_miss = [r for r in labelled if r.scored_miss]
+    read_empty = [r for r in labelled if r.read_empty]
     lines = [
         "# Detection accuracy",
         "",
@@ -510,16 +517,16 @@ def write_report(results: list[Result], out_dir: Path) -> Path:
         "A `?` suffix in the truth file marks a label I wasn't sure about; it is still",
         "scored against as-is and just flagged here.",
         "",
-        "`NO_CHANGE` against an expected `MISS` counts as **correct**: nothing new near",
-        "the board means the dart bounced out or never stuck, which is worth zero points,",
-        "and so is a `MISS`. They are the same call. `ALIGNMENT_FAILED` does not count —",
-        "that is the pipeline failing to look, not reading a zero.",
+        "`NO_CHANGE` counts as **correct** only against the label `NO_CHANGE`: a frame",
+        "with no new dart in it. A `MISS` is a dart in the surround and has to be found —",
+        "crediting `NO_CHANGE` there would score the points, not the detection.",
+        "`ALIGNMENT_FAILED` never counts: that is the pipeline failing to look.",
         "",
         f"- Pairs attempted: **{len(results)}**",
         f"- Located: **{sum(r.located for r in results)}/{len(results)}**",
         f"- Correct: **{len(correct)}/{len(labelled)}** "
         f"({100 * len(correct) / len(labelled):.1f}%)",
-        f"- of those, `NO_CHANGE` scored as `MISS`: **{len(scored_miss)}**",
+        f"- of those, frames correctly read as `NO_CHANGE`: **{len(read_empty)}**",
         f"- Uncertain truth labels (`?`): **{uncertain}/{len(labelled)}**",
         "",
     ]
@@ -581,6 +588,13 @@ def write_report(results: list[Result], out_dir: Path) -> Path:
     return write_markdown(out_dir, REPORT_NAME, lines)
 
 
+def template_label(result: Result) -> str:
+    """The seed label for a frame: what the detector said, as a truth label."""
+    if result.detected is not None:
+        return result.detected
+    return NO_CHANGE_LABEL if result.failure is DetectionFailure.NO_CHANGE else "MISS"
+
+
 def write_truth_templates(results: list[Result]) -> list[Path]:
     """Write a `ground_truth.template.txt` per folder, seeded with detections.
 
@@ -596,11 +610,12 @@ def write_truth_templates(results: list[Result]) -> list[Path]:
         lines = [
             f"# Ground truth for {folder.name}. Correct each label against the video,",
             f"# then rename this file to {GROUND_TRUTH_NAME}.",
-            "# Format: <frame stem> <segment>   e.g. S5 / T20 / D16 / BULL / 25 / MISS",
+            "# Format: <frame stem> <segment>   e.g. S5 / T20 / D16 / BULL / 25 / MISS,",
+            "# or NO_CHANGE when the frame shows no new dart at all.",
             "# Labels below are the CURRENT DETECTIONS — a guess to fix, not truth.",
             "",
         ]
-        lines += [f"{r.path.stem} {r.detected or 'MISS'}" for r in group]
+        lines += [f"{r.path.stem} {template_label(r)}" for r in group]
         target = folder / TRUTH_TEMPLATE_NAME
         target.write_text("\n".join(lines) + "\n", encoding="utf-8")
         written.append(target)
@@ -669,10 +684,10 @@ def main() -> int:
     labelled = [r for r in all_results if r.expected is not None]
     if labelled:
         correct = sum(r.correct for r in labelled)
-        scored_miss = sum(r.scored_miss for r in labelled)
+        read_empty = sum(r.read_empty for r in labelled)
         print(f"{correct}/{len(labelled)} correct ({100 * correct / len(labelled):.1f}%)")
-        if scored_miss:
-            print(f"  ({scored_miss} of them NO_CHANGE against an expected MISS)")
+        if read_empty:
+            print(f"  ({read_empty} of them frames correctly read as NO_CHANGE)")
         print(f"accuracy report: {write_report(all_results, out_dir)}")
     else:
         print(

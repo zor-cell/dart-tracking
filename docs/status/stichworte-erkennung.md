@@ -9,7 +9,7 @@ Stand: 24.08. · Kalibrierung war letztes Gespräch, hier geht es nur um die Det
 - **Testset ist gewachsen:** 285 Detektions-Paare, **5 Boards** (`cc`, `fh`, `pz`, `pz-light`, `tz`), **16 Kamera-Setups**, 0.63–1.69 px/mm, verschiedene Lichtverhältnisse.
 - Jeder Ordner hat eine **`ground_truth.txt`** (gegen die Videos beschriftet) → echte Segment-Accuracy, nicht mehr Sichtprüfung.
 - Zwei **gegenläufige Pfeil-Typen** im Set: alte dunkle Pfeile (`pz`, `tz`) und neue Wolfram-Pfeile mit weißen Flights (`cc`, `fh`, `pz-light`). Wichtig fürs Argumentieren — sie heben sich in einer Gesamtzahl teilweise auf, deshalb immer Aufschlüsselung pro Board.
-- **Stand: 227 / 285 = 79.6 %** korrekte Wertung, pro Board 73–87 %. Baseline war 18.3 %.
+- **Stand: 226 / 285 = 79.3 %** korrekte Wertung, pro Board 73–87 %. Baseline war 18.3 %.
 
 ---
 
@@ -59,7 +59,8 @@ Stand: 24.08. · Kalibrierung war letztes Gespräch, hier geht es nur um die Det
 | Stand bei 285 Paaren | 216 — 75.8 % |
 | + Warp-Gültigkeitsmaske | 218 — 76.5 % |
 | + Sättigungskanal auf hellen Betten | 222 — 77.9 % |
-| + Fusions-Reichweite 90 → 110 mm | **227 — 79.6 %** |
+| + Fusions-Reichweite 90 → 110 mm | 227 — 79.6 % |
+| + `NO_CHANGE` als eigenes Truth-Label | **226 — 79.3 %** (Maßstab verschärft, nicht Pipeline verschlechtert) |
 
 Dazwischen liegen **drei komplett verworfene Anläufe** (siehe §5).
 
