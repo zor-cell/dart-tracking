@@ -1,8 +1,7 @@
 TODOs:
 
 Wenig Aufwand:
-- am iphone ist das keyboard für entry gerade abgeschnitten und die kamera zu klein. die kamera muss eine mindesthöhe haben
-es muss wohl an den extra viewport einschränkungen liegen (url bar, untere leiste)
+- 
 
 - ok button vllt größer?, manchmal unabsichtlich auf zurück gedrückt.
 - man muss das spiel wiederholen können (auch alle beteiligten im room), es soll auch möglich sein eine andere

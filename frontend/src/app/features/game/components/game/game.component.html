@@ -208,7 +208,7 @@
                 <button
                   type="button"
                   class="scorepad__key"
-                  [disabled]="state.dartsRemaining === 0"
+                  [disabled]="!game.acceptsDarts()"
                   [attr.aria-label]="multiplierPrefix() + n"
                   (click)="enterNumber(n)"
                 >
@@ -220,7 +220,7 @@
                   type="button"
                   class="scorepad__key scorepad__key--fixed"
                   [class.scorepad__key--bull]="side.value !== 0"
-                  [disabled]="state.dartsRemaining === 0"
+                  [disabled]="!game.acceptsDarts()"
                   (click)="enterFixed(side)"
                 >
                   {{ fixedLabel(side) }}
@@ -233,7 +233,7 @@
               class="scorepad__key scorepad__mod"
               [class.scorepad__mod--active]="multiplier() === 2"
               [attr.aria-pressed]="multiplier() === 2"
-              [disabled]="state.dartsRemaining === 0"
+              [disabled]="!game.acceptsDarts()"
               (click)="toggleDouble()"
             >
               Double
@@ -243,7 +243,7 @@
               class="scorepad__key scorepad__mod"
               [class.scorepad__mod--active]="multiplier() === 3"
               [attr.aria-pressed]="multiplier() === 3"
-              [disabled]="state.dartsRemaining === 0"
+              [disabled]="!game.acceptsDarts()"
               (click)="toggleTriple()"
             >
               Triple
