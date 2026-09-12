@@ -262,12 +262,8 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
     if not changed:
         return
 
-    # An undo or a hand-entered dart is a correction; the handover settles the
-    # visit those corrections belonged to.
     if isinstance(command, NextPlayerDto):
         recorder.settle_visit(game)
-    else:
-        recorder.note_correction(game_id)
 
     await _publish_state(game)
     if isinstance(command, NextPlayerDto):

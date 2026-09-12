@@ -225,24 +225,31 @@ steckte. Seit `NO_CHANGE` ein eigenes Ground-Truth-Label ist, ist das getrennt
 
 ---
 
-## 4. Bilder: nur die Fehlerfälle
+## 4. Bilder: jeder Visit eines Testlaufs
 
 Der `FrameBuffer` hält die Frames des offenen Visits im Speicher — das
 Kalibrierungsbild des leeren Boards als `base`, dann jeden gescorten Wurf. Bei
 `next_player`:
 
-- **korrigiert** und das Spiel ist als Testlauf markiert → die Serie wird nach
-  `backend/testdata/evaluation/game_<game-id>/` geschrieben, als
-  `throwN_base.jpg` + `throwN_dartK.jpg`;
-- **unverändert übernommen** → verworfen.
+- **Spiel als Testlauf markiert** → die Serie wird nach
+  `testdata/evaluation/game_<game-id>/` geschrieben, als
+  `throwN_base.jpg` + `throwN_dartK.jpg`, egal ob korrigiert oder nicht;
+- **sonst** → verworfen.
+
+Anfangs wurden nur korrigierte Visits geschrieben, mit der Begründung, ein
+übernommener Visit habe nichts zu lehren. Das hielt nicht: ohne die korrekt
+gewerteten Serien lässt sich eine Änderung am Detektor offline nur gegen ihre
+Fehlerfälle prüfen, nicht dagegen, ob sie einen vorher richtigen Pfeil kostet.
+Der Testlauf-Schalter ist ohnehin schon die Entscheidung „dieses Spiel
+aufzeichnen".
 
 Das `game_`-Präfix sagt, wofür die UUID steht, und fällt zugleich mit der
 `<board>_setup<n>`-Aufteilung des Offline-Runners zusammen: alle aufgezeichneten
 Setups gruppieren dort unter dem „Board" `game`.
 
 `N` ist der Visit-Index aus dem Event-Log, nicht durchnummeriert: `throw3` ist
-die vierte Runde des Spiels, und dass `throw2` fehlt heißt, dass sie unverändert
-übernommen wurde. So lässt sich eine Bilderserie ohne Umweg der Zeile im Log
+die vierte Runde des Spiels, und dass `throw2` fehlt heißt, dass die Kamera in
+dieser Runde nichts gescort hat. So lässt sich eine Bilderserie ohne Umweg der Zeile im Log
 zuordnen. Den Namen vergibt `frame_buffer.series_name`, die auch der Report
 benutzt — die beiden dürfen nicht auseinanderlaufen.
 

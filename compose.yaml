@@ -32,8 +32,8 @@ services:
       retries: 3
       start_period: 40s
     # Recorded throw series survive a deployment only outside the runner's build
-    # directory, which CI wipes with `git clean -ffdx` on every checkout. Set
-    # TESTDATA_DIR to an absolute path there; the default is for local runs.
+    # directory, which CI wipes with `git clean -ffdx` on every checkout. The
+    # deploy job sets TESTDATA_DIR; the default is for local runs.
     volumes:
       - ${TESTDATA_DIR:-./backend/testdata}:/app/testdata
 

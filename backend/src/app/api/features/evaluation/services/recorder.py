@@ -185,18 +185,12 @@ def note_throw(game_id: str, jpeg: bytes) -> None:
     frames.add_throw(game_id, jpeg)
 
 
-def note_correction(game_id: str) -> None:
-    """Mark the open visit as one the players took back or typed into."""
-    frames.mark_corrected(game_id)
-
-
 def settle_visit(game: Game) -> None:
-    """Close the visit that just ended, keeping its frames only if it was
-    corrected: an accepted visit is one the tracker got right."""
+    """Close the visit that just ended, keeping its frames if the game is a test run."""
     # The handover has already opened the next visit, so the one that ended is
     # the slot before it.
     ended = len(game.turns) - 2
-    if game.evaluation_enabled and frames.was_corrected(game.id):
+    if game.evaluation_enabled:
         frames.flush(game.id, ended)
     else:
         frames.discard(game.id)

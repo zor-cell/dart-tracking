@@ -149,10 +149,11 @@ einen einzigen Port veröffentlichen, und es ist keine Domain im Build hartkodie
 
 ### Aufgezeichnete Wurfserien
 
-Korrigierte Runden legt das Backend als Wurfserie unter `/app/testdata/evaluation`
-ab ([auswertung.md](docs/feature/auswertung.md)). Der Host-Pfad dahinter kommt aus
-`TESTDATA_DIR` und **muss auf dem Pi außerhalb des Runner-Build-Verzeichnisses
-liegen**: GitLab räumt das Verzeichnis bei jedem Checkout mit `git clean -ffdx`
+In einem Testlauf legt das Backend jede Runde als Wurfserie unter
+`/app/testdata/evaluation` ab ([auswertung.md](docs/feature/auswertung.md)). Der
+Host-Pfad dahinter kommt aus `TESTDATA_DIR`, das der Deploy-Job in
+[.gitlab-ci.yml](.gitlab-ci.yml) auf `/srv/dart-tracking/testdata` setzt. Er
+**muss auf dem Pi außerhalb des Runner-Build-Verzeichnisses liegen**: GitLab räumt das Verzeichnis bei jedem Checkout mit `git clean -ffdx`
 auf, und das schließt ignorierte Pfade wie `backend/testdata/` ein. Lag der Mount
 dort, hat der Container die Dateien als `root` angelegt, worauf der Checkout mit
 `failed to remove ...: Permission denied` abbrach — und wären die Rechte gepasst,

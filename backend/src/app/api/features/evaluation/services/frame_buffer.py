@@ -1,7 +1,7 @@
 """Holds the scoring camera's frames of the open visit.
 
-An accepted visit is thrown away, a corrected one written out as a throw series
-(docs/feature/auswertung.md §4). Process-local, about a megabyte per game.
+In a test run every visit is written out as a throw series, otherwise thrown
+away (docs/feature/auswertung.md §4). Process-local, about a megabyte per game.
 """
 
 import logging
@@ -40,8 +40,6 @@ class FrameBuffer:
         # The camera's last frame, which is the base image of the next visit.
         self._previous: dict[str, bytes] = {}
         self._visits: dict[str, _Visit] = {}
-        # Games whose open visit the players have touched by hand.
-        self._corrected: set[str] = set()
 
     def remember(self, game_id: str, jpeg: bytes) -> None:
         """Note a frame that opens a visit rather than belonging to one — the
@@ -60,17 +58,8 @@ class FrameBuffer:
         visit.throws.append(jpeg)
         self._previous[game_id] = jpeg
 
-    def mark_corrected(self, game_id: str) -> None:
-        """Note that the open visit was undone or entered by hand — the only
-        visits whose frames are worth keeping."""
-        self._corrected.add(game_id)
-
-    def was_corrected(self, game_id: str) -> bool:
-        return game_id in self._corrected
-
     def discard(self, game_id: str) -> None:
         self._visits.pop(game_id, None)
-        self._corrected.discard(game_id)
 
     def forget(self, game_id: str) -> None:
         """Drop everything held for a game."""
@@ -85,7 +74,6 @@ class FrameBuffer:
         which label only follows from the alignment.
         """
         visit = self._visits.pop(game_id, None)
-        self._corrected.discard(game_id)
         if visit is None or visit.base is None or not visit.throws:
             return None
 
