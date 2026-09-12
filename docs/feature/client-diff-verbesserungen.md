@@ -45,6 +45,7 @@ sondern eine fehlende Prüfung.
 | 6 | [Der abgefallene Pfeil ist eine Null](#6-der-abgefallene-pfeil-ist-eine-null) | beide | L | offen, ungelöst |
 | 7 | [Darts jenseits des dritten verwerfen](#7-darts-jenseits-des-dritten-verwerfen-verworfen) | Server | – | **verworfen** — existiert bereits und hilft nicht |
 | 8 | [Kein Frame, solange die Runde keinen Dart annimmt](#8-kein-frame-solange-die-runde-keinen-dart-annimmt-client) | Client | S | **erledigt** — vierte Wurflinie im Bestätigungsmodus |
+| 9 | [Kleine MISS-Blobs verwerfen](#9-kleine-miss-blobs-verwerfen-server) | Server | S | **erledigt** — 38 von 52 Live-Phantomen, 2 echte Fehlwürfe auf dem Testsatz |
 
 **Messdisziplin.** Schritt 1 wird wie die Server-Schritte mit
 `scripts/detection/run_all.py` gegen den Testsatz belegt: die Grenze darf keinen
@@ -421,6 +422,61 @@ sofort wieder leer und das Tor damit offen (→ Schritt 3), und ein Fehlauslöse
 **Nebeneffekt.** Die Badge zeigt „Tracking pausiert" statt „Bereit", solange
 nichts gesendet wird. Ohne das sieht ein bewusst ignorierter Wurf aus wie ein
 übersehener.
+
+---
+
+## 9. Kleine MISS-Blobs verwerfen *(Server)*
+
+**Befund.** Zwei Testspiele im Betrieb (08.09., ein Setup, 0.95 px/mm,
+Wolfram-Pfeile), `game_events` über Visit-Replay und `judge` ausgewertet: 135
+gebuchte Darts, davon **65 korrekt, 18 falsch, 52 Phantome**. Das Reinlaufen ist
+dabei kein Thema mehr — `implausible_shape` fing es neunmal ab, das Tor aus
+Schritt 8 hält. Die Phantome sind eine andere Klasse:
+
+- **42 von 52 haben unter 500 mm² Fläche**, ein echter Pfeil hier 900–2000 mm².
+- Fast alle werden als `MISS` gebucht, Spitze bei r ≈ 180–230 mm.
+- 4–5 Fragmente, das größte hält nur 30–50 % des Blobs: die Fusion fädelt Krümel
+  zu einer 100 mm langen Linie.
+- Sie kehren **Visit für Visit an derselben Stelle** wieder, etwa (−8, 213) mm
+  über der 20. Die Kamera hat sich dabei nicht bewegt (`alignment_shift_px`
+  0.2–0.5): es sind lokale Registrierungs-Reste an den aufgedruckten Zahlen
+  (erkennung.md §5.11, §5.13), kein globaler Versatz, den eine bessere
+  Ausrichtung beheben würde.
+- Die Hälfte fällt in die ersten 5 s nach dem Rundenwechsel.
+
+Nebenbei schickt der Client rund **15 Frames pro Minute, die `no_change`
+ergeben** — jeder davon eine Gelegenheit für so einen Rest.
+
+Die übrigen 8 Phantome sind normal große Blobs: derselbe echte Pfeil, nach
+einem Undo ein zweites Mal gebucht (identische Position und Fläche). Die
+Ursache ist offen; der Undo fasst den Referenz-Frame nicht an.
+
+**Warum keine reine Flächengrenze.** Über die 285 Testpaare kostet sie zu viel,
+weil die schwarzen Pfeile und die fernen Setups dort deutlich kleinere Blobs
+liefern:
+
+| Regel | Testsatz: korrekte verloren | Live: Phantome abgefangen | Live: korrekte verloren |
+|---|---|---|---|
+| Fläche < 400 | 11 | 41 / 52 | 1 |
+| Fläche < 600 | 34 | 42 / 52 | 2 |
+| Fläche < 400 und größtes Fragment < 60 % | 2 | 28 / 52 | 1 |
+| **Fläche < 400 und Spitze > 170 mm** | **2** | **38 / 52** | **1** |
+| Fläche < 600 und Spitze > 170 mm | 6 | 39 / 52 | 1 |
+
+**Gewählt: `MISS` und Fläche < 400 mm² → `NO_CHANGE`.** Die Bedingung auf den
+`MISS` macht die Regel punktneutral: sie kann nur eine Null verwerfen, nie einen
+Treffer. Die zwei verlorenen Testpaare sind echte Fehlwürfe im Surround, der eine
+verlorene Live-Dart ebenso. Der Detektor meldet `NO_CHANGE` und nicht
+`IMPLAUSIBLE_SHAPE`, weil es inhaltlich dasselbe ist wie ein zu kleiner Blob; die
+Metriken (`dart_area_mm2 > 0`) unterscheiden die beiden Fälle weiterhin.
+
+**Gemessen:** 226 → **224 / 285**, `281 → 274 darts located`. Weggefallen sind
+die zwei Fehlwürfe und fünf Fehlfits, die ohnehin falsch waren.
+
+**Was bleibt.** 14 Phantome übersteht die Regel: die 8 doppelt gebuchten Pfeile
+und einige größere Blobs mit Kameraversatz über 1 px. Der Trigger selbst ist
+unverändert — die Rate der Fehlsendungen senkt das nicht, es macht sie nur
+folgenlos.
 
 ---
 

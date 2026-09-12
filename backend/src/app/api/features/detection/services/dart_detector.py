@@ -47,6 +47,7 @@ import numpy as np
 
 from app.api.features.calibration.domain.board_geometry import (
     DOUBLE_OUTER_RADIUS,
+    MISS,
     segment_at,
     single_bed_centres,
 )
@@ -111,6 +112,10 @@ _MAX_DART_LENGTH_MM = 110.0
 # the change mask being clipped to a disc of 315 mm radius.
 _MAX_BLOB_LENGTH_MM = 250.0
 _MAX_BLOB_AREA_MM2 = 8000.0
+
+# Smallest blob that may be booked as a MISS. Below it, a tip outside the scoring
+# area is taken for a registration residual on the surround, not a dart.
+_MIN_MISS_AREA_MM2 = 400.0
 
 # Smallest component kept at all; anything below is noise. Two floors because
 # board-relative area is the meaningful limit but sensor noise is a fixed number
@@ -201,12 +206,15 @@ def detect_dart(
     tip, far_end = _tip_and_far_end(blob, pixels_per_mm)
     trace.anchor_to_tip_mm = _anchor_distance(tip, pixels_per_mm)
     board_point = _to_board(calibration.homography, tip)
+    segment = segment_at(*board_point)
+    if segment == MISS and trace.dart_area_mm2 < _MIN_MISS_AREA_MM2:
+        return _record_failure(DetectionFailure.NO_CHANGE)
 
     return Dart(
         tip_image=tip,
         axis_image=(tip, far_end),
         tip_board=board_point,
-        segment=segment_at(*board_point),
+        segment=segment,
     )
 
 

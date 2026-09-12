@@ -14,7 +14,7 @@ Was als nächstes geändert wird und warum:
 
 > **Stand:** Diese Pipeline ist neuer als die Kalibrierung und noch nicht auf
 > ihrem Endstand. Es gibt inzwischen eine Ground-Truth-Evaluation (§6): aktuell
-> **79.3 % korrekte Wertung** über 285 Wurf-Paare (fünf Boards, 16 Setups),
+> **78.6 % korrekte Wertung** über 285 Wurf-Paare (fünf Boards, 16 Setups),
 > von einer 18.3 %-Baseline aus. Der Restfehler zerfällt in Spitzen-Präzision
 > (knapp die Hälfte der Mismatches liegt unter 5 mm) und eine Handvoll
 > struktureller Ursachen (§6, §7). Die strukturelle Hälfte hat eine gemeinsame
@@ -314,6 +314,15 @@ segment = segment_at(*board_point)            # reine Geometrie, board_geometry.
 Die Spitze wird durch die Homographie in Board-Millimeter abgebildet, dann
 entscheidet `segment_at` rein geometrisch (Radius → Ring, Winkel → Sektor,
 `board_geometry.py`). Jenseits von 170 mm ist das Ergebnis `MISS`.
+
+**Ein kleiner `MISS` ist kein Pfeil.** Liegt die Spitze außerhalb der
+Scoring-Fläche und hat der Blob weniger als `_MIN_MISS_AREA_MM2 = 400 mm²`,
+meldet der Detektor `NO_CHANGE` statt eines Darts. Das sind die
+Registrierungs-Reste an den aufgedruckten Zahlen (§5.13), die die Fusion aus
+vier, fünf Krümeln zu einer Linie fädelt. Die Regel greift nur auf einen `MISS`
+und kann deshalb nie einen punktbringenden Pfeil kosten; der Preis ist ein
+echter Fehlwurf, der von Hand als 0 nachgetragen werden muss. Befund und Wahl
+der Grenze in [client-diff-verbesserungen.md §9](client-diff-verbesserungen.md#9-kleine-miss-blobs-verwerfen-server).
 
 ---
 
@@ -779,7 +788,13 @@ Zeilen vergleichbar bleiben:
 | + Sättigungskanal auf hellen Betten (§2.2) | 222 / 285 — 77.9 % |
 | (Anker-Umsortierung — sechs Regeln gemessen, verworfen, §5.13) | 219 – 223 / 285 |
 | + Fusions-Reichweite 90 → 110 mm (§2.3) | 227 / 285 — 79.6 % |
-| + `NO_CHANGE` als eigenes Truth-Label (§3) | **226 / 285 — 79.3 %** |
+| + `NO_CHANGE` als eigenes Truth-Label (§3) | 226 / 285 — 79.3 % |
+| + kleine `MISS`-Blobs verworfen (§2.5) | **224 / 285 — 78.6 %** |
+
+Die letzte Zeile kostet auf dem Testsatz genau zwei echte Fehlwürfe (Truth
+`MISS`, jetzt `NO_CHANGE`), punktemäßig identisch. Gewonnen wird sie im
+laufenden Spiel: dort waren ein Drittel aller gebuchten Darts solche Krümel
+([client-diff-verbesserungen.md §9](client-diff-verbesserungen.md#9-kleine-miss-blobs-verwerfen-server)).
 
 Die letzte Zeile ist **kein Rückschritt der Pipeline**, sondern eine Verschärfung
 des Maßstabs: an der Erkennung hat sich nichts geändert, nur zählt ein
