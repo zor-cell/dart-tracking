@@ -60,6 +60,18 @@ class UserRepository:
         ).scalar_one_or_none()
         return None if row is None else (_to_domain(row), row.password_hash)
 
+    async def update_profile(
+        self, session: AsyncSession, user_id: str, username: str, display_name: str
+    ) -> User | None:
+        """Both names at once, so a rename is one write and one transaction."""
+        row = await session.get(UserTable, user_id)
+        if row is None:
+            return None
+        row.username = username
+        row.display_name = display_name
+        await session.flush()
+        return _to_domain(row)
+
     async def taken(self, session: AsyncSession, email: str, username: str) -> str | None:
         """Which of the two is already in use, for a message that names the
         field. The unique constraints stay the actual guarantee."""
@@ -76,6 +88,20 @@ class UserRepository:
         if row is None:
             return None
         return "email" if row.email == email else "username"
+
+    async def username_taken(
+        self, session: AsyncSession, username: str, excluding_user_id: str
+    ) -> bool:
+        """For a rename, where the account's own handle is not a collision."""
+        row = (
+            await session.execute(
+                select(UserTable.id).where(
+                    func.lower(UserTable.username) == username.lower(),
+                    UserTable.id != excluding_user_id,
+                )
+            )
+        ).first()
+        return row is not None
 
 
 repository = UserRepository()

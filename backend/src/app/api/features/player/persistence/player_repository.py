@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.player.domain.player_identity import PlayerIdentity
@@ -57,6 +57,20 @@ class PlayerRepository:
             )
         ).scalars().all()
         return [_to_domain(row) for row in rows]
+
+    async def rename_self(
+        self, session: AsyncSession, user_id: str, display_name: str
+    ) -> None:
+        """The account's own entry follows the account's display name — that row
+        is what the player list shows for oneself."""
+        await session.execute(
+            update(PlayerTable)
+            .where(
+                PlayerTable.user_id == user_id,
+                PlayerTable.owner_user_id == user_id,
+            )
+            .values(display_name=display_name)
+        )
 
     async def owned(
         self, session: AsyncSession, ids: list[str], owner_user_id: str

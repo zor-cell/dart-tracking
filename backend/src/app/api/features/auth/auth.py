@@ -8,6 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, Cookie, HTTPException, Response
 
 from app.api.features.auth.dto.login import LoginDto
+from app.api.features.auth.dto.profile import ProfileDto
 from app.api.features.auth.dto.register import RegisterDto
 from app.api.features.auth.dto.session import SessionDto
 from app.api.features.auth.dto.user import UserDto
@@ -130,3 +131,23 @@ async def logout(response: Response, refresh_token: RefreshCookie = None) -> Non
 @router.get("/me", response_model=UserDto)
 async def me(user: AuthenticatedUser) -> UserDto:
     return UserDto.from_entity(user)
+
+
+@router.put("/me", response_model=UserDto)
+async def update_profile(body: ProfileDto, user: AuthenticatedUser) -> UserDto:
+    """Identification runs on the id everywhere, so both names are free to
+    change. The display name is carried into the account's own address-book
+    entry, which is the row the player list shows."""
+    username = body.username.strip()
+
+    async with database.session_scope() as session:
+        if await repository.username_taken(session, username, user.id):
+            raise HTTPException(status_code=409, detail="username already in use")
+        updated = await repository.update_profile(
+            session, user.id, username, body.display_name
+        )
+        if updated is None:
+            raise HTTPException(status_code=404, detail="account not found")
+        await players.rename_self(session, user.id, body.display_name)
+
+    return UserDto.from_entity(updated)

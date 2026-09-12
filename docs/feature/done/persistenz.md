@@ -791,6 +791,14 @@ denn sonst würde sie ihnen nie jemand anlegen. Konten aus der Zeit vor der
 Spalte `users.display_name` bekommen dort ihren `username` eingetragen
 (`e5c9a13b7402`) — derselbe Wert, unter dem ihre Identität ohnehin schon steht.
 
+**Beide Namen sind änderbar, `PUT /auth/me`.** Identifiziert wird überall über
+die `id`, also hängt an keinem der beiden Namen eine Referenz; `username` bleibt
+unique (Kollision = 409, der eigene Handle zählt nicht als eine), `display_name`
+nicht. Der Schreibvorgang zieht den Anzeigenamen in dieselbe `players`-Zeile
+nach, die die Registrierung angelegt hat — sonst würde die Spielerliste weiter
+den alten Namen zeigen, und genau dafür existiert die Spalte. Die Zeilen-`id`
+bleibt dabei stehen, laufende Spiele und die Statistik hängen daran.
+
 **Ein Platz ist eine Identität *oder* ein Name, geprüft im Schema.**
 `PlayerSlotDto` trägt `playerId` und `name` und lässt genau eines von beiden zu;
 beides oder keines ist ein 422 aus dem Validator, ein leerer Name ebenfalls (er

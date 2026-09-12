@@ -22,24 +22,127 @@
     </div>
   } @else {
     @if (user(); as account) {
-      <dl class="account">
-        <div class="account__row">
-          <dt class="account__label">Anzeigename</dt>
-          <dd class="account__value">{{ account.displayName }}</dd>
+      <form class="account" [formGroup]="form" (ngSubmit)="confirm()">
+        <div
+          class="account__row"
+          [class.account__row--editing]="editingField() === 'displayName'"
+        >
+          <span class="account__label" id="label-displayName">Anzeigename</span>
+          <span class="account__value">
+            @if (editingField() === 'displayName') {
+              <input
+                pInputText
+                formControlName="displayName"
+                autocomplete="nickname"
+                aria-labelledby="label-displayName"
+                (keydown.escape)="cancel()"
+                fluid
+              />
+            } @else {
+              {{ account.displayName }}
+            }
+          </span>
+          @if (editingField() === 'displayName') {
+            <p-button
+              type="submit"
+              icon="pi pi-check"
+              ariaLabel="Anzeigename speichern"
+              [rounded]="true"
+              [text]="true"
+              [loading]="saving()"
+              [disabled]="form.controls.displayName.invalid"
+            />
+            <p-button
+              type="button"
+              icon="pi pi-times"
+              ariaLabel="Bearbeiten abbrechen"
+              severity="secondary"
+              [rounded]="true"
+              [text]="true"
+              [disabled]="saving()"
+              (onClick)="cancel()"
+            />
+          } @else {
+            <p-button
+              type="button"
+              icon="pi pi-pencil"
+              ariaLabel="Anzeigename bearbeiten"
+              severity="secondary"
+              [rounded]="true"
+              [text]="true"
+              [disabled]="saving()"
+              (onClick)="edit('displayName')"
+            />
+          }
         </div>
-        <div class="account__row">
-          <dt class="account__label">Benutzername</dt>
-          <dd class="account__value">{{ account.username }}</dd>
+
+        <div
+          class="account__row"
+          [class.account__row--editing]="editingField() === 'username'"
+        >
+          <span class="account__label" id="label-username">Benutzername</span>
+          <span class="account__value">
+            @if (editingField() === 'username') {
+              <input
+                pInputText
+                formControlName="username"
+                autocomplete="username"
+                aria-labelledby="label-username"
+                (keydown.escape)="cancel()"
+                fluid
+              />
+            } @else {
+              {{ account.username }}
+            }
+          </span>
+          @if (editingField() === 'username') {
+            <p-button
+              type="submit"
+              icon="pi pi-check"
+              ariaLabel="Benutzername speichern"
+              [rounded]="true"
+              [text]="true"
+              [loading]="saving()"
+              [disabled]="form.controls.username.invalid"
+            />
+            <p-button
+              type="button"
+              icon="pi pi-times"
+              ariaLabel="Bearbeiten abbrechen"
+              severity="secondary"
+              [rounded]="true"
+              [text]="true"
+              [disabled]="saving()"
+              (onClick)="cancel()"
+            />
+          } @else {
+            <p-button
+              type="button"
+              icon="pi pi-pencil"
+              ariaLabel="Benutzername bearbeiten"
+              severity="secondary"
+              [rounded]="true"
+              [text]="true"
+              [disabled]="saving()"
+              (onClick)="edit('username')"
+            />
+          }
         </div>
+
         <div class="account__row">
-          <dt class="account__label">E-Mail</dt>
-          <dd class="account__value">{{ account.email }}</dd>
+          <span class="account__label">E-Mail</span>
+          <span class="account__value">{{ account.email }}</span>
         </div>
+
         <div class="account__row">
-          <dt class="account__label">Registriert</dt>
-          <dd class="account__value">{{ account.createdAt | date: 'dd.MM.yyyy' }}</dd>
+          <span class="account__label">Registriert</span>
+          <span class="account__value">{{ account.createdAt | date: 'dd.MM.yyyy' }}</span>
         </div>
-      </dl>
+
+        @if (error(); as message) {
+          <p-message severity="error" [text]="message" />
+        }
+      </form>
     } @else {
       <div class="view__actions">
         <p-button fluid label="Anmelden" icon="pi pi-sign-in" routerLink="/login" />

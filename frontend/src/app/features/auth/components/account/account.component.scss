@@ -6,20 +6,30 @@
 
   &__row {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 0.5rem;
+    min-height: 2.5rem;
     padding-bottom: 0.75rem;
     border-bottom: 1px solid var(--p-content-border-color);
   }
 
   &__label {
     color: var(--p-text-muted-color);
+    flex: none;
   }
 
   &__value {
     margin: 0;
+    flex: 1;
+    min-width: 0;
     text-align: right;
     overflow-wrap: anywhere;
+  }
+
+  /* Keeps the rows without a button aligned with the ones that have one. */
+  &__row:not(:has(p-button)) {
+    padding-right: 3rem;
   }
 }
 

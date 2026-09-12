@@ -1,6 +1,8 @@
 TODOs:
 
 Wenig Aufwand:
+- stats page spiel werten geht nicht, nur von wertung rausnehmen geht
+- neuer spielmodus: elimination
 - ok button vllt größer?, manchmal unabsichtlich auf zurück gedrückt.
 - man muss das spiel wiederholen können (auch alle beteiligten im room), es soll auch möglich sein eine andere
 spielart da auszuwählen
