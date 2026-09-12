@@ -7,3 +7,4 @@ class Player:
 
     id: int
     name: str
+    identity_id: str

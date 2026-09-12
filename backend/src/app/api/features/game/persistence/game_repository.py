@@ -49,7 +49,7 @@ class GameRepository:
             mode=mode,
             variant=variant,
             players=[
-                Player(id=seat, name=identity.display_name)
+                Player(id=seat, name=identity.display_name, identity_id=identity.id)
                 for seat, identity in enumerate(identities)
             ],
             checkout_mode=checkout_mode,
@@ -308,7 +308,11 @@ class GameRepository:
 
         entries = (
             await session.execute(
-                select(GamePlayerTable.player_index, PlayerTable.display_name)
+                select(
+                    GamePlayerTable.player_index,
+                    PlayerTable.display_name,
+                    GamePlayerTable.player_id,
+                )
                 .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
                 .where(GamePlayerTable.game_id == game_id)
                 .order_by(GamePlayerTable.player_index)
@@ -342,7 +346,10 @@ class GameRepository:
             id=row.id,
             mode=GameMode(row.mode),
             variant=GameVariant(row.variant),
-            players=[Player(id=index, name=name) for index, name in entries],
+            players=[
+                Player(id=index, name=name, identity_id=identity_id)
+                for index, name, identity_id in entries
+            ],
             checkout_mode=CheckoutMode(row.checkout_mode),
             evaluation_enabled=row.evaluation_enabled,
             current_player_index=row.current_player_index,

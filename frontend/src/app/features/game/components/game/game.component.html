@@ -260,6 +260,13 @@
       <div class="finish" [class.finish--reserved]="settings.manualEntryEnabled()">
         <p-button
           fluid
+          label="Revanche"
+          icon="pi pi-replay"
+          routerLink="/game/new"
+          [queryParams]="{ rematch: state.id }"
+        />
+        <p-button
+          fluid
           label="Zurück"
           icon="pi pi-undo"
           severity="secondary"

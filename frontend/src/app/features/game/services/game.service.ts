@@ -136,16 +136,25 @@ export class GameService {
    * answered, so a device that turns back was never in it.
    */
   async load(gameId: string): Promise<boolean> {
+    const state = await this.fetch(gameId);
+    if (state === null) {
+      return false;
+    }
+    this.setState(state);
+    return true;
+  }
+
+  /** Read a game without adopting it — the setup screen copies a finished one's
+   * seats from it. Resolves to null when the server does not know the id. */
+  async fetch(gameId: string): Promise<GameStateDto | null> {
     try {
-      const state = await firstValueFrom(
+      return await firstValueFrom(
         this.http.get<GameStateDto>(`${this.baseUrl}/${gameId}`, {
           context: SILENT_ERROR_CONTEXT,
         }),
       );
-      this.setState(state);
-      return true;
     } catch {
-      return false;
+      return null;
     }
   }
 
