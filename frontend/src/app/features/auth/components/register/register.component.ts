@@ -33,6 +33,7 @@ export class RegisterComponent {
         Validators.pattern(USERNAME_PATTERN),
       ],
     ],
+    displayName: ['', [Validators.required, Validators.maxLength(64)]],
     password: ['', [Validators.required, Validators.minLength(8)]],
   });
 

@@ -11,6 +11,7 @@ class User:
     id: str
     email: str
     username: str
+    display_name: str
     created_at: datetime
     role: UserRole = UserRole.USER
 

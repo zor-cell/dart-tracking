@@ -13,6 +13,7 @@ def _to_domain(row: UserTable) -> User:
         id=row.id,
         email=row.email,
         username=row.username,
+        display_name=row.display_name,
         created_at=row.created_at,
         role=UserRole(row.role),
     )
@@ -20,9 +21,19 @@ def _to_domain(row: UserTable) -> User:
 
 class UserRepository:
     async def create(
-        self, session: AsyncSession, email: str, username: str, password_hash: str
+        self,
+        session: AsyncSession,
+        email: str,
+        username: str,
+        display_name: str,
+        password_hash: str,
     ) -> User:
-        row = UserTable(email=email, username=username, password_hash=password_hash)
+        row = UserTable(
+            email=email,
+            username=username,
+            display_name=display_name,
+            password_hash=password_hash,
+        )
         session.add(row)
         # Both the id (uuidv7) and created_at come from the server, so the row
         # has to be read back before it can be mapped.

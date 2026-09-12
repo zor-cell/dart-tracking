@@ -24,6 +24,10 @@
     @if (user(); as account) {
       <dl class="account">
         <div class="account__row">
+          <dt class="account__label">Anzeigename</dt>
+          <dd class="account__value">{{ account.displayName }}</dd>
+        </div>
+        <div class="account__row">
           <dt class="account__label">Benutzername</dt>
           <dd class="account__value">{{ account.username }}</dd>
         </div>

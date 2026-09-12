@@ -66,18 +66,23 @@ async def _begin_session(response: Response, user: User) -> SessionDto:
 async def register(body: RegisterDto, response: Response) -> SessionDto:
     email = body.email.strip().lower()
     username = body.username.strip()
+    display_name = body.display_name
 
     async with database.session_scope() as session:
         taken = await repository.taken(session, email, username)
         if taken is not None:
             raise HTTPException(status_code=409, detail=f"{taken} already in use")
         user = await repository.create(
-            session, email, username, passwords.hash_password(body.password)
+            session,
+            email,
+            username,
+            display_name,
+            passwords.hash_password(body.password),
         )
         # The account's own entry in its address book, so the first game can be
         # set up without typing one's own name (§4.1).
         await players.create(
-            session, username, owner_user_id=user.id, user_id=user.id
+            session, display_name, owner_user_id=user.id, user_id=user.id
         )
 
     return await _begin_session(response, user)

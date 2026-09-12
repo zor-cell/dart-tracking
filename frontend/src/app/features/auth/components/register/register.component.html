@@ -26,6 +26,21 @@
     </div>
 
     <div class="auth-form__field">
+      <label class="auth-form__label" for="displayName">Anzeigename</label>
+      <input
+        pInputText
+        id="displayName"
+        formControlName="displayName"
+        autocomplete="nickname"
+        aria-describedby="displayName-hint"
+        fluid
+      />
+      <small class="auth-form__hint" id="displayName-hint">
+        So erscheinst du in der Spielerliste. Muss nicht eindeutig sein.
+      </small>
+    </div>
+
+    <div class="auth-form__field">
       <label class="auth-form__label" for="password">Passwort</label>
       <input
         pInputText

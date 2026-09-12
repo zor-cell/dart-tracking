@@ -152,7 +152,7 @@ Alle `id`-Spalten sind `uuid` mit `DEFAULT uuidv7()`, also serverseitig erzeugt
 und zeitlich sortierbar (§8.5).
 
 ```
-users(id, email UNIQUE, username UNIQUE, password_hash, created_at)
+users(id, email UNIQUE, username UNIQUE, display_name, password_hash, created_at)
 
 players(id, display_name, created_at,
         user_id       NULL → users,   -- dieser Spieler IST dieser Account
@@ -188,6 +188,9 @@ Auf `users` steht bewusst **kein** Vor-/Nachname: die Oberfläche zeigt
 ausschließlich `players.display_name`, der Account taucht dort nie auf. `email`
 ist der Login, `username` das öffentliche Handle — brauchbar, um später einen
 Gast-Player an einen Account zu übergeben (§10), ohne die Adresse preiszugeben.
+Daneben steht `users.display_name`: der frei gewählte Name, mit dem die eigene
+Identität bei der Registrierung angelegt wird. Er ist **nicht** unique — zwei
+Konten dürfen „Phil" heißen, der `username` hält sie auseinander.
 
 **Zeitstempel sind `timestamptz`, und das heißt UTC.** Der Typname führt in die
 Irre: Postgres speichert dort keine Zeitzone, sondern einen absoluten Zeitpunkt
@@ -778,12 +781,15 @@ neue, mit denselben Werten.
 
 **Die eigene Identität entsteht bei der Registrierung.** `POST /auth/register`
 legt in derselben Transaktion eine `players`-Zeile mit
-`user_id = owner_user_id = <neuer Account>` und `display_name = username` an.
+`user_id = owner_user_id = <neuer Account>` und `display_name = users.display_name`
+an, dem bei der Registrierung angegebenen Anzeigenamen.
 Der Alternative — sie erst beim ersten Spiel anzulegen — fehlt der Zeitpunkt:
 das Adressbuch wäre beim ersten Aufruf leer, und die Setup-View könnte den
 eigenen Namen nicht vorbelegen. Konten aus der Zeit davor bekommen ihre Zeile
 über die Datenmigration `d883252c5886` (`INSERT … SELECT … WHERE NOT EXISTS`),
-denn sonst würde sie ihnen nie jemand anlegen.
+denn sonst würde sie ihnen nie jemand anlegen. Konten aus der Zeit vor der
+Spalte `users.display_name` bekommen dort ihren `username` eingetragen
+(`e5c9a13b7402`) — derselbe Wert, unter dem ihre Identität ohnehin schon steht.
 
 **Ein Platz ist eine Identität *oder* ein Name, geprüft im Schema.**
 `PlayerSlotDto` trägt `playerId` und `name` und lässt genau eines von beiden zu;
