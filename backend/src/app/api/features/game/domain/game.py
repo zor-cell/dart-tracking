@@ -1,4 +1,4 @@
-"""Domain model and x01 rules for the game feature.
+"""Domain model and scoring rules for the game feature.
 
 The turn list is the single source of truth: every score (remaining points,
 winner, darts left) is derived from it. Nothing is stored twice, and the full
@@ -11,6 +11,7 @@ from app.api.features.game.domain.checkout import checkout_route
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game_mode import GameMode
+from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.player import Player
 from app.api.features.game.domain.turn import Turn
 
@@ -22,6 +23,7 @@ class Game:
     id: str
     mode: GameMode
     players: list[Player]
+    variant: GameVariant = GameVariant.X01
     checkout_mode: CheckoutMode = CheckoutMode.DOUBLE_OUT
     evaluation_enabled: bool = False
     current_player_index: int = 0
@@ -70,14 +72,34 @@ class Game:
         return list(route) if route is not None else None
 
     def remaining(self, player_id: int) -> int:
-        """Points left for a player: the starting score minus every dart of that
-        player's turns, skipping busted ones."""
-        scored = sum(
-            turn.points
-            for turn in self.turns
-            if turn.player_id == player_id and not turn.busted
-        )
-        return self.mode - scored
+        """Points a player still needs to finish: x01 counts this down to zero,
+        elimination counts the score up to the mode. Holding the distance rather
+        than the score is what lets both share the bust, win and checkout rules."""
+        return self.mode - self._scores()[player_id]
+
+    def _scores(self) -> dict[int, int]:
+        """Points scored per player, replayed in throwing order. An elimination
+        reset depends on what everyone stood at when the dart landed, so this
+        cannot be a per-player sum (docs/feature/spielmodi.md §2)."""
+        scores = {player.id: 0 for player in self.players}
+        for turn in self.turns:
+            if turn.busted:
+                continue
+            for dart in turn.darts:
+                scores[turn.player_id] += dart.points
+                if self.variant is GameVariant.ELIMINATION:
+                    self._eliminate(scores, turn.player_id)
+        return scores
+
+    def _eliminate(self, scores: dict[int, int], thrower_id: int) -> None:
+        """Reset every other player the thrower just drew level with. Zero is
+        exempt: everyone starts there, so an opening miss would wipe the field."""
+        hit = scores[thrower_id]
+        if hit == 0:
+            return
+        for player in self.players:
+            if player.id != thrower_id and scores[player.id] == hit:
+                scores[player.id] = 0
 
     def register_dart(self, dart: Dart) -> None:
         """Apply one dart to the current player's open turn, busting it when the

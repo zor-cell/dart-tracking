@@ -6,6 +6,7 @@ from app.api.features.game.dto.turn import TurnDto
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.game_mode import GameMode
+from app.api.features.game.domain.game_variant import GameVariant
 
 
 class GameStateDto(CamelModel):
@@ -20,6 +21,7 @@ class GameStateDto(CamelModel):
     id: str
     revision: int
     mode: GameMode
+    variant: GameVariant
     checkout_mode: CheckoutMode
     players: list[PlayerDto]
     current_player_index: int
@@ -36,6 +38,7 @@ class GameStateDto(CamelModel):
             id=game.id,
             revision=game.revision,
             mode=game.mode,
+            variant=game.variant,
             checkout_mode=game.checkout_mode,
             players=[
                 PlayerDto.from_entity(player, game.remaining(player.id))

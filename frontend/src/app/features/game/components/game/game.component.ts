@@ -20,6 +20,7 @@ import {DetectionService} from '../../../detection/services/detection.service';
 import {FrameDiffService} from '../../../detection/services/frame-diff.service';
 import {SettingsService} from '../../../settings/services/settings.service';
 import {DartDto} from '../../dto/dart.dto';
+import {PlayerDto} from '../../dto/player.dto';
 import {DARTS_PER_TURN} from '../../models/visit';
 import {GameService} from '../../services/game.service';
 import {GameSessionService} from '../../services/game-session.service';
@@ -144,6 +145,16 @@ export class GameComponent implements OnInit, OnDestroy {
     const checkout = this.game.state()?.checkout ?? null;
     return Array.from({ length: DARTS_PER_TURN - thrown }, (_, index) => checkout?.[index] ?? null);
   });
+
+  /** The number on a player's card: points still needed in x01, points gathered
+   * so far in elimination — the same value read from opposite ends. */
+  protected score(player: PlayerDto): number {
+    const state = this.game.state();
+    if (state === null || state.variant !== 'elimination') {
+      return player.remaining;
+    }
+    return state.mode - player.remaining;
+  }
 
   constructor() {
     // Follow play along the row, so the thrower stays in the middle and the two

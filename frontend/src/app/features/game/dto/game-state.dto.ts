@@ -1,5 +1,6 @@
 import { GameMode } from '../models/game-mode';
 import { CheckoutMode } from '../models/checkout-mode';
+import { GameVariant } from '../models/game-variant';
 import { PlayerDto } from './player.dto';
 import { TurnDto } from './turn.dto';
 
@@ -13,6 +14,7 @@ export interface GameStateDto {
   readonly id: string;
   readonly revision: number;
   readonly mode: GameMode;
+  readonly variant: GameVariant;
   readonly checkoutMode: CheckoutMode;
   readonly players: readonly PlayerDto[];
   readonly currentPlayerIndex: number;

@@ -158,9 +158,10 @@ players(id, display_name, created_at,
         user_id       NULL → users,   -- dieser Spieler IST dieser Account
         owner_user_id NULL → users)   -- diese Identität hat dieser Account angelegt
 
-games(id, mode, checkout_mode, owner_user_id NULL → users,
+games(id, mode, variant, checkout_mode, owner_user_id NULL → users,
       current_player_index, revision, created_at, finished_at NULL,
       status)   -- active | finished | abandoned | discarded, siehe §4.5
+                -- variant: x01 | elimination, siehe feature/spielmodi.md
 
 game_players(game_id → games, player_index, player_id → players,
              PRIMARY KEY (game_id, player_index), UNIQUE (game_id, player_id))

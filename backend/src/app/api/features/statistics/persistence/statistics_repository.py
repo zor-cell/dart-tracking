@@ -17,6 +17,7 @@ from app.api.features.game.domain.turn import Turn
 from app.api.features.game.persistence.dart import DartTable
 from app.api.features.game.persistence.game import GameTable
 from app.api.features.game.persistence.game_player import GamePlayerTable
+from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.persistence.turn import TurnTable
 from app.api.features.player.persistence.player import PlayerTable
 from app.api.features.statistics.domain.player_statistics import PlayerStatistics
@@ -32,6 +33,7 @@ class StatisticsRepository:
                 select(
                     GameTable.id,
                     GameTable.mode,
+                    GameTable.variant,
                     GameTable.checkout_mode,
                     GameTable.status,
                     GameTable.updated_at,
@@ -90,6 +92,11 @@ class StatisticsRepository:
             own_darts = sum(len(turn.darts) for turn in turns)
             status = effective_status(GameStatus(seat.status), seat.updated_at)
             if not counts_in_statistics(status, own_darts):
+                continue
+
+            # Elimination legs are left out: the countdown below cannot see the
+            # resets other players caused, so every rate it derives would be wrong.
+            if GameVariant(seat.variant) is not GameVariant.X01:
                 continue
 
             statistics.add_leg(seat.mode, CheckoutMode(seat.checkout_mode), turns)
