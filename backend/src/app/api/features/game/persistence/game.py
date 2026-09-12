@@ -13,6 +13,7 @@ class GameTable(Base):
 
     id: Mapped[str] = uuid_primary_key()
     mode: Mapped[int] = mapped_column(Integer)
+    variant: Mapped[str] = mapped_column(String(16))
     checkout_mode: Mapped[str] = mapped_column(String(16))
     status: Mapped[str] = mapped_column(String(16))
     current_player_index: Mapped[int] = mapped_column(Integer)

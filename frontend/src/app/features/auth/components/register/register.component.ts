@@ -5,10 +5,13 @@ import { Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
+import {
+  DISPLAY_NAME_MAX_LENGTH,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+  USERNAME_PATTERN,
+} from '../../models/profile-rules';
 import { AuthService } from '../../services/auth.service';
-
-/** Mirrors the server-side constraint, so a rejected handle is caught here. */
-const USERNAME_PATTERN = /^[A-Za-z0-9_.-]+$/;
 
 @Component({
   selector: 'app-register',
@@ -28,11 +31,12 @@ export class RegisterComponent {
       '',
       [
         Validators.required,
-        Validators.minLength(3),
-        Validators.maxLength(32),
+        Validators.minLength(USERNAME_MIN_LENGTH),
+        Validators.maxLength(USERNAME_MAX_LENGTH),
         Validators.pattern(USERNAME_PATTERN),
       ],
     ],
+    displayName: ['', [Validators.required, Validators.maxLength(DISPLAY_NAME_MAX_LENGTH)]],
     password: ['', [Validators.required, Validators.minLength(8)]],
   });
 

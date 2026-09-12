@@ -6,6 +6,7 @@ from app.api.features.game.dto.turn import TurnDto
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.game_mode import GameMode
+from app.api.features.game.domain.game_variant import GameVariant
 
 
 class GameStateDto(CamelModel):
@@ -20,6 +21,7 @@ class GameStateDto(CamelModel):
     id: str
     revision: int
     mode: GameMode
+    variant: GameVariant
     checkout_mode: CheckoutMode
     players: list[PlayerDto]
     current_player_index: int
@@ -28,6 +30,7 @@ class GameStateDto(CamelModel):
     can_undo: bool
     winner_id: int | None
     checkout: list[str] | None
+    elimination: list[str] | None
     evaluation_enabled: bool
 
     @classmethod
@@ -36,6 +39,7 @@ class GameStateDto(CamelModel):
             id=game.id,
             revision=game.revision,
             mode=game.mode,
+            variant=game.variant,
             checkout_mode=game.checkout_mode,
             players=[
                 PlayerDto.from_entity(player, game.remaining(player.id))
@@ -47,5 +51,6 @@ class GameStateDto(CamelModel):
             can_undo=game.can_undo,
             winner_id=game.winner.id if game.winner is not None else None,
             checkout=game.checkout,
+            elimination=game.elimination,
             evaluation_enabled=game.evaluation_enabled,
         )

@@ -9,6 +9,7 @@ class UserDto(CamelModel):
     id: str
     email: str
     username: str
+    display_name: str
     created_at: datetime
     role: UserRole
 
@@ -18,6 +19,7 @@ class UserDto(CamelModel):
             id=user.id,
             email=user.email,
             username=user.username,
+            display_name=user.display_name,
             created_at=user.created_at,
             role=user.role,
         )

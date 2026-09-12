@@ -45,7 +45,7 @@ redundant: `/capture` ist konzeptionell Teil von `/game`. Geplante
 | Route        | Zweck                                                                 | Änderung                          |
 |--------------|-----------------------------------------------------------------------|-----------------------------------|
 | `/start`     | Landing: „Neues Spiel"; später letzte Spiele / Statistiken            | bleibt                            |
-| `/game/new`  | Setup-Formular: Spieler + Spielmodus (501, …)                         | neu                               |
+| `/game/new`  | Setup-Formular: Spieler, Variante und Modus ([spielmodi.md](feature/spielmodi.md)) | neu                               |
 | `/game`      | Aktive Session: Kamera oben + Scoreboard unten; Sub-States Kalibrierung → Tracking | verschmilzt `/game` + `/capture` |
 | `/settings`  | Technische Erkennungs-Parameter (Thresholds); global **und** als Schnellzugriff im Spiel | bleibt, geschärft                 |
 

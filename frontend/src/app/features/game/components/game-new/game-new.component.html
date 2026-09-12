@@ -6,6 +6,17 @@
 
   <form class="setup" [formGroup]="form" (ngSubmit)="startGame()">
     <div class="setup__field">
+      <label class="setup__label" for="variant">Variante</label>
+      <p-selectbutton
+        inputId="variant"
+        formControlName="variant"
+        [options]="variantOptions"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </div>
+
+    <div class="setup__field">
       <label class="setup__label" for="mode">Modus</label>
       <p-selectbutton
         inputId="mode"

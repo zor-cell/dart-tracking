@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
@@ -12,6 +13,7 @@ import { PlayerService } from '../../../player/services/player.service';
 import { SettingsService } from '../../../settings/services/settings.service';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { CHECKOUT_MODES, CheckoutMode } from '../../models/checkout-mode';
+import { GAME_VARIANTS, GameVariant } from '../../models/game-variant';
 import { PlayerSlotDto } from '../../dto/player-slot.dto';
 import { GameService } from '../../services/game.service';
 import { GameSessionService } from '../../services/game-session.service';
@@ -36,6 +38,7 @@ export class GameNewComponent {
   private readonly settings = inject(SettingsService);
 
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
+  protected readonly variantOptions = [...GAME_VARIANTS];
   protected readonly checkoutModeOptions = [...CHECKOUT_MODES];
 
   protected readonly signedIn = this.auth.isAuthenticated;
@@ -51,9 +54,16 @@ export class GameNewComponent {
 
   protected readonly form = this.fb.group({
     mode: this.fb.nonNullable.control<GameMode>(501, Validators.required),
+    variant: this.fb.nonNullable.control<GameVariant>('x01', Validators.required),
     checkoutMode: this.fb.nonNullable.control<CheckoutMode>('double_out', Validators.required),
     players: this.fb.array<FormControl<Seat>>([]),
   });
+
+  private readonly variant = toSignal(this.form.controls.variant.valueChanges, {
+    initialValue: this.form.controls.variant.value,
+  });
+  /** Elimination counts up, so the score field is a target rather than a mode. */
+  protected readonly isElimination = computed(() => this.variant() === 'elimination');
 
   constructor() {
     void this.restoreSeats();
@@ -93,7 +103,7 @@ export class GameNewComponent {
     if (this.form.invalid) {
       return;
     }
-    const { mode, checkoutMode, players } = this.form.getRawValue();
+    const { mode, variant, checkoutMode, players } = this.form.getRawValue();
     const seats = (players as Seat[]).map<PlayerSlotDto>((seat) =>
       typeof seat === 'string' ? { name: seat.trim() } : { playerId: seat.id },
     );
@@ -101,6 +111,7 @@ export class GameNewComponent {
     this.game
       .createGame({
         mode,
+        variant,
         checkoutMode,
         players: seats,
         evaluationEnabled: this.settings.evaluationEnabled(),

@@ -152,7 +152,7 @@
           <span class="scoreboard__name">
             {{ player.name }}
           </span>
-          <span class="scoreboard__remaining">{{ player.remaining }}</span>
+          <span class="scoreboard__remaining">{{ score(player) }}</span>
         </li>
       }
     </ul>
@@ -168,10 +168,11 @@
               @for (slot of checkoutSlots(); track $index) {
                 <li
                   class="turn__dart turn__dart--empty"
-                  [class.turn__dart--checkout]="slot !== null"
+                  [class.turn__dart--checkout]="slot.label !== null"
+                  [class.turn__dart--elimination]="slot.eliminating && slot.label !== null"
                   aria-hidden="true"
                 >
-                  {{ slot ?? '–' }}
+                  {{ slot.label ?? '–' }}
                 </li>
               }
             </ul>

@@ -1,5 +1,6 @@
-export interface RegisterDto {
+import { ProfileDto } from './profile.dto';
+
+export interface RegisterDto extends ProfileDto {
   readonly email: string;
-  readonly username: string;
   readonly password: string;
 }

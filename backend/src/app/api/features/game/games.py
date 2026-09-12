@@ -72,6 +72,7 @@ async def create_game(body: GameConfigDto, user: CurrentUser) -> GameStateDto:
             session,
             body.mode,
             identities,
+            body.variant,
             body.checkout_mode,
             owner_user_id=owner_id,
             evaluation_enabled=body.evaluation_enabled,

@@ -35,6 +35,16 @@ export class GameTopBarComponent {
 
   protected readonly shareDialogVisible = signal(false);
 
+  /** The mode alone names an x01 game; elimination shares those numbers as its
+   * target and has to say so. */
+  protected readonly title = computed(() => {
+    const state = this.game.state();
+    if (state === null) {
+      return '';
+    }
+    return state.variant === 'elimination' ? `Elimination ${state.mode}` : `${state.mode}`;
+  });
+
   /**
    * The link a second device follows to join. Built from the origin this device
    * loaded the app from, which is what makes it reachable for the other phone:

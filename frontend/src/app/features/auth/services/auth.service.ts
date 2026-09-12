@@ -2,8 +2,13 @@ import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { SILENT_ERROR_HANDLER, SKIP_AUTH_RETRY } from '../../../core/interceptors';
+import {
+  SILENT_ERROR_CONTEXT,
+  SILENT_ERROR_HANDLER,
+  SKIP_AUTH_RETRY,
+} from '../../../core/interceptors';
 import { LoginDto } from '../dto/login.dto';
+import { ProfileDto } from '../dto/profile.dto';
 import { RegisterDto } from '../dto/register.dto';
 import { SessionDto } from '../dto/session.dto';
 import { UserDto } from '../dto/user.dto';
@@ -42,6 +47,20 @@ export class AuthService {
 
   async register(registration: RegisterDto): Promise<void> {
     this.adopt(await this.post<SessionDto>('register', registration));
+  }
+
+  /** Rename the account. The answer is what the server stored, so the cached
+   * user adopts its reading rather than the optimistic one. Unlike the calls
+   * around it this is an ordinary authenticated request: a 401 here is an
+   * expired token and should be retried, not an answer. */
+  async updateProfile(profile: ProfileDto): Promise<void> {
+    this._user.set(
+      await firstValueFrom(
+        this.http.put<UserDto>(`${this.baseUrl}/me`, profile, {
+          context: SILENT_ERROR_CONTEXT,
+        }),
+      ),
+    );
   }
 
   async logout(): Promise<void> {

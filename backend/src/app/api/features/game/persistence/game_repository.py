@@ -15,6 +15,7 @@ from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_status import GameStatus, effective_status
+from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.game_summary import GameSummary, GameSummaryPlayer
 from app.api.features.game.domain.player import Player
 from app.api.features.game.domain.turn import Turn
@@ -35,6 +36,7 @@ class GameRepository:
         session: AsyncSession,
         mode: GameMode,
         identities: list[PlayerIdentity],
+        variant: GameVariant,
         checkout_mode: CheckoutMode,
         owner_user_id: str | None = None,
         evaluation_enabled: bool = False,
@@ -45,6 +47,7 @@ class GameRepository:
         game = Game(
             id="",
             mode=mode,
+            variant=variant,
             players=[
                 Player(id=seat, name=identity.display_name)
                 for seat, identity in enumerate(identities)
@@ -55,6 +58,7 @@ class GameRepository:
 
         row = GameTable(
             mode=int(mode),
+            variant=variant.value,
             checkout_mode=checkout_mode.value,
             status=GameStatus.ACTIVE.value,
             current_player_index=game.current_player_index,
@@ -337,6 +341,7 @@ class GameRepository:
         return Game(
             id=row.id,
             mode=GameMode(row.mode),
+            variant=GameVariant(row.variant),
             players=[Player(id=index, name=name) for index, name in entries],
             checkout_mode=CheckoutMode(row.checkout_mode),
             evaluation_enabled=row.evaluation_enabled,
