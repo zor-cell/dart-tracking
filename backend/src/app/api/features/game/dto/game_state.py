@@ -30,6 +30,7 @@ class GameStateDto(CamelModel):
     can_undo: bool
     winner_id: int | None
     checkout: list[str] | None
+    elimination: list[str] | None
     evaluation_enabled: bool
 
     @classmethod
@@ -50,5 +51,6 @@ class GameStateDto(CamelModel):
             can_undo=game.can_undo,
             winner_id=game.winner.id if game.winner is not None else None,
             checkout=game.checkout,
+            elimination=game.elimination,
             evaluation_enabled=game.evaluation_enabled,
         )

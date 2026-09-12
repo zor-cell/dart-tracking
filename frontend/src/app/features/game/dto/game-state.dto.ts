@@ -23,5 +23,6 @@ export interface GameStateDto {
   readonly canUndo: boolean;
   readonly winnerId: number | null;
   readonly checkout: readonly string[] | null;
+  readonly elimination: readonly string[] | null;
   readonly evaluationEnabled: boolean;
 }

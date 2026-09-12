@@ -71,6 +71,33 @@ class Game:
         )
         return list(route) if route is not None else None
 
+    @property
+    def elimination(self) -> list[str] | None:
+        """A route that lands exactly on an opponent's score, resetting them, or
+        None when none fits the darts left. The easiest target wins: fewest
+        darts first, then the smallest gap (docs/feature/spielmodi.md §3)."""
+        if self.variant is not GameVariant.ELIMINATION or self.winner is not None:
+            return None
+
+        scores = self._scores()
+        mine = scores[self.current_player.id]
+        best: tuple[tuple[int, int], tuple[str, ...]] | None = None
+        for player in self.players:
+            # A gap of zero is not a target: hitting it would score nothing, and
+            # the zero exemption in `_eliminate` means it resets nobody.
+            gap = scores[player.id] - mine
+            if player.id == self.current_player.id or gap <= 0:
+                continue
+            # No double needed: a reset is not a finish, so any field will do.
+            route = checkout_route(gap, self.darts_remaining, False)
+            if route is None:
+                continue
+            cost = (len(route), gap)
+            if best is None or cost < best[0]:
+                best = (cost, route)
+
+        return list(best[1]) if best is not None else None
+
     def remaining(self, player_id: int) -> int:
         """Points a player still needs to finish: x01 counts this down to zero,
         elimination counts the score up to the mode. Holding the distance rather

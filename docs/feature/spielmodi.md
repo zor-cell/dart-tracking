@@ -98,18 +98,59 @@ Zahl, die auf der Karte steht, ist eine Ansichtssache und wird dort gebildet
 
 ---
 
-## 3. Wo die Variante überall hängt
+## 3. Der Eliminations-Hinweis
+
+Neben der Checkout-Route zeigt die Wurfreihe bei Elimination, womit sich ein
+Mitspieler zurücksetzen lässt — dieselben Kästchen, aber **rot** statt grau.
+
+**Die Route ist dasselbe Problem wie ein Checkout.** Um A auf Stand `S` zu
+treffen, muss ich von meinem Stand `M` aus exakt `S − M` Punkte werfen. Das ist
+die Frage, die `checkout_route` ohnehin beantwortet, mit zwei Unterschieden:
+
+- **Kein Double nötig** (`double_out=False`): ein Reset ist kein Finish, jedes
+  Feld zählt. Ein Konflikt mit der Double-Out-Regel kann nicht entstehen, denn
+  ein Gegner auf dem Ziel hätte bereits gewonnen.
+- **Kein Bust möglich:** `M + (S − M) = S`, und `S` liegt unter dem Ziel.
+
+**Welcher Gegner.** Es können mehrere erreichbar sein. Gewählt wird der am
+leichtesten zu treffende: wenige Darts zuerst, bei Gleichstand der kleinere
+Abstand. Gegner *unter* meinem Stand entfallen — Darts addieren nur. Ein Abstand
+von 0 entfällt ebenfalls, passend zur Null-Ausnahme aus §1: dort gibt es nichts
+zu treffen.
+
+**Sieg schlägt Reset.** Wenn beides möglich ist, füllen die Kästchen die
+Checkout-Route. Die Rangfolge sitzt im Frontend (`checkout ?? elimination`),
+nicht in der Domain — `GameStateDto` trägt beide Routen und bleibt damit eine
+Zustandsbeschreibung statt einer Anzeigeentscheidung.
+
+**Warum nicht beide gleichzeitig.** Eine Route ist eine *Sequenz über die
+Kästchen* (`D20` in Slot 1, `20` in Slot 2). Zwei Sequenzen nebeneinander
+(`16 / D20`) lesen sich nur, solange die rote genau einen Dart lang ist; ab
+einem Bedarf über 60 braucht sie zwei, und beide Sequenzen parallel durch die
+Slots zu führen wird mehrdeutig. Deshalb die Entweder-oder-Regel.
+
+**Unterschieden wird allein über die Textfarbe** (Entscheidung): rot gegen das
+gedämpfte Grau, Rahmen und Schriftschnitt bleiben identisch. Ein zusätzlicher
+durchgezogener Rahmen war zwischenzeitlich drin, um nach WCAG 1.4.1 nicht nur
+über Farbe zu unterscheiden, wurde aber zugunsten der ruhigeren Reihe verworfen.
+Entschärft ist der Punkt dadurch, dass die Kästchen `aria-hidden` sind und die
+Route nur ein Vorschlag ist — sie trägt keine Information, ohne die sich das
+Spiel nicht führen lässt.
+
+---
+
+## 4. Wo die Variante überall hängt
 
 | Stelle | Was |
 |---|---|
 | `domain/game_variant.py` | `StrEnum` mit `x01` / `elimination` |
-| `domain/game.py` | Feld `variant`, `_scores()`, `_eliminate()` |
+| `domain/game.py` | Feld `variant`, `_scores()`, `_eliminate()`, `elimination` (§3) |
 | `persistence/game.py` | Spalte `variant` (Migration `b17d4e9c05a2`, Bestand auf `x01` gesetzt) |
 | `dto/game_config.py` | Eingabe beim Anlegen, Default `x01` |
-| `dto/game_state.py` | geht an alle Geräte im Raum |
+| `dto/game_state.py` | geht an alle Geräte im Raum, inkl. `elimination` |
 | Frontend `models/game-variant.ts` | Gegenstück, Werte identisch zur Wire-Form |
 | `game-new.component` | Auswahl; die Modus-Auswahl heißt bei Elimination „Ziel" |
-| `game.component` / `game-top-bar` | Anzeige des Stands und des Titels |
+| `game.component` / `game-top-bar` | Anzeige des Stands, des Titels und der roten Kästchen |
 
 Die CV-Pipeline (Kalibrierung, Erkennung, Socket, Kamera) ist **nicht**
 betroffen: ein erkannter Dart ist in beiden Varianten derselbe `Dart`, nur die
@@ -117,7 +158,7 @@ Verrechnung unterscheidet sich.
 
 ---
 
-## 4. Offene Punkte
+## 5. Offene Punkte
 
 - **Spieleliste.** `GameRepository.summaries` rechnet den Endstand als
   `mode - scored` direkt in SQL. Ein `SUM` kennt keine Resets, für

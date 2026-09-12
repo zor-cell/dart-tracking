@@ -422,6 +422,10 @@
   border-style: dashed;
 }
 
+.turn__dart--elimination {
+  color: var(--p-red-500, #ef4444);
+}
+
 .turn__dart--busted {
   text-decoration: line-through;
   color: var(--p-text-muted-color, #6b7280);
