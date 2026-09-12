@@ -76,3 +76,6 @@ class DetectionTrace:
     minimum_candidate_px: float = 0.0
 
     failure: DetectionFailure | None = None
+    # A blob found but rejected as too small for a miss; its frame still becomes
+    # the next reference.
+    rejected_miss: bool = False

@@ -396,6 +396,7 @@ async def _handle_throw_frame(
     reference = detection_store.get(game_id, client_id)
 
     aligned: np.ndarray | None = None
+    rejected_miss = False
     metrics: dict[str, float] = {}
     raw = b""
 
@@ -414,11 +415,16 @@ async def _handle_throw_frame(
             # Both read under the lock: the trace is a module global that the
             # next run replaces.
             aligned = dart_detector.trace.aligned
+            rejected_miss = dart_detector.trace.rejected_miss
             metrics = recorder.metrics_of(dart_detector.trace)
 
     scoring = await scoring_camera_store.is_scoring(game_id, client_id)
 
     if isinstance(outcome, DetectionFailure):
+        # A rejected miss is still a change in the picture; left out of the
+        # reference, it would be found again on every later throw.
+        if rejected_miss and aligned is not None:
+            detection_store.set(game_id, client_id, aligned)
         await hub.send(connection, DetectionResultDto.failed(outcome))
         if scoring:
             await recorder.note_failure(game_id, client_id, outcome, metrics)
@@ -432,8 +438,8 @@ async def _handle_throw_frame(
     if not scoring:
         return
 
-    # Only frames the fit reached: a failed detection leaves the reference where
-    # it was, and a series holding it would chain differently offline.
+    # Only located darts: the report labels a series frame by frame against the
+    # darts that were booked.
     recorder.note_throw(game_id, raw)
 
     # The detected segment carries the field, not just the points, so a tracked

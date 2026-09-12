@@ -473,6 +473,19 @@ Metriken (`dart_area_mm2 > 0`) unterscheiden die beiden Fälle weiterhin.
 **Gemessen:** 226 → **224 / 285**, `281 → 274 darts located`. Weggefallen sind
 die zwei Fehlwürfe und fünf Fehlfits, die ohnehin falsch waren.
 
+**Nachtrag: die Referenz rollt trotzdem weiter.** Im ersten Testlauf mit der
+Regel (12.09.) zeigte sich eine Nebenwirkung. Ein verworfener Blob ließ den
+Referenz-Frame stehen, also blieb die Änderung für immer in der Differenz: ein
+Fehlwurf im Surround wurde in Visit 11 elfmal hintereinander mit derselben
+Fläche (~300 mm²) wiedergefunden und schließlich, etwas größer angekommen, doch
+noch als `MISS` gebucht — nachdem die 0 schon von Hand eingetragen war. Seitdem
+setzt `socket.py` bei `trace.rejected_miss` den ausgerichteten Frame als neue
+Referenz, bucht aber nichts. Das ist so punktneutral wie die Regel selbst, und
+es ist das, was `run_all.py` offline ohnehin tut (dort rollt jeder
+ausgerichtete Frame weiter). In der aufgezeichneten Wurfserie fehlt ein solcher
+Frame, weil deren Ground Truth gegen die gebuchten Darts ausgerichtet wird; die
+Offline-Kette weicht dort also um einen Rest ab, der keinen Punkt wert ist.
+
 **Was bleibt.** 14 Phantome übersteht die Regel: die 8 doppelt gebuchten Pfeile
 und einige größere Blobs mit Kameraversatz über 1 px. Der Trigger selbst ist
 unverändert — die Rate der Fehlsendungen senkt das nicht, es macht sie nur
