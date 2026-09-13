@@ -334,6 +334,29 @@ Testset-Zahlen nebeneinander lesbar sind:
   zu der [client-diff-verbesserungen.md](client-diff-verbesserungen.md) gehört.
 - Mismatch-Liste, nach Abstand aufsteigend.
 
+### Export vom Pi
+
+Report und Offline-Runner laufen lokal, die Daten entstehen auf dem Pi.
+`scripts/evaluation/export.py` packt beides in ein Zip: `games.csv` und
+`game_events.csv` im Format eines psql-Exports, dazu der Bilderordner unter
+`testdata/evaluation/game_<id>/`. Entpackt ins Backend-Verzeichnis liegen die
+Bilder damit dort, wo `run_all.py` und `run_debug.py` sie erwarten.
+
+```bash
+uv run python scripts/evaluation/export.py --list         # Spiele mit Events und Frames
+uv run python scripts/evaluation/export.py                # alle Testläufe, ein Zip
+uv run python scripts/evaluation/export.py <game-id>      # nur dieses Spiel
+uv run python scripts/evaluation/export.py --per-game     # ein Zip je Spiel
+```
+
+Geschrieben wird nach `testdata/_exports/`, auf dem Pi also nach
+`/srv/dart-tracking/testdata/_exports/` — von dort per `scp` abholen. Auf dem Pi
+im laufenden Container ausführen, der hat Datenbank und Bilder:
+
+```bash
+docker exec $(docker ps -qf name=backend) uv run python scripts/evaluation/export.py --list
+```
+
 ---
 
 ## 7. Die Seite in der App
