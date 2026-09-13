@@ -417,6 +417,7 @@ async def _handle_throw_frame(
             aligned = dart_detector.trace.aligned
             rejected_miss = dart_detector.trace.rejected_miss
             metrics = recorder.metrics_of(dart_detector.trace)
+    metrics |= recorder.trigger_metrics_of(frame.trigger)
 
     scoring = await scoring_camera_store.is_scoring(game_id, client_id)
 

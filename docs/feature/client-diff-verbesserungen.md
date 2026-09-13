@@ -513,3 +513,30 @@ Aufzunehmen:
 
 Punkt 2 und 3 zusammen sind ein eigenständiges Ergebnis für die Arbeit: sie
 zeigen den Zielkonflikt des Triggers als Zahlenpaar, nicht als Behauptung.
+
+### Das Instrument: Trigger-Metriken im Event-Log
+
+Das Debug-Panel reicht dafür nicht: es zeigt einen geglätteten Wert, nur live
+und nur auf dem Gerät. Deshalb schickt der Client mit jedem `detection_frame`
+die Episode mit, die ihn ausgelöst hat (`ThrowTriggerDto`), und der Server legt
+sie neben den Detektor-Metriken in `game_events.metrics` ab, Präfix `trigger_`:
+
+| Feld | Bedeutung |
+|---|---|
+| `trigger_peak_blocks` | höchste Zahl aktiver Zellen in der Episode, ungeglättet |
+| `trigger_peak_excess` | höchster Überschuss über der Baseline |
+| `trigger_span_cols`, `trigger_span_rows` | Bounding-Box der aktiven Zellen im Peak-Frame |
+| `trigger_frames` | Episodenlänge in verarbeiteten Frames (60 ms) |
+| `trigger_timed_out` | 1, wenn `MAX_MOTION_FRAMES` erfasst hat statt des Settlings |
+| `trigger_grid_cols`, `trigger_grid_rows` | Raster, auf das sich die Zählungen beziehen |
+
+Die Episode reicht vom Scharfschalten bis zur Erfassung. Am Verhalten ändert das
+nichts. Weil jede Zeile zugleich das Urteil des Detektors trägt (`detected` mit
+Segment, `no_change`, `implausible_shape`) und das Visit-Replay sie als korrekt,
+falsch oder Phantom einordnet, liefert ein einziges Testspiel Punkt 1 und 2
+direkt. Nicht erfasst ist, was nie gesendet wurde — ein verpasster Wurf hinterlässt
+keine Zeile und bleibt über `missed` im Replay sichtbar.
+
+Eine simulierte Person, die durchs Bild läuft, landet dabei genau wie in
+Schritt 2 beschrieben: `peak_blocks` 36, `span_rows` 9 (volle Bildhöhe),
+`timed_out` 1 — gegen `peak_blocks` 3, `span_rows` 1 für einen Pfeil.

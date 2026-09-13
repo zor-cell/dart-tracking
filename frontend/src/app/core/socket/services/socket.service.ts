@@ -5,6 +5,7 @@ import { ClientStateDto } from '../dto/client-state.dto';
 import { ServerMessage } from '../dto/server-message';
 import { ClientFrame, ClientMessage } from '../dto/client-message';
 import { DeviceRole } from '../models/device-role';
+import { ThrowTriggerDto } from '../../../features/detection/dto/throw-trigger.dto';
 
 export type SocketConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
@@ -134,13 +135,19 @@ export class SocketService {
    * than queued — by the time the socket opened it would describe a board the
    * game has already moved past.
    */
-  async sendFrame(type: ClientFrame['type'], frame: Blob, debug?: boolean): Promise<void> {
+  async sendFrame(
+    type: ClientFrame['type'],
+    frame: Blob,
+    debug?: boolean,
+    trigger?: ThrowTriggerDto,
+  ): Promise<void> {
     if (this.socket?.readyState !== WebSocket.OPEN) {
       console.warn('SocketService: Frame verworfen, WebSocket nicht verbunden');
       return;
     }
     const image = await blobToBase64(frame);
-    const message: ClientFrame = debug === undefined ? { type, image } : { type, image, debug };
+    const message: ClientFrame =
+      type === 'detection_frame' ? { type, image, debug, trigger } : { type, image, debug };
     this.socket.send(JSON.stringify(message));
   }
 

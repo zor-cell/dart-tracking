@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.core.socket.services.game_hub import hub
 from app.api.features.detection.debug.trace import DetectionTrace
 from app.api.features.detection.domain.detection_failure import DetectionFailure
+from app.api.features.detection.dto.throw_trigger import ThrowTriggerDto
 from app.api.features.detection.services.scoring_camera import (
     store as scoring_camera_store,
 )
@@ -128,6 +129,13 @@ def metrics_of(trace: DetectionTrace) -> dict[str, float]:
     # throw: a numpy scalar slipping in would not fail the log, it would roll
     # the dart back.
     return {name: float(value) for name, value in figures.items()}
+
+
+def trigger_metrics_of(trigger: ThrowTriggerDto | None) -> dict[str, float]:
+    """The client's trigger figures, prefixed so they sit apart from the detector's."""
+    if trigger is None:
+        return {}
+    return {f"trigger_{name}": float(value) for name, value in trigger.model_dump().items()}
 
 
 async def camera_armed(game_id: str) -> bool:

@@ -5,6 +5,7 @@ import { SettingsService } from '../../settings/services/settings.service';
 import { GameService } from '../../game/services/game.service';
 import { DetectionFailureDto } from '../dto/detection-failure.dto';
 import { DetectionResultDto } from '../dto/detection-result.dto';
+import { ThrowTriggerDto } from '../dto/throw-trigger.dto';
 import { GameStateDto } from '../../game/dto/game-state.dto';
 import { dartColor } from '../../game/models/dart-colors';
 
@@ -165,13 +166,18 @@ export class DetectionService {
   }
 
   /** Send a triggered throw frame; the result arrives asynchronously. */
-  async submitFrame(frame: Blob): Promise<void> {
+  async submitFrame(frame: Blob, trigger: ThrowTriggerDto | null): Promise<void> {
     this.clearFeedback();
     // Log the send *before* awaiting: this is the exact moment a client trigger
     // turned into a frame leaving the device, which is what the log is meant to
     // pin down. The matching `hit`/`rejected` follows when the server answers.
     this.logEvent('sent', `${(frame.size / 1024).toFixed(0)} kB`);
-    await this.socket.sendFrame('detection_frame', frame, this.settings.debugDetection());
+    await this.socket.sendFrame(
+      'detection_frame',
+      frame,
+      this.settings.debugDetection(),
+      trigger ?? undefined,
+    );
   }
 
   private logEvent(kind: DetectionEventKind, label: string): void {

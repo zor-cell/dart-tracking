@@ -1,6 +1,7 @@
 from typing import Literal
 
 from app.api.core.dto.base import CamelModel
+from app.api.features.detection.dto.throw_trigger import ThrowTriggerDto
 
 
 class DetectionFrameDto(CamelModel):
@@ -8,5 +9,5 @@ class DetectionFrameDto(CamelModel):
 
     type: Literal["detection_frame"]
     image: str  # base64-encoded JPEG
-    # Off unless the client asks: on, the server dumps per-stage debug images.
     debug: bool = False
+    trigger: ThrowTriggerDto | None = None

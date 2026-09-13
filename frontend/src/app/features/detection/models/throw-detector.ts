@@ -1,3 +1,5 @@
+import { ThrowTriggerDto } from '../dto/throw-trigger.dto';
+
 export type ThrowDetectorState = 'idle' | 'motion' | 'settling';
 
 /** Live numbers for the debug view, so a real throw can be watched and tuned. */
@@ -77,6 +79,16 @@ export class ThrowDetector {
   private cooldownFrames = 0;
   private changedFraction = 0;
   private activeBlocks = 0;
+  // Bounding box of this frame's active cells, in cells.
+  private spanCols = 0;
+  private spanRows = 0;
+
+  // The running episode, from arming to capture.
+  private peakBlocks = 0;
+  private peakExcess = 0;
+  private peakSpanCols = 0;
+  private peakSpanRows = 0;
+  private trigger: ThrowTriggerDto | null = null;
 
   // Steady localized-change level (wobble/light); arming is relative to it.
   private ambientBlocks = 0;
@@ -98,6 +110,11 @@ export class ThrowDetector {
 
   getState(): ThrowDetectorState {
     return this.state;
+  }
+
+  /** What the episode behind the most recent capture looked like. */
+  lastTrigger(): ThrowTriggerDto | null {
+    return this.trigger;
   }
 
   getDiagnostics(): ThrowDetectorDiagnostics {
@@ -159,6 +176,7 @@ export class ThrowDetector {
     this.activeBlocks = 0;
     this.ambientBlocks = 0;
     this.ambientPrimed = false;
+    this.trigger = null;
     this.resetCycle();
   }
 
@@ -171,6 +189,7 @@ export class ThrowDetector {
     if (localizedThrow) {
       this.state = 'motion';
       this.motionFrames = 0;
+      this.trackEpisode();
       return false;
     }
     this.updateAmbient();
@@ -179,21 +198,23 @@ export class ThrowDetector {
 
   private stepMotion(): boolean {
     this.motionFrames++;
+    this.trackEpisode();
     if (this.isStill()) {
       this.state = 'settling';
       this.stableFrameCount = 1;
       return false;
     }
     // Kommt kein Settling zustande (Wackeln hält an), trotzdem erfassen.
-    return this.motionFrames >= MAX_MOTION_FRAMES ? this.capture() : false;
+    return this.motionFrames >= MAX_MOTION_FRAMES ? this.capture(true) : false;
   }
 
   private stepSettling(): boolean {
     this.motionFrames++;
+    this.trackEpisode();
     if (this.isStill()) {
       this.stableFrameCount++;
       if (this.stableFrameCount >= SETTLE_FRAMES_REQUIRED) {
-        return this.capture();
+        return this.capture(false);
       }
       return false;
     }
@@ -201,7 +222,17 @@ export class ThrowDetector {
     // Timeout läuft weiter (motionFrames wird nicht zurückgesetzt).
     this.state = 'motion';
     this.stableFrameCount = 0;
-    return this.motionFrames >= MAX_MOTION_FRAMES ? this.capture() : false;
+    return this.motionFrames >= MAX_MOTION_FRAMES ? this.capture(true) : false;
+  }
+
+  /** Fold this frame into the running episode's high-water marks. */
+  private trackEpisode(): void {
+    this.peakExcess = Math.max(this.peakExcess, this.activeBlocks - this.ambientBlocks);
+    if (this.activeBlocks > this.peakBlocks) {
+      this.peakBlocks = this.activeBlocks;
+      this.peakSpanCols = this.spanCols;
+      this.peakSpanRows = this.spanRows;
+    }
   }
 
   /** The localized change has returned to the steady (wobble/light) level. */
@@ -209,7 +240,17 @@ export class ThrowDetector {
     return this.activeBlocks <= this.ambientBlocks + SETTLE_BLOCK_MARGIN;
   }
 
-  private capture(): boolean {
+  private capture(timedOut: boolean): boolean {
+    this.trigger = {
+      peakBlocks: this.peakBlocks,
+      peakExcess: Math.round(this.peakExcess * 100) / 100,
+      spanCols: this.peakSpanCols,
+      spanRows: this.peakSpanRows,
+      frames: this.motionFrames,
+      timedOut,
+      gridCols: this.columns,
+      gridRows: this.rows,
+    };
     this.cooldownFrames = COOLDOWN_FRAMES;
     this.resetCycle();
     return true;
@@ -225,6 +266,10 @@ export class ThrowDetector {
     this.state = 'idle';
     this.stableFrameCount = 0;
     this.motionFrames = 0;
+    this.peakBlocks = 0;
+    this.peakExcess = 0;
+    this.peakSpanCols = 0;
+    this.peakSpanRows = 0;
   }
 
   /**
@@ -256,13 +301,25 @@ export class ThrowDetector {
     }
 
     let active = 0;
+    let minCol = this.columns;
+    let maxCol = -1;
+    let minRow = this.rows;
+    let maxRow = -1;
     for (let i = 0; i < this.blockCounts.length; i++) {
       if (this.blockCounts[i] >= BLOCK_MIN_CHANGED) {
         active++;
+        const col = i % this.columns;
+        const row = Math.floor(i / this.columns);
+        minCol = Math.min(minCol, col);
+        maxCol = Math.max(maxCol, col);
+        minRow = Math.min(minRow, row);
+        maxRow = Math.max(maxRow, row);
       }
     }
 
     this.changedFraction = changed / a.length;
     this.activeBlocks = active;
+    this.spanCols = Math.max(0, maxCol - minCol + 1);
+    this.spanRows = Math.max(0, maxRow - minRow + 1);
   }
 }

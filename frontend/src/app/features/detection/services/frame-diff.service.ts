@@ -2,6 +2,7 @@ import { Injectable, inject, NgZone, signal } from '@angular/core';
 import { ThrowDetector, ThrowDetectorDiagnostics } from '../models/throw-detector';
 import { captureFrameAsJpeg } from '../../camera/models/frame-capture';
 import { DetectionService } from './detection.service';
+import { ThrowTriggerDto } from '../dto/throw-trigger.dto';
 import {DisplayStatus} from "../models/frame-diff-status";
 
 const DIFF_WIDTH = 160;
@@ -190,7 +191,7 @@ export class FrameDiffService {
 
     if (sending) {
       this.captureCount++;
-      this.captureAndSendFrame(video);
+      this.captureAndSendFrame(video, this.detector.lastTrigger());
     }
 
     if (debugOn) {
@@ -198,9 +199,12 @@ export class FrameDiffService {
     }
   }
 
-  private async captureAndSendFrame(video: HTMLVideoElement): Promise<void> {
+  private async captureAndSendFrame(
+    video: HTMLVideoElement,
+    trigger: ThrowTriggerDto | null,
+  ): Promise<void> {
     const frame = await captureFrameAsJpeg(video, this.captureCanvas!);
-    await this.detection.submitFrame(frame);
+    await this.detection.submitFrame(frame, trigger);
 
     if (this.sentDisplayTimeoutId !== null) {
       clearTimeout(this.sentDisplayTimeoutId);

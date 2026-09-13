@@ -1,6 +1,7 @@
 TODOs:
 
 Wenig Aufwand:
+- kalibrierung von scoreboard soll einfach eine animation zeigen fürs laden, nicht das schirche banner
 - stats page spiel werten geht nicht, nur von wertung rausnehmen geht
 - die anzeigten tips im scoreboard verschwinden ja mit undo. das ist aber blöd wenn ich nur einen phantom guess weghaben
 will, wenn das phantom problem weg ist, ist aber auch das weg
