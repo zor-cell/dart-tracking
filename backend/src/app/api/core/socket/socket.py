@@ -348,7 +348,7 @@ async def _handle_calibration_frame(
         response = CalibrationResultDto.failed(outcome)
     else:
         await calibration_store.set(game_id, client_id, outcome)
-        detection_store.set(game_id, client_id, image)
+        detection_store.seed(game_id, client_id, image)
         if await scoring_camera_store.claim(game_id, client_id):
             recorder.remember_frame(game_id, raw)
         response = CalibrationResultDto.from_calibration(outcome)
@@ -394,6 +394,7 @@ async def _handle_throw_frame(
     decoded = _decode_jpeg(frame.image)
     calibration = await calibration_store.get(game_id, client_id)
     reference = detection_store.get(game_id, client_id)
+    empty_board = detection_store.empty_board(game_id, client_id)
 
     aligned: np.ndarray | None = None
     rejected_miss = False
@@ -408,7 +409,7 @@ async def _handle_throw_frame(
         image, raw = decoded
         async with _detector_lock:
             outcome = await asyncio.to_thread(
-                dart_detector.detect_dart, reference, image, calibration
+                dart_detector.detect_dart, reference, image, calibration, empty_board
             )
             if frame.debug:
                 _write_detection_debug(game_id, client_id, outcome)
@@ -422,9 +423,10 @@ async def _handle_throw_frame(
     scoring = await scoring_camera_store.is_scoring(game_id, client_id)
 
     if isinstance(outcome, DetectionFailure):
-        # A rejected miss is still a change in the picture; left out of the
-        # reference, it would be found again on every later throw.
-        if rejected_miss and aligned is not None:
+        # A rejected miss or a pulled dart is still a change in the picture; left
+        # out of the reference, it would be found again on every later throw.
+        absorbed = rejected_miss or outcome is DetectionFailure.DARTS_REMOVED
+        if absorbed and aligned is not None:
             detection_store.set(game_id, client_id, aligned)
         await hub.send(connection, DetectionResultDto.failed(outcome))
         if scoring:

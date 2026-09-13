@@ -96,6 +96,26 @@ wird — was er tut, wenn er bestätigt wird („Wurf bestätigen"). Steht die
 Einstellung auf automatisches Weiterschalten, kommt er direkt nach dem dritten
 Dart und damit zu früh; die Kalibrierung sieht dann ein Board mit drei Pfeilen.
 
+**Gezogene Pfeile innerhalb einer Runde.** Wird gezogen, während die Runde noch
+einen Dart annimmt — typisch nach einem Undo —, zeigt die Differenz die Lücke,
+wo der Pfeil steckte, und die Pipeline buchte sie als Wurf an alter Position.
+Deshalb hält der `FrameStore` neben der rollenden Referenz auch das leere Board
+der letzten Kalibrierung. Für den fusionierten Blob wird gemessen, welcher
+Anteil seiner Pixel sich vom leeren Board noch unterscheidet
+(`changed_from_empty`). Ein geworfener Pfeil unterscheidet sich dort, wo er
+steckt; ein gezogener nicht mehr, weil an seiner Stelle wieder das leere Board zu
+sehen ist. Unter `_MIN_CHANGED_FROM_EMPTY = 0.25` meldet der Detektor
+`DARTS_REMOVED`, bucht nichts und rollt die Referenz weiter.
+
+Gemessen über alle 402 Paare (kuratierter Testsatz plus aufgezeichnete Spiele):
+die 222 korrekt gewerteten Pfeile des Testsatzes liegen bei **mindestens 0.35**,
+die gezogenen Pfeile bei **höchstens 0.05**; dazwischen nur ein Frame mit einer
+Person vor dem Board (0.17, ohnehin `IMPLAUSIBLE_SHAPE`). Der Testsatz bleibt bei
+224 / 285. Im Spiel vom 13.09. fängt die Prüfung genau die vier Buchungen, die
+nach einem Undo auf gezogene Pfeile fielen. Weil sie pro Blob und nicht pro Bild
+misst, greift sie auch, wenn nur einer von mehreren Pfeilen gezogen wurde — und
+beim automatischen Weiterschalten, sobald dort gezogen wird.
+
 ---
 
 ## 2. Pipeline im Überblick
@@ -341,9 +361,10 @@ statt bloß „nichts gefunden". Das DTO `DetectionResult` trägt den Wert im Fe
 | `ALIGNMENT_FAILED` | Frames nicht in eine gemeinsame Sicht zu bringen — Kamera zu weit bewegt oder Board weitgehend verdeckt |
 | `NO_CHANGE` | nichts Neues nahe dem Board — kein Wurf, oder Pfeil abgeprallt |
 | `IMPLAUSIBLE_SHAPE` | etwas hat sich geändert, ist aber viel zu groß für einen Pfeil — jemand steht vor dem Board |
+| `DARTS_REMOVED` | die Änderung ist ein gezogener Pfeil: an seiner Stelle ist wieder das leere Board zu sehen (§1) |
 
 `INVALID_IMAGE` und `NOT_CALIBRATED` entstehen im Socket vor dem eigentlichen
-Fit; die übrigen drei im Detektor.
+Fit; die übrigen im Detektor.
 
 `IMPLAUSIBLE_SHAPE` ist bewusst von `NO_CHANGE` getrennt, obwohl beide „kein
 Pfeil gefunden" heißen: `NO_CHANGE` bedeutet, dass der Wurf null Punkte wert war

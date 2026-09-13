@@ -64,6 +64,8 @@ class DetectionTrace:
     dart_length_mm: float = 0.0
     dart_width_mm: float = 0.0
     dart_area_mm2: float = 0.0
+    # Share of the blob still differing from the empty board; -1 when not measured.
+    changed_from_empty: float = -1.0
 
     # Axis fit on the fused blob: both ends (tip first) and the width at each,
     # which is what decided which end is the flight.

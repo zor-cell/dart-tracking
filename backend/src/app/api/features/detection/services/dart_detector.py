@@ -113,6 +113,10 @@ _MAX_DART_LENGTH_MM = 110.0
 _MAX_BLOB_LENGTH_MM = 250.0
 _MAX_BLOB_AREA_MM2 = 8000.0
 
+# Share of a blob's pixels that must still differ from the empty board for it to
+# be an added dart; below it the blob marks where a dart was pulled out.
+_MIN_CHANGED_FROM_EMPTY = 0.25
+
 # Smallest blob that may be booked as a MISS. Below it, a tip outside the scoring
 # area is taken for a registration residual on the surround, not a dart.
 _MIN_MISS_AREA_MM2 = 400.0
@@ -140,15 +144,15 @@ trace = DetectionTrace()
 
 
 def detect_dart(
-    reference: np.ndarray, frame: np.ndarray, calibration: Calibration
+    reference: np.ndarray,
+    frame: np.ndarray,
+    calibration: Calibration,
+    empty_board: np.ndarray | None = None,
 ) -> Dart | DetectionFailure:
     """Find the dart added in `frame` relative to `reference`.
 
-    `calibration` must be the calibration of `reference`; the incoming frame is
-    warped onto it rather than calibrated in its own right. Two independent
-    ellipse fits do not agree closely enough for differencing — on the test set
-    the fitted axes drifted by 7 % between consecutive frames of one series,
-    which is enough to light up every wire on the board.
+    `calibration` belongs to `reference`, and `empty_board` (the calibration
+    frame) tells an added dart from a pulled one; without it that check is skipped.
     """
     global trace
     trace = DetectionTrace(reference=reference, frame=frame)
@@ -203,6 +207,11 @@ def detect_dart(
     if trace.dart_length_mm > _MAX_BLOB_LENGTH_MM or trace.dart_area_mm2 > _MAX_BLOB_AREA_MM2:
         return _record_failure(DetectionFailure.IMPLAUSIBLE_SHAPE)
 
+    if empty_board is not None:
+        trace.changed_from_empty = _changed_from_empty(blob, aligned, empty_board)
+        if trace.changed_from_empty < _MIN_CHANGED_FROM_EMPTY:
+            return _record_failure(DetectionFailure.DARTS_REMOVED)
+
     tip, far_end = _tip_and_far_end(blob, pixels_per_mm)
     trace.anchor_to_tip_mm = _anchor_distance(tip, pixels_per_mm)
     board_point = _to_board(calibration.homography, tip)
@@ -217,6 +226,15 @@ def detect_dart(
         tip_board=board_point,
         segment=segment,
     )
+
+
+def _changed_from_empty(
+    blob: np.ndarray, aligned: np.ndarray, empty_board: np.ndarray
+) -> float:
+    """Share of the blob's pixels (x, y) where the frame still differs from the empty board."""
+    columns, rows = blob[:, 0].astype(int), blob[:, 1].astype(int)
+    difference = cv2.absdiff(aligned, empty_board).max(axis=2)
+    return float((difference[rows, columns] > _DIFFERENCE_THRESHOLD).mean())
 
 
 def _anchor_distance(tip: tuple[float, float], pixels_per_mm: float) -> float:

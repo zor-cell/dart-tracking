@@ -8,4 +8,5 @@ export type DetectionFailureDto =
   | 'not_calibrated'
   | 'alignment_failed'
   | 'no_change'
-  | 'implausible_shape';
+  | 'implausible_shape'
+  | 'darts_removed';

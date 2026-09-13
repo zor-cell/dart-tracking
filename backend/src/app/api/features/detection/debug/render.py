@@ -293,6 +293,8 @@ def _draw_components(trace: DetectionTrace) -> np.ndarray | None:
         )
     if trace.failure is DetectionFailure.IMPLAUSIBLE_SHAPE:
         lines.append("REJECTED: too big for a dart")
+    elif trace.failure is DetectionFailure.DARTS_REMOVED:
+        lines.append(f"REJECTED: dart removed ({100 * trace.changed_from_empty:.0f}% differs from empty board)")
     elif trace.rejected_miss:
         lines.append("REJECTED: too small for a miss")
     return _caption(canvas, lines)

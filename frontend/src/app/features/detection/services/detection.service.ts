@@ -18,6 +18,7 @@ const FAILURE_HINTS: Record<DetectionFailureDto, string> = {
   alignment_failed: 'Kamera hat sich bewegt',
   no_change: 'Kein Wurf erkannt',
   implausible_shape: 'Board verdeckt',
+  darts_removed: 'Pfeile entfernt',
 };
 
 /** One located dart to draw: its polylines plus the colour for its round index. */

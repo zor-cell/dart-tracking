@@ -164,10 +164,14 @@ def fusion_summary(trace: DetectionTrace) -> str:
 
 
 def debug_one(
-    reference: np.ndarray, frame: np.ndarray, calibration: Calibration, out_dir: Path
+    reference: np.ndarray,
+    frame: np.ndarray,
+    calibration: Calibration,
+    out_dir: Path,
+    empty_board: np.ndarray | None = None,
 ) -> Dart | DetectionFailure:
     """Detect one pair and dump its stage images into `out_dir`. Returns the outcome."""
-    outcome = dart_detector.detect_dart(reference, frame, calibration)
+    outcome = dart_detector.detect_dart(reference, frame, calibration, empty_board)
     dart = None if isinstance(outcome, DetectionFailure) else outcome
     written = write_debug_images(dart_detector.trace, dart, out_dir)
 
@@ -201,6 +205,7 @@ def run_series(folder: Path, series: str, out_dir: Path, raw: bool) -> int:
         f"({dart_detector._pixels_per_mm(calibration.homography):.2f} px/mm)\n"
     )
 
+    empty_board = reference
     for label, path in frames[1:]:
         print(f"{label}  ({path.name})")
         frame = load_image(path, raw)
@@ -208,7 +213,7 @@ def run_series(folder: Path, series: str, out_dir: Path, raw: bool) -> int:
             print("  UNREADABLE")
             continue
 
-        debug_one(reference, frame, calibration, out_dir / label)
+        debug_one(reference, frame, calibration, out_dir / label, empty_board)
         print()
 
         # Each dart is differenced against the frame before it, so the aligned

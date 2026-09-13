@@ -51,6 +51,7 @@ _FIT_FAILURES = frozenset(
         DetectionFailure.ALIGNMENT_FAILED,
         DetectionFailure.NO_CHANGE,
         DetectionFailure.IMPLAUSIBLE_SHAPE,
+        DetectionFailure.DARTS_REMOVED,
     }
 )
 
@@ -120,6 +121,7 @@ def metrics_of(trace: DetectionTrace) -> dict[str, float]:
         "dart_length_mm": round(trace.dart_length_mm, 2),
         "dart_width_mm": round(trace.dart_width_mm, 2),
         "dart_area_mm2": round(trace.dart_area_mm2, 2),
+        "changed_from_empty": round(trace.changed_from_empty, 4),
         "alignment_shift_px": round(trace.alignment_shift_px, 2),
         "alignment_inliers": trace.alignment_inliers,
         "region_clipped": round(trace.region_clipped, 4),

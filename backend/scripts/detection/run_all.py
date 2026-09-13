@@ -136,7 +136,7 @@ class Result:
         not a reading of the board.
         """
         return (
-            self.failure is DetectionFailure.NO_CHANGE
+            self.failure in (DetectionFailure.NO_CHANGE, DetectionFailure.DARTS_REMOVED)
             and self.expected == NO_CHANGE_LABEL
         )
 
@@ -357,6 +357,7 @@ def run_series(
 
     print(f"{name}  reference {frames[0][1].name}  ({dart_detector._pixels_per_mm(calibration.homography):.2f} px/mm)")
 
+    empty_board = reference
     results: list[Result] = []
     for (_, _previous), (label, path) in zip(frames, frames[1:]):
         expected, uncertain = expected_for(truth, path.stem)
@@ -366,7 +367,7 @@ def run_series(
             results.append(Result(name, label, path, False, None, expected, uncertain=uncertain))
             continue
 
-        outcome = dart_detector.detect_dart(reference, frame, calibration)
+        outcome = dart_detector.detect_dart(reference, frame, calibration, empty_board)
         shift = dart_detector.trace.alignment_shift_px
         shake = "!" if shift > SHAKE_WARN_PX else " "
         failure = outcome if isinstance(outcome, DetectionFailure) else None
@@ -592,7 +593,8 @@ def template_label(result: Result) -> str:
     """The seed label for a frame: what the detector said, as a truth label."""
     if result.detected is not None:
         return result.detected
-    return NO_CHANGE_LABEL if result.failure is DetectionFailure.NO_CHANGE else "MISS"
+    empty = (DetectionFailure.NO_CHANGE, DetectionFailure.DARTS_REMOVED)
+    return NO_CHANGE_LABEL if result.failure in empty else "MISS"
 
 
 def write_truth_templates(results: list[Result]) -> list[Path]:
