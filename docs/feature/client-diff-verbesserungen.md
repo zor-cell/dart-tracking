@@ -46,6 +46,8 @@ sondern eine fehlende Prüfung.
 | 7 | [Darts jenseits des dritten verwerfen](#7-darts-jenseits-des-dritten-verwerfen-verworfen) | Server | – | **verworfen** — existiert bereits und hilft nicht |
 | 8 | [Kein Frame, solange die Runde keinen Dart annimmt](#8-kein-frame-solange-die-runde-keinen-dart-annimmt-client) | Client | S | **erledigt** — vierte Wurflinie im Bestätigungsmodus |
 | 9 | [Kleine MISS-Blobs verwerfen](#9-kleine-miss-blobs-verwerfen-server) | Server | S | **erledigt** — 38 von 52 Live-Phantomen, 2 echte Fehlwürfe auf dem Testsatz |
+| 10 | [Nach dem Timeout auf Ruhe warten](#10-nach-dem-timeout-auf-ruhe-warten-client) | Client | S | **erledigt**, Feldmessung ausstehend |
+| 11 | [Gezogene Pfeile erkennen](#11-gezogene-pfeile-erkennen-server) | Server | S | **erledigt** — 4 von 4 im Spiel vom 13.09., Testsatz unverändert |
 
 **Messdisziplin.** Schritt 1 wird wie die Server-Schritte mit
 `scripts/detection/run_all.py` gegen den Testsatz belegt: die Grenze darf keinen
@@ -490,6 +492,56 @@ Offline-Kette weicht dort also um einen Rest ab, der keinen Punkt wert ist.
 und einige größere Blobs mit Kameraversatz über 1 px. Der Trigger selbst ist
 unverändert — die Rate der Fehlsendungen senkt das nicht, es macht sie nur
 folgenlos.
+
+---
+
+## 10. Nach dem Timeout auf Ruhe warten *(Client)*
+
+**Befund.** Das erste Spiel mit Trigger-Metriken (13.09., 16 Visits, 83 %
+korrekt) zerlegt die Sendungen danach, wie die Episode endete:
+
+| Trigger | korrekt | falsch | Phantom | `no_change` | klein verworfen |
+|---|---|---|---|---|---|
+| zur Ruhe gekommen, < 20 Zellen | 29 | 3 | 3 | 69 | 3 |
+| zur Ruhe gekommen, ≥ 20 Zellen | 5 | 1 | 0 | 18 | 5 |
+| **Timeout** (`MAX_MOTION_FRAMES`) | 5 | 3 | **5** | 31 | 10 |
+
+Das Timeout lieferte 5 der 8 Phantome und 3 der 7 falschen Würfe. Die Episoden
+dahinter sehen alle gleich aus: 35–45 aktive Zellen über die volle Breite, 25
+Frames, Kamera-Versatz 1–2 px, gehäuft in den Sekunden nach dem Rundenwechsel —
+das Board schwingt nach dem Ziehen der Pfeile nach. Das Sicherheitsnetz schickte
+damit ein Bild mitten aus der Bewegung.
+
+**Fix.** Nach `MAX_MOTION_FRAMES` wird nicht mehr erfasst; stattdessen folgt die
+Baseline der Bewegung, bis das Bild relativ zu ihr still ist, und erst dann wird
+erfasst. Recall kostet das nicht: ein steckender Pfeil ist nach dem Schwingen
+noch da und kommt nur später beim Server an — von den fünf korrekten
+Timeout-Pfeilen wäre keiner verloren. Beim Erfassen wird die Baseline auf den
+ruhigen Stand zurückgesetzt, sonst würde die in der Episode angehobene Baseline
+den nächsten Wurf sekundenlang maskieren. `trigger_timed_out` bedeutet seitdem
+„Episode länger als das Timeout", nicht mehr „vom Timeout erfasst".
+
+Simuliert: 60 Frames Wackeln über das ganze Bild werden drei Frames nach dessen
+Ende erfasst, ein Wurf eine Sekunde später normal. Die Feldmessung steht aus;
+der nächste Export zeigt sie direkt in der Tabelle oben.
+
+---
+
+## 11. Gezogene Pfeile erkennen *(Server)*
+
+**Befund.** Im selben Spiel vier Buchungen auf ein leeres Board: Pfeile gezogen,
+dann am Scoreboard ein Undo — die Runde nimmt wieder einen Dart an, die Kamera
+sendet, und die Differenz gegen die Referenz mit drei Pfeilen zeigt die Lücke des
+gezogenen als Wurf an alter Position. Das erklärt auch die „doppelten Buchungen
+nach einem Undo" vom 08.09. (identische Position und Fläche).
+
+Der Trigger kann das nicht unterscheiden — für ihn ist es gewöhnliche Bewegung.
+Die Arbeitsreihenfolge (erst korrigieren, dann ziehen) vermeidet es, ist aber
+eine Bedienregel, und beim automatischen Weiterschalten gibt es sie nicht.
+
+**Fix.** Der Detektor vergleicht den Blob zusätzlich mit dem leeren Board der
+letzten Kalibrierung; Details und Messung in
+[erkennung.md §1](erkennung.md#der-rollende-referenz-frame-live-pipeline).
 
 ---
 

@@ -42,8 +42,8 @@ const PIXEL_DELTA = 20;
 //    is enough — deliberately tiny, so a faint dart is caught. Anything larger
 //    than MAX_THROW_BLOCKS is a global disturbance (person, lighting, wobble
 //    surge): folded into the baseline instead of fired, so it does not flood.
-// 4. *Timeout.* If a fired throw never settles (wobble grows mid-throw), it is
-//    captured anyway after MAX_MOTION_FRAMES.
+// 4. *Timeout.* If a fired throw does not settle within MAX_MOTION_FRAMES, the
+//    baseline starts following the motion, so the capture waits for a calm frame.
 const BLOCK_SIZE = 10; // cell edge in diff pixels → 16×9 grid at 160×90
 const BLOCK_MIN_CHANGED = 5; // changed pixels for a cell to count as a cluster
 const MAX_THROW_BLOCKS = 48; // above this the change is global, not a dart
@@ -52,8 +52,8 @@ const SETTLE_BLOCK_MARGIN = 1; // back to within this of the baseline counts as 
 const AMBIENT_ALPHA = 0.05; // baseline adaptation rate (small = slow)
 
 const SETTLE_FRAMES_REQUIRED = 3;
-// At ~16 fps (PROCESS_INTERVAL_MS) roughly 1.5 s: if no clean settle happens by
-// then, capture anyway (recall safety net).
+// At ~16 fps (PROCESS_INTERVAL_MS) roughly 1.5 s of motion before the baseline
+// starts adapting to it.
 const MAX_MOTION_FRAMES = 25;
 // Pause briefly after a capture so the retreating hand does not re-trigger and
 // the result has time to show.
@@ -202,10 +202,8 @@ export class ThrowDetector {
     if (this.isStill()) {
       this.state = 'settling';
       this.stableFrameCount = 1;
-      return false;
     }
-    // Kommt kein Settling zustande (Wackeln hält an), trotzdem erfassen.
-    return this.motionFrames >= MAX_MOTION_FRAMES ? this.capture(true) : false;
+    return false;
   }
 
   private stepSettling(): boolean {
@@ -214,7 +212,7 @@ export class ThrowDetector {
     if (this.isStill()) {
       this.stableFrameCount++;
       if (this.stableFrameCount >= SETTLE_FRAMES_REQUIRED) {
-        return this.capture(false);
+        return this.capture();
       }
       return false;
     }
@@ -222,11 +220,15 @@ export class ThrowDetector {
     // Timeout läuft weiter (motionFrames wird nicht zurückgesetzt).
     this.state = 'motion';
     this.stableFrameCount = 0;
-    return this.motionFrames >= MAX_MOTION_FRAMES ? this.capture(true) : false;
+    return false;
   }
 
-  /** Fold this frame into the running episode's high-water marks. */
+  /** Fold this frame into the episode; past the timeout the baseline follows the motion. */
   private trackEpisode(): void {
+    if (this.motionFrames >= MAX_MOTION_FRAMES) {
+      this.updateAmbient();
+    }
+
     this.peakExcess = Math.max(this.peakExcess, this.activeBlocks - this.ambientBlocks);
     if (this.activeBlocks > this.peakBlocks) {
       this.peakBlocks = this.activeBlocks;
@@ -240,17 +242,19 @@ export class ThrowDetector {
     return this.activeBlocks <= this.ambientBlocks + SETTLE_BLOCK_MARGIN;
   }
 
-  private capture(timedOut: boolean): boolean {
+  private capture(): boolean {
     this.trigger = {
       peakBlocks: this.peakBlocks,
       peakExcess: Math.round(this.peakExcess * 100) / 100,
       spanCols: this.peakSpanCols,
       spanRows: this.peakSpanRows,
       frames: this.motionFrames,
-      timedOut,
+      timedOut: this.motionFrames >= MAX_MOTION_FRAMES,
       gridCols: this.columns,
       gridRows: this.rows,
     };
+    // A baseline raised by a long episode would otherwise mask the next throw.
+    this.ambientBlocks = Math.min(this.ambientBlocks, this.activeBlocks);
     this.cooldownFrames = COOLDOWN_FRAMES;
     this.resetCycle();
     return true;

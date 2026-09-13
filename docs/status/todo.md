@@ -1,6 +1,8 @@
 TODOs:
 
 Wenig Aufwand:
+- sprache englisch machen
+- sound für treffer, also einfach durchsage von roboter stimme
 - /game/new soll angezeigt bleiben, wenn man page wechselt?
 - kalibrierung von scoreboard soll einfach eine animation zeigen fürs laden, nicht das schirche banner
 - stats page spiel werten geht nicht, nur von wertung rausnehmen geht
