@@ -17,12 +17,12 @@
         <app-virtual-board [darts]="currentDarts()" />
         <p-button
           class="game__recalibrate"
-          icon="pi pi-sync"
+          [icon]="calibrationRequestPending() ? 'pi pi-sync pi-spin' : 'pi pi-sync'"
           [rounded]="true"
           severity="primary"
           size="small"
           ariaLabel="Rekalibrieren"
-          (onClick)="requestCalibration()"
+          [attr.aria-busy]="calibrationRequestPending()"          (onClick)="requestCalibration()"
         />
       </div>
     } @else {

@@ -92,6 +92,7 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly cameraError = this.session.cameraError;
   protected readonly calibrationStatus = this.calibration.status;
   protected readonly calibrationOverlay = this.calibration.overlay;
+  protected readonly calibrationRequestPending = this.calibration.requestPending;
   protected readonly roundDarts = this.detection.roundDarts;
   protected readonly detectionStatusLabel = this.throwCapture.statusLabel;
   protected readonly detectionFeedback = this.detection.feedbackLabel;

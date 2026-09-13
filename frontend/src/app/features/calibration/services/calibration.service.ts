@@ -27,7 +27,9 @@ const FAILURE_TOAST_LIFE = 8000;
 // cannot see the board, so the advice above ("get closer", "avoid shadows") is
 // addressed to someone else and only the fact belongs here.
 const REMOTE_FAILURE_MESSAGE = 'Die Kamera konnte das Board nicht erkennen.';
-const REMOTE_SUCCESS_MESSAGE = 'Board neu kalibriert.';
+const REMOTE_TIMEOUT_MESSAGE = 'Keine Kamera hat geantwortet.';
+// How long a requested recalibration may stay unanswered, in ms.
+const REMOTE_TIMEOUT = 8000;
 
 /**
  * Board calibration: capture the current video frame, send it as a
@@ -57,11 +59,10 @@ export class CalibrationService {
    */
   readonly overlay = signal<number[][][] | null>(null);
 
-  // Whether this device asked for the recalibration that is currently out.
-  // Only then is a *successful* one worth a toast: it is the answer to a tap
-  // that otherwise looks like it did nothing. The ones the round change fires
-  // would be a toast per visit.
-  private awaitingRequest = false;
+  /** Whether this device asked for a recalibration that no camera has answered yet. */
+  readonly requestPending = signal(false);
+
+  private requestTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     this.socket
@@ -96,7 +97,12 @@ export class CalibrationService {
    * its own frame, and what comes back here is `calibration_status`.
    */
   requestCalibration(): void {
-    this.awaitingRequest = true;
+    this.clearRequest();
+    this.requestPending.set(true);
+    this.requestTimeout = setTimeout(() => {
+      this.clearRequest();
+      this.notifications.showErrorMessage(REMOTE_TIMEOUT_MESSAGE, FAILURE_TITLE, FAILURE_TOAST_LIFE);
+    }, REMOTE_TIMEOUT);
     this.socket.send({ type: 'request_calibration' });
   }
 
@@ -123,22 +129,25 @@ export class CalibrationService {
   }
 
   /**
-   * Report a camera's attempt to the device that asked for it. Failures always:
-   * from here on nothing is scored on that camera. Success only in answer to a
-   * tap of our own — the ones a round change fires would be a toast per visit.
+   * Report a camera's attempt to the device that asked for it: stop the pending
+   * indicator, and toast failures only — success is the indicator stopping.
    */
   private reportRemoteStatus(status: CalibrationStatusDto): void {
-    const requested = this.awaitingRequest;
-    this.awaitingRequest = false;
-
+    this.clearRequest();
     if (!status.success) {
       this.notifications.showErrorMessage(
         REMOTE_FAILURE_MESSAGE,
         FAILURE_TITLE,
         FAILURE_TOAST_LIFE,
       );
-    } else if (requested) {
-      this.notifications.showSuccess(REMOTE_SUCCESS_MESSAGE);
     }
+  }
+
+  private clearRequest(): void {
+    if (this.requestTimeout !== null) {
+      clearTimeout(this.requestTimeout);
+      this.requestTimeout = null;
+    }
+    this.requestPending.set(false);
   }
 }

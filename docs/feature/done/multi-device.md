@@ -487,8 +487,11 @@ Antwort. Weggefallen ist nur der *Zwang* — das Protokoll dürfte inzwischen zw
 Nachrichten an ein Gerät schicken, es hat hier bloß keinen Grund dazu.
 
 Wie der Status aufbereitet wird: **Fehlschläge** immer — ab dem Moment wird
-nichts mehr korrekt gewertet. Ein **Erfolg** nur als Antwort auf einen eigenen
-Tap; sonst wäre jeder Rundenwechsel ein Toast. Die automatische Rekalibrierung
+nichts mehr korrekt gewertet. Ein **Erfolg** bekommt keinen Toast: solange die
+Anfrage offen ist, dreht sich das Sync-Icon des Buttons, und dass es aufhört, ist
+die Bestätigung. Antwortet binnen 8 s keine Kamera (z. B. weil keine verbunden
+ist — der Server schickt dann gar nichts), stoppt es mit einem Fehler-Toast.
+Die automatische Rekalibrierung
 verschickt gar keinen Status: niemand hat gefragt, und die Kamera meldet ihren
 Fehlschlag ohnehin auf dem Gerät, an dem auch nachjustiert werden muss.
 
