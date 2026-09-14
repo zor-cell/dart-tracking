@@ -2,7 +2,6 @@ TODOs:
 
 Wenig Aufwand:
 - revanche sollte auf alle im game room angewendet werden, dass man das kamera phone gleich weiterverwenden kann
-- kamera sollte die volle kamera sein, die das handy sieht also hochformat (vllt button mit ganzer screen)
 - smarte undos?, momentan wenn ich undo mache, werden die marker resettet, was wenn nur einer der 3 pfeile falsch war?
 dadurch gehen halt auch gute erkennungsdaten verloren
 - sprache englisch machen

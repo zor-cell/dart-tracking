@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   ElementRef,
   inject,
@@ -10,6 +11,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import {RouterLink} from '@angular/router';
 import {Button} from 'primeng/button';
 import {ProgressSpinner} from 'primeng/progressspinner';
@@ -78,9 +80,11 @@ export class GameComponent implements OnInit, OnDestroy {
   private readonly calibration = inject(CalibrationService);
   private readonly throwCapture = inject(FrameDiffService);
   private readonly detection = inject(DetectionService);
+  private readonly document = inject(DOCUMENT);
 
   // Optional: these live behind the "game active" gate, so they are absent until
   // the state is (re)loaded — which after a full reload is a few ticks after init.
+  private readonly cameraRef = viewChild<ElementRef<HTMLDivElement>>('camera');
   private readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('video');
   private readonly diffCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('diffCanvas');
   private readonly captureCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('captureCanvas');
@@ -107,6 +111,10 @@ export class GameComponent implements OnInit, OnDestroy {
   );
 
   protected readonly padRows = PAD_ROWS;
+
+  /** The stream's aspect ratio as CSS, so the preview shows the whole frame. */
+  protected readonly videoAspect = signal('4 / 3');
+  protected readonly cameraExpanded = signal(false);
 
   /** Whether the game is still being fetched — the placeholder below the view is
    * for "no game", which is a different answer from "not yet known". Without a
@@ -193,6 +201,42 @@ export class GameComponent implements OnInit, OnDestroy {
       this.throwCapture.setDebugCanvas(this.settings.debugClientDetection() ? canvas : null);
     });
 
+    effect((onCleanup) => {
+      const video = this.videoRef()?.nativeElement;
+      if (!video) {
+        return;
+      }
+      const update = () => {
+        if (video.videoWidth && video.videoHeight) {
+          this.videoAspect.set(`${video.videoWidth} / ${video.videoHeight}`);
+        }
+      };
+      update();
+      video.addEventListener('loadedmetadata', update);
+      video.addEventListener('resize', update);
+      onCleanup(() => {
+        video.removeEventListener('loadedmetadata', update);
+        video.removeEventListener('resize', update);
+      });
+    });
+
+    effect(() => {
+      if (this.cameraPhase() === 'idle') {
+        this.collapseCamera();
+      }
+    });
+
+    // Leaving browser fullscreen by gesture or back button collapses the view too.
+    const onFullscreenChange = () => {
+      if (!this.document.fullscreenElement) {
+        this.cameraExpanded.set(false);
+      }
+    };
+    this.document.addEventListener('fullscreenchange', onFullscreenChange);
+    inject(DestroyRef).onDestroy(() =>
+      this.document.removeEventListener('fullscreenchange', onFullscreenChange),
+    );
+
     // Hand the session this view's camera elements once they exist. They live
     // behind the "game active" gate, so after a full reload — where the state is
     // refetched first — they appear a few ticks after init, not at view init.
@@ -215,6 +259,17 @@ export class GameComponent implements OnInit, OnDestroy {
 
   protected startCamera(): Promise<void> {
     return this.session.startCamera();
+  }
+
+  /** Fills the screen with the camera; browser fullscreen where supported, a
+   * fixed overlay otherwise (iPhone). */
+  protected toggleCameraExpanded(): void {
+    if (this.cameraExpanded()) {
+      this.collapseCamera();
+      return;
+    }
+    this.cameraExpanded.set(true);
+    this.cameraRef()?.nativeElement.requestFullscreen?.().catch(() => {});
   }
 
   protected calibrateBoard(): Promise<void> {
@@ -253,6 +308,13 @@ export class GameComponent implements OnInit, OnDestroy {
   protected enterFixed(key: FixedKey): void {
     this.game.registerDart(key.value, this.isDoubled(key) ? 2 : key.multiplier);
     this.multiplier.set(1);
+  }
+
+  private collapseCamera(): void {
+    this.cameraExpanded.set(false);
+    if (this.document.fullscreenElement) {
+      void this.document.exitFullscreen();
+    }
   }
 
   private isDoubled(key: FixedKey): boolean {

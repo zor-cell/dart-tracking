@@ -42,8 +42,7 @@
 .game__camera {
   position: relative;
   // Takes whatever the keypad leaves, and gives way to its minimum before the
-  // keypad does. The video is `object-fit: cover`, so a box that is not 4/3
-  // crops rather than distorts.
+  // keypad does. The aspect ratio is the stream's, bound in the template.
   flex: 1 6 auto;
   // A floor the picture keeps whatever else is on screen. Tying it to the
   // viewport instead let the browser bars take it down to 79 px.
@@ -51,7 +50,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  aspect-ratio: 4 / 3;
   border: 1px solid var(--p-content-border-color, #e5e7eb);
   border-radius: 0.75rem;
   overflow: hidden;
@@ -65,8 +63,40 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   background: #000;
+}
+
+.game__camera--expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+  background: #000;
+
+  .game__recalibrate {
+    top: calc(0.5rem + env(safe-area-inset-top));
+    right: calc(0.5rem + env(safe-area-inset-right));
+  }
+
+  .game__camera-badge {
+    bottom: calc(0.5rem + env(safe-area-inset-bottom));
+    left: calc(0.5rem + env(safe-area-inset-left));
+  }
+
+  .game__expand {
+    bottom: calc(0.5rem + env(safe-area-inset-bottom));
+    right: calc(0.5rem + env(safe-area-inset-right));
+  }
+}
+
+.game__expand {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  z-index: 2;
 }
 
 // Dimmed while the debug mask is shown, so the highlighted changes stand out.

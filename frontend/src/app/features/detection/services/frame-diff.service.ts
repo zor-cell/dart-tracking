@@ -1,6 +1,7 @@
 import { Injectable, inject, NgZone, signal } from '@angular/core';
 import { ThrowDetector, ThrowDetectorDiagnostics } from '../models/throw-detector';
 import { captureFrameAsJpeg } from '../../camera/models/frame-capture';
+import { containRect } from '../../camera/models/video-fit';
 import { DetectionService } from './detection.service';
 import { ThrowTriggerDto } from '../dto/throw-trigger.dto';
 import {DisplayStatus} from "../models/frame-diff-status";
@@ -98,7 +99,7 @@ export class FrameDiffService {
   private mask?: Uint8ClampedArray;
   private maskImage?: ImageData;
   // The mask is built at diff resolution here, then scaled onto the full-size
-  // overlay with the video's cover geometry.
+  // overlay with the video's contain geometry.
   private maskSource?: CanvasRenderingContext2D;
   private peakFraction = 0;
   private peakBlocks = 0;
@@ -136,7 +137,7 @@ export class FrameDiffService {
 
   /**
    * Attach (or detach with null) the full-size canvas the change mask is painted
-   * onto — an overlay over the video, mapped with the same cover geometry as the
+   * onto — an overlay over the video, mapped with the same contain geometry as the
    * board overlay so the changes sit where they are in the picture.
    */
   setDebugCanvas(canvas: HTMLCanvasElement | null): void {
@@ -267,8 +268,7 @@ export class FrameDiffService {
     source.putImageData(image, 0, 0);
 
     // Back the canvas at device resolution, then place the diff-resolution mask
-    // onto the video with object-fit: cover geometry (fill, centre, crop the
-    // overflow) — the same mapping the board overlay uses.
+    // onto the video with the same contain mapping the board overlay uses.
     const ratio = window.devicePixelRatio || 1;
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
@@ -278,21 +278,17 @@ export class FrameDiffService {
     context.clearRect(0, 0, width, height);
     context.imageSmoothingEnabled = false; // keep the diff pixels crisp
 
-    const scale = Math.max(width / video.videoWidth, height / video.videoHeight);
-    const drawWidth = video.videoWidth * scale;
-    const drawHeight = video.videoHeight * scale;
-    const offsetX = (width - drawWidth) / 2;
-    const offsetY = (height - drawHeight) / 2;
+    const frame = containRect(width, height, video.videoWidth, video.videoHeight);
     context.drawImage(
       source.canvas,
       0,
       0,
       DIFF_WIDTH,
       DIFF_HEIGHT,
-      offsetX,
-      offsetY,
-      drawWidth,
-      drawHeight,
+      frame.x,
+      frame.y,
+      frame.width,
+      frame.height,
     );
   }
 

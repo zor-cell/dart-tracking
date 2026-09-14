@@ -26,7 +26,12 @@
         />
       </div>
     } @else {
-      <div class="game__camera">
+      <div
+        #camera
+        class="game__camera"
+        [class.game__camera--expanded]="cameraExpanded()"
+        [style.aspect-ratio]="cameraExpanded() ? null : videoAspect()"
+      >
         <video
           #video
           class="game__video"
@@ -77,19 +82,30 @@
             <span class="game__camera-badge">{{ detectionFeedback() ?? detectionStatusLabel() }}</span>
             <p-button
               class="game__recalibrate"
-              label="Neu kalibrieren"
-              icon="pi pi-crosshair"
-              severity="secondary"
+              [icon]="calibrationStatus() === 'pending' ? 'pi pi-sync pi-spin' : 'pi pi-sync'"
+              [rounded]="true"
+              severity="primary"
               size="small"
-              [loading]="calibrationStatus() === 'pending'"
+              ariaLabel="Rekalibrieren"
+              [attr.aria-busy]="calibrationStatus() === 'pending'"
               (onClick)="calibrateBoard()"
             />
           }
         }
 
-        <!-- The frame-diff change mask, painted over the dimmed video with the same
-             object-fit: cover mapping as the board overlay, so a throw that fails to
-             trigger can be watched. Toggle via the "Debug: Client-Anzeige" setting. -->
+        @if (cameraPhase() !== 'idle') {
+          <p-button
+            class="game__expand"
+            [icon]="cameraExpanded() ? 'pi pi-window-minimize' : 'pi pi-expand'"
+            [rounded]="true"
+            severity="secondary"
+            size="small"
+            [ariaLabel]="cameraExpanded() ? 'Vollbild verlassen' : 'Kamera im Vollbild'"
+            (onClick)="toggleCameraExpanded()"
+          />
+        }
+
+        <!-- Frame-diff change mask over the dimmed video ("Debug: Client-Anzeige"). -->
         @if (debugActive()) {
           <canvas #detectionDebugCanvas class="game__debug-mask" aria-hidden="true"></canvas>
         }

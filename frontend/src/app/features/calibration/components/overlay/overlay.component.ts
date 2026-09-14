@@ -7,6 +7,7 @@ import {
   OnDestroy,
   viewChild,
 } from '@angular/core';
+import { containRect } from '../../../camera/models/video-fit';
 
 const DEFAULT_LINE_COLOR = 'rgba(255, 214, 10, 0.9)';
 const LINE_WIDTH = 1.5;
@@ -16,10 +17,7 @@ const LINE_WIDTH = 1.5;
  * board (so the user can check the calibration — the lines should sit on the
  * real rings and sector wires) and, in a different colour, the located dart.
  *
- * Expects to be positioned over a video rendered with `object-fit: cover`, and
- * reproduces that mapping — cover scales the frame to fill the box and crops
- * the overflow, so drawing straight onto the box would misalign the lines by
- * however much was cropped.
+ * Expects to sit over a video rendered with `object-fit: contain`.
  */
 @Component({
   selector: 'app-overlay',
@@ -54,7 +52,7 @@ export class OverlayComponent implements OnDestroy {
       this.resizeObserver.observe(this.canvasRef().nativeElement);
     });
 
-    // `video.videoWidth`/`videoHeight` drive the cover mapping but are not
+    // `video.videoWidth`/`videoHeight` drive the contain mapping but are not
     // reactive: when the polylines arrive before the stream has reported its
     // intrinsic size, the first draw finds 0x0, no-ops, and nothing re-runs it —
     // so the outline stays blank until the next calibration happens to redraw it.
@@ -99,11 +97,7 @@ export class OverlayComponent implements OnDestroy {
       return;
     }
 
-    // Replicate object-fit: cover — scale to fill, centre, and let the
-    // overflow fall outside the box just as the video does.
-    const scale = Math.max(width / video.videoWidth, height / video.videoHeight);
-    const offsetX = (width - video.videoWidth * scale) / 2;
-    const offsetY = (height - video.videoHeight * scale) / 2;
+    const frame = containRect(width, height, video.videoWidth, video.videoHeight);
 
     context.strokeStyle = this.color();
     context.lineWidth = LINE_WIDTH;
@@ -112,8 +106,8 @@ export class OverlayComponent implements OnDestroy {
     for (const line of polylines) {
       context.beginPath();
       line.forEach(([x, y], index) => {
-        const pixelX = x * video.videoWidth * scale + offsetX;
-        const pixelY = y * video.videoHeight * scale + offsetY;
+        const pixelX = frame.x + x * frame.width;
+        const pixelY = frame.y + y * frame.height;
         if (index === 0) {
           context.moveTo(pixelX, pixelY);
         } else {
