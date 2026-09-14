@@ -14,6 +14,7 @@ from typing import Annotated
 from pydantic import Field, TypeAdapter
 
 from app.api.core.socket.dto.command.set_role import SetRoleDto
+from app.api.features.announcement.dto.command.claim_announcer import ClaimAnnouncerDto
 from app.api.features.calibration.dto.calibration_frame import CalibrationFrameDto
 from app.api.features.calibration.dto.command.request_calibration import (
     RequestCalibrationDto,
@@ -28,6 +29,7 @@ ClientMessage = Annotated[
     | DetectionFrameDto
     | SetRoleDto
     | SetEvaluationDto
+    | ClaimAnnouncerDto
     | GameCommand,
     Field(discriminator="type"),
 ]

@@ -30,6 +30,11 @@ from app.api.core.socket.dto.client_message import (
     client_message_adapter,
 )
 from app.api.core.socket.services.game_hub import Connection, hub
+from app.api.features.announcement.domain.announcer import choose_announcer
+from app.api.features.announcement.dto.announcer_state import AnnouncerStateDto
+from app.api.features.announcement.dto.command.claim_announcer import ClaimAnnouncerDto
+from app.api.features.announcement.dto.dart_announcement import DartAnnouncementDto
+from app.api.features.announcement.services.announcer_store import store as announcer_store
 from app.api.features.calibration.dto.calibration_frame import CalibrationFrameDto
 from app.api.features.calibration.dto.calibration_requested import (
     CalibrationRequestedDto,
@@ -112,6 +117,7 @@ async def websocket_endpoint(
     connection = hub.join(game_id, websocket, client)
     await hub.send(connection, ClientStateDto.from_entity(client))
     await hub.send(connection, GameStateDto.from_entity(game))
+    await _publish_announcer(game_id)
 
     try:
         while True:
@@ -128,6 +134,7 @@ async def websocket_endpoint(
         pass
     finally:
         hub.leave(game_id, websocket)
+        await _publish_announcer(game_id)
 
 
 async def _dispatch(
@@ -171,6 +178,10 @@ async def _dispatch(
             await _request_calibration(game_id, requester=connection.client.id)
         case SetRoleDto():
             await _handle_client_command(connection, message)
+            await _publish_announcer(game_id)
+        case ClaimAnnouncerDto():
+            await announcer_store.choose(game_id, connection.client.id)
+            await _publish_announcer(game_id)
         case SetEvaluationDto():
             await _handle_set_evaluation(game_id, message)
         case RegisterDartDto() | UndoDto() | NextPlayerDto():
@@ -283,6 +294,20 @@ async def _publish_state(game: Game) -> None:
     await hub.broadcast(game.id, GameStateDto.from_entity(game))
 
 
+async def _current_announcer(game_id: str) -> str | None:
+    """The device in the room that speaks booked darts (docs/feature/ansage.md §1)."""
+    return choose_announcer(
+        [c.client for c in hub.connections(game_id)],
+        await announcer_store.chosen(game_id),
+        await scoring_camera_store.holder(game_id),
+    )
+
+
+async def _publish_announcer(game_id: str) -> None:
+    """Tell the room who the announcer is, after anything that may have changed it."""
+    await hub.broadcast(game_id, AnnouncerStateDto(client_id=await _current_announcer(game_id)))
+
+
 async def _request_calibration(game_id: str, *, requester: str | None) -> None:
     """Ask every camera in the room to calibrate again from a fresh frame.
 
@@ -351,6 +376,7 @@ async def _handle_calibration_frame(
         detection_store.seed(game_id, client_id, image)
         if await scoring_camera_store.claim(game_id, client_id):
             recorder.remember_frame(game_id, raw)
+            await _publish_announcer(game_id)
         response = CalibrationResultDto.from_calibration(outcome)
 
     await hub.send(connection, response)
@@ -464,7 +490,12 @@ async def _handle_throw_frame(
 
     # Pushed even when the game absorbed the dart (a trigger during a full
     # visit): the camera trims its drawn outlines against this state.
-    await _publish_state(applied[0])
+    game, changed = applied
+    await _publish_state(game)
+
+    announcer = await _current_announcer(game_id)
+    if changed and announcer is not None:
+        await hub.send_to_client(game_id, announcer, DartAnnouncementDto.from_entity(dart, game))
 
 
 
