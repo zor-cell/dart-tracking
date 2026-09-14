@@ -7,7 +7,6 @@ dadurch gehen halt auch gute erkennungsdaten verloren
 - sprache englisch machen
 - /game/new soll angezeigt bleiben, wenn man page wechselt?
 - stats page spiel werten geht nicht, nur von wertung rausnehmen geht
-- phantom pfeile unglaublich nervig bei bedienung!!!
 
 Viel Aufwand:
 - client diff löst ja derzeit öfter aus, fokus auf recall, das backend muss da was checken (ist das überhaupt möglich), weil
