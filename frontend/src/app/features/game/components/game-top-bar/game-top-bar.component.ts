@@ -7,6 +7,7 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
 import { Divider } from 'primeng/divider';
 import { InputText } from 'primeng/inputtext';
+import { AnnouncerToggleComponent } from '../../../announcement/components/announcer-toggle/announcer-toggle.component';
 import { NotificationService } from '../../../../core/notification/services/notification.service';
 import { GameService } from '../../services/game.service';
 import { GameSessionService } from '../../services/game-session.service';
@@ -18,7 +19,7 @@ import { GameSessionService } from '../../services/game-session.service';
  */
 @Component({
   selector: 'app-game-top-bar',
-  imports: [Button, ConfirmDialog, Dialog, Divider, InputText, QRCodeComponent],
+  imports: [AnnouncerToggleComponent, Button, ConfirmDialog, Dialog, Divider, InputText, QRCodeComponent],
   templateUrl: './game-top-bar.component.html',
   styleUrl: './game-top-bar.component.scss',
   // Scoped to this component so its <p-confirmdialog> shares the same instance.

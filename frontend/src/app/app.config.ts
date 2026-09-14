@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { providePrimeNG } from 'primeng/config';
 
@@ -7,6 +7,7 @@ import {provideHttpClient, withInterceptors} from "@angular/common/http";
 import { Noir } from "../app-theme";
 import {MessageService} from "primeng/api";
 import {authInterceptor, errorInterceptor} from "./core/interceptors";
+import { AnnouncerService } from './features/announcement/services/announcer.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -18,6 +19,8 @@ export const appConfig: ApplicationConfig = {
         preset: Noir
       }
     }),
-    MessageService
+    MessageService,
+    // Listens from app start, so an announcer_state sent on join is never missed.
+    provideAppInitializer(() => void inject(AnnouncerService)),
   ]
 };

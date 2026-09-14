@@ -1,4 +1,5 @@
 import { SetRoleDto } from './set-role.dto';
+import { ClaimAnnouncerDto } from '../../../features/announcement/dto/claim-announcer.dto';
 import { CalibrationFrameDto } from '../../../features/calibration/dto/calibration-frame.dto';
 import { RequestCalibrationDto } from '../../../features/calibration/dto/request-calibration.dto';
 import { DetectionFrameDto } from '../../../features/detection/dto/detection-frame.dto';
@@ -21,6 +22,7 @@ export type ClientMessage =
   | SetRoleDto
   | RegisterDartDto
   | SetEvaluationDto
+  | ClaimAnnouncerDto
   | UndoDto
   | NextPlayerDto;
 

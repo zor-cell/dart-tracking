@@ -36,7 +36,8 @@ export class SocketService {
 
   private readonly messages = new Subject<ServerMessage>();
 
-  private clientId: string | null = localStorage.getItem(CLIENT_ID_KEY);
+  private readonly _clientId = signal<string | null>(localStorage.getItem(CLIENT_ID_KEY));
+  readonly clientId = this._clientId.asReadonly();
 
   // Commands issued before the socket finished opening, flushed on connect.
   // Only commands are held back: a queued frame would describe a board the game
@@ -157,14 +158,15 @@ export class SocketService {
    * belongs in the URL. Absent on a first connect, when there is no name yet.
    */
   private identity(): string {
-    return this.clientId ? `?clientId=${encodeURIComponent(this.clientId)}` : '';
+    const clientId = this._clientId();
+    return clientId ? `?clientId=${encodeURIComponent(clientId)}` : '';
   }
 
   /** Take the server's word for who this device is, except while a role change
    * is in flight: its confirmation is the message that clears the request, and
    * anything before it still carries the old role. */
   private adopt(message: ClientStateDto): void {
-    this.clientId = message.clientId;
+    this._clientId.set(message.clientId);
     localStorage.setItem(CLIENT_ID_KEY, message.clientId);
 
     if (this.requestedRole !== null && message.role !== this.requestedRole) {

@@ -1,0 +1,10 @@
+@if (announcer.supported) {
+  <p-button
+    [icon]="icon()"
+    [severity]="announcer.isAnnouncer() ? 'primary' : 'secondary'"
+    [outlined]="!announcer.isAnnouncer()"
+    size="small"
+    [ariaLabel]="label()"
+    (onClick)="onClick()"
+  />
+}

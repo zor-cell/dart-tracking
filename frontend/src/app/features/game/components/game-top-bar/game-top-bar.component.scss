@@ -19,6 +19,12 @@
   border-bottom: 1px solid var(--p-content-border-color, #e5e7eb);
 }
 
+.top-bar__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .top-bar__title {
   font-weight: 700;
   font-variant-numeric: tabular-nums;

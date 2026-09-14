@@ -1,13 +1,13 @@
 TODOs:
 
 Wenig Aufwand:
+- revanche sollte auf alle im game room angewendet werden, dass man das kamera phone gleich weiterverwenden kann
+- kamera sollte die volle kamera sein, die das handy sieht also hochformat (vllt button mit ganzer screen)
+- smarte undos?, momentan wenn ich undo mache, werden die marker resettet, was wenn nur einer der 3 pfeile falsch war?
+dadurch gehen halt auch gute erkennungsdaten verloren
 - sprache englisch machen
-- sound für treffer, also einfach durchsage von roboter stimme
 - /game/new soll angezeigt bleiben, wenn man page wechselt?
-- kalibrierung von scoreboard soll einfach eine animation zeigen fürs laden, nicht das schirche banner
 - stats page spiel werten geht nicht, nur von wertung rausnehmen geht
-- die anzeigten tips im scoreboard verschwinden ja mit undo. das ist aber blöd wenn ich nur einen phantom guess weghaben
-will, wenn das phantom problem weg ist, ist aber auch das weg
 - phantom pfeile unglaublich nervig bei bedienung!!!
 
 Viel Aufwand:
