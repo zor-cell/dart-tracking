@@ -12,9 +12,9 @@
  * detector found".
  */
 const DART_COLORS = [
-  'rgba(56, 189, 248, 0.95)', // dart 1 — cyan
-  'rgba(244, 114, 182, 0.95)', // dart 2 — pink
-  'rgba(74, 222, 128, 0.95)', // dart 3 — lime
+  '#648fff', // dart 1 — blue
+  '#ffb000', // dart 2 — amber
+  '#dc267f', // dart 3 — magenta
 ] as const;
 
 /**

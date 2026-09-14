@@ -1,7 +1,6 @@
 TODOs:
 
 Wenig Aufwand:
-- tracking farben ändern, auch board overlay
 - revanche sollte auf alle im game room angewendet werden, dass man das kamera phone gleich weiterverwenden kann
 - smarte undos?, momentan wenn ich undo mache, werden die marker resettet, was wenn nur einer der 3 pfeile falsch war?
 dadurch gehen halt auch gute erkennungsdaten verloren
@@ -22,3 +21,4 @@ Zukunft:
 - Players ansicht im konto profil. dort muss man player löschen können. man muss auch einen existierenden user
 seine games zuschreiben können, der muss halt akzeptieren. 
 - statistiken nach datum sortieren können, die default ansicht einfach letzten monat (eher letzte 30 tage montasübergreifend)
+- kamera und scoreboard auch ändern können

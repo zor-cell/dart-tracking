@@ -54,7 +54,14 @@
         @if (cameraPhase() !== 'idle') {
           <app-overlay [polylines]="calibrationOverlay()" [video]="video" />
           @for (dart of roundDarts(); track $index) {
-            <app-overlay [polylines]="dart.polylines" [video]="video" [color]="dart.color" />
+            <app-overlay
+              [polylines]="dart.polylines"
+              [video]="video"
+              [color]="dart.color"
+              [lineWidth]="1.5"
+              [label]="'' + ($index + 1)"
+              [outlined]="true"
+            />
           }
         }
 

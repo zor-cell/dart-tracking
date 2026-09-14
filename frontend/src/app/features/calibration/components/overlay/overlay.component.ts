@@ -9,8 +9,13 @@ import {
 } from '@angular/core';
 import { containRect } from '../../../camera/models/video-fit';
 
-const DEFAULT_LINE_COLOR = 'rgba(255, 214, 10, 0.9)';
-const LINE_WIDTH = 1.5;
+const DEFAULT_LINE_COLOR = '#ffffff';
+const LINE_WIDTH = 1;
+const LABEL_FONT = '600 12px system-ui, sans-serif';
+// Matches the marker outline on the virtual board.
+const OUTLINE_COLOR = '#1b1b1b';
+const OUTLINE_EXTRA_WIDTH = 2;
+const LABEL_OUTLINE_WIDTH = 2;
 
 /**
  * Draws normalized polylines over the camera preview. Used for the detected
@@ -32,8 +37,17 @@ export class OverlayComponent implements OnDestroy {
   /** The video being drawn over; supplies the frame's intrinsic size. */
   readonly video = input.required<HTMLVideoElement>();
 
-  /** Stroke colour; defaults to the board's yellow. */
+  /** Stroke colour; defaults to the board's white. */
   readonly color = input(DEFAULT_LINE_COLOR);
+
+  /** Stroke width in CSS pixels. */
+  readonly lineWidth = input(LINE_WIDTH);
+
+  /** Text drawn beside the first point of the first polyline, e.g. the dart's ordinal. */
+  readonly label = input<string | null>(null);
+
+  /** Whether lines and label get a dark outline. */
+  readonly outlined = input(false);
 
   private readonly canvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly resizeObserver = new ResizeObserver(() => this.draw());
@@ -44,6 +58,9 @@ export class OverlayComponent implements OnDestroy {
       this.polylines();
       this.video();
       this.color();
+      this.lineWidth();
+      this.label();
+      this.outlined();
       this.draw();
     });
 
@@ -99,15 +116,47 @@ export class OverlayComponent implements OnDestroy {
 
     const frame = containRect(width, height, video.videoWidth, video.videoHeight);
 
-    context.strokeStyle = this.color();
-    context.lineWidth = LINE_WIDTH;
-    context.lineJoin = 'round';
+    const toPixel = ([x, y]: number[]): [number, number] => [
+      frame.x + x * frame.width,
+      frame.y + y * frame.height,
+    ];
 
+    context.lineJoin = 'round';
+    context.lineCap = 'round';
+    if (this.outlined()) {
+      this.strokeLines(context, polylines, toPixel, OUTLINE_COLOR, this.lineWidth() + OUTLINE_EXTRA_WIDTH);
+    }
+    this.strokeLines(context, polylines, toPixel, this.color(), this.lineWidth());
+
+    const label = this.label();
+    const anchor = polylines[0]?.[0];
+    if (label && anchor) {
+      const [pixelX, pixelY] = toPixel(anchor);
+      context.font = LABEL_FONT;
+      context.textBaseline = 'middle';
+      if (this.outlined()) {
+        context.strokeStyle = OUTLINE_COLOR;
+        context.lineWidth = LABEL_OUTLINE_WIDTH;
+        context.strokeText(label, pixelX + 10, pixelY - 10);
+      }
+      context.fillStyle = this.color();
+      context.fillText(label, pixelX + 10, pixelY - 10);
+    }
+  }
+
+  private strokeLines(
+    context: CanvasRenderingContext2D,
+    polylines: number[][][],
+    toPixel: (point: number[]) => [number, number],
+    color: string,
+    width: number,
+  ): void {
+    context.strokeStyle = color;
+    context.lineWidth = width;
     for (const line of polylines) {
       context.beginPath();
-      line.forEach(([x, y], index) => {
-        const pixelX = frame.x + x * frame.width;
-        const pixelY = frame.y + y * frame.height;
+      line.forEach((point, index) => {
+        const [pixelX, pixelY] = toPixel(point);
         if (index === 0) {
           context.moveTo(pixelX, pixelY);
         } else {
