@@ -396,11 +396,22 @@ Server also nicht erneut. Das ist tragbar, weil ein Spiel nur rund fünfzehn
 Zahlen beiträgt; die Rechnung für die Totale ist ohnehin die Summe der
 Einzelspiele, ein „nur die Liste"-Modus würde nichts sparen.
 
-**Einbezogen sind alle geloggten Spiele**, nicht nur die mit gesetztem
-Testlauf-Schalter. Der Schalter aus §5 steuert das Ablegen der Bilder in
+**Einbezogen sind alle abgeschlossenen, geloggten Spiele**, nicht nur die mit
+gesetztem Testlauf-Schalter. Der Schalter aus §5 steuert das Ablegen der Bilder in
 `testdata/evaluation/`, nicht die Messung: Events schreibt der Recorder immer.
 Spiele ohne gefilmten Visit fallen heraus (`Visit.tracked`), sonst läsen sie
 sich als Pfeile, die die Kamera nicht gesehen hat.
+
+**Nur `status = finished`.** Im Betrieb entstehen laufend Spiele, die nach ein,
+zwei Pfeilen liegen bleiben — Kamera ausprobiert, Kalibrierung getestet. Sie
+tragen kaum Judgements, tauchen aber als eigene Zeile in der Spielliste auf und
+verrauschen die Einzelspiel-Ansicht. Filter im Repository
+(`logged_games(finished_only=True)`), damit die Einschränkung in SQL passiert und
+nicht erst nach dem Laden aller Logs. Anders als die Statistik
+(`counts_in_statistics`, [persistenz.md §4.5](done/persistenz.md)) zählen
+verlassene Spiele hier auch mit neun oder mehr Pfeilen nicht: ein
+abgeschlossenes Spiel ist die sauberste Abgrenzung eines echten Durchlaufs.
+`report.py` bleibt davon unberührt.
 
 ### 7c. Warum eine Admin-Rolle
 

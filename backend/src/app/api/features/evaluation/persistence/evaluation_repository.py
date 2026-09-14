@@ -11,6 +11,7 @@ from app.api.features.evaluation.domain.game_event import (
     GameEventKind,
 )
 from app.api.features.evaluation.persistence.game_event import GameEventTable
+from app.api.features.game.domain.game_status import GameStatus
 from app.api.features.game.persistence.game import GameTable
 
 
@@ -70,10 +71,10 @@ class EvaluationRepository:
         ]
 
     async def logged_games(
-        self, session: AsyncSession, *, evaluation_only: bool
+        self, session: AsyncSession, *, evaluation_only: bool, finished_only: bool = False
     ) -> list[LoggedGame]:
         """Games that have a log, oldest first. `evaluation_only` narrows it to
-        the ones marked as a test run."""
+        the ones marked as a test run, `finished_only` to the ones with a winner."""
         # `created_at` is selected as well as ordered on: Postgres rejects a
         # DISTINCT whose ORDER BY names a column that is not in the list.
         statement = (
@@ -89,6 +90,8 @@ class EvaluationRepository:
         )
         if evaluation_only:
             statement = statement.where(GameTable.evaluation_enabled.is_(True))
+        if finished_only:
+            statement = statement.where(GameTable.status == GameStatus.FINISHED.value)
 
         return [
             LoggedGame(

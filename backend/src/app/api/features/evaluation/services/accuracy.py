@@ -14,13 +14,15 @@ from app.api.features.evaluation.persistence.evaluation_repository import reposi
 
 
 async def overview(session: AsyncSession) -> AccuracyOverview:
-    """Every logged game, newest first, and the totals over all of them. A game
-    nobody filmed is left out: it would read as darts the camera never saw."""
+    """Every finished, filmed game, newest first, and the totals over all of them.
+    A game nobody filmed is left out: it would read as darts the camera never saw."""
     visits: list[Visit] = []
     judgements: list[Judgement] = []
     per_game: list[GameAccuracy] = []
 
-    for game in await repository.logged_games(session, evaluation_only=False):
+    for game in await repository.logged_games(
+        session, evaluation_only=False, finished_only=True
+    ):
         events = await repository.events(session, game.id)
         filmed = [visit for visit in replay(events) if visit.tracked]
         if not filmed:
