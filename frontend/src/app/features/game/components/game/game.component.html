@@ -16,6 +16,15 @@
       <div class="game__board">
         <app-virtual-board [darts]="currentDarts()" />
         <p-button
+          class="game__switch-role"
+          icon="pi pi-video"
+          [rounded]="true"
+          severity="secondary"
+          size="small"
+          ariaLabel="Dieses Gerät als Kamera verwenden"
+          (onClick)="switchRole()"
+        />
+        <p-button
           class="game__recalibrate"
           [icon]="calibrationRequestPending() ? 'pi pi-sync pi-spin' : 'pi pi-sync'"
           [rounded]="true"
@@ -99,6 +108,16 @@
             />
           }
         }
+
+        <p-button
+          class="game__switch-role"
+          icon="pi pi-bullseye"
+          [rounded]="true"
+          severity="secondary"
+          size="small"
+          ariaLabel="Dieses Gerät als Scoreboard verwenden"
+          (onClick)="switchRole()"
+        />
 
         @if (cameraPhase() !== 'idle') {
           <p-button

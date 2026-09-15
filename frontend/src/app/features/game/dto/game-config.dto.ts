@@ -9,4 +9,5 @@ export interface GameConfigDto {
   readonly variant: GameVariant;
   readonly checkoutMode: CheckoutMode;
   readonly evaluationEnabled: boolean;
+  readonly rematchOf?: string;
 }

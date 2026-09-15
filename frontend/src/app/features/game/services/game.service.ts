@@ -80,6 +80,16 @@ export class GameService {
           this.maybeAutoAdvance(state);
         }
       });
+
+    // Every device in the room follows a rematch; its role stays with the device.
+    this.socket
+      .on('rematch_started')
+      .pipe(takeUntilDestroyed())
+      .subscribe(({ gameId }) => {
+        if (gameId !== this.peekGameId()) {
+          void this.join(gameId);
+        }
+      });
   }
 
   /** Create a game on the server; the caller navigates once it resolves. */

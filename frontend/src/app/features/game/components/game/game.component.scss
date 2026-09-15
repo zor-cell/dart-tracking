@@ -81,6 +81,11 @@
     right: calc(0.5rem + env(safe-area-inset-right));
   }
 
+  .game__switch-role {
+    top: calc(0.5rem + env(safe-area-inset-top));
+    left: calc(0.5rem + env(safe-area-inset-left));
+  }
+
   .game__camera-badge {
     bottom: calc(0.5rem + env(safe-area-inset-bottom));
     left: calc(0.5rem + env(safe-area-inset-left));
@@ -162,6 +167,13 @@
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
+}
+
+.game__switch-role {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 2;
 }
 
 // The change mask sits over the video like the board overlay; dimming the video

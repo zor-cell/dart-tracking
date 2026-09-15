@@ -272,6 +272,10 @@ export class GameComponent implements OnInit, OnDestroy {
     this.cameraRef()?.nativeElement.requestFullscreen?.().catch(() => {});
   }
 
+  protected switchRole(): void {
+    this.session.setRole(this.deviceRole() === 'camera' ? 'scoreboard' : 'camera');
+  }
+
   protected calibrateBoard(): Promise<void> {
     return this.session.calibrate();
   }

@@ -1,4 +1,4 @@
-import { Injectable, effect, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CalibrationService } from '../../calibration/services/calibration.service';
 import { CameraService } from '../../camera/services/camera.service';
@@ -60,6 +60,12 @@ export class GameSessionService {
   // after a reload once the game is confirmed. Consumed once the elements exist.
   private pendingResumePhase: CameraPhase | null = null;
 
+  private readonly gameId = computed(() => this.game.state()?.id ?? null);
+  // The game the running camera phase belongs to.
+  private currentGameId: string | null = null;
+  // Set when the camera was carried into a new game and has not calibrated there yet.
+  private readonly recalibrationPending = signal(false);
+
   constructor() {
     effect(() => {
       if (this.calibration.status() === 'success' && this.phase() === 'calibrating') {
@@ -79,6 +85,22 @@ export class GameSessionService {
           void this.calibrate();
         }
       });
+
+    // Calibration is per game, so a running camera recalibrates when the game changes under it.
+    effect(() => {
+      const gameId = this.gameId();
+      const previous = this.currentGameId;
+      this.currentGameId = gameId;
+      if (previous !== null && gameId !== null && gameId !== previous && untracked(this.phase) !== 'idle') {
+        untracked(() => this.carryOverCamera());
+      }
+    });
+
+    effect(() => {
+      if (this.recalibrationPending() && this.socket.connectionStatus() === 'connected') {
+        untracked(() => void this.recalibrateCarriedOver());
+      }
+    });
 
     // Mirror the live phase into storage so a refresh can resume from it.
     effect(() => {
@@ -108,6 +130,7 @@ export class GameSessionService {
       if (this.phase() === 'tracking') {
         this.runDetectionLoop();
       }
+      void this.recalibrateCarriedOver();
       return;
     }
 
@@ -138,13 +161,8 @@ export class GameSessionService {
   }
 
   /**
-   * Set what this device does. Called on the way into a game — from the setup,
-   * or from the join screen — and not afterwards: the role picks the view for
-   * the whole game, so it cannot change under a running camera.
-   *
-   * A no-op when it already holds, so the server is only told about an actual
-   * change. Dropping the camera role still tears a live session down, because
-   * the device may be carrying one over from the game before.
+   * Set what this device does: on the way into a game, or from the switch in the
+   * game view. A no-op when it already holds; dropping the camera role ends a live session.
    */
   setRole(role: DeviceRole): void {
     if (role === this.role()) {
@@ -169,6 +187,7 @@ export class GameSessionService {
     this.throwCapture.stopDetectionLoop();
     this.camera.stop();
     this.calibration.reset();
+    this.recalibrationPending.set(false);
     this.phase.set('idle');
   }
 
@@ -199,6 +218,27 @@ export class GameSessionService {
     if (target === 'tracking') {
       this.runDetectionLoop();
     }
+  }
+
+  /** Keep the stream, but start the new game from calibration. */
+  private carryOverCamera(): void {
+    this.throwCapture.stopDetectionLoop();
+    this.calibration.reset();
+    this.phase.set('calibrating');
+    this.recalibrationPending.set(true);
+  }
+
+  /** Calibrate a carried-over camera once both its view and the new room are there. */
+  private async recalibrateCarriedOver(): Promise<void> {
+    const video = this.video;
+    if (!this.recalibrationPending() || !video || this.socket.connectionStatus() !== 'connected') {
+      return;
+    }
+    this.recalibrationPending.set(false);
+    if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      await new Promise((resolve) => video.addEventListener('loadeddata', resolve, { once: true }));
+    }
+    await this.calibrate();
   }
 
   private startTracking(): void {

@@ -8,7 +8,7 @@ import {
   Injector,
   signal,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
@@ -16,6 +16,7 @@ import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { SelectButton } from 'primeng/selectbutton';
 import { Skeleton } from 'primeng/skeleton';
+import { SocketService } from '../../../../core/socket/services/socket.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { PlayerIdentityDto } from '../../../player/dto/player-identity.dto';
 import { PlayerService } from '../../../player/services/player.service';
@@ -58,6 +59,7 @@ export class GameNewComponent {
   private readonly auth = inject(AuthService);
   private readonly players = inject(PlayerService);
   private readonly settings = inject(SettingsService);
+  private readonly socket = inject(SocketService);
 
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
   protected readonly variantOptions = [...GAME_VARIANTS];
@@ -81,6 +83,9 @@ export class GameNewComponent {
     players: this.fb.array<FormControl<Seat>>([]),
   });
 
+  /** The finished game being replayed, once `restoreSeats` has confirmed it exists. */
+  private rematchId: string | null = null;
+
   private readonly variant = toSignal(this.form.controls.variant.valueChanges, {
     initialValue: this.form.controls.variant.value,
   });
@@ -89,6 +94,16 @@ export class GameNewComponent {
 
   constructor() {
     void this.restoreSeats();
+
+    // Another device started the rematch first: join it instead of creating a second one.
+    this.socket
+      .on('rematch_started')
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.rematchId !== null) {
+          void this.router.navigate(['/game']);
+        }
+      });
   }
 
   protected get seats(): FormArray<FormControl<Seat>> {
@@ -145,6 +160,7 @@ export class GameNewComponent {
     const seats = (players as Seat[]).map<PlayerSlotDto>((seat) =>
       typeof seat === 'string' ? { name: seat.trim() } : { playerId: seat.id },
     );
+    const rematchOf = this.rematchId ?? undefined;
 
     this.game
       .createGame({
@@ -153,9 +169,13 @@ export class GameNewComponent {
         checkoutMode,
         players: seats,
         evaluationEnabled: this.settings.evaluationEnabled(),
+        rematchOf,
       })
       .subscribe(() => {
-        this.session.setRole('camera');
+        // A rematch keeps every device's role; a fresh game starts on the camera.
+        if (rematchOf === undefined) {
+          this.session.setRole('camera');
+        }
         this.router.navigate(['/game']);
       });
   }
@@ -176,6 +196,7 @@ export class GameNewComponent {
 
     const rematchId = this.route.snapshot.queryParamMap.get('rematch');
     const previous = rematchId ? await this.game.fetch(rematchId) : null;
+    this.rematchId = previous?.id ?? null;
 
     if (previous !== null) {
       this.form.patchValue({
