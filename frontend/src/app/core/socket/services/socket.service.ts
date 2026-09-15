@@ -72,18 +72,34 @@ export class SocketService {
 
     this.gameId = gameId;
     this.connectionStatus.set('connecting');
-    this.socket = new WebSocket(`${environment.wsApiUrl}/games/${gameId}${this.identity()}`);
+    const socket = new WebSocket(`${environment.wsApiUrl}/games/${gameId}${this.identity()}`);
+    this.socket = socket;
 
-    this.socket.addEventListener('open', () => {
+    // Events of a socket already replaced by a newer connect must not touch the current one.
+    const current = () => this.socket === socket;
+
+    socket.addEventListener('open', () => {
+      if (!current()) {
+        return;
+      }
       this.connectionStatus.set('connected');
       this.flush();
     });
-    this.socket.addEventListener('error', () => this.connectionStatus.set('error'));
-    this.socket.addEventListener('close', () => {
-      this.connectionStatus.set('disconnected');
-      this.socket = null;
+    socket.addEventListener('error', () => {
+      if (current()) {
+        this.connectionStatus.set('error');
+      }
     });
-    this.socket.addEventListener('message', (event) => {
+    socket.addEventListener('close', () => {
+      if (current()) {
+        this.connectionStatus.set('disconnected');
+        this.socket = null;
+      }
+    });
+    socket.addEventListener('message', (event) => {
+      if (!current()) {
+        return;
+      }
       const message = JSON.parse(event.data) as ServerMessage;
       if (message.type === 'client_state') {
         this.adopt(message);
