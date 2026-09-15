@@ -103,6 +103,11 @@ export class GameService {
     this.socket.send({ type: 'undo' });
   }
 
+  /** Take one dart out of the open visit; the darts after it move up. */
+  removeDart(index: number): void {
+    this.socket.send({ type: 'remove_dart', index });
+  }
+
   /** Switch to the next player */
   nextPlayer(): void {
     this.socket.send({ type: 'next_player' });

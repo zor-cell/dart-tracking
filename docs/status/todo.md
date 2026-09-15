@@ -2,8 +2,6 @@ TODOs:
 
 Wenig Aufwand:
 - revanche sollte auf alle im game room angewendet werden, dass man das kamera phone gleich weiterverwenden kann
-- smarte undos?, momentan wenn ich undo mache, werden die marker resettet, was wenn nur einer der 3 pfeile falsch war?
-dadurch gehen halt auch gute erkennungsdaten verloren
 - sprache englisch machen
 - /game/new soll angezeigt bleiben, wenn man page wechselt?
 - stats page spiel werten geht nicht, nur von wertung rausnehmen geht

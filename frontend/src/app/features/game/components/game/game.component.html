@@ -59,7 +59,7 @@
               [video]="video"
               [color]="dart.color"
               [lineWidth]="1.5"
-              [label]="'' + ($index + 1)"
+              [label]="'' + (dart.dartIndex + 1)"
               [outlined]="true"
             />
           }
@@ -186,7 +186,17 @@
           <div class="turn__row">
             <ul class="turn__darts" aria-label="Darts dieser Runde">
               @for (dart of turn.darts; track $index) {
-                <li class="turn__dart" [class.turn__dart--busted]="turn.busted">{{ dart.label }}</li>
+                <li class="turn__slot">
+                  <button
+                    type="button"
+                    class="turn__dart turn__dart--removable"
+                    [class.turn__dart--busted]="turn.busted"
+                    [attr.aria-label]="dart.label + ' entfernen'"
+                    (click)="removeDart($index)"
+                  >
+                    {{ dart.label }}
+                  </button>
+                </li>
               }
               @for (slot of checkoutSlots(); track $index) {
                 <li

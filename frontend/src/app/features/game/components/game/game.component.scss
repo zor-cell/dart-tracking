@@ -415,11 +415,13 @@
   gap: 0.5rem;
 }
 
+// Three equal columns, whether a slot holds a dart button or an empty box.
 .turn__darts {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   flex: 1;
   gap: 0.5rem;
 }
@@ -439,6 +441,19 @@
   font-variant-numeric: tabular-nums;
 
   background: var(--p-content-hover-background, #f3f4f6);
+}
+
+.turn__slot {
+  display: flex;
+  min-width: 0;
+}
+
+.turn__dart--removable {
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
 .turn__dart--empty {

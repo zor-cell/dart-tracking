@@ -6,6 +6,7 @@ import { GameService } from '../../game/services/game.service';
 import { DetectionFailureDto } from '../dto/detection-failure.dto';
 import { DetectionResultDto } from '../dto/detection-result.dto';
 import { ThrowTriggerDto } from '../dto/throw-trigger.dto';
+import { DartDto } from '../../game/dto/dart.dto';
 import { GameStateDto } from '../../game/dto/game-state.dto';
 import { dartColor } from '../../game/models/dart-colors';
 
@@ -21,9 +22,11 @@ const FAILURE_HINTS: Record<DetectionFailureDto, string> = {
   darts_removed: 'Pfeile entfernt',
 };
 
-/** One located dart to draw: its polylines plus the colour for its round index. */
+/** One located dart to draw: its polylines, its position in the visit, and the
+ * colour for that position. */
 export interface RoundDartOverlay {
   readonly polylines: number[][][];
+  readonly dartIndex: number;
   readonly color: string;
 }
 
@@ -90,8 +93,9 @@ export class DetectionService {
   private eventSeq = 0;
 
   private feedbackTimeoutId: ReturnType<typeof setTimeout> | null = null;
-  // The turn count from the last reconciled state, to spot a round boundary.
+  // The turn count and open visit from the last reconciled state.
   private lastTurnCount: number | null = null;
+  private lastDarts: readonly DartDto[] = [];
 
   constructor() {
     // Located darts arrive over the socket, one `detection_result` per throw.
@@ -135,9 +139,10 @@ export class DetectionService {
     if (!this.acceptsThrows()) {
       return;
     }
+    const dartIndex = this.game.currentTurn()?.darts.length ?? 0;
     this.roundDarts.update((darts) => [
       ...darts,
-      { polylines, color: dartColor(darts.length) },
+      { polylines, dartIndex, color: dartColor(dartIndex) },
     ]);
   }
 
@@ -147,23 +152,33 @@ export class DetectionService {
    *   visit (count up) clears the moment the round is accepted, which is what the
    *   board should show for the next thrower; an undo across the boundary (count
    *   down) reopens a visit whose darts were never tracked here, so also clear;
-   * - same turn, fewer darts is an in-visit undo — trim to the real count. Never
-   *   grow here: appending is the detection result's job, which always arrives
-   *   before its game_state (see core/socket.py).
+   * - same turn, fewer darts is an undo or a removal — the outline of the dart
+   *   that went is dropped and the ones after it move up. Never grow here:
+   *   appending is the detection result's job, which always arrives before its
+   *   game_state (see core/socket.py).
    */
   private reconcileRound(turns: GameStateDto['turns']): void {
     const count = turns.length;
+    const darts = turns.at(-1)?.darts ?? [];
     if (this.lastTurnCount !== null) {
       if (count !== this.lastTurnCount) {
         this.roundDarts.set([]);
-      } else {
-        const dartCount = turns.at(-1)?.darts.length ?? 0;
-        this.roundDarts.update((darts) =>
-          darts.length > dartCount ? darts.slice(0, dartCount) : darts,
+      } else if (darts.length < this.lastDarts.length) {
+        const removed = removedIndex(this.lastDarts, darts);
+        this.roundDarts.update((overlays) =>
+          overlays
+            .filter((overlay) => overlay.dartIndex !== removed)
+            .map((overlay) => {
+              const dartIndex =
+                overlay.dartIndex > removed ? overlay.dartIndex - 1 : overlay.dartIndex;
+              return { ...overlay, dartIndex, color: dartColor(dartIndex) };
+            })
+            .filter((overlay) => overlay.dartIndex < darts.length),
         );
       }
     }
     this.lastTurnCount = count;
+    this.lastDarts = darts;
   }
 
   /** Send a triggered throw frame; the result arrives asynchronously. */
@@ -218,4 +233,19 @@ function formatHit(segment: string | null, points: number | null): string {
 
 function hintFor(failure: DetectionFailureDto | null): string {
   return (failure && FAILURE_HINTS[failure]) ?? 'Kein Wurf erkannt';
+}
+
+/** Which dart of `before` is missing from `after`: the first position where the
+ * two differ, or the last dart when all earlier ones match. */
+function removedIndex(before: readonly DartDto[], after: readonly DartDto[]): number {
+  const index = after.findIndex((dart, i) => !sameDart(dart, before[i]));
+  return index === -1 ? after.length : index;
+}
+
+function sameDart(a: DartDto, b: DartDto): boolean {
+  return (
+    a.label === b.label &&
+    a.position?.[0] === b.position?.[0] &&
+    a.position?.[1] === b.position?.[1]
+  );
 }

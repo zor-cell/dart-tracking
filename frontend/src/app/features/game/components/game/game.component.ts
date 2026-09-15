@@ -292,6 +292,10 @@ export class GameComponent implements OnInit, OnDestroy {
     }
   }
 
+  protected removeDart(index: number): void {
+    this.game.removeDart(index);
+  }
+
   /** A 1–20 key: booked with the active multiplier, which then falls back to
    * single — the multiplier applies to one dart, not to the rest of the visit. */
   protected enterNumber(value: number): void {
