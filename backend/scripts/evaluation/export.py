@@ -1,14 +1,14 @@
 """Pack logged games into a zip: their table rows as CSV and their recorded frames.
 
 Usage:
-    uv run python scripts/evaluation/export.py --list              # logged games
-    uv run python scripts/evaluation/export.py                     # every test run, one zip
+    uv run python scripts/evaluation/export.py --list              # selected games
+    uv run python scripts/evaluation/export.py                     # finished games, one zip
     uv run python scripts/evaluation/export.py <game-id> ...       # just these
     uv run python scripts/evaluation/export.py --per-game          # one zip per game
-    uv run python scripts/evaluation/export.py --all-games --out /tmp
+    uv run python scripts/evaluation/export.py --include-unfinished --out /tmp
 
-Writes to `testdata/_exports`. Inside the zip: `games.csv`, `game_events.csv`,
-and `testdata/evaluation/game_<id>/` as the backend wrote it.
+Selects games as `report.py` does. Writes to `testdata/_exports`. Inside the zip:
+`games.csv`, `game_events.csv`, and `testdata/evaluation/game_<id>/`.
 """
 
 import argparse
@@ -32,14 +32,14 @@ from sqlalchemy import Table, func, select  # noqa: E402
 
 from app.api import tables  # noqa: E402, F401
 from app.api.features.evaluation.domain.accuracy import LoggedGame  # noqa: E402
-from app.api.features.evaluation.persistence.evaluation_repository import (  # noqa: E402
-    repository as evaluation_repository,
-)
 from app.api.features.evaluation.persistence.game_event import GameEventTable  # noqa: E402
+from app.api.features.evaluation.services.accuracy import judged_games  # noqa: E402
 from app.api.features.evaluation.services.frame_buffer import folder_of  # noqa: E402
 from app.api.features.game.persistence.game import GameTable  # noqa: E402
 from app.infrastructure import database  # noqa: E402
 from app.infrastructure.config import get_settings  # noqa: E402
+
+from scripts.evaluation.selection import add_selection_arguments  # noqa: E402
 
 EXPORT_DIR = _BACKEND / "testdata" / "_exports"
 
@@ -72,13 +72,15 @@ async def _rows(session, table: Table, key, game_ids: list[str]) -> list[Any]:
     return list((await session.execute(statement)).mappings().all())
 
 
-async def list_games(evaluation_only: bool) -> list[tuple[LoggedGame, int]]:
-    """Logged games with their event counts, oldest first."""
+async def list_games(
+    test_runs_only: bool, include_unfinished: bool
+) -> list[tuple[LoggedGame, int]]:
+    """The games the report would read, with their event counts, oldest first."""
     database.init(get_settings().database_url)
     try:
         async with database.session_scope() as session:
-            games = await evaluation_repository.logged_games(
-                session, evaluation_only=evaluation_only
+            games = await judged_games(
+                session, test_runs_only=test_runs_only, include_unfinished=include_unfinished
             )
             counts = dict(
                 (
@@ -88,7 +90,7 @@ async def list_games(evaluation_only: bool) -> list[tuple[LoggedGame, int]]:
                     )
                 ).all()
             )
-            return [(game, counts.get(game.id, 0)) for game in games]
+            return [(game.game, counts.get(game.game.id, 0)) for game in games]
     finally:
         await database.close()
 
@@ -134,17 +136,18 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument("games", nargs="*", help="game ids; default is every test run")
-    parser.add_argument(
-        "--all-games", action="store_true", help="include games not marked as a test run"
-    )
+    parser.add_argument("games", nargs="*", help="game ids; default is every finished game")
+    add_selection_arguments(parser)
     parser.add_argument("--per-game", action="store_true", help="one zip per game")
-    parser.add_argument("--list", action="store_true", help="list logged games and exit")
+    parser.add_argument("--list", action="store_true", help="list the selected games and exit")
     parser.add_argument("--out", type=Path, default=EXPORT_DIR, help="where the zips go")
     args = parser.parse_args()
 
+    def selected() -> list[tuple[LoggedGame, int]]:
+        return asyncio.run(list_games(args.test_runs_only, args.include_unfinished))
+
     if args.list:
-        for game, events in asyncio.run(list_games(evaluation_only=not args.all_games)):
+        for game, events in selected():
             frames = folder_of(game.id)
             count = sum(1 for f in frames.glob("*.jpg")) if frames.is_dir() else 0
             test = "test run" if game.evaluation_enabled else "        "
@@ -154,11 +157,9 @@ def main() -> int:
             )
         return 0
 
-    game_ids = args.games or [
-        game.id for game, _ in asyncio.run(list_games(evaluation_only=not args.all_games))
-    ]
+    game_ids = args.games or [game.id for game, _ in selected()]
     if not game_ids:
-        print("no logged games found - play one with the test run switch on")
+        print("no judged darts in the selected games - was a camera scoring?")
         return 1
 
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")

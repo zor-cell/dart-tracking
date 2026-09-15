@@ -25,6 +25,7 @@ from app.api.features.evaluation.domain.game_event import (
 from app.api.features.evaluation.persistence.evaluation_repository import (
     repository as events,
 )
+from app.api.features.evaluation.services.frame_buffer import FrameKind
 from app.api.features.evaluation.services.frame_buffer import store as frames
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game import Game
@@ -193,9 +194,14 @@ def remember_frame(game_id: str, jpeg: bytes) -> None:
     frames.remember(game_id, jpeg)
 
 
-def note_throw(game_id: str, jpeg: bytes) -> None:
-    """Add a located throw to the open visit's frames."""
-    frames.add_throw(game_id, jpeg)
+def note_throw(game_id: str, jpeg: bytes, *, booked: bool) -> None:
+    """Add a located throw to the open visit's frames, taken by the game or not."""
+    frames.add(game_id, jpeg, FrameKind.BOOKED if booked else FrameKind.UNBOOKED)
+
+
+def note_absorbed(game_id: str, jpeg: bytes) -> None:
+    """Add a frame that moved the reference without booking a dart."""
+    frames.add(game_id, jpeg, FrameKind.ABSORBED)
 
 
 def settle_visit(game: Game) -> None:
@@ -205,5 +211,16 @@ def settle_visit(game: Game) -> None:
     ended = len(game.turns) - 2
     if game.evaluation_enabled:
         frames.flush(game.id, ended)
+    else:
+        frames.discard(game.id)
+
+
+def settle_win(game: Game) -> None:
+    """Write the visit that won the game, which no handover will close. Kept
+    open, since an undo can take the winning dart back."""
+    if game.winner is None:
+        return
+    if game.evaluation_enabled:
+        frames.flush(game.id, len(game.turns) - 1, keep=True)
     else:
         frames.discard(game.id)

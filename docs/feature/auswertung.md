@@ -281,17 +281,40 @@ die, die der Tracker schon kann, und sie machen den Großteil aus. Bei ~10 %
 Speicherbedarf liefert der Puffer genau die Fälle, die das Testset noch nicht
 enthält.
 
-**Nur Frames, die der Fit erreicht hat.** Eine fehlgeschlagene Detektion lässt
-den Referenz-Frame stehen; eine Serie, die sie enthielte, würde offline anders
-verkettet als sie live war (`run_all.py` verkettet jedes aufeinanderfolgende
-Paar).
+**Genau die Frames, die die Referenz weitergerollt haben.** `run_all.py`
+verkettet jedes aufeinanderfolgende Paar, die Serie muss also dieselbe Kette
+enthalten wie live. Eine fehlgeschlagene Detektion lässt die Referenz stehen und
+fehlt deshalb. Drei Arten gehören hinein, festgehalten in `throwN_frames.txt`
+(`FrameKind` in `frame_buffer.py`):
+
+| Art | Wann | Label im Report |
+|---|---|---|
+| `booked` | Pfeil lokalisiert und vom Spiel angenommen | aus dem Alignment |
+| `absorbed` | verworfener MISS oder `darts_removed` | `NO_CHANGE` |
+| `unbooked` | Pfeil lokalisiert, Visit aber schon voll | keins |
+
+Anfangs standen nur `booked`-Frames in der Serie. Offline verkettete sie damit
+gegen andere Referenzen als live: 72 von 542 Frames bekamen mit identischem Code
+ein anderes Urteil, 79.3 % live gegen 74.5 % offline
+([testrun1.md §8](../test/testrun1.md#8-testserien-vollständig-und-treu-schreiben)).
+Aus demselben Grund wird der Frame erst nach `register_dart` eingeordnet — vorher
+war nicht bekannt, ob der Dart angenommen wurde, und ein geschluckter vierter
+Dart verschob die Labels der Serie um eins.
+
+**Auch der Siegervisit.** Geschrieben wird sonst bei `next_player`, und ein
+gewonnenes Spiel endet ohne. `recorder.settle_win` schreibt den Visit, sobald
+`winner` gesetzt ist, und lässt ihn offen: nimmt ein Undo den Siegpfeil zurück,
+wird dieselbe Serie beim nächsten Schreiben vollständig neu angelegt, samt
+Löschen überzähliger Frames.
 
 **`ground_truth.txt` schreibt der Report, nicht der Server.** Welches Label zu
 welchem Frame gehört, folgt erst aus dem Alignment — ein Frame ohne Partner in
-der Wahrheit ist ein Phantom und bekommt `MISS`, ein Wahrheits-Label ohne Frame
-(`missed`) fällt weg. Damit landen die Serien im Format, das
-`scripts/detection/run_all.py` unverändert liest, und ein korrigierter Visit
-wird ohne eine einzige Handmarkierung zum Testfall.
+der Wahrheit ist ein Phantom und bekommt `NO_CHANGE`, ein Wahrheits-Label ohne
+Frame (`missed`) fällt weg. Passt die Zahl der `booked`-Frames nicht zu den
+gebuchten Darts im Log (Undo über eine Visit-Grenze), bleibt die Serie
+unmarkiert, statt verschobene Labels zu bekommen. Damit landen die Serien im
+Format, das `scripts/detection/run_all.py` unverändert liest, und ein
+korrigierter Visit wird ohne eine einzige Handmarkierung zum Testfall.
 
 ---
 
@@ -313,10 +336,16 @@ immer mit.
 ## 6. Der Report
 
 ```bash
-uv run python scripts/evaluation/report.py              # alle Testläufe
-uv run python scripts/evaluation/report.py --all-games  # alle geloggten Spiele
+uv run python scripts/evaluation/report.py                       # wie die Seite (§7b)
+uv run python scripts/evaluation/report.py --test-runs-only      # nur Testläufe
+uv run python scripts/evaluation/report.py --include-unfinished  # auch Spiele ohne Sieger
 uv run python scripts/evaluation/report.py <game-id>
 ```
+
+Welche Spiele gelesen werden, entscheidet nicht das Skript, sondern
+`services/accuracy.judged_games` — dieselbe Funktion wie für die Seite und den
+Export (§7b). Ohne Schalter kommen Report, Seite und Export also auf dieselben
+Spiele und dieselbe Kopfzahl.
 
 Schreibt `accuracy.md` nach `testdata/evaluation/_report/` und je Spiel dessen
 `ground_truth.txt` in den Bilderordner. Bewusst nicht nach `_results`: dorthin
@@ -337,6 +366,10 @@ Testset-Zahlen nebeneinander lesbar sind:
 - **Kohäsions-Tabelle**: Quote gegen die Zahl der Fragmente, aus denen der Pfeil
   zusammengesetzt werden musste — die Live-Entsprechung der Messung aus
   [erkennung-blob.md](erkennung-blob.md).
+- **Gebuchte MISS nach Lage der Spitze**: auf dem Board oder jenseits von
+  225 mm. Ein „korrekter“ MISS jenseits des Boards ist verdächtig — das Alignment
+  vergleicht nur Labels und paart ein MISS-Phantom mit einer von Hand
+  eingetragenen Null ([testrun1.md §10](../test/testrun1.md#10-report-und-seite-angleichen)).
 - Leer zurückgekommene Detektionen nach Failure-Typ (`no_change`,
   `alignment_failed`, `implausible_shape`) — das Maß für die Trigger-Qualität,
   zu der [client-diff-verbesserungen.md](client-diff-verbesserungen.md) gehört.
@@ -351,11 +384,15 @@ Report und Offline-Runner laufen lokal, die Daten entstehen auf dem Pi.
 Bilder damit dort, wo `run_all.py` und `run_debug.py` sie erwarten.
 
 ```bash
-uv run python scripts/evaluation/export.py --list         # Spiele mit Events und Frames
-uv run python scripts/evaluation/export.py                # alle Testläufe, ein Zip
-uv run python scripts/evaluation/export.py <game-id>      # nur dieses Spiel
+uv run python scripts/evaluation/export.py --list         # die ausgewählten Spiele
+uv run python scripts/evaluation/export.py                # dieselben wie der Report, ein Zip
+uv run python scripts/evaluation/export.py <game-id>      # nur dieses Spiel, ungefiltert
 uv run python scripts/evaluation/export.py --per-game     # ein Zip je Spiel
 ```
+
+Die Auswahl-Schalter `--test-runs-only` und `--include-unfinished` sind dieselben
+wie beim Report (`scripts/evaluation/selection.py`). Ein Export und der Report
+darüber lesen damit dieselben Spiele.
 
 Geschrieben wird nach `testdata/_exports/`, auf dem Pi also nach
 `/srv/dart-tracking/testdata/_exports/` — von dort per `scp` abholen. Auf dem Pi
@@ -388,7 +425,7 @@ laufen, sind schlimmer als keine. Die Rechnung liegt deshalb in
 | `domain/alignment.py` | Paarung getrackt ↔ akzeptiert (§3) |
 | `domain/visit_replay.py` | Visits aus dem Event-Log |
 | `domain/accuracy.py` | `judge` je Visit, `summarise` über eine Menge davon |
-| `services/accuracy.py` | liest die Logs, fasst je Spiel und gesamt zusammen |
+| `services/accuracy.py` | wählt die Spiele (`judged_games`), fasst je Spiel und gesamt zusammen |
 | `scripts/evaluation/report.py` | rendert Markdown, schreibt `ground_truth.txt` |
 | `dto/accuracy.py` + `evaluation.py` | dieselben Zahlen als JSON |
 
@@ -408,7 +445,10 @@ Einzelspiele, ein „nur die Liste"-Modus würde nichts sparen.
 gesetztem Testlauf-Schalter. Der Schalter aus §5 steuert das Ablegen der Bilder in
 `testdata/evaluation/`, nicht die Messung: Events schreibt der Recorder immer.
 Spiele ohne gefilmten Visit fallen heraus (`Visit.tracked`), sonst läsen sie
-sich als Pfeile, die die Kamera nicht gesehen hat.
+sich als Pfeile, die die Kamera nicht gesehen hat. Ebenso Spiele, deren gefilmte
+Visits keinen einzigen gewerteten Pfeil ergeben — etwa eines, das nur einen
+`no_change` hinterlassen hat. Es zählte sonst in „Games“ mit, ohne in einer
+Zeile der Tabelle aufzutauchen.
 
 **Nur `status = finished`.** Im Betrieb entstehen laufend Spiele, die nach ein,
 zwei Pfeilen liegen bleiben — Kamera ausprobiert, Kalibrierung getestet. Sie
@@ -419,7 +459,12 @@ nicht erst nach dem Laden aller Logs. Anders als die Statistik
 (`counts_in_statistics`, [persistenz.md §4.5](done/persistenz.md)) zählen
 verlassene Spiele hier auch mit neun oder mehr Pfeilen nicht: ein
 abgeschlossenes Spiel ist die sauberste Abgrenzung eines echten Durchlaufs.
-`report.py` bleibt davon unberührt.
+
+**Report und Export wählen genauso.** Früher las `report.py` standardmäßig alle
+Testläufe inklusive der nicht beendeten, die Seite alle beendeten Spiele — im
+ersten Testlauf 15 gegen 11 Spiele und zwei verschiedene Kopfzahlen für dieselbe
+Frage. Heute rufen alle drei `judged_games` auf; die Skripte weichen nur ab, wenn
+ein Schalter es ausdrücklich verlangt.
 
 ### 7c. Warum eine Admin-Rolle
 

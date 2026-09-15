@@ -282,6 +282,7 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
 
     if isinstance(command, NextPlayerDto):
         recorder.settle_visit(game)
+    recorder.settle_win(game)
 
     await _publish_state(game)
     if isinstance(command, NextPlayerDto):
@@ -461,6 +462,8 @@ async def _handle_throw_frame(
         absorbed = rejected_miss or outcome is DetectionFailure.DARTS_REMOVED
         if absorbed and aligned is not None:
             detection_store.set(game_id, client_id, aligned)
+            if scoring:
+                recorder.note_absorbed(game_id, raw)
         await hub.send(connection, DetectionResultDto.failed(outcome))
         if scoring:
             await recorder.note_failure(game_id, client_id, outcome, metrics)
@@ -473,10 +476,6 @@ async def _handle_throw_frame(
 
     if not scoring:
         return
-
-    # Only located darts: the report labels a series frame by frame against the
-    # darts that were booked.
-    recorder.note_throw(game_id, raw)
 
     # The detected segment carries the field, not just the points, so a tracked
     # dart reaches the scoreboard in the same form as a manually entered one.
@@ -498,6 +497,8 @@ async def _handle_throw_frame(
     # Pushed even when the game absorbed the dart (a trigger during a full
     # visit): the camera trims its drawn outlines against this state.
     game, changed = applied
+    recorder.note_throw(game_id, raw, booked=changed)
+    recorder.settle_win(game)
     await _publish_state(game)
 
     announcer = await _current_announcer(game_id)

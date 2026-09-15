@@ -51,9 +51,9 @@ Visits ohne Korrektur stiegen von 2/16 und 2/17 (A) auf 8/16 und 13/26 (E).
 | 5 | [Mindestfläche für punktende Pfeile](#5-mindestfläche-für-punktende-pfeile) | Server | S | offen |
 | 6 | [Zu lange Blobs neu fusionieren statt verwerfen](#6-zu-lange-blobs-neu-fusionieren-statt-verwerfen) | Server | M | offen |
 | 7 | [Rekalibrierung bei Kameraversatz](#7-rekalibrierung-bei-kameraversatz) | Server | S | offen |
-| 8 | [Testserien vollständig und treu schreiben](#8-testserien-vollständig-und-treu-schreiben) | Server | S | offen |
+| 8 | [Testserien vollständig und treu schreiben](#8-testserien-vollständig-und-treu-schreiben) | Server | S | **erledigt** — Feldmessung ausstehend |
 | 9 | [Kalibrierungen ins Event-Log](#9-kalibrierungen-ins-event-log) | Server | S | offen |
-| 10 | [Report und Seite angleichen](#10-report-und-seite-angleichen) | Skript | S | offen |
+| 10 | [Report und Seite angleichen](#10-report-und-seite-angleichen) | Skript | S | **erledigt** — Report und Seite: 11 Spiele, 468 / 609 |
 | 11 | [Client-Trigger: Schritt 2 und 4 zurückstellen](#11-client-trigger-schritt-2-und-4-zurückstellen) | Doku | – | Entscheidung |
 
 **Reihenfolge:** 8 zuerst, weil jede weitere Messung auf den Serien aufbaut.
@@ -301,6 +301,26 @@ schreiben; `report.py` labelt sie `NO_CHANGE`.
 **Messung.** Nach dem Fix: nächster Testlauf offline nachspielen, Abweichung
 live/offline muss auf Rauschen fallen.
 
+### Umsetzung
+
+- **8a:** `recorder.settle_win` schreibt den offenen Visit, sobald `winner`
+  gesetzt ist — nach jedem Kommando und jeder Buchung. Der Visit bleibt dabei im
+  Puffer: nimmt ein Undo den Siegpfeil zurück, schreibt der nächste Wechsel oder
+  Sieg dieselbe Serie vollständig neu. `flush` löscht dabei überzählige
+  `throwN_dartK.jpg` eines früheren Schreibens.
+- **8b + 8c:** Jeder Frame, der die Referenz weiterrollt, landet in der Serie,
+  mit seiner Art in `throwN_frames.txt`: `booked`, `absorbed` (verworfener MISS,
+  `darts_removed`) oder `unbooked` (Dart vom Spiel geschluckt). Eingeordnet wird
+  erst nach `_apply`, wenn `changed` feststeht.
+- **Report:** `booked` bekommt das Label aus dem Alignment, `absorbed` `NO_CHANGE`,
+  `unbooked` keins. Passt die Zahl der `booked`-Frames nicht zu den gebuchten
+  Darts, bleibt die Serie unmarkiert statt verschoben gelabelt. Serien ohne
+  Manifest (vor dieser Änderung) gelten als rein `booked` — `09750` throw9 und
+  throw15 fallen damit jetzt heraus.
+
+Details in [auswertung.md §4](../feature/auswertung.md#4-bilder-jeder-visit-eines-testlaufs).
+Die Messung steht aus: sie braucht einen Testlauf mit dem neuen Stand.
+
 ---
 
 ## 9. Kalibrierungen ins Event-Log
@@ -331,6 +351,29 @@ messbar.
 **Fix.** Report standardmäßig auf `finished_only`, mit Schalter für alle; Spiele
 ohne Judgement nicht zählen; die MISS-Paarung im Report getrennt ausweisen,
 bevor die Regel geändert wird.
+
+### Umsetzung
+
+- **Eine Auswahl für alle drei.** `services/accuracy.judged_games` wählt die
+  Spiele: standardmäßig alle beendeten, nur solche mit mindestens einem
+  gewerteten Pfeil. Die Seite (`overview`), `report.py` und `export.py` rufen sie
+  auf. Die Skripte teilen sich die Schalter `--test-runs-only` und
+  `--include-unfinished` (`scripts/evaluation/selection.py`); `--all-games`
+  entfällt. Explizit genannte Spiel-IDs umgehen die Filter.
+- **Nachgerechnet auf dem Export:** Seite und Report kommen ohne Schalter beide
+  auf **11 Spiele, 468 / 609 (76.8 %)**; mit `--include-unfinished` sind es
+  14 Spiele. `0a062` fällt in beiden Fällen heraus.
+- **MISS-Tabelle im Report:** gebuchte MISS nach Lage der Spitze. Auf dem Export:
+
+| Spitze | correct | wrong | phantom |
+|---|---|---|---|
+| auf dem Board (≤ 225 mm) | 52 | 11 | 18 |
+| jenseits von 225 mm | 6 | 14 | 11 |
+
+Die Paarungsregel selbst ist unverändert. Jenseits des Boards stehen 6 korrekte
+gegen 25 falsche und Phantome — ein Teil davon ist der Orientierungs-Flip aus
+Schritt 4. Ob die Regel geändert wird, entscheidet sich erst, wenn Schritt 4
+umgesetzt ist.
 
 ---
 

@@ -5,8 +5,9 @@ visit, by sequence alignment - so one missed dart reads as one missed dart and
 not as the two or three corrections it cost (docs/feature/auswertung.md §3).
 
 Usage:
-    uv run python scripts/evaluation/report.py                # every test run
-    uv run python scripts/evaluation/report.py --all-games    # every logged game
+    uv run python scripts/evaluation/report.py                       # finished games, as the page
+    uv run python scripts/evaluation/report.py --test-runs-only
+    uv run python scripts/evaluation/report.py --include-unfinished
     uv run python scripts/evaluation/report.py <game-id> ...
     uv run python scripts/evaluation/report.py --out results/evening-1
 
@@ -17,6 +18,7 @@ becomes a test case without being labelled by hand.
 
 import argparse
 import asyncio
+import math
 import sys
 from collections import Counter
 from pathlib import Path
@@ -29,27 +31,27 @@ sys.path.insert(0, str(_BACKEND / "src"))
 
 from app.api.features.evaluation.domain.accuracy import (  # noqa: E402
     Accuracy,
+    JudgedGame,
     Judgement,
-    judge,
     summarise,
 )
 from app.api.features.evaluation.domain.alignment import (  # noqa: E402
     DartOutcome,
     align,
 )
-from app.api.features.evaluation.domain.game_event import GameEvent  # noqa: E402
-from app.api.features.evaluation.domain.visit_replay import Visit, replay  # noqa: E402
-from app.api.features.evaluation.persistence.evaluation_repository import (  # noqa: E402
-    repository as evaluation_repository,
-)
+from app.api.features.evaluation.domain.visit_replay import Visit  # noqa: E402
+from app.api.features.evaluation.services.accuracy import judged_games  # noqa: E402
 from app.api.features.evaluation.services.frame_buffer import (  # noqa: E402
+    FrameKind,
     folder_of,
+    read_manifest,
     series_name,
 )
 from app.infrastructure import database  # noqa: E402
 from app.infrastructure.config import get_settings  # noqa: E402
 
 from scripts.common import rate_table, write_markdown  # noqa: E402
+from scripts.evaluation.selection import add_selection_arguments  # noqa: E402
 
 # Not `_results`: that is where `run_all.py` writes when pointed at this tree,
 # and it wipes the folder before each run.
@@ -63,12 +65,39 @@ NO_CHANGE_LABEL = "NO_CHANGE"
 # rather than a structural failure - the same cut the offline runner makes.
 NEAR_MISS_MM = 5.0
 
-def write_ground_truth(game_id: str, visits: list[Visit]) -> Path | None:
-    """Label the frames kept for this game, in the offline runner's format.
+# Radius of the board itself, in mm. A booked MISS beyond it lies off the board.
+BOARD_EDGE_MM = 225.0
 
-    Only a booked dart left a frame behind. A frame the alignment matched to no
-    accepted dart is a phantom: nothing new is in it, so the label is NO_CHANGE.
-    """
+
+def series_labels(folder: Path, visit: Visit) -> list[str] | None:
+    """Truth lines for one visit's frames, or None if they do not match the
+    booked darts. Absorbed frames read NO_CHANGE, unbooked ones stay unlabelled."""
+    series = series_name(visit.turn_index)
+    frames = len(list(folder.glob(f"{series}_dart*.jpg")))
+    # Series written before manifests existed hold booked darts only.
+    kinds = read_manifest(folder, series) or [FrameKind.BOOKED] * frames
+    if len(kinds) != frames or kinds.count(FrameKind.BOOKED) != len(visit.claimed):
+        return None
+
+    tracked = [event.label for event in visit.claimed]
+    expected = [event.label for event in visit.accepted]
+    booked = iter(
+        expected[right] if right is not None else NO_CHANGE_LABEL
+        for left, right in align(tracked, expected)
+        if left is not None
+    )
+
+    lines = []
+    for index, kind in enumerate(kinds, start=1):
+        if kind is FrameKind.BOOKED:
+            lines.append(f"{series}_dart{index} {next(booked)}")
+        elif kind is FrameKind.ABSORBED:
+            lines.append(f"{series}_dart{index} {NO_CHANGE_LABEL}")
+    return lines
+
+
+def write_ground_truth(game_id: str, visits: list[Visit]) -> Path | None:
+    """Label the frames kept for this game, in the offline runner's format."""
     folder = folder_of(game_id)
     if not folder.is_dir():
         return None
@@ -81,17 +110,11 @@ def write_ground_truth(game_id: str, visits: list[Visit]) -> Path | None:
         series = series_name(visit.turn_index)
         if not (folder / f"{series}_base.jpg").exists():
             continue
-        tracked = [event.label for event in visit.claimed]
-        expected = [event.label for event in visit.accepted]
-        frame = 0
-        for left, right in align(tracked, expected):
-            if left is None:
-                continue
-            frame += 1
-            lines.append(
-                f"{series}_dart{frame} "
-                f"{expected[right] if right is not None else NO_CHANGE_LABEL}"
-            )
+        labels = series_labels(folder, visit)
+        if labels is None:
+            print(f"  ! {folder.name}/{series}: frames do not match the booked darts, left unlabelled")
+            continue
+        lines += labels
 
     path = folder / GROUND_TRUTH_NAME
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -170,6 +193,30 @@ def cohesion_table(judgements: list[Judgement]) -> list[str]:
     )
 
 
+def miss_table(judgements: list[Judgement]) -> list[str]:
+    """Booked MISS darts by where their tip landed. A correct one off the board
+    may be a phantom that happened to meet a zero entered by hand."""
+    booked = [
+        j for j in judgements
+        if j.tracked is not None and j.tracked.label == "MISS" and j.tracked.position
+    ]
+    if not booked:
+        return ["No MISS was booked."]
+
+    def band(judgement: Judgement) -> str:
+        on_board = math.hypot(*judgement.tracked.position) <= BOARD_EDGE_MM
+        return "on the board" if on_board else f"beyond {BOARD_EDGE_MM:.0f} mm"
+
+    counts = Counter((band(j), j.outcome) for j in booked)
+    lines = ["| tip | correct | wrong | phantom |", "|---|---|---|---|"]
+    for name in ("on the board", f"beyond {BOARD_EDGE_MM:.0f} mm"):
+        lines.append(
+            f"| {name} | {counts[name, DartOutcome.CORRECT]} "
+            f"| {counts[name, DartOutcome.WRONG]} | {counts[name, DartOutcome.PHANTOM]} |"
+        )
+    return lines
+
+
 def failure_table(failures: Counter) -> list[str]:
     if not failures:
         return ["None."]
@@ -221,6 +268,10 @@ def build_report(
         "",
         *cohesion_table(judgements),
         "",
+        "## Booked MISS darts",
+        "",
+        *miss_table(judgements),
+        "",
         "## Detections that came back empty",
         "",
         *failure_table(failures),
@@ -232,70 +283,52 @@ def build_report(
 
 
 async def gather(
-    game_ids: list[str] | None, evaluation_only: bool
-) -> dict[str, list[GameEvent]]:
-    """Read the event logs of the games asked for."""
+    game_ids: list[str] | None, test_runs_only: bool, include_unfinished: bool
+) -> list[JudgedGame]:
+    """The games asked for, selected exactly as the evaluation page selects them."""
     database.init(get_settings().database_url)
     try:
         async with database.session_scope() as session:
-            ids = game_ids or [
-                game.id
-                for game in await evaluation_repository.logged_games(
-                    session, evaluation_only=evaluation_only
-                )
-            ]
-            return {
-                game_id: await evaluation_repository.events(session, game_id)
-                for game_id in ids
-            }
+            return await judged_games(
+                session,
+                game_ids=game_ids,
+                test_runs_only=test_runs_only,
+                include_unfinished=include_unfinished,
+            )
     finally:
         await database.close()
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("games", nargs="*", help="game ids; default is every test run")
-    parser.add_argument(
-        "--all-games",
-        action="store_true",
-        help="include games that were not marked as a test run",
-    )
+    parser.add_argument("games", nargs="*", help="game ids; default is every finished game")
+    add_selection_arguments(parser)
     parser.add_argument(
         "--out", type=Path, default=REPORT_DIR, help="where accuracy.md goes"
     )
     args = parser.parse_args()
 
-    logs = asyncio.run(gather(args.games or None, evaluation_only=not args.all_games))
-    if not logs:
-        print("no logged games found - play one with the test run switch on")
+    games = asyncio.run(
+        gather(args.games or None, args.test_runs_only, args.include_unfinished)
+    )
+    if not games:
+        print("no judged darts in the selected games - was a camera scoring?")
         return 1
 
-    games = 0
     all_visits: list[Visit] = []
     judgements: list[Judgement] = []
     failures: Counter = Counter()
 
-    for game_id, events in logs.items():
-        visits = [visit for visit in replay(events) if visit.tracked]
-        if not visits:
-            continue
-        games += 1
-        all_visits += visits
-        for visit in visits:
-            judgements += judge(game_id, visit)
-        for event in events:
-            if event.failure:
-                failures[event.failure] += 1
+    for game in games:
+        all_visits += game.visits
+        judgements += game.judgements
+        failures.update(event.failure for event in game.events if event.failure)
 
-        truth = write_ground_truth(game_id, visits)
+        truth = write_ground_truth(game.game.id, game.visits)
         if truth is not None:
             print(f"labelled kept frames: {truth}")
 
-    if not judgements:
-        print("no filmed visit in the logs - was a camera scoring?")
-        return 1
-
-    accuracy = summarise(games, all_visits, judgements)
+    accuracy = summarise(len(games), all_visits, judgements)
     args.out.mkdir(parents=True, exist_ok=True)
     path = write_markdown(
         args.out, REPORT_NAME, build_report(accuracy, judgements, failures)

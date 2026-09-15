@@ -182,6 +182,16 @@ class LoggedGame:
 
 
 @dataclass(frozen=True)
+class JudgedGame:
+    """One game's log, its filmed visits and the darts judged in them."""
+
+    game: LoggedGame
+    events: list[GameEvent]
+    visits: list[Visit]
+    judgements: list[Judgement]
+
+
+@dataclass(frozen=True)
 class GameAccuracy:
     game: LoggedGame
     accuracy: Accuracy

@@ -484,9 +484,11 @@ noch als `MISS` gebucht — nachdem die 0 schon von Hand eingetragen war. Seitde
 setzt `socket.py` bei `trace.rejected_miss` den ausgerichteten Frame als neue
 Referenz, bucht aber nichts. Das ist so punktneutral wie die Regel selbst, und
 es ist das, was `run_all.py` offline ohnehin tut (dort rollt jeder
-ausgerichtete Frame weiter). In der aufgezeichneten Wurfserie fehlt ein solcher
-Frame, weil deren Ground Truth gegen die gebuchten Darts ausgerichtet wird; die
-Offline-Kette weicht dort also um einen Rest ab, der keinen Punkt wert ist.
+ausgerichtete Frame weiter). In der aufgezeichneten Wurfserie fehlte ein solcher
+Frame anfangs, in der Annahme, die Offline-Kette weiche dadurch nur um einen Rest
+ab, der keinen Punkt wert ist. Der erste Testlauf widerlegte das (72 von 542
+Frames mit anderem Urteil); seitdem steht er als `absorbed` mit Label
+`NO_CHANGE` in der Serie ([testrun1.md §8](../test/testrun1.md#8-testserien-vollständig-und-treu-schreiben)).
 
 **Was bleibt.** 14 Phantome übersteht die Regel: die 8 doppelt gebuchten Pfeile
 und einige größere Blobs mit Kameraversatz über 1 px. Der Trigger selbst ist

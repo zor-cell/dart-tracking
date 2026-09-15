@@ -5,35 +5,57 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.features.evaluation.domain.accuracy import (
     AccuracyOverview,
     GameAccuracy,
-    Judgement,
+    JudgedGame,
     judge,
     summarise,
 )
-from app.api.features.evaluation.domain.visit_replay import Visit, replay
+from app.api.features.evaluation.domain.visit_replay import replay
 from app.api.features.evaluation.persistence.evaluation_repository import repository
 
 
-async def overview(session: AsyncSession) -> AccuracyOverview:
-    """Every finished, filmed game, newest first, and the totals over all of them.
-    A game nobody filmed is left out: it would read as darts the camera never saw."""
-    visits: list[Visit] = []
-    judgements: list[Judgement] = []
-    per_game: list[GameAccuracy] = []
+async def judged_games(
+    session: AsyncSession,
+    *,
+    game_ids: list[str] | None = None,
+    test_runs_only: bool = False,
+    include_unfinished: bool = False,
+) -> list[JudgedGame]:
+    """The games the page, the report and the export all read, oldest first.
 
-    for game in await repository.logged_games(
-        session, evaluation_only=False, finished_only=True
-    ):
+    Finished games by default; explicit ids skip both filters. A game without a
+    single judged dart is left out, filmed or not.
+    """
+    games = await repository.logged_games(
+        session,
+        evaluation_only=test_runs_only and not game_ids,
+        finished_only=not include_unfinished and not game_ids,
+    )
+    if game_ids:
+        wanted = set(game_ids)
+        games = [game for game in games if game.id in wanted]
+
+    judged: list[JudgedGame] = []
+    for game in games:
         events = await repository.events(session, game.id)
-        filmed = [visit for visit in replay(events) if visit.tracked]
-        if not filmed:
-            continue
+        visits = [visit for visit in replay(events) if visit.tracked]
+        judgements = [j for visit in visits for j in judge(game.id, visit)]
+        if judgements:
+            judged.append(JudgedGame(game, events, visits, judgements))
+    return judged
 
-        judged = [j for visit in filmed for j in judge(game.id, visit)]
-        per_game.append(GameAccuracy(game=game, accuracy=summarise(1, filmed, judged)))
-        visits += filmed
-        judgements += judged
 
-    per_game.reverse()
+async def overview(session: AsyncSession) -> AccuracyOverview:
+    """Every finished, judged game, newest first, and the totals over all of them."""
+    games = await judged_games(session)
+    per_game = [
+        GameAccuracy(game=g.game, accuracy=summarise(1, g.visits, g.judgements))
+        for g in reversed(games)
+    ]
     return AccuracyOverview(
-        total=summarise(len(per_game), visits, judgements), games=per_game
+        total=summarise(
+            len(games),
+            [visit for g in games for visit in g.visits],
+            [j for g in games for j in g.judgements],
+        ),
+        games=per_game,
     )
