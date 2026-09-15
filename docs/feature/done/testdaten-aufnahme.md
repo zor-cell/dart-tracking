@@ -16,7 +16,7 @@ solche Änderungen überhaupt gemessen werden können.
 ## 1. Warum
 
 Das Testset hat 285 Paare über fünf Boards und 16 Setups
-([erkennung.md §6](../erkennung.md#6-stand-der-messungen)). Jedes davon ist von Hand
+([erkennung.md §6](erkennung.md#6-stand-der-messungen)). Jedes davon ist von Hand
 entstanden: Fotoserie aufnehmen, auf den Rechner ziehen, Ordner benennen, und die
 `ground_truth.txt` **nachträglich gegen die Videos** beschriften. Der letzte
 Schritt ist der teure, und er ist auch der fehleranfälligste — ein Segment aus
@@ -29,7 +29,7 @@ ist ein Weg, diese Information abzugreifen, bevor sie verloren geht.
 Zwei Größenordnungen Unterschied im Aufwand: eine gespielte Session mit 30 Visits
 sind 90 beschriftete Paare — ein Drittel des heutigen Testsets, an einem Abend,
 ohne Nacharbeit. Damit werden auch die Aussagen aus
-[erkennung.md §6](../erkennung.md#6-stand-der-messungen) belastbarer, die derzeit
+[erkennung.md §6](erkennung.md#6-stand-der-messungen) belastbarer, die derzeit
 teils auf Board-Aufschlüsselungen mit 20–30 Paaren beruhen.
 
 Nebeneffekt, der eigenständig zählt: die Korrektur ist auch für das *Spiel*
@@ -273,7 +273,7 @@ ablesbar) und braucht keinen neuen Interaktionspunkt.
 **Kopplung an `confirmThrowEnabled`.** Ohne Bestätigung feuert `next_player`
 direkt nach dem dritten Dart, die Rekalibrierung sieht ein Board mit drei Pfeilen,
 und das aufgenommene `base` des nächsten Visits ist unbrauchbar — der bekannte
-Punkt aus [erkennung.md §7](../erkennung.md#7-offene-punkte). Aufnahme erzwingt
+Punkt aus [erkennung.md §7](erkennung.md#7-offene-punkte). Aufnahme erzwingt
 deshalb den Bestätigungs-Modus, oder das Setting warnt sichtbar.
 
 ### Segment-Picker
@@ -403,7 +403,7 @@ und dann sind alle so erzeugten Daten falsch, nicht nur einzelne.
 - **Wie viel Korrektur ist zu viel Korrektur?** Wenn der Spieler das Label setzt,
   nachdem er die Erkennung gesehen hat, besteht ein Ankereffekt — bei einem
   knappen Triple ist „passt schon" bequemer als nachzumessen. Für die 5-mm-Klasse
-  aus [erkennung.md §6](../erkennung.md#was-den-restfehler-ausmacht) ist das genau
+  aus [erkennung.md §6](erkennung.md#was-den-restfehler-ausmacht) ist das genau
   die Population, um die es geht. Möglicher Ausweg: das erkannte Segment im
   Korrektur-Schritt erst *nach* der Eingabe zeigen. Kostet Tempo, und ob es sich
   lohnt, ist ungeprüft.

@@ -3,14 +3,14 @@
 Dokumentation der serverseitigen Detektions-Pipeline: was sie tut, welche
 OpenCV-Algorithmen dabei zum Einsatz kommen, warum sie so aufgebaut ist und
 welche Ansätze auf dem Weg dorthin verworfen wurden. Baut auf der fertigen
-Kalibrierung auf ([kalibrierung.md](done/kalibrierung.md)) — ohne Homographie kein
+Kalibrierung auf ([kalibrierung.md](kalibrierung.md)) — ohne Homographie kein
 Scoring.
 
 Referenz-Implementierung:
 `backend/src/app/api/features/detection/services/dart_detector.py`.
-Literatur-Sammelstelle: [roadmap.md §6.2](../roadmap.md#62-pfeil-lokalisierung--verdeckung).
+Literatur-Sammelstelle: [roadmap.md §6.2](../../roadmap.md#62-pfeil-lokalisierung--verdeckung).
 Was als nächstes geändert wird und warum:
-[erkennung-verbesserungen.md](erkennung-verbesserungen.md).
+[erkennung-verbesserungen.md](../erkennung-verbesserungen.md).
 
 > **Stand:** Diese Pipeline ist neuer als die Kalibrierung und noch nicht auf
 > ihrem Endstand. Es gibt inzwischen eine Ground-Truth-Evaluation (§6): aktuell
@@ -19,7 +19,7 @@ Was als nächstes geändert wird und warum:
 > (knapp die Hälfte der Mismatches liegt unter 5 mm) und eine Handvoll
 > struktureller Ursachen (§6, §7). Die strukturelle Hälfte hat eine gemeinsame
 > Wurzel — der Pfeil kommt nicht als ein Blob an — und ein eigenes Dokument:
-> [erkennung-blob.md](erkennung-blob.md). Dort ist sie seit §6.5 auch direkt
+> [erkennung-blob.md](../erkennung-blob.md). Dort ist sie seit §6.5 auch direkt
 > gemessen und nicht mehr nur erschlossen: **nur ein Drittel der Pfeile erreicht
 > die Auswertung als eine Komponente**, und die Quote fällt mit jeder weiteren.
 > Das Dokument wächst mit.
@@ -89,7 +89,7 @@ also womöglich auf der Silhouette eines gezogenen Pfeils. Das Signal dafür ist
 der **Rundenwechsel**: `next_player` schickt allen Kameras ein
 `calibration_requested`, die daraufhin einen frischen Frame kalibrieren und
 damit die Referenz auf das leere Board neu setzen (siehe
-[multi-device.md §5c](done/multi-device.md#5c-rekalibrierung-anfordern)).
+[multi-device.md §5c](multi-device.md#5c-rekalibrierung-anfordern)).
 
 Das setzt voraus, dass der Rundenwechsel *nach* dem Ziehen der Pfeile ausgelöst
 wird — was er tut, wenn er bestätigt wird („Wurf bestätigen"). Steht die
@@ -284,7 +284,7 @@ Stattdessen werden die Fragmente zu einem Pfeil zusammengefügt (`_fuse_dart_fra
    lag durch den Flight allein. Gemessen über die 285 Paare: 90 → 222,
    **110 → 227**, 130 → 227, 150 → 219, 180 → 217 — ein Optimum im Inneren, und
    der Grund, warum 110 und nicht mehr. Aufschlüsselung in
-   [erkennung-blob.md §6.1b](erkennung-blob.md#61b-fusions-reichweite-der-deckel-war-zu-eng).
+   [erkennung-blob.md §6.1b](../erkennung-blob.md#61b-fusions-reichweite-der-deckel-war-zu-eng).
 
 Bleibt nach Fläche nichts übrig oder ist der zusammengefügte Pfeil kleiner als
 `_MIN_DART_AREA_MM2 = 20 mm²` → `DetectionFailure.NO_CHANGE` (kein Wurf, oder der
@@ -342,7 +342,7 @@ Registrierungs-Reste an den aufgedruckten Zahlen (§5.13), die die Fusion aus
 vier, fünf Krümeln zu einer Linie fädelt. Die Regel greift nur auf einen `MISS`
 und kann deshalb nie einen punktbringenden Pfeil kosten; der Preis ist ein
 echter Fehlwurf, der von Hand als 0 nachgetragen werden muss. Befund und Wahl
-der Grenze in [client-diff-verbesserungen.md §9](client-diff-verbesserungen.md#9-kleine-miss-blobs-verwerfen-server).
+der Grenze in [client-diff-verbesserungen.md §9](../client-diff-verbesserungen.md#9-kleine-miss-blobs-verwerfen-server).
 
 ---
 
@@ -400,10 +400,10 @@ ausgelegt und löst auch ohne Wurf aus. Ein automatisch gebuchter Nullwurf wäre
 dann ein Phantom-Pfeil, der eine Aufnahme verbraucht. Der Detektor kann „Wurf
 fand statt, blieb aber nicht stecken" nicht von „es gab keinen Wurf"
 unterscheiden — diese Unterscheidung muss vom Client kommen (Arbeitsplan in
-[client-diff-verbesserungen.md](client-diff-verbesserungen.md)).
+[client-diff-verbesserungen.md](../client-diff-verbesserungen.md)).
 
 Die Live-Auswertung zählt ein `no_change` dagegen immer als `missed`, auch bei
-leerem Board ([auswertung.md §3a](auswertung.md#3a-die-gelesene-null-zählt-nicht)).
+leerem Board ([auswertung.md §3a](../auswertung.md#3a-die-gelesene-null-zählt-nicht)).
 Das ist kein Widerspruch, sondern eine andere Frage: offline wird gemessen, ob
 die Pipeline das Frame-Paar richtig *gelesen* hat, live, ob das System selbst
 *gewertet* hat. Bei leerem Board hat es richtig gelesen und trotzdem nichts
@@ -466,7 +466,7 @@ viele Mismatches innerhalb von 5 mm liegen.
 
 Dazu der Abschnitt **Per blob cohesion**: aus wie vielen Komponenten der
 gewertete Pfeil zusammengesetzt werden musste, aufgeschlüsselt gegen die Quote.
-Das misst das Ziel aus [erkennung-blob.md §1](erkennung-blob.md#1-die-ausgangsthese)
+Das misst das Ziel aus [erkennung-blob.md §1](../erkennung-blob.md#1-die-ausgangsthese)
 direkt — „eine Detektion = eine Komponente" — statt es aus der Segment-Quote zu
 erschließen, die von zu vielem anderen abhängt. Aktuell erreichen **96 von 280**
 Pfeilen (34 %) die Auswertung als ein Stück, und die Quote fällt von 81 % bei
@@ -657,7 +657,7 @@ Mitte, ihre Residuen erreichen die Scoring-Fläche also genauso leicht wie ein
 Pfeil.
 
 Vollständige Sweeps in
-[erkennung-verbesserungen.md](erkennung-verbesserungen.md#2-gradientenabhängiger-schwellwert-verworfen).
+[erkennung-verbesserungen.md](../erkennung-verbesserungen.md#2-gradientenabhängiger-schwellwert-verworfen).
 
 ### 5.12 Bettskalierter Schwellwert  *(verworfen)*
 
@@ -675,7 +675,7 @@ Fläche, nicht der Wert: eine über die ganze Suchfläche gelockerte Schwelle ka
 ein paar hundert echte Pfeil-Pixel gegen zehntausende Fremdpixel, und weil die
 Fusion auf dem *breitesten* Fragment ankert, genügt eines davon, um den Fit zu
 entführen. Vollständige Tabellen und die Konsequenz daraus in
-[erkennung-blob.md](erkennung-blob.md).
+[erkennung-blob.md](../erkennung-blob.md).
 
 ### 5.13 Anker nach Überzeugungskraft statt nach Breite  *(verworfen)*
 
@@ -697,7 +697,7 @@ nach **jedem** Erscheinungsmerkmal überzeugender als der Pfeil: breit, hell,
 flächig. Ihn trennt vom Pfeil nur, **wo** er liegt — im Surround, wo keine Spitze
 stecken kann. Ein tragfähiger Anker-Test braucht also Board-Geometrie, keine
 Pixelstatistik. Vollständige Tabelle in
-[erkennung-blob.md §6.1](erkennung-blob.md#61-anker-entkoppeln-s-als-umsortierung-verworfen).
+[erkennung-blob.md §6.1](../erkennung-blob.md#61-anker-entkoppeln-s-als-umsortierung-verworfen).
 
 ### 5.14 Anderer Differenz-Kanal: ΔV statt max|ΔBGR|  *(verworfen)*
 
@@ -815,7 +815,7 @@ Zeilen vergleichbar bleiben:
 Die letzte Zeile kostet auf dem Testsatz genau zwei echte Fehlwürfe (Truth
 `MISS`, jetzt `NO_CHANGE`), punktemäßig identisch. Gewonnen wird sie im
 laufenden Spiel: dort waren ein Drittel aller gebuchten Darts solche Krümel
-([client-diff-verbesserungen.md §9](client-diff-verbesserungen.md#9-kleine-miss-blobs-verwerfen-server)).
+([client-diff-verbesserungen.md §9](../client-diff-verbesserungen.md#9-kleine-miss-blobs-verwerfen-server)).
 
 Die letzte Zeile ist **kein Rückschritt der Pipeline**, sondern eine Verschärfung
 des Maßstabs: an der Erkennung hat sich nichts geändert, nur zählt ein
@@ -829,7 +829,7 @@ keine Bildänderung ist, aber der Warp-Rand war nur *eine* Quelle breiter, helle
 Fremdfragmente; die anderen bleiben. Der Versuch, auch die zu fassen, brachte
 drei weitere Pfeile, kostete aber auf dem dunkelsten Board zwei und ist deshalb
 nicht Teil der Pipeline (§5.11). Aufschlüsselung in
-[erkennung-verbesserungen.md](erkennung-verbesserungen.md).
+[erkennung-verbesserungen.md](../erkennung-verbesserungen.md).
 
 Die Fehler*verteilung* bewegt sich deutlicher als die Quote, und das ist die
 interessantere Zahl:
@@ -881,7 +881,7 @@ Die **29 unter 5 mm** sind die Präzisionsgrenze — bei einem Draht von rund 1 
 Breite und einer Spitzenlage auf wenige Millimeter genau ist das kein Fehler, den
 ein besserer Algorithmus wegräumt. Die **16 über 20 mm** dagegen haben jeweils
 eine benennbare Ursache und sind das eigentliche Ziel; sie werden in
-[erkennung-verbesserungen.md](erkennung-verbesserungen.md) einzeln aufgeschlüsselt.
+[erkennung-verbesserungen.md](../erkennung-verbesserungen.md) einzeln aufgeschlüsselt.
 
 **Der strukturelle Teil ist der, der sich bewegt.** Über 20 mm waren es 23, jetzt
 16 — die Fusions-Reichweite (§2.3) hat sieben Fälle geräumt, in denen der Fit auf
@@ -925,7 +925,7 @@ also eine **zweite** Kompressionsgeneration, die es live nie sieht.
 Betroffen waren nicht verstreute Einzelbilder, sondern **80 von 380
 Eingabefotos, und zwar genau `cc_setup1/2` und `fh_setup1/2`** — zwei ganze
 Boards von fünf. Auf den live aufgezeichneten Serien
-([auswertung.md](auswertung.md)) kostete derselbe Effekt 81.8 % → 54.5 %.
+([auswertung.md](../auswertung.md)) kostete derselbe Effekt 81.8 % → 54.5 %.
 
 Der Fix ist eine Bedingung: ein Bild innerhalb der Aufnahmegröße wird
 unverändert durchgereicht. Gemessen über die vollen 285 Paare, vorher/nachher:
@@ -963,7 +963,7 @@ Neben dem festen Testset misst sich die Pipeline seit neuestem auch beim
 normalen Spielen: was die Kamera bucht, wird gegen das gehalten, was die Spieler
 am Ende übernehmen. Weil eine verpasste Erkennung mehrere Korrekturen kostet,
 werden die beiden Sequenzen je Visit *ausgerichtet* statt Korrekturen gezählt —
-Verfahren, Kennzahlen und Grenzen in [auswertung.md](auswertung.md). Korrigierte
+Verfahren, Kennzahlen und Grenzen in [auswertung.md](../auswertung.md). Korrigierte
 Runden legen ihre Kamerabilder als Wurfserie ab und wachsen damit ins Testset
 hinein.
 
@@ -972,7 +972,7 @@ hinein.
 ## 7. Offene Punkte
 
 Die konkret geplanten Schritte mit Befund, Fix und erwartetem Hebel stehen in
-[erkennung-verbesserungen.md](erkennung-verbesserungen.md). Hier bleiben die
+[erkennung-verbesserungen.md](../erkennung-verbesserungen.md). Hier bleiben die
 längerfristigen Punkte:
 
 - **Signal statt Algorithmus — teilweise beantwortet.** Die These war, das
@@ -1001,9 +1001,9 @@ längerfristigen Punkte:
 - **Board-Clear bei Auto-Weiterschaltung.** Das Re-Base am Rundenwechsel (§1)
   hängt daran, dass der Wechsel bestätigt wird, also nach dem Ziehen kommt. Ohne
   Bestätigung feuert er direkt nach dem dritten Dart. Siehe
-  [client-diff-verbesserungen.md §3](client-diff-verbesserungen.md#3-auto-advance-vom-kameramodus-entkoppeln).
+  [client-diff-verbesserungen.md §3](../client-diff-verbesserungen.md#3-auto-advance-vom-kameramodus-entkoppeln).
 - **Größen-Ablehnung nur grob.** `IMPLAUSIBLE_SHAPE` fängt seit
-  [client-diff-verbesserungen.md §1](client-diff-verbesserungen.md#1-plausibilitätsgrenze-auf-dem-blob-server)
+  [client-diff-verbesserungen.md §1](../client-diff-verbesserungen.md#1-plausibilitätsgrenze-auf-dem-blob-server)
   ab, was klar zu groß ist (>250 mm lang oder >8000 mm²). Die Grenzen liegen weit
   oben, weil ein echter Pfeil im Testsatz bis 177 mm lang wird — der Bereich
   dazwischen ist ungeprüft und braucht ein anderes Merkmal als die reine Größe.

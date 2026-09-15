@@ -119,7 +119,7 @@ Die gehören in **eine Pipeline**, dann ist es ein Roundtrip statt drei.
 eine Kopie beim `np.frombuffer`. Über Loopback grob **5–15 ms je Richtung**, also
 10–30 ms auf jede Detektion. Verkraftbar, aber nicht gratis — und geschätzt, nicht
 gemessen. Solange die Detektionslaufzeit selbst nicht gemessen ist
-([erkennung.md §6](../erkennung.md): „noch nicht systematisch gemessen"), lässt sich
+([erkennung.md §6](erkennung.md): „noch nicht systematisch gemessen"), lässt sich
 der Anteil nicht beziffern. Deshalb bleibt das Frame lokal, bis es einen Grund
 gibt, das zu ändern.
 
@@ -930,10 +930,10 @@ kopieren.
 einer Millisekunde, das Performance-Argument aus §3 wäre erledigt.
 
 *Warum verworfen:* Die Referenz **rollt nach jedem Wurf weiter** auf das
-ausgerichtete Bild ([erkennung.md §1](../erkennung.md)). Ein JPEG-Roundtrip pro Wurf
+ausgerichtete Bild ([erkennung.md §1](erkennung.md)). Ein JPEG-Roundtrip pro Wurf
 schreibt also generationsweise Kompressionsartefakte in genau das Bild, gegen das
 mit Schwellwert 40 differenziert wird. Die Artefakte sitzen an Kanten — dort, wo
-laut [erkennung.md §5.11](../erkennung.md) das Registrierungs-Residuum ohnehin bei
+laut [erkennung.md §5.11](erkennung.md) das Registrierungs-Residuum ohnehin bei
 ~52 Grauwerten pro Pixel liegt und die Fusion sich schon heute gelegentlich einen
 falschen Anker holt. Zehn Millisekunden gegen ein Risiko auf der Kernmetrik der
 Arbeit ist der falsche Tausch.

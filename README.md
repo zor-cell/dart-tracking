@@ -43,7 +43,7 @@ Hybrid-Architektur, um kontinuierliches Video-Streaming zu vermeiden:
 
 | Dokument | Inhalt |
 |---|---|
-| [erkennung.md](docs/feature/erkennung.md) | Pfeil-Erkennung: Pipeline, Fehlerbehandlung, Messungen |
+| [erkennung.md](docs/feature/done/erkennung.md) | Pfeil-Erkennung: Pipeline, Fehlerbehandlung, Messungen |
 | [erkennung-verbesserungen.md](docs/feature/erkennung-verbesserungen.md) | Geplante Einzelschritte an der Erkennung, mit Befund und Hebel |
 | [erkennung-blob.md](docs/feature/erkennung-blob.md) | „Der Pfeil muss als ein Blob ankommen" — die strukturelle Fehlerhälfte |
 | [client-diff-verbesserungen.md](docs/feature/client-diff-verbesserungen.md) | Trigger-Zuverlässigkeit der Frame-Differenz |

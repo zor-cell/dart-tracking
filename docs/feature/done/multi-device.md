@@ -217,7 +217,7 @@ ausschließlich serverseitig.
 ### Würfe, die neben dem Board gelandet sind
 
 Die Detektion sucht bis 225 mm hinaus, damit ein Pfeil im Surround überhaupt
-*gefunden* wird ([erkennung.md §2.1](../erkennung.md)) — die gezeichnete Scheibe
+*gefunden* wird ([erkennung.md §2.1](erkennung.md)) — die gezeichnete Scheibe
 reicht aber nur bis 200 mm. Ein Punkt darüber hinaus lag deshalb am Rand oder
 ganz außerhalb: teils angeschnitten, teils gar nicht sichtbar.
 
@@ -499,7 +499,7 @@ Fehlschlag ohnehin auf dem Gerät, an dem auch nachjustiert werden muss.
 2. **Das Rundenende.** `next_player` fordert dieselbe Rekalibrierung an. Das ist
    der wichtigere der beiden: am Rundenende werden die Pfeile aus dem Board
    gezogen, und das ist zugleich der Moment, in dem ein frisches Leer-Board als
-   Referenz aufgenommen werden kann (siehe [erkennung.md §1](../erkennung.md)) und
+   Referenz aufgenommen werden kann (siehe [erkennung.md §1](erkennung.md)) und
    der, in dem am ehesten gegen Board oder Kamera gestoßen wurde.
 
 Der zweite Auslöser hängt an einer Annahme: dass der Rundenwechsel **nach** dem

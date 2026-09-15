@@ -1,10 +1,10 @@
 # Erkennung: geplante Verbesserungen
 
 Arbeitsplan für die nächste Runde an der Detektions-Pipeline. Die Pipeline
-selbst ist in [erkennung.md](erkennung.md) beschrieben — dieses Dokument hält
+selbst ist in [erkennung.md](done/erkennung.md) beschrieben — dieses Dokument hält
 fest, *was als nächstes warum* geändert wird, damit die Reihenfolge und die
 Begründungen eine Session überdauern. Erledigte Schritte wandern inhaltlich nach
-[erkennung.md](erkennung.md) und bleiben hier nur als Zeile in der Statustabelle
+[erkennung.md](done/erkennung.md) und bleiben hier nur als Zeile in der Statustabelle
 stehen.
 
 Es geht hier ausschließlich um die **Genauigkeit** der Pipeline: gegeben ein
@@ -19,7 +19,7 @@ die alten dunklen (`pz`, `tz`) und die neuen mit Wolfram-Spitzen und **einfarbig
 weißen Flights** (`cc`, `fh`, `pz-light`). 285 Paare über fünf Boards / 16 Setups.
 Ausgangsstand **216/285 = 75.8 %**, aktueller Stand **226/285 = 79.3 %**
 (Metrik: `NO_CHANGE` gegen ein erwartetes `MISS` zählt als korrekt, siehe
-[erkennung.md §3](erkennung.md#no_change-ist-punktemäßig-ein-miss)).
+[erkennung.md §3](done/erkennung.md#no_change-ist-punktemäßig-ein-miss)).
 
 Die Fehlerverteilung in `backend/testdata/detection/_results/accuracy.md` zerfällt
 in zwei Klassen: 32 der 67 Mismatches liegen **unter 5 mm** vom erwarteten Segment
@@ -41,7 +41,7 @@ strukturellen Ursache. Dieser Plan zielt ausschließlich auf die zweite Klasse.
 | 7 | [Der Pfeil muss als ein Blob ankommen](erkennung-blob.md) | L | **in Arbeit — das eigentliche Ziel**, dem die Schritte oben zuarbeiten. Blob-Metriken (§6.5) und Fusions-Reichweite (§6.1b) erledigt, 77.9 % → **79.6 %**; Anker-Umsortierung (§6.1) verworfen |
 
 Nach jedem Schritt `scripts/detection/run_all.py` laufen lassen und die
-Accuracy-Tabelle in [erkennung.md §6](erkennung.md#6-stand-der-messungen)
+Accuracy-Tabelle in [erkennung.md §6](done/erkennung.md#6-stand-der-messungen)
 fortschreiben — dieselbe A/B-Disziplin wie bei den ersten vier Entwicklungs-
 schritten. Ohne Vorher/Nachher-Zahl gilt ein Schritt nicht als erledigt.
 
@@ -106,7 +106,7 @@ Drei Fälle haben sich geändert:
   vorher hat die Pipeline den Randstreifen gefunden, ihn außerhalb von 170 mm
   verortet und **aus dem falschen Grund** `MISS` gemeldet. Unter der korrigierten
   Metrik (`NO_CHANGE` = `MISS`, siehe
-  [erkennung.md §3](erkennung.md#no_change-ist-punktemäßig-ein-miss)) zählt dieser
+  [erkennung.md §3](done/erkennung.md#no_change-ist-punktemäßig-ein-miss)) zählt dieser
   Fall weiterhin als Treffer — jetzt aus dem richtigen Grund.
 
 **Metrik-Hinweis.** Zwischen den beiden Messungen wurde die Auswertung geändert:
@@ -309,7 +309,7 @@ und unbekannte Setups sind der Zweck des ganzen Systems.
 Der Code ist entfernt (`_threshold_map`, `_drop_unseeded`, die vier Konstanten
 und die zugehörigen Trace-Felder). Der aktuelle Stand ist wieder **218/285 =
 76.5 %**, verifiziert. Die Messungen bleiben hier und in
-[erkennung.md §5.11](erkennung.md#511-gradientenabhängiger-schwellwert-gegen-registrierungs-reste)
+[erkennung.md §5.11](done/erkennung.md#511-gradientenabhängiger-schwellwert-gegen-registrierungs-reste)
 stehen, weil das Negativergebnis für die Arbeit brauchbar ist: es benennt die
 **Bedingung**, unter der Kanten-Gating trägt.
 
@@ -340,7 +340,7 @@ Wichtig, weil die bisherige Doku es einseitig darstellt: das Problem ist
 
 Derselbe Mechanismus, gespiegelt. „Helleres Pfeilmaterial" ist deshalb keine
 Lösung, sondern verschiebt nur, *welche* Betten blind sind — das ist bereits als
-Ergebnis in [erkennung.md §7](erkennung.md#7-offene-punkte) festgehalten. Was
+Ergebnis in [erkennung.md §7](done/erkennung.md#7-offene-punkte) festgehalten. Was
 fehlt, ist ein Front-End, das beide Fälle trägt.
 
 **Gemessen** (`pz-light_setup3`, HSV auf OpenCVs 0–255-Skala für S und V):
@@ -402,7 +402,7 @@ hellem Bett. Der Schwellwert wirft also nicht Rauschen weg, sondern Signal:
 40 ist das Zehnfache des schwarzen Bett-Rauschens (4.1), aber unterhalb des
 Pfeils selbst.
 
-Damit ist auch [erkennung.md §5.10](erkennung.md#510-schwellwert-senken-um-das-schwarz-signal-zu-heben)
+Damit ist auch [erkennung.md §5.10](done/erkennung.md#510-schwellwert-senken-um-das-schwarz-signal-zu-heben)
 neu einzuordnen. Dort wurde der Schwellwert *global* gesenkt und es wurde
 schlechter (40 und 20 gleichauf, 12 katastrophal) — daraus folgte „unterhalb von
 40 steckt kein Pfeil-Signal, nur Rauschen". Die Messung sagt: das gilt für die
@@ -561,7 +561,7 @@ Gedeckelt (höchstens eine Segmentbreite) und nur bei gut bestimmter Achse. Dami
 wird die Abbruchstelle von einem Fehler zu einer Information.
 
 **Priorität.** Durch die Wolfram-Spitzen nicht mehr der Hauptfehler, adressiert
-aber den in [erkennung.md §6](erkennung.md#6-stand-der-messungen) dokumentierten
+aber den in [erkennung.md §6](done/erkennung.md#6-stand-der-messungen) dokumentierten
 Restfehler des farb-gegateten Signals.
 
 ---
@@ -578,7 +578,7 @@ Homographie nach jedem Wurf neu zu berechnen.
   ORB-Registrierung da, und sie liefert an diesen Frames 2412–2907 RANSAC-Inlier.
   Ein Verrutschen ist nicht die Fehlerquelle.
 - Ein Ellipsen-Fit pro Frame ist **messbar schlechter**:
-  [erkennung.md §5.3](erkennung.md#53-zwei-unabhängige-ellipsen-fits-statt-registrierung)
+  [erkennung.md §5.3](done/erkennung.md#53-zwei-unabhängige-ellipsen-fits-statt-registrierung)
   dokumentiert 7 % Achsendrift zwischen zwei unabhängigen Fits aufeinander-
   folgender Frames einer Serie. Das zerstört zusätzlich die Differenzbasis, auf
   der die ganze Pipeline steht.

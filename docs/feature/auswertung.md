@@ -4,7 +4,7 @@ Wie aus einem normal gespielten Abend eine belastbare Genauigkeitszahl wird:
 was mitgeschrieben wird, warum Korrekturen nicht gezählt, sondern *ausgerichtet*
 werden, und welche Zahlen am Ende herausfallen.
 
-Baut auf der Detektion auf ([erkennung.md](erkennung.md)) und ergänzt deren
+Baut auf der Detektion auf ([erkennung.md](done/erkennung.md)) und ergänzt deren
 Offline-Auswertung auf dem festen Testset um eine, die während des Spiels
 entsteht.
 
@@ -186,7 +186,7 @@ kein einziger Trigger kam — sonst wäre der schlimmste Recall-Fall unsichtbar.
 Ein `no_change` heißt: die Kamera hat hingesehen und nichts Neues am Board
 gefunden — der Pfeil ist abgeprallt oder blieb nicht stecken. Das ist
 punktemäßig dasselbe wie ein `MISS`, und offline zählt `run_all.py` es deshalb
-als korrekt ([erkennung.md §3](erkennung.md)). **Live nicht.** Ein `no_change`
+als korrekt ([erkennung.md §3](done/erkennung.md)). **Live nicht.** Ein `no_change`
 zählt als `missed`.
 
 Der Weg dorthin ging über zwei verworfene Varianten, beide lehrreich.
@@ -228,7 +228,7 @@ Was daran *doch* zu reparieren war, lag woanders: offline trugen „nichts zu
 sehen" und „Pfeil steckt im Surround" beide das Label `MISS`, sodass eine
 verpasste Detektion einen Treffer bekam, sobald der Pfeil außerhalb der Wertung
 steckte. Seit `NO_CHANGE` ein eigenes Ground-Truth-Label ist, ist das getrennt
-([erkennung.md §3](erkennung.md)); die Offline-Quote fiel dadurch von 227 auf
+([erkennung.md §3](done/erkennung.md)); die Offline-Quote fiel dadurch von 227 auf
 **226 / 285** — ein Pfeil, der vorher zu Unrecht als Treffer galt.
 
 ---
@@ -273,7 +273,7 @@ Kein `--raw` nötig: die Frames liegen schon so vor, wie der Client sie sendet
 (max. 1280 px, JPEG q85), und `as_client_would_send` reicht ein Bild innerhalb
 der Aufnahmegröße unverändert durch. Vorher komprimierte es blind ein zweites
 Mal, was auf diesen elf Pfeilen **81.8 % → 54.5 %** kostete — siehe
-[erkennung.md §6](erkennung.md), wo derselbe Effekt auf dem kuratierten Testset
+[erkennung.md §6](done/erkennung.md), wo derselbe Effekt auf dem kuratierten Testset
 gemessen ist.
 
 Das ist der Grund für die Aufteilung des Schalters: die akzeptierten Visits sind

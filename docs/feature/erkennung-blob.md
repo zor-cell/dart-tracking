@@ -6,7 +6,7 @@ als Streu-Fragmente, die `_fuse_dart_fragments` hinterher wieder zusammenraten
 muss. Alles, was danach kommt — Anker-Wahl, Achsenfit, Spitzen-Präzision — ist
 Schadensbegrenzung an diesem einen Punkt.
 
-Pipeline-Beschreibung: [erkennung.md](erkennung.md). Geplante Einzelschritte:
+Pipeline-Beschreibung: [erkennung.md](done/erkennung.md). Geplante Einzelschritte:
 [erkennung-verbesserungen.md](erkennung-verbesserungen.md). Dieses Dokument ist
 kein Schritt in jener Liste, sondern das Ziel, auf das die Liste hinauslaufen
 soll.
@@ -36,7 +36,7 @@ zusammengesetzt wurde, und ob die Spitze in der größten davon liegt.
 ## 2. Warum das der zentrale Punkt ist
 
 Die Fusion ankert auf dem **breitesten** Fragment und nennt es Flight
-([erkennung.md §2.3](erkennung.md#23-fragment-fusion-den-pfeil-aus-bruchstücken-zusammensetzen)).
+([erkennung.md §2.3](done/erkennung.md#23-fragment-fusion-den-pfeil-aus-bruchstücken-zusammensetzen)).
 Diese Regel ist nur haltbar, solange die Maske im Wesentlichen aus Pfeil besteht.
 Sobald sie auch Fremdmaterial enthält — Registrierungs-Residuen an Drähten, die
 weißen Board-Zahlen, Branding auf dem Surround — konkurriert jedes breite,
@@ -61,7 +61,7 @@ Genau das ist unten viermal hintereinander gemessen worden.
 
 Ausgangsstand **218/285 = 76.5 %**, Endstand **222/285 = 77.9 %**. Alle Zahlen mit
 `scripts/detection/run_all.py` über die vollen 285 Paare, Metrik wie in
-[erkennung.md §3](erkennung.md#no_change-ist-punktemäßig-ein-miss).
+[erkennung.md §3](done/erkennung.md#no_change-ist-punktemäßig-ein-miss).
 
 ### 3.1 Ortsabhängiger Schwellwert — verworfen
 
@@ -113,7 +113,7 @@ mehr tut. Das ist kein Parameterproblem, das ist ein Strukturproblem.
 Jede Zeile hat dabei eine echte Fehlerursache beseitigt, und trotzdem:
 
 - **B** (Hysterese) ist die Lehre aus
-  [erkennung.md §5.11](erkennung.md#511-gradientenabhängiger-schwellwert-gegen-registrierungs-reste),
+  [erkennung.md §5.11](done/erkennung.md#511-gradientenabhängiger-schwellwert-gegen-registrierungs-reste),
   korrekt herum angewandt: der strenge Schwellwert entscheidet *ob* etwas eine
   Änderung ist, der lockere nur *wie weit* sie reicht. Bringt +7 gegenüber A,
   bleibt 14 unter der Baseline.
@@ -255,10 +255,10 @@ Quote, das Optimum jedes Mal bei „Änderung aus":
 
 | Anlauf | Idee | Ergebnis |
 |---|---|---|
-| [erkennung.md §5.10](erkennung.md#510-schwellwert-senken-um-das-schwarz-signal-zu-heben) | Schwelle global senken | 40 = 20, bei 12 Absturz |
-| [§5.11](erkennung.md#511-gradientenabhängiger-schwellwert-gegen-registrierungs-reste) | Schwelle am Gradienten koppeln | +3 gesamt, −2 auf `fh` |
-| [§5.12](erkennung.md#512-bettskalierter-schwellwert-verworfen) | Schwelle am Bett koppeln | 4 Varianten, alle unter Baseline |
-| [§5.14](erkennung.md#514-anderer-differenz-kanal-δv-statt-maxδbgr-verworfen) | anderen Kanal wählen | schlechter auf **jedem** Wert |
+| [erkennung.md §5.10](done/erkennung.md#510-schwellwert-senken-um-das-schwarz-signal-zu-heben) | Schwelle global senken | 40 = 20, bei 12 Absturz |
+| [§5.11](done/erkennung.md#511-gradientenabhängiger-schwellwert-gegen-registrierungs-reste) | Schwelle am Gradienten koppeln | +3 gesamt, −2 auf `fh` |
+| [§5.12](done/erkennung.md#512-bettskalierter-schwellwert-verworfen) | Schwelle am Bett koppeln | 4 Varianten, alle unter Baseline |
+| [§5.14](done/erkennung.md#514-anderer-differenz-kanal-δv-statt-maxδbgr-verworfen) | anderen Kanal wählen | schlechter auf **jedem** Wert |
 
 Der vierte ist der lehrreichste, weil er die Vormessung gegen sich hatte: ΔV
 gewann im Signal-zu-Untergrund-Verhältnis **jedes einzelne Feld** und verlor
@@ -299,7 +299,7 @@ Reihenfolge nach Hebel geteilt durch Risiko. Jeder Schritt einzeln gegen die
 Die Anker-Regel ist der Multiplikator hinter jedem Fehlschlag oben. Der Anker muss
 gar nicht der Flight sein — welches Ende der Flight ist, entscheidet ohnehin erst
 `_tip_and_far_end` über die Endbreiten am fertig gefusten Blob
-([erkennung.md §2.4](erkennung.md#24-hauptachse-und-spitze)). Der Anker muss nur
+([erkennung.md §2.4](done/erkennung.md#24-hauptachse-und-spitze)). Der Anker muss nur
 **mit Sicherheit ein Pfeilfragment** sein.
 
 Kandidat war: nicht das breiteste, sondern das *überzeugendste* Fragment —
@@ -431,7 +431,7 @@ Gradientenbetrag oder normierte Kreuzkorrelation. Ein Pfeil, der ein Sisal-Bett
 verdeckt, ändert dessen Textur, auch wenn er den Mittelwert nicht ändert.
 
 Achtung, das ist nah an dem, was in
-[erkennung.md §5.11](erkennung.md#511-gradientenabhängiger-schwellwert-gegen-registrierungs-reste)
+[erkennung.md §5.11](done/erkennung.md#511-gradientenabhängiger-schwellwert-gegen-registrierungs-reste)
 verworfen wurde — dort war der Gradient allerdings der *Störer* (Drahtkanten unter
 Sub-Pixel-Versatz), hier wäre er das *Signal*. Der Unterschied ist die Richtung:
 NCC vergleicht Struktur mit Struktur und ist gegen einen kleinen Versatz robust,

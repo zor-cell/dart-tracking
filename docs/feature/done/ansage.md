@@ -21,7 +21,7 @@ Regel:
 1. **Ausdrücklich gewählt:** Ein Gerät hat „Ansage hier" getippt und ist
    gerade im Raum.
 2. **Erstes Scoreboard** in Beitrittsreihenfolge.
-3. **Buchende Kamera** ([multi-device.md §5a](done/multi-device.md)).
+3. **Buchende Kamera** ([multi-device.md §5a](multi-device.md)).
 4. **Erste Kamera**, solange noch keine kalibriert hat.
 
 Das Scoreboard hat Vorrang vor der Kamera. Das Kamera-Handy steht meist ein

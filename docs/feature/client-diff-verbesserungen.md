@@ -27,7 +27,7 @@ Pfeile zu ziehen. Das löst einen `detection_frame` aus, und der Server erkennt
 darin einen „Pfeil", dessen Blob über das halbe Board reicht.
 
 Die Trennschärfe wäre dabei nicht knapp: ein Pfeil ist laut
-[erkennung.md](erkennung.md) „a few hundred pixels", eine Person vor dem Board
+[erkennung.md](done/erkennung.md) „a few hundred pixels", eine Person vor dem Board
 deckt Zehntausende ab. Drei Größenordnungen — das ist kein Schwellwertproblem,
 sondern eine fehlende Prüfung.
 
@@ -317,7 +317,7 @@ ist danach unverändert. Der Server meldet `NO_CHANGE`, und das ist **punktemä�
 eine Null** — der Wurf hat stattgefunden und zählt.
 
 Genau diese Buchung darf aber nicht automatisch passieren, und
-[erkennung.md §3](erkennung.md#no_change-ist-punktemäßig-ein-miss) begründet
+[erkennung.md §3](done/erkennung.md#no_change-ist-punktemäßig-ein-miss) begründet
 warum: `NO_CHANGE` bedeutet auch „es gab gar keinen Wurf", was bei einem
 Recall-first-Trigger der häufigere Fall ist. Ein blind gebuchter Nullwurf wäre
 dann ein Phantom-Pfeil, der eine Aufnahme des Spielers verbraucht.
@@ -541,7 +541,7 @@ eine Bedienregel, und beim automatischen Weiterschalten gibt es sie nicht.
 
 **Fix.** Der Detektor vergleicht den Blob zusätzlich mit dem leeren Board der
 letzten Kalibrierung; Details und Messung in
-[erkennung.md §1](erkennung.md#der-rollende-referenz-frame-live-pipeline).
+[erkennung.md §1](done/erkennung.md#der-rollende-referenz-frame-live-pipeline).
 
 ---
 
