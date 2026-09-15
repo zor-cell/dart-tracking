@@ -12,7 +12,8 @@ better estimate is the open research question (see docs/feature/done/multi-devic
 the pairs of independent observations that studying it needs.
 
 **The claim is made on a successful calibration** — the first moment a camera
-can actually detect anything — and is never released. A camera that drops and
+can actually detect anything — and is released only when the device stops being
+a camera (`set_role`). A camera that drops and
 comes back brings the same client id and keeps it, which is the point: handing
 scoring over mid-visit would let a flapping connection book the throw in flight
 twice. The cost is that a game whose scoring camera never returns stops being
@@ -45,6 +46,11 @@ class ScoringCameraStore:
             _key(game_id), client_id, nx=True, ex=_TTL_SECONDS
         )
         return bool(claimed) or await self.is_scoring(game_id, client_id)
+
+    async def release(self, game_id: str, client_id: str) -> None:
+        """Give up the scoring role, if this camera holds it."""
+        if await self.is_scoring(game_id, client_id):
+            await redis_client.client().delete(_key(game_id))
 
     async def is_scoring(self, game_id: str, client_id: str) -> bool:
         holder = await self.holder(game_id)

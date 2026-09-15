@@ -13,6 +13,7 @@ docs/feature/done/multi-device.md §3).
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.core.socket.services.game_hub import hub
 from app.api.features.auth.services.current_user import AuthenticatedUser, CurrentUser
 from app.api.features.game.domain.game_status import GameStatus
 from app.api.features.game.dto.game_config import GameConfigDto
@@ -20,6 +21,7 @@ from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.dto.game_status_update import GameStatusUpdateDto
 from app.api.features.game.dto.game_summary import GameSummaryDto
 from app.api.features.game.dto.player_slot import PlayerSlotDto
+from app.api.features.game.dto.rematch_started import RematchStartedDto
 from app.api.features.game.persistence.game_repository import repository
 from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.persistence.player_repository import repository as players
@@ -77,6 +79,9 @@ async def create_game(body: GameConfigDto, user: CurrentUser) -> GameStateDto:
             owner_user_id=owner_id,
             evaluation_enabled=body.evaluation_enabled,
         )
+
+    if body.rematch_of:
+        await hub.broadcast(body.rematch_of, RematchStartedDto(game_id=game.id))
 
     return GameStateDto.from_entity(game)
 

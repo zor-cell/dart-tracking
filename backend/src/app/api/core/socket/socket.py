@@ -178,7 +178,7 @@ async def _dispatch(
         case RequestCalibrationDto():
             await _request_calibration(game_id, requester=connection.client.id)
         case SetRoleDto():
-            await _handle_client_command(connection, message)
+            await _handle_client_command(connection, game_id, message)
             await _publish_announcer(game_id)
         case ClaimAnnouncerDto():
             await announcer_store.choose(game_id, connection.client.id)
@@ -189,7 +189,9 @@ async def _dispatch(
             await _handle_game_command(game_id, message)
 
 
-async def _handle_client_command(connection: Connection, command: ClientCommand) -> None:
+async def _handle_client_command(
+    connection: Connection, game_id: str, command: ClientCommand
+) -> None:
     """Record what this device does in the game, and confirm it.
 
     The confirmation is not redundant with the device having applied the role
@@ -204,6 +206,8 @@ async def _handle_client_command(connection: Connection, command: ClientCommand)
         case SetRoleDto():
             connection.client.role = command.role
             await client_store.save(connection.client)
+            if command.role is not DeviceRole.CAMERA:
+                await scoring_camera_store.release(game_id, connection.client.id)
 
     await hub.send(connection, ClientStateDto.from_entity(connection.client))
 

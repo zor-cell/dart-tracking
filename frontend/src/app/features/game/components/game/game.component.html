@@ -84,29 +84,22 @@
               }
             </div>
           }
-          @case ('calibrating') {
-            <div class="game__camera-overlay">
-              <p-button
-                label="Board kalibrieren"
-                icon="pi pi-crosshair"
-                [loading]="calibrationStatus() === 'pending'"
-                (onClick)="calibrateBoard()"
-              />
-            </div>
-          }
           @case ('tracking') {
             <span class="game__camera-badge">{{ detectionFeedback() ?? detectionStatusLabel() }}</span>
-            <p-button
-              class="game__recalibrate"
-              [icon]="calibrationStatus() === 'pending' ? 'pi pi-sync pi-spin' : 'pi pi-sync'"
-              [rounded]="true"
-              severity="primary"
-              size="small"
-              ariaLabel="Rekalibrieren"
-              [attr.aria-busy]="calibrationStatus() === 'pending'"
-              (onClick)="calibrateBoard()"
-            />
           }
+        }
+
+        @if (cameraPhase() !== 'idle') {
+          <p-button
+            class="game__recalibrate"
+            [icon]="calibrationStatus() === 'pending' ? 'pi pi-sync pi-spin' : 'pi pi-sync'"
+            [rounded]="true"
+            severity="primary"
+            size="small"
+            [ariaLabel]="cameraPhase() === 'calibrating' ? 'Board kalibrieren' : 'Rekalibrieren'"
+            [attr.aria-busy]="calibrationStatus() === 'pending'"
+            (onClick)="calibrateBoard()"
+          />
         }
 
         <p-button

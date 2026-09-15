@@ -11,3 +11,4 @@ class GameConfigDto(CamelModel):
     variant: GameVariant = GameVariant.X01
     checkout_mode: CheckoutMode = CheckoutMode.DOUBLE_OUT
     evaluation_enabled: bool = False
+    rematch_of: str | None = None

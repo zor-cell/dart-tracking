@@ -40,10 +40,10 @@ Sie steuert nur, ob das Gerät die Kamera-Pipeline startet.
 
 Sie ist eine Eigenschaft des **Geräts**, nicht des Spiels: das Handy in der
 Halterung filmt über Spiele hinweg, das auf dem Tisch zählt. Entsprechend liegt
-sie serverseitig am Gerät (§5) und nicht am Spiel. Gesetzt wird sie ausschließlich
-auf dem Weg in ein Spiel — beim Anlegen (Kamera) oder beim Beitreten (gewählt) —
-und danach nicht mehr: die Rolle wählt die Ansicht für das ganze Spiel und kann
-so nicht unter einer laufenden Kamera wegbrechen.
+sie serverseitig am Gerät (§5) und nicht am Spiel. Gesetzt wird sie auf dem Weg
+in ein Spiel — beim Anlegen (Kamera) oder beim Beitreten (gewählt) — und lässt
+sich im laufenden Spiel über den Umschalter oben links wechseln (§5d). Eine
+Revanche übernimmt sie unverändert (§5e).
 
 Mehrere Geräte können die Kamera-Rolle haben. Serverseitig läuft die Erkennung
 dann aus mehreren Perspektiven, gebucht wird aber nur eine davon (§5a); wie
@@ -118,6 +118,7 @@ Spielstand also in derselben Form, egal auf welchem Weg er ankam.
 | `calibration_status` | nur das Gerät, das die Rekalibrierung angefordert hat | es wartet auf die Antwort, und niemand darf zu einem Versuch zwei Nachrichten bekommen (§5c) |
 | `calibration_requested` | alle **Kameras** im Room | nur wer ein Bild hat, kann die Aufforderung beantworten (§5c) |
 | `detection_result` | nur der Sender | Overlay-Polylines liegen im Pixelraster dieser Kamera |
+| `rematch_started` | alle im Room des **beendeten** Spiels | sie sollen gemeinsam ins neue wechseln (§5e) |
 | `presence` | alle im Room | wie viele Geräte, welche Rollen (optional) |
 
 Damit gibt es vier Zustellwege statt zwei: `send` an das Gerät, dessen Nachricht
@@ -160,9 +161,9 @@ gerade beantwortet wird, `send_to_client` an ein *anderes*, namentlich genanntes
    oder die virtuelle Scheibe zeigt.
 
    Der Join-Screen bietet beide Optionen nebeneinander an, „Mit Kamera" ist
-   deaktiviert (§5a). Das Anlegen eines Spiels setzt die Kamera-Rolle, weil das
-   Gerät aus dem vorigen Spiel noch Scoreboard sein kann — und weil es sonst
-   keinen Weg zurück zur Kamera gäbe.
+   deaktiviert (§5a). Das Anlegen eines neuen Spiels setzt die Kamera-Rolle als
+   Default; eine Revanche lässt die Rollen stehen (§5e), und falsch gesetzt ist
+   jede Rolle mit einem Tap korrigiert (§5d).
 
    Der Join-Screen lädt das Spiel zunächst nur (`GameService.load`) und tritt
    dem Room erst nach der Wahl bei (`connect`) — ein Gerät, das umkehrt, war nie
@@ -270,8 +271,9 @@ bequemer aus und ist falsch: das Kamera-Handy sperrt kurz den Bildschirm, das
 Scoreboard hält den Raum allein, und beim Reconnect ist die Kamera stumm zum
 Scoreboard geworden. Eine abgeleitete Rolle rät; eine kommandierte gilt.
 
-Gesendet wird `set_role` genau auf dem Weg in ein Spiel: beim Anlegen (Kamera)
-und beim Beitreten (gewählt). Das Gerät setzt sie lokal sofort, damit die
+Gesendet wird `set_role` auf dem Weg in ein Spiel — beim Anlegen (Kamera, außer
+bei einer Revanche) und beim Beitreten (gewählt) — und vom Rollen-Umschalter im
+Spiel (§5d). Das Gerät setzt sie lokal sofort, damit die
 Ansicht etwas zu zeichnen hat; die Bestätigung des Servers ist maßgeblich und
 kommt geordnet **nach** dem `client_state` des Handshakes, das noch die alte
 Rolle trug.
@@ -316,8 +318,8 @@ dritte spurlos verschwindet — ein Fehler, der wie eine Fehlerkennung aussieht,
 aber keine ist.
 
 Beansprucht wird die Rolle bei der **ersten erfolgreichen Kalibrierung**, dem
-frühesten Moment, in dem eine Kamera überhaupt etwas erkennen könnte, und danach
-nicht wieder abgegeben. Ein Gerät, das kurz wegbricht und mit derselben
+frühesten Moment, in dem eine Kamera überhaupt etwas erkennen könnte, und erst
+wieder abgegeben, wenn das Gerät aufhört, Kamera zu sein (§5d). Ein Gerät, das kurz wegbricht und mit derselben
 `client_id` zurückkommt, behält sie — die Übergabe mitten in einer Runde würde
 sonst genau den Wurf doppelt buchen, der gerade in der Luft ist. Der Preis: ein
 Spiel, dessen buchende Kamera nie zurückkommt, wird nicht mehr automatisch
@@ -522,6 +524,76 @@ melden.
 Homographie und Referenzbild nur bei Erfolg. Eine misslungene Rekalibrierung
 lässt die alte stehen, die Erkennung läuft also weiter — nur eben gegen eine
 Referenz, die die gezogenen Pfeile noch enthält.
+
+---
+
+## 5d. Rolle im Spiel wechseln
+
+Ursprünglich war die Rolle nur auf dem Weg in ein Spiel wählbar, damit sie nicht
+unter einer laufenden Kamera wegbricht. Der Preis war, dass eine falsch gesetzte
+Rolle nur über ein neues Spiel zu korrigieren war — und dass das Anlegen die
+Kamera-Rolle *erzwingen* musste, weil es sonst keinen Weg zurück gab. Genau das
+stand der Revanche (§5e) im Weg.
+
+Jetzt sitzt oben links auf der Kamera-Kachel bzw. der virtuellen Scheibe ein
+Icon, das die Rolle umschaltet. Es schickt dasselbe `set_role` wie Join und
+Setup; neu ist nichts am Protokoll.
+
+- **Kamera → Scoreboard:** die Kamera-Session wird beendet (Stream, Loop,
+  Kalibrierung), wie es `setRole` für diesen Fall schon tat. Serverseitig gibt
+  das Gerät das Buchungsrecht ab (`scoring_camera.release`), sonst würde ein
+  Spiel, dessen buchende Kamera zum Scoreboard wird, nie mehr automatisch
+  gezählt. Eine weitere Kamera im Raum übernimmt es bei ihrer nächsten
+  erfolgreichen Kalibrierung.
+- **Scoreboard → Kamera:** die Kamera-Kachel erscheint im Zustand „Kamera
+  starten". Das Starten bleibt ein eigener Tap, wegen der Berechtigungsabfrage.
+
+Der Umschalter fragt nicht nach. Ein versehentlicher Tap auf dem Kamera-Handy
+kostet eine Neukalibrierung — lästig, aber sichtbar und in Sekunden behoben.
+
+---
+
+## 5e. Revanche
+
+Die Revanche legt ein neues Spiel an; alle Geräte des alten Raums sollen darin
+landen, jedes in seiner Rolle, und das Kamera-Handy soll ohne Berührung
+weiterfilmen.
+
+**Ablauf.**
+
+1. Ein beliebiges Gerät tippt „Revanche" und stellt das Spiel ein. Der
+   `POST /api/games` trägt `rematchOf` mit der Id des beendeten Spiels.
+2. Der Server legt das Spiel an und schickt `rematch_started { gameId }` an
+   **alle Geräte im alten Raum**. Das anlegende Gerät ist darunter, falls es
+   noch verbunden ist; für es ist die Nachricht folgenlos.
+3. Jedes Gerät tritt dem neuen Spiel bei (`GameService.join`). Die Rolle liegt am
+   Gerät (§5) und kommt im Handshake unverändert zurück. Das anlegende Gerät
+   sendet bei einer Revanche kein `set_role` — nur ein *neues* Spiel setzt die
+   Kamera als Default.
+4. Die anderen Geräte zeigen bis dahin einfach den Endstand; der Wechsel ist der
+   neue Spielstand, der ihn ersetzt.
+
+**Die Kamera kommt mit.** Kalibrierung, Referenzbild und Buchungsrecht hängen an
+`(game_id, client_id)`, gelten im neuen Spiel also nicht. Wechselt das Spiel,
+während die Kamera läuft, bleibt der Stream stehen, die Session geht auf
+`calibrating` und kalibriert selbst, sobald der neue Socket offen und das
+Videoelement da ist. Das greift unabhängig von der Revanche bei jedem
+Spielwechsel mit laufender Kamera, auch beim Anlegen eines neuen Spiels vom
+Kamera-Handy aus — dort lief die Erkennung vorher gegen ein unkalibriertes Spiel
+(`NOT_CALIBRATED`).
+
+Das setzt dieselbe Annahme voraus wie der Rundenwechsel (§5c): wer die Revanche
+startet, hat die Pfeile gezogen. Schlägt die Kalibrierung fehl, meldet die
+Kamera das wie jeden Fehlschlag, und es bleibt der Tap auf „Board kalibrieren".
+
+*Verworfen, vorerst:* Kalibrierung, Referenzbild und Buchungsrecht serverseitig
+ins neue Spiel kopieren. Robuster bei einer misslungenen Kalibrierung, aber die
+Stores liegen teils in Redis, teils im Prozess, und die Auswertung merkt sich am
+Buchungsrecht ihren ersten Frame. Die Neukalibrierung nutzt den bestehenden Pfad.
+
+**Zwei gleichzeitige Revanchen.** Stellen zwei Geräte gleichzeitig eine Revanche
+ein, gewinnt das erste: das zweite bekommt `rematch_started`, verlässt den
+Setup-Screen und landet im Spiel des ersten, statt ein zweites anzulegen.
 
 ---
 

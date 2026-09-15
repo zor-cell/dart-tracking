@@ -15,6 +15,7 @@ from app.api.features.calibration.dto.calibration_result import CalibrationResul
 from app.api.features.calibration.dto.calibration_status import CalibrationStatusDto
 from app.api.features.detection.dto.detection_result import DetectionResultDto
 from app.api.features.game.dto.game_state import GameStateDto
+from app.api.features.game.dto.rematch_started import RematchStartedDto
 
 ServerMessage = (
     ClientStateDto
@@ -25,4 +26,5 @@ ServerMessage = (
     | GameStateDto
     | AnnouncerStateDto
     | DartAnnouncementDto
+    | RematchStartedDto
 )
