@@ -15,8 +15,7 @@ Verbindungsmodell.
 >
 > **Mehrere Kameras** trägt das Backend seit §5a: Kalibrierungs- und
 > Detection-Store hängen an `(game_id, client_id)`, und genau eine Kamera pro
-> Spiel bucht. Im Join-Screen ist „Mit Kamera" weiterhin deaktiviert — das ist
-> nur noch ein Frontend-Schritt. Die Fusion zweier Ansichten zu *einer*
+> Spiel bucht. Im Join-Screen ist „Mit Kamera" freigeschaltet. Die Fusion zweier Ansichten zu *einer*
 > Schätzung ist hergeleitet, aber nicht gebaut (§5b).
 >
 > **Rekalibrierung** kann seit §5c jedes Gerät im Raum anstoßen — auch eines
@@ -160,8 +159,7 @@ gerade beantwortet wird, `send_to_client` an ein *anderes*, namentlich genanntes
    serverseitig am Gerät (§5) und entscheidet, ob das Gerät die Kamera-Kachel
    oder die virtuelle Scheibe zeigt.
 
-   Der Join-Screen bietet beide Optionen nebeneinander an, „Mit Kamera" ist
-   deaktiviert (§5a). Das Anlegen eines neuen Spiels setzt die Kamera-Rolle als
+   Der Join-Screen bietet beide Optionen nebeneinander an. Das Anlegen eines neuen Spiels setzt die Kamera-Rolle als
    Default; eine Revanche lässt die Rollen stehen (§5e), und falsch gesetzt ist
    jede Rolle mit einem Tap korrigiert (§5d).
 
@@ -333,10 +331,8 @@ aufsetzen würde.
 **Bewusst nicht gelöst:** eben diese Fusion. Der Ansatz dafür steht in §5b, die
 Begründung, warum er hier noch nicht implementiert ist, am Ende davon.
 
-**Nicht umgesetzt (Frontend):** „Mit Kamera" ist im Join-Screen noch deaktiviert
-(`cameraJoinAvailable`), es schickt also bislang nichts einen zweiten
-Kamerastream. Geprüft ist das Backend über zwei rohe Sockets mit je einem
-eigenen Testdaten-Setup.
+**Frontend:** „Mit Kamera" ist im Join-Screen freigeschaltet, ein beitretendes
+Gerät kann also als zweite Kamera einsteigen.
 
 ---
 
@@ -573,23 +569,22 @@ weiterfilmen.
 4. Die anderen Geräte zeigen bis dahin einfach den Endstand; der Wechsel ist der
    neue Spielstand, der ihn ersetzt.
 
-**Die Kamera kommt mit.** Kalibrierung, Referenzbild und Buchungsrecht hängen an
-`(game_id, client_id)`, gelten im neuen Spiel also nicht. Wechselt das Spiel,
-während die Kamera läuft, bleibt der Stream stehen, die Session geht auf
-`calibrating` und kalibriert selbst, sobald der neue Socket offen und das
-Videoelement da ist. Das greift unabhängig von der Revanche bei jedem
-Spielwechsel mit laufender Kamera, auch beim Anlegen eines neuen Spiels vom
-Kamera-Handy aus — dort lief die Erkennung vorher gegen ein unkalibriertes Spiel
-(`NOT_CALIBRATED`).
+**Die Kamera kalibriert neu — auf Anforderung.** Kalibrierung, Referenzbild und
+Buchungsrecht hängen an `(game_id, client_id)`, gelten im neuen Spiel also
+nicht. Der Stream des Kamera-Handys läuft über den Wechsel weiter, erkennt aber
+bis zur ersten Kalibrierung im neuen Spiel nichts (`NOT_CALIBRATED`). Kalibriert
+wird mit einem Tap auf „Rekalibrieren" am Scoreboard-Handy (§5c) — das Kamera-Handy
+bleibt unberührt.
 
-Das setzt dieselbe Annahme voraus wie der Rundenwechsel (§5c): wer die Revanche
-startet, hat die Pfeile gezogen. Schlägt die Kalibrierung fehl, meldet die
-Kamera das wie jeden Fehlschlag, und es bleibt der Tap auf „Board kalibrieren".
+*Verworfen:* automatisch kalibrieren, sobald das Spiel unter einer laufenden
+Kamera wechselt (Session auf `calibrating`, kalibrieren sobald neuer Socket und
+Videoelement bereit sind). Zuverlässig ausgelöst hat das in der Praxis nicht,
+und der Tap am Scoreboard ist derselbe Weg wie nach jedem Rundenwechsel, den es
+ohnehin schon gibt.
 
-*Verworfen, vorerst:* Kalibrierung, Referenzbild und Buchungsrecht serverseitig
-ins neue Spiel kopieren. Robuster bei einer misslungenen Kalibrierung, aber die
-Stores liegen teils in Redis, teils im Prozess, und die Auswertung merkt sich am
-Buchungsrecht ihren ersten Frame. Die Neukalibrierung nutzt den bestehenden Pfad.
+*Ebenfalls verworfen, vorerst:* Kalibrierung, Referenzbild und Buchungsrecht
+serverseitig ins neue Spiel kopieren. Die Stores liegen teils in Redis, teils im
+Prozess, und die Auswertung merkt sich am Buchungsrecht ihren ersten Frame.
 
 **Zwei gleichzeitige Revanchen.** Stellen zwei Geräte gleichzeitig eine Revanche
 ein, gewinnt das erste: das zweite bekommt `rematch_started`, verlässt den

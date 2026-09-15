@@ -33,8 +33,6 @@ export class GameJoinComponent implements OnInit {
 
   protected readonly status = signal<JoinStatus>('resolving');
 
-  protected readonly cameraJoinAvailable = false;
-
   /** Mode and players of the resolved game — the check that this is the right one. */
   protected readonly summary = computed(() => {
     const state = this.game.state();
