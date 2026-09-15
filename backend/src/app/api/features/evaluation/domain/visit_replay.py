@@ -1,6 +1,6 @@
 """Rebuilds the visits of a game from its event log.
 
-Replays register/undo/handover exactly as `Game` applies them, but keeps a
+Replays register/undo/removal/handover exactly as `Game` applies them, but keeps a
 second list per visit that undo never touches: what the camera claimed.
 """
 
@@ -66,6 +66,10 @@ def replay(events: Iterable[GameEvent]) -> list[Visit]:
                     corrected[open_index] = True
             case GameEventKind.UNDO if event.accepted:
                 open_index = _undo(accepted, corrected, open_index)
+            case GameEventKind.DART_REMOVED if event.accepted:
+                if event.dart_index is not None and event.dart_index < len(accepted[open_index]):
+                    accepted[open_index].pop(event.dart_index)
+                corrected[open_index] = True
             case GameEventKind.NEXT_PLAYER if event.accepted:
                 # The event carries the player who just finished, so the
                 # new slot's owner is left to the first event that lands in it.

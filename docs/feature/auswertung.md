@@ -57,6 +57,7 @@ Schritt, nie aktualisiert, nie gelöscht.
 | `detection_failed` | die Kamera hat gesucht und nichts gefunden |
 | `manual` | ein Gerät hat einen Pfeil von Hand gebucht |
 | `undo` | ein Schritt zurück |
+| `dart_removed` | ein einzelner Pfeil aus dem offenen Visit genommen (`dart_index`) |
 | `next_player` | Visit abgeschlossen |
 
 Jede Zeile trägt Feld (`value`/`multiplier`), Trefferpunkt in Board-Millimetern,
@@ -146,6 +147,13 @@ zurück, verschwindet der offene Visit, und die nächste Übergabe öffnet dense
 Slot wieder — derselbe Spieler, der noch einmal wirft. Die Behauptungsliste
 dieses Slots bleibt dabei stehen, sonst gingen genau die Fehlbuchungen verloren,
 um die es geht.
+
+`dart_removed` nimmt in der Wahrheitsliste genau den Pfeil an `dart_index`
+heraus, die Behauptungsliste bleibt unberührt. Das ist der Weg aus dem Fall
+8 · Phantom-0 · 16: Ein Tipp auf die 0 entfernt sie, und die 16 bleibt als
+erkannter Pfeil mit Trefferpunkt stehen. Mit Undo musste sie zurückgenommen und
+von Hand neu eingegeben werden, und ohne Position fehlte sie in jeder Heatmap.
+Das Alignment zählt die 0 weiterhin als `phantom`.
 
 ### Abgrenzung gegen Spiele ohne Kamera
 

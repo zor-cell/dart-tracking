@@ -31,6 +31,7 @@ from app.api.features.game.domain.game import Game
 from app.api.features.game.dto.command.game_command import GameCommand
 from app.api.features.game.dto.command.next_player import NextPlayerDto
 from app.api.features.game.dto.command.register_dart import RegisterDartDto
+from app.api.features.game.dto.command.remove_dart import RemoveDartDto
 from app.api.features.game.dto.command.undo import UndoDto
 from app.api.features.game.persistence.game_repository import repository as game_repository
 from app.infrastructure import database
@@ -41,6 +42,7 @@ logger = logging.getLogger(__name__)
 _KINDS = {
     RegisterDartDto: GameEventKind.MANUAL,
     UndoDto: GameEventKind.UNDO,
+    RemoveDartDto: GameEventKind.DART_REMOVED,
     NextPlayerDto: GameEventKind.NEXT_PLAYER,
 }
 
@@ -86,6 +88,7 @@ def for_command(command: GameCommand, *, camera_armed: bool) -> Recording:
             camera_armed=camera_armed,
             value=booked.value if booked else None,
             multiplier=booked.multiplier if booked else None,
+            dart_index=command.index if isinstance(command, RemoveDartDto) else None,
         )
 
     return record

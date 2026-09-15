@@ -197,6 +197,21 @@ class Game:
                 if player.id == self.current_turn.player_id
             )
 
+    def remove_dart(self, index: int) -> None:
+        """Take one dart out of the open visit. The rest is re-applied in order,
+        because whether a dart busts depends on the darts before it."""
+        turn = self.current_turn
+        if not 0 <= index < len(turn.darts):
+            return
+        kept = turn.darts[:index] + turn.darts[index + 1 :]
+        turn.darts = []
+        turn.busted = False
+        for dart in kept:
+            turn.darts.append(dart)
+            if self._busts(dart):
+                turn.busted = True
+        self.revision += 1
+
     def next_player(self) -> None:
         """Hand over to the next player, ending the current visit.
 

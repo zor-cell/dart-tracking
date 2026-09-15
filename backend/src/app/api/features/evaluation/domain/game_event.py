@@ -16,6 +16,7 @@ class GameEventKind(StrEnum):
     DETECTION_FAILED = "detection_failed"  # the camera looked and found nothing
     MANUAL = "manual"  # a device booked a dart by hand
     UNDO = "undo"
+    DART_REMOVED = "dart_removed"  # a device took one dart out of the open visit
     NEXT_PLAYER = "next_player"
 
 
@@ -49,6 +50,7 @@ class GameEvent:
     value: int | None = None
     multiplier: int | None = None
     position: tuple[float, float] | None = None  # board millimetres
+    dart_index: int | None = None  # position in the visit, for a removed dart
     failure: str | None = None
     # Detector figures for this throw (fragment count, blob size, alignment
     # shift), so a mis-scored dart can be correlated with how it arrived.
