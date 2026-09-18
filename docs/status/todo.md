@@ -4,6 +4,7 @@ Wenig Aufwand:
 - /game/new soll angezeigt bleiben, wenn man page wechselt?
 - bei manuellen einträgen ohne erkennung auch frame mitschicken? weil sonst passt die diff überhaupt nicht
 - sprache englisch machen
+- debug settings soll nur admin sehen
 
 Viel Aufwand:
 
