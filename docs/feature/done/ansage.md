@@ -90,14 +90,66 @@ stattdessen weiterreichen, spräche einfach das nächste Handy.
 
 Browser spielen Sprache erst nach einer Nutzeraktion ab. iOS Safari ist dabei
 am strengsten: Die erste Äußerung muss direkt in einem Touch-Handler starten.
-Der Client spricht deshalb beim ersten `pointerdown` auf der Seite eine leere
-Äußerung. Irgendein Tippen reicht also, etwa auf „Kamera starten" oder auf den
+Der Client spricht deshalb bei `pointerdown` eine stumme Äußerung (Lautstärke
+0). Irgendein Tippen reicht also, etwa auf „Kamera starten" oder auf den
 Lautsprecher. Ein Gerät, das die Rolle automatisch bekommt und nie berührt
 wurde, bleibt allerdings stumm.
 
+Der Handler bleibt hängen, bis die Freischaltung nachweislich geklappt hat:
+Erst wenn die stumme Äußerung ein `start`-Ereignis meldet, wird er entfernt.
+Vorher galt sie nach dem ersten Tippen als erledigt — misslang sie, blieb das
+Gerät für den Rest der Sitzung stumm, ohne dass man es noch einmal versuchen
+konnte. Die Äußerung trägt außerdem echten Text: WebKit verwirft eine leere
+Äußerung, ohne sie je abzuspielen, und schaltet damit auch nichts frei.
+
 ---
 
-## 4. Offene Punkte
+## 4. WebKit-Eigenheiten
+
+Die Web Speech API ist auf iOS deutlich empfindlicher als auf Desktop-Browsern.
+Drei Punkte, an denen dieselbe Implementierung auf einem Windows-Laptop läuft
+und auf einem iPhone stumm bleibt:
+
+**Nur der Kopf der Warteschlange wird gesprochen.** Ein Dart erzeugt bis zu zwei
+Phrasen („Triple 20", dann „140"). Werden beide unmittelbar nacheinander an
+`speechSynthesis.speak` übergeben, spielt WebKit die zweite oft nicht mehr ab
+und bleibt anschließend in einem Zustand hängen, in dem auch jede weitere
+Äußerung verschluckt wird — ab dem ersten Wurf ist dann Ruhe. Der Client hält
+die Phrasen deshalb selbst in einer Liste und schickt die nächste erst im
+`end`-Ereignis der vorigen los.
+
+Weil `end` und `error` auf iOS ebenfalls ausbleiben können, sichert ein Timer
+den Übergang ab (2 s Grundzeit plus 120 ms je Zeichen). Ohne ihn würde eine
+einzige verlorene Rückmeldung die Ansage dauerhaft blockieren.
+
+**Der Synthesizer bleibt pausiert.** Wechselt die Seite in den Hintergrund —
+Bildschirmsperre, App-Wechsel, eingehender Anruf —, pausiert WebKit die
+Sprachausgabe und nimmt sie beim Zurückkommen nicht von selbst wieder auf. Vor
+jeder Äußerung steht deshalb ein `resume()`. Auf anderen Browsern ist der Aufruf
+wirkungslos.
+
+**`getVoices()` ist beim ersten Aufruf leer.** Die Stimmliste lädt
+asynchron. Der Client fragt sie deshalb pro Äußerung neu ab und setzt
+`utterance.voice` nur, wenn eine deutsche Stimme dabei ist; sonst bleibt das
+Feld unberührt und die Auswahl läuft über `utterance.lang`. Ein ausdrücklich auf
+`null` gesetztes `voice` hat in manchen WebKit-Versionen dieselbe Wirkung wie
+eine ungültige Stimme.
+
+### Was außerhalb des Codes liegt
+
+Bleibt ein iPhone trotzdem stumm, sind zwei Ursachen wahrscheinlicher als ein
+Fehler in der Pipeline:
+
+- **Der Stummschalter am Gehäuse.** iOS führt die Sprachausgabe der Web Speech
+  API über den Klingelton-Kanal. Steht der Schalter auf stumm, ist die Ansage
+  lautlos, während jedes Video auf demselben Gerät normal tönt.
+- **Das Gerät ist gar nicht der Ansager.** Ist ein Laptop als Scoreboard im
+  Spiel, gewinnt er nach Regel 2 gegen das Kamera-Handy. Der Lautsprecher-Button
+  ist dann auf dem iPhone grau; ein Tippen holt die Rolle herüber (§3).
+
+---
+
+## 5. Offene Punkte
 
 - **Restpunktzahl ansagen** („noch 32"). Ist nicht eingebaut, weil sie bei jeder
   Aufnahme mitläuft und schnell zu viel wird. Denkbar nur ab Checkout-Bereich.
