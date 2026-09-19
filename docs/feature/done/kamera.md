@@ -53,15 +53,17 @@ erst später lernt — ohne dass hier eine Browser-Version gepflegt werden muss.
 | Plattform | Lampe |
 |---|---|
 | Android, Chromium-Browser | ja, das ist die Herkunft der Capability |
+| iOS / iPadOS | ja, am Testgerät bestätigt |
 | Desktop | in aller Regel nein — Webcams haben keine |
-| iOS / iPadOS (jeder Browser, alle sind WebKit) | **nein** |
 
-Auf iOS ist das keine Einstellung und kein Fehler in der App: WebKit meldet die
-Capability nicht, und `getCapabilities` fehlt auf älteren Versionen ganz. Alle
-iOS-Browser sind WebKit, ein anderer Browser hilft also nicht. Die Kameras-App
-kann es, weil sie nativ ist; aus einer Web-App gibt es keinen Weg dorthin.
-Bleibt für ein dunkles Board: Raumlicht, eine Lampe daneben, oder ein
-Android-Gerät als Kamera.
+Dass iOS mitspielt, war nicht zu erwarten: WebKit hat die Capability lange nicht
+gemeldet, und die verbreiteten Fundstellen sagen bis heute, es ginge nicht. Genau
+deshalb wird gefragt statt nachgeschlagen — eine Browser-Liste im Code hätte den
+Knopf auf dem iPhone weggelassen, obwohl er dort funktioniert.
+
+Der Knopf sitzt in der Titelzeile neben dem Lautsprecher, nicht im Kamerabild:
+er gehört zum Gerät und nicht zum Bild, und die Ecken über dem Board sind für
+Rekalibrieren, Rollenwechsel und Vollbild belegt.
 
 ---
 

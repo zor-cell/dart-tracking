@@ -1,0 +1,11 @@
+@if (camera.torchSupported()) {
+  <p-button
+    icon="pi pi-lightbulb"
+    [severity]="camera.torchOn() ? 'primary' : 'secondary'"
+    [outlined]="!camera.torchOn()"
+    size="small"
+    [ariaLabel]="camera.torchOn() ? 'Licht ausschalten' : 'Licht einschalten'"
+    [attr.aria-pressed]="camera.torchOn()"
+    (onClick)="onClick()"
+  />
+}

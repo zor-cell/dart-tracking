@@ -31,9 +31,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 40s
-    # Recorded throw series survive a deployment only outside the runner's build
-    # directory, which CI wipes with `git clean -ffdx` on every checkout. The
-    # deploy job sets TESTDATA_DIR; the default is for local runs.
     volumes:
       - ${TESTDATA_DIR:-./backend/testdata}:/app/testdata
 
@@ -54,8 +51,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?missing in .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?missing in .env}
       POSTGRES_DB: ${POSTGRES_DB:?missing in .env}
-    # Mounted one level above PGDATA, which is versioned since 18
-    # (/var/lib/postgresql/18/docker). Keeps the next major bump out of here.
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
@@ -69,8 +64,6 @@ services:
     restart: unless-stopped
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?missing in .env}
-    # Read from the environment rather than passed as an argument, so the
-    # password stays out of the container's process list.
     command: ["sh", "-c", "exec redis-server --requirepass \"$$REDIS_PASSWORD\""]
     volumes:
       - redis_data:/data

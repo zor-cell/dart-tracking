@@ -1,6 +1,9 @@
 TODOs:
 
 Wenig Aufwand:
+- spieler order ändern buttons sind nicht sehr angenehm zu benutzen auf mobile, es sollt da nicht
+die tastatur aufpoppen, man muss ur weit nach oben ziehen dass sich was tut
+
 Viel Aufwand:
 
 Zukunft:

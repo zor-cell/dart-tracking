@@ -86,11 +86,6 @@
     left: calc(0.5rem + env(safe-area-inset-left));
   }
 
-  .game__torch {
-    top: calc(3.5rem + env(safe-area-inset-top));
-    right: calc(0.5rem + env(safe-area-inset-right));
-  }
-
   .game__camera-badge {
     bottom: calc(0.5rem + env(safe-area-inset-bottom));
     left: calc(0.5rem + env(safe-area-inset-left));
@@ -105,14 +100,6 @@
 .game__expand {
   position: absolute;
   bottom: 0.5rem;
-  right: 0.5rem;
-  z-index: 2;
-}
-
-/* Under the recalibrate button, which owns the top right corner. */
-.game__torch {
-  position: absolute;
-  top: 3.5rem;
   right: 0.5rem;
   z-index: 2;
 }
