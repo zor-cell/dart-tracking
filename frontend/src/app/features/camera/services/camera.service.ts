@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import {CameraStatus} from "../models/camera-status";
+import { applyTorch, hasTorch } from '../models/torch';
 
 const CAPTURE_WIDTH = 1280;
 const CAPTURE_HEIGHT = 720;
@@ -8,6 +9,11 @@ const CAPTURE_HEIGHT = 720;
 export class CameraService {
   readonly status = signal<CameraStatus>('idle');
   readonly error = signal<string | null>(null);
+
+  /** Whether the running camera has a light this browser will switch, and
+   * whether it is on. Both false while no stream runs. */
+  readonly torchSupported = signal(false);
+  readonly torchOn = signal(false);
 
   private stream: MediaStream | null = null;
 
@@ -27,6 +33,9 @@ export class CameraService {
         },
         audio: false,
       });
+      const track = this.videoTrack();
+      this.torchSupported.set(track !== null && hasTorch(track));
+      this.torchOn.set(false);
       this.status.set('active');
       return this.stream;
     } catch (err) {
@@ -46,11 +55,36 @@ export class CameraService {
   }
 
   /**
+   * Switch the camera light, where the device has one. Goes out with the stream,
+   * so nothing has to be reset on stop.
+   */
+  async toggleTorch(): Promise<void> {
+    const track = this.videoTrack();
+    if (track === null || !this.torchSupported()) {
+      return;
+    }
+    const on = !this.torchOn();
+    if (await applyTorch(track, on)) {
+      this.torchOn.set(on);
+    } else {
+      // Advertised but refused: stop offering it rather than showing a switch
+      // that does nothing.
+      this.torchSupported.set(false);
+    }
+  }
+
+  /**
    * Stop the running media stream
    */
   stop(): void {
     this.stream?.getTracks().forEach((track) => track.stop());
     this.stream = null;
+    this.torchSupported.set(false);
+    this.torchOn.set(false);
     this.status.set('idle');
+  }
+
+  private videoTrack(): MediaStreamTrack | null {
+    return this.stream?.getVideoTracks()[0] ?? null;
   }
 }

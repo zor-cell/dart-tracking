@@ -112,6 +112,19 @@
           (onClick)="switchRole()"
         />
 
+        @if (cameraPhase() !== 'idle' && torchSupported()) {
+          <p-button
+            class="game__torch"
+            [icon]="torchOn() ? 'pi pi-sun' : 'pi pi-lightbulb'"
+            [rounded]="true"
+            [severity]="torchOn() ? 'primary' : 'secondary'"
+            size="small"
+            [ariaLabel]="torchOn() ? 'Licht ausschalten' : 'Licht einschalten'"
+            [attr.aria-pressed]="torchOn()"
+            (onClick)="toggleTorch()"
+          />
+        }
+
         @if (cameraPhase() !== 'idle') {
           <p-button
             class="game__expand"

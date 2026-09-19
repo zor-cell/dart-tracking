@@ -1,12 +1,6 @@
 TODOs:
 
 Wenig Aufwand:
-- ansage auf ios: audiocontext im tap + cancel vor speak sind drin, aber am iphone
-  noch ungeprueft. selbsttest unter einstellungen -> ansage laufen lassen, einmal mit
-  laufender kamera und einmal als scoreboard (ansage.md abschnitt 4)
-- blitz auf ios: geht nicht, webkit meldet die capability nicht (kamera.md abschnitt 2).
-  knopf erscheint auf android automatisch
-
 Viel Aufwand:
 
 Zukunft:

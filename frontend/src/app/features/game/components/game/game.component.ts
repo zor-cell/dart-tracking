@@ -18,6 +18,7 @@ import {ProgressSpinner} from 'primeng/progressspinner';
 import {Skeleton} from 'primeng/skeleton';
 import {OverlayComponent} from '../../../calibration/components/overlay/overlay.component';
 import {CalibrationService} from '../../../calibration/services/calibration.service';
+import {CameraService} from '../../../camera/services/camera.service';
 import {DetectionService} from '../../../detection/services/detection.service';
 import {FrameDiffService} from '../../../detection/services/frame-diff.service';
 import {SettingsService} from '../../../settings/services/settings.service';
@@ -77,6 +78,7 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly settings = inject(SettingsService);
 
   private readonly session = inject(GameSessionService);
+  private readonly camera = inject(CameraService);
   private readonly calibration = inject(CalibrationService);
   private readonly throwCapture = inject(FrameDiffService);
   private readonly detection = inject(DetectionService);
@@ -97,6 +99,8 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly calibrationStatus = this.calibration.status;
   protected readonly calibrationOverlay = this.calibration.overlay;
   protected readonly calibrationRequestPending = this.calibration.requestPending;
+  protected readonly torchSupported = this.camera.torchSupported;
+  protected readonly torchOn = this.camera.torchOn;
   protected readonly roundDarts = this.detection.roundDarts;
   protected readonly detectionStatusLabel = this.throwCapture.statusLabel;
   protected readonly detectionFeedback = this.detection.feedbackLabel;
@@ -278,6 +282,11 @@ export class GameComponent implements OnInit, OnDestroy {
 
   protected calibrateBoard(): Promise<void> {
     return this.session.calibrate();
+  }
+
+  /** The camera light, where the device has one (see docs/feature/done/kamera.md). */
+  protected toggleTorch(): Promise<void> {
+    return this.camera.toggleTorch();
   }
 
   /** Scoreboard counterpart to `calibrateBoard`: this device has no picture, so
