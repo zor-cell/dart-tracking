@@ -131,7 +131,9 @@
 
         <div class="account__row">
           <span class="account__label">E-Mail</span>
-          <span class="account__value">{{ account.email }}</span>
+          <span class="account__value" [appFitText]="account.email"
+            >{{ email().local }}<wbr />{{ email().domain }}</span
+          >
         </div>
 
         <div class="account__row">

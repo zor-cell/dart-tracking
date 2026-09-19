@@ -2,9 +2,6 @@ TODOs:
 
 Wenig Aufwand:
 - auf iphone 12 als einziges handy nicht voller bildschirm benutzt
-- email sehr lang in konto ansicht und abgeschnitten, vllt kleinere fontsize dafür?
-- man kann bei den slider buttons im game create keine option auswählen, wird zwar rot aber am besten wenn das
-gar nicht geht
 
 Viel Aufwand:
 

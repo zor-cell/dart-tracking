@@ -1,12 +1,13 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { FitTextDirective } from '../../../../core/ui/directives/fit-text.directive';
 import { APP_VERSION } from '../../../../../environments/version';
 import {
   DISPLAY_NAME_MAX_LENGTH,
@@ -24,6 +25,7 @@ type EditableField = 'displayName' | 'username';
   imports: [
     Button,
     DatePipe,
+    FitTextDirective,
     InputText,
     Message,
     ProgressSpinner,
@@ -47,6 +49,16 @@ export class AccountComponent {
   protected readonly isAdmin = this.auth.isAdmin;
 
   protected readonly version = APP_VERSION;
+
+  /** The address in two parts, so the row breaks on the `@` instead of mid-word
+   * when it is too long for one line. */
+  protected readonly email = computed(() => {
+    const address = this.user()?.email ?? '';
+    const at = address.lastIndexOf('@');
+    return at < 0
+      ? { local: address, domain: '' }
+      : { local: address.slice(0, at), domain: address.slice(at) };
+  });
   protected readonly busy = signal(false);
   protected readonly restoring = signal(true);
 
