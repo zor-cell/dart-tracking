@@ -10,6 +10,7 @@
       <p-selectbutton
         inputId="variant"
         formControlName="variant"
+        [allowEmpty]="false"
         [options]="variantOptions"
         optionLabel="label"
         optionValue="value"
@@ -21,6 +22,7 @@
       <p-selectbutton
         inputId="mode"
         formControlName="mode"
+        [allowEmpty]="false"
         [options]="modeOptions"
         optionLabel="label"
         optionValue="value"
@@ -32,6 +34,7 @@
       <p-selectbutton
         inputId="checkoutMode"
         formControlName="checkoutMode"
+        [allowEmpty]="false"
         [options]="checkoutModeOptions"
         optionLabel="label"
         optionValue="value"
