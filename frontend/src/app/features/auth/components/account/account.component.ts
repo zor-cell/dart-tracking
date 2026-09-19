@@ -7,6 +7,7 @@ import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { APP_VERSION } from '../../../../../environments/version';
 import {
   DISPLAY_NAME_MAX_LENGTH,
   USERNAME_MAX_LENGTH,
@@ -44,6 +45,8 @@ export class AccountComponent {
 
   protected readonly user = this.auth.user;
   protected readonly isAdmin = this.auth.isAdmin;
+
+  protected readonly version = APP_VERSION;
   protected readonly busy = signal(false);
   protected readonly restoring = signal(true);
 

@@ -1,9 +1,12 @@
 {
   "name": "frontend",
-  "version": "0.0.0",
+  "version": "0.7.0",
   "scripts": {
     "ng": "ng",
+    "version:generate": "node scripts/generate-version.mjs",
+    "prestart": "npm run version:generate",
     "start": "ng serve",
+    "prebuild": "npm run version:generate",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"

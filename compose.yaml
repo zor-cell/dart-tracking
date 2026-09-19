@@ -41,6 +41,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        APP_BUILD: ${APP_BUILD:-}
     restart: unless-stopped
     ports:
       - "10020:80"

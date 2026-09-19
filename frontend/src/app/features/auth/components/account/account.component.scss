@@ -33,6 +33,14 @@
   }
 }
 
+.account__version {
+  margin: 0;
+  padding-top: 0.5rem;
+  text-align: center;
+  color: var(--p-text-muted-color);
+  font-size: 0.8rem;
+}
+
 /* Rows that navigate to a sub-page of the account area. */
 .pages {
   display: flex;
