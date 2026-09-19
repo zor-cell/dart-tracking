@@ -28,8 +28,11 @@
 }
 
 .setup__grip {
+  position: relative;
   align-self: stretch;
-  width: 1.5rem;
+  /* A thumb's width, not an icon's: at 1.5rem the miss lands in the name field
+     next to it, which opens the keyboard instead of starting the drag. */
+  width: 2.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -48,6 +51,14 @@
   &:focus-visible {
     outline: 2px solid var(--p-primary-color, #10b981);
     outline-offset: 1px;
+  }
+
+  /* Rounds the grab area up to the 44px a finger needs, without making the row
+     taller than the field it sits beside. */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -0.25rem 0;
   }
 }
 
