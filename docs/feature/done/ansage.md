@@ -128,6 +128,25 @@ Sprachausgabe und nimmt sie beim Zurückkommen nicht von selbst wieder auf. Vor
 jeder Äußerung steht deshalb ein `resume()`. Auf anderen Browsern ist der Aufruf
 wirkungslos.
 
+**Ohne laufende Audio-Sitzung bleibt das iPhone stumm.** Auf iOS hängt die
+Sprachausgabe an der Audio-Sitzung der Seite, und die startet nicht von selbst.
+Deshalb wird bei der ersten Nutzeraktion — und beim Selbsttest, der ohnehin im
+Tippen sitzt — ein `AudioContext` angelegt und mit `resume()` geweckt, bevor
+gesprochen wird. Derselbe Effekt trifft auch die andere Richtung: ein laufendes
+`getUserMedia` schaltet iOS in den Aufnahme-Modus, in dem die Sprachausgabe als
+„system speech" degradiert wird. Deshalb hat der Kamera-Stream kein Audio
+([kamera.md §1](kamera.md#1-der-stream)), und deshalb ist ein Gerät ohne Kamera
+der bessere Ansager.
+
+**Vor jeder Äußerung wird abgebrochen.** `speechSynthesis.cancel()` unmittelbar
+vor `speak()` räumt den Zustand weg, in dem WebKit jede weitere Äußerung
+verschluckt — dieselbe Klemme, die der Einzel-Warteschlange oben zugrunde liegt,
+nur von der anderen Seite. Auf Chromium ist der Aufruf folgenlos (geprüft: die
+Äußerung läuft danach bis `end` durch).
+
+> Beide Punkte stammen aus Fremdberichten zu genau diesem Fehlerbild und sind auf
+> unserem iPhone noch **nicht bestätigt** — dafür ist der Selbsttest da.
+
 **`getVoices()` ist beim ersten Aufruf leer.** Die Stimmliste lädt
 asynchron. Der Client fragt sie deshalb pro Äußerung neu ab und setzt
 `utterance.voice` nur, wenn eine deutsche Stimme dabei ist; sonst bleibt das
@@ -135,9 +154,36 @@ Feld unberührt und die Auswahl läuft über `utterance.lang`. Ein ausdrücklich
 `null` gesetztes `voice` hat in manchen WebKit-Versionen dieselbe Wirkung wie
 eine ungültige Stimme.
 
+### Der Selbsttest
+
+Alle Punkte oben haben dieselbe Schwäche: **ein stummes Handy sieht bei jeder
+Ursache gleich aus.** Ob die Ansage gar nicht ankam, der Browser sie verschluckte
+oder sie lief und nur niemand sie hörte, ist von außen nicht zu unterscheiden —
+und genau deshalb war „auf iOS geht die Sprache nicht" bisher nicht reparierbar,
+sondern nur ratbar.
+
+Deshalb steht unter *Einstellungen → Ansage* ein Test. Er spricht einen Satz
+**direkt aus dem Tippen heraus** — der eine Moment, in dem WebKit eine erste
+Äußerung zulässt, womit er ein bisher stummes Gerät zugleich freischaltet — und
+meldet, was der Synthesizer daraus gemacht hat:
+
+| Ergebnis | Heißt |
+|---|---|
+| gesprochen | Die Äußerung lief bis zum Ende. War nichts zu hören, liegt es an Lautstärke oder Klingelton-Schalter — die API weiß davon nichts. |
+| keine Rückmeldung | Weder `end` noch `error` kamen an; der Browser hat die Äußerung verschluckt. |
+| abgebrochen | `error`, also eine abgelehnte Äußerung (Stimme, Sprache, Zustand). |
+| stumm geschaltet | Der Lautsprecher-Knopf dieses Geräts steht auf stumm. |
+| keine Sprachausgabe | Der Browser hat die Web Speech API nicht. |
+
+Daneben steht, was das Gerät über sich sagt: ob die API da ist, ob schon einmal
+eine Äußerung *gestartet* ist (Freischaltung), wie viele Stimmen geladen sind und
+davon deutsche, ob dieses Gerät überhaupt der Ansager ist und ob es stumm steht.
+Damit fällt eine Aussage wie „geht auf iOS nicht" in einen der Fälle oben, und
+jeder davon hat eine andere Antwort.
+
 ### Was außerhalb des Codes liegt
 
-Bleibt ein iPhone trotzdem stumm, sind zwei Ursachen wahrscheinlicher als ein
+Bleibt ein iPhone trotzdem stumm, sind drei Ursachen wahrscheinlicher als ein
 Fehler in der Pipeline:
 
 - **Der Stummschalter am Gehäuse.** iOS führt die Sprachausgabe der Web Speech
@@ -146,6 +192,11 @@ Fehler in der Pipeline:
 - **Das Gerät ist gar nicht der Ansager.** Ist ein Laptop als Scoreboard im
   Spiel, gewinnt er nach Regel 2 gegen das Kamera-Handy. Der Lautsprecher-Button
   ist dann auf dem iPhone grau; ein Tippen holt die Rolle herüber (§3).
+- **Der Bildschirm ist aus.** Ein Scoreboard-Handy, das nur danebenliegt, sperrt
+  nach einer Minute; WebKit friert die Seite dann ein, und eine Ansage, die nie
+  ankommt, kann auch nicht gesprochen werden. Ein Kamera-Gerät bleibt wegen des
+  laufenden Videos meist wach, ein Scoreboard nicht. Gegenmittel wäre ein Wake
+  Lock ([kamera.md §3](kamera.md#3-offene-punkte)), verbaut ist keiner.
 
 ---
 

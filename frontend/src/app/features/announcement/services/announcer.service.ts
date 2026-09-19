@@ -11,13 +11,23 @@ const ANNOUNCEMENT_LANG = 'de-DE';
 /** Spoken at volume 0 to prime the synthesiser; must not be empty on WebKit. */
 const UNLOCK_PHRASE = 'ok';
 
+/** What the self-test says out loud. */
+const TEST_PHRASE = 'Ansage funktioniert';
+
 /** Watchdog for an utterance that never reports back, in ms. */
 const UTTERANCE_TIMEOUT_BASE = 2000;
 const UTTERANCE_TIMEOUT_PER_CHAR = 120;
 
+/** Older WebKit has the audio context under a prefix. */
+type WebAudioWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
+
+/** What the synthesiser did with the self-test's utterance. `spoken` says it ran
+ * to the end, not that anything was audible (docs/feature/done/ansage.md §4). */
+export type AnnouncerTestResult = 'spoken' | 'failed' | 'no_answer' | 'muted' | 'unsupported';
+
 /**
  * Speaks the darts the camera books, on the one device the server picked as
- * announcer (docs/feature/ansage.md). Muting is local to this device.
+ * announcer (docs/feature/done/ansage.md). Muting is local to this device.
  */
 @Injectable({ providedIn: 'root' })
 export class AnnouncerService {
@@ -28,13 +38,18 @@ export class AnnouncerService {
   private readonly _muted = signal(localStorage.getItem(MUTED_KEY) === 'true');
 
   private readonly pending: string[] = [];
+  private audio: AudioContext | null = null;
   private speaking = false;
-  private unlocked = false;
+  private readonly _unlocked = signal(false);
   private watchdog: ReturnType<typeof setTimeout> | null = null;
   private readonly onGesture = () => this.unlock();
 
   readonly muted = this._muted.asReadonly();
   readonly supported = this.synth() !== null;
+
+  /** Whether an utterance has been heard to start on this device. Until then the
+   * browser may be dropping them, which is what the self-test makes visible. */
+  readonly unlocked = this._unlocked.asReadonly();
   readonly isAnnouncer = computed(
     () => this.announcerId() !== null && this.announcerId() === this.socket.clientId(),
   );
@@ -93,15 +108,12 @@ export class AnnouncerService {
       return;
     }
 
-    // WebKit leaves the synthesiser paused after the page was backgrounded.
+    // WebKit swallows every later utterance once its queue is stuck, and leaves
+    // the synthesiser paused after the page was backgrounded.
+    synth.cancel();
     synth.resume();
 
-    const utterance = new SpeechSynthesisUtterance(phrase);
-    utterance.lang = ANNOUNCEMENT_LANG;
-    const voice = this.germanVoice();
-    if (voice !== null) {
-      utterance.voice = voice;
-    }
+    const utterance = this.utterance(phrase);
 
     const finish = () => {
       if (!this.speaking) {
@@ -142,26 +154,106 @@ export class AnnouncerService {
    */
   private unlock(): void {
     const synth = this.synth();
-    if (this.unlocked || synth === null || this.speaking) {
+    if (this._unlocked() || synth === null || this.speaking) {
       return;
     }
-    const utterance = new SpeechSynthesisUtterance(UNLOCK_PHRASE);
+    this.primeAudio();
+    const utterance = this.utterance(UNLOCK_PHRASE);
     utterance.volume = 0;
-    utterance.lang = ANNOUNCEMENT_LANG;
-    utterance.onstart = () => {
-      this.unlocked = true;
-      this.document.removeEventListener('pointerdown', this.onGesture, { capture: true });
-    };
     synth.resume();
     synth.speak(utterance);
   }
 
-  private germanVoice(): SpeechSynthesisVoice | null {
+  /**
+   * Say one phrase out loud and report what the synthesiser made of it. Speaks
+   * from inside the caller's click, the one moment WebKit allows a first
+   * utterance (docs/feature/done/ansage.md §4).
+   */
+  test(): Promise<AnnouncerTestResult> {
+    const synth = this.synth();
+    if (synth === null) {
+      return Promise.resolve<AnnouncerTestResult>('unsupported');
+    }
+    if (this._muted()) {
+      return Promise.resolve<AnnouncerTestResult>('muted');
+    }
+
+    this.primeAudio();
+    this.stop();
+    const utterance = this.utterance(TEST_PHRASE);
+
+    return new Promise((resolve) => {
+      const settle = (result: AnnouncerTestResult) => {
+        if (this.speaking) {
+          this.speaking = false;
+          this.clearWatchdog();
+          resolve(result);
+          this.drain();
+        }
+      };
+      utterance.onend = () => settle('spoken');
+      utterance.onerror = () => settle('failed');
+
+      // Held like a queued phrase, so an announcement arriving mid-test waits
+      // rather than talking over it.
+      this.speaking = true;
+      this.watchdog = setTimeout(
+        () => settle('no_answer'),
+        UTTERANCE_TIMEOUT_BASE + TEST_PHRASE.length * UTTERANCE_TIMEOUT_PER_CHAR,
+      );
+      synth.resume();
+      synth.speak(utterance);
+    });
+  }
+
+  /**
+   * Open and resume an audio context, from inside a gesture. iOS keeps speech
+   * silent while the page holds no running audio session
+   * (docs/feature/done/ansage.md §4).
+   */
+  private primeAudio(): void {
+    const view = this.document.defaultView as WebAudioWindow | null;
+    const context = view?.AudioContext ?? view?.webkitAudioContext;
+    if (context === undefined) {
+      return;
+    }
+    const audio = (this.audio ??= new context());
+    void audio.resume().catch(() => {});
+  }
+
+  /** An utterance in the announcement voice, and the note that speech works on
+   * this device once it starts. */
+  private utterance(phrase: string): SpeechSynthesisUtterance {
+    const utterance = new SpeechSynthesisUtterance(phrase);
+    utterance.lang = ANNOUNCEMENT_LANG;
+    const voice = this.germanVoice();
+    if (voice !== null) {
+      utterance.voice = voice;
+    }
+    utterance.onstart = () => {
+      this._unlocked.set(true);
+      this.document.removeEventListener('pointerdown', this.onGesture, { capture: true });
+    };
+    return utterance;
+  }
+
+  /** How many voices the device offers, and how many of them speak German. Both
+   * load asynchronously, so they are read fresh rather than cached. */
+  voiceCounts(): { total: number; german: number } {
     const voices = this.synth()?.getVoices() ?? [];
-    return voices.find((v) => v.lang.replace('_', '-').toLowerCase().startsWith('de')) ?? null;
+    return { total: voices.length, german: voices.filter(isGerman).length };
+  }
+
+  private germanVoice(): SpeechSynthesisVoice | null {
+    return (this.synth()?.getVoices() ?? []).find(isGerman) ?? null;
   }
 
   private synth(): SpeechSynthesis | null {
     return this.document.defaultView?.speechSynthesis ?? null;
   }
+}
+
+/** Whether a voice speaks German, whichever way the device writes the tag. */
+function isGerman(voice: SpeechSynthesisVoice): boolean {
+  return voice.lang.replace('_', '-').toLowerCase().startsWith('de');
 }

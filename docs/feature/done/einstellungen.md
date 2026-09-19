@@ -65,6 +65,22 @@ Konto ohne Zeile zum Fehler wird.
 Schalter je einen undefinierten Zustand auf der Leitung, und die Antwort des
 `PUT` ist das, was gespeichert wurde.
 
+## 3a. Die Debug-Schalter gehören dem Admin
+
+Die drei `debug*`-Schalter sind Diagnose, nicht Spielverhalten: zwei lassen den
+Server pro Frame Bilder auf die Platte schreiben, der dritte zeichnet die
+Änderungsmaske über das Kamerabild. Für ein normales Konto ist damit nichts
+gewonnen und im Zweifel eine volle Platte zu holen, also sind sie an die
+Admin-Rolle gebunden — dieselbe, an der die Auswertungs-Seite hängt
+([auswertung.md §7c](../auswertung.md#7c-warum-eine-admin-rolle)).
+
+Gesperrt wird **am Server**, in beide Richtungen: `GET` maskiert sie aus, `PUT`
+speichert sie für ein Konto ohne die Rolle als `False`
+(`AppSettings.without_diagnostics`). Nur die Oberfläche auszublenden würde einen
+schon gespeicherten `True` weiterlaufen lassen, und ohne die Kachel gäbe es keinen
+Weg, ihn wieder auszuschalten. Der Client blendet die Kachel zusätzlich aus, damit
+niemand einen Schalter sieht, der nichts tut.
+
 ## 4. Auf dem Client
 
 `SettingsService` hält weiterhin ein Signal, das die Views synchron lesen — an

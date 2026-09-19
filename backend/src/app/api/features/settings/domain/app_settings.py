@@ -4,7 +4,8 @@ Server-owned so the choices follow the account across devices; an anonymous
 session gets `DEFAULTS` and cannot change them.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from typing import Self
 
 
 @dataclass(frozen=True)
@@ -18,6 +19,16 @@ class AppSettings:
     debug_calibration: bool = False
     debug_detection: bool = False
     debug_client_detection: bool = False
+
+    def without_diagnostics(self) -> Self:
+        """This set with every debug switch off: what an account that is not an
+        admin runs on, whatever happens to be stored for it."""
+        return replace(
+            self,
+            debug_calibration=False,
+            debug_detection=False,
+            debug_client_detection=False,
+        )
 
 
 DEFAULTS = AppSettings()
