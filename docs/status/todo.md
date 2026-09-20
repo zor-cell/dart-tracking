@@ -13,8 +13,8 @@ Zukunft:
   aber nicht in der referenz, die naechste differenz zeigt zwei. frame nachziehen war
   gebaut und wieder rausgenommen (zu eingreifend), problem ist noch offen
 - sprache englisch machen
-- möglichkeit für knappe tripe/double erkennung, wieder mit farbmaske arbeiten, wenn eine maske unterbrochen ist, aber nikcht durchgängig, dann steckt wahrscheinlich
-  ein pfeil drinnen
+- knappe triple/double faelle ueber die farbkante entscheiden statt ueber millimeter,
+  ausgearbeitet in docs/feature/erkennung-verbesserungen.md §8
 - Players ansicht im konto profil. dort muss man player löschen können. man muss auch einen existierenden user
 seine games zuschreiben können, der muss halt akzeptieren. 
 - statistiken nach datum sortieren können, die default ansicht einfach letzten monat (eher letzte 30 tage montasübergreifend)

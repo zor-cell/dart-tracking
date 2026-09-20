@@ -180,6 +180,45 @@ nicht. Zwei Kandidaten:
 Daten bestimmt, auf denen der Befund entstand, und damit nur ein Hinweis auf die
 Größenordnung — der Wert muss aus Schritt 1 kommen, nicht aus dieser Tabelle.
 
+### Ergebnis der Lineal-Messung (20.09.)
+
+Schritt 1 ist erledigt, und die Antwort ist **beide Kandidaten**.
+
+Am Board (Winmau Blade 6): Double und Triple messen je **genau 10.0 mm von Apex
+zu Apex**, die beiden Blades zusammen etwa 0.5 mm — also rund 9.5 mm blankes
+Sisal statt der modellierten 8.0 mm. Die Außenradien waren über die lange Strecke
+mit dem Lineal nicht sauber zu treffen, sie sind aber durch die Kantenmessung
+oben (−0.4 mm an der Außenkante) ohnehin bestätigt.
+
+Die 8.0 mm waren nie falsch abgelesen, sondern die **Runddraht**-Zahl: die WDF
+nennt 8.0 mm inside-to-inside für Runddraht und 10.0 mm apex-to-apex für
+Banddraht. Das ist derselbe Ring, nur liegen die 2 mm Differenz bei Runddraht
+unter den Drähten und bei Banddraht frei.
+
+Damit zerfällt die gemessene Abweichung in zwei Teile:
+
+| Anteil | Triple innen | Double innen |
+|---|---|---|
+| gemessen (Farbkanten) | −3.1 mm | −3.6 mm |
+| davon Geometrie (8.0 → 10.0 mm) | −2.0 mm | −2.0 mm |
+| **Rest: radialer Bias** | **−1.1 mm** | **−1.6 mm** |
+
+Der Rest ist kein Geometrieproblem und gehört nicht in die Ringkonstante; er
+steht als eigener Punkt in
+[kalibrierung.md §7](../feature/done/kalibrierung.md#7-offene-punkte).
+
+**Umgesetzt:** `RING_WIDTH = 9.2 mm`, die Innenkanten also auf 98.2 / 160.8 mm
+— bewusst ein Teilschritt und nicht gleich die vollen 10.0 mm. Gründe: die
+Kontrafaktik oben zeigt, dass jedes Millimeter nach innen auch Singles kostet
+(−4 bis −7), und sobald der radiale Bias behoben ist, verschiebt sich das
+Optimum ohnehin wieder nach außen.
+
+Auf dem Offline-Testsatz als A/B am selben Codestand gemessen: **225 / 285
+(78.9 %) → 227 / 285 (79.6 %)**, `Located` in beiden Läufen identisch bei
+274 / 285. Also genau die zwei Pfeile, die die Klasse hergibt, und keine
+Nebenwirkung. Die Live-Daten oben lassen mehr erwarten, dort steckt aber auch
+der radiale Bias mit drin.
+
 ---
 
 ## 4. Orientierung bei steiler Kamera

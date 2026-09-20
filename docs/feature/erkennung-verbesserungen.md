@@ -17,7 +17,7 @@ Trigger-Problem löst.
 **Ausgangslage:** das Testset enthält jetzt zwei gegenläufige Pfeil-Typen —
 die alten dunklen (`pz`, `tz`) und die neuen mit Wolfram-Spitzen und **einfarbig
 weißen Flights** (`cc`, `fh`, `pz-light`). 285 Paare über fünf Boards / 16 Setups.
-Ausgangsstand **216/285 = 75.8 %**, aktueller Stand **226/285 = 79.3 %**
+Ausgangsstand **216/285 = 75.8 %**, aktueller Stand **227/285 = 79.6 %**
 (Metrik: `NO_CHANGE` gegen ein erwartetes `MISS` zählt als korrekt, siehe
 [erkennung.md §3](done/erkennung.md#no_change-ist-punktemäßig-ein-miss)).
 
@@ -39,6 +39,7 @@ strukturellen Ursache. Dieser Plan zielt ausschließlich auf die zweite Klasse.
 | 5 | [Homographie-Residuum messen](#5-homographie-residuum-messen) | M | teilweise (Overlay + Kameraversatz erledigt) |
 | 6 | [Ambiguitäts-Guard](#6-ambiguitäts-guard) | S | offen |
 | 7 | [Der Pfeil muss als ein Blob ankommen](erkennung-blob.md) | L | **in Arbeit — das eigentliche Ziel**, dem die Schritte oben zuarbeiten. Blob-Metriken (§6.5) und Fusions-Reichweite (§6.1b) erledigt, 77.9 % → **79.6 %**; Anker-Umsortierung (§6.1) verworfen |
+| 8 | [Farbkante entscheidet knappe Ringfälle](#8-farbkante-entscheidet-knappe-ringfälle) | M | offen |
 
 Nach jedem Schritt `scripts/detection/run_all.py` laufen lassen und die
 Accuracy-Tabelle in [erkennung.md §6](done/erkennung.md#6-stand-der-messungen)
@@ -640,3 +641,57 @@ scoren. Hängt direkt am Todo „client diff löst öfter aus, das Backend muss 
 prüfen".
 
 **Erwartung.** Kein Accuracy-Gewinn, sondern Robustheit im echten Spiel.
+
+---
+
+## 8. Farbkante entscheidet knappe Ringfälle
+
+**Befund.** Die größte verbliebene Fehlerklasse sind Ringverwechslungen im
+selben Sektor: T→S und D→S, Spitze wenige Millimeter neben der Ringkante
+([testrun2 §2](../test/testrun2.md), 9 von 19 `wrong`). Ein Teil davon war die zu
+schmale Ringbreite und ist mit `RING_WIDTH = 9.2` erledigt. Der Rest bleibt, weil
+die Entscheidung heute **zwei Millimeterzahlen vergleicht**: den Radius der
+Spitze und die Modellkante. Beide kommen aus derselben Homographie, und die
+trägt innerhalb des 170-mm-Kreises einen radialen Bias von 1 – 2 mm
+([kalibrierung.md §7](done/kalibrierung.md#7-offene-punkte)) — also genau in der
+Größenordnung der Entscheidung.
+
+**Idee.** Bei einem knappen Fall nicht die Millimeter vergleichen, sondern **im
+Bild nachsehen, auf welcher Seite der Farbkante die Spitze liegt**. Die
+Ringkante ist im Bild direkt sichtbar: rot/grünes Bett gegen schwarz/beiges. Wird
+die Spitze gegen diese Kante geprüft statt gegen die Modellkante, fällt der
+Kalibrierungsbias aus der Rechnung — beide Größen werden aus demselben Bild
+gelesen, der Bias wirkt auf beide gleich.
+
+**Ablauf.**
+
+1. Nur auslösen, wenn der Radius der Spitze weniger als ~2 mm von einer
+   Ringkante entfernt ist. Alles andere läuft unverändert durch, der Schritt kann
+   den Normalfall also nicht verschlechtern.
+2. Auf dem **Referenzframe** (Bett unverdeckt) den Strahl vom Board-Mittelpunkt
+   durch die Spitze abtasten und die Farbkante nahe der Modellkante suchen —
+   dieselbe Mechanik wie der Ring-Walk der Kalibrierung, nur auf einem Strahl.
+3. Spitzenposition und gefundene Kante im Bild vergleichen, das entscheidet den
+   Multiplikator. Der Sektor bleibt bei der Geometrie.
+
+**Offene Fragen.**
+
+- Steckt aus demselben Visit schon ein Pfeil in diesem Bett, ist die Kante auch
+  im Referenzframe unterbrochen. Der Ring-Walk überbrückt solche Lücken bereits
+  (`_find_colour_transitions`), die Logik ist übertragbar.
+- Auf unterbelichteten Aufnahmen gibt es keine Farbe (bekannte HSV-Grenze) →
+  Rückfall auf die reine Geometrie, nicht auf ein Rateergebnis.
+- Verwandt, aber nicht dasselbe: aus einer *unterbrochenen* Ringmaske darauf zu
+  schließen, dass überhaupt ein Pfeil im Ring steckt. Das ist ein
+  Anwesenheits-, kein Kantentest — als Plausibilisierung interessant, als
+  Entscheidungsgrundlage zu schwach, weil der Schaft ohnehin über mehrere Betten
+  läuft.
+
+**Verhältnis zum radialen Bias.** Der Schritt umgeht den Bias an der Stelle, an
+der er weh tut, behebt ihn aber nicht: Heatmaps und Trefferstatistiken benutzen
+den Millimeterwert direkt und bleiben schief. Die beiden Vorhaben ersetzen
+einander nicht.
+
+**Erwartung.** Greift nur auf den knappen Fällen; die Obergrenze sind die
+Ringverwechslungen, rund 5 % aller Pfeile.
+

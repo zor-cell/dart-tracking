@@ -810,9 +810,16 @@ Zeilen vergleichbar bleiben:
 | (Anker-Umsortierung — sechs Regeln gemessen, verworfen, §5.13) | 219 – 223 / 285 |
 | + Fusions-Reichweite 90 → 110 mm (§2.3) | 227 / 285 — 79.6 % |
 | + `NO_CHANGE` als eigenes Truth-Label (§3) | 226 / 285 — 79.3 % |
-| + kleine `MISS`-Blobs verworfen (§2.5) | **224 / 285 — 78.6 %** |
+| + kleine `MISS`-Blobs verworfen (§2.5) | 224 / 285 — 78.6 % |
+| + Ringbreite 8.0 → 9.2 mm ([kalibrierung.md](kalibrierung.md#das-board-koordinatensystem)) | **227 / 285 — 79.6 %** |
 
-Die letzte Zeile kostet auf dem Testsatz genau zwei echte Fehlwürfe (Truth
+Die **letzte Zeile** ist als direktes A/B am selben Codestand gemessen:
+225 / 285 mit 8.0 mm, 227 / 285 mit 9.2 mm, `Located` in beiden Läufen identisch
+274 / 285. Die Differenz zur Zeile darüber ist deshalb *nicht* der Beitrag dieses
+Schritts — dazwischen liegen andere Änderungen, die vor diesem A/B nicht neu
+vermessen waren.
+
+Die Zeile davor kostet auf dem Testsatz genau zwei echte Fehlwürfe (Truth
 `MISS`, jetzt `NO_CHANGE`), punktemäßig identisch. Gewonnen wird sie im
 laufenden Spiel: dort waren ein Drittel aller gebuchten Darts solche Krümel
 ([client-diff-verbesserungen.md §9](../client-diff-verbesserungen.md#9-kleine-miss-blobs-verwerfen-server)).
@@ -860,8 +867,8 @@ Label-Quote als einzige Metrik nicht reicht — ein Fehler kann sich als Treffer
 tarnen, und nur die `off by`-Spalte und das Board-Modell im Bild (§4) zeigen das.
 
 Seither ist das Test-Set auf **285 Paare** über fünf Boards und 16 Setups
-gewachsen; die Pipeline erreicht darauf **226 / 285 — 79.3 %**, pro Board
-73 – 87 %. Ein Blob wird praktisch immer gefunden (281/285 „lokalisiert"), und
+gewachsen; die Pipeline erreicht darauf **227 / 285 — 79.6 %**, pro Board
+73 – 87 %. Ein Blob wird praktisch immer gefunden (274/285 „lokalisiert"), und
 die Ausnahmen sind Pfeile, die gar nicht steckenblieben (§3) — die
 aussagekräftige Zahl ist die korrekte *Wertung*, nicht „irgendwo ein Pfeil".
 

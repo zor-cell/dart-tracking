@@ -31,14 +31,25 @@ Definiert in `domain/board_geometry.py`, nach WDF/BDO-Norm:
 |---|---|
 | Bullseye (50) | r ≤ 6.35 mm |
 | Bull (25) | r ≤ 15.9 mm |
-| Triple-Ring | 99.4 – 107.4 mm |
-| Double-Ring | 162.0 – 170.0 mm |
+| Triple-Ring | 98.2 – 107.4 mm |
+| Double-Ring | 160.8 – 170.0 mm |
 | Äußere Scoring-Grenze | 170.0 mm |
 | Sektoren | 20, je 18° |
 
 Ursprung im Bullseye, x nach rechts, y nach oben, Winkel gegen den Uhrzeigersinn
 ab +x. Sektor 20 hängt konventionsgemäß oben (`FIRST_SECTOR_CENTRE_ANGLE = π/2`),
 die Sektorfarben alternieren strikt, Sektor 20 ist rot.
+
+**Ringbreite.** Die Norm fixiert die *Außenkante* (170.0 bzw. 107.4 mm, jeweils
+bis zur Außenseite des Drahts) und die Breite getrennt: 8.0 mm inside-to-inside
+bei Runddraht, 10.0 mm apex-to-apex bei Banddraht. Das ist derselbe Ring — bei
+Runddraht liegen die fehlenden 2 mm unter den beiden Drähten, bei Banddraht sind
+sie Sisal. Die Scoring-Bänder waren bis 20.09. mit 8.0 mm an die Außenkante
+geklebt und damit innen 2 mm zu kurz; das war die häufigste Einzelursache für
+Fehlwertungen ([testrun1 §3](../../test/testrun1.md#3-ring-innenkanten-nachmessen)).
+Sie stehen jetzt auf `RING_WIDTH = 9.2 mm`, also knapp innerhalb der physischen
+Kante — der Rest der gemessenen Abweichung ist kein Geometrie-, sondern ein
+Kalibrierungsfehler und gehört nicht in diese Konstante (siehe §7).
 
 ### Was die Homographie aussagt
 
@@ -191,8 +202,8 @@ Kandidatin muss deshalb ein ganzes **Board** erklären — zwei konzentrische Ri
 im normierten Verhältnis:
 
 ```python
-_DOUBLE_BAND = (162.0 + 170.0) / 2 / 170.0   # ≈ 0.976
-_TRIPLE_BAND = ( 99.4 + 107.4) / 2 / 170.0   # ≈ 0.608
+_DOUBLE_BAND = (160.8 + 170.0) / 2 / 170.0   # ≈ 0.973
+_TRIPLE_BAND = ( 98.2 + 107.4) / 2 / 170.0   # ≈ 0.605
 _BAND_TOLERANCE = 0.10
 ```
 
@@ -551,11 +562,21 @@ Ellipsen-Fit sitzt.
 
 - **Unabhängige Genauigkeitsmessung.** Die ±0.2 mm sind das Fit-Residuum. Für
   eine belastbare Zahl braucht es Punkte, die *nicht* in den Fit eingegangen
-  sind — etwa bekannte Positionen auf dem Triple-Ring.
+  sind — etwa bekannte Positionen auf dem Triple-Ring. Ein erster solcher Satz
+  liegt vor: die Farbkanten von Triple und Double, über 60 Radien je Basisbild
+  gemessen ([testrun1 §3](../../test/testrun1.md#3-ring-innenkanten-nachmessen)).
+- **Radialer Bias nach innen.** Ebendiese Messung: die Außenkante, auf die
+  gefittet wird, sitzt richtig (−0.4 mm), die Kanten weiter innen laufen um
+  1.0 – 1.9 mm nach innen weg. Ein reiner Skalenfehler wäre am Rand am größten,
+  dieser ist dort null — das Muster passt zu Objektivverzeichnung, die von einer
+  Homographie nicht erfasst wird. Plausibler Grund: **alle 20 Korrespondenzen
+  liegen auf einem einzigen Kreis** (170 mm), radial innerhalb davon ist die
+  Abbildung durch nichts gestützt. Kandidaten: zusätzliche Korrespondenzen auf
+  den Ring-Innenkanten, oder eine Kamera-Vorkalibrierung.
 - **Beleuchtungsvarianz.** Die HSV-Grenzen sind fest. Unterbelichtete Aufnahmen
   fallen komplett durch (siehe §6).
-- **Objektivverzeichnung.** Aktuell unmodelliert. Ob eine
-  Kamera-Vorkalibrierung den Randfehler nennenswert senkt, ist ungeprüft.
+- **Objektivverzeichnung.** Aktuell unmodelliert; siehe den radialen Bias oben,
+  der der erste gemessene Hinweis darauf ist.
 - **Re-Kalibrierung.** `H` gilt nur für eine feste Kamerapose. Ausgelöst wird
   sie inzwischen an jedem Rundenwechsel, auf Anforderung eines beliebigen
   Geräts im Raum und beim Beitritt einer Kamera, für die das Spiel noch keine

@@ -219,14 +219,14 @@ def _draw_ruler(ax) -> None:
         style="italic",
     )
 
-    # Nudges keep the labels of bands only 8 mm apart from touching.
+    # Nudges keep the labels of bands only 9 mm apart from touching.
     ticks = (
         (0.0, "0", -3.5),
         (BULLSEYE_RADIUS, "6.35", 3.5),
         (BULL_RADIUS, "15.9", 10.0),
-        (TRIPLE_INNER_RADIUS, "99.4", -4.5),
+        (TRIPLE_INNER_RADIUS, "98.2", -4.5),
         (TRIPLE_OUTER_RADIUS, "107.4", 4.5),
-        (DOUBLE_INNER_RADIUS, "162.0", -4.5),
+        (DOUBLE_INNER_RADIUS, "160.8", -4.5),
         (DOUBLE_OUTER_RADIUS, "170.0", 4.5),
     )
     for radius, label, nudge in ticks:
