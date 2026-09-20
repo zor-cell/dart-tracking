@@ -60,6 +60,10 @@ export class GameSessionService {
   // after a reload once the game is confirmed. Consumed once the elements exist.
   private pendingResumePhase: CameraPhase | null = null;
 
+  // A calibration asked for while no camera view was mounted, run on the next
+  // attach.
+  private pendingCalibration = false;
+
   constructor() {
     effect(() => {
       if (this.calibration.status() === 'success' && this.phase() === 'calibrating') {
@@ -67,8 +71,8 @@ export class GameSessionService {
       }
     });
 
-    // A recalibration asked for elsewhere: the scoreboard's button, or the end
-    // of a visit, when the darts have just come out of the board. The server
+    // A recalibration asked for elsewhere: the scoreboard's button, the end of
+    // a visit, or joining a game the server holds no calibration for. The server
     // sends it to camera devices only; the phase is what says whether this one
     // has a running picture to answer it with.
     this.socket
@@ -103,10 +107,14 @@ export class GameSessionService {
 
     if (this.phase() !== 'idle') {
       this.camera.attachTo(video);
-      video.play().catch(() => {});
+      const playing = video.play().catch(() => {});
 
       if (this.phase() === 'tracking') {
         this.runDetectionLoop();
+      }
+      // Awaited: before playback starts the element has no frame to capture.
+      if (this.pendingCalibration) {
+        void playing.then(() => this.calibrate());
       }
       return;
     }
@@ -151,11 +159,17 @@ export class GameSessionService {
     }
   }
 
-  /** Capture the current frame for board calibration. */
+  /** Capture the current frame for board calibration. With no view mounted there
+   * is no frame to send: the attempt is held over to the next attach, and the
+   * outline of the last one drops with it. */
   async calibrate(): Promise<void> {
-    if (this.video && this.captureCanvas) {
-      await this.calibration.calibrate(this.video, this.captureCanvas);
+    if (!this.video || !this.captureCanvas) {
+      this.pendingCalibration = true;
+      this.calibration.reset();
+      return;
     }
+    this.pendingCalibration = false;
+    await this.calibration.calibrate(this.video, this.captureCanvas);
   }
 
   /** End the game: full teardown of the live session. The socket goes down with
@@ -164,6 +178,7 @@ export class GameSessionService {
     this.throwCapture.stopDetectionLoop();
     this.camera.stop();
     this.calibration.reset();
+    this.pendingCalibration = false;
     this.phase.set('idle');
   }
 

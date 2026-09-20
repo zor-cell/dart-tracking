@@ -122,6 +122,14 @@ async def websocket_endpoint(
     await hub.send(connection, GameStateDto.from_entity(game))
     await _publish_announcer(game_id)
 
+    # A camera without a calibration for this game cannot detect anything, and
+    # only its own frame can produce one.
+    if (
+        client.role is DeviceRole.CAMERA
+        and await calibration_store.get(game_id, client.id) is None
+    ):
+        await hub.send(connection, CalibrationRequestedDto())
+
     try:
         while True:
             raw = await websocket.receive_text()

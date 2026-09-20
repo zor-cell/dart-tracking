@@ -2,10 +2,12 @@ TODOs:
 
 Wenig Aufwand:
 - auf iphone 12 als einziges handy nicht voller bildschirm benutzt
+- tracker version aufnehmen bei tracking, dass accuracy nach version nachgeschaut werden kann?
 
 Viel Aufwand:
 
 Zukunft:
+- tracking pausieren button?
 - referenz nach manueller eingabe: nach einer handbuchung steht der pfeil im board,
   aber nicht in der referenz, die naechste differenz zeigt zwei. frame nachziehen war
   gebaut und wieder rausgenommen (zu eingreifend), problem ist noch offen

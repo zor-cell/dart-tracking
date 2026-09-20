@@ -493,7 +493,7 @@ Die automatische Rekalibrierung
 verschickt gar keinen Status: niemand hat gefragt, und die Kamera meldet ihren
 Fehlschlag ohnehin auf dem Gerät, an dem auch nachjustiert werden muss.
 
-### Zwei Auslöser, ein Mechanismus
+### Drei Auslöser, ein Mechanismus
 
 1. **Der Button auf dem Scoreboard** — der Fall, für den das Kommando existiert.
 2. **Das Rundenende.** `next_player` fordert dieselbe Rekalibrierung an. Das ist
@@ -501,6 +501,14 @@ Fehlschlag ohnehin auf dem Gerät, an dem auch nachjustiert werden muss.
    gezogen, und das ist zugleich der Moment, in dem ein frisches Leer-Board als
    Referenz aufgenommen werden kann (siehe [erkennung.md §1](erkennung.md)) und
    der, in dem am ehesten gegen Board oder Kamera gestoßen wurde.
+3. **Der Beitritt einer Kamera ohne Kalibrierung für dieses Spiel.** Der Store
+   ist nach Spiel *und* Kamera geschlüsselt (§5), eine Revanche ist ein neues
+   Spiel — die Kamera bleibt dieselbe, ihre Homographie gilt aber nicht mehr.
+   Ohne diesen Auslöser blieb nach einer Revanche das Overlay der letzten
+   Kalibrierung stehen, während jeder Wurf als `not_calibrated` zurückkam. Der
+   Server prüft das beim Handshake und schickt `calibration_requested` nur an
+   diese eine Verbindung; nach einem Reload existiert die Kalibrierung noch, es
+   passiert also nichts.
 
 Der zweite Auslöser hängt an einer Annahme: dass der Rundenwechsel **nach** dem
 Ziehen der Pfeile ausgelöst wird. Bei bestätigtem Wechsel („Wurf bestätigen")
@@ -511,7 +519,7 @@ Logik eingebaut (kein Warten auf ein ruhiges Bild, keine Leer-Prüfung): der
 Bestätigungs-Tap *ist* die Aussage „Board ist leer", und eine zweite Quelle
 derselben Information hätte nur eigene Fehlerfälle.
 
-Ein dritter Auslöser ist vorgezeichnet, aber nicht gebaut: die
+Ein weiterer Auslöser ist vorgezeichnet, aber nicht gebaut: die
 Detection-Registrierung misst mit `alignment_shift_px` bereits, wie weit sich die
 Kamera bewegt hat — ein Schwellwert darauf würde eine verrutschte Kamera selbst
 melden.
