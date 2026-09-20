@@ -198,15 +198,42 @@ class Game:
             )
 
     def remove_dart(self, index: int) -> None:
-        """Take one dart out of the open visit. The rest is re-applied in order,
-        because whether a dart busts depends on the darts before it."""
+        """Take one dart out of the open visit — what a phantom booking is
+        cleared with, from any position rather than only the last."""
         turn = self.current_turn
         if not 0 <= index < len(turn.darts):
             return
-        kept = turn.darts[:index] + turn.darts[index + 1 :]
+        self._rescore(turn.darts[:index] + turn.darts[index + 1 :])
+
+    def replace_dart(self, index: int, dart: Dart) -> None:
+        """Book a different field for one dart of the open visit, in its place.
+        Open to a full or busted visit, unlike `register_dart`: correcting the
+        dart that caused the bust is the point (docs/feature/done/korrektur.md §5)."""
+        turn = self.current_turn
+        if not 0 <= index < len(turn.darts):
+            return
+        self._rescore(turn.darts[:index] + [dart] + turn.darts[index + 1 :])
+
+    def move_dart(self, index: int, to_index: int) -> None:
+        """Move one dart of the open visit to another place in it, for a throw
+        the camera missed: entered afterwards, it lands last and belongs
+        wherever it was actually thrown."""
+        turn = self.current_turn
+        count = len(turn.darts)
+        if not (0 <= index < count and 0 <= to_index < count) or index == to_index:
+            return
+        darts = list(turn.darts)
+        darts.insert(to_index, darts.pop(index))
+        self._rescore(darts)
+
+    def _rescore(self, darts: list[Dart]) -> None:
+        """Take the open visit as this sequence of darts, re-applying the bust
+        rule from the start — whether a dart busts depends on the darts before
+        it, so any change to the order or the fields re-decides it."""
+        turn = self.current_turn
         turn.darts = []
         turn.busted = False
-        for dart in kept:
+        for dart in darts:
             turn.darts.append(dart)
             if self._busts(dart):
                 turn.busted = True

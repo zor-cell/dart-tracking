@@ -1,0 +1,163 @@
+# Pfeil-Korrektur im offenen Visit
+
+Wie ein falsch gebuchter Pfeil geradegerückt wird, ohne den Rest des Visits
+mitzureißen: auswählen und überschreiben, verschieben, einzeln löschen.
+
+Referenz-Implementierung: `Game.replace_dart` / `move_dart` / `remove_dart`
+(`backend/src/app/api/features/game/domain/game.py`), Bedienung in
+`frontend/src/app/features/game/components/game/`.
+Wirkung auf die Messung: [auswertung.md §2/§3](../auswertung.md).
+
+---
+
+## 1. Warum nicht Undo
+
+Undo ist ein Stapel: es nimmt den *letzten* Pfeil zurück. Jeder Fehler weiter
+vorn im Visit kostet damit so viele Schritte, wie Pfeile danach kamen — und
+jeder dieser Schritte wirft Information weg, die richtig war:
+
+- die **Reihenfolge**: der nachgetippte Pfeil landet hinten, nicht dort, wo er
+  geworfen wurde;
+- die **Trefferpunkte** der zurückgenommenen Pfeile — sie werden von Hand neu
+  eingegeben und haben danach keine Position mehr, fehlen also im virtuellen
+  Board und in jeder Heatmap;
+- die **Overlays** auf dem Kamerabild, die an ihren Pfeilen hängen.
+
+Drei Fehlerbilder treten in der Praxis auf, und Undo ist für keines davon das
+passende Werkzeug:
+
+| Fall | Was passiert ist | Korrektur |
+|---|---|---|
+| **Fehlerkennung** | Kamera bucht T20, es steckt S20 | Pfeil auswählen, Feld neu tippen |
+| **Nicht erkannt** | 20, 1, 5 geworfen, 1 und 5 gebucht | 20 von Hand nachtragen, nach vorn ziehen |
+| **Phantom** | Buchung ohne Wurf, mitten im Visit | Pfeil auswählen, löschen |
+
+---
+
+## 2. Auswählen statt löschen
+
+Ein Tipp auf einen gebuchten Pfeil **wählt ihn aus** (vorher: löschte ihn).
+Ausgewählt heißt: der nächste Tastendruck auf dem Zifferblock schreibt dieses
+Feld *an dieser Stelle*, statt hinten anzuhängen. Danach ist die Auswahl
+verbraucht — der Tipp darauf hängt wieder an.
+
+Zwei Dinge folgen daraus:
+
+- **Der Zifferblock bleibt aktiv, wenn ein Pfeil ausgewählt ist**, auch bei
+  vollem oder überworfenem Visit (`padAccepts`). Genau dort muss eine
+  Fehlerkennung ja korrigierbar sein — der dritte Pfeil ist der häufigste Fall,
+  und der Bust kann gerade das sein, was falsch ist.
+- **Die Auswahl wird durch den offenen Visit gelesen**, nicht bloß gespeichert:
+  gemerkt wird `{turn, index}`, und `selectedDart` gibt sie nur heraus, solange
+  `turn` noch der offene Visit ist und der Index darin steckt. Sie kann damit
+  keinen Pfeil überleben, den es nicht mehr gibt — und, wichtiger, nach einer
+  Übergabe nicht wieder auftauchen: ein bloßer Index hätte sich an den Pfeil
+  geheftet, der im *nächsten* Visit an dieselbe Stelle fällt.
+- **Ein Tipp irgendwo sonst beendet die Auswahl.** Ausgewählt zu sein ist ein
+  Modus, und ihn zu verlassen soll nicht den zweiten Tipp auf denselben Pfeil
+  verlangen. Ein `pointerdown` auf dem Dokument räumt sie deshalb auf, sofern das
+  Ziel weder in der Pfeil-Reihe noch im Zifferblock liegt — den beiden Blöcken,
+  die etwas mit ihr tun. `pointerdown` und nicht `click`, damit das Aufräumen
+  schon beim Aufsetzen des Fingers passiert und nicht erst beim Loslassen.
+
+Der ersetzte Pfeil ist danach eine **Handbuchung ohne Trefferpunkt**. Das ist
+die ehrliche Lesart: korrigiert wird, weil die Kamera das Segment falsch gelesen
+hat, also ist auch ihr Punkt nicht zu trauen. `DartDto.position` bedeutet
+unverändert „von der Kamera lokalisiert" (siehe
+[multi-device.md §4a](multi-device.md)).
+
+---
+
+## 3. Zurück wird Löschen
+
+Solange ein Pfeil ausgewählt ist, trägt die Zurück-Taste ein Mülleimer-Symbol
+und nimmt **diesen** Pfeil heraus statt des letzten. Dieselbe Taste, weil sich
+die beiden nie überschneiden: ein ausgewählter Pfeil ist der, den man ändern
+will, und „einen Schritt zurück" ist dann keine sinnvolle Antwort — der Schritt
+zurück würde einen anderen Pfeil treffen.
+
+Das ist der Weg aus dem Phantom-Fall. Vorher hieß er: zweimal Undo, dann den
+echten dritten Pfeil neu eintippen.
+
+---
+
+## 4. Ziehen ändert die Reihenfolge
+
+Die drei Pfeil-Kästchen sind eine `cdkDropList` mit horizontaler Sortierung; ein
+Kästchen lässt sich an eine andere Stelle ziehen. Serverseitig ist das
+`move_dart(index, to_index)`.
+
+**Warum die Reihenfolge überhaupt zählt**, wo die Summe doch dieselbe bleibt:
+
+1. Das Alignment der Auswertung ist eine Sequenz-Ausrichtung über die Labels
+   ([auswertung.md §3](../auswertung.md)). Position im Visit ist das, was
+   „dieser Pfeil wurde verpasst" von „dieser Pfeil wurde falsch gelesen"
+   trennt.
+2. Das virtuelle Board und die Overlays auf dem Kamerabild nummerieren und
+   färben nach Position (`dartColor`). Ein nachgetragener erster Pfeil, der
+   hinten steht, färbt alle drei falsch.
+3. Checkout-Vorschläge und die Bust-Regel hängen an der Reihenfolge, sobald ein
+   Pfeil ins Minus führt.
+
+`cdkDragStartDelay` steht auf 150 ms für Touch und 0 für Maus: ohne die
+Verzögerung wird jeder Tipp auf ein Kästchen zum Beginn eines Zuges, und der
+Tipp ist die häufigere Geste.
+
+Nichts wird lokal umsortiert. Der Drop schickt das Kommando, der Server pusht
+den neuen Zustand, die Liste rendert daraus — wie jede andere Änderung auch
+(`docs/feature/done/persistenz.md`).
+
+---
+
+## 5. Serverseite: eine Regel für alle drei
+
+Alle drei Kommandos laufen über `Game._rescore(darts)`: der offene Visit wird
+verworfen und die übergebene Folge von vorn neu angewendet, inklusive
+`_busts` pro Pfeil.
+
+Das ist nicht Bequemlichkeit, sondern notwendig. Ob ein Pfeil überwirft, hängt
+vom Reststand *vor* ihm ab, also von allen Pfeilen davor. Ein Tausch an
+Position 0 kann den Bust an Position 2 erzeugen oder auflösen; ein Zug von hinten
+nach vorn ebenso. Nur ein vollständiger Neudurchlauf kommt auf dieselbe Antwort
+wie die ursprüngliche Buchung.
+
+`replace_dart` und `move_dart` sind bewusst **nicht** durch „Visit voll" oder
+„Spiel gewonnen" abgesichert — dieselbe Begründung wie bei `undo`: einen falsch
+gebuchten Siegwurf zu korrigieren ist genau der Moment, in dem man es braucht.
+`register_dart` bleibt abgesichert, denn dort geht es ums Anhängen, und ein
+vierter Pfeil im Visit ist ein Fehltrigger.
+
+---
+
+## 6. Overlays folgen ihrem Pfeil
+
+Die Umrisse auf dem Kamerabild hingen bisher an einem Index und wurden bei einer
+Entfernung von Hand nachgezogen. Mit Ersetzen und Verschieben reicht das nicht
+mehr, also hängen sie jetzt am **Trefferpunkt** in Board-Millimetern
+(`RoundDartOverlay.tip`, `place()` in `detection.service.ts`):
+
+- Ein frischer Umriss übernimmt den Punkt aus dem Pfeil, den der Server an
+  seiner Stelle gebucht hat — der `detection_result` trägt ihn nicht selbst, er
+  spricht bewusst nur die Bildkoordinaten dieser Kamera.
+- Danach wird er bei jedem `game_state` über diesen Punkt wiedergefunden. Damit
+  stimmen Nummer und Farbe nach Löschen, Ersetzen und Verschieben von selbst.
+- Ein korrigierter Pfeil hat keinen Punkt mehr, sein Umriss fällt also heraus.
+  Das ist gewollt: der gezeichnete Punkt ist dann keiner mehr, den das Spiel
+  behauptet.
+
+Ersetzt wurde damit auch die alte Heuristik `removedIndex`, die den entfernten
+Pfeil über den ersten Unterschied der beiden Listen suchte — zwei gleiche Pfeile
+im Visit konnten sie verwirren.
+
+---
+
+## 7. Offene Punkte
+
+- **Referenzbild nach einer Korrektur.** Unverändert das offene Problem aus
+  `docs/status/todo.md`: eine Handbuchung — und damit auch eine Korrektur —
+  ändert nichts am Referenzframe, das Board zeigt aber weiterhin drei Pfeile.
+- **Kein Ziehen über die Visit-Grenze.** Ein Pfeil, der im falschen Visit
+  gelandet ist, braucht weiterhin Undo.
+- **Auswahl ist gerätelokal.** Zwei Geräte können denselben Pfeil ausgewählt
+  haben und ihn nacheinander überschreiben. Der Server serialisiert das
+  (`_apply` unter Row-Lock), es gewinnt also der zweite; angezeigt wird es nicht.

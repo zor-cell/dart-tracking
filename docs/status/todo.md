@@ -2,6 +2,7 @@ TODOs:
 
 Wenig Aufwand:
 - auf iphone 12 als einziges handy nicht voller bildschirm benutzt
+- virtual board grössere punkte und zahlen
 
 Viel Aufwand:
 

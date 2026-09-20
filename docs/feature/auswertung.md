@@ -36,6 +36,12 @@ Reihenfolge.
 Eine Undo-Zählung überschätzt den Fehler also systematisch, und zwar umso mehr,
 je früher im Visit er passiert.
 
+*(Die Undo-Kaskade in diesem Beispiel ist inzwischen nicht mehr der Weg: ein
+falsch gebuchter Pfeil wird an Ort und Stelle korrigiert, siehe
+[korrektur.md](done/korrektur.md). Am Maßproblem ändert das nichts — auch
+Korrekturen zu zählen überschätzt den Fehler, und das Alignment unten bleibt die
+Antwort darauf.)*
+
 ---
 
 ## 2. Das Event-Log
@@ -58,6 +64,8 @@ Schritt, nie aktualisiert, nie gelöscht.
 | `manual` | ein Gerät hat einen Pfeil von Hand gebucht |
 | `undo` | ein Schritt zurück |
 | `dart_removed` | ein einzelner Pfeil aus dem offenen Visit genommen (`dart_index`) |
+| `dart_replaced` | ein einzelner Pfeil auf ein anderes Feld umgebucht (`dart_index` + Feld) |
+| `dart_moved` | ein Pfeil an eine andere Stelle im Visit gezogen (`dart_index` → `target_index`) |
 | `next_player` | Visit abgeschlossen |
 
 Jede Zeile trägt Feld (`value`/`multiplier`), Trefferpunkt in Board-Millimetern,
@@ -148,12 +156,25 @@ Slot wieder — derselbe Spieler, der noch einmal wirft. Die Behauptungsliste
 dieses Slots bleibt dabei stehen, sonst gingen genau die Fehlbuchungen verloren,
 um die es geht.
 
-`dart_removed` nimmt in der Wahrheitsliste genau den Pfeil an `dart_index`
-heraus, die Behauptungsliste bleibt unberührt. Das ist der Weg aus dem Fall
-8 · Phantom-0 · 16: Ein Tipp auf die 0 entfernt sie, und die 16 bleibt als
-erkannter Pfeil mit Trefferpunkt stehen. Mit Undo musste sie zurückgenommen und
-von Hand neu eingegeben werden, und ohne Position fehlte sie in jeder Heatmap.
-Das Alignment zählt die 0 weiterhin als `phantom`.
+`dart_removed`, `dart_replaced` und `dart_moved` fassen **nur die
+Wahrheitsliste** an — herausnehmen, an Ort und Stelle überschreiben,
+umsortieren. Die Behauptungsliste bleibt unberührt, sonst ginge genau die
+Fehlbuchung verloren, um die es geht. Das sind die drei Korrektur-Gesten aus
+[korrektur.md](done/korrektur.md), und jede spart die Undo-Kaskade, die den Rest
+des Visits mitgerissen hätte:
+
+- *8 · Phantom-0 · 16:* ein Tipp auf die 0 und Löschen entfernt sie; die 16
+  bleibt als erkannter Pfeil mit Trefferpunkt stehen, statt von Hand und ohne
+  Position neu eingegeben zu werden. Das Alignment zählt die 0 weiterhin als
+  `phantom`.
+- *T20 statt S20:* der Pfeil wird überschrieben, die Behauptung T20 bleibt
+  stehen. Das Paar liest sich als `wrong`, und weil der Trefferpunkt am
+  `detected`-Event hängt und nicht am Spielzustand, bleibt auch `off_by_mm`
+  messbar.
+- *Verpasster erster Pfeil:* von Hand nachgetragen landet er hinten und wird
+  nach vorn gezogen. An den Stückzahlen ändert das nichts — das Alignment
+  findet die Lücke so oder so — wohl aber an der Position, unter der der
+  verpasste Pfeil im Report steht.
 
 ### Abgrenzung gegen Spiele ohne Kamera
 
@@ -172,6 +193,8 @@ kein einziger Trigger kam — sonst wäre der schlimmste Recall-Fall unsichtbar.
   Die Zahl bleibt richtig, nur die Bilder fehlen.
 - `MANUAL` ist nicht von „Korrektur" zu unterscheiden, wenn jemand ohnehin
   von Hand mitschreibt. Deshalb die Kamera-Bedingung oben.
+  `dart_replaced` dagegen ist immer eine: es gibt nichts zu überschreiben,
+  was nicht schon gebucht war.
 - **Die Behauptungsliste ist kumulativ.** Nach einem Undo ist der Platz im Visit
   wieder frei, die Kamera bucht also erneut hinein — die Liste wird länger als
   drei. Das ist gewollt (jede Fehlbuchung soll gezählt werden), heißt aber: liest

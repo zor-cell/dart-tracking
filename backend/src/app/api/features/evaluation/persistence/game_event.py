@@ -34,5 +34,6 @@ class GameEventTable(Base):
     pos_x: Mapped[float | None] = mapped_column(Float, default=None)
     pos_y: Mapped[float | None] = mapped_column(Float, default=None)
     dart_index: Mapped[int | None] = mapped_column(Integer, default=None)
+    target_index: Mapped[int | None] = mapped_column(Integer, default=None)
     failure: Mapped[str | None] = mapped_column(String(32), default=None)
     metrics: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=None)

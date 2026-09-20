@@ -3,9 +3,11 @@ import { ClaimAnnouncerDto } from '../../../features/announcement/dto/claim-anno
 import { CalibrationFrameDto } from '../../../features/calibration/dto/calibration-frame.dto';
 import { RequestCalibrationDto } from '../../../features/calibration/dto/request-calibration.dto';
 import { DetectionFrameDto } from '../../../features/detection/dto/detection-frame.dto';
+import { MoveDartDto } from '../../../features/game/dto/move-dart.dto';
 import { NextPlayerDto } from '../../../features/game/dto/next-player.dto';
 import { RegisterDartDto } from '../../../features/game/dto/register-dart.dto';
 import { RemoveDartDto } from '../../../features/game/dto/remove-dart.dto';
+import { ReplaceDartDto } from '../../../features/game/dto/replace-dart.dto';
 import { SetEvaluationDto } from '../../../features/game/dto/set-evaluation.dto';
 import { UndoDto } from '../../../features/game/dto/undo.dto';
 
@@ -22,6 +24,8 @@ export type ClientMessage =
   | DetectionFrameDto
   | SetRoleDto
   | RegisterDartDto
+  | ReplaceDartDto
+  | MoveDartDto
   | SetEvaluationDto
   | ClaimAnnouncerDto
   | UndoDto

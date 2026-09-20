@@ -12,6 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
 import {RouterLink} from '@angular/router';
 import {Button} from 'primeng/button';
 import {ProgressSpinner} from 'primeng/progressspinner';
@@ -67,6 +68,8 @@ const PAD_ROWS: readonly PadRow[] = [
     OverlayComponent,
     VirtualBoardComponent,
     GameTopBarComponent,
+    CdkDropList,
+    CdkDrag,
   ],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss',
@@ -133,6 +136,31 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly multiplier = signal<1 | 2 | 3>(1);
   protected readonly multiplierPrefix = computed(() =>
     this.multiplier() === 2 ? 'D' : this.multiplier() === 3 ? 'T' : '',
+  );
+
+  // The picked dart together with the visit it was picked in.
+  private readonly pickedDart = signal<{ turn: number; index: number } | null>(null);
+
+  /** The dart a keypad tap corrects instead of appending, or null to append.
+   * Read back against the open visit, so a pick cannot outlive it and reattach
+   * to whatever stands in that place in the next one. */
+  protected readonly selectedDart = computed(() => {
+    const picked = this.pickedDart();
+    const turns = this.game.state()?.turns;
+    if (picked === null || turns === undefined) {
+      return null;
+    }
+    const open = turns.length - 1;
+    return picked.turn === open && picked.index < (turns[open]?.darts.length ?? 0)
+      ? picked.index
+      : null;
+  });
+
+  /** Whether the keypad books at all: appending needs room in the visit,
+   * correcting a selected dart does not — a full or busted visit is exactly
+   * where a misread has to be fixable. */
+  protected readonly padAccepts = computed(
+    () => this.game.acceptsDarts() || this.selectedDart() !== null,
   );
 
   /** The visit being thrown, drawn on the virtual board as it fills up. */
@@ -233,9 +261,21 @@ export class GameComponent implements OnInit, OnDestroy {
       }
     };
     this.document.addEventListener('fullscreenchange', onFullscreenChange);
-    inject(DestroyRef).onDestroy(() =>
-      this.document.removeEventListener('fullscreenchange', onFullscreenChange),
-    );
+
+    // A picked dart is a mode, so anything outside the two blocks that act on
+    // it — the dart row and the keypad — leaves that mode.
+    const onDocumentPointerDown = (event: Event) => {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest('.turn__darts, .scorepad')) {
+        this.pickedDart.set(null);
+      }
+    };
+    this.document.addEventListener('pointerdown', onDocumentPointerDown);
+
+    inject(DestroyRef).onDestroy(() => {
+      this.document.removeEventListener('fullscreenchange', onFullscreenChange);
+      this.document.removeEventListener('pointerdown', onDocumentPointerDown);
+    });
 
     // Hand the session this view's camera elements once they exist. They live
     // behind the "game active" gate, so after a full reload — where the state is
@@ -296,15 +336,43 @@ export class GameComponent implements OnInit, OnDestroy {
     }
   }
 
-  protected removeDart(index: number): void {
-    this.game.removeDart(index);
+  /** Pick a thrown dart out for correction, or drop the pick by tapping it
+   * again. Nothing is booked or taken back here — the next keypad tap decides
+   * which it was. */
+  protected selectDart(index: number): void {
+    const turn = this.openTurnIndex();
+    this.pickedDart.update((picked) =>
+      picked?.turn === turn && picked.index === index ? null : { turn, index },
+    );
+  }
+
+  /** The back key's other job: with a dart picked out there is no step back to
+   * take — that dart is not the last one — so it takes that dart instead,
+   * which is how a phantom booking in the middle of a visit goes. */
+  protected undoOrDelete(): void {
+    const selected = this.selectedDart();
+    if (selected === null) {
+      this.game.undo();
+      return;
+    }
+    this.game.removeDart(selected);
+    this.pickedDart.set(null);
+  }
+
+  /** Drop a dragged dart in its new place. The order comes back from the server
+   * like every other change, so nothing is reordered here. */
+  protected dropDart(event: CdkDragDrop<unknown>): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+    this.game.moveDart(event.previousIndex, event.currentIndex);
+    this.pickedDart.set({ turn: this.openTurnIndex(), index: event.currentIndex });
   }
 
   /** A 1–20 key: booked with the active multiplier, which then falls back to
    * single — the multiplier applies to one dart, not to the rest of the visit. */
   protected enterNumber(value: number): void {
-    this.game.registerDart(value, this.multiplier());
-    this.multiplier.set(1);
+    this.book(value, this.multiplier());
   }
 
   /** The face a side key currently shows: the bull reads 50 while D is held. */
@@ -314,7 +382,19 @@ export class GameComponent implements OnInit, OnDestroy {
 
   /** A bull/miss key: its own fixed field, so only the bull follows D. */
   protected enterFixed(key: FixedKey): void {
-    this.game.registerDart(key.value, this.isDoubled(key) ? 2 : key.multiplier);
+    this.book(key.value, this.isDoubled(key) ? 2 : key.multiplier);
+  }
+
+  /** One keypad tap: the picked dart's new field, or the next dart of the visit.
+   * The pick is spent either way, so the tap after it appends again. */
+  private book(value: number, multiplier: number): void {
+    const selected = this.selectedDart();
+    if (selected === null) {
+      this.game.registerDart(value, multiplier);
+    } else {
+      this.game.replaceDart(selected, value, multiplier);
+      this.pickedDart.set(null);
+    }
     this.multiplier.set(1);
   }
 
@@ -323,6 +403,10 @@ export class GameComponent implements OnInit, OnDestroy {
     if (this.document.fullscreenElement) {
       void this.document.exitFullscreen();
     }
+  }
+
+  private openTurnIndex(): number {
+    return (this.game.state()?.turns.length ?? 1) - 1;
   }
 
   private isDoubled(key: FixedKey): boolean {

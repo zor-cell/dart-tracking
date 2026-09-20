@@ -196,15 +196,23 @@
       <div class="turn">
         @if (game.currentTurn(); as turn) {
           <div class="turn__row">
-            <ul class="turn__darts" aria-label="Darts dieser Runde">
+            <ul
+              class="turn__darts"
+              aria-label="Darts dieser Runde"
+              cdkDropList
+              cdkDropListOrientation="horizontal"
+              (cdkDropListDropped)="dropDart($event)"
+            >
               @for (dart of turn.darts; track $index) {
-                <li class="turn__slot">
+                <li class="turn__slot" cdkDrag [cdkDragStartDelay]="{ touch: 150, mouse: 0 }">
                   <button
                     type="button"
-                    class="turn__dart turn__dart--removable"
+                    class="turn__dart turn__dart--pickable"
                     [class.turn__dart--busted]="turn.busted"
-                    [attr.aria-label]="dart.label + ' entfernen'"
-                    (click)="removeDart($index)"
+                    [class.turn__dart--selected]="selectedDart() === $index"
+                    [attr.aria-pressed]="selectedDart() === $index"
+                    [attr.aria-label]="dart.label + ' auswählen und korrigieren'"
+                    (click)="selectDart($index)"
                   >
                     {{ dart.label }}
                   </button>
@@ -238,15 +246,22 @@
 
         @if (settings.manualEntryEnabled() && !game.settledWinner()) {
           <div class="scorepad" role="group" aria-label="Punkte-Eingabe">
+            <!-- Takes the picked dart instead of the last one; see undoOrDelete. -->
             <button
               type="button"
               class="scorepad__key scorepad__undo"
-              [disabled]="!state.canUndo"
-              aria-label="Zurück"
-              (click)="game.undo()"
+              [class.scorepad__undo--delete]="selectedDart() !== null"
+              [disabled]="selectedDart() === null && !state.canUndo"
+              [attr.aria-label]="selectedDart() === null ? 'Zurück' : 'Ausgewählten Dart löschen'"
+              (click)="undoOrDelete()"
             >
-              <i class="pi pi-undo" aria-hidden="true"></i>
-              <span>Zurück</span>
+              @if (selectedDart() === null) {
+                <i class="pi pi-undo" aria-hidden="true"></i>
+                <span>Zurück</span>
+              } @else {
+                <i class="pi pi-trash" aria-hidden="true"></i>
+                <span>Löschen</span>
+              }
             </button>
 
             @for (row of padRows; track $index) {
@@ -254,7 +269,7 @@
                 <button
                   type="button"
                   class="scorepad__key"
-                  [disabled]="!game.acceptsDarts()"
+                  [disabled]="!padAccepts()"
                   [attr.aria-label]="multiplierPrefix() + n"
                   (click)="enterNumber(n)"
                 >
@@ -266,7 +281,7 @@
                   type="button"
                   class="scorepad__key scorepad__key--fixed"
                   [class.scorepad__key--bull]="side.value !== 0"
-                  [disabled]="!game.acceptsDarts()"
+                  [disabled]="!padAccepts()"
                   (click)="enterFixed(side)"
                 >
                   {{ fixedLabel(side) }}
@@ -279,7 +294,7 @@
               class="scorepad__key scorepad__mod"
               [class.scorepad__mod--active]="multiplier() === 2"
               [attr.aria-pressed]="multiplier() === 2"
-              [disabled]="!game.acceptsDarts()"
+              [disabled]="!padAccepts()"
               (click)="toggleDouble()"
             >
               Double
@@ -289,7 +304,7 @@
               class="scorepad__key scorepad__mod"
               [class.scorepad__mod--active]="multiplier() === 3"
               [attr.aria-pressed]="multiplier() === 3"
-              [disabled]="!game.acceptsDarts()"
+              [disabled]="!padAccepts()"
               (click)="toggleTriple()"
             >
               Triple

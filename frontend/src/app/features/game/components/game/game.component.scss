@@ -460,12 +460,20 @@
   min-width: 0;
 }
 
-.turn__dart--removable {
+.turn__dart--pickable {
   font: inherit;
   font-weight: 600;
   color: inherit;
   cursor: pointer;
   touch-action: manipulation;
+  width: 100%;
+}
+
+// The dart the keypad writes over and the delete key takes.
+.turn__dart--selected {
+  border-color: var(--p-primary-color, #09090b);
+  box-shadow: inset 0 0 0 1px var(--p-primary-color, #09090b);
+  background: var(--p-content-background, #ffffff);
 }
 
 .turn__dart--empty {
@@ -486,6 +494,20 @@
 .turn__dart--busted {
   text-decoration: line-through;
   color: var(--p-text-muted-color, #6b7280);
+}
+
+// Dragging a dart into another place in the visit. The box left behind fades
+// rather than collapsing, so the three columns keep their width while sorting.
+.turn__slot.cdk-drag-placeholder {
+  opacity: 0.3;
+}
+
+.turn__slot.cdk-drag-preview {
+  list-style: none;
+}
+
+.turn__darts.cdk-drop-list-dragging .turn__slot:not(.cdk-drag-placeholder) {
+  transition: transform 0.2s cubic-bezier(0, 0, 0.2, 1);
 }
 
 // Dartboard keypad. Ten columns so the number/side keys span two each (five
@@ -545,6 +567,12 @@
   i {
     font-size: 1.1rem;
   }
+}
+
+// Same key, other job: it deletes the picked dart instead of stepping back.
+.scorepad__undo--delete {
+  border-color: var(--p-red-500, #ef4444);
+  color: var(--p-red-500, #ef4444);
 }
 
 // Double / Triple span half the row each and lock filled while active.

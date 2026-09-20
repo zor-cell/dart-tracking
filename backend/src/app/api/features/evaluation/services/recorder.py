@@ -30,9 +30,11 @@ from app.api.features.evaluation.services.frame_buffer import store as frames
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.dto.command.game_command import GameCommand
+from app.api.features.game.dto.command.move_dart import MoveDartDto
 from app.api.features.game.dto.command.next_player import NextPlayerDto
 from app.api.features.game.dto.command.register_dart import RegisterDartDto
 from app.api.features.game.dto.command.remove_dart import RemoveDartDto
+from app.api.features.game.dto.command.replace_dart import ReplaceDartDto
 from app.api.features.game.dto.command.undo import UndoDto
 from app.api.features.game.persistence.game_repository import repository as game_repository
 from app.infrastructure import database
@@ -44,6 +46,8 @@ _KINDS = {
     RegisterDartDto: GameEventKind.MANUAL,
     UndoDto: GameEventKind.UNDO,
     RemoveDartDto: GameEventKind.DART_REMOVED,
+    ReplaceDartDto: GameEventKind.DART_REPLACED,
+    MoveDartDto: GameEventKind.DART_MOVED,
     NextPlayerDto: GameEventKind.NEXT_PLAYER,
 }
 
@@ -80,7 +84,12 @@ def for_command(command: GameCommand, *, camera_armed: bool) -> Recording:
     """The event one game command leaves behind."""
 
     def record(at: VisitPosition, accepted: bool) -> GameEvent:
-        booked = command if isinstance(command, RegisterDartDto) else None
+        booked = command if isinstance(command, RegisterDartDto | ReplaceDartDto) else None
+        placed = (
+            command
+            if isinstance(command, RemoveDartDto | ReplaceDartDto | MoveDartDto)
+            else None
+        )
         return GameEvent(
             kind=_KINDS[type(command)],
             turn_index=at.turn_index,
@@ -89,7 +98,8 @@ def for_command(command: GameCommand, *, camera_armed: bool) -> Recording:
             camera_armed=camera_armed,
             value=booked.value if booked else None,
             multiplier=booked.multiplier if booked else None,
-            dart_index=command.index if isinstance(command, RemoveDartDto) else None,
+            dart_index=placed.index if placed else None,
+            target_index=command.to_index if isinstance(command, MoveDartDto) else None,
         )
 
     return record

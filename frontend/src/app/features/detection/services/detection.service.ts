@@ -22,12 +22,15 @@ const FAILURE_HINTS: Record<DetectionFailureDto, string> = {
   darts_removed: 'Pfeile entfernt',
 };
 
-/** One located dart to draw: its polylines, its position in the visit, and the
- * colour for that position. */
+/** One located dart to draw: its polylines, its place in the visit, and the
+ * colour for that place. */
 export interface RoundDartOverlay {
   readonly polylines: number[][][];
   readonly dartIndex: number;
   readonly color: string;
+  /** The tip this outline was drawn at, in board millimetres — what it is
+   * matched back to the visit by. Null until the state holding it has arrived. */
+  readonly tip: readonly [number, number] | null;
 }
 
 /**
@@ -93,9 +96,8 @@ export class DetectionService {
   private eventSeq = 0;
 
   private feedbackTimeoutId: ReturnType<typeof setTimeout> | null = null;
-  // The turn count and open visit from the last reconciled state.
+  // The turn count from the last reconciled state.
   private lastTurnCount: number | null = null;
-  private lastDarts: readonly DartDto[] = [];
 
   constructor() {
     // Located darts arrive over the socket, one `detection_result` per throw.
@@ -142,43 +144,24 @@ export class DetectionService {
     const dartIndex = this.game.currentTurn()?.darts.length ?? 0;
     this.roundDarts.update((darts) => [
       ...darts,
-      { polylines, dartIndex, color: dartColor(dartIndex) },
+      { polylines, dartIndex, color: dartColor(dartIndex), tip: null },
     ]);
   }
 
   /**
-   * Keep the drawn darts in step with the authoritative turn history:
-   * - a turn boundary (count changed) retires the outlines at once — a confirmed
-   *   visit (count up) clears the moment the round is accepted, which is what the
-   *   board should show for the next thrower; an undo across the boundary (count
-   *   down) reopens a visit whose darts were never tracked here, so also clear;
-   * - same turn, fewer darts is an undo or a removal — the outline of the dart
-   *   that went is dropped and the ones after it move up. Never grow here:
-   *   appending is the detection result's job, which always arrives before its
-   *   game_state (see core/socket.py).
+   * Keep the drawn darts in step with the authoritative turn history: a turn
+   * boundary retires them all, within the turn each is placed again by its tip.
+   * Never grows here — appending is the detection result's job.
    */
   private reconcileRound(turns: GameStateDto['turns']): void {
     const count = turns.length;
     const darts = turns.at(-1)?.darts ?? [];
-    if (this.lastTurnCount !== null) {
-      if (count !== this.lastTurnCount) {
-        this.roundDarts.set([]);
-      } else if (darts.length < this.lastDarts.length) {
-        const removed = removedIndex(this.lastDarts, darts);
-        this.roundDarts.update((overlays) =>
-          overlays
-            .filter((overlay) => overlay.dartIndex !== removed)
-            .map((overlay) => {
-              const dartIndex =
-                overlay.dartIndex > removed ? overlay.dartIndex - 1 : overlay.dartIndex;
-              return { ...overlay, dartIndex, color: dartColor(dartIndex) };
-            })
-            .filter((overlay) => overlay.dartIndex < darts.length),
-        );
-      }
+    if (this.lastTurnCount !== null && count !== this.lastTurnCount) {
+      this.roundDarts.set([]);
+    } else {
+      this.roundDarts.update((overlays) => overlays.flatMap((o) => place(o, darts)));
     }
     this.lastTurnCount = count;
-    this.lastDarts = darts;
   }
 
   /** Send a triggered throw frame; the result arrives asynchronously. */
@@ -235,17 +218,21 @@ function hintFor(failure: DetectionFailureDto | null): string {
   return (failure && FAILURE_HINTS[failure]) ?? 'Kein Wurf erkannt';
 }
 
-/** Which dart of `before` is missing from `after`: the first position where the
- * two differ, or the last dart when all earlier ones match. */
-function removedIndex(before: readonly DartDto[], after: readonly DartDto[]): number {
-  const index = after.findIndex((dart, i) => !sameDart(dart, before[i]));
-  return index === -1 ? after.length : index;
+/** Where an outline belongs in the visit as it now stands, or nothing when the
+ * dart it marked is gone. A fresh outline takes its tip from the dart booked at
+ * its place, and is looked up by that point from then on. */
+function place(overlay: RoundDartOverlay, darts: readonly DartDto[]): RoundDartOverlay[] {
+  const tip = overlay.tip ?? darts[overlay.dartIndex]?.position ?? null;
+  const dartIndex = tip === null ? overlay.dartIndex : darts.findIndex((d) => sameTip(d.position, tip));
+  if (dartIndex < 0 || dartIndex >= darts.length) {
+    return [];
+  }
+  return [{ ...overlay, tip, dartIndex, color: dartColor(dartIndex) }];
 }
 
-function sameDart(a: DartDto, b: DartDto): boolean {
-  return (
-    a.label === b.label &&
-    a.position?.[0] === b.position?.[0] &&
-    a.position?.[1] === b.position?.[1]
-  );
+function sameTip(
+  a: readonly [number, number] | null,
+  b: readonly [number, number],
+): boolean {
+  return a !== null && a[0] === b[0] && a[1] === b[1];
 }

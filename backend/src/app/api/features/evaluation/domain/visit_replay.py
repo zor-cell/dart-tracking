@@ -1,7 +1,7 @@
 """Rebuilds the visits of a game from its event log.
 
-Replays register/undo/removal/handover exactly as `Game` applies them, but keeps a
-second list per visit that undo never touches: what the camera claimed.
+Replays every booking and correction exactly as `Game` applies them, but keeps
+a second list per visit that undo never touches: what the camera claimed.
 """
 
 from collections import defaultdict
@@ -70,6 +70,13 @@ def replay(events: Iterable[GameEvent]) -> list[Visit]:
                 if event.dart_index is not None and event.dart_index < len(accepted[open_index]):
                     accepted[open_index].pop(event.dart_index)
                 corrected[open_index] = True
+            case GameEventKind.DART_REPLACED if event.accepted:
+                if event.dart_index is not None and event.dart_index < len(accepted[open_index]):
+                    accepted[open_index][event.dart_index] = event
+                corrected[open_index] = True
+            case GameEventKind.DART_MOVED if event.accepted:
+                _move(accepted[open_index], event.dart_index, event.target_index)
+                corrected[open_index] = True
             case GameEventKind.NEXT_PLAYER if event.accepted:
                 # The event carries the player who just finished, so the
                 # new slot's owner is left to the first event that lands in it.
@@ -104,3 +111,14 @@ def _undo(
         if open_index == 0:
             return 0
         open_index -= 1
+
+
+def _move(darts: list[GameEvent], index: int | None, to_index: int | None) -> None:
+    """Put one dart of the truth list in another place in it — `Game.move_dart`
+    on the log's side. Order is what the alignment reads, so a dart entered
+    after the ones it was thrown before has to travel here too."""
+    if index is None or to_index is None:
+        return
+    if not (0 <= index < len(darts) and 0 <= to_index < len(darts)):
+        return
+    darts.insert(to_index, darts.pop(index))

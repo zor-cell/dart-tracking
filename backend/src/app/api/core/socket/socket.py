@@ -68,9 +68,11 @@ from app.api.features.evaluation.dto.command.set_evaluation import SetEvaluation
 from app.api.features.evaluation.services import recorder
 from app.api.features.game.dto.command.game_command import GameCommand
 from app.api.features.game.dto.game_state import GameStateDto
+from app.api.features.game.dto.command.move_dart import MoveDartDto
 from app.api.features.game.dto.command.next_player import NextPlayerDto
 from app.api.features.game.dto.command.register_dart import RegisterDartDto
 from app.api.features.game.dto.command.remove_dart import RemoveDartDto
+from app.api.features.game.dto.command.replace_dart import ReplaceDartDto
 from app.api.features.game.dto.command.undo import UndoDto
 from app.api.features.game.domain.dart import Dart as ScoredDart
 from app.api.features.game.domain.game import Game
@@ -185,7 +187,14 @@ async def _dispatch(
             await _publish_announcer(game_id)
         case SetEvaluationDto():
             await _handle_set_evaluation(game_id, message)
-        case RegisterDartDto() | UndoDto() | RemoveDartDto() | NextPlayerDto():
+        case (
+            RegisterDartDto()
+            | ReplaceDartDto()
+            | MoveDartDto()
+            | UndoDto()
+            | RemoveDartDto()
+            | NextPlayerDto()
+        ):
             await _handle_game_command(game_id, message)
 
 
@@ -265,6 +274,10 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
         match command:
             case RegisterDartDto():
                 game.register_dart(command.to_entity())
+            case ReplaceDartDto():
+                game.replace_dart(command.index, command.to_entity())
+            case MoveDartDto():
+                game.move_dart(command.index, command.to_index)
             case UndoDto():
                 game.undo()
             case RemoveDartDto():

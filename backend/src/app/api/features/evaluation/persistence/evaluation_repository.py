@@ -33,6 +33,7 @@ class EvaluationRepository:
                 pos_x=event.position[0] if event.position else None,
                 pos_y=event.position[1] if event.position else None,
                 dart_index=event.dart_index,
+                target_index=event.target_index,
                 failure=event.failure,
                 metrics=event.metrics,
             )
@@ -65,6 +66,7 @@ class EvaluationRepository:
                 multiplier=row.multiplier,
                 position=None if row.pos_x is None else (row.pos_x, row.pos_y),
                 dart_index=row.dart_index,
+                target_index=row.target_index,
                 failure=row.failure,
                 metrics=row.metrics,
                 created_at=row.created_at,

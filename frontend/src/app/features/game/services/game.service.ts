@@ -118,6 +118,16 @@ export class GameService {
     this.socket.send({ type: 'remove_dart', index });
   }
 
+  /** Book a different field for one dart of the open visit, in its place. */
+  replaceDart(index: number, value: number, multiplier: number): void {
+    this.socket.send({ type: 'replace_dart', index, value, multiplier });
+  }
+
+  /** Move one dart of the open visit to another place in it. */
+  moveDart(index: number, toIndex: number): void {
+    this.socket.send({ type: 'move_dart', index, toIndex });
+  }
+
   /** Switch to the next player */
   nextPlayer(): void {
     this.socket.send({ type: 'next_player' });
