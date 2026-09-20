@@ -188,10 +188,11 @@ Rechnung aus testrun1 (+14 / −4 bei 2.5 mm) und bleibt wie dort ein Hinweis au
 die Größenordnung, nicht mehr — bestimmt auf denselben Daten, aus denen der
 Befund stammt.
 
-**Offen bleibt der Messschritt aus testrun1 §3:** mit dem Lineal am Board die
-Innenbreite von Double und Triple nachmessen. Das entscheidet zwischen „die
-Konstanten passen nicht zu diesem Board" und „die Homographie verzerrt radial,
-weil alle 20 Korrespondenzen auf einem einzigen Kreis liegen".
+**Nachgemessen (20.09.):** Double und Triple messen am Board je 10.0 mm von Apex
+zu Apex, nicht 8.0 mm — die Konstanten passten tatsächlich nicht zu diesem Board.
+Sie erklären aber nur 2.0 der gemessenen 3.1 – 3.6 mm; der Rest ist der radiale
+Bias. Es war also beides, Aufschlüsselung in
+[testrun1 §3](testrun1.md#ergebnis-der-lineal-messung-2009).
 
 ---
 
