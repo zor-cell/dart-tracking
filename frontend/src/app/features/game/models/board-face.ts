@@ -39,8 +39,9 @@ export const BOARD_BACKING_RADIUS = 200;
 /** Where a dart that landed off the board is marked, in the margin around it. */
 export const OFF_BOARD_MARKER_RADIUS = 202;
 
-/** Half the drawn area's edge length: the board plus the off-board margin. */
-const VIEW_EXTENT = 216;
+/** Half the drawn area's edge length: the board, the off-board margin, and room
+ * for the ordinal beside a marker out on it. */
+const VIEW_EXTENT = 218;
 
 export const BOARD_VIEW_BOX = `${-VIEW_EXTENT} ${-VIEW_EXTENT} ${VIEW_EXTENT * 2} ${VIEW_EXTENT * 2}`;
 

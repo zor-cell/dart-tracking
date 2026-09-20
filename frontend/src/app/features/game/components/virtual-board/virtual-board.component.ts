@@ -11,10 +11,13 @@ import {
 import { BULLSEYE_RADIUS, BULL_RADIUS, toSvg } from '../../models/board-geometry';
 
 /** How far the ordinal sits from the arrow, across the direction it points. */
-const OFF_BOARD_LABEL_OFFSET = 15;
+const OFF_BOARD_LABEL_OFFSET = 18;
 
 /** An arrowhead pointing along +x, aimed by the marker's own rotation. */
-const ARROW_PATH = 'M 8 0 L -4 -6 L -4 6 Z';
+const ARROW_PATH = 'M 9.5 0 L -5 -7 L -5 7 Z';
+
+/** Radius of the dot marking a located tip, in board millimetres. */
+const MARKER_RADIUS = 5.5;
 
 /** A dart drawn where its tip was located, or aimed off the board. */
 interface DartMarker {
@@ -58,6 +61,7 @@ export class VirtualBoardComponent {
   protected readonly viewBox = BOARD_VIEW_BOX;
 
   protected readonly arrowPath = ARROW_PATH;
+  protected readonly markerRadius = MARKER_RADIUS;
 
   protected readonly markers = computed<DartMarker[]>(() =>
     this.darts().flatMap((dart, index): DartMarker[] => {
@@ -69,7 +73,7 @@ export class VirtualBoardComponent {
       const radius = Math.hypot(x, y);
 
       if (radius <= BOARD_BACKING_RADIUS) {
-        return [{ ...shared, x, y, labelX: x + 10, labelY: y - 8, arrowTransform: null }];
+        return [{ ...shared, x, y, labelX: x + 11, labelY: y - 11, arrowTransform: null }];
       }
 
       // Off the board there is nothing to point at, so the marker keeps only the

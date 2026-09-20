@@ -68,16 +68,18 @@ $board-wire: #9aa0a6;
   circle,
   path {
     stroke: #1b1b1b;
-    stroke-width: 1.5;
+    stroke-width: 2;
     stroke-linejoin: round;
   }
 
+  // In viewBox units, which the board renders at roughly 0.74 CSS px each — so
+  // this lands near the camera overlay's label, the same dart on the other view.
   text {
-    font-size: 15px;
+    font-size: 19px;
     font-weight: 700;
     paint-order: stroke;
     stroke: #1b1b1b;
-    stroke-width: 3;
+    stroke-width: 3.5;
   }
 }
 
