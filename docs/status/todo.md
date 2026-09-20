@@ -3,6 +3,7 @@ TODOs:
 Wenig Aufwand:
 - auf iphone 12 als einziges handy nicht voller bildschirm benutzt
 - tracker version aufnehmen bei tracking, dass accuracy nach version nachgeschaut werden kann?
+- standard player count for new game should be only yourself, looks weird when restarting when playing alone otherwise
 
 Viel Aufwand:
 
