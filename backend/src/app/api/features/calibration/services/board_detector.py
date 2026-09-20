@@ -324,6 +324,36 @@ def _select_board_components(
     return _keep_labels(red_labels, kept[0]), _keep_labels(green_labels, kept[1])
 
 
+def _trim_band_strays(
+    ellipse: tuple[tuple[float, float], tuple[float, float], float],
+    entries: list[tuple[tuple[float, float], int, int, int]],
+    votes: list[int],
+) -> list[int]:
+    """Cut each band down to the twenty segments a ring actually has.
+
+    Branding just outside the double ring votes like a segment, and a hull fitted
+    over it is anchored on it; the count gives it away while the fit still can.
+    """
+    members: dict[float, list[int]] = {_DOUBLE_BAND: [], _TRIPLE_BAND: []}
+    for index in votes:
+        radius = _normalised_radius(ellipse, entries[index][0])
+        members[min(members, key=lambda band: abs(radius - band))].append(index)
+
+    kept: list[int] = []
+    for band in members.values():
+        while len(band) > SECTOR_COUNT:
+            points = np.array([entries[index][0] for index in band], dtype=np.float32)
+            try:
+                fit = cv2.fitEllipse(points)
+            except cv2.error:
+                break
+            # The outermost, since branding sits outside the ring and never inside.
+            band.remove(max(band, key=lambda i: _normalised_radius(fit, entries[i][0])))
+        kept += band
+
+    return sorted(kept)
+
+
 def _settle_hypothesis(
     ellipse: tuple[tuple[float, float], tuple[float, float], float],
     entries: list[tuple[tuple[float, float], int, int, int]],
@@ -339,6 +369,8 @@ def _settle_hypothesis(
     matching insists on all twenty. Refitting on the double-ring voters and
     re-collecting recovers them.
     """
+    votes = _trim_band_strays(ellipse, entries, votes)
+
     for _ in range(_MAX_BAND_PASSES):
         ring = [
             entries[index][0]
@@ -353,7 +385,7 @@ def _settle_hypothesis(
         centre, (axis_a, axis_b), angle = cv2.fitEllipse(np.array(ring, dtype=np.float32))
         refit = (centre, (axis_a / _DOUBLE_BAND, axis_b / _DOUBLE_BAND), angle)
 
-        settled = _board_votes(refit, entries, frame)
+        settled = _trim_band_strays(refit, entries, _board_votes(refit, entries, frame))
         if len(settled) <= len(votes):
             break
         votes, ellipse = settled, refit

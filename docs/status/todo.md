@@ -4,10 +4,13 @@ Wenig Aufwand:
 - auf iphone 12 als einziges handy nicht voller bildschirm benutzt
 - tracker version aufnehmen bei tracking, dass accuracy nach version nachgeschaut werden kann?
 - standard player count for new game should be only yourself, looks weird when restarting when playing alone otherwise
+- in auswertung von nicht erkannten pfeilen angeben, wie viele nuller waren, soll natürlich noch immer
+als nicht erkannt zählen, aber generell sind 0er weitaus schwerer zu tracken, vllt ist pfeil runtergefallen, vllt ausserhalb der vision etc.
 
 Viel Aufwand:
 
 Zukunft:
+- elimination also with double, so its not so easy
 - tracking pausieren button?
 - referenz nach manueller eingabe: nach einer handbuchung steht der pfeil im board,
   aber nicht in der referenz, die naechste differenz zeigt zwei. frame nachziehen war

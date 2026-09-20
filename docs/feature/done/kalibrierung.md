@@ -240,6 +240,45 @@ zwanzig. Also: auf den Double-Ring-Wählern neu fitten, um `1/_DOUBLE_BAND`
 nach außen skalieren (der Fit sitzt ja mittig im Ring), neu einsammeln — bis zu
 4 Durchgänge, Abbruch sobald es nicht mehr besser wird.
 
+**Fremdkörper im Band (`_trim_band_strays`).** Die Bandtoleranz von 0.10 muss
+locker sein, weil eine aus fünf Punkten gezogene Hypothese keinen festen Maßstab
+hat. Damit stimmt aber auch das **Branding auf dem Zahlenring** mit ab: auf der
+Blade 6 sind das der WINMAU-Schriftzug, die rote 6 von BLADE6 und die beiden
+GEN⑥TEC-Plaketten — vier rote Blobs, knapp außerhalb des Double-Rings und
+ringförmig über das Board verteilt, also genau in der Toleranz (ρ = 1.01 – 1.11).
+
+Das ist deshalb fatal, weil der anschließende Hüllen-Fit (§2.3) durch die
+**äußersten** Punkte läuft. Nimmt er das Branding mit, hängt die Ellipse daran —
+und der Ausreißer-Test misst gegen ebendiese Ellipse. Der Ausreißer hat sie
+gerade so weit aufgebläht, dass er selbst innen liegt (ρ ≈ 0.98 ≤
+`_OUTER_BAND_LIMIT`), der Test sieht keinen Ausreißer mehr. Eine
+selbstbestätigende Schleife: die Annahme „jede Runde schrumpft die Ellipse"
+gilt nur, solange der Fit nicht schon am Ausreißer hängt.
+
+Gemessen an einem exportierten Spiel (57 Frames, **feststehende Kamera**, also
+eine einzige richtige Antwort): 11 Frames lieferten eine um **7.7 % zu lange**
+Hauptachse — und alle 11 meldeten `OK` mit 20/20 Drähten. Eine stille
+Fehlkalibrierung, die eine ganze Runde falsch wertet, ist schlimmer als ein
+sauberer Fehlschlag.
+
+Der Ausweg nutzt eine Zahl, die kein Fit verfälschen kann: **ein Ring hat genau
+zwanzig Segmente**. Solange ein Band mehr Mitglieder hat, fliegt das
+**äußerste** heraus, gemessen an einer Ellipse durch die Schwerpunkte des Bandes
+selbst. Dass gerade das äußerste gehen muss und nicht das am schlechtesten
+passende, ist die Invariante aus §2.3: Branding sitzt immer außerhalb des
+Double-Rings, nie innerhalb.
+
+| | vorher | nachher |
+|---|---|---|
+| Export, verschiedene Ellipsen auf 57 Frames | 2 Cluster, Δ Hauptachse 7.7 % | **eine, ± 1 px** |
+| Testsatz erkannt | 15 / 18 | **15 / 18** |
+| `cc-center-mid` Hauptachse | 253 px | **240 px** (farblose Ring-Proben 3 % → 2 %) |
+| Segment-Accuracy der Detektion | 227 / 285 | **234 / 285** |
+
+Der Zugewinn der letzten Zeile sitzt vollständig auf `pz` (45 → 50 / 60) und
+`cc` (24 → 26 / 30) — den beiden Boards, auf denen die Verschmutzung überhaupt
+gemessen wurde. `pz-light`, `tz` und `fh` bleiben auf den Pfeil genau gleich.
+
 **Reproduzierbarkeit:** `np.random.default_rng(0)`. Ein Detektor, dessen Antwort
 zwischen Läufen wackelt, lässt sich nicht debuggen.
 
@@ -527,6 +566,45 @@ Zirkelschluss nur zur Hälfte. Es braucht die Farbmasken als **Eingabe**, aber
 die Kreis-/Ellipsen-Annahme darf danach als **Modell** dienen, um zu entscheiden,
 welche Masken-Teile dazugehören. Genau das tut §2.2.
 
+### 5.6 Festes enges Toleranzfenster nach dem Settling
+
+*Idee:* Die 0.10 braucht nur die rohe Hypothese. Nach `_settle_hypothesis` ist
+das Modell genauer, also ein zweites Einsammeln mit ±0.03 um die Bandmitte.
+
+*Warum es scheiterte:* Die gesettelte Ellipse ist von denselben Fremdkörpern
+**selbst mitgezogen** (Hauptachse 475 statt 451 px). Gegen sie liegt das
+Branding bei ρ ≈ 0.98, mitten im engen Fenster, während echte Segmente der
+Gegenseite auf 0.85 rutschen und herausfallen. Das Fenster wirft genau das
+Falsche weg: 18 → 12 von 18 erkannt.
+
+### 5.7 Abweichung vom Median des Bands
+
+*Idee:* Statt gegen einen Nominalwert gegen den Median der Bandmitglieder
+messen — der ist maßstabsfrei und damit unabhängig davon, durch welche Punkte
+die Hypothese gezogen wurde.
+
+*Warum es scheiterte:* Die Annahme „echte Segmente bilden einen engen Cluster"
+stimmt nur, wenn die Hypothese gut sitzt. Wo sie das nicht tut, läuft ρ als
+**glatter Gradient über den Winkel** — auf `pz-center_flash` von 0.873 bis
+1.049, und die niedrigen Werte gehören zu Segmenten mit ganz normaler Fläche
+(192 – 229 px). Streuung misst hier die Güte der Hypothese, nicht die
+Verschmutzung. 13 / 18.
+
+*Was davon bleibt:* die Erkenntnis, dass **kein** Radiuskriterium trägt, solange
+es gegen eine Ellipse gemessen wird, die der Ausreißer mitbestimmt hat. Deshalb
+entscheidet §2.2 über die Segmentanzahl statt über einen Radius.
+
+### 5.8 Innerhalb der Anzahl den am schlechtesten passenden verwerfen
+
+*Idee:* Bei mehr als zwanzig Mitgliedern das mit der größten Abweichung |ρ − 1|
+zur Schwerpunkt-Ellipse verwerfen.
+
+*Warum es scheiterte:* Bei ebendiesem Gradienten ist die Abweichung des
+*innersten* echten Segments größer (−0.116) als die des Brandings (+0.059) — es
+flog ein echtes Segment heraus, `cc-center-mid` verlor die Drahtzuordnung
+(14 / 18). Der Fix ist eine Zeile: das **äußerste** verwerfen, nicht das am
+schlechtesten passende. Branding sitzt außen, das ist die Invariante, auf der
+schon §2.3 beruht.
 ---
 
 ## 6. Stand der Messungen
@@ -573,6 +651,14 @@ Ellipsen-Fit sitzt.
   liegen auf einem einzigen Kreis** (170 mm), radial innerhalb davon ist die
   Abbildung durch nichts gestützt. Kandidaten: zusätzliche Korrespondenzen auf
   den Ring-Innenkanten, oder eine Kamera-Vorkalibrierung.
+- **Keine Selbstprüfung des Ergebnisses.** Die Pipeline meldet `OK`, sobald sie
+  zwanzig Drähte zuordnen konnte — ob die Homographie *stimmt*, prüft sie nicht.
+  Die Fremdkörper-Fälle aus §2.2 kamen deshalb als saubere Erfolge zurück und
+  verdarben still eine ganze Runde. Der Trim beseitigt diese Ursache, nicht die
+  Lücke: eine verzogene Ellipse aus einem anderen Grund sähe genauso aus. Eine
+  billige Prüfung liegt nahe — nach dem Fit vom Mittelpunkt nach außen laufen
+  und sehen, ob die äußerste Farbkante auf 170 mm abgebildet wird; weicht sie
+  ab, `CalibrationFailure` statt Ergebnis.
 - **Beleuchtungsvarianz.** Die HSV-Grenzen sind fest. Unterbelichtete Aufnahmen
   fallen komplett durch (siehe §6).
 - **Objektivverzeichnung.** Aktuell unmodelliert; siehe den radialen Bias oben,

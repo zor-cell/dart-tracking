@@ -17,7 +17,7 @@ Trigger-Problem löst.
 **Ausgangslage:** das Testset enthält jetzt zwei gegenläufige Pfeil-Typen —
 die alten dunklen (`pz`, `tz`) und die neuen mit Wolfram-Spitzen und **einfarbig
 weißen Flights** (`cc`, `fh`, `pz-light`). 285 Paare über fünf Boards / 16 Setups.
-Ausgangsstand **216/285 = 75.8 %**, aktueller Stand **227/285 = 79.6 %**
+Ausgangsstand **216/285 = 75.8 %**, aktueller Stand **234/285 = 82.1 %**
 (Metrik: `NO_CHANGE` gegen ein erwartetes `MISS` zählt als korrekt, siehe
 [erkennung.md §3](done/erkennung.md#no_change-ist-punktemäßig-ein-miss)).
 
