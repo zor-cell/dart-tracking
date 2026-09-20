@@ -31,7 +31,7 @@ Definiert in `domain/board_geometry.py`, nach WDF/BDO-Norm:
 |---|---|
 | Bullseye (50) | r ≤ 6.35 mm |
 | Bull (25) | r ≤ 15.9 mm |
-| Triple-Ring | 99.0 – 107.0 mm |
+| Triple-Ring | 99.4 – 107.4 mm |
 | Double-Ring | 162.0 – 170.0 mm |
 | Äußere Scoring-Grenze | 170.0 mm |
 | Sektoren | 20, je 18° |
@@ -192,7 +192,7 @@ im normierten Verhältnis:
 
 ```python
 _DOUBLE_BAND = (162.0 + 170.0) / 2 / 170.0   # ≈ 0.976
-_TRIPLE_BAND = ( 99.0 + 107.0) / 2 / 170.0   # ≈ 0.606
+_TRIPLE_BAND = ( 99.4 + 107.4) / 2 / 170.0   # ≈ 0.608
 _BAND_TOLERANCE = 0.10
 ```
 

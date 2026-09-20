@@ -12,8 +12,8 @@ from dataclasses import dataclass
 # Ring radii (mm from centre). Each pair is inner/outer edge of a ring.
 BULLSEYE_RADIUS = 6.35  # the 50
 BULL_RADIUS = 15.9  # the 25
-TRIPLE_INNER_RADIUS = 99.0
-TRIPLE_OUTER_RADIUS = 107.0
+TRIPLE_INNER_RADIUS = 99.4
+TRIPLE_OUTER_RADIUS = 107.4
 DOUBLE_INNER_RADIUS = 162.0
 DOUBLE_OUTER_RADIUS = 170.0  # outer edge of scoring area
 
