@@ -148,12 +148,14 @@ class Game:
         self.revision += 1
 
     def add_dart(self, dart: Dart) -> None:
-        """Book a manually entered dart into any visit with room left, busted or
-        won. After a win it goes before the finishing dart, which must stay last."""
-        darts = list(self.current_turn.darts)
+        """Book a manually entered dart into any visit with room left. A won or
+        busted visit is closed by its last dart, so the new one goes before it."""
+        turn = self.current_turn
+        darts = list(turn.darts)
         if len(darts) >= DARTS_PER_TURN:
             return
-        darts.insert(len(darts) - 1 if self.winner is not None else len(darts), dart)
+        closed = turn.busted or self.winner is not None
+        darts.insert(len(darts) - 1 if closed else len(darts), dart)
         self._rescore(darts)
 
     def _busts(self, dart: Dart) -> bool:

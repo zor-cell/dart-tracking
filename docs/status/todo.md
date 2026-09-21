@@ -2,7 +2,6 @@ TODOs:
 
 Wenig Aufwand:
 - auf iphone 12 als einziges handy nicht voller bildschirm benutzt
-- bei normalem bust auch die 0er automatisch vorziehen?
 
 Viel Aufwand:
 
