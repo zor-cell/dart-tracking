@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Self
 
 from app.api.core.dto.base import CamelModel
+from app.api.features.calibration.domain.camera_angle import CameraAngle
 from app.api.features.evaluation.domain.accuracy import (
     Accuracy,
     AccuracyOverview,
@@ -56,11 +57,29 @@ class AccuracySummaryDto(CamelModel):
         )
 
 
+class CameraAngleDto(CamelModel):
+    """Viewing angles in degrees; see `CameraAngle` for the signs."""
+
+    tilt: float
+    horizontal: float
+    vertical: float
+
+    @classmethod
+    def from_entity(cls, angle: CameraAngle) -> Self:
+        return cls(
+            tilt=round(angle.tilt, 1),
+            horizontal=round(angle.horizontal, 1),
+            vertical=round(angle.vertical, 1),
+        )
+
+
 class GameAccuracyDto(CamelModel):
     game_id: str
     mode: int
     created_at: datetime
     evaluation_enabled: bool
+    tracker_version: int | None
+    camera: CameraAngleDto | None
     summary: AccuracySummaryDto
 
     @classmethod
@@ -70,6 +89,8 @@ class GameAccuracyDto(CamelModel):
             mode=judged.game.mode,
             created_at=judged.game.created_at,
             evaluation_enabled=judged.game.evaluation_enabled,
+            tracker_version=judged.game.tracker_version,
+            camera=CameraAngleDto.from_entity(judged.camera) if judged.camera else None,
             summary=AccuracySummaryDto.from_entity(judged.accuracy),
         )
 

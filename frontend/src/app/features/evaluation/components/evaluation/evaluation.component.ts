@@ -57,13 +57,14 @@ export class EvaluationComponent {
     })),
   ]);
 
-  protected readonly summary = computed<AccuracySummaryDto | null>(() => {
+  protected readonly selectedGame = computed<GameAccuracyDto | null>(() => {
     const gameId = this.selectedGameId();
-    if (gameId === null) {
-      return this.total();
-    }
-    return this.games().find((game) => game.gameId === gameId)?.summary ?? null;
+    return this.games().find((game) => game.gameId === gameId) ?? null;
   });
+
+  protected readonly summary = computed<AccuracySummaryDto | null>(() =>
+    this.selectedGameId() === null ? this.total() : (this.selectedGame()?.summary ?? null),
+  );
 
   /** Share of thrown darts booked in the right segment. */
   protected readonly accuracy = computed(() => {
@@ -91,6 +92,11 @@ export class EvaluationComponent {
 
   protected count(key: keyof AccuracySummaryDto): number {
     return (this.summary()?.[key] as number) ?? 0;
+  }
+
+  protected sideOf(degrees: number, negative: string, positive: string): string {
+    const rounded = Math.round(Math.abs(degrees));
+    return `${rounded}° ${degrees < 0 ? negative : positive}`;
   }
 
   private labelOf(game: GameAccuracyDto): string {

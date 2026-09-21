@@ -91,6 +91,10 @@ H = [[  0.980303  -0.085738  -555.451815 ]
 Verifiziert: der Bull bildet auf (0.00, 0.00) mm ab, acht über die gefittete
 Ellipse verteilte Punkte auf 169.8 – 170.2 mm.
 
+Aus derselben Matrix lässt sich auch die Kamerapose zurückrechnen — daraus
+entsteht der Blickwinkel, nach dem die Live-Auswertung aufschlüsselt
+([auswertung.md §8](../auswertung.md#8-tracker-version-und-kamerawinkel)).
+
 **Grenzen** (relevant für die Evaluation in Phase 4):
 
 1. *Gilt nur für die Board-Ebene.* Die Pfeilspitze steckt in der Scheibe, passt

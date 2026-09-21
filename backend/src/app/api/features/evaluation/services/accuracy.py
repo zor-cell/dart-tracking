@@ -48,7 +48,9 @@ async def overview(session: AsyncSession) -> AccuracyOverview:
     """Every finished, judged game, newest first, and the totals over all of them."""
     games = await judged_games(session)
     per_game = [
-        GameAccuracy(game=g.game, accuracy=summarise(1, g.visits, g.judgements))
+        GameAccuracy(
+            game=g.game, accuracy=summarise(1, g.visits, g.judgements), camera=g.camera
+        )
         for g in reversed(games)
     ]
     return AccuracyOverview(

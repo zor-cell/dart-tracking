@@ -11,6 +11,7 @@ from collections.abc import Callable
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.core.socket.services.game_hub import hub
+from app.api.features.calibration.domain.camera_angle import CameraAngle
 from app.api.features.detection.debug.trace import DetectionTrace
 from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.detection.dto.throw_trigger import ThrowTriggerDto
@@ -147,6 +148,16 @@ def metrics_of(trace: DetectionTrace) -> dict[str, float]:
     return {name: float(value) for name, value in figures.items()}
 
 
+def angle_metrics_of(angle: CameraAngle) -> dict[str, float]:
+    """A calibration's viewing angle, in degrees, as event metrics."""
+    return {
+        "tilt_deg": round(float(angle.tilt), 2),
+        "horizontal_deg": round(float(angle.horizontal), 2),
+        "vertical_deg": round(float(angle.vertical), 2),
+        "focal_px": round(float(angle.focal_px), 1),
+    }
+
+
 def trigger_metrics_of(trigger: ThrowTriggerDto | None) -> dict[str, float]:
     """The client's trigger figures, prefixed so they sit apart from the detector's."""
     if trigger is None:
@@ -196,6 +207,32 @@ async def note_failure(
             )
     except Exception:  # noqa: BLE001 - diagnostics must not break the game
         logger.exception("[evaluation] could not record %s", failure)
+
+
+async def note_calibration(game_id: str, client_id: str, angle: CameraAngle) -> None:
+    """Note the viewing angle of a scoring camera's calibration. Its own
+    transaction, like a failure: a lost measurement must not cost the calibration."""
+    try:
+        async with database.session_scope() as session:
+            game = await game_repository.get(session, game_id)
+            if game is None:
+                return
+            at = position_of(game)
+            events.append(
+                session,
+                game_id,
+                GameEvent(
+                    kind=GameEventKind.CALIBRATED,
+                    turn_index=at.turn_index,
+                    player_index=at.player_index,
+                    accepted=True,
+                    camera_armed=True,
+                    client_id=client_id,
+                    metrics=angle_metrics_of(angle),
+                ),
+            )
+    except Exception:  # noqa: BLE001 - diagnostics must not break the game
+        logger.exception("[evaluation] could not record a calibration")
 
 
 def remember_frame(game_id: str, jpeg: bytes) -> None:

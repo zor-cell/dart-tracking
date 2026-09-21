@@ -23,11 +23,20 @@ export interface AccuracySummaryDto {
   readonly worstOffBy: number | null;
 }
 
+/** Viewing angles in degrees: horizontal < 0 is left of the board, vertical < 0 below the bull. */
+export interface CameraAngleDto {
+  readonly tilt: number;
+  readonly horizontal: number;
+  readonly vertical: number;
+}
+
 export interface GameAccuracyDto {
   readonly gameId: string;
   readonly mode: GameMode;
   readonly createdAt: string;
   readonly evaluationEnabled: boolean;
+  readonly trackerVersion: number | null;
+  readonly camera: CameraAngleDto | null;
   readonly summary: AccuracySummaryDto;
 }
 

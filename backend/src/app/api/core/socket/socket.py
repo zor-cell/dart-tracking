@@ -46,6 +46,7 @@ from app.api.features.calibration.dto.command.request_calibration import (
 )
 from app.api.features.calibration.domain.calibration import Calibration
 from app.api.features.calibration.domain.calibration_failure import CalibrationFailure
+from app.api.features.calibration.domain.camera_angle import camera_angle
 from app.api.features.calibration.services import board_detector
 from app.api.features.calibration.debug.render import (
     write_debug_images as write_calibration_debug_images,
@@ -405,6 +406,9 @@ async def _handle_calibration_frame(
         detection_store.seed(game_id, client_id, image)
         if await scoring_camera_store.claim(game_id, client_id):
             recorder.remember_frame(game_id, raw)
+            angle = camera_angle(outcome)
+            if angle is not None:
+                await recorder.note_calibration(game_id, client_id, angle)
             await _publish_announcer(game_id)
         response = CalibrationResultDto.from_calibration(outcome)
 

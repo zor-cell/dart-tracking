@@ -16,6 +16,10 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY . .
 RUN uv sync --frozen --no-dev
 
+# The build recorded with every game; the deploy passes CI_PIPELINE_IID.
+ARG APP_BUILD
+ENV APP_BUILD=$APP_BUILD
+
 EXPOSE 8000
 
 # run migration before serving the app

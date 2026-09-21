@@ -17,7 +17,8 @@ from app.api.features.evaluation.domain.alignment import (
     align,
     outcome_of,
 )
-from app.api.features.evaluation.domain.game_event import GameEvent
+from app.api.features.calibration.domain.camera_angle import CameraAngle
+from app.api.features.evaluation.domain.game_event import GameEvent, GameEventKind
 from app.api.features.evaluation.domain.visit_replay import Visit
 
 # Upper bound of each band, in millimetres from the expected segment.
@@ -187,6 +188,7 @@ class LoggedGame:
     mode: int
     created_at: datetime
     evaluation_enabled: bool
+    tracker_version: int | None = None
 
 
 @dataclass(frozen=True)
@@ -198,11 +200,33 @@ class JudgedGame:
     visits: list[Visit]
     judgements: list[Judgement]
 
+    @property
+    def camera(self) -> CameraAngle | None:
+        return camera_angle_of(self.events)
+
 
 @dataclass(frozen=True)
 class GameAccuracy:
     game: LoggedGame
     accuracy: Accuracy
+    camera: CameraAngle | None = None
+
+
+def camera_angle_of(events: list[GameEvent]) -> CameraAngle | None:
+    """The scoring camera's viewing angle over a game: the median of its calibrations."""
+    angles = [
+        event.metrics
+        for event in events
+        if event.kind is GameEventKind.CALIBRATED and event.metrics
+    ]
+    if not angles:
+        return None
+    return CameraAngle(
+        tilt=statistics.median(a["tilt_deg"] for a in angles),
+        horizontal=statistics.median(a["horizontal_deg"] for a in angles),
+        vertical=statistics.median(a["vertical_deg"] for a in angles),
+        focal_px=statistics.median(a["focal_px"] for a in angles),
+    )
 
 
 @dataclass(frozen=True)

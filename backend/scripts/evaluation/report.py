@@ -21,6 +21,7 @@ import asyncio
 import math
 import sys
 from collections import Counter
+from collections.abc import Callable
 from pathlib import Path
 
 # Import app.* from src/ (as `--app-dir src` does at runtime) and scripts.* from
@@ -29,6 +30,7 @@ _BACKEND = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_BACKEND))
 sys.path.insert(0, str(_BACKEND / "src"))
 
+from app.api.features.calibration.domain.camera_angle import CameraAngle  # noqa: E402
 from app.api.features.evaluation.domain.accuracy import (  # noqa: E402
     Accuracy,
     JudgedGame,
@@ -67,6 +69,11 @@ NEAR_MISS_MM = 5.0
 
 # Radius of the board itself, in mm. A booked MISS beyond it lies off the board.
 BOARD_EDGE_MM = 225.0
+
+# Upper edges of the camera tilt bands, in degrees.
+TILT_BANDS = (20, 35, 50)
+# A horizontal or vertical angle within this many degrees counts as level with the bull.
+LEVEL_DEG = 15.0
 
 
 def series_labels(folder: Path, visit: Visit) -> list[str] | None:
@@ -221,6 +228,76 @@ def miss_table(judgements: list[Judgement]) -> list[str]:
     return lines
 
 
+def version_of(game: JudgedGame) -> str:
+    version = game.game.tracker_version
+    return "unknown" if version is None else str(version)
+
+
+def tilt_band(angle: CameraAngle) -> str:
+    """Overall tilt off the board normal, in bands of TILT_BANDS."""
+    low = 0
+    for high in TILT_BANDS:
+        if angle.tilt < high:
+            return f"{low} - {high}°"
+        low = high
+    return f">= {low}°"
+
+
+def side_of(degrees: float, negative: str, positive: str) -> str:
+    if degrees < -LEVEL_DEG:
+        return negative
+    return positive if degrees > LEVEL_DEG else f"within ±{LEVEL_DEG:.0f}°"
+
+
+def game_table(games: list[JudgedGame]) -> list[str]:
+    """Every game with the tracker version and camera angle it was played with."""
+    lines = [
+        "| game | version | tilt | horizontal | vertical | correct | total | rate |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
+    for game in games:
+        thrown = [j for j in game.judgements if j.outcome is not DartOutcome.PHANTOM]
+        correct = sum(1 for j in thrown if j.outcome is DartOutcome.CORRECT)
+        camera = game.camera
+        angles = (
+            f"{camera.tilt:.0f}° | {camera.horizontal:+.0f}° | {camera.vertical:+.0f}°"
+            if camera
+            else "- | - | -"
+        )
+        rate = f"{100 * correct / len(thrown):.0f}%" if thrown else "-"
+        lines.append(
+            f"| {game.game.id[:8]} | {version_of(game)} | {angles} "
+            f"| {correct} | {len(thrown)} | {rate} |"
+        )
+    return lines
+
+
+def grouped_table(
+    games: list[JudgedGame], key: Callable[[JudgedGame], str | None], header: str
+) -> list[str]:
+    """Darts thrown and correct per group of games; games `key` cannot place are left out."""
+    by_game = {game.game.id: key(game) for game in games}
+    thrown = [
+        j
+        for game in games
+        for j in game.judgements
+        if j.outcome is not DartOutcome.PHANTOM and by_game[game.game.id] is not None
+    ]
+    if not thrown:
+        return ["No game carries this yet."]
+    return rate_table(
+        thrown,
+        lambda j: by_game[j.game_id],
+        lambda j: j.outcome is DartOutcome.CORRECT,
+        header,
+        "correct",
+    )
+
+
+def camera_key(pick: Callable[[CameraAngle], str]) -> Callable[[JudgedGame], str | None]:
+    return lambda game: None if game.camera is None else pick(game.camera)
+
+
 def failure_table(failures: Counter) -> list[str]:
     if not failures:
         return ["None."]
@@ -229,7 +306,10 @@ def failure_table(failures: Counter) -> list[str]:
 
 
 def build_report(
-    accuracy: Accuracy, judgements: list[Judgement], failures: Counter
+    accuracy: Accuracy,
+    games: list[JudgedGame],
+    judgements: list[Judgement],
+    failures: Counter,
 ) -> list[str]:
     return [
         "# Tracking accuracy",
@@ -260,12 +340,29 @@ def build_report(
         "",
         # Phantoms are left out so the denominator is the darts thrown, as in
         # the headline rate above.
-        *rate_table(
-            [j for j in judgements if j.outcome is not DartOutcome.PHANTOM],
-            lambda j: j.game_id[:8],
-            lambda j: j.outcome is DartOutcome.CORRECT,
-            "game",
-            "correct",
+        *game_table(games),
+        "",
+        "## Per tracker version",
+        "",
+        *grouped_table(games, version_of, "version"),
+        "",
+        "## Per camera angle",
+        "",
+        "Median over the scoring camera's calibrations in each game "
+        "(docs/feature/auswertung.md §8).",
+        "",
+        *grouped_table(games, camera_key(tilt_band), "tilt"),
+        "",
+        *grouped_table(
+            games,
+            camera_key(lambda a: side_of(a.horizontal, "left", "right")),
+            "horizontal",
+        ),
+        "",
+        *grouped_table(
+            games,
+            camera_key(lambda a: side_of(a.vertical, "below", "above")),
+            "vertical",
         ),
         "",
         "## Per blob cohesion",
@@ -335,7 +432,7 @@ def main() -> int:
     accuracy = summarise(len(games), all_visits, judgements)
     args.out.mkdir(parents=True, exist_ok=True)
     path = write_markdown(
-        args.out, REPORT_NAME, build_report(accuracy, judgements, failures)
+        args.out, REPORT_NAME, build_report(accuracy, games, judgements, failures)
     )
 
     print(

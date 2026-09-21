@@ -2,11 +2,13 @@ TODOs:
 
 Wenig Aufwand:
 - auf iphone 12 als einziges handy nicht voller bildschirm benutzt
-- tracker version aufnehmen bei tracking, dass accuracy nach version nachgeschaut werden kann?
+- bei normalem bust auch die 0er automatisch vorziehen?
 
 Viel Aufwand:
 
 Zukunft:
+- eigene pro spieler checkout präferenzen
+- manuelle einträge auch am virtual board highlighten, indem man das gesamte segment mit farbe umrahmt
 - elimination also with double, so its not so easy
 - tracking pausieren button?
 - referenz nach manueller eingabe: nach einer handbuchung steht der pfeil im board,

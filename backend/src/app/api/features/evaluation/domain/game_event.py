@@ -20,6 +20,7 @@ class GameEventKind(StrEnum):
     DART_REPLACED = "dart_replaced"  # a device booked another field for one dart
     DART_MOVED = "dart_moved"  # a device moved one dart to another place in the visit
     NEXT_PLAYER = "next_player"
+    CALIBRATED = "calibrated"  # the scoring camera calibrated; metrics hold its angle
 
 
 @dataclass(frozen=True)

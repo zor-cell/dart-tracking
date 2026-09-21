@@ -85,6 +85,42 @@
         </div>
       </dl>
 
+      @if (selectedGame(); as game) {
+        <section class="panel">
+          <h2 class="panel__title">Aufnahme</h2>
+          <p class="panel__hint">
+            Kamerawinkel als Median über die Kalibrierungen der scorenden Kamera
+          </p>
+          <ul class="rows">
+            <li class="row">
+              <span class="row__label">Tracker-Version</span>
+              <span class="row__value">{{ game.trackerVersion ?? 'unbekannt' }}</span>
+            </li>
+            @if (game.camera; as camera) {
+              <li class="row">
+                <span class="row__label">Neigung zur Scheibe</span>
+                <span class="row__value">{{ camera.tilt | number: '1.0-0' }}°</span>
+              </li>
+              <li class="row">
+                <span class="row__label">Seitlich</span>
+                <span class="row__value">{{ sideOf(camera.horizontal, 'links', 'rechts') }}</span>
+              </li>
+              <li class="row">
+                <span class="row__label">Höhe</span>
+                <span class="row__value">{{
+                  sideOf(camera.vertical, 'unterhalb', 'oberhalb')
+                }}</span>
+              </li>
+            } @else {
+              <li class="row">
+                <span class="row__label">Kamerawinkel</span>
+                <span class="row__value">&ndash;</span>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+
       <section class="panel">
         <h2 class="panel__title">Fehleraufschlüsselung</h2>
         <p class="panel__hint">

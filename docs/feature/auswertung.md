@@ -67,6 +67,7 @@ Schritt, nie aktualisiert, nie gelöscht.
 | `dart_replaced` | ein einzelner Pfeil auf ein anderes Feld umgebucht (`dart_index` + Feld) |
 | `dart_moved` | ein Pfeil an eine andere Stelle im Visit gezogen (`dart_index` → `target_index`) |
 | `next_player` | Visit abgeschlossen |
+| `calibrated` | die scorende Kamera hat kalibriert; `metrics` trägt ihren Blickwinkel (§8) |
 
 Jede Zeile trägt Feld (`value`/`multiplier`), Trefferpunkt in Board-Millimetern,
 den Visit-Index, ob das Spiel die Aktion überhaupt angenommen hat (`accepted` —
@@ -513,7 +514,111 @@ Vorgang, der eine Oberfläche braucht.
 
 ---
 
-## 8. Offene Punkte
+## 8. Tracker-Version und Kamerawinkel
+
+Zwei Dinge, nach denen sich die Genauigkeit aufschlüsseln lassen soll: *mit
+welchem Code* gespielt wurde, und *aus welchem Winkel* die Kamera auf die
+Scheibe sah.
+
+### Version
+
+`games.tracker_version`, gesetzt beim Anlegen des Spiels: die GitLab-
+Pipelinenummer (`CI_PIPELINE_IID`), die die Deploy-Pipeline als Build-Arg
+`APP_BUILD` an das Backend-Image übergibt und `Settings.app_build` liest. Als
+Build-Arg und nicht als Laufzeit-Variable, damit die Nummer am Image klebt und
+nicht davon abhängt, mit welcher Umgebung `docker compose up` zuletzt lief.
+Welcher Commit dahintersteht, zeigt die Pipeline in GitLab — die Nummer ist pro
+Projekt eindeutig, der Commit wird deshalb nicht mitgespeichert.
+
+Das Frontend bekommt dieselbe `APP_BUILD` aus derselben Pipeline — eine Zahl
+beschreibt also Trigger im Browser und CV-Pipeline gemeinsam. Lokal und bei
+allen Spielen vor dieser Spalte ist sie leer, Report und Seite zeigen dann
+`unknown` bzw. „unbekannt“.
+
+Bewusst am Spiel, nicht an jedem Event: ein Deploy mitten im Spiel würde die
+Würfe danach falsch zuordnen, kommt an einem Testabend aber nicht vor.
+
+### Kamerawinkel
+
+Aus der Homographie jeder Kalibrierung, ohne zusätzliche Messung
+(`calibration/domain/camera_angle.py`):
+
+1. `H⁻¹` (Board → Bild) auf die Bildmitte als Hauptpunkt verschieben.
+2. Die Brennweite schätzen: `H = K·[r₁ r₂ t]` mit `K = diag(f, f, 1)`, und
+   `r₁`, `r₂` müssen orthogonal und gleich lang sein. Zwei Gleichungen, eine
+   Unbekannte (`f²`), per Least Squares.
+3. `r₁`, `r₂`, `t` herausrechnen, `R` orthonormalisieren, Kameraposition
+   `C = −Rᵀt` in Board-Millimetern.
+4. Winkel aus `C`: **Neigung** gegen die Board-Normale, **horizontal**
+   `atan2(Cₓ, C_z)` (negativ = links vom Board, vom Abwurf aus gesehen),
+   **vertikal** `atan2(C_y, C_z)` (negativ = unterhalb des Bulls).
+
+Fast frontal ist Schritt 2 entartet (die Tiefenanteile von `H` gehen gegen
+null). Liegt die Schätzung außerhalb von 0.5 – 3 × der langen Bildkante, gilt
+stattdessen eine typische Handy-Hauptkamera (26 mm KB-äquivalent). Die Winkel
+sind dort ohnehin klein, der Fehler bleibt es auch.
+
+Geloggt wird jede erfolgreiche Kalibrierung der **scorenden** Kamera als
+`calibrated`-Event (Winkel plus `focal_px` in `metrics`). Pro Spiel gilt der
+**Median** darüber (`camera_angle_of`): die Kamera steht fest, die
+Kalibrierungen streuen um ±0.5°, und eine einzelne verzogene fällt so nicht ins
+Gewicht. Die Historie bleibt im Log — springt die Pose zwischen zwei
+Kalibrierungen, obwohl niemand die Kamera angefasst hat, war eine davon schief.
+Das ist ein Ansatzpunkt für die fehlende Selbstprüfung aus
+[kalibrierung.md §7](done/kalibrierung.md#7-offene-punkte).
+
+**Validierung am Testset** (`throw*_base.jpg` je Detektions-Setup, Client-Kette):
+
+| Setup | Neigung | horizontal | vertikal | Accuracy offline |
+|---|---|---|---|---|
+| pz_setup1 | 13° | +8° | −11° | 73 % |
+| tz_setup1 | 15° | +4° | −15° | 87 % |
+| pz_setup3 | 23° | +1° | −23° | 93 % |
+| cc_setup1 | 27° | −1° | −27° | 80 % |
+| pz-light_setup3 | 30° | −1° | −30° | 87 % |
+| pz_setup4 | 31° | −1° | −31° | 87 % |
+| tz_setup3 | 31° | +23° | −23° | 93 % |
+| cc_setup2 | 32° | −19° | −28° | 93 % |
+| fh_setup2 | 35° | −2° | −35° | 80 % |
+| pz_setup2 | 36° | −30° | −24° | 73 % |
+| tz_setup2 | 36° | −25° | −30° | 67 % |
+| tz_setup4 | 40° | −28° | −33° | 80 % |
+| fh_setup1 | 40° | +20° | −37° | 53 % |
+| pz-light_setup2 | 46° | +43° | −25° | 90 % |
+| tz_setup5 | 54° | −48° | −39° | 73 % |
+| pz-light_setup1 | 55° | −50° | −41° | 80 % |
+
+- **Neigung robust.** Die grobe Näherung über das Achsenverhältnis der
+  gefitteten Ellipse (`cos θ ≈ b/a`) liegt überall innerhalb von 1 – 3° an der
+  vollen Posenschätzung, über die Basisbilder eines Setups streut sie ±0.5°.
+- **Aufteilung plausibel.** `left_near`/`right_near` landen auf der richtigen
+  Seite, `pz-light_setup1` (das „Stativ weit seitlich“ aus
+  [kalibrierung.md §2.5](done/kalibrierung.md#25-zuordnung-zu-board-winkeln))
+  ist das steilste Setup. Streuung innerhalb eines Setups ±1 – 2°.
+- **Brennweite nötig.** Mit fester Standardbrennweite statt Schätzung liegt die
+  Aufteilung um 5 – 8° daneben. Die Testfotos tragen keine EXIF-Daten; wo doch
+  (zwei Bilder), passt die Schätzung auf 5 – 20 %.
+- **Kein Abstand, keine Höhe in mm.** `C` selbst ist bei schräger Kamera auf
+  etwa ±5 % stabil, fast frontal springt der Abstand um Dezimeter
+  (`tz_setup1`: 2.0 – 2.7 m). Gespeichert werden deshalb nur Winkel.
+- **Kein Zusammenhang mit der Accuracy erkennbar** — bei 15 – 30 Würfen je Setup
+  sind ±10 % aber Rauschen. Genau dafür ist die Live-Aufzeichnung da.
+
+Objektivverzeichnung bleibt unmodelliert (wie in der Kalibrierung selbst); für
+Winkel in Grad-Genauigkeit reicht das.
+
+### Wo es auftaucht
+
+- **Report:** Spalten Version, Neigung, horizontal, vertikal in „Per game“, dazu
+  Quoten je Version, je Neigungsband (< 20°, 20 – 35°, 35 – 50°, ≥ 50°) und je
+  Seite/Höhe (jenseits von ±15° links/rechts bzw. unter/über dem Bull).
+- **Seite:** bei einem einzelnen Spiel ein Abschnitt „Aufnahme“ mit Version und
+  Winkeln.
+- **Export:** über `games.csv` und die `calibrated`-Zeilen in `game_events.csv`.
+
+---
+
+## 9. Offene Punkte
 
 - **Mehrfach-Trigger ohne Wurf bleiben ungezählt.** Löst die Kamera ohne Wurf
   aus und findet nichts, entsteht gar kein Judgement — weder auf der
@@ -521,9 +626,10 @@ Vorgang, der eine Oberfläche braucht.
   nur in der Failure-Tabelle. Ob Trigger-Qualität in die Genauigkeitszahl
   gehört, ist bewusst offen; sie steckt heute in
   [client-diff-verbesserungen.md](client-diff-verbesserungen.md).
-- **Kein Setup-Begriff.** Offline gruppiert die Auswertung nach Board und Setup
-  (`pz_setup1`); live ist ein Spiel die kleinste Einheit. Solange ein Abend =
-  ein Kamera-Aufbau ist, deckt sich das; sonst braucht es ein Feld dafür.
+- **Kein Setup-Begriff jenseits des Winkels.** Offline gruppiert die Auswertung
+  nach Board und Setup (`pz_setup1`); live trennt §8 inzwischen nach
+  Kamerawinkel, Board und Licht aber nicht. Solange an einem Board gespielt
+  wird, reicht das.
 - **Latenz ungemessen.** Die Zeitstempel des Logs geben den Abstand zwischen
   Trigger und Buchung her, ausgewertet wird er noch nicht.
 - **`FrameBuffer` wird nie geleert.** Prozesslokal und an kein Spielende

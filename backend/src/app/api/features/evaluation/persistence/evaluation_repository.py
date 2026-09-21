@@ -87,6 +87,7 @@ class EvaluationRepository:
                 GameTable.mode,
                 GameTable.created_at,
                 GameTable.evaluation_enabled,
+                GameTable.tracker_version,
             )
             .join(GameEventTable, GameEventTable.game_id == GameTable.id)
             .order_by(GameTable.created_at)
@@ -103,6 +104,7 @@ class EvaluationRepository:
                 mode=row.mode,
                 created_at=row.created_at,
                 evaluation_enabled=row.evaluation_enabled,
+                tracker_version=row.tracker_version,
             )
             for row in (await session.execute(statement)).all()
         ]

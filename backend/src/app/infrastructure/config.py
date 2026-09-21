@@ -8,6 +8,7 @@ from functools import lru_cache
 from pathlib import Path
 from urllib.parse import quote_plus
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # One `.env` at the repository root, shared with docker compose. Absent inside
@@ -39,6 +40,14 @@ class Settings(BaseSettings):
     access_token_minutes: int = 15
     refresh_token_days: int = 30
     cookie_secure: bool = False
+
+    # CI pipeline number the image was built from; unset in a local run.
+    app_build: int | None = None
+
+    @field_validator("app_build", mode="before")
+    @classmethod
+    def _blank_is_unset(cls, value: object) -> object:
+        return None if value == "" else value
 
     @property
     def database_url(self) -> str:

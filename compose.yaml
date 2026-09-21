@@ -5,6 +5,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      args:
+        APP_BUILD: ${APP_BUILD:-}
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?missing in .env}
