@@ -3,6 +3,7 @@ TODOs:
 Wenig Aufwand:
 - auf iphone 12 als einziges handy nicht voller bildschirm benutzt
 - tracker version aufnehmen bei tracking, dass accuracy nach version nachgeschaut werden kann?
+- manuelles keyboard muss nach bust oder so noch da sein, falls dazwischen ein pfeil nicht getracked wurde
 
 Viel Aufwand:
 

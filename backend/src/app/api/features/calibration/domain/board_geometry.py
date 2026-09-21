@@ -14,7 +14,7 @@ BULLSEYE_RADIUS = 6.35  # the 50
 BULL_RADIUS = 15.9  # the 25
 # Double and treble share one width, measured apex to apex. The WDF spec for
 # strip material is 10.0 mm; the bands stay just inside it, see docs/test/testrun2.md.
-RING_WIDTH = 9.2
+RING_WIDTH = 9.8
 TRIPLE_OUTER_RADIUS = 107.4
 TRIPLE_INNER_RADIUS = TRIPLE_OUTER_RADIUS - RING_WIDTH
 DOUBLE_OUTER_RADIUS = 170.0  # outer edge of scoring area

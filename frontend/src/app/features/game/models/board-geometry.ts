@@ -7,7 +7,7 @@
 export const BULLSEYE_RADIUS = 6.35; // the 50
 export const BULL_RADIUS = 15.9; // the 25
 // Double and treble share one width, measured apex to apex.
-export const RING_WIDTH = 9.2;
+export const RING_WIDTH = 9.8;
 export const TRIPLE_OUTER_RADIUS = 107.4;
 export const TRIPLE_INNER_RADIUS = TRIPLE_OUTER_RADIUS - RING_WIDTH;
 export const DOUBLE_OUTER_RADIUS = 170; // outer edge of the scoring area

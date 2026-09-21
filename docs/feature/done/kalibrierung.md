@@ -47,8 +47,8 @@ Runddraht liegen die fehlenden 2 mm unter den beiden Drähten, bei Banddraht sin
 sie Sisal. Die Scoring-Bänder waren bis 20.09. mit 8.0 mm an die Außenkante
 geklebt und damit innen 2 mm zu kurz; das war die häufigste Einzelursache für
 Fehlwertungen ([testrun1 §3](../../test/testrun1.md#3-ring-innenkanten-nachmessen)).
-Sie stehen jetzt auf `RING_WIDTH = 9.2 mm`, also knapp innerhalb der physischen
-Kante — der Rest der gemessenen Abweichung ist kein Geometrie-, sondern ein
+Sie standen danach auf `RING_WIDTH = 9.2 mm` und stehen seit 21.09. versuchsweise
+auf **9.8 mm**, also knapp innerhalb der physischen Kante — der Rest der gemessenen Abweichung ist kein Geometrie-, sondern ein
 Kalibrierungsfehler und gehört nicht in diese Konstante (siehe §7).
 
 ### Was die Homographie aussagt
