@@ -281,7 +281,7 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
     def mutate(game: Game) -> None:
         match command:
             case RegisterDartDto():
-                game.register_dart(command.to_entity())
+                game.add_dart(command.to_entity())
             case ReplaceDartDto():
                 game.replace_dart(command.index, command.to_entity())
             case MoveDartDto():

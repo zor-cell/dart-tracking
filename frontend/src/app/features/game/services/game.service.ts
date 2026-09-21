@@ -8,6 +8,7 @@ import { SocketService } from '../../../core/socket/services/socket.service';
 import { GameStateDto } from '../dto/game-state.dto';
 import { PlayerDto } from '../dto/player.dto';
 import { TurnDto } from '../dto/turn.dto';
+import { DARTS_PER_TURN } from '../models/visit';
 import {GameConfigDto} from "../dto/game-config.dto";
 import {SettingsService} from "../../settings/services/settings.service";
 import { ACTIVE_GAME_KEY } from "./active-game";
@@ -56,6 +57,13 @@ export class GameService {
     const state = this._state();
     return state !== null && state.winnerId === null && state.dartsRemaining > 0;
   });
+
+  /** Whether the keypad may append: into any visit with room left, busted or
+   * won but unconfirmed, as the server's `Game.add_dart` allows. */
+  readonly acceptsManualDarts = computed(
+    () =>
+      this.settledWinner() === null && (this.currentTurn()?.darts.length ?? 0) < DARTS_PER_TURN,
+  );
 
   /** A win that still waits for the confirm tap, the same gate every other visit
    * passes through. Never pending while confirming is off. */

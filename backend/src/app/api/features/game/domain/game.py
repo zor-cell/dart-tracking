@@ -147,6 +147,15 @@ class Game:
             turn.busted = True
         self.revision += 1
 
+    def add_dart(self, dart: Dart) -> None:
+        """Book a manually entered dart into any visit with room left, busted or
+        won. After a win it goes before the finishing dart, which must stay last."""
+        darts = list(self.current_turn.darts)
+        if len(darts) >= DARTS_PER_TURN:
+            return
+        darts.insert(len(darts) - 1 if self.winner is not None else len(darts), dart)
+        self._rescore(darts)
+
     def _busts(self, dart: Dart) -> bool:
         """Whether the dart just thrown spoils the visit, scoring it as nothing.
 

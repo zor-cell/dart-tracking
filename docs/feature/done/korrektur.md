@@ -127,6 +127,24 @@ gebuchten Siegwurf zu korrigieren ist genau der Moment, in dem man es braucht.
 `register_dart` bleibt abgesichert, denn dort geht es ums Anhängen, und ein
 vierter Pfeil im Visit ist ein Fehltrigger.
 
+**Nachtragen nach einem Bust.** Die Handeingabe läuft seit 21.09. nicht mehr über
+`register_dart`, sondern über `add_dart`: dieselbe Grenze von drei Pfeilen, aber
+ein überworfener Visit nimmt noch Pfeile an, solange Platz ist. Der Fall: der
+erste Pfeil wurde nicht getrackt, der zweite überwirft — ohne das wäre die
+Tastatur gesperrt und der verpasste Pfeil nur über Undo nachzutragen. Er landet
+hinten und wird per Ziehen (§4) an seine Stelle gebracht; `_rescore` entscheidet
+den Bust dabei neu.
+
+Dasselbe gilt für einen gewonnenen, noch nicht bestätigten Visit (Stand 20:
+2, D9 eingegeben, geworfen war 2, 0, D9). Dort wird der Pfeil nicht angehängt,
+sondern **vor den Siegpfeil** gesetzt: nach dem Checkout kann nichts mehr
+geworfen worden sein, und hinten angehängt würde eine 0 wegen Double-Out als Bust
+zählen. Ein nachgetragener Pfeil, der davor schon überwirft (2, 5, D9), macht
+aus dem Sieg korrekt einen Bust. Nach der Bestätigung ist die Tastatur
+ausgeblendet, wie bisher. Die Kamera bleibt bei `register_dart`, ein Treffer nach dem
+Bust ist dort weiterhin ein Fehltrigger. Im Frontend spiegelt
+`GameService.acceptsManualDarts` die Regel.
+
 ---
 
 ## 6. Overlays folgen ihrem Pfeil

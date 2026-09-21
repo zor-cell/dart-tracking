@@ -157,10 +157,9 @@ export class GameComponent implements OnInit, OnDestroy {
   });
 
   /** Whether the keypad books at all: appending needs room in the visit,
-   * correcting a selected dart does not — a full or busted visit is exactly
-   * where a misread has to be fixable. */
+   * correcting a selected dart does not. */
   protected readonly padAccepts = computed(
-    () => this.game.acceptsDarts() || this.selectedDart() !== null,
+    () => this.game.acceptsManualDarts() || this.selectedDart() !== null,
   );
 
   /** The visit being thrown, drawn on the virtual board as it fills up. */
