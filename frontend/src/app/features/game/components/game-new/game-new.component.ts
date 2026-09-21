@@ -67,7 +67,7 @@ export class GameNewComponent {
 
   protected readonly signedIn = this.auth.isAuthenticated;
   /** One placeholder row per seat `restoreSeats` will open. */
-  protected readonly skeletonSeats = [0, 1];
+  protected readonly skeletonSeats = [0];
   /** Rendered height of a seat's input and buttons, so the placeholders take the same space. */
   protected readonly seatRowHeight = '2.4375rem';
   /** Whether the session is known yet. The seats depend on it, so they are only
@@ -216,7 +216,6 @@ export class GameNewComponent {
         : undefined;
 
       this.seats.push(self ? this.fb.nonNullable.control<Seat>(self) : this.createSeat(1));
-      this.seats.push(this.createSeat(2));
     }
     this.sessionResolved.set(true);
   }
