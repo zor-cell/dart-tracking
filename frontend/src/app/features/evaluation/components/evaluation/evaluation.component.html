@@ -100,14 +100,20 @@
                   <span class="row__hint">{{ outcome.hint }}</span>
                   <ng-container
                     [ngTemplateOutlet]="value"
-                    [ngTemplateOutletContext]="{ $implicit: summary.missed }"
+                    [ngTemplateOutletContext]="{
+                      $implicit: summary.missed,
+                      rate: share(summary.missed),
+                    }"
                   />
                 </span>
                 <span class="row__line">
                   <span class="row__hint">davon als 0 eingetragen</span>
                   <ng-container
                     [ngTemplateOutlet]="value"
-                    [ngTemplateOutletContext]="{ $implicit: summary.missedZeros }"
+                    [ngTemplateOutletContext]="{
+                      $implicit: summary.missedZeros,
+                      rate: summary.missed === 0 ? null : summary.missedZeros / summary.missed,
+                    }"
                   />
                 </span>
               </li>
@@ -119,7 +125,10 @@
                 </span>
                 <ng-container
                   [ngTemplateOutlet]="value"
-                  [ngTemplateOutletContext]="{ $implicit: count(outcome.key) }"
+                  [ngTemplateOutletContext]="{
+                    $implicit: count(outcome.key),
+                    rate: share(count(outcome.key)),
+                  }"
                 />
               </li>
             }
@@ -155,11 +164,11 @@
   }
 </section>
 
-<ng-template #value let-darts>
+<ng-template #value let-darts let-rate="rate">
   <span class="row__value">
     {{ darts }}
     <span class="row__share">
-      @if (share(darts); as rate) {
+      @if (rate !== null) {
         {{ rate * 100 | number: '1.1-1' }} %
       } @else {
         &ndash;
