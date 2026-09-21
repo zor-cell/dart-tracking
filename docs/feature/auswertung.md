@@ -247,6 +247,13 @@ Es ist also kein Schlamperei-Unterschied, den man wegvereinheitlichen müsste,
 sondern folgt aus dem, was jede Zahl beantwortet. Wer eine der beiden Quoten
 nennt, muss nur sagen, welche Frage sie beantwortet.
 
+**Ausgewiesen wird es trotzdem.** `missed_zeros` zählt die `missed`-Pfeile, die
+die Spieler als Null eingetragen haben. Sie bleiben `missed`, sind aber eine
+eigene Klasse: abgeprallt, heruntergefallen oder außerhalb des Bildes — ein
+Pfeil, der gar nicht im Board steckt, ist weit schwerer zu erkennen als einer,
+der steckt und falsch gelesen wurde. Die Auswertungsseite zeigt die Zahl unter
+„Verpasst", `report.py` unter der Fehleraufschlüsselung.
+
 Was daran *doch* zu reparieren war, lag woanders: offline trugen „nichts zu
 sehen" und „Pfeil steckt im Surround" beide das Label `MISS`, sodass eine
 verpasste Detektion einen Treffer bekam, sobald der Pfeil außerhalb der Wertung

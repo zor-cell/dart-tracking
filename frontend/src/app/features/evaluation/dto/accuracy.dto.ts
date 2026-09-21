@@ -15,9 +15,9 @@ export interface AccuracySummaryDto {
   readonly correct: number;
   readonly wrong: number;
   readonly missed: number;
+  readonly missedZeros: number;
   readonly phantom: number;
   readonly bands: readonly DistanceBandDto[];
-  /** Millimetres, over the mis-scored darts that carried a located tip. */
   readonly meanOffBy: number | null;
   readonly medianOffBy: number | null;
   readonly worstOffBy: number | null;

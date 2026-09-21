@@ -24,6 +24,7 @@ class AccuracySummaryDto(CamelModel):
     correct: int
     wrong: int
     missed: int
+    missed_zeros: int
     phantom: int
     # Off-by distances in millimetres, over the mis-scored darts that carried a
     # located tip.
@@ -43,6 +44,7 @@ class AccuracySummaryDto(CamelModel):
             correct=accuracy.outcomes[DartOutcome.CORRECT],
             wrong=accuracy.outcomes[DartOutcome.WRONG],
             missed=accuracy.outcomes[DartOutcome.MISSED],
+            missed_zeros=accuracy.missed_zeros,
             phantom=accuracy.outcomes[DartOutcome.PHANTOM],
             bands=[
                 DistanceBandDto(label=band.label, darts=band.darts)

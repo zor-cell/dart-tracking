@@ -90,6 +90,19 @@
   border-radius: 0.5rem;
 }
 
+.row--split {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.3rem;
+}
+
+.row__line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .row__text {
   display: flex;
   flex-direction: column;

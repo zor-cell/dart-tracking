@@ -127,7 +127,11 @@ def error_table(accuracy: Accuracy) -> list[str]:
     lines = ["| outcome | darts | share |", "|---|---|---|"]
     for outcome, count in accuracy.outcomes.items():
         lines.append(f"| {outcome.value} | {count} | {100 * count / total:.1f}% |")
-    return lines
+    return lines + [
+        "",
+        f"{accuracy.missed_zeros} of the {accuracy.outcomes[DartOutcome.MISSED]} "
+        "missed darts were booked as a zero by the players.",
+    ]
 
 
 def distance_table(accuracy: Accuracy) -> list[str]:

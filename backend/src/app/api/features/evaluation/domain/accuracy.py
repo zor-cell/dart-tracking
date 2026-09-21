@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from app.api.features.calibration.domain.board_geometry import (
+    MISS,
     Segment,
     distance_to_segment,
     segment_from_label,
@@ -83,6 +84,7 @@ class Accuracy:
     visits: int
     clean_visits: int  # accepted without a correction
     outcomes: dict[DartOutcome, int]
+    missed_zeros: int  # missed darts the players booked as a zero
     # Off-by distances of the mis-scored darts that carried a located tip.
     distances: tuple[float, ...]
 
@@ -163,6 +165,12 @@ def summarise(games: int, visits: list[Visit], judgements: list[Judgement]) -> A
         visits=len(visits),
         clean_visits=sum(1 for visit in visits if not visit.corrected),
         outcomes={outcome: counts[outcome] for outcome in DartOutcome},
+        missed_zeros=sum(
+            1
+            for judgement in judgements
+            if judgement.outcome is DartOutcome.MISSED
+            and judgement.expected_segment == MISS
+        ),
         distances=tuple(
             judgement.off_by_mm
             for judgement in judgements

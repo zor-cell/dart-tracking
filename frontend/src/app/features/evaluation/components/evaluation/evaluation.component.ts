@@ -1,4 +1,4 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -23,7 +23,15 @@ interface ScopeOption {
 
 @Component({
   selector: 'app-evaluation',
-  imports: [Button, DecimalPipe, FormsModule, ProgressSpinner, RouterLink, Select],
+  imports: [
+    Button,
+    DecimalPipe,
+    FormsModule,
+    NgTemplateOutlet,
+    ProgressSpinner,
+    RouterLink,
+    Select,
+  ],
   templateUrl: './evaluation.component.html',
   styleUrl: './evaluation.component.scss',
   providers: [DatePipe],

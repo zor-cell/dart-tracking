@@ -88,27 +88,41 @@
       <section class="panel">
         <h2 class="panel__title">Fehleraufschlüsselung</h2>
         <p class="panel__hint">
-          Jeder gewertete Pfeil zählt genau einmal &ndash; ein Phantom hatte keinen Pfeil
-          hinter sich, ein verpasster keinen Eintrag
+          Jeder gewertete Pfeil zählt genau einmal &ndash; ein Phantom hatte keinen Pfeil hinter
+          sich, ein verpasster keinen Eintrag
         </p>
         <ul class="rows">
           @for (outcome of outcomes; track outcome.key) {
-            <li class="row">
-              <span class="row__text">
+            @if (outcome.key === 'missed') {
+              <li class="row row--split">
                 <span class="row__label">{{ outcome.label }}</span>
-                <span class="row__hint">{{ outcome.hint }}</span>
-              </span>
-              <span class="row__value">
-                {{ count(outcome.key) }}
-                <span class="row__share">
-                  @if (share(count(outcome.key)); as rate) {
-                    {{ rate * 100 | number: '1.1-1' }} %
-                  } @else {
-                    &ndash;
-                  }
+                <span class="row__line">
+                  <span class="row__hint">{{ outcome.hint }}</span>
+                  <ng-container
+                    [ngTemplateOutlet]="value"
+                    [ngTemplateOutletContext]="{ $implicit: summary.missed }"
+                  />
                 </span>
-              </span>
-            </li>
+                <span class="row__line">
+                  <span class="row__hint">davon als 0 eingetragen</span>
+                  <ng-container
+                    [ngTemplateOutlet]="value"
+                    [ngTemplateOutletContext]="{ $implicit: summary.missedZeros }"
+                  />
+                </span>
+              </li>
+            } @else {
+              <li class="row">
+                <span class="row__text">
+                  <span class="row__label">{{ outcome.label }}</span>
+                  <span class="row__hint">{{ outcome.hint }}</span>
+                </span>
+                <ng-container
+                  [ngTemplateOutlet]="value"
+                  [ngTemplateOutletContext]="{ $implicit: count(outcome.key) }"
+                />
+              </li>
+            }
           }
         </ul>
       </section>
@@ -116,8 +130,8 @@
       <section class="panel">
         <h2 class="panel__title">Abstand zum erwarteten Segment</h2>
         <p class="panel__hint">
-          Über die falsch gewerteten Pfeile mit lokalisierter Spitze. Wenige Millimeter
-          heißen falsche Drahtseite, zig Millimeter ein Fit auf etwas anderem.
+          Über die falsch gewerteten Pfeile mit lokalisierter Spitze. Wenige Millimeter heißen
+          falsche Drahtseite, zig Millimeter ein Fit auf etwas anderem.
         </p>
         @if (summary.meanOffBy === null) {
           <p class="panel__hint">Kein falsch gewerteter Pfeil trug eine lokalisierte Spitze.</p>
@@ -140,3 +154,16 @@
     }
   }
 </section>
+
+<ng-template #value let-darts>
+  <span class="row__value">
+    {{ darts }}
+    <span class="row__share">
+      @if (share(darts); as rate) {
+        {{ rate * 100 | number: '1.1-1' }} %
+      } @else {
+        &ndash;
+      }
+    </span>
+  </span>
+</ng-template>
