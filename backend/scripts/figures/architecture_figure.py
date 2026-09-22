@@ -92,7 +92,6 @@ def render(out_path: Path) -> None:
             "camera frames",
             "frame differencing",
             "trigger once the scene settles",
-            "encode a single still image",
         )
     ):
         _item(ax, capture[0] + 2.0, 49.5 - offset * 4.2, f"· {text}")
@@ -122,8 +121,8 @@ def render(out_path: Path) -> None:
     )
     for offset, (tier, content) in enumerate(
         (
-            ("durable", "games, visits, darts"),
-            ("session-scoped, shared", "calibrations, camera claim"),
+            ("persisted", "games, visits, darts"),
+            ("session-scoped", "calibrations, camera claim"),
             ("process-local", "connections, reference frame"),
         )
     ):
