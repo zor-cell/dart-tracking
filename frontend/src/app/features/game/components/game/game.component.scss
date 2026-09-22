@@ -160,7 +160,7 @@
   align-items: center;
   gap: 0.35rem;
   width: max-content;
-  max-width: calc(100% - 7rem);
+  max-width: min(20rem, calc(100% - 7rem));
   padding: 0.75rem 1rem;
   border-radius: 0.75rem;
   background: rgb(0 0 0 / 70%);

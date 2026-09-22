@@ -548,13 +548,24 @@ nicht kalibriert":
 
 - **Kamera:** solange sie in der Phase `calibrating` ist, also selbst noch
   keine Kalibrierung hat. Das weiß das Gerät lokal, dafür braucht es keine
-  Nachricht.
+  Nachricht. Während ein Versuch läuft, steht darunter „Wird kalibriert …".
 - **Scoreboard:** solange `calibration_state.calibrated` falsch ist. Der Server
   leitet das aus dem Scoring-Claim ab (§5a): der wird bei der ersten
   erfolgreichen Kalibrierung gesetzt und erst beim Rollenwechsel wieder
   aufgegeben. „Kalibriert" heißt also genau „es gibt eine Kamera, deren Würfe
   gebucht werden", und das ist das, was der Hinweis sagen soll. Gesendet wird
   beim Join, nach einem erfolgreichen Claim und nach dessen Freigabe.
+  Während eine angeforderte Kalibrierung läuft, steht darunter „Wird
+  kalibriert …".
+
+Schlägt ein Versuch fehl, lautet der Titel stattdessen „Kalibrierung
+fehlgeschlagen", darunter steht der Grund. Auf der Kamera ist das der Fehler aus
+der Board-Erkennung, auf dem Scoreboard, das die Kalibrierung angefordert hat,
+„Kamera konnte das Board nicht erkennen" oder „Keine Kamera hat geantwortet".
+Der Grund verschwindet, sobald ein neuer Versuch beginnt oder einer gelingt.
+Toasts gibt es für Kalibrierungsfehler keine mehr. Scheitert eine
+Rekalibrierung bei schon kalibriertem Board, bleibt der Fehlschlag deshalb
+unsichtbar: die alte Kalibrierung gilt weiter, und der Hinweis erscheint nicht.
 
 Eine Wertungskamera, die nur die Verbindung verloren hat, behält ihren Claim.
 Das Scoreboard zeigt dann weiter „kalibriert", obwohl gerade niemand filmt.

@@ -101,6 +101,7 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly calibrationOverlay = this.calibration.overlay;
   protected readonly calibrationRequestPending = this.calibration.requestPending;
   protected readonly boardCalibrated = this.calibration.boardCalibrated;
+  protected readonly calibrationFailure = this.calibration.failureMessage;
   protected readonly roundDarts = this.detection.roundDarts;
   protected readonly detectionStatusLabel = this.throwCapture.statusLabel;
   protected readonly detectionFeedback = this.detection.feedbackLabel;

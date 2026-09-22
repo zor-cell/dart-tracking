@@ -1,6 +1,5 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NotificationService } from '../../../core/notification/services/notification.service';
 import { CalibrationFailureDto } from '../dto/calibration-failure.dto';
 import { CalibrationStatusDto } from '../dto/calibration-status.dto';
 import { captureFrameAsJpeg } from '../../camera/models/frame-capture';
@@ -19,9 +18,6 @@ const FAILURE_MESSAGES: Record<CalibrationFailureDto, string> = {
 };
 
 const UNKNOWN_FAILURE_MESSAGE = 'Bitte erneut versuchen.';
-
-const FAILURE_TITLE = 'Kalibrierung fehlgeschlagen';
-const FAILURE_TOAST_LIFE = 8000;
 
 // What a device without a camera is told about another device's attempt: it
 // cannot see the board, so the advice above ("get closer", "avoid shadows") is
@@ -45,7 +41,6 @@ const REMOTE_TIMEOUT = 8000;
 @Injectable({ providedIn: 'root' })
 export class CalibrationService {
   private readonly socket = inject(SocketService);
-  private readonly notifications = inject(NotificationService);
   private readonly settings = inject(SettingsService);
 
   readonly status = signal<CalibrationStatus>('idle');
@@ -61,6 +56,9 @@ export class CalibrationService {
 
   /** Whether the game has a calibrated scoring camera; null until the server said. */
   readonly boardCalibrated = signal<boolean | null>(null);
+
+  /** Why this device's last calibration attempt failed; null once a new one starts or succeeds. */
+  readonly failureMessage = signal<string | null>(null);
 
   /** Whether this device asked for a recalibration that no camera has answered yet. */
   readonly requestPending = signal(false);
@@ -78,6 +76,7 @@ export class CalibrationService {
         this.status.set(result.success ? 'success' : 'error');
         if (result.success) {
           this.overlay.set(result.overlay);
+          this.failureMessage.set(null);
         } else {
           this.reportFailure(result.failure);
         }
@@ -86,7 +85,12 @@ export class CalibrationService {
     this.socket
       .on('calibration_state')
       .pipe(takeUntilDestroyed())
-      .subscribe((state) => this.boardCalibrated.set(state.calibrated));
+      .subscribe((state) => {
+        this.boardCalibrated.set(state.calibrated);
+        if (state.calibrated) {
+          this.failureMessage.set(null);
+        }
+      });
 
     // How a device learns about a calibration that was not its own — the only
     // route for one without a camera, since `calibration_result` goes to the
@@ -106,10 +110,11 @@ export class CalibrationService {
    */
   requestCalibration(): void {
     this.clearRequest();
+    this.failureMessage.set(null);
     this.requestPending.set(true);
     this.requestTimeout = setTimeout(() => {
       this.clearRequest();
-      this.notifications.showErrorMessage(REMOTE_TIMEOUT_MESSAGE, FAILURE_TITLE, FAILURE_TOAST_LIFE);
+      this.failureMessage.set(REMOTE_TIMEOUT_MESSAGE);
     }, REMOTE_TIMEOUT);
     this.socket.send({ type: 'request_calibration' });
   }
@@ -117,6 +122,7 @@ export class CalibrationService {
   async calibrate(video: HTMLVideoElement, canvas: HTMLCanvasElement): Promise<void> {
     this.status.set('pending');
     this.overlay.set(null);
+    this.failureMessage.set(null);
     const frame = await captureFrameAsJpeg(video, canvas);
     await this.socket.sendFrame('calibration_frame', frame, this.settings.debugCalibration());
   }
@@ -124,30 +130,21 @@ export class CalibrationService {
   reset(): void {
     this.status.set('idle');
     this.overlay.set(null);
+    this.failureMessage.set(null);
   }
 
-  /**
-   * Failures are transient toasts rather than something pinned to the preview:
-   * the whole point of this screen is seeing the camera, so an advice text that
-   * never leaves ends up hiding the very thing it asks the user to fix.
-   */
   private reportFailure(failure: CalibrationFailureDto | null): void {
-    const message = (failure && FAILURE_MESSAGES[failure]) ?? UNKNOWN_FAILURE_MESSAGE;
-    this.notifications.showErrorMessage(message, FAILURE_TITLE, FAILURE_TOAST_LIFE);
+    this.failureMessage.set((failure && FAILURE_MESSAGES[failure]) ?? UNKNOWN_FAILURE_MESSAGE);
   }
 
   /**
    * Report a camera's attempt to the device that asked for it: stop the pending
-   * indicator, and toast failures only — success is the indicator stopping.
+   * indicator, and keep a failure for the notice — success is the indicator stopping.
    */
   private reportRemoteStatus(status: CalibrationStatusDto): void {
     this.clearRequest();
     if (!status.success) {
-      this.notifications.showErrorMessage(
-        REMOTE_FAILURE_MESSAGE,
-        FAILURE_TITLE,
-        FAILURE_TOAST_LIFE,
-      );
+      this.failureMessage.set(REMOTE_FAILURE_MESSAGE);
     }
   }
 

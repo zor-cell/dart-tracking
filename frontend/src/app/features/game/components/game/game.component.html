@@ -18,7 +18,15 @@
         @if (boardCalibrated() === false) {
           <div class="game__calibration-notice" role="status">
             <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-            <strong>Board nicht kalibriert</strong>
+            @if (calibrationFailure(); as failure) {
+              <strong>Kalibrierung fehlgeschlagen</strong>
+              <span>{{ failure }}</span>
+            } @else {
+              <strong>Board nicht kalibriert</strong>
+              @if (calibrationRequestPending()) {
+                <span>Wird kalibriert …</span>
+              }
+            }
           </div>
         }
         <p-button
@@ -93,7 +101,15 @@
           @case ('calibrating') {
             <div class="game__calibration-notice" role="status">
               <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-              <strong>Board nicht kalibriert</strong>
+              @if (calibrationFailure(); as failure) {
+                <strong>Kalibrierung fehlgeschlagen</strong>
+                <span>{{ failure }}</span>
+              } @else {
+                <strong>Board nicht kalibriert</strong>
+                @if (calibrationStatus() === 'pending') {
+                  <span>Wird kalibriert …</span>
+                }
+              }
             </div>
           }
           @case ('tracking') {
