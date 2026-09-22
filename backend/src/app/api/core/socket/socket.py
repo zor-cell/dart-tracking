@@ -52,6 +52,9 @@ from app.api.features.calibration.services import board_detector
 from app.api.features.calibration.debug.render import (
     write_debug_images as write_calibration_debug_images,
 )
+from app.api.features.calibration.services.calibration_failure_store import (
+    store as calibration_failure_store,
+)
 from app.api.features.calibration.services.calibration_request_store import (
     store as calibration_request_store,
 )
@@ -226,8 +229,12 @@ async def _handle_client_command(
         case SetRoleDto():
             connection.client.role = command.role
             await client_store.save(connection.client)
-            if command.role is not DeviceRole.CAMERA:
-                await scoring_camera_store.release(game_id, connection.client.id)
+            client_id = connection.client.id
+            if command.role is not DeviceRole.CAMERA and await scoring_camera_store.is_scoring(
+                game_id, client_id
+            ):
+                await scoring_camera_store.release(game_id, client_id)
+                await calibration_failure_store.clear(game_id)
                 await hub.broadcast(game_id, await _calibration_state(game_id))
 
     await hub.send(connection, ClientStateDto.from_entity(connection.client))
@@ -342,8 +349,12 @@ async def _publish_announcer(game_id: str) -> None:
 
 
 async def _calibration_state(game_id: str) -> CalibrationStateDto:
-    """Whether a camera has calibrated and claimed scoring for this game."""
-    return CalibrationStateDto(calibrated=await scoring_camera_store.holder(game_id) is not None)
+    """Whether a camera has calibrated and claimed scoring for this game, and
+    whether its latest attempt failed."""
+    return CalibrationStateDto(
+        calibrated=await scoring_camera_store.holder(game_id) is not None,
+        failed=await calibration_failure_store.failed(game_id),
+    )
 
 
 async def _request_calibration(game_id: str, *, requester: str | None) -> None:
@@ -409,6 +420,10 @@ async def _handle_calibration_frame(
 
     if isinstance(outcome, CalibrationFailure):
         response = CalibrationResultDto.failed(outcome)
+        # Another camera's failure says nothing about the one that scores.
+        if await scoring_camera_store.holder(game_id) in (None, client_id):
+            await calibration_failure_store.set(game_id)
+            await hub.broadcast(game_id, await _calibration_state(game_id))
     else:
         await calibration_store.set(game_id, client_id, outcome)
         detection_store.seed(game_id, client_id, image)
@@ -417,6 +432,7 @@ async def _handle_calibration_frame(
             angle = camera_angle(outcome)
             if angle is not None:
                 await recorder.note_calibration(game_id, client_id, angle)
+            await calibration_failure_store.clear(game_id)
             await _publish_announcer(game_id)
             await hub.broadcast(game_id, await _calibration_state(game_id))
         response = CalibrationResultDto.from_calibration(outcome)

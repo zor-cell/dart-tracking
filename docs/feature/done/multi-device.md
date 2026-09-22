@@ -116,7 +116,7 @@ Spielstand also in derselben Form, egal auf welchem Weg er ankam.
 | `calibration_result` | nur der Sender | gehört zu *dessen* Kamerabild |
 | `calibration_status` | nur das Gerät, das die Rekalibrierung angefordert hat | es wartet auf die Antwort, und niemand darf zu einem Versuch zwei Nachrichten bekommen (§5c) |
 | `calibration_requested` | alle **Kameras** im Room | nur wer ein Bild hat, kann die Aufforderung beantworten (§5c) |
-| `calibration_state` | alle im Room (beim Join nur der Neue) | ob das Spiel eine kalibrierte, wertende Kamera hat (§5c) |
+| `calibration_state` | alle im Room (beim Join nur der Neue) | ob das Spiel eine kalibrierte, wertende Kamera hat und ob deren letzter Versuch scheiterte (§5c) |
 | `detection_result` | nur der Sender | Overlay-Polylines liegen im Pixelraster dieser Kamera |
 | `rematch_started` | alle im Room des **beendeten** Spiels | sie sollen gemeinsam ins neue wechseln (§5e) |
 | `presence` | alle im Room | wie viele Geräte, welche Rollen (optional) |
@@ -559,13 +559,27 @@ nicht kalibriert":
   kalibriert …".
 
 Schlägt ein Versuch fehl, lautet der Titel stattdessen „Kalibrierung
-fehlgeschlagen", darunter steht der Grund. Auf der Kamera ist das der Fehler aus
-der Board-Erkennung, auf dem Scoreboard, das die Kalibrierung angefordert hat,
-„Kamera konnte das Board nicht erkennen" oder „Keine Kamera hat geantwortet".
-Der Grund verschwindet, sobald ein neuer Versuch beginnt oder einer gelingt.
-Toasts gibt es für Kalibrierungsfehler keine mehr. Scheitert eine
-Rekalibrierung bei schon kalibriertem Board, bleibt der Fehlschlag deshalb
-unsichtbar: die alte Kalibrierung gilt weiter, und der Hinweis erscheint nicht.
+fehlgeschlagen", darunter steht der Grund. Das gilt auch **mitten im Spiel**,
+bei schon kalibriertem Board: die alte Homographie wird zwar weiter benutzt,
+aber eine gescheiterte Rekalibrierung heißt meist, dass Board oder Kamera
+verschoben wurden. Weiterzuspielen hieße dann, gegen eine falsche Kalibrierung
+zu werten. Toasts gibt es für Kalibrierungsfehler keine mehr, der Hinweis ist
+der einzige Weg.
+
+- **Kamera:** ihr eigener Fehler aus der Board-Erkennung, lokal gehalten, bis
+  ein Versuch gelingt. Ein neuer Versuch blendet ihn nicht aus, sondern zeigt
+  „Wird kalibriert …" als Unterzeile. Die routinemäßige Rekalibrierung nach
+  jedem Spielerwechsel bleibt damit unsichtbar, solange sie klappt.
+- **Scoreboard:** `calibration_state.failed`. Das Scoreboard hat die
+  automatische Rekalibrierung nicht angefordert, `calibration_status` erreicht
+  es also nicht. Der Server merkt sich deshalb in Redis
+  (`calibration_failure_store`), ob der letzte Versuch der *wertenden* Kamera
+  scheiterte. Solange noch niemand wertet, zählt jede Kamera. Fehlschläge
+  anderer Kameras zählen nicht, sie sagen über die gebuchten Würfe nichts aus.
+  Gelöscht wird die Markierung bei erfolgreichem Claim und bei Freigabe der
+  Rolle. Der Text lautet dann „Die Kamera konnte das Board nicht erkennen." Hat
+  das Scoreboard selbst angefordert, stehen dort die eigene Antwort bzw. „Keine
+  Kamera hat geantwortet.".
 
 Eine Wertungskamera, die nur die Verbindung verloren hat, behält ihren Claim.
 Das Scoreboard zeigt dann weiter „kalibriert", obwohl gerade niemand filmt.

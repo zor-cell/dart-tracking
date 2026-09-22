@@ -15,17 +15,14 @@
     } @else if (deviceRole() === 'scoreboard') {
       <div class="game__board">
         <app-virtual-board [darts]="currentDarts()" />
-        @if (boardCalibrated() === false) {
+        @if (boardCalibrated() === false || roomCalibrationFailure()) {
           <div class="game__calibration-notice" role="status">
             <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-            @if (calibrationFailure(); as failure) {
-              <strong>Kalibrierung fehlgeschlagen</strong>
+            <strong>{{ roomCalibrationFailure() ? 'Kalibrierung fehlgeschlagen' : 'Board nicht kalibriert' }}</strong>
+            @if (calibrationRequestPending()) {
+              <span>Wird kalibriert …</span>
+            } @else if (roomCalibrationFailure(); as failure) {
               <span>{{ failure }}</span>
-            } @else {
-              <strong>Board nicht kalibriert</strong>
-              @if (calibrationRequestPending()) {
-                <span>Wird kalibriert …</span>
-              }
             }
           </div>
         }
@@ -88,6 +85,18 @@
           }
         }
 
+        @if (cameraPhase() === 'calibrating' || (cameraPhase() === 'tracking' && calibrationFailure())) {
+          <div class="game__calibration-notice" role="status">
+            <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+            <strong>{{ calibrationFailure() ? 'Kalibrierung fehlgeschlagen' : 'Board nicht kalibriert' }}</strong>
+            @if (calibrationStatus() === 'pending') {
+              <span>Wird kalibriert …</span>
+            } @else if (calibrationFailure(); as failure) {
+              <span>{{ failure }}</span>
+            }
+          </div>
+        }
+
         @switch (cameraPhase()) {
           @case ('idle') {
             <div class="game__camera-overlay">
@@ -95,20 +104,6 @@
               <p-button label="Kamera starten" icon="pi pi-video" (onClick)="startCamera()" />
               @if (cameraError(); as error) {
                 <p class="game__camera-error">{{ error }}</p>
-              }
-            </div>
-          }
-          @case ('calibrating') {
-            <div class="game__calibration-notice" role="status">
-              <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-              @if (calibrationFailure(); as failure) {
-                <strong>Kalibrierung fehlgeschlagen</strong>
-                <span>{{ failure }}</span>
-              } @else {
-                <strong>Board nicht kalibriert</strong>
-                @if (calibrationStatus() === 'pending') {
-                  <span>Wird kalibriert …</span>
-                }
               }
             </div>
           }

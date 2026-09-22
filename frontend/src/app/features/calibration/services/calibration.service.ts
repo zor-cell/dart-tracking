@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CalibrationFailureDto } from '../dto/calibration-failure.dto';
 import { CalibrationStatusDto } from '../dto/calibration-status.dto';
@@ -57,8 +57,16 @@ export class CalibrationService {
   /** Whether the game has a calibrated scoring camera; null until the server said. */
   readonly boardCalibrated = signal<boolean | null>(null);
 
-  /** Why this device's last calibration attempt failed; null once a new one starts or succeeds. */
+  /** Why this device's last calibration attempt failed; null once one succeeds. */
   readonly failureMessage = signal<string | null>(null);
+
+  /** Whether the scoring camera's latest attempt failed, as the server reports it. */
+  private readonly roomFailed = signal(false);
+
+  /** The failure a device without a camera shows: its own request's, or the room's. */
+  readonly roomFailureMessage = computed(
+    () => this.failureMessage() ?? (this.roomFailed() ? REMOTE_FAILURE_MESSAGE : null),
+  );
 
   /** Whether this device asked for a recalibration that no camera has answered yet. */
   readonly requestPending = signal(false);
@@ -87,7 +95,8 @@ export class CalibrationService {
       .pipe(takeUntilDestroyed())
       .subscribe((state) => {
         this.boardCalibrated.set(state.calibrated);
-        if (state.calibrated) {
+        this.roomFailed.set(state.failed);
+        if (state.calibrated && !state.failed) {
           this.failureMessage.set(null);
         }
       });
@@ -110,7 +119,6 @@ export class CalibrationService {
    */
   requestCalibration(): void {
     this.clearRequest();
-    this.failureMessage.set(null);
     this.requestPending.set(true);
     this.requestTimeout = setTimeout(() => {
       this.clearRequest();
@@ -122,7 +130,6 @@ export class CalibrationService {
   async calibrate(video: HTMLVideoElement, canvas: HTMLCanvasElement): Promise<void> {
     this.status.set('pending');
     this.overlay.set(null);
-    this.failureMessage.set(null);
     const frame = await captureFrameAsJpeg(video, canvas);
     await this.socket.sendFrame('calibration_frame', frame, this.settings.debugCalibration());
   }
@@ -143,9 +150,7 @@ export class CalibrationService {
    */
   private reportRemoteStatus(status: CalibrationStatusDto): void {
     this.clearRequest();
-    if (!status.success) {
-      this.failureMessage.set(REMOTE_FAILURE_MESSAGE);
-    }
+    this.failureMessage.set(status.success ? null : REMOTE_FAILURE_MESSAGE);
   }
 
   private clearRequest(): void {
