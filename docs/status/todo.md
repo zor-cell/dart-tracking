@@ -2,7 +2,6 @@ TODOs:
 
 Wenig Aufwand:
 - auf iphone 12 als einziges handy nicht voller bildschirm benutzt
-- vollbild button scheint durch share dialog
 
 Viel Aufwand:
 
