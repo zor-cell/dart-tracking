@@ -185,7 +185,15 @@ Dafür reist die Trefferposition auf dem Spielstand mit:
 - `game/domain/dart.py` bekommt ein `position: tuple[float, float] | None` in
   Board-Millimetern. Der Socket füllt es beim erkannten Wurf aus `tip_board`.
 - Manuell gebuchte Darts haben `None` — das Feld ist bekannt, der Punkt darin
-  nicht. Die Ansicht sagt das ausdrücklich, statt den Wurf stumm wegzulassen.
+  nicht. Die Ansicht rahmt deshalb das ganze Feld in der Wurffarbe ein (bei
+  einem Single beide Single-Bänder), leicht nach innen versetzt, mit der
+  Wurfnummer daneben. Der Rahmen ist 3.2 mm breit (rund 2.4 px). Landen
+  mehrere eingegebene Darts im selben Feld, sitzt jeder weitere Rahmen 1.5 mm
+  weiter innen und überdeckt den vorigen teilweise. So bleiben alle Farben
+  sichtbar, auch drei im 9.8 mm breiten Triple-Ring. Die Nummern eines Felds
+  stehen dann gemeinsam in einer Zeile. Auf dem Kamera-Overlay erscheinen
+  eingegebene Darts nicht, dort gibt es keinen Punkt im Bild, an den sie sich
+  heften könnten. Ein Miss (`0`) bleibt ohne Markierung.
 
 Das ist bewusst der **Spielstand** und nicht `detection_result`: Letzteres geht
 nur an die sendende Kamera und liegt in deren Pixelraster (§3). Board-Millimeter

@@ -12,6 +12,19 @@
     <text class="board__number" [attr.x]="number.x" [attr.y]="number.y">{{ number.value }}</text>
   }
 
+  @for (field of enteredFields(); track $index) {
+    <g class="board__field">
+      @for (frame of field.frames; track $index) {
+        <path [attr.d]="frame.d" [attr.stroke]="frame.color" [attr.stroke-width]="frameWidth" />
+      }
+      <text [attr.x]="field.x" [attr.y]="field.y">
+        @for (ordinal of field.ordinals; track ordinal.value) {
+          <tspan [attr.fill]="ordinal.color" [attr.dx]="$first ? null : 5">{{ ordinal.value }}</tspan>
+        }
+      </text>
+    </g>
+  }
+
   <!-- Coloured by position in the visit, the same order the camera outlines the
        darts in, so one throw is one colour on both screens. -->
   @for (marker of markers(); track $index) {

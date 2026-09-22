@@ -4,6 +4,7 @@
  */
 
 import {
+  BULLSEYE_RADIUS,
   BULL_RADIUS,
   DOUBLE_INNER_RADIUS,
   DOUBLE_OUTER_RADIUS,
@@ -46,27 +47,33 @@ const VIEW_EXTENT = 218;
 export const BOARD_VIEW_BOX = `${-VIEW_EXTENT} ${-VIEW_EXTENT} ${VIEW_EXTENT * 2} ${VIEW_EXTENT * 2}`;
 
 /**
- * Builds one ring band of one sector as an SVG path: along the inner arc,
- * outwards, back along the outer arc, closed. The angles grow counter-clockwise
- * in board space, which the flipped y turns into counter-clockwise on screen —
- * hence the differing sweep flags of the two arcs.
+ * One ring band of one sector as an SVG path, shrunk by `inset` mm on every side.
+ * Angles grow counter-clockwise in board space, hence the differing sweep flags.
  */
-function band(index: number, innerRadius: number, outerRadius: number): string {
+function band(index: number, innerRadius: number, outerRadius: number, inset = 0): string {
   const centre = sectorCentreAngle(index);
-  const start = centre - SECTOR_ANGLE / 2;
-  const end = centre + SECTOR_ANGLE / 2;
+  const half = SECTOR_ANGLE / 2;
+  // The inset radial edges meet at `inset / sin(half)`; the band cannot start closer in.
+  const inner = Math.max(innerRadius + inset, inset / Math.sin(half) + 0.01);
+  const outer = outerRadius - inset;
 
-  const point = (angle: number, radius: number): string => {
+  const point = (radius: number, side: -1 | 1): string => {
+    const angle = centre + side * (half - Math.asin(inset / radius));
     const [x, y] = toSvg(radius * Math.cos(angle), radius * Math.sin(angle));
     return `${x.toFixed(2)} ${y.toFixed(2)}`;
   };
 
   return (
-    `M ${point(start, innerRadius)}` +
-    ` A ${innerRadius} ${innerRadius} 0 0 0 ${point(end, innerRadius)}` +
-    ` L ${point(end, outerRadius)}` +
-    ` A ${outerRadius} ${outerRadius} 0 0 1 ${point(start, outerRadius)} Z`
+    `M ${point(inner, -1)}` +
+    ` A ${inner} ${inner} 0 0 0 ${point(inner, 1)}` +
+    ` L ${point(outer, 1)}` +
+    ` A ${outer} ${outer} 0 0 1 ${point(outer, -1)} Z`
   );
+}
+
+/** A full circle as an SVG subpath. */
+function circle(radius: number): string {
+  return `M ${radius} 0 A ${radius} ${radius} 0 1 0 ${-radius} 0 A ${radius} ${radius} 0 1 0 ${radius} 0 Z`;
 }
 
 export const BOARD_SEGMENTS: readonly BoardSegment[] = Array.from(
@@ -90,3 +97,71 @@ export const BOARD_SECTOR_NUMBERS: readonly SectorNumber[] = SECTOR_ORDER.map(
     return { x, y, value };
   },
 );
+
+/** A board field as named by a called-out label: 20, D20, T20, 25, 50. */
+type Field =
+  | { readonly ring: 'single' | 'double' | 'triple'; readonly index: number }
+  | { readonly ring: 'bull' | 'bullseye' };
+
+function parseField(label: string): Field | null {
+  if (label === '50') {
+    return { ring: 'bullseye' };
+  }
+  if (label === '25') {
+    return { ring: 'bull' };
+  }
+  const match = /^([DT]?)(\d+)$/.exec(label);
+  const index = match ? SECTOR_ORDER.indexOf(Number(match[2])) : -1;
+  if (match === null || index < 0) {
+    return null;
+  }
+  return { ring: match[1] === 'D' ? 'double' : match[1] === 'T' ? 'triple' : 'single', index };
+}
+
+/** Outline of the field `label` names, `inset` mm inside its edges; null for a miss. */
+export function fieldOutline(label: string, inset: number): string | null {
+  const field = parseField(label);
+  if (field === null) {
+    return null;
+  }
+  switch (field.ring) {
+    case 'bullseye':
+      return circle(BULLSEYE_RADIUS - inset);
+    case 'bull':
+      return `${circle(BULL_RADIUS - inset)} ${circle(BULLSEYE_RADIUS + inset)}`;
+    case 'triple':
+      return band(field.index, TRIPLE_INNER_RADIUS, TRIPLE_OUTER_RADIUS, inset);
+    case 'double':
+      return band(field.index, DOUBLE_INNER_RADIUS, DOUBLE_OUTER_RADIUS, inset);
+    case 'single':
+      return (
+        `${band(field.index, BULL_RADIUS, TRIPLE_INNER_RADIUS, inset)} ` +
+        band(field.index, TRIPLE_OUTER_RADIUS, DOUBLE_INNER_RADIUS, inset)
+      );
+  }
+}
+
+/** Board radius (mm) the ordinals beside a single, triple or double field are written at. */
+const FIELD_LABEL_RADIUS = { single: 57, triple: TRIPLE_INNER_RADIUS - 16, double: DOUBLE_INNER_RADIUS - 16 };
+
+/** Distance (mm) of the bull's and the bullseye's ordinals from the centre. */
+const BULL_LABEL_OFFSET = 28;
+
+/** Where the ordinals of darts entered into the field `label` are written, in SVG units. */
+export function fieldLabelPoint(label: string): readonly [number, number] | null {
+  const field = parseField(label);
+  if (field === null) {
+    return null;
+  }
+  switch (field.ring) {
+    case 'bullseye':
+      return toSvg(0, BULL_LABEL_OFFSET);
+    case 'bull':
+      return toSvg(0, -BULL_LABEL_OFFSET);
+    default: {
+      const angle = sectorCentreAngle(field.index);
+      const radius = FIELD_LABEL_RADIUS[field.ring];
+      return toSvg(radius * Math.cos(angle), radius * Math.sin(angle));
+    }
+  }
+}

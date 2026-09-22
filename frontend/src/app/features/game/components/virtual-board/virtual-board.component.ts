@@ -7,6 +7,8 @@ import {
   BOARD_SEGMENTS,
   BOARD_VIEW_BOX,
   OFF_BOARD_MARKER_RADIUS,
+  fieldLabelPoint,
+  fieldOutline,
 } from '../../models/board-face';
 import { BULLSEYE_RADIUS, BULL_RADIUS, toSvg } from '../../models/board-geometry';
 
@@ -18,6 +20,12 @@ const ARROW_PATH = 'M 9.5 0 L -5 -7 L -5 7 Z';
 
 /** Radius of the dot marking a located tip, in board millimetres. */
 const MARKER_RADIUS = 5.5;
+
+/** Stroke width of a manually entered dart's field frame, in board millimetres. */
+const FRAME_WIDTH = 3.2;
+
+/** How much further in each further frame on the same field sits, in board millimetres. */
+const FRAME_STEP = 1.5;
 
 /** A dart drawn where its tip was located, or aimed off the board. */
 interface DartMarker {
@@ -34,14 +42,21 @@ interface DartMarker {
   readonly arrowTransform: string | null;
 }
 
+/** A field that manually entered darts landed in: one inset frame per dart. */
+interface EnteredField {
+  readonly x: number;
+  readonly y: number;
+  readonly frames: { readonly d: string; readonly color: string }[];
+  readonly ordinals: { readonly value: number; readonly color: string }[];
+}
+
 /**
  * A drawn dartboard with the located tips plotted on it — what a device without
  * a camera has instead of the picture. The camera usually stands off to one
  * side, so its view answers "was something found" but not "where"; this answers
  * where, straight-on, for everyone in the room.
  *
- * Only tracked darts carry a position; manually entered ones are counted but
- * cannot be placed, which the caption spells out rather than silently omitting.
+ * Tracked darts are drawn at their tip; manually entered ones frame their field.
  */
 @Component({
   selector: 'app-virtual-board',
@@ -62,6 +77,7 @@ export class VirtualBoardComponent {
 
   protected readonly arrowPath = ARROW_PATH;
   protected readonly markerRadius = MARKER_RADIUS;
+  protected readonly frameWidth = FRAME_WIDTH;
 
   protected readonly markers = computed<DartMarker[]>(() =>
     this.darts().flatMap((dart, index): DartMarker[] => {
@@ -96,13 +112,33 @@ export class VirtualBoardComponent {
     }),
   );
 
+  protected readonly enteredFields = computed<EnteredField[]>(() => {
+    const fields = new Map<string, EnteredField>();
+    this.darts().forEach((dart, index) => {
+      const point = dart.position === null ? fieldLabelPoint(dart.label) : null;
+      if (point === null) {
+        return;
+      }
+      const field = fields.get(dart.label) ?? { x: point[0], y: point[1], frames: [], ordinals: [] };
+      const inset = FRAME_WIDTH / 2 + Math.min(field.frames.length, 2) * FRAME_STEP;
+      const color = dartColor(index);
+      field.frames.push({ d: fieldOutline(dart.label, inset) ?? '', color });
+      field.ordinals.push({ value: index + 1, color });
+      fields.set(dart.label, field);
+    });
+    return [...fields.values()];
+  });
+
   protected readonly ariaLabel = computed(() => {
-    const placed = this.markers();
-    return placed.length === 0
-      ? 'Virtuelle Dartscheibe, keine erkannten Treffer dieser Runde'
-      : `Virtuelle Dartscheibe mit ${placed.length} erkannten Treffern dieser Runde: ` +
-          placed
-            .map((marker) => (marker.arrowTransform === null ? marker.label : `${marker.label}, daneben`))
-            .join(', ');
+    const described = this.darts().flatMap((dart) => {
+      if (dart.position === null) {
+        return fieldLabelPoint(dart.label) === null ? [] : [`${dart.label}, eingegeben`];
+      }
+      const [x, y] = dart.position;
+      return [Math.hypot(x, y) <= BOARD_BACKING_RADIUS ? dart.label : `${dart.label}, daneben`];
+    });
+    return described.length === 0
+      ? 'Virtuelle Dartscheibe, keine Treffer dieser Runde'
+      : `Virtuelle Dartscheibe mit ${described.length} Treffern dieser Runde: ${described.join(', ')}`;
   });
 }

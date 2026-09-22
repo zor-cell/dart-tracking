@@ -2,6 +2,7 @@ TODOs:
 
 Wenig Aufwand:
 - auf iphone 12 als einziges handy nicht voller bildschirm benutzt
+- initiale kalibrierung vllt sichtbarer machen, dass mans sonst nicht benutzen kann, vllt overlay zum starten kalibrieren
 
 Viel Aufwand:
 
