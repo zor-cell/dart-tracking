@@ -3,6 +3,7 @@ import { AnnouncerStateDto } from '../../../features/announcement/dto/announcer-
 import { DartAnnouncementDto } from '../../../features/announcement/dto/dart-announcement.dto';
 import { CalibrationRequestedDto } from '../../../features/calibration/dto/calibration-requested.dto';
 import { CalibrationResultDto } from '../../../features/calibration/dto/calibration-result.dto';
+import { CalibrationStateDto } from '../../../features/calibration/dto/calibration-state.dto';
 import { CalibrationStatusDto } from '../../../features/calibration/dto/calibration-status.dto';
 import { DetectionResultDto } from '../../../features/detection/dto/detection-result.dto';
 import { GameStateDto } from '../../../features/game/dto/game-state.dto';
@@ -18,6 +19,7 @@ export type ServerMessage =
   | ClientStateDto
   | CalibrationRequestedDto
   | CalibrationResultDto
+  | CalibrationStateDto
   | CalibrationStatusDto
   | DetectionResultDto
   | GameStateDto

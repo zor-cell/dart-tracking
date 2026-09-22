@@ -8,6 +8,7 @@ import { Noir } from "../app-theme";
 import {MessageService} from "primeng/api";
 import {authInterceptor, errorInterceptor} from "./core/interceptors";
 import { AnnouncerService } from './features/announcement/services/announcer.service';
+import { CalibrationService } from './features/calibration/services/calibration.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -22,5 +23,6 @@ export const appConfig: ApplicationConfig = {
     MessageService,
     // Listens from app start, so an announcer_state sent on join is never missed.
     provideAppInitializer(() => void inject(AnnouncerService)),
+    provideAppInitializer(() => void inject(CalibrationService)),
   ]
 };

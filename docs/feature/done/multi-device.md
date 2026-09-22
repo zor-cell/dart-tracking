@@ -116,6 +116,7 @@ Spielstand also in derselben Form, egal auf welchem Weg er ankam.
 | `calibration_result` | nur der Sender | gehört zu *dessen* Kamerabild |
 | `calibration_status` | nur das Gerät, das die Rekalibrierung angefordert hat | es wartet auf die Antwort, und niemand darf zu einem Versuch zwei Nachrichten bekommen (§5c) |
 | `calibration_requested` | alle **Kameras** im Room | nur wer ein Bild hat, kann die Aufforderung beantworten (§5c) |
+| `calibration_state` | alle im Room (beim Join nur der Neue) | ob das Spiel eine kalibrierte, wertende Kamera hat (§5c) |
 | `detection_result` | nur der Sender | Overlay-Polylines liegen im Pixelraster dieser Kamera |
 | `rematch_started` | alle im Room des **beendeten** Spiels | sie sollen gemeinsam ins neue wechseln (§5e) |
 | `presence` | alle im Room | wie viele Geräte, welche Rollen (optional) |
@@ -536,6 +537,27 @@ melden.
 Homographie und Referenzbild nur bei Erfolg. Eine misslungene Rekalibrierung
 lässt die alte stehen, die Erkennung läuft also weiter — nur eben gegen eine
 Referenz, die die gezogenen Pfeile noch enthält.
+
+### Hinweis „Board nicht kalibriert"
+
+Vorher war einem frisch gestarteten Spiel nicht anzusehen, dass noch keine
+Kamera kalibriert hat. Das Scoreboard zeigte eine leere Scheibe, die Kamera das
+Bild ohne Board-Linien, und beides sieht genauso aus wie „kalibriert, noch
+nichts geworfen". Jetzt liegt auf beiden Ansichten mittig der Hinweis „Board
+nicht kalibriert":
+
+- **Kamera:** solange sie in der Phase `calibrating` ist, also selbst noch
+  keine Kalibrierung hat. Das weiß das Gerät lokal, dafür braucht es keine
+  Nachricht.
+- **Scoreboard:** solange `calibration_state.calibrated` falsch ist. Der Server
+  leitet das aus dem Scoring-Claim ab (§5a): der wird bei der ersten
+  erfolgreichen Kalibrierung gesetzt und erst beim Rollenwechsel wieder
+  aufgegeben. „Kalibriert" heißt also genau „es gibt eine Kamera, deren Würfe
+  gebucht werden", und das ist das, was der Hinweis sagen soll. Gesendet wird
+  beim Join, nach einem erfolgreichen Claim und nach dessen Freigabe.
+
+Eine Wertungskamera, die nur die Verbindung verloren hat, behält ihren Claim.
+Das Scoreboard zeigt dann weiter „kalibriert", obwohl gerade niemand filmt.
 
 ---
 

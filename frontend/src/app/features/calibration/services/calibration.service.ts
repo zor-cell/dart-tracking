@@ -59,6 +59,9 @@ export class CalibrationService {
    */
   readonly overlay = signal<number[][][] | null>(null);
 
+  /** Whether the game has a calibrated scoring camera; null until the server said. */
+  readonly boardCalibrated = signal<boolean | null>(null);
+
   /** Whether this device asked for a recalibration that no camera has answered yet. */
   readonly requestPending = signal(false);
 
@@ -79,6 +82,11 @@ export class CalibrationService {
           this.reportFailure(result.failure);
         }
       });
+
+    this.socket
+      .on('calibration_state')
+      .pipe(takeUntilDestroyed())
+      .subscribe((state) => this.boardCalibrated.set(state.calibrated));
 
     // How a device learns about a calibration that was not its own — the only
     // route for one without a camera, since `calibration_result` goes to the

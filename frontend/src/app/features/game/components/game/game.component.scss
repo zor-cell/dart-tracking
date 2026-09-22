@@ -148,6 +148,33 @@
   font-size: 0.85rem;
 }
 
+// Centred over the picture or the drawn board; clicks pass through to what is behind.
+.game__calibration-notice {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  width: max-content;
+  max-width: calc(100% - 7rem);
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: rgb(0 0 0 / 70%);
+  color: #fff;
+  text-align: center;
+  font-size: 0.9rem;
+  pointer-events: none;
+
+  > i {
+    font-size: 1.5rem;
+    color: #ffb000;
+  }
+}
+
 // Anchors the recalibrate button the same way the camera box does, so it sits
 // in the same corner whichever of the two this device shows. The board is a
 // circle in a square box, so that corner is empty — but only for the icon-only

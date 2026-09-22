@@ -40,6 +40,7 @@ from app.api.features.calibration.dto.calibration_requested import (
     CalibrationRequestedDto,
 )
 from app.api.features.calibration.dto.calibration_result import CalibrationResultDto
+from app.api.features.calibration.dto.calibration_state import CalibrationStateDto
 from app.api.features.calibration.dto.calibration_status import CalibrationStatusDto
 from app.api.features.calibration.dto.command.request_calibration import (
     RequestCalibrationDto,
@@ -122,6 +123,7 @@ async def websocket_endpoint(
     await hub.send(connection, ClientStateDto.from_entity(client))
     await hub.send(connection, GameStateDto.from_entity(game))
     await _publish_announcer(game_id)
+    await hub.send(connection, await _calibration_state(game_id))
 
     # A camera without a calibration for this game cannot detect anything, and
     # only its own frame can produce one.
@@ -226,6 +228,7 @@ async def _handle_client_command(
             await client_store.save(connection.client)
             if command.role is not DeviceRole.CAMERA:
                 await scoring_camera_store.release(game_id, connection.client.id)
+                await hub.broadcast(game_id, await _calibration_state(game_id))
 
     await hub.send(connection, ClientStateDto.from_entity(connection.client))
 
@@ -338,6 +341,11 @@ async def _publish_announcer(game_id: str) -> None:
     await hub.broadcast(game_id, AnnouncerStateDto(client_id=await _current_announcer(game_id)))
 
 
+async def _calibration_state(game_id: str) -> CalibrationStateDto:
+    """Whether a camera has calibrated and claimed scoring for this game."""
+    return CalibrationStateDto(calibrated=await scoring_camera_store.holder(game_id) is not None)
+
+
 async def _request_calibration(game_id: str, *, requester: str | None) -> None:
     """Ask every camera in the room to calibrate again from a fresh frame.
 
@@ -410,6 +418,7 @@ async def _handle_calibration_frame(
             if angle is not None:
                 await recorder.note_calibration(game_id, client_id, angle)
             await _publish_announcer(game_id)
+            await hub.broadcast(game_id, await _calibration_state(game_id))
         response = CalibrationResultDto.from_calibration(outcome)
 
     await hub.send(connection, response)

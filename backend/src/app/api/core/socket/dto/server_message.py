@@ -12,6 +12,7 @@ from app.api.features.calibration.dto.calibration_requested import (
     CalibrationRequestedDto,
 )
 from app.api.features.calibration.dto.calibration_result import CalibrationResultDto
+from app.api.features.calibration.dto.calibration_state import CalibrationStateDto
 from app.api.features.calibration.dto.calibration_status import CalibrationStatusDto
 from app.api.features.detection.dto.detection_result import DetectionResultDto
 from app.api.features.game.dto.game_state import GameStateDto
@@ -21,6 +22,7 @@ ServerMessage = (
     ClientStateDto
     | CalibrationRequestedDto
     | CalibrationResultDto
+    | CalibrationStateDto
     | CalibrationStatusDto
     | DetectionResultDto
     | GameStateDto
