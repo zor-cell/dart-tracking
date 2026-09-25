@@ -32,6 +32,31 @@ $board-wire: #9aa0a6;
   fill: #1b1b1b;
 }
 
+// Green like the confirm button: reads on light and dark pages and against the board's dark rim.
+.board__ring {
+  fill: none;
+  stroke: var(--p-green-500, #22c55e);
+  stroke-width: 4;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--p-green-500, #22c55e) 80%, transparent));
+}
+
+.board__ring--pulsing {
+  animation: board-ring-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes board-ring-pulse {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board__ring--pulsing {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
 .board__segment {
   stroke: $board-wire;
   stroke-width: 0.7;

@@ -14,16 +14,16 @@
       </div>
     } @else if (deviceRole() === 'scoreboard') {
       <div class="game__board">
-        <app-virtual-board [darts]="currentDarts()" />
-        @if (boardCalibrated() === false || roomCalibrationFailure()) {
+        <app-virtual-board [darts]="currentDarts()" [calibration]="roomCalibration()" />
+        @if (roomCalibrationFailure(); as failure) {
           <div class="game__calibration-notice" role="status">
             <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-            <strong>{{ roomCalibrationFailure() ? 'Kalibrierung fehlgeschlagen' : 'Board nicht kalibriert' }}</strong>
-            @if (calibrationRequestPending()) {
-              <span>Wird kalibriert …</span>
-            } @else if (roomCalibrationFailure(); as failure) {
-              <span>{{ failure }}</span>
-            }
+            <strong>Kalibrierung fehlgeschlagen</strong>
+            <span>{{ failure }}</span>
+          </div>
+        } @else if (roomCalibration() === 'uncalibrated') {
+          <div class="game__calibration-notice game__calibration-notice--info" role="status">
+            <strong>Board nicht kalibriert</strong>
           </div>
         }
         <p-button
@@ -35,15 +35,18 @@
           ariaLabel="Dieses Gerät als Kamera verwenden"
           (onClick)="switchRole()"
         />
-        <p-button
-          class="game__recalibrate"
-          [icon]="calibrationRequestPending() ? 'pi pi-sync pi-spin' : 'pi pi-sync'"
-          [rounded]="true"
-          severity="primary"
-          size="small"
-          ariaLabel="Rekalibrieren"
-          [attr.aria-busy]="calibrationRequestPending()"          (onClick)="requestCalibration()"
-        />
+        @if (roomCalibration() !== 'no_camera') {
+          <p-button
+            class="game__recalibrate"
+            [icon]="roomCalibration() === 'calibrating' ? 'pi pi-sync pi-spin' : 'pi pi-sync'"
+            [rounded]="true"
+            severity="primary"
+            size="small"
+            ariaLabel="Rekalibrieren"
+            [attr.aria-busy]="roomCalibration() === 'calibrating'"
+            (onClick)="requestCalibration()"
+          />
+        }
       </div>
     } @else {
       <div
@@ -86,8 +89,14 @@
         }
 
         @if (cameraPhase() === 'calibrating' || (cameraPhase() === 'tracking' && calibrationFailure())) {
-          <div class="game__calibration-notice" role="status">
-            <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+          <div
+            class="game__calibration-notice"
+            [class.game__calibration-notice--info]="!calibrationFailure()"
+            role="status"
+          >
+            @if (calibrationFailure()) {
+              <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+            }
             <strong>{{ calibrationFailure() ? 'Kalibrierung fehlgeschlagen' : 'Board nicht kalibriert' }}</strong>
             @if (calibrationStatus() === 'pending') {
               <span>Wird kalibriert …</span>

@@ -114,9 +114,8 @@ Spielstand also in derselben Form, egal auf welchem Weg er ankam.
 | `game_state` | alle im Room | der geteilte Spielstand |
 | `client_state` | nur der Sender | wer *dieses* Gerät ist: `clientId` und Rolle (§5) |
 | `calibration_result` | nur der Sender | gehört zu *dessen* Kamerabild |
-| `calibration_status` | nur das Gerät, das die Rekalibrierung angefordert hat | es wartet auf die Antwort, und niemand darf zu einem Versuch zwei Nachrichten bekommen (§5c) |
 | `calibration_requested` | alle **Kameras** im Room | nur wer ein Bild hat, kann die Aufforderung beantworten (§5c) |
-| `calibration_state` | alle im Room (beim Join nur der Neue) | ob das Spiel eine kalibrierte, wertende Kamera hat und ob deren letzter Versuch scheiterte (§5c) |
+| `calibration_state` | alle im Room | wie weit die Kalibrierung des Spiels ist: keine Kamera, unkalibriert, läuft, kalibriert, fehlgeschlagen (§5c) |
 | `detection_result` | nur der Sender | Overlay-Polylines liegen im Pixelraster dieser Kamera |
 | `rematch_started` | alle im Room des **beendeten** Spiels | sie sollen gemeinsam ins neue wechseln (§5e) |
 | `presence` | alle im Room | wie viele Geräte, welche Rollen (optional) |
@@ -465,42 +464,23 @@ aktuellen Frame und läuft den normalen Kalibrierungspfad.
 **Es fächert sich der Auslöser auf, nicht das Ergebnis.** Ein
 `calibration_result` kann den Weg nicht zurückgehen: sein Overlay liegt im
 Pixelraster der Kamera, die es erzeugt hat (§3). Jede Kamera bekommt also ihr
-eigenes — und damit das anfordernde Gerät überhaupt erfährt, ob etwas passiert
-ist, geht ein `calibration_status` an **genau dieses eine Gerät**: nur Erfolg
-ja/nein, kein Overlay. Wer das ist, hält `calibration_request_store` fest, denn
-der Antwortende ist nicht der Fragende.
+eigenes. Alle anderen Geräte erfahren den Ausgang über `calibration_state`, das
+an den ganzen Raum geht (siehe „Kalibrierungsstatus im Raum" unten).
 
-> Der Status trug ursprünglich auch `clientId` und den Fehlergrund. Beides hat
-> das Frontend nie gelesen und wurde entfernt; bei mehreren Kameras (§5a) kommt
-> `clientId` zurück, sobald der Empfänger sie auseinanderhalten muss.
-
-### Warum der Status nicht an den Raum geht
-
-Der erste Wurf war ein Broadcast, und der hat die Kalibrierung auf dem
-Kamera-Handy zuverlässig aufgehängt: Der Ladebalken drehte endlos, weil die
-Kamera **zwei** Nachrichten für einen Versuch bekam — erst ihr
-`calibration_result`, unmittelbar danach den Broadcast.
-
-Die Ursache lag im Client und ist inzwischen behoben (§6a): der Socket führte
-die ankommenden Nachrichten in einem Signal, das nur den letzten Wert trägt, und
-zwei Nachrichten in einem Frame ergaben einen Effect-Lauf, der nur die zweite
-sah. Das `calibration_result` wurde nie beobachtet, `status` blieb auf
-`'pending'`.
-
-Die Adressierung ist trotzdem geblieben, weil sie unabhängig davon richtig ist:
-die Kamera bekommt ihr Ergebnis, der Anfragende seinen Status, sonst niemand.
-Der Status beantwortet eine Frage, und nur wer sie gestellt hat, wartet auf die
-Antwort. Weggefallen ist nur der *Zwang* — das Protokoll dürfte inzwischen zwei
-Nachrichten an ein Gerät schicken, es hat hier bloß keinen Grund dazu.
-
-Wie der Status aufbereitet wird: **Fehlschläge** immer — ab dem Moment wird
-nichts mehr korrekt gewertet. Ein **Erfolg** bekommt keinen Toast: solange die
-Anfrage offen ist, dreht sich das Sync-Icon des Buttons, und dass es aufhört, ist
-die Bestätigung. Antwortet binnen 8 s keine Kamera (z. B. weil keine verbunden
-ist — der Server schickt dann gar nichts), stoppt es mit einem Fehler-Toast.
-Die automatische Rekalibrierung
-verschickt gar keinen Status: niemand hat gefragt, und die Kamera meldet ihren
-Fehlschlag ohnehin auf dem Gerät, an dem auch nachjustiert werden muss.
+> Bis 25.09. ging stattdessen ein `calibration_status` (nur Erfolg ja/nein) an
+> **genau das Gerät, das angefordert hatte**; wer das war, hielt
+> `calibration_request_store` fest. Damit wusste ein Scoreboard nur von
+> Kalibrierungen, die es selbst angestoßen hatte — die automatische am
+> Rundenende, der Button auf der Kamera oder die Anfrage eines anderen
+> Scoreboards blieben unsichtbar. Das 8-s-Zeitlimit für „keine Kamera hat
+> geantwortet" lag im Frontend des Anfragenden. Beides ist mit dem Raum-Status
+> entfallen: der Status beantwortet jetzt keine Frage eines Einzelnen mehr,
+> sondern beschreibt einen Zustand, den alle anzeigen.
+>
+> Die erste Fassung dieses Status war ein Broadcast und hängte die Kamera auf
+> (endlos drehender Ladebalken, zwei Nachrichten in einem Frame). Ursache war
+> der Socket-Eingang als Signal, behoben in §6a — für den heutigen Broadcast
+> spielt das keine Rolle mehr.
 
 ### Drei Auslöser, ein Mechanismus
 
@@ -538,51 +518,71 @@ Homographie und Referenzbild nur bei Erfolg. Eine misslungene Rekalibrierung
 lässt die alte stehen, die Erkennung läuft also weiter — nur eben gegen eine
 Referenz, die die gezogenen Pfeile noch enthält.
 
-### Hinweis „Board nicht kalibriert"
+### Kalibrierungsstatus im Raum
 
-Vorher war einem frisch gestarteten Spiel nicht anzusehen, dass noch keine
-Kamera kalibriert hat. Das Scoreboard zeigte eine leere Scheibe, die Kamera das
-Bild ohne Board-Linien, und beides sieht genauso aus wie „kalibriert, noch
-nichts geworfen". Jetzt liegt auf beiden Ansichten mittig der Hinweis „Board
-nicht kalibriert":
+Einer frisch gestarteten Partie war anfangs nicht anzusehen, ob schon eine
+Kamera kalibriert hat: eine leere Scheibe sieht genauso aus wie „kalibriert,
+noch nichts geworfen". Und ein Scoreboard erfuhr nicht, wann gerade
+rekalibriert wird. Der Server führt deshalb **einen** Status je Spiel
+(`CalibrationState` in `calibration/domain/calibration_state.py`) und schickt
+ihn als `calibration_state` an den ganzen Raum, sobald sich etwas daran
+geändert haben kann: Join, Verlassen, Rollenwechsel, Beginn und Ende eines
+Versuchs.
 
-- **Kamera:** solange sie in der Phase `calibrating` ist, also selbst noch
-  keine Kalibrierung hat. Das weiß das Gerät lokal, dafür braucht es keine
-  Nachricht. Während ein Versuch läuft, steht darunter „Wird kalibriert …".
-- **Scoreboard:** solange `calibration_state.calibrated` falsch ist. Der Server
-  leitet das aus dem Scoring-Claim ab (§5a): der wird bei der ersten
-  erfolgreichen Kalibrierung gesetzt und erst beim Rollenwechsel wieder
-  aufgegeben. „Kalibriert" heißt also genau „es gibt eine Kamera, deren Würfe
-  gebucht werden", und das ist das, was der Hinweis sagen soll. Gesendet wird
-  beim Join, nach einem erfolgreichen Claim und nach dessen Freigabe.
-  Während eine angeforderte Kalibrierung läuft, steht darunter „Wird
-  kalibriert …".
+| Zustand | Wann | Scoreboard |
+|---|---|---|
+| `no_camera` | keine Verbindung mit Rolle Kamera im Raum | nichts — manuelles Spiel ist ein normaler Modus, kein Fehler; kein Rekalibrieren-Button |
+| `calibrating` | ein Versuch läuft, der die Wertung betrifft | Ring um die Scheibe pulsiert, Sync-Icon dreht |
+| `failed` | letzter Versuch der wertenden Kamera scheiterte | Warnhinweis „Kalibrierung fehlgeschlagen" |
+| `calibrated` | die wertende Kamera ist verbunden | grüner Ring um die Scheibe |
+| `uncalibrated` | sonst: Kamera da, aber keine wertende verbunden | dezenter Hinweis „Board nicht kalibriert", ohne Warnsymbol |
 
-Schlägt ein Versuch fehl, lautet der Titel stattdessen „Kalibrierung
-fehlgeschlagen", darunter steht der Grund. Das gilt auch **mitten im Spiel**,
-bei schon kalibriertem Board: die alte Homographie wird zwar weiter benutzt,
-aber eine gescheiterte Rekalibrierung heißt meist, dass Board oder Kamera
-verschoben wurden. Weiterzuspielen hieße dann, gegen eine falsche Kalibrierung
-zu werten. Toasts gibt es für Kalibrierungsfehler keine mehr, der Hinweis ist
-der einzige Weg.
+Die Reihenfolge der Zeilen ist die Priorität (`calibration_state()`): ein
+laufender Versuch überdeckt einen alten Fehlschlag, weil er ihn gerade
+beheben soll.
 
-- **Kamera:** ihr eigener Fehler aus der Board-Erkennung, lokal gehalten, bis
-  ein Versuch gelingt. Ein neuer Versuch blendet ihn nicht aus, sondern zeigt
-  „Wird kalibriert …" als Unterzeile. Die routinemäßige Rekalibrierung nach
-  jedem Spielerwechsel bleibt damit unsichtbar, solange sie klappt.
-- **Scoreboard:** `calibration_state.failed`. Das Scoreboard hat die
-  automatische Rekalibrierung nicht angefordert, `calibration_status` erreicht
-  es also nicht. Der Server merkt sich deshalb in Redis
-  (`calibration_failure_store`), ob der letzte Versuch der *wertenden* Kamera
-  scheiterte. Solange noch niemand wertet, zählt jede Kamera. Fehlschläge
-  anderer Kameras zählen nicht, sie sagen über die gebuchten Würfe nichts aus.
-  Gelöscht wird die Markierung bei erfolgreichem Claim und bei Freigabe der
-  Rolle. Der Text lautet dann „Die Kamera konnte das Board nicht erkennen." Hat
-  das Scoreboard selbst angefordert, stehen dort die eigene Antwort bzw. „Keine
-  Kamera hat geantwortet.".
+**Der Ring ist grün** wie der Bestätigen-Button. Zuerst war er weiß wie die
+Board-Linien, die die Kamera nach erfolgreicher Kalibrierung über ihr Bild
+legt; im hellen Theme verschwand er aber auf dem weißen Hintergrund, und die
+Kontrastfarbe des Themes (dort Schwarz) verschmolz mit dem dunklen Board-Rand.
+Er pulsiert auch bei der automatischen Rekalibrierung nach jedem Rundenwechsel;
+das ist gewollt, man sieht, dass etwas passiert.
 
-Eine Wertungskamera, die nur die Verbindung verloren hat, behält ihren Claim.
-Das Scoreboard zeigt dann weiter „kalibriert", obwohl gerade niemand filmt.
+**`no_camera` kommt aus dem Hub**, nicht aus Redis: gezählt werden die
+Verbindungen mit Rolle Kamera. Ohne diesen Zustand stand vor dem 25.09. auf
+jedem Spiel ohne Kamera dauerhaft „Board nicht kalibriert" mit Warnschild —
+manuelles Spielen sah wie ein Defekt aus.
+
+**`calibrated` verlangt, dass die wertende Kamera verbunden ist.** Der Claim
+(§5a) überlebt einen Verbindungsabbruch absichtlich; für die Anzeige zählt er
+aber nur, solange die Kamera auch im Raum ist. Vorher zeigte ein Scoreboard
+„kalibriert", obwohl gerade niemand filmte.
+
+**Wann ein Versuch läuft** (`calibration_progress`, prozesslokal wie der Hub):
+ab dem Versenden von `calibration_requested` (Button auf dem Scoreboard,
+Rundenende — nur, wenn überhaupt eine Kamera im Raum ist) und ab dem Eintreffen
+eines `calibration_frame` (Button auf der Kamera). Er endet mit dem Ergebnis.
+Zählen tut nur die wertende Kamera bzw. jede, solange noch keine wertet —
+Fehlschläge und Erfolge anderer Kameras sagen über die gebuchten Würfe nichts.
+Antwortet keine Kamera binnen **8 s** (etwa weil sie ihre Kamera noch nicht
+gestartet hat und die Aufforderung ignoriert), fällt der Status von selbst
+zurück; ohne dieses Zeitlimit pulsierte der Ring endlos.
+
+**Fehlschläge** merkt sich der Server in Redis (`calibration_failure_store`),
+gelöscht wird bei erfolgreichem Claim und bei Freigabe der Rolle. Auch mitten
+im Spiel, bei schon kalibriertem Board, ist ein Fehlschlag ein Warnhinweis:
+die alte Homographie wird zwar weiter benutzt, aber eine gescheiterte
+Rekalibrierung heißt meist, dass Board oder Kamera verschoben wurden. Der Text
+auf dem Scoreboard lautet „Die Kamera konnte das Board nicht erkennen." —
+Ratschläge wie „näher heran" richten sich an den, der die Kamera hält.
+
+**Kamera-Ansicht:** Sie braucht den Raum-Status nicht, sie weiß lokal, ob sie
+kalibriert ist (Phase `calibrating`), und zeigt ihren eigenen Fehlergrund aus
+`calibration_result`. Auch dort ist „Board nicht kalibriert" nur ein neutraler
+Hinweis ohne Warnsymbol; das Warnsymbol steht allein bei „Kalibrierung
+fehlgeschlagen". Ein neuer Versuch blendet einen alten Fehler nicht aus,
+sondern zeigt „Wird kalibriert …" als Unterzeile. Toasts gibt es für
+Kalibrierungsfehler keine.
 
 ---
 

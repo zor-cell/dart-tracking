@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { CalibrationState } from '../../../calibration/dto/calibration-state.dto';
 import { DartDto } from '../../dto/dart.dto';
 import { dartColor } from '../../models/dart-colors';
 import {
@@ -23,6 +24,9 @@ const MARKER_RADIUS = 5.5;
 
 /** Stroke width of a manually entered dart's field frame, in board millimetres. */
 const FRAME_WIDTH = 3.2;
+
+/** Stroke width of the calibration ring around the board, in board millimetres. */
+const RING_WIDTH = 4;
 
 /** How much further in each further frame on the same field sits, in board millimetres. */
 const FRAME_STEP = 1.5;
@@ -68,6 +72,9 @@ export class VirtualBoardComponent {
   /** The current visit's darts, drawn large and numbered as thrown. */
   readonly darts = input.required<readonly DartDto[]>();
 
+  /** The room's calibration; a calibrated board gets a ring, a running attempt a pulsing one. */
+  readonly calibration = input<CalibrationState | null>(null);
+
   protected readonly segments = BOARD_SEGMENTS;
   protected readonly sectorNumbers = BOARD_SECTOR_NUMBERS;
   protected readonly bullRadius = BULL_RADIUS;
@@ -78,6 +85,7 @@ export class VirtualBoardComponent {
   protected readonly arrowPath = ARROW_PATH;
   protected readonly markerRadius = MARKER_RADIUS;
   protected readonly frameWidth = FRAME_WIDTH;
+  protected readonly ringRadius = BOARD_BACKING_RADIUS + RING_WIDTH / 2;
 
   protected readonly markers = computed<DartMarker[]>(() =>
     this.darts().flatMap((dart, index): DartMarker[] => {

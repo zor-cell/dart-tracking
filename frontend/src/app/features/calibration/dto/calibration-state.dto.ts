@@ -1,7 +1,8 @@
-/** Server -> room: whether the game has a calibrated scoring camera, and whether
- * that camera's latest attempt failed. */
+/** How far the game's board calibration is; mirrors the server's `CalibrationState`. */
+export type CalibrationState = 'no_camera' | 'uncalibrated' | 'calibrating' | 'calibrated' | 'failed';
+
+/** Server -> room: how far the game's board calibration is. */
 export interface CalibrationStateDto {
   readonly type: 'calibration_state';
-  readonly calibrated: boolean;
-  readonly failed: boolean;
+  readonly state: CalibrationState;
 }

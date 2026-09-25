@@ -12,6 +12,16 @@
     <text class="board__number" [attr.x]="number.x" [attr.y]="number.y">{{ number.value }}</text>
   }
 
+  @if (calibration() === 'calibrated' || calibration() === 'calibrating') {
+    <circle
+      class="board__ring"
+      [class.board__ring--pulsing]="calibration() === 'calibrating'"
+      cx="0"
+      cy="0"
+      [attr.r]="ringRadius"
+    />
+  }
+
   @for (field of enteredFields(); track $index) {
     <g class="board__field">
       @for (frame of field.frames; track $index) {

@@ -175,6 +175,17 @@
   }
 }
 
+// Not an error, just not set up yet: smaller and quieter than a failure.
+.game__calibration-notice--info {
+  padding: 0.4rem 0.75rem;
+  background: rgb(0 0 0 / 50%);
+  font-size: 0.85rem;
+
+  > strong {
+    font-weight: 500;
+  }
+}
+
 // Anchors the recalibrate button the same way the camera box does, so it sits
 // in the same corner whichever of the two this device shows. The board is a
 // circle in a square box, so that corner is empty — but only for the icon-only

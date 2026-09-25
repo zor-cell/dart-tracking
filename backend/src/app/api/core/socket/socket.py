@@ -41,12 +41,12 @@ from app.api.features.calibration.dto.calibration_requested import (
 )
 from app.api.features.calibration.dto.calibration_result import CalibrationResultDto
 from app.api.features.calibration.dto.calibration_state import CalibrationStateDto
-from app.api.features.calibration.dto.calibration_status import CalibrationStatusDto
 from app.api.features.calibration.dto.command.request_calibration import (
     RequestCalibrationDto,
 )
 from app.api.features.calibration.domain.calibration import Calibration
 from app.api.features.calibration.domain.calibration_failure import CalibrationFailure
+from app.api.features.calibration.domain.calibration_state import calibration_state
 from app.api.features.calibration.domain.camera_angle import camera_angle
 from app.api.features.calibration.services import board_detector
 from app.api.features.calibration.debug.render import (
@@ -55,8 +55,8 @@ from app.api.features.calibration.debug.render import (
 from app.api.features.calibration.services.calibration_failure_store import (
     store as calibration_failure_store,
 )
-from app.api.features.calibration.services.calibration_request_store import (
-    store as calibration_request_store,
+from app.api.features.calibration.services.calibration_progress import (
+    progress as calibration_progress,
 )
 from app.api.features.calibration.services.calibration_store import store as calibration_store
 from app.api.features.detection.dto.detection_result import DetectionResultDto
@@ -126,7 +126,7 @@ async def websocket_endpoint(
     await hub.send(connection, ClientStateDto.from_entity(client))
     await hub.send(connection, GameStateDto.from_entity(game))
     await _publish_announcer(game_id)
-    await hub.send(connection, await _calibration_state(game_id))
+    await _publish_calibration_state(game_id)
 
     # A camera without a calibration for this game cannot detect anything, and
     # only its own frame can produce one.
@@ -152,6 +152,7 @@ async def websocket_endpoint(
     finally:
         hub.leave(game_id, websocket)
         await _publish_announcer(game_id)
+        await _publish_calibration_state(game_id)
 
 
 async def _dispatch(
@@ -192,7 +193,7 @@ async def _dispatch(
         case DetectionFrameDto():
             await _handle_throw_frame(connection, game_id, message)
         case RequestCalibrationDto():
-            await _request_calibration(game_id, requester=connection.client.id)
+            await _request_calibration(game_id)
         case SetRoleDto():
             await _handle_client_command(connection, game_id, message)
             await _publish_announcer(game_id)
@@ -235,7 +236,7 @@ async def _handle_client_command(
             ):
                 await scoring_camera_store.release(game_id, client_id)
                 await calibration_failure_store.clear(game_id)
-                await hub.broadcast(game_id, await _calibration_state(game_id))
+            await _publish_calibration_state(game_id)
 
     await hub.send(connection, ClientStateDto.from_entity(connection.client))
 
@@ -318,7 +319,7 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
 
     await _publish_state(game)
     if isinstance(command, NextPlayerDto):
-        await _request_calibration(game.id, requester=None)
+        await _request_calibration(game.id)
 
 
 async def _handle_set_evaluation(game_id: str, command: SetEvaluationDto) -> None:
@@ -348,16 +349,27 @@ async def _publish_announcer(game_id: str) -> None:
     await hub.broadcast(game_id, AnnouncerStateDto(client_id=await _current_announcer(game_id)))
 
 
-async def _calibration_state(game_id: str) -> CalibrationStateDto:
-    """Whether a camera has calibrated and claimed scoring for this game, and
-    whether its latest attempt failed."""
-    return CalibrationStateDto(
-        calibrated=await scoring_camera_store.holder(game_id) is not None,
+async def _publish_calibration_state(game_id: str) -> None:
+    """Tell the room how far the board calibration is, after anything that may have changed it."""
+    cameras = {
+        c.client.id for c in hub.connections(game_id) if c.client.role is DeviceRole.CAMERA
+    }
+    state = calibration_state(
+        camera_connected=bool(cameras),
+        scoring_connected=await scoring_camera_store.holder(game_id) in cameras,
+        calibrating=calibration_progress.running(game_id),
         failed=await calibration_failure_store.failed(game_id),
     )
+    await hub.broadcast(game_id, CalibrationStateDto(state=state))
 
 
-async def _request_calibration(game_id: str, *, requester: str | None) -> None:
+async def _start_calibrating(game_id: str) -> None:
+    """Mark an attempt as running; the room hears when it starts and when it times out."""
+    if calibration_progress.start(game_id, lambda: _publish_calibration_state(game_id)):
+        await _publish_calibration_state(game_id)
+
+
+async def _request_calibration(game_id: str) -> None:
     """Ask every camera in the room to calibrate again from a fresh frame.
 
     Two things ask for this: a device without a camera of its own, and the end
@@ -370,15 +382,10 @@ async def _request_calibration(game_id: str, *, requester: str | None) -> None:
     Only the trigger fans out. A `calibration_result` cannot: its overlay lives
     in the pixel grid of the camera that produced it, so every camera answers
     its own.
-
-    `requester` is the device waiting to hear whether it worked, and is `None`
-    for the automatic one, where nobody is (see `calibration_request_store`).
     """
-    if requester is None:
-        await calibration_request_store.clear(game_id)
-    else:
-        await calibration_request_store.set(game_id, requester)
-
+    if not any(c.client.role is DeviceRole.CAMERA for c in hub.connections(game_id)):
+        return
+    await _start_calibrating(game_id)
     await hub.broadcast(game_id, CalibrationRequestedDto(), role=DeviceRole.CAMERA)
 
 
@@ -401,12 +408,14 @@ async def _handle_calibration_frame(
     being the first point at which it could detect anything. Only the first
     claim takes (see `scoring_camera`).
 
-    If another device asked for this calibration, the outcome also goes to that
-    one as `calibration_status`, stripped of the overlay only this camera can
-    place. It goes there and nowhere else: the status answers a question, and
-    only the device that asked is waiting on it.
+    Only an attempt of the scoring camera — or of any, while none scores — moves
+    the room's `calibration_state`; another camera's says nothing about the
+    darts that are booked.
     """
     client_id = connection.client.id
+    decides = await scoring_camera_store.holder(game_id) in (None, client_id)
+    if decides:
+        await _start_calibrating(game_id)
     decoded = _decode_jpeg(frame.image)
 
     if decoded is None:
@@ -420,10 +429,8 @@ async def _handle_calibration_frame(
 
     if isinstance(outcome, CalibrationFailure):
         response = CalibrationResultDto.failed(outcome)
-        # Another camera's failure says nothing about the one that scores.
-        if await scoring_camera_store.holder(game_id) in (None, client_id):
+        if decides:
             await calibration_failure_store.set(game_id)
-            await hub.broadcast(game_id, await _calibration_state(game_id))
     else:
         await calibration_store.set(game_id, client_id, outcome)
         detection_store.seed(game_id, client_id, image)
@@ -434,16 +441,13 @@ async def _handle_calibration_frame(
                 await recorder.note_calibration(game_id, client_id, angle)
             await calibration_failure_store.clear(game_id)
             await _publish_announcer(game_id)
-            await hub.broadcast(game_id, await _calibration_state(game_id))
         response = CalibrationResultDto.from_calibration(outcome)
 
     await hub.send(connection, response)
 
-    requester = await calibration_request_store.get(game_id)
-    if requester is not None and requester != client_id:
-        await hub.send_to_client(
-            game_id, requester, CalibrationStatusDto.from_result(response)
-        )
+    if decides:
+        calibration_progress.finish(game_id)
+        await _publish_calibration_state(game_id)
 
 
 async def _handle_throw_frame(

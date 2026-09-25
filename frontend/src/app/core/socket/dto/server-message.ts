@@ -4,7 +4,6 @@ import { DartAnnouncementDto } from '../../../features/announcement/dto/dart-ann
 import { CalibrationRequestedDto } from '../../../features/calibration/dto/calibration-requested.dto';
 import { CalibrationResultDto } from '../../../features/calibration/dto/calibration-result.dto';
 import { CalibrationStateDto } from '../../../features/calibration/dto/calibration-state.dto';
-import { CalibrationStatusDto } from '../../../features/calibration/dto/calibration-status.dto';
 import { DetectionResultDto } from '../../../features/detection/dto/detection-result.dto';
 import { GameStateDto } from '../../../features/game/dto/game-state.dto';
 import { RematchStartedDto } from '../../../features/game/dto/rematch-started.dto';
@@ -20,7 +19,6 @@ export type ServerMessage =
   | CalibrationRequestedDto
   | CalibrationResultDto
   | CalibrationStateDto
-  | CalibrationStatusDto
   | DetectionResultDto
   | GameStateDto
   | AnnouncerStateDto

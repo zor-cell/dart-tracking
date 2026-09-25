@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CalibrationFailureDto } from '../dto/calibration-failure.dto';
-import { CalibrationStatusDto } from '../dto/calibration-status.dto';
+import { CalibrationState } from '../dto/calibration-state.dto';
 import { captureFrameAsJpeg } from '../../camera/models/frame-capture';
 import { SocketService } from '../../../core/socket/services/socket.service';
 import { SettingsService } from '../../settings/services/settings.service';
@@ -19,13 +19,9 @@ const FAILURE_MESSAGES: Record<CalibrationFailureDto, string> = {
 
 const UNKNOWN_FAILURE_MESSAGE = 'Bitte erneut versuchen.';
 
-// What a device without a camera is told about another device's attempt: it
-// cannot see the board, so the advice above ("get closer", "avoid shadows") is
-// addressed to someone else and only the fact belongs here.
+// What a device without a camera is told about the scoring camera's attempt;
+// the advice above is addressed to whoever holds that camera.
 const REMOTE_FAILURE_MESSAGE = 'Die Kamera konnte das Board nicht erkennen.';
-const REMOTE_TIMEOUT_MESSAGE = 'Keine Kamera hat geantwortet.';
-// How long a requested recalibration may stay unanswered, in ms.
-const REMOTE_TIMEOUT = 8000;
 
 /**
  * Board calibration: capture the current video frame, send it as a
@@ -54,24 +50,16 @@ export class CalibrationService {
    */
   readonly overlay = signal<number[][][] | null>(null);
 
-  /** Whether the game has a calibrated scoring camera; null until the server said. */
-  readonly boardCalibrated = signal<boolean | null>(null);
+  /** How far the game's calibration is, as the server reports it; null until it said. */
+  readonly roomState = signal<CalibrationState | null>(null);
 
   /** Why this device's last calibration attempt failed; null once one succeeds. */
   readonly failureMessage = signal<string | null>(null);
 
-  /** Whether the scoring camera's latest attempt failed, as the server reports it. */
-  private readonly roomFailed = signal(false);
-
-  /** The failure a device without a camera shows: its own request's, or the room's. */
-  readonly roomFailureMessage = computed(
-    () => this.failureMessage() ?? (this.roomFailed() ? REMOTE_FAILURE_MESSAGE : null),
+  /** The failure a device without a camera shows. */
+  readonly roomFailureMessage = computed(() =>
+    this.roomState() === 'failed' ? REMOTE_FAILURE_MESSAGE : null,
   );
-
-  /** Whether this device asked for a recalibration that no camera has answered yet. */
-  readonly requestPending = signal(false);
-
-  private requestTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     this.socket
@@ -93,37 +81,16 @@ export class CalibrationService {
     this.socket
       .on('calibration_state')
       .pipe(takeUntilDestroyed())
-      .subscribe((state) => {
-        this.boardCalibrated.set(state.calibrated);
-        this.roomFailed.set(state.failed);
-        if (state.calibrated && !state.failed) {
+      .subscribe(({ state }) => {
+        this.roomState.set(state);
+        if (state === 'calibrated') {
           this.failureMessage.set(null);
         }
       });
-
-    // How a device learns about a calibration that was not its own — the only
-    // route for one without a camera, since `calibration_result` goes to the
-    // camera that produced it alone (docs/feature/done/multi-device.md §3). Reaches
-    // the device that asked for the recalibration and no other, so no attempt
-    // is ever reported twice here.
-    this.socket
-      .on('calibration_status')
-      .pipe(takeUntilDestroyed())
-      .subscribe((status) => this.reportRemoteStatus(status));
   }
 
-  /**
-   * Ask the game's cameras to calibrate again. What a device without a picture
-   * of its own has instead of the calibrate button; each camera answers from
-   * its own frame, and what comes back here is `calibration_status`.
-   */
+  /** Ask the game's cameras to calibrate again; the outcome arrives as `calibration_state`. */
   requestCalibration(): void {
-    this.clearRequest();
-    this.requestPending.set(true);
-    this.requestTimeout = setTimeout(() => {
-      this.clearRequest();
-      this.failureMessage.set(REMOTE_TIMEOUT_MESSAGE);
-    }, REMOTE_TIMEOUT);
     this.socket.send({ type: 'request_calibration' });
   }
 
@@ -142,22 +109,5 @@ export class CalibrationService {
 
   private reportFailure(failure: CalibrationFailureDto | null): void {
     this.failureMessage.set((failure && FAILURE_MESSAGES[failure]) ?? UNKNOWN_FAILURE_MESSAGE);
-  }
-
-  /**
-   * Report a camera's attempt to the device that asked for it: stop the pending
-   * indicator, and keep a failure for the notice — success is the indicator stopping.
-   */
-  private reportRemoteStatus(status: CalibrationStatusDto): void {
-    this.clearRequest();
-    this.failureMessage.set(status.success ? null : REMOTE_FAILURE_MESSAGE);
-  }
-
-  private clearRequest(): void {
-    if (this.requestTimeout !== null) {
-      clearTimeout(this.requestTimeout);
-      this.requestTimeout = null;
-    }
-    this.requestPending.set(false);
   }
 }

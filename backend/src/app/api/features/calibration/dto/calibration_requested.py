@@ -9,7 +9,7 @@ class CalibrationRequestedDto(CamelModel):
     Only the trigger travels to the cameras. The result cannot come back the
     same way: an overlay is drawn in the pixel grid of the camera that produced
     it, so each camera answers its own `calibration_result` and the room learns
-    the outcome through `calibration_status`.
+    the outcome through `calibration_state`.
     """
 
     type: Literal["calibration_requested"] = "calibration_requested"

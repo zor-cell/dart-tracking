@@ -3,8 +3,6 @@ TODOs:
 Wenig Aufwand:
 - auf iphone 12 als einziges handy nicht voller bildschirm benutzt
 - tracken auch nach checkout aber halt nicht zählen? wenn momentan letzter wurf falsch getracked wird, werden die andern nicht getracked
-- kalibrierung für scoreboard eher mit so leuchten ums board anzeigen, wenn kalibriert wird dann kur weg und dann wieder da
-- man kann derzeit nicht allein ohne kamera spielen, weil das kalibrierungs ding im weg ist
 
 Viel Aufwand:
 
