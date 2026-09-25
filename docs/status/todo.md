@@ -1,7 +1,6 @@
 TODOs:
 
 Wenig Aufwand:
-- auf iphone 12 als einziges handy nicht voller bildschirm benutzt
 - tracken auch nach checkout aber halt nicht zählen? wenn momentan letzter wurf falsch getracked wird, werden die andern nicht getracked
 
 Viel Aufwand:

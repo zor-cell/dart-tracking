@@ -195,7 +195,7 @@
 .game__board {
   position: relative;
   flex: 1 6 auto;
-  min-height: 12rem;
+  min-height: 10rem;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -438,9 +438,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-// Gives way once the picture is down to its minimum, down to the keypad's own
-// automatic minimum — that is what compresses the key rows from 2.75rem to 2rem
-// rather than dropping the last one.
+// Gives way once the picture is down to its minimum, down to the keypad's
+// minimum — that is what compresses the key rows from 2.75rem to 2rem rather
+// than dropping the last one.
 .turn,
 .finish {
   flex: 0 1 auto;
@@ -557,6 +557,8 @@
   // Six key rows at the 2.75rem tap target. The pad asks for no more than that,
   // so spare height goes to the picture instead of into oversized keys.
   height: var(--pad-height);
+  // How far it gives way: six 2rem rows. Stated outright, not left to the flex minimum.
+  min-height: calc(6 * 2rem + 5 * var(--pad-gap));
   // Rows share the pad's height rather than each claiming a fixed size, so the
   // pad gives way on a short screen instead of pushing itself off it.
   grid-auto-rows: minmax(1.5rem, 1fr);
