@@ -1,6 +1,7 @@
 import { GameMode } from '../models/game-mode';
 import { CheckoutMode } from '../models/checkout-mode';
 import { GameVariant } from '../models/game-variant';
+import { DartDto } from './dart.dto';
 import { PlayerDto } from './player.dto';
 import { TurnDto } from './turn.dto';
 
@@ -19,6 +20,8 @@ export interface GameStateDto {
   readonly players: readonly PlayerDto[];
   readonly currentPlayerIndex: number;
   readonly turns: readonly TurnDto[];
+  /** Darts the camera located after a win or bust closed the open visit; they score nothing yet. */
+  readonly shadowDarts: readonly DartDto[];
   readonly dartsRemaining: number;
   readonly canUndo: boolean;
   readonly winnerId: number | null;

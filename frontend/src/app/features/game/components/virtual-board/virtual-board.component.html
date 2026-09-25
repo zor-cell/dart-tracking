@@ -38,7 +38,7 @@
   <!-- Coloured by position in the visit, the same order the camera outlines the
        darts in, so one throw is one colour on both screens. -->
   @for (marker of markers(); track $index) {
-    <g class="board__marker">
+    <g class="board__marker" [class.board__marker--shadow]="marker.shadow">
       @if (marker.arrowTransform === null) {
         <circle [attr.cx]="marker.x" [attr.cy]="marker.y" [attr.r]="markerRadius" [attr.fill]="marker.color" />
       } @else {

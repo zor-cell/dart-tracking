@@ -126,6 +126,11 @@ $board-wire: #9aa0a6;
   }
 }
 
+// Located after the visit closed: there, but not counted.
+.board__marker--shadow {
+  opacity: 0.6;
+}
+
 // The off-board ordinal is centred on its point instead of hung off a corner,
 // so it stays inside the drawn area out at the rim.
 .board__marker--aimed {

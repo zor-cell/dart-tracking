@@ -1,14 +1,12 @@
 TODOs:
 
 Wenig Aufwand:
-- tracken auch nach checkout aber halt nicht zählen? wenn momentan letzter wurf falsch getracked wird, werden die andern nicht getracked
 
 Viel Aufwand:
 
 Zukunft:
 - auch beste treffer für setup von checkout anzeigen, also wenn man nicht fertig werden kann
 - eigene pro spieler checkout präferenzen
-- manuelle einträge auch am virtual board highlighten, indem man das gesamte segment mit farbe umrahmt
 - elimination also with double, so its not so easy
 - tracking pausieren button?
 - referenz nach manueller eingabe: nach einer handbuchung steht der pfeil im board,

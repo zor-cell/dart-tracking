@@ -62,6 +62,9 @@ def replay(events: Iterable[GameEvent]) -> list[Visit]:
                 if event.accepted:
                     claimed[open_index].append(event)
                     accepted[open_index].append(event)
+            case GameEventKind.SHADOW_BOOKED:
+                claimed[open_index].append(event)
+                accepted[open_index].append(event)
             case GameEventKind.MANUAL:
                 if event.accepted:
                     accepted[open_index].append(event)

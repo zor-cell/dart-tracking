@@ -41,7 +41,11 @@ type FixedKey = {
 
 /** One suggestion box: its label, and whether it resets an opponent rather than
  * winning the leg. */
-type CheckoutSlot = { readonly label: string | null; readonly eliminating: boolean };
+type CheckoutSlot = {
+  readonly label: string | null;
+  readonly eliminating: boolean;
+  readonly shadow: boolean;
+};
 
 const MISS: FixedKey = { label: '0', value: 0, multiplier: 0, doubles: false };
 const BULL: FixedKey = { label: '25', value: 25, multiplier: 1, doubles: true };
@@ -182,7 +186,7 @@ export class GameComponent implements OnInit, OnDestroy {
    * there is one. Sized off the darts thrown rather than `dartsRemaining`: a
    * busted visit has none remaining, which would drop the boxes from the row.
    * A winning finish outranks a reset, so the elimination route only fills the
-   * slots when there is no checkout.
+   * slots when there is no checkout. Shadow darts take the first free slots.
    */
   protected readonly checkoutSlots = computed<readonly CheckoutSlot[]>(() => {
     const thrown = this.game.currentTurn()?.darts.length ?? 0;
@@ -191,10 +195,13 @@ export class GameComponent implements OnInit, OnDestroy {
     const elimination = state?.elimination ?? null;
     const route = checkout ?? elimination;
     const eliminating = checkout === null && elimination !== null;
-    return Array.from({ length: DARTS_PER_TURN - thrown }, (_, index) => ({
-      label: route?.[index] ?? null,
-      eliminating,
-    }));
+    const shadows = this.game.shadowDarts();
+    return Array.from({ length: DARTS_PER_TURN - thrown }, (_, index) => {
+      const shadow = shadows[index];
+      return shadow
+        ? { label: shadow.label, eliminating: false, shadow: true }
+        : { label: route?.[index] ?? null, eliminating, shadow: false };
+    });
   });
 
   /** The number on a player's card: points still needed in x01, points gathered

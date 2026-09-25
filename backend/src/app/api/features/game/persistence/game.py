@@ -2,7 +2,9 @@
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
+from typing import Any
+
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database import Base, uuid_primary_key
@@ -20,6 +22,8 @@ class GameTable(Base):
     revision: Mapped[int] = mapped_column(Integer)
     evaluation_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     tracker_version: Mapped[int | None] = mapped_column(Integer, default=None)
+    # The open visit's shadow darts as {value, multiplier, position}; only that visit has any.
+    shadow_darts: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
     owner_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

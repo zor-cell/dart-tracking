@@ -28,6 +28,9 @@ class Game:
     evaluation_enabled: bool = False
     current_player_index: int = 0
     turns: list[Turn] = field(default_factory=list)
+    # Darts the camera located after a win or bust closed the open visit, in
+    # throwing order. They score nothing until a correction reopens the visit.
+    shadow_darts: list[Dart] = field(default_factory=list)
     revision: int = 0
 
     def __post_init__(self) -> None:
@@ -128,24 +131,21 @@ class Game:
             if player.id != thrower_id and scores[player.id] == hit:
                 scores[player.id] = 0
 
-    def register_dart(self, dart: Dart) -> None:
-        """Apply one dart to the current player's open turn, busting it when the
-        dart breaks the checkout rule (see `_busts`).
-
-        Advancing to the next player is a separate, explicit step (`next_player`)
-        driven by the client, so the two input modes can differ: manual entry
-        advances on its own once the visit is full, while camera tracking waits
-        for a confirm tap — otherwise a player walking up to pull their darts
-        would be tracked as the next player's visit. A dart beyond the third (or
-        after a bust) is ignored until the advance happens, which also absorbs an
-        over-eager camera trigger."""
-        if self.winner is not None or self.darts_remaining <= 0:
-            return
-        turn = self.current_turn
-        turn.darts.append(dart)
-        if self._busts(dart):
-            turn.busted = True
-        self.revision += 1
+    def register_dart(self, dart: Dart) -> bool:
+        """Book a tracked dart into the open visit; whether it was booked. After a
+        win or bust it is kept as a shadow dart instead, and past the third
+        physical dart it is dropped (docs/feature/done/korrektur.md §7)."""
+        if self.winner is None and self.darts_remaining > 0:
+            turn = self.current_turn
+            turn.darts.append(dart)
+            if self._busts(dart):
+                turn.busted = True
+            self.revision += 1
+            return True
+        if len(self.current_turn.darts) + len(self.shadow_darts) < DARTS_PER_TURN:
+            self.shadow_darts.append(dart)
+            self.revision += 1
+        return False
 
     def add_dart(self, dart: Dart) -> None:
         """Book a manually entered dart into any visit with room left. A won or
@@ -198,6 +198,7 @@ class Game:
                 # A bust is always caused by the turn's last dart, so removing
                 # that dart necessarily clears it.
                 turn.busted = False
+                self._book_shadow_darts()
                 return
             if len(self.turns) == 1:
                 return
@@ -248,7 +249,18 @@ class Game:
             turn.darts.append(dart)
             if self._busts(dart):
                 turn.busted = True
+        self._book_shadow_darts()
         self.revision += 1
+
+    def _book_shadow_darts(self) -> None:
+        """Book the shadow darts in throwing order for as long as the visit stays open."""
+        turn = self.current_turn
+        del self.shadow_darts[max(DARTS_PER_TURN - len(turn.darts), 0) :]
+        while self.shadow_darts and self.winner is None and self.darts_remaining > 0:
+            dart = self.shadow_darts.pop(0)
+            turn.darts.append(dart)
+            if self._busts(dart):
+                turn.busted = True
 
     def next_player(self) -> None:
         """Hand over to the next player, ending the current visit.
@@ -263,6 +275,7 @@ class Game:
             return
         self.revision += 1
         self.current_player_index = (self.current_player_index + 1) % len(self.players)
+        self.shadow_darts = []
         self._start_turn()
 
     def set_evaluation(self, enabled: bool) -> None:

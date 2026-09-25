@@ -47,16 +47,17 @@ export class GameService {
     return state.players.find((player) => player.id === state.winnerId) ?? null;
   });
 
-  /**
-   * Whether another dart could still be booked. Mirrors the precondition in the
-   * server's `Game.register_dart`, so the two cannot disagree about what a full,
-   * busted or won visit accepts. Reaching zero closes the visit at once — that
-   * is the score, not the confirmation, so `winner` and not `settledWinner`.
-   */
-  readonly acceptsDarts = computed(() => {
-    const state = this._state();
-    return state !== null && state.winnerId === null && state.dartsRemaining > 0;
-  });
+  /** Shadow darts of the open visit: located after a win or bust, booked once a correction reopens it. */
+  readonly shadowDarts = computed(() => this._state()?.shadowDarts ?? []);
+
+  /** Whether the camera keeps sending throws: while the visit has physical room
+   * left and no win is settled — past a win or bust they arrive as shadow darts. */
+  readonly tracksThrows = computed(
+    () =>
+      this._state() !== null &&
+      this.settledWinner() === null &&
+      (this.currentTurn()?.darts.length ?? 0) + this.shadowDarts().length < DARTS_PER_TURN,
+  );
 
   /** Whether the keypad may append: into any visit with room left, busted or
    * won but unconfirmed, as the server's `Game.add_dart` allows. */

@@ -13,6 +13,7 @@ from app.api.features.calibration.domain.board_geometry import Segment
 
 class GameEventKind(StrEnum):
     DETECTED = "detected"  # the camera booked a dart
+    SHADOW_BOOKED = "shadow_booked"  # a correction reopened the visit and booked a shadow dart
     DETECTION_FAILED = "detection_failed"  # the camera looked and found nothing
     MANUAL = "manual"  # a device booked a dart by hand
     UNDO = "undo"

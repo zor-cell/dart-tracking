@@ -529,6 +529,12 @@
   color: var(--p-red-500, #ef4444);
 }
 
+// Located after the visit closed: shown, but not counted until a correction reopens it.
+.turn__dart--shadow {
+  border-style: dashed;
+  opacity: 0.55;
+}
+
 .turn__dart--busted {
   text-decoration: line-through;
   color: var(--p-text-muted-color, #6b7280);

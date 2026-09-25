@@ -265,6 +265,7 @@ async def _apply(
 
         at = recorder.position_of(game)
         revision = game.revision
+        shadows = list(game.shadow_darts)
         mutate(game)
         changed = game.revision != revision
         if changed:
@@ -272,6 +273,10 @@ async def _apply(
 
         if record is not None:
             recorder.append(session, game_id, record(at, changed))
+        booked = recorder.position_of(game)
+        for dart in shadows:
+            if any(dart is placed for placed in game.current_turn.darts):
+                recorder.append(session, game_id, recorder.for_shadow_booking(dart, booked))
 
     return game, changed
 
@@ -540,23 +545,26 @@ async def _handle_throw_frame(
         position=outcome.tip_board,
     )
 
-    applied = await _apply(
-        game_id,
-        lambda game: game.register_dart(dart),
-        recorder.for_detection(dart, client_id, metrics),
-    )
+    booked = False
+
+    def mutate(game: Game) -> None:
+        nonlocal booked
+        booked = game.register_dart(dart)
+
+    record = recorder.for_detection(dart, client_id, metrics)
+    applied = await _apply(game_id, mutate, lambda at, _: record(at, booked))
     if applied is None:
         return
 
     # Pushed even when the game absorbed the dart (a trigger during a full
     # visit): the camera trims its drawn outlines against this state.
-    game, changed = applied
-    recorder.note_throw(game_id, raw, booked=changed)
+    game, _ = applied
+    recorder.note_throw(game_id, raw, booked=booked)
     recorder.settle_win(game)
     await _publish_state(game)
 
     announcer = await _current_announcer(game_id)
-    if changed and announcer is not None:
+    if booked and announcer is not None:
         await hub.send_to_client(game_id, announcer, DartAnnouncementDto.from_entity(dart, game))
 
 

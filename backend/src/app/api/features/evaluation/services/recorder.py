@@ -126,6 +126,20 @@ def for_detection(dart: Dart, client_id: str, metrics: dict[str, float]) -> Reco
     return record
 
 
+def for_shadow_booking(dart: Dart, at: VisitPosition) -> GameEvent:
+    """The event a shadow dart leaves behind once a correction books it."""
+    return GameEvent(
+        kind=GameEventKind.SHADOW_BOOKED,
+        turn_index=at.turn_index,
+        player_index=at.player_index,
+        accepted=True,
+        camera_armed=True,
+        value=dart.value,
+        multiplier=dart.multiplier,
+        position=dart.position,
+    )
+
+
 def metrics_of(trace: DetectionTrace) -> dict[str, float]:
     """Detector figures worth keeping per throw: how the dart arrived, how big
     it was, how far the camera had moved (docs/feature/erkennung.md §4)."""

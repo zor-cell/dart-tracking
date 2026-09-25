@@ -59,7 +59,8 @@ Schritt, nie aktualisiert, nie gelöscht.
 
 | Kind | Wann |
 |---|---|
-| `detected` | die Kamera hat einen Pfeil gebucht |
+| `detected` | die Kamera hat einen Pfeil gebucht; `accepted = false`, wenn er nach Sieg/Bust nur als Schatten-Dart ankam |
+| `shadow_booked` | eine Korrektur hat den Visit wieder geöffnet und einen Schatten-Dart nachgebucht ([korrektur.md §7](done/korrektur.md#7-schatten-darts-nach-sieg-oder-bust)) |
 | `detection_failed` | die Kamera hat gesucht und nichts gefunden |
 | `manual` | ein Gerät hat einen Pfeil von Hand gebucht |
 | `undo` | ein Schritt zurück |
@@ -156,6 +157,10 @@ zurück, verschwindet der offene Visit, und die nächste Übergabe öffnet dense
 Slot wieder — derselbe Spieler, der noch einmal wirft. Die Behauptungsliste
 dieses Slots bleibt dabei stehen, sonst gingen genau die Fehlbuchungen verloren,
 um die es geht.
+
+`shadow_booked` geht in **beide** Listen: es ist eine Behauptung der Kamera,
+die erst mit der Korrektur zur Buchung wird. Es steht im Log direkt hinter dem
+Korrektur-Event, das den Visit geöffnet hat.
 
 `dart_removed`, `dart_replaced` und `dart_moved` fassen **nur die
 Wahrheitsliste** an — herausnehmen, an Ort und Stelle überschreiben,

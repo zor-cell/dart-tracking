@@ -8,7 +8,7 @@ import { DetectionResultDto } from '../dto/detection-result.dto';
 import { ThrowTriggerDto } from '../dto/throw-trigger.dto';
 import { DartDto } from '../../game/dto/dart.dto';
 import { GameStateDto } from '../../game/dto/game-state.dto';
-import { dartColor } from '../../game/models/dart-colors';
+import { dartColor, SHADOW_DART_COLOR } from '../../game/models/dart-colors';
 
 /** How long a hit/failure line stays in the badge before it clears. */
 const FEEDBACK_DURATION_MS = 2500;
@@ -84,9 +84,8 @@ export class DetectionService {
   /** Transient hit ("T20 · 60") or failure hint, shown briefly in the badge. */
   readonly feedbackLabel = signal<string | null>(null);
 
-  /** Whether a tracked throw could still be booked — the same rule the keypad
-   * greys its keys out by. */
-  readonly acceptsThrows = this.game.acceptsDarts;
+  /** Whether a tracked throw is still taken, as a booked or as a shadow dart. */
+  readonly acceptsThrows = this.game.tracksThrows;
 
   /**
    * Recent detect→send→answer events, newest first — the persistent trace behind
@@ -113,9 +112,9 @@ export class DetectionService {
     // mirrors both the socket pushes and the HTTP responses, so this catches every
     // boundary.
     effect(() => {
-      const turns = this.game.state()?.turns;
-      if (turns) {
-        this.reconcileRound(turns);
+      const state = this.game.state();
+      if (state) {
+        this.reconcileRound(state.turns, state.shadowDarts);
       }
     });
   }
@@ -141,10 +140,11 @@ export class DetectionService {
     if (!this.acceptsThrows()) {
       return;
     }
-    const dartIndex = this.game.currentTurn()?.darts.length ?? 0;
+    const booked = this.game.currentTurn()?.darts.length ?? 0;
+    const dartIndex = booked + this.game.shadowDarts().length;
     this.roundDarts.update((darts) => [
       ...darts,
-      { polylines, dartIndex, color: dartColor(dartIndex), tip: null },
+      { polylines, dartIndex, color: colorFor(dartIndex, booked), tip: null },
     ]);
   }
 
@@ -153,13 +153,16 @@ export class DetectionService {
    * boundary retires them all, within the turn each is placed again by its tip.
    * Never grows here — appending is the detection result's job.
    */
-  private reconcileRound(turns: GameStateDto['turns']): void {
+  private reconcileRound(turns: GameStateDto['turns'], shadows: readonly DartDto[]): void {
     const count = turns.length;
-    const darts = turns.at(-1)?.darts ?? [];
+    const booked = turns.at(-1)?.darts ?? [];
+    const darts = [...booked, ...shadows];
     if (this.lastTurnCount !== null && count !== this.lastTurnCount) {
       this.roundDarts.set([]);
     } else {
-      this.roundDarts.update((overlays) => overlays.flatMap((o) => place(o, darts)));
+      this.roundDarts.update((overlays) =>
+        overlays.flatMap((o) => place(o, darts, booked.length)),
+      );
     }
     this.lastTurnCount = count;
   }
@@ -218,16 +221,23 @@ function hintFor(failure: DetectionFailureDto | null): string {
   return (failure && FAILURE_HINTS[failure]) ?? 'Kein Wurf erkannt';
 }
 
-/** Where an outline belongs in the visit as it now stands, or nothing when the
- * dart it marked is gone. A fresh outline takes its tip from the dart booked at
- * its place, and is looked up by that point from then on. */
-function place(overlay: RoundDartOverlay, darts: readonly DartDto[]): RoundDartOverlay[] {
+/** Where an outline belongs in the visit as it now stands — booked darts, then
+ * shadow darts — or nothing when the dart it marked is gone. Looked up by its tip. */
+function place(
+  overlay: RoundDartOverlay,
+  darts: readonly DartDto[],
+  booked: number,
+): RoundDartOverlay[] {
   const tip = overlay.tip ?? darts[overlay.dartIndex]?.position ?? null;
   const dartIndex = tip === null ? overlay.dartIndex : darts.findIndex((d) => sameTip(d.position, tip));
   if (dartIndex < 0 || dartIndex >= darts.length) {
     return [];
   }
-  return [{ ...overlay, tip, dartIndex, color: dartColor(dartIndex) }];
+  return [{ ...overlay, tip, dartIndex, color: colorFor(dartIndex, booked) }];
+}
+
+function colorFor(dartIndex: number, booked: number): string {
+  return dartIndex < booked ? dartColor(dartIndex) : SHADOW_DART_COLOR;
 }
 
 function sameTip(

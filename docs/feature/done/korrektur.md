@@ -172,7 +172,57 @@ im Visit konnten sie verwirren.
 
 ---
 
-## 7. Offene Punkte
+## 7. Schatten-Darts nach Sieg oder Bust
+
+**Problem.** Ein Checkout auf D18 landet knapp daneben, die Kamera liest D18.
+Der Visit ist damit gewonnen, `register_dart` nahm bis 25.09. nichts mehr an, und
+das Kamera-Handy schickte gar keine Frames mehr („Tracking pausiert"). Die
+beiden folgenden Pfeile wurden nicht erkannt; wer die D18 korrigierte, musste
+sie von Hand nachtragen oder neu werfen. Dasselbe bei einem fälschlich
+erkannten Bust. Nebenbei blieb das Referenzbild des Servers auf dem Stand vor
+den beiden Pfeilen stehen.
+
+**Lösung.** Ist der offene Visit durch Sieg oder Bust geschlossen, aber noch
+nicht bestätigt, trackt die Kamera weiter, solange weniger als drei Pfeile
+physisch im Board stecken (gebuchte + Schatten). `Game.register_dart` legt
+solche Pfeile in `Game.shadow_darts` ab statt in den Visit; sie zählen nicht,
+werden nicht angesagt, und alle Geräte zeigen sie ausgegraut: gestrichelt in
+den freien Slots der Dart-Zeile, blass auf der virtuellen Scheibe, grau im
+Kamera-Overlay.
+
+**Nachbuchen.** Jede Korrektur, die den Visit wieder öffnet — Ersetzen,
+Löschen, Verschieben, manuelles Hinzufügen, Undo —, bucht die Schatten-Darts in
+Wurfreihenfolge ein, solange der Visit offen bleibt
+(`Game._book_shadow_darts`). Aus „D18 · (5) · (D9)" wird durch Umbuchen der
+D18 auf 18 also direkt „18 · 5 · D9" mit korrekt neu entschiedenem Bust bzw.
+Sieg. Es gilt dieselbe Regel wie in §5: der Server bucht, das Frontend zeigt
+nur an.
+
+**Randregeln.**
+
+- *Obergrenze drei Pfeile.* Gebuchte plus Schatten-Darts übersteigen nie drei.
+  Macht eine manuelle Buchung den Visit voller, fällt der letzte Schatten-Dart
+  weg — die Handeingabe sagt, dass der Nutzer es besser weiß.
+- *Undo* nimmt weiterhin den letzten **gebuchten** Pfeil, nicht einen
+  Schatten-Dart: der typische Griff zur Zurück-Taste gilt genau dem Pfeil, der
+  den Visit fälschlich geschlossen hat.
+- *Bestätigen verwirft.* `next_player` leert die Liste; ein richtig erkannter
+  Sieg wird clientseitig bestätigt, danach pausiert das Tracking wie bisher.
+- *Automatisches Weiterschalten* (Bestätigen aus) kennt keinen Schattenzustand:
+  nach einem Bust ist sofort der nächste Spieler dran.
+
+**Speicher.** Nur der offene Visit kann Schatten-Darts haben, deshalb eine
+JSON-Spalte `games.shadow_darts` statt einer Spalte in `game_darts` — die
+Statistik-Abfragen auf `game_darts` bleiben unberührt.
+
+**Auswertung.** Ein Schatten-Dart wird wie ein absorbierter Pfeil als
+`detected` mit `accepted = false` geloggt; wird er nachgebucht, folgt ein
+`shadow_booked` ([auswertung.md §2](../auswertung.md)), das der Replay als
+Kamera-Behauptung und als Buchung zählt.
+
+---
+
+## 8. Offene Punkte
 
 - **Referenzbild nach einer Korrektur.** Unverändert das offene Problem aus
   `docs/status/todo.md`: eine Handbuchung — und damit auch eine Korrektur —

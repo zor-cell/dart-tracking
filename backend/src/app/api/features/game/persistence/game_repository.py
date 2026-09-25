@@ -5,6 +5,7 @@ each command and written back inside the same transaction (see
 docs/feature/done/persistenz.md §5.1/§5.2).
 """
 
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import case, delete, func, or_, select, update
@@ -110,6 +111,7 @@ class GameRepository:
                 current_player_index=game.current_player_index,
                 revision=game.revision,
                 evaluation_enabled=game.evaluation_enabled,
+                shadow_darts=[_dart_json(dart) for dart in game.shadow_darts],
                 # `discarded` is a judgement about the game, not a consequence of
                 # the score, so deriving the status must not overwrite it.
                 status=case(
@@ -363,8 +365,26 @@ class GameRepository:
                 )
                 for turn in turn_rows
             ],
+            shadow_darts=[_dart_from_json(dart) for dart in row.shadow_darts],
             revision=row.revision,
         )
+
+
+def _dart_json(dart: Dart) -> dict[str, Any]:
+    return {
+        "value": dart.value,
+        "multiplier": dart.multiplier,
+        "position": list(dart.position) if dart.position is not None else None,
+    }
+
+
+def _dart_from_json(data: dict[str, Any]) -> Dart:
+    position = data.get("position")
+    return Dart(
+        value=data["value"],
+        multiplier=data["multiplier"],
+        position=(position[0], position[1]) if position is not None else None,
+    )
 
 
 repository = GameRepository()

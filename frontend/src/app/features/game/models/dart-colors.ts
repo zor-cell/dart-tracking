@@ -17,6 +17,9 @@ const DART_COLORS = [
   '#dc267f', // dart 3 — magenta
 ] as const;
 
+/** The colour of a shadow dart: located after the visit closed, not counted. */
+export const SHADOW_DART_COLOR = '#9aa0a6';
+
 /**
  * The colour for the dart at `index`, held at the last one beyond the third: an
  * over-eager trigger can land more than three detections in one visit, and

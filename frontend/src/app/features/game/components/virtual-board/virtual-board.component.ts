@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { CalibrationState } from '../../../calibration/dto/calibration-state.dto';
 import { DartDto } from '../../dto/dart.dto';
-import { dartColor } from '../../models/dart-colors';
+import { dartColor, SHADOW_DART_COLOR } from '../../models/dart-colors';
 import {
   BOARD_BACKING_RADIUS,
   BOARD_SECTOR_NUMBERS,
@@ -42,6 +42,8 @@ interface DartMarker {
   readonly ordinal: number;
   /** The colour of this dart's outline on the camera phone (`dartColor`). */
   readonly color: string;
+  /** Located after the visit closed; drawn faded, it scores nothing. */
+  readonly shadow: boolean;
   /** Places and aims the arrow; null for a tip that is on the board. */
   readonly arrowTransform: string | null;
 }
@@ -72,6 +74,9 @@ export class VirtualBoardComponent {
   /** The current visit's darts, drawn large and numbered as thrown. */
   readonly darts = input.required<readonly DartDto[]>();
 
+  /** Darts located after a win or bust closed the visit, drawn faded after the booked ones. */
+  readonly shadowDarts = input<readonly DartDto[]>([]);
+
   /** The room's calibration; a calibrated board gets a ring, a running attempt a pulsing one. */
   readonly calibration = input<CalibrationState | null>(null);
 
@@ -88,12 +93,14 @@ export class VirtualBoardComponent {
   protected readonly ringRadius = BOARD_BACKING_RADIUS + RING_WIDTH / 2;
 
   protected readonly markers = computed<DartMarker[]>(() =>
-    this.darts().flatMap((dart, index): DartMarker[] => {
+    [...this.darts(), ...this.shadowDarts()].flatMap((dart, index): DartMarker[] => {
       if (dart.position === null) {
         return [];
       }
       const [x, y] = toSvg(dart.position[0], dart.position[1]);
-      const shared = { label: dart.label, ordinal: index + 1, color: dartColor(index) };
+      const shadow = index >= this.darts().length;
+      const color = shadow ? SHADOW_DART_COLOR : dartColor(index);
+      const shared = { label: dart.label, ordinal: index + 1, color, shadow };
       const radius = Math.hypot(x, y);
 
       if (radius <= BOARD_BACKING_RADIUS) {
@@ -138,13 +145,14 @@ export class VirtualBoardComponent {
   });
 
   protected readonly ariaLabel = computed(() => {
+    const shadows = this.shadowDarts().map((dart) => `${dart.label}, nicht gewertet`);
     const described = this.darts().flatMap((dart) => {
       if (dart.position === null) {
         return fieldLabelPoint(dart.label) === null ? [] : [`${dart.label}, eingegeben`];
       }
       const [x, y] = dart.position;
       return [Math.hypot(x, y) <= BOARD_BACKING_RADIUS ? dart.label : `${dart.label}, daneben`];
-    });
+    }).concat(shadows);
     return described.length === 0
       ? 'Virtuelle Dartscheibe, keine Treffer dieser Runde'
       : `Virtuelle Dartscheibe mit ${described.length} Treffern dieser Runde: ${described.join(', ')}`;

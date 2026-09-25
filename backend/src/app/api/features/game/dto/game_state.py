@@ -1,6 +1,7 @@
 from typing import Literal, Self
 
 from app.api.core.dto.base import CamelModel
+from app.api.features.game.dto.dart import DartDto
 from app.api.features.game.dto.player import PlayerDto
 from app.api.features.game.dto.turn import TurnDto
 from app.api.features.game.domain.checkout_mode import CheckoutMode
@@ -26,6 +27,7 @@ class GameStateDto(CamelModel):
     players: list[PlayerDto]
     current_player_index: int
     turns: list[TurnDto]
+    shadow_darts: list[DartDto]
     darts_remaining: int
     can_undo: bool
     winner_id: int | None
@@ -47,6 +49,7 @@ class GameStateDto(CamelModel):
             ],
             current_player_index=game.current_player_index,
             turns=[TurnDto.from_entity(turn) for turn in game.turns],
+            shadow_darts=[DartDto.from_entity(dart) for dart in game.shadow_darts],
             darts_remaining=game.darts_remaining,
             can_undo=game.can_undo,
             winner_id=game.winner.id if game.winner is not None else None,
