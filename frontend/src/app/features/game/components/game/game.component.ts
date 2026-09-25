@@ -364,11 +364,11 @@ export class GameComponent implements OnInit, OnDestroy {
   /** Drop a dragged dart in its new place. The order comes back from the server
    * like every other change, so nothing is reordered here. */
   protected dropDart(event: CdkDragDrop<unknown>): void {
+    this.pickedDart.set(null);
     if (event.previousIndex === event.currentIndex) {
       return;
     }
     this.game.moveDart(event.previousIndex, event.currentIndex);
-    this.pickedDart.set({ turn: this.openTurnIndex(), index: event.currentIndex });
   }
 
   /** A 1–20 key: booked with the active multiplier, which then falls back to
