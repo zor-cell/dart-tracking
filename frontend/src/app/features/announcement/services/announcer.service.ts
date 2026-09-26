@@ -8,8 +8,12 @@ import { announcementPhrases } from '../models/announcement-text';
 const MUTED_KEY = 'dart-tracking.announcerMuted';
 const ANNOUNCEMENT_LANG = 'de-DE';
 
-/** Spoken at volume 0 to prime the synthesiser; must not be empty on WebKit. */
+/** Spoken nearly silent to prime the synthesiser; must not be empty on WebKit. */
 const UNLOCK_PHRASE = 'ok';
+const UNLOCK_VOLUME = 0.01;
+
+/** Events that count as a user activation on touch and mouse alike. */
+const GESTURE_EVENTS = ['touchend', 'click'] as const;
 
 /** What the self-test says out loud. */
 const TEST_PHRASE = 'Ansage funktioniert';
@@ -73,7 +77,9 @@ export class AnnouncerService {
       }
     });
 
-    this.document.addEventListener('pointerdown', this.onGesture, { capture: true });
+    for (const event of GESTURE_EVENTS) {
+      this.document.addEventListener(event, this.onGesture, { capture: true });
+    }
   }
 
   claim(): void {
@@ -154,12 +160,12 @@ export class AnnouncerService {
    */
   private unlock(): void {
     const synth = this.synth();
-    if (this._unlocked() || synth === null || this.speaking) {
+    if (this._unlocked() || synth === null || this.speaking || synth.pending || synth.speaking) {
       return;
     }
     this.primeAudio();
     const utterance = this.utterance(UNLOCK_PHRASE);
-    utterance.volume = 0;
+    utterance.volume = UNLOCK_VOLUME;
     synth.resume();
     synth.speak(utterance);
   }
@@ -232,7 +238,9 @@ export class AnnouncerService {
     }
     utterance.onstart = () => {
       this._unlocked.set(true);
-      this.document.removeEventListener('pointerdown', this.onGesture, { capture: true });
+      for (const event of GESTURE_EVENTS) {
+        this.document.removeEventListener(event, this.onGesture, { capture: true });
+      }
     };
     return utterance;
   }
