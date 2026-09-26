@@ -90,8 +90,8 @@ stattdessen weiterreichen, spräche einfach das nächste Handy.
 
 Browser spielen Sprache erst nach einer Nutzeraktion ab. iOS Safari ist dabei
 am strengsten: Die erste Äußerung muss direkt in einem Touch-Handler starten.
-Der Client spricht deshalb bei `pointerdown` eine stumme Äußerung (Lautstärke
-0). Irgendein Tippen reicht also, etwa auf „Kamera starten" oder auf den
+Der Client spricht deshalb bei `touchend` und `click` eine fast stumme Äußerung
+(Lautstärke 0.01). Irgendein Tippen reicht also, etwa auf „Kamera starten" oder auf den
 Lautsprecher. Ein Gerät, das die Rolle automatisch bekommt und nie berührt
 wurde, bleibt allerdings stumm.
 
@@ -101,6 +101,15 @@ Vorher galt sie nach dem ersten Tippen als erledigt — misslang sie, blieb das
 Gerät für den Rest der Sitzung stumm, ohne dass man es noch einmal versuchen
 konnte. Die Äußerung trägt außerdem echten Text: WebKit verwirft eine leere
 Äußerung, ohne sie je abzuspielen, und schaltet damit auch nichts frei.
+
+**Welches Event.** Ursprünglich hing der Handler an `pointerdown`. Das zählt laut
+HTML-Spec nur bei einer Maus als Nutzeraktion, bei einem Finger nicht — auf dem
+iPhone liefen stumme Äußerung und `AudioContext.resume()` also ohne Freigabe ins
+Leere, und die Ansage kam erst nach dem Selbsttest (der in einem `click` sitzt).
+`touchend` und `click` sind auf Touch und Maus gleichermaßen aktivierend.
+Die Lautstärke steht auf 0.01 statt 0, weil iOS bei einer Äußerung mit
+Lautstärke 0 im Verdacht steht, `start` zu melden, ohne die Audio-Sitzung zu
+öffnen — dann gälte das Gerät als freigeschaltet und der Handler wäre weg.
 
 ---
 
