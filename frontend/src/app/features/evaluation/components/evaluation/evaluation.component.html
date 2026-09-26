@@ -192,16 +192,6 @@
                 />
               </span>
               <span class="row__line">
-                <span class="row__hint">korrekt</span>
-                <ng-container
-                  [ngTemplateOutlet]="value"
-                  [ngTemplateOutletContext]="{
-                    $implicit: field.correct,
-                    rate: field.thrown === 0 ? null : field.correct / field.thrown,
-                  }"
-                />
-              </span>
-              <span class="row__line">
                 <span class="row__hint">falsch</span>
                 <ng-container
                   [ngTemplateOutlet]="value"

@@ -480,7 +480,7 @@ steht zusätzlich, wie viele im richtigen Sektor, aber im falschen Ring gebucht
 wurden — das trennt einen Ring-Fehler (Kalibrierung radial, siehe
 [kalibrierung.md §7](done/kalibrierung.md#7-offene-punkte)) von einem
 Sektor-Fehler (Drahtseite, Rotation). Die Seite zeigt je Feld die geworfenen
-Pfeile als Anteil aller geworfenen, darunter korrekt, falsch und verpasst als
+Pfeile als Anteil aller geworfenen, darunter falsch und verpasst als
 Anteil der Pfeile in diesem Feld; den Ring-Anteil zeigt nur der Report. Der Report („Accuracy per field“) führt dieselben Zählungen
 plus die Quote korrekt / geworfen.
 

@@ -1,6 +1,7 @@
 TODOs:
 
 Wenig Aufwand:
+- auf ios geht voice announcement erst wenn ich es manuell teste mit der funktion
 
 Viel Aufwand:
 
