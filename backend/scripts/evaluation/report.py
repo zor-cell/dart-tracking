@@ -141,6 +141,21 @@ def error_table(accuracy: Accuracy) -> list[str]:
     ]
 
 
+def field_table(accuracy: Accuracy) -> list[str]:
+    """Outcomes per kind of field the thrown darts belonged in."""
+    lines = [
+        "| field | thrown | correct | wrong | of which ring | missed | accuracy |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for field in accuracy.fields:
+        rate = f"{100 * field.correct / field.thrown:.1f}%" if field.thrown else "-"
+        lines.append(
+            f"| {field.kind.value} | {field.thrown} | {field.correct} | {field.wrong} "
+            f"| {field.wrong_ring} | {field.missed} | {rate} |"
+        )
+    return lines
+
+
 def distance_table(accuracy: Accuracy) -> list[str]:
     """How far the mis-scored darts landed from where they belonged: a few
     millimetres is the wrong side of a wire, tens of millimetres a fit that
@@ -331,6 +346,10 @@ def build_report(
         "## Error breakdown",
         "",
         *error_table(accuracy),
+        "",
+        "## Accuracy per field",
+        "",
+        *field_table(accuracy),
         "",
         "## Distance from the expected segment",
         "",

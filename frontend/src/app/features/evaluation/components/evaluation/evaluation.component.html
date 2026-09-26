@@ -173,6 +173,60 @@
       </section>
 
       <section class="panel">
+        <h2 class="panel__title">Fehler nach Feld</h2>
+        <p class="panel__hint">
+          Geworfene Pfeile nach dem Feld, in dem sie laut Spielern steckten; die Aufteilung als
+          Anteil der Pfeile in diesem Feld
+        </p>
+        <ul class="rows">
+          @for (field of summary.fields; track field.kind) {
+            <li class="row row--split">
+              <span class="row__line">
+                <span class="row__label">{{ fieldLabels[field.kind] }}</span>
+                <ng-container
+                  [ngTemplateOutlet]="value"
+                  [ngTemplateOutletContext]="{
+                    $implicit: field.thrown,
+                    rate: summary.dartsThrown === 0 ? null : field.thrown / summary.dartsThrown,
+                  }"
+                />
+              </span>
+              <span class="row__line">
+                <span class="row__hint">korrekt</span>
+                <ng-container
+                  [ngTemplateOutlet]="value"
+                  [ngTemplateOutletContext]="{
+                    $implicit: field.correct,
+                    rate: field.thrown === 0 ? null : field.correct / field.thrown,
+                  }"
+                />
+              </span>
+              <span class="row__line">
+                <span class="row__hint">falsch</span>
+                <ng-container
+                  [ngTemplateOutlet]="value"
+                  [ngTemplateOutletContext]="{
+                    $implicit: field.wrong,
+                    rate: field.thrown === 0 ? null : field.wrong / field.thrown,
+                  }"
+                />
+              </span>
+              <span class="row__line">
+                <span class="row__hint">verpasst</span>
+                <ng-container
+                  [ngTemplateOutlet]="value"
+                  [ngTemplateOutletContext]="{
+                    $implicit: field.missed,
+                    rate: field.thrown === 0 ? null : field.missed / field.thrown,
+                  }"
+                />
+              </span>
+            </li>
+          }
+        </ul>
+      </section>
+
+      <section class="panel">
         <h2 class="panel__title">Abstand zum erwarteten Segment</h2>
         <p class="panel__hint">
           Über die falsch gewerteten Pfeile mit lokalisierter Spitze. Wenige Millimeter heißen

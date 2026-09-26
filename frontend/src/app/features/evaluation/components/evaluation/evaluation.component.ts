@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { Select } from 'primeng/select';
-import { AccuracySummaryDto, GameAccuracyDto } from '../../dto/accuracy.dto';
+import { AccuracySummaryDto, FieldKind, GameAccuracyDto } from '../../dto/accuracy.dto';
 import { EvaluationService } from '../../services/evaluation.service';
 
 /** What the outcome counts are called on the page, in reading order. */
@@ -15,6 +15,13 @@ const OUTCOMES: readonly { key: keyof AccuracySummaryDto; label: string; hint: s
   { key: 'missed', label: 'Verpasst', hint: 'Geworfen, von der Kamera nie gebucht' },
   { key: 'phantom', label: 'Phantom', hint: 'Gebucht, ohne dass ein Pfeil steckte' },
 ];
+
+const FIELD_LABELS: Record<FieldKind, string> = {
+  single: 'Single',
+  double: 'Double',
+  triple: 'Triple',
+  outside: 'Daneben',
+};
 
 interface ScopeOption {
   readonly gameId: string | null;
@@ -47,6 +54,7 @@ export class EvaluationComponent {
   protected readonly loading = signal(true);
 
   protected readonly outcomes = OUTCOMES;
+  protected readonly fieldLabels = FIELD_LABELS;
 
   /** The whole set first, then one entry per logged game, newest first. */
   protected readonly scopes = computed<ScopeOption[]>(() => [
@@ -81,12 +89,14 @@ export class EvaluationComponent {
     void this.reload();
   }
 
-  protected share(count: number): number | null {
+  /** Every judged dart, phantoms included: the base of the outcome shares. */
+  protected readonly judged = computed(() => {
     const summary = this.summary();
-    if (!summary) {
-      return null;
-    }
-    const judged = summary.correct + summary.wrong + summary.missed + summary.phantom;
+    return summary ? summary.correct + summary.wrong + summary.missed + summary.phantom : 0;
+  });
+
+  protected share(count: number): number | null {
+    const judged = this.judged();
     return judged === 0 ? null : count / judged;
   }
 

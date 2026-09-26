@@ -467,7 +467,22 @@ laufen, sind schlimmer als keine. Die Rechnung liegt deshalb in
 
 `report.py` behält, was nur dort Sinn ergibt: die Mismatch-Liste, die
 Kohäsions-Tabelle, die Failure-Zählung und das Schreiben der Ground Truth. Die
-Seite zeigt Kopfzahlen, Fehleraufschlüsselung und Abstands-Buckets.
+Seite zeigt Kopfzahlen, Fehleraufschlüsselung, Fehler nach Feld und
+Abstands-Buckets.
+
+**Fehler nach Feld** (`field_errors`) teilt die geworfenen Pfeile nach dem Feld,
+in dem sie laut Spielern steckten: Single, Double, Triple und Daneben. Der Bull
+wird nach Multiplikator einsortiert wie in `Segment`: die 25 als Single, das
+Bullseye als Double — so summieren sich die Zeilen weiter auf alle geworfenen
+Pfeile, auf Kosten einer Double-Quote, die auch die Bullseye-Scheibe enthält. Je Feld zählen korrekt, falsch und verpasst;
+Phantome fallen heraus, weil sie kein erwartetes Feld haben. Unter „falsch“
+steht zusätzlich, wie viele im richtigen Sektor, aber im falschen Ring gebucht
+wurden — das trennt einen Ring-Fehler (Kalibrierung radial, siehe
+[kalibrierung.md §7](done/kalibrierung.md#7-offene-punkte)) von einem
+Sektor-Fehler (Drahtseite, Rotation). Die Seite zeigt je Feld die geworfenen
+Pfeile als Anteil aller geworfenen, darunter korrekt, falsch und verpasst als
+Anteil der Pfeile in diesem Feld; den Ring-Anteil zeigt nur der Report. Der Report („Accuracy per field“) führt dieselben Zählungen
+plus die Quote korrekt / geworfen.
 
 ### 7b. Umfang: gesamt und pro Spiel
 

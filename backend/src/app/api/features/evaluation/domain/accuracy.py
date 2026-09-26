@@ -5,6 +5,7 @@ import statistics
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime
+from enum import StrEnum
 
 from app.api.features.calibration.domain.board_geometry import (
     MISS,
@@ -69,6 +70,37 @@ class Judgement:
         return None if count is None else int(count)
 
 
+class FieldKind(StrEnum):
+    """Which kind of field a dart belonged in. The bull sorts by its multiplier:
+    the 25 as a single, the bullseye as a double."""
+
+    SINGLE = "single"
+    DOUBLE = "double"
+    TRIPLE = "triple"
+    OUTSIDE = "outside"
+
+
+def field_kind(segment: Segment) -> FieldKind:
+    if segment.multiplier == 0:
+        return FieldKind.OUTSIDE
+    return (FieldKind.SINGLE, FieldKind.DOUBLE, FieldKind.TRIPLE)[segment.multiplier - 1]
+
+
+@dataclass(frozen=True)
+class FieldErrors:
+    """How the thrown darts that belonged in one kind of field were judged."""
+
+    kind: FieldKind
+    correct: int
+    wrong: int
+    wrong_ring: int  # booked in the right sector, but in another ring
+    missed: int
+
+    @property
+    def thrown(self) -> int:
+        return self.correct + self.wrong + self.missed
+
+
 @dataclass(frozen=True)
 class DistanceBand:
     """How many mis-scored darts landed within one band of the buckets."""
@@ -88,6 +120,7 @@ class Accuracy:
     missed_zeros: int  # missed darts the players booked as a zero
     # Off-by distances of the mis-scored darts that carried a located tip.
     distances: tuple[float, ...]
+    fields: tuple[FieldErrors, ...] = ()
 
     @property
     def darts_thrown(self) -> int:
@@ -177,6 +210,32 @@ def summarise(games: int, visits: list[Visit], judgements: list[Judgement]) -> A
             for judgement in judgements
             if judgement.off_by_mm is not None
         ),
+        fields=field_errors(judgements),
+    )
+
+
+def field_errors(judgements: list[Judgement]) -> tuple[FieldErrors, ...]:
+    """Thrown darts split by the kind of field they belonged in, every kind listed."""
+    counts: dict[FieldKind, Counter[str]] = {kind: Counter() for kind in FieldKind}
+    for judgement in judgements:
+        expected = judgement.expected_segment
+        if expected is None:
+            continue
+        tally = counts[field_kind(expected)]
+        tally[judgement.outcome.value] += 1
+        if judgement.outcome is DartOutcome.WRONG and judgement.tracked is not None:
+            booked = judgement.tracked.segment
+            if booked is not None and booked.value == expected.value:
+                tally["wrong_ring"] += 1
+    return tuple(
+        FieldErrors(
+            kind=kind,
+            correct=tally[DartOutcome.CORRECT.value],
+            wrong=tally[DartOutcome.WRONG.value],
+            wrong_ring=tally["wrong_ring"],
+            missed=tally[DartOutcome.MISSED.value],
+        )
+        for kind, tally in counts.items()
     )
 
 

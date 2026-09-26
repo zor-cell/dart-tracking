@@ -6,6 +6,8 @@ from app.api.features.calibration.domain.camera_angle import CameraAngle
 from app.api.features.evaluation.domain.accuracy import (
     Accuracy,
     AccuracyOverview,
+    FieldErrors,
+    FieldKind,
     GameAccuracy,
 )
 from app.api.features.evaluation.domain.alignment import DartOutcome
@@ -14,6 +16,26 @@ from app.api.features.evaluation.domain.alignment import DartOutcome
 class DistanceBandDto(CamelModel):
     label: str
     darts: int
+
+
+class FieldErrorsDto(CamelModel):
+    kind: FieldKind
+    thrown: int
+    correct: int
+    wrong: int
+    wrong_ring: int
+    missed: int
+
+    @classmethod
+    def from_entity(cls, field: FieldErrors) -> Self:
+        return cls(
+            kind=field.kind,
+            thrown=field.thrown,
+            correct=field.correct,
+            wrong=field.wrong,
+            wrong_ring=field.wrong_ring,
+            missed=field.missed,
+        )
 
 
 class AccuracySummaryDto(CamelModel):
@@ -33,6 +55,7 @@ class AccuracySummaryDto(CamelModel):
     mean_off_by: float | None
     median_off_by: float | None
     worst_off_by: float | None
+    fields: list[FieldErrorsDto]
 
     @classmethod
     def from_entity(cls, accuracy: Accuracy) -> Self:
@@ -54,6 +77,7 @@ class AccuracySummaryDto(CamelModel):
             mean_off_by=_rounded(accuracy.mean_off_by),
             median_off_by=_rounded(accuracy.median_off_by),
             worst_off_by=_rounded(accuracy.worst_off_by),
+            fields=[FieldErrorsDto.from_entity(field) for field in accuracy.fields],
         )
 
 

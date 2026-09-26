@@ -6,6 +6,19 @@ export interface DistanceBandDto {
   readonly darts: number;
 }
 
+export type FieldKind = 'single' | 'double' | 'triple' | 'outside';
+
+/** How the thrown darts that belonged in one kind of field were judged. */
+export interface FieldErrorsDto {
+  readonly kind: FieldKind;
+  readonly thrown: number;
+  readonly correct: number;
+  readonly wrong: number;
+  /** Booked in the right sector, but in another ring. */
+  readonly wrongRing: number;
+  readonly missed: number;
+}
+
 export interface AccuracySummaryDto {
   readonly games: number;
   readonly visits: number;
@@ -21,6 +34,7 @@ export interface AccuracySummaryDto {
   readonly meanOffBy: number | null;
   readonly medianOffBy: number | null;
   readonly worstOffBy: number | null;
+  readonly fields: readonly FieldErrorsDto[];
 }
 
 /** Viewing angles in degrees: horizontal < 0 is left of the board, vertical < 0 below the bull. */
