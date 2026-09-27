@@ -1,6 +1,7 @@
 TODOs:
 
 Wenig Aufwand:
+- rand bei virtual board ist sehr schmal, es passt derzeit nicht zu den millimetern hab ich das gefühl
 
 Viel Aufwand:
 
