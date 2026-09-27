@@ -12,7 +12,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from app.api.features.calibration.domain.board_geometry import SECTOR_COUNT, is_red_sector
+from app.api.features.calibration.domain.board_geometry import SECTOR_ORDER, sector_centre_angle
 from app.api.features.calibration.domain.calibration import Calibration
 from app.api.features.calibration.domain.calibration_failure import CalibrationFailure
 from app.api.features.calibration.debug.trace import CalibrationTrace
@@ -20,13 +20,14 @@ from app.api.features.calibration.services import board_detector
 from app.api.features.calibration.services.board_overlay import build_overlay
 
 # BGR throughout, chosen to read against a board's own red/green/black/white.
-_COLOUR_HULL = (255, 0, 255)  # magenta
-_COLOUR_ELLIPSE = (0, 255, 255)  # yellow
+_COLOUR_HULL = (255, 255, 255)
+_COLOUR_ELLIPSE = (255, 255, 255)
+_COLOUR_PROJECTED = (0, 255, 255)  # yellow
 _COLOUR_CENTRE = (255, 255, 255)  # white
 _COLOUR_TRANSITION = (255, 128, 0)  # blue
 _COLOUR_WIRE_RED = (0, 0, 220)
 _COLOUR_WIRE_GREEN = (0, 200, 0)
-_COLOUR_OVERLAY = (0, 255, 255)
+_COLOUR_OVERLAY = (255, 255, 255)
 _COLOUR_KEPT_RED = (0, 0, 255)
 _COLOUR_KEPT_GREEN = (0, 255, 0)
 _COLOUR_DROPPED_OFF_BOARD = (70, 70, 70)  # grey
@@ -34,6 +35,8 @@ _COLOUR_DROPPED_OUTER = (170, 120, 60)  # steel blue
 
 _RING_DOT_RADIUS = 2
 _MARKER_RADIUS = 5
+# Board radius (mm) of the sector labels, in the outer single bed.
+_LABEL_RADIUS = 135.0
 
 
 def write_debug_images(
@@ -120,15 +123,15 @@ def _draw_hull_ellipse(trace: CalibrationTrace) -> np.ndarray:
     """
     canvas = trace.image.copy()
     if trace.hull is not None:
-        cv2.polylines(canvas, [trace.hull.astype(np.int32)], True, _COLOUR_HULL, 1, cv2.LINE_AA)
+        cv2.polylines(canvas, [trace.hull.astype(np.int32)], True, _COLOUR_HULL, 2, cv2.LINE_AA)
     if trace.ellipse is not None:
-        cv2.ellipse(canvas, trace.ellipse, _COLOUR_ELLIPSE, 1, cv2.LINE_AA)
+        cv2.ellipse(canvas, trace.ellipse, _COLOUR_ELLIPSE, 2, cv2.LINE_AA)
         centre = tuple(round(c) for c in trace.ellipse[0])
-        cv2.drawMarker(canvas, centre, _COLOUR_ELLIPSE, cv2.MARKER_CROSS, 12, 1)
+        cv2.drawMarker(canvas, centre, _COLOUR_ELLIPSE, cv2.MARKER_CROSS, 20, 3)
     return canvas
 
 
-def _draw_pass(trace: CalibrationTrace, index: int) -> np.ndarray:
+def _draw_pass(trace: CalibrationTrace, index: int, label_projection: bool = True) -> np.ndarray:
     """One refinement pass: rays from the centre estimate, coloured by vote.
 
     The dot colour is what the ring walk decided at that angle (red/green/grey
@@ -161,8 +164,9 @@ def _draw_pass(trace: CalibrationTrace, index: int) -> np.ndarray:
 
     if current.projected_centre is not None:
         refined_point = (round(current.projected_centre[0]), round(current.projected_centre[1]))
-        cv2.drawMarker(canvas, refined_point, _COLOUR_ELLIPSE, cv2.MARKER_CROSS, 14, 2)
+        cv2.drawMarker(canvas, refined_point, _COLOUR_PROJECTED, cv2.MARKER_CROSS, 14, 2)
 
+    if current.projected_centre is not None and label_projection:
         text_position = (refined_point[0] + 5, refined_point[1] - 5)
         cv2.putText(
             img=canvas,
@@ -170,7 +174,7 @@ def _draw_pass(trace: CalibrationTrace, index: int) -> np.ndarray:
             org=text_position,
             fontFace=cv2.FONT_HERSHEY_SIMPLEX,
             fontScale=0.4,
-            color=_COLOUR_ELLIPSE,
+            color=_COLOUR_PROJECTED,
             thickness=1,
             lineType=cv2.LINE_AA
         )
@@ -178,33 +182,46 @@ def _draw_pass(trace: CalibrationTrace, index: int) -> np.ndarray:
     return canvas
 
 
-def _draw_correspondences(trace: CalibrationTrace, index: int) -> np.ndarray:
-    """Which wire each transition was assigned to, once a pass has a match.
-
-    Sector 0 (the 20) is marked distinctly so a rotation that is one or two
-    sectors off — colour alternation alone leaves that ambiguous — is visible
-    at a glance rather than only showing up as a wrong score later.
-    """
+def _draw_correspondences(trace: CalibrationTrace, index: int, draw_labels: bool = True) -> np.ndarray:
+    """The matched wires, and each sector's number where this pass's homography puts it."""
     current = trace.passes[index]
     canvas = trace.image.copy()
     if current.correspondences is None:
         return canvas
 
-    for wire, (parameter, board_angle) in enumerate(current.correspondences):
+    for parameter, _ in current.correspondences:
         x, y = board_detector._ellipse_point(trace.ellipse, parameter)
-        colour = _COLOUR_WIRE_RED if is_red_sector(wire % SECTOR_COUNT) else _COLOUR_WIRE_GREEN
-        cv2.circle(canvas, (round(x), round(y)), _MARKER_RADIUS, colour, -1)
-        cv2.putText(
-            canvas,
-            str(wire),
-            (round(x) + 6, round(y)),
-            cv2.FONT_HERSHEY_PLAIN,
-            1.0,
-            (255, 255, 255),
-            1,
-            cv2.LINE_AA,
-        )
+        cv2.circle(canvas, (round(x), round(y)), _MARKER_RADIUS, _COLOUR_ELLIPSE, -1)
+
+    if draw_labels:
+        for text, position in sector_label_positions(trace, index):
+            _put_centred_label(canvas, text, position)
     return canvas
+
+
+def sector_label_positions(trace: CalibrationTrace, index: int) -> list[tuple[str, tuple[float, float]]]:
+    """Each sector's number and its image position under this pass's homography."""
+    homography = trace.passes[index].homography
+    if homography is None:
+        return []
+
+    board_to_image = np.linalg.inv(homography)
+    labels = []
+    for sector, value in enumerate(SECTOR_ORDER):
+        angle = sector_centre_angle(sector)
+        board_point = np.array([[[_LABEL_RADIUS * np.cos(angle), _LABEL_RADIUS * np.sin(angle)]]])
+        x, y = cv2.perspectiveTransform(board_point, board_to_image)[0, 0]
+        labels.append((str(value), (float(x), float(y))))
+    return labels
+
+
+def _put_centred_label(canvas: np.ndarray, text: str, centre: tuple[float, float]) -> None:
+    """White text with a black outline, centred on `centre`."""
+    font, scale = cv2.FONT_HERSHEY_SIMPLEX, 0.7
+    (width, height), _ = cv2.getTextSize(text, font, scale, 2)
+    origin = (round(centre[0] - width / 2), round(centre[1] + height / 2))
+    cv2.putText(canvas, text, origin, font, scale, (0, 0, 0), 4, cv2.LINE_AA)
+    cv2.putText(canvas, text, origin, font, scale, (255, 255, 255), 2, cv2.LINE_AA)
 
 
 def _draw_result(trace: CalibrationTrace, calibration: Calibration) -> np.ndarray:
