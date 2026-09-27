@@ -31,8 +31,8 @@ Definiert in `domain/board_geometry.py`, nach WDF/BDO-Norm:
 |---|---|
 | Bullseye (50) | r ≤ 6.35 mm |
 | Bull (25) | r ≤ 15.9 mm |
-| Triple-Ring | 98.2 – 107.4 mm |
-| Double-Ring | 160.8 – 170.0 mm |
+| Triple-Ring | 97.4 – 107.4 mm |
+| Double-Ring | 160.0 – 170.0 mm |
 | Äußere Scoring-Grenze | 170.0 mm |
 | Sektoren | 20, je 18° |
 
@@ -47,9 +47,10 @@ Runddraht liegen die fehlenden 2 mm unter den beiden Drähten, bei Banddraht sin
 sie Sisal. Die Scoring-Bänder waren bis 20.09. mit 8.0 mm an die Außenkante
 geklebt und damit innen 2 mm zu kurz; das war die häufigste Einzelursache für
 Fehlwertungen ([testrun1 §3](../../test/testrun1.md#3-ring-innenkanten-nachmessen)).
-Sie standen danach auf `RING_WIDTH = 9.2 mm` und stehen seit 21.09. versuchsweise
-auf **9.8 mm**, also knapp innerhalb der physischen Kante — der Rest der gemessenen Abweichung ist kein Geometrie-, sondern ein
-Kalibrierungsfehler und gehört nicht in diese Konstante (siehe §7).
+Sie standen danach auf `RING_WIDTH = 9.2 mm`, ab 21.09. auf 9.8 mm und seit
+27.09. auf den **10.0 mm** der Norm. Der Rest der gemessenen Abweichung ist kein
+Geometrie-, sondern ein Kalibrierungsfehler und gehört nicht in diese Konstante
+(siehe §7).
 
 ### Was die Homographie aussagt
 
@@ -206,8 +207,8 @@ Kandidatin muss deshalb ein ganzes **Board** erklären — zwei konzentrische Ri
 im normierten Verhältnis:
 
 ```python
-_DOUBLE_BAND = (160.8 + 170.0) / 2 / 170.0   # ≈ 0.973
-_TRIPLE_BAND = ( 98.2 + 107.4) / 2 / 170.0   # ≈ 0.605
+_DOUBLE_BAND = (160.0 + 170.0) / 2 / 170.0   # ≈ 0.971
+_TRIPLE_BAND = ( 97.4 + 107.4) / 2 / 170.0   # ≈ 0.602
 _BAND_TOLERANCE = 0.10
 ```
 

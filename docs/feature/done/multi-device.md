@@ -190,7 +190,7 @@ Dafür reist die Trefferposition auf dem Spielstand mit:
   Wurfnummer daneben. Der Rahmen ist 3.2 mm breit (rund 2.4 px). Landen
   mehrere eingegebene Darts im selben Feld, sitzt jeder weitere Rahmen 1.5 mm
   weiter innen und überdeckt den vorigen teilweise. So bleiben alle Farben
-  sichtbar, auch drei im 9.8 mm breiten Triple-Ring. Die Nummern eines Felds
+  sichtbar, auch drei im 10 mm breiten Triple-Ring. Die Nummern eines Felds
   stehen dann gemeinsam in einer Zeile. Auf dem Kamera-Overlay erscheinen
   eingegebene Darts nicht, dort gibt es keinen Punkt im Bild, an den sie sich
   heften könnten. Ein Miss (`0`) bleibt ohne Markierung.
