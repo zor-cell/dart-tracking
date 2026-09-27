@@ -15,7 +15,7 @@ from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 matplotlib.rcParams["pdf.fonttype"] = 42
 
 _BACKEND = Path(__file__).resolve().parents[2]
-_DEFAULT_OUT = _BACKEND.parents[1] / "thesis" / "graphics" / "architecture.pdf"
+_DEFAULT_OUT = _BACKEND.parents[1] / "thesis" / "graphics" / "figures" / "architecture.pdf"
 
 BLACK = "#1c1c1c"
 ACCENT = "#1f4e79"

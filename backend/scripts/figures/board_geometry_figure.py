@@ -34,7 +34,7 @@ from app.api.features.calibration.domain.board_geometry import (  # noqa: E402
     sector_centre_angle,
 )
 
-_DEFAULT_OUT = _BACKEND.parents[1] / "thesis" / "graphics" / "board-geometry.pdf"
+_DEFAULT_OUT = _BACKEND.parents[1] / "thesis" / "graphics" / "figures" / "board-geometry.pdf"
 
 RED = "#b8232f"
 GREEN = "#1a7a43"

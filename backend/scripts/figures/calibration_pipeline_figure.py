@@ -27,7 +27,7 @@ from app.api.features.calibration.services import board_detector as detector  # 
 
 from scripts.common import load_image  # noqa: E402
 
-_DEFAULT_OUT = _BACKEND.parents[1] / "thesis" / "graphics" / "calibration-pipeline.pdf"
+_DEFAULT_OUT = _BACKEND.parents[1] / "thesis" / "graphics" / "figures" / "calibration-pipeline.pdf"
 
 # Crop side as a multiple of the fitted ellipse's major axis.
 _CROP_FACTOR = 1.2
