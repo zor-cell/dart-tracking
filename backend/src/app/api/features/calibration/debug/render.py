@@ -24,7 +24,7 @@ _COLOUR_HULL = (255, 255, 255)
 _COLOUR_ELLIPSE = (255, 255, 255)
 _COLOUR_PROJECTED = (0, 255, 255)  # yellow
 _COLOUR_CENTRE = (255, 255, 255)  # white
-_COLOUR_TRANSITION = (255, 128, 0)  # blue
+_COLOUR_TRANSITION = (255, 255, 255)  # white
 _COLOUR_WIRE_RED = (0, 0, 220)
 _COLOUR_WIRE_GREEN = (0, 200, 0)
 _COLOUR_OVERLAY = (255, 255, 255)
@@ -183,14 +183,17 @@ def _draw_pass(trace: CalibrationTrace, index: int, label_projection: bool = Tru
 
 
 def _draw_correspondences(trace: CalibrationTrace, index: int, draw_labels: bool = True) -> np.ndarray:
-    """The matched wires, and each sector's number where this pass's homography puts it."""
+    """The matched wires as rays from the centre, and each sector's number under this pass's homography."""
     current = trace.passes[index]
     canvas = trace.image.copy()
     if current.correspondences is None:
         return canvas
 
-    for parameter, _ in current.correspondences:
-        x, y = board_detector._ellipse_point(trace.ellipse, parameter)
+    centre = (round(current.centre[0]), round(current.centre[1]))
+    wires = [board_detector._ellipse_point(trace.ellipse, parameter) for parameter, _ in current.correspondences]
+    for x, y in wires:
+        cv2.line(canvas, centre, (round(x), round(y)), _COLOUR_OVERLAY, 1, cv2.LINE_AA)
+    for x, y in wires:
         cv2.circle(canvas, (round(x), round(y)), _MARKER_RADIUS, _COLOUR_ELLIPSE, -1)
 
     if draw_labels:

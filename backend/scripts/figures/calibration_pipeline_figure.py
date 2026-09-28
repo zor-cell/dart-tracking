@@ -1,7 +1,7 @@
 """Render the six calibration stages of one photo as a 2x3 thesis figure.
 
 Usage:
-    uv run --with matplotlib python scripts/figures/calibration_pipeline_figure.py testdata/calibration/pz_setup/left_near.jpg
+    uv run --with matplotlib python scripts/figures/calibration_pipeline_figure.py testdata/calibration/pz_setup/left_near2.jpg
 """
 
 import argparse
@@ -56,7 +56,7 @@ def _draw_sector_labels(ax, trace) -> None:
     for text, (x, y) in render.sector_label_positions(trace, len(trace.passes) - 1):
         ax.text(
             x - x0, y - y0, text, ha="center", va="center",
-            fontsize=4.5, color="white", path_effects=outline,
+            fontsize=5.5, color="white", path_effects=outline,
         )
 
 
