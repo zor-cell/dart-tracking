@@ -174,11 +174,12 @@ export class DetectionService {
     // turned into a frame leaving the device, which is what the log is meant to
     // pin down. The matching `hit`/`rejected` follows when the server answers.
     this.logEvent('sent', `${(frame.size / 1024).toFixed(0)} kB`);
+    const testRun = this.game.state()?.evaluationEnabled ?? false;
     await this.socket.sendFrame(
       'detection_frame',
       frame,
       this.settings.debugDetection(),
-      trigger ?? undefined,
+      trigger && !testRun ? { ...trigger, snapshots: [] } : (trigger ?? undefined),
     );
   }
 

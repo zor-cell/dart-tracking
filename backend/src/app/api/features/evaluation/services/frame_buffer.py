@@ -55,7 +55,8 @@ def read_manifest(folder: Path, series: str) -> list[FrameKind] | None:
 @dataclass
 class _Visit:
     base: bytes | None = None
-    frames: list[tuple[bytes, FrameKind]] = field(default_factory=list)
+    # JPEG, why it is kept, and the client's trigger episode as JSON if it sent one.
+    frames: list[tuple[bytes, FrameKind, bytes | None]] = field(default_factory=list)
 
 
 class FrameBuffer:
@@ -69,7 +70,7 @@ class FrameBuffer:
         calibration shot of the empty board."""
         self._previous[game_id] = jpeg
 
-    def add(self, game_id: str, jpeg: bytes, kind: FrameKind) -> None:
+    def add(self, game_id: str, jpeg: bytes, kind: FrameKind, trigger: bytes | None = None) -> None:
         """Add a frame that moved the camera's reference forward.
 
         A detection that left the reference where it was stays out, so the
@@ -78,7 +79,7 @@ class FrameBuffer:
         visit = self._visits.setdefault(game_id, _Visit())
         if visit.base is None:
             visit.base = self._previous.get(game_id)
-        visit.frames.append((jpeg, kind))
+        visit.frames.append((jpeg, kind, trigger))
         self._previous[game_id] = jpeg
 
     def discard(self, game_id: str) -> None:
@@ -91,7 +92,7 @@ class FrameBuffer:
 
     def flush(self, game_id: str, turn_index: int, *, keep: bool = False) -> Path | None:
         """Write the open visit as `throwN_base.jpg` + `throwN_dartK.jpg` plus
-        its manifest. Returns the folder, or None when there was nothing to write.
+        its manifest and each dart's trigger episode. Returns the folder, or None when there was nothing to write.
 
         `keep` leaves the visit open, for one that may still grow after an undo.
         """
@@ -104,12 +105,15 @@ class FrameBuffer:
         try:
             folder.mkdir(parents=True, exist_ok=True)
             # A rewritten series may hold fewer frames than an earlier write.
-            for stale in folder.glob(f"{series}_dart*.jpg"):
-                stale.unlink()
+            for pattern in (f"{series}_dart*.jpg", f"{series}_dart*_trigger.json"):
+                for stale in folder.glob(pattern):
+                    stale.unlink()
             (folder / f"{series}_base.jpg").write_bytes(visit.base)
             lines = []
-            for index, (jpeg, kind) in enumerate(visit.frames, start=1):
+            for index, (jpeg, kind, trigger) in enumerate(visit.frames, start=1):
                 (folder / f"{series}_dart{index}.jpg").write_bytes(jpeg)
+                if trigger is not None:
+                    (folder / f"{series}_dart{index}_trigger.json").write_bytes(trigger)
                 lines.append(f"dart{index} {kind}")
             manifest_of(folder, series).write_text("\n".join(lines) + "\n")
         except OSError:

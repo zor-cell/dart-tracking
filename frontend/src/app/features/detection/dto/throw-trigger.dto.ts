@@ -1,3 +1,6 @@
+import { TriggerSampleDto } from './trigger-sample.dto';
+import { TriggerSnapshotDto } from './trigger-snapshot.dto';
+
 /**
  * What the frame-diff episode that fired this capture looked like, sent along
  * with the frame so the server can log it next to its own blob metrics.
@@ -12,4 +15,6 @@ export interface ThrowTriggerDto {
   readonly timedOut: boolean; // captured by the motion timeout instead of settling
   readonly gridCols: number; // grid the counts and spans are relative to
   readonly gridRows: number;
+  readonly timeline: readonly TriggerSampleDto[]; // the frames leading up to the capture
+  readonly snapshots: readonly TriggerSnapshotDto[]; // sent in test runs only
 }

@@ -176,7 +176,10 @@ def trigger_metrics_of(trigger: ThrowTriggerDto | None) -> dict[str, float]:
     """The client's trigger figures, prefixed so they sit apart from the detector's."""
     if trigger is None:
         return {}
-    return {f"trigger_{name}": float(value) for name, value in trigger.model_dump().items()}
+    return {
+        f"trigger_{name}": float(value)
+        for name, value in trigger.model_dump(exclude={"timeline", "snapshots"}).items()
+    }
 
 
 async def camera_armed(game_id: str) -> bool:
@@ -255,14 +258,22 @@ def remember_frame(game_id: str, jpeg: bytes) -> None:
     frames.remember(game_id, jpeg)
 
 
-def note_throw(game_id: str, jpeg: bytes, *, booked: bool) -> None:
+def note_throw(
+    game_id: str, jpeg: bytes, trigger: ThrowTriggerDto | None, *, booked: bool
+) -> None:
     """Add a located throw to the open visit's frames, taken by the game or not."""
-    frames.add(game_id, jpeg, FrameKind.BOOKED if booked else FrameKind.UNBOOKED)
+    kind = FrameKind.BOOKED if booked else FrameKind.UNBOOKED
+    frames.add(game_id, jpeg, kind, _trigger_json(trigger))
 
 
-def note_absorbed(game_id: str, jpeg: bytes) -> None:
+def note_absorbed(game_id: str, jpeg: bytes, trigger: ThrowTriggerDto | None) -> None:
     """Add a frame that moved the reference without booking a dart."""
-    frames.add(game_id, jpeg, FrameKind.ABSORBED)
+    frames.add(game_id, jpeg, FrameKind.ABSORBED, _trigger_json(trigger))
+
+
+def _trigger_json(trigger: ThrowTriggerDto | None) -> bytes | None:
+    """The client's trigger episode as written beside its frame."""
+    return None if trigger is None else trigger.model_dump_json(by_alias=True, indent=1).encode()
 
 
 def settle_visit(game: Game) -> None:

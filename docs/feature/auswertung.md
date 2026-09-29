@@ -343,6 +343,20 @@ gewonnenes Spiel endet ohne. `recorder.settle_win` schreibt den Visit, sobald
 wird dieselbe Serie beim nächsten Schreiben vollständig neu angelegt, samt
 Löschen überzähliger Frames.
 
+**Die Trigger-Episode je Frame.** Neben jedem `throwN_dartK.jpg` liegt, sofern
+der Client sie mitgeschickt hat, `throwN_dartK_trigger.json`: die
+Zusammenfassung aus `ThrowTriggerDto` plus eine `timeline` der letzten 40
+verarbeiteten Frames des Triggers (≈ 2.4 s) — Zeit relativ zur Aufnahme,
+Zustand *nach* dem Frame, aktive Zellen, Ambient-Pegel und die Indizes der
+aktiven Zellen. Nur in Testläufen kommen `snapshots` dazu: das 160×90-Graubild
+des Triggers und seine Änderungsmaske (ein Bit pro Pixel, beides base64) zu
+den Momenten `arm`, `peak` und `capture`, zusammen etwa 60 KB pro Wurf.
+`scripts/figures/trigger_figure.py` zeichnet daraus die Trigger-Abbildung. Damit
+lässt sich offline nachzeichnen, wie der Wurf live erkannt wurde, ohne das Video
+zu brauchen; gedacht für die Trigger-Abbildung der Arbeit und für die
+Feldmessungen in [client-diff-verbesserungen.md](client-diff-verbesserungen.md).
+`trigger_metrics_of` lässt die `timeline` aus, die Event-Metriken bleiben skalar.
+
 **`ground_truth.txt` schreibt der Report, nicht der Server.** Welches Label zu
 welchem Frame gehört, folgt erst aus dem Alignment — ein Frame ohne Partner in
 der Wahrheit ist ein Phantom und bekommt `NO_CHANGE`, ein Wahrheits-Label ohne

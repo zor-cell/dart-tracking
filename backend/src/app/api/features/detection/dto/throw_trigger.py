@@ -3,6 +3,8 @@
 from pydantic import NonNegativeFloat, NonNegativeInt
 
 from app.api.core.dto.base import CamelModel
+from app.api.features.detection.dto.trigger_sample import TriggerSampleDto
+from app.api.features.detection.dto.trigger_snapshot import TriggerSnapshotDto
 
 
 class ThrowTriggerDto(CamelModel):
@@ -18,3 +20,5 @@ class ThrowTriggerDto(CamelModel):
     timed_out: bool  # captured by the motion timeout instead of settling
     grid_cols: NonNegativeInt  # grid the counts and spans are relative to
     grid_rows: NonNegativeInt
+    timeline: list[TriggerSampleDto] = []  # the frames leading up to the capture
+    snapshots: list[TriggerSnapshotDto] = []  # sent in test runs only

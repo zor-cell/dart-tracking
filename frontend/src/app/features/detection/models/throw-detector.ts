@@ -1,4 +1,6 @@
 import { ThrowTriggerDto } from '../dto/throw-trigger.dto';
+import { TriggerSampleDto } from '../dto/trigger-sample.dto';
+import { TriggerMoment, TriggerSnapshotDto } from '../dto/trigger-snapshot.dto';
 
 export type ThrowDetectorState = 'idle' | 'motion' | 'settling';
 
@@ -58,6 +60,22 @@ const MAX_MOTION_FRAMES = 25;
 // Pause briefly after a capture so the retreating hand does not re-trigger and
 // the result has time to show.
 const COOLDOWN_FRAMES = 5;
+// Processed frames kept for the timeline sent with a capture, about 2.4 s.
+const TIMELINE_FRAMES = 40;
+
+interface Sample {
+  readonly t: number; // ms, performance clock
+  readonly state: ThrowDetectorState;
+  readonly activeBlocks: number;
+  readonly ambientBlocks: number;
+  readonly cells: readonly number[];
+}
+
+interface Snapshot {
+  readonly t: number; // ms, performance clock
+  readonly luma: Uint8ClampedArray;
+  readonly changed: Uint8Array; // 1 where the pixel changed
+}
 
 /**
  * Frame-Differenz-Erkennung: idle -> motion -> settling -> (captured event).
@@ -79,6 +97,11 @@ export class ThrowDetector {
   private cooldownFrames = 0;
   private changedFraction = 0;
   private activeBlocks = 0;
+  private activeCells: number[] = [];
+  private history: Sample[] = [];
+  private frameTime = 0; // ms, performance clock, of the frame being processed
+  private snapshots = new Map<TriggerMoment, Snapshot>();
+  private readonly changed: Uint8Array;
   // Bounding box of this frame's active cells, in cells.
   private spanCols = 0;
   private spanRows = 0;
@@ -106,6 +129,7 @@ export class ThrowDetector {
     this.columns = Math.ceil(width / BLOCK_SIZE);
     this.rows = Math.ceil(height / BLOCK_SIZE);
     this.blockCounts = new Int32Array(this.columns * this.rows);
+    this.changed = new Uint8Array(width * height);
   }
 
   getState(): ThrowDetectorState {
@@ -151,6 +175,16 @@ export class ThrowDetector {
       this.ambientPrimed = true;
     }
 
+    this.frameTime = performance.now();
+    const captured = this.step();
+    this.recordSample();
+    if (captured && this.trigger) {
+      this.trigger = { ...this.trigger, timeline: this.timeline() };
+    }
+    return captured;
+  }
+
+  private step(): boolean {
     // Während des Cooldowns nichts auswerten, aber Referenz und Baseline aktuell
     // halten, damit der Vergleich nach der Pause auf dem neuen Ruhezustand aufsetzt.
     if (this.cooldownFrames > 0) {
@@ -177,6 +211,7 @@ export class ThrowDetector {
     this.ambientBlocks = 0;
     this.ambientPrimed = false;
     this.trigger = null;
+    this.history = [];
     this.resetCycle();
   }
 
@@ -187,6 +222,7 @@ export class ThrowDetector {
     const excess = this.activeBlocks - this.ambientBlocks;
     const localizedThrow = excess >= ARM_BLOCK_EXCESS && this.activeBlocks <= MAX_THROW_BLOCKS;
     if (localizedThrow) {
+      this.takeSnapshot('arm');
       this.state = 'motion';
       this.motionFrames = 0;
       this.trackEpisode();
@@ -231,6 +267,7 @@ export class ThrowDetector {
 
     this.peakExcess = Math.max(this.peakExcess, this.activeBlocks - this.ambientBlocks);
     if (this.activeBlocks > this.peakBlocks) {
+      this.takeSnapshot('peak');
       this.peakBlocks = this.activeBlocks;
       this.peakSpanCols = this.spanCols;
       this.peakSpanRows = this.spanRows;
@@ -243,6 +280,7 @@ export class ThrowDetector {
   }
 
   private capture(): boolean {
+    this.takeSnapshot('capture');
     this.trigger = {
       peakBlocks: this.peakBlocks,
       peakExcess: Math.round(this.peakExcess * 100) / 100,
@@ -252,12 +290,65 @@ export class ThrowDetector {
       timedOut: this.motionFrames >= MAX_MOTION_FRAMES,
       gridCols: this.columns,
       gridRows: this.rows,
+      timeline: [],
+      snapshots: this.encodedSnapshots(),
     };
     // A baseline raised by a long episode would otherwise mask the next throw.
     this.ambientBlocks = Math.min(this.ambientBlocks, this.activeBlocks);
     this.cooldownFrames = COOLDOWN_FRAMES;
     this.resetCycle();
     return true;
+  }
+
+  /** Append this frame to the rolling history, in the state it left the detector in. */
+  private recordSample(): void {
+    this.history.push({
+      t: this.frameTime,
+      state: this.state,
+      activeBlocks: this.activeBlocks,
+      ambientBlocks: this.ambientBlocks,
+      cells: this.activeCells,
+    });
+    if (this.history.length > TIMELINE_FRAMES) {
+      this.history.shift();
+    }
+  }
+
+  /** Keep this frame and its change mask as the given moment of the episode. */
+  private takeSnapshot(moment: TriggerMoment): void {
+    if (!this.previousFrame) {
+      return;
+    }
+    this.snapshots.set(moment, {
+      t: this.frameTime,
+      luma: this.previousFrame.slice(),
+      changed: this.changed.slice(),
+    });
+  }
+
+  /** The episode's snapshots, times relative to the capturing frame. */
+  private encodedSnapshots(): TriggerSnapshotDto[] {
+    const end = this.snapshots.get('capture')?.t ?? 0;
+    return [...this.snapshots].map(([moment, { t, luma, changed }]) => ({
+      moment,
+      tMs: Math.round(t - end),
+      width: this.width,
+      height: this.height,
+      luma: toBase64(luma),
+      changed: toBase64(packBits(changed)),
+    }));
+  }
+
+  /** The history with times relative to the capturing frame. */
+  private timeline(): TriggerSampleDto[] {
+    const end = this.history[this.history.length - 1]?.t ?? 0;
+    return this.history.map(({ t, state, activeBlocks, ambientBlocks, cells }) => ({
+      tMs: Math.round(t - end),
+      state,
+      activeBlocks,
+      ambientBlocks: Math.round(ambientBlocks * 100) / 100,
+      cells,
+    }));
   }
 
   /** Baseline träge in Richtung der aktuellen Block-Zahl nachziehen. */
@@ -274,6 +365,7 @@ export class ThrowDetector {
     this.peakExcess = 0;
     this.peakSpanCols = 0;
     this.peakSpanRows = 0;
+    this.snapshots.clear();
   }
 
   /**
@@ -294,6 +386,7 @@ export class ThrowDetector {
       const blockRow = Math.floor(y / BLOCK_SIZE) * this.columns;
       for (let x = 0; x < this.width; x++, index++) {
         const isChanged = Math.abs(a[index] - b[index]) > PIXEL_DELTA;
+        this.changed[index] = isChanged ? 1 : 0;
         if (isChanged) {
           changed++;
           this.blockCounts[blockRow + Math.floor(x / BLOCK_SIZE)]++;
@@ -305,6 +398,7 @@ export class ThrowDetector {
     }
 
     let active = 0;
+    const cells: number[] = [];
     let minCol = this.columns;
     let maxCol = -1;
     let minRow = this.rows;
@@ -312,6 +406,7 @@ export class ThrowDetector {
     for (let i = 0; i < this.blockCounts.length; i++) {
       if (this.blockCounts[i] >= BLOCK_MIN_CHANGED) {
         active++;
+        cells.push(i);
         const col = i % this.columns;
         const row = Math.floor(i / this.columns);
         minCol = Math.min(minCol, col);
@@ -323,7 +418,27 @@ export class ThrowDetector {
 
     this.changedFraction = changed / a.length;
     this.activeBlocks = active;
+    this.activeCells = cells;
     this.spanCols = Math.max(0, maxCol - minCol + 1);
     this.spanRows = Math.max(0, maxRow - minRow + 1);
   }
+}
+
+/** One bit per entry, most significant bit first; a partial last byte is zero-padded. */
+function packBits(values: Uint8Array): Uint8Array {
+  const packed = new Uint8Array(Math.ceil(values.length / 8));
+  for (let i = 0; i < values.length; i++) {
+    if (values[i]) {
+      packed[i >> 3] |= 0x80 >> (i & 7);
+    }
+  }
+  return packed;
+}
+
+function toBase64(bytes: Uint8Array | Uint8ClampedArray): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }

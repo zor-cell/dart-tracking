@@ -522,7 +522,7 @@ async def _handle_throw_frame(
         if absorbed and aligned is not None:
             detection_store.set(game_id, client_id, aligned)
             if scoring:
-                recorder.note_absorbed(game_id, raw)
+                recorder.note_absorbed(game_id, raw, frame.trigger)
         await hub.send(connection, DetectionResultDto.failed(outcome))
         if scoring:
             await recorder.note_failure(game_id, client_id, outcome, metrics)
@@ -559,7 +559,7 @@ async def _handle_throw_frame(
     # Pushed even when the game absorbed the dart (a trigger during a full
     # visit): the camera trims its drawn outlines against this state.
     game, _ = applied
-    recorder.note_throw(game_id, raw, booked=booked)
+    recorder.note_throw(game_id, raw, frame.trigger, booked=booked)
     recorder.settle_win(game)
     await _publish_state(game)
 
