@@ -1,4 +1,4 @@
-"""Render the detection stages of one dart as a 2x4 thesis figure.
+"""Render the detection stages of one dart as a seven-panel thesis figure.
 
 Usage:
     uv run --with matplotlib python scripts/figures/detection_pipeline_figure.py pz_setup3/throw2 dart2
@@ -121,7 +121,6 @@ def render_figure(target: Path, dart: str, out: Path, raw: bool) -> None:
     stages = [
         ("Reference", first),
         ("Throw frame", framed),
-        ("Alignment", render._draw_alignment(trace)),
         ("Difference", render._draw_difference(trace)),
         ("Change mask", render._draw_mask(trace)),
         ("Fragment fusion", render._draw_components(trace)),
@@ -129,9 +128,15 @@ def render_figure(target: Path, dart: str, out: Path, raw: bool) -> None:
         ("Scored tip", _scored(trace, outcome, calibration)),
     ]
 
-    fig, axes = plt.subplots(2, 4, figsize=(6.3, 3.4))
-    for index, (ax, (title, stage)) in enumerate(zip(axes.flat, stages)):
-        zoomed = index >= 5
+    # Four board-wide panels on top, the three zoomed ones below at a larger size.
+    fig = plt.figure(figsize=(6.3, 4.1))
+    grid = fig.add_gridspec(2, 12, height_ratios=[3, 4], wspace=0.15, hspace=0.12)
+    slots = [grid[0, 3 * i : 3 * i + 3] for i in range(4)] + [grid[1, 4 * i : 4 * i + 4] for i in range(3)]
+    axes = []
+    for index, (slot, (title, stage)) in enumerate(zip(slots, stages)):
+        ax = fig.add_subplot(slot)
+        axes.append(ax)
+        zoomed = index >= 4
         crop = _square(stage, cx, cy, half) if zoomed else _board_crop(stage, ellipse)
         ax.imshow(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB), interpolation="none")
         ax.set_axis_off()
@@ -142,14 +147,14 @@ def render_figure(target: Path, dart: str, out: Path, raw: bool) -> None:
 
     tip_x, tip_y = outcome.tip_image
     # Top left of the tip marker, clear of its arms.
-    axes.flat[-1].annotate(
+    axes[-1].annotate(
         outcome.segment.label, (tip_x - cx + half, tip_y - cy + half),
         xytext=(-2, 2), textcoords="offset points", ha="right", va="bottom",
         fontsize=10, color="white",
         path_effects=[patheffects.withStroke(linewidth=1.4, foreground="black")],
     )
 
-    fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.06, wspace=0.04, hspace=0.14)
+    fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.04)
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=300)
     plt.close(fig)
