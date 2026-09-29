@@ -192,7 +192,7 @@ def _draw_correspondences(trace: CalibrationTrace, index: int, draw_labels: bool
     centre = (round(current.centre[0]), round(current.centre[1]))
     wires = [board_detector._ellipse_point(trace.ellipse, parameter) for parameter, _ in current.correspondences]
     for x, y in wires:
-        cv2.line(canvas, centre, (round(x), round(y)), _COLOUR_OVERLAY, 1, cv2.LINE_AA)
+        cv2.line(canvas, centre, (round(x), round(y)), _COLOUR_OVERLAY, 2, cv2.LINE_AA)
     for x, y in wires:
         cv2.circle(canvas, (round(x), round(y)), _MARKER_RADIUS, _COLOUR_ELLIPSE, -1)
 
