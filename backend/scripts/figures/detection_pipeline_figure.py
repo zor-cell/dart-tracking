@@ -39,6 +39,9 @@ _CROP_FACTOR = 1.2
 # Zoom crop side as a multiple of the dart's length in the image.
 _ZOOM_FACTOR = 1.4
 
+# Space kept above and left of the tip for its label, as a share of the dart extent.
+_LABEL_ROOM = 0.3
+
 BLACK = "#1c1c1c"
 
 # The debug captions are diagnostics; the figure caption carries the explanation.
@@ -58,10 +61,12 @@ def _square(image: np.ndarray, cx: float, cy: float, half: int) -> np.ndarray:
     return padded[y0 + half : y0 + 3 * half, x0 + half : x0 + 3 * half]
 
 
-def _dart_window(trace) -> tuple[float, float, int]:
-    """Centre and half side (px) of a square around the fused dart."""
+def _dart_window(trace, tip: tuple[float, float]) -> tuple[float, float, int]:
+    """Centre and half side (px) of a square around the fused dart and its tip label."""
     points = np.column_stack(np.where(np.isin(trace.labels, trace.inlier_labels))[::-1])
     (x_min, y_min), (x_max, y_max) = points.min(axis=0), points.max(axis=0)
+    room = _LABEL_ROOM * max(x_max - x_min, y_max - y_min)
+    x_min, y_min = min(x_min, tip[0] - room), min(y_min, tip[1] - room)
     half = round(max(x_max - x_min, y_max - y_min) * _ZOOM_FACTOR / 2)
     return (x_min + x_max) / 2, (y_min + y_max) / 2, half
 
@@ -107,7 +112,7 @@ def render_figure(target: Path, dart: str, out: Path, raw: bool) -> None:
 
     # A later dart is differenced against the previous throw, not the calibration frame.
     first = board_model if dart == "dart1" else reference
-    cx, cy, half = _dart_window(trace)
+    cx, cy, half = _dart_window(trace, outcome.tip_image)
     framed = trace.aligned.copy()
     cv2.rectangle(
         framed, (round(cx) - half, round(cy) - half), (round(cx) + half, round(cy) + half),
@@ -136,9 +141,11 @@ def render_figure(target: Path, dart: str, out: Path, raw: bool) -> None:
         )
 
     tip_x, tip_y = outcome.tip_image
-    axes.flat[-1].text(
-        tip_x - cx + half, tip_y - cy + half - 0.08 * half, outcome.segment.label,
-        ha="center", va="bottom", fontsize=7, color="white",
+    # Top left of the tip marker, clear of its arms.
+    axes.flat[-1].annotate(
+        outcome.segment.label, (tip_x - cx + half, tip_y - cy + half),
+        xytext=(-2, 2), textcoords="offset points", ha="right", va="bottom",
+        fontsize=10, color="white",
         path_effects=[patheffects.withStroke(linewidth=1.4, foreground="black")],
     )
 

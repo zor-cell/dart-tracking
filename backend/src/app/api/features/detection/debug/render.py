@@ -33,7 +33,7 @@ _COLOUR_TIP = (0, 255, 255)  # yellow
 _COLOUR_CHOSEN = (0, 220, 0)
 _COLOUR_SATURATION = (0, 255, 255)  # yellow — only the saturation channel saw it
 _COLOUR_FLIGHT = (0, 140, 255)  # orange — the fragment that anchored the fit
-_COLOUR_LINE = (255, 200, 0)  # cyan-ish — the fused dart line
+_COLOUR_LINE = (255, 0, 255)  # magenta — the fused dart line, as the axis
 _COLOUR_REJECTED = (140, 140, 140)
 _COLOUR_TOO_SMALL = (70, 70, 70)  # below the fragment area floor: never a candidate
 _COLOUR_REGION = (0, 255, 255)  # the seed radius
@@ -347,15 +347,11 @@ def _draw_result(trace: DetectionTrace, dart: Dart) -> np.ndarray:
     cv2.drawMarker(
         canvas, tuple(round(v) for v in tip), _COLOUR_TIP, cv2.MARKER_CROSS, 18, 2, cv2.LINE_AA
     )
-    cv2.putText(
-        canvas,
-        f"{dart.segment.label} = {dart.points}",
-        (round(tip[0]) + 12, round(tip[1]) - 8),
-        _LABEL_FONT,
-        0.6,
-        _COLOUR_TIP,
-        2,
-        cv2.LINE_AA,
-    )
+    # Top left of the tip marker, white on a black outline.
+    label = dart.segment.label
+    (width, _), _ = cv2.getTextSize(label, _LABEL_FONT, 0.6, 2)
+    origin = (round(tip[0]) - 4 - width, round(tip[1]) - 4)
+    cv2.putText(canvas, label, origin, _LABEL_FONT, 0.6, (0, 0, 0), 4, cv2.LINE_AA)
+    cv2.putText(canvas, label, origin, _LABEL_FONT, 0.6, (255, 255, 255), 2, cv2.LINE_AA)
     x, y = dart.tip_board
     return _caption(canvas, [f"tip ({x:.1f}, {y:.1f}) mm   r={np.hypot(x, y):.1f} mm"])
