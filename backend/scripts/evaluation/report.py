@@ -8,6 +8,7 @@ Usage:
     uv run python scripts/evaluation/report.py                       # finished games, as the page
     uv run python scripts/evaluation/report.py --test-runs-only
     uv run python scripts/evaluation/report.py --include-unfinished
+    uv run python scripts/evaluation/report.py --min-version 170
     uv run python scripts/evaluation/report.py <game-id> ...
     uv run python scripts/evaluation/report.py --out results/evening-1
 
@@ -403,7 +404,10 @@ def build_report(
 
 
 async def gather(
-    game_ids: list[str] | None, test_runs_only: bool, include_unfinished: bool
+    game_ids: list[str] | None,
+    test_runs_only: bool,
+    include_unfinished: bool,
+    min_version: int | None,
 ) -> list[JudgedGame]:
     """The games asked for, selected exactly as the evaluation page selects them."""
     database.init(get_settings().database_url)
@@ -414,6 +418,7 @@ async def gather(
                 game_ids=game_ids,
                 test_runs_only=test_runs_only,
                 include_unfinished=include_unfinished,
+                min_version=min_version,
             )
     finally:
         await database.close()
@@ -429,7 +434,12 @@ def main() -> int:
     args = parser.parse_args()
 
     games = asyncio.run(
-        gather(args.games or None, args.test_runs_only, args.include_unfinished)
+        gather(
+            args.games or None,
+            args.test_runs_only,
+            args.include_unfinished,
+            args.min_version,
+        )
     )
     if not games:
         print("no judged darts in the selected games - was a camera scoring?")

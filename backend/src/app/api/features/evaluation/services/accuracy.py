@@ -19,6 +19,7 @@ async def judged_games(
     game_ids: list[str] | None = None,
     test_runs_only: bool = False,
     include_unfinished: bool = False,
+    min_version: int | None = None,
 ) -> list[JudgedGame]:
     """The games the page, the report and the export all read, oldest first.
 
@@ -33,6 +34,12 @@ async def judged_games(
     if game_ids:
         wanted = set(game_ids)
         games = [game for game in games if game.id in wanted]
+    if min_version is not None:
+        games = [
+            game
+            for game in games
+            if game.tracker_version is not None and game.tracker_version >= min_version
+        ]
 
     judged: list[JudgedGame] = []
     for game in games:

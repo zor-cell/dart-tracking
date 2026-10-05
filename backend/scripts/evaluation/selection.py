@@ -15,3 +15,8 @@ def add_selection_arguments(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="also games without a winner",
     )
+    parser.add_argument(
+        "--min-version",
+        type=int,
+        help="only games played with at least this tracker version",
+    )

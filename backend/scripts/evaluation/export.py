@@ -73,14 +73,17 @@ async def _rows(session, table: Table, key, game_ids: list[str]) -> list[Any]:
 
 
 async def list_games(
-    test_runs_only: bool, include_unfinished: bool
+    test_runs_only: bool, include_unfinished: bool, min_version: int | None
 ) -> list[tuple[LoggedGame, int]]:
     """The games the report would read, with their event counts, oldest first."""
     database.init(get_settings().database_url)
     try:
         async with database.session_scope() as session:
             games = await judged_games(
-                session, test_runs_only=test_runs_only, include_unfinished=include_unfinished
+                session,
+                test_runs_only=test_runs_only,
+                include_unfinished=include_unfinished,
+                min_version=min_version,
             )
             counts = dict(
                 (
@@ -144,7 +147,9 @@ def main() -> int:
     args = parser.parse_args()
 
     def selected() -> list[tuple[LoggedGame, int]]:
-        return asyncio.run(list_games(args.test_runs_only, args.include_unfinished))
+        return asyncio.run(
+            list_games(args.test_runs_only, args.include_unfinished, args.min_version)
+        )
 
     if args.list:
         for game, events in selected():

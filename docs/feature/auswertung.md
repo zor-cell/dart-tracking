@@ -389,6 +389,7 @@ immer mit.
 uv run python scripts/evaluation/report.py                       # wie die Seite (§7b)
 uv run python scripts/evaluation/report.py --test-runs-only      # nur Testläufe
 uv run python scripts/evaluation/report.py --include-unfinished  # auch Spiele ohne Sieger
+uv run python scripts/evaluation/report.py --min-version 170     # nur ab dieser Tracker-Version (§8)
 uv run python scripts/evaluation/report.py <game-id>
 ```
 
@@ -440,8 +441,8 @@ uv run python scripts/evaluation/export.py <game-id>      # nur dieses Spiel, un
 uv run python scripts/evaluation/export.py --per-game     # ein Zip je Spiel
 ```
 
-Die Auswahl-Schalter `--test-runs-only` und `--include-unfinished` sind dieselben
-wie beim Report (`scripts/evaluation/selection.py`). Ein Export und der Report
+Die Auswahl-Schalter `--test-runs-only`, `--include-unfinished` und
+`--min-version` sind dieselben wie beim Report (`scripts/evaluation/selection.py`). Ein Export und der Report
 darüber lesen damit dieselben Spiele.
 
 Geschrieben wird nach `testdata/_exports/`, auf dem Pi also nach

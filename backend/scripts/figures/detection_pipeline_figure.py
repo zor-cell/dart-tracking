@@ -116,7 +116,7 @@ def render_figure(target: Path, dart: str, out: Path, raw: bool) -> None:
     framed = trace.aligned.copy()
     cv2.rectangle(
         framed, (round(cx) - half, round(cy) - half), (round(cx) + half, round(cy) + half),
-        (255, 255, 255), 2, cv2.LINE_AA,
+        (255, 255, 255), 5, cv2.LINE_AA,
     )
     stages = [
         ("Reference", first),

@@ -1,7 +1,20 @@
 TODOs:
 
+Feedback:
+- ton sollte auch über bluetooth speaker gehen, wenn man connected ist
+- momentan schon sehr auf stativ angewiesen, ohne stativ wäre nochmal cooler
+- farberkennung von double / triple
+- browser stimme hat immer andere voicelines -> stimme sollte von server kommen
+- durchschnitte anzeigen
+- führende person highlighten
+- cutom durchsagen
+- nicht erkannte fehlerwürfe, wäre perfekt wenn das gesamte surround mitgenommen wird
+- full screen sollte noch immer top-game bar zeigen, für alle einstellungen ohne zu minimieren
+- elimination beide checkouts anzeigen lassen können, also einfach sowohl elim, als auch checkout
+
 Wenig Aufwand:
 - rand bei virtual board ist sehr schmal, es passt derzeit nicht zu den millimetern hab ich das gefühl
+- versionierung verbessern, nicht stur nach pipeline nummer
 
 Viel Aufwand:
 
