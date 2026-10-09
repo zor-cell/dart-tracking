@@ -458,7 +458,7 @@
   height: var(--input-height);
 }
 
-// The dart boxes and, in camera mode, the confirm button sit on one row.
+// The back button, the dart boxes and, in camera mode, the confirm button sit on one row.
 .turn__row {
   display: flex;
   align-items: center;
@@ -476,7 +476,8 @@
   gap: 0.5rem;
 }
 
-// Keeps its size next to the growing dart boxes.
+// Keep their size next to the growing dart boxes.
+.turn__undo,
 .turn__confirm {
   flex-shrink: 0;
 }
@@ -571,8 +572,12 @@
   gap: var(--pad-gap);
 }
 
-.scorepad__key {
+.scorepad__key,
+.scorepad__slot {
   grid-column: span 2;
+}
+
+.scorepad__key {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -602,28 +607,33 @@
   }
 }
 
-// Fills the empty slot beside 4, 8 and 12: side column, the top three rows.
-.scorepad__undo {
+// Side column beside the five number rows, in tenths of its height: the miss
+// key takes four (two rows), the bull and the bullseye three each.
+.scorepad__side {
   grid-column: 9 / span 2;
-  grid-row: 1 / span 3;
-  flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.75rem;
+  grid-row: 1 / span 5;
+  display: grid;
+  grid-template-rows: repeat(10, minmax(0, 1fr));
+  gap: var(--pad-gap);
+  min-height: 0;
 
-  i {
-    font-size: 1.1rem;
+  > * {
+    grid-column: 1;
+    grid-row: span 3;
+  }
+
+  > :first-child {
+    grid-row: span 4;
   }
 }
 
-// Same key, other job: it deletes the picked dart instead of stepping back.
-.scorepad__undo--delete {
-  border-color: var(--p-red-500, #ef4444);
-  color: var(--p-red-500, #ef4444);
+// Double / Triple span half the row each and lock filled while active.
+.scorepad__mod,
+.scorepad__slot--mod {
+  grid-column: span 5;
 }
 
-// Double / Triple span half the row each and lock filled while active.
 .scorepad__mod {
-  grid-column: span 5;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-size: 0.85rem;
@@ -653,16 +663,3 @@
   gap: 0.25rem;
 }
 
-// The keypad's grid spans, without the key's own border and padding.
-.scorepad__slot {
-  grid-column: span 2;
-}
-
-.scorepad__slot--undo {
-  grid-column: 9 / span 2;
-  grid-row: 1 / span 3;
-}
-
-.scorepad__slot--mod {
-  grid-column: span 5;
-}

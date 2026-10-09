@@ -232,6 +232,17 @@
       <div class="turn">
         @if (game.currentTurn(); as turn) {
           <div class="turn__row">
+            <!-- Takes the picked dart instead of the last one; see undoOrDelete. -->
+            <p-button
+              class="turn__undo"
+              [icon]="selectedDart() === null ? 'pi pi-arrow-left' : 'pi pi-trash'"
+              [rounded]="true"
+              [severity]="selectedDart() === null ? 'secondary' : 'danger'"
+              [ariaLabel]="selectedDart() === null ? 'Zurück' : 'Ausgewählten Dart löschen'"
+              [disabled]="selectedDart() === null && !state.canUndo"
+              (onClick)="undoOrDelete()"
+            />
+
             <ul
               class="turn__darts"
               aria-label="Darts dieser Runde"
@@ -284,26 +295,8 @@
 
         @if (settings.manualEntryEnabled() && !game.settledWinner()) {
           <div class="scorepad" role="group" aria-label="Punkte-Eingabe">
-            <!-- Takes the picked dart instead of the last one; see undoOrDelete. -->
-            <button
-              type="button"
-              class="scorepad__key scorepad__undo"
-              [class.scorepad__undo--delete]="selectedDart() !== null"
-              [disabled]="selectedDart() === null && !state.canUndo"
-              [attr.aria-label]="selectedDart() === null ? 'Zurück' : 'Ausgewählten Dart löschen'"
-              (click)="undoOrDelete()"
-            >
-              @if (selectedDart() === null) {
-                <i class="pi pi-undo" aria-hidden="true"></i>
-                <span>Zurück</span>
-              } @else {
-                <i class="pi pi-trash" aria-hidden="true"></i>
-                <span>Löschen</span>
-              }
-            </button>
-
             @for (row of padRows; track $index) {
-              @for (n of row.numbers; track n) {
+              @for (n of row; track n) {
                 <button
                   type="button"
                   class="scorepad__key"
@@ -314,18 +307,20 @@
                   {{ multiplierPrefix() }}{{ n }}
                 </button>
               }
-              @if (row.side; as side) {
+            }
+
+            <div class="scorepad__side">
+              @for (side of sideKeys; track side.label) {
                 <button
                   type="button"
-                  class="scorepad__key scorepad__key--fixed"
-                  [class.scorepad__key--bull]="side.value !== 0"
+                  class="scorepad__key"
                   [disabled]="!padAccepts()"
                   (click)="enterFixed(side)"
                 >
-                  {{ fixedLabel(side) }}
+                  {{ side.label }}
                 </button>
               }
-            }
+            </div>
 
             <button
               type="button"
@@ -375,18 +370,6 @@
       </div>
     }
 
-    <!-- No keypad on this device, so its back button is missing too. -->
-    @if (!settings.manualEntryEnabled() && !game.settledWinner()) {
-      <p-button
-        fluid
-        label="Zurück"
-        icon="pi pi-undo"
-        severity="secondary"
-        [text]="true"
-        [disabled]="!state.canUndo"
-        (onClick)="game.undo()"
-      />
-    }
   </section>
 } @else if (restoring()) {
   <header class="loading-bar">
@@ -420,6 +403,7 @@
 
     <div class="turn">
       <div class="turn__row">
+        <p-skeleton width="2.5rem" height="2.5rem" shape="circle" />
         <ul class="turn__darts">
           @for (dart of skeletonDarts; track $index) {
             <li class="turn__dart turn__dart--empty">
@@ -434,15 +418,16 @@
 
       @if (settings.manualEntryEnabled()) {
         <div class="scorepad">
-          <p-skeleton class="scorepad__slot scorepad__slot--undo" height="100%" borderRadius="0.5rem" />
           @for (row of padRows; track $index) {
-            @for (n of row.numbers; track n) {
-              <p-skeleton class="scorepad__slot" height="100%" borderRadius="0.5rem" />
-            }
-            @if (row.side) {
+            @for (n of row; track n) {
               <p-skeleton class="scorepad__slot" height="100%" borderRadius="0.5rem" />
             }
           }
+          <div class="scorepad__side">
+            @for (side of sideKeys; track side.label) {
+              <p-skeleton height="100%" borderRadius="0.5rem" />
+            }
+          </div>
           <p-skeleton class="scorepad__slot scorepad__slot--mod" height="100%" borderRadius="0.5rem" />
           <p-skeleton class="scorepad__slot scorepad__slot--mod" height="100%" borderRadius="0.5rem" />
         </div>

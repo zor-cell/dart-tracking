@@ -30,13 +30,11 @@ import {GameSessionService} from '../../services/game-session.service';
 import {GameTopBarComponent} from '../game-top-bar/game-top-bar.component';
 import {VirtualBoardComponent} from '../virtual-board/virtual-board.component';
 
-/** A side-column key: a fixed field. `doubles` marks the bull, the one field the
- * D key applies to — T has no bull, so it never does. */
+/** A side-column key: a fixed field, booked as it stands whatever D or T is set to. */
 type FixedKey = {
   readonly label: string;
   readonly value: number;
   readonly multiplier: number;
-  readonly doubles: boolean;
 };
 
 /** One suggestion box: its label, and whether it resets an opponent rather than
@@ -47,20 +45,21 @@ type CheckoutSlot = {
   readonly shadow: boolean;
 };
 
-const MISS: FixedKey = { label: '0', value: 0, multiplier: 0, doubles: false };
-const BULL: FixedKey = { label: '25', value: 25, multiplier: 1, doubles: true };
+const MISS: FixedKey = { label: '0', value: 0, multiplier: 0 };
+const BULL: FixedKey = { label: '25', value: 25, multiplier: 1 };
+const BULLSEYE: FixedKey = { label: '50', value: 25, multiplier: 2 };
 
-/** Score keypad layout: four numbers per row, with the bull/miss keys down the
- * side column (top three rows have no side key). */
-type PadRow = { readonly numbers: number[]; readonly side: FixedKey | null };
-
-const PAD_ROWS: readonly PadRow[] = [
-  { numbers: [1, 2, 3, 4], side: null },
-  { numbers: [5, 6, 7, 8], side: null },
-  { numbers: [9, 10, 11, 12], side: null },
-  { numbers: [13, 14, 15, 16], side: MISS },
-  { numbers: [17, 18, 19, 20], side: BULL },
+/** Score keypad layout: four numbers per row. */
+const PAD_ROWS: readonly number[][] = [
+  [1, 2, 3, 4],
+  [5, 6, 7, 8],
+  [9, 10, 11, 12],
+  [13, 14, 15, 16],
+  [17, 18, 19, 20],
 ];
+
+/** The side column beside the number rows, top to bottom. */
+const SIDE_KEYS: readonly FixedKey[] = [MISS, BULL, BULLSEYE];
 
 @Component({
   selector: 'app-game',
@@ -120,6 +119,7 @@ export class GameComponent implements OnInit, OnDestroy {
   );
 
   protected readonly padRows = PAD_ROWS;
+  protected readonly sideKeys = SIDE_KEYS;
 
   /** The stream's aspect ratio as CSS, so the preview shows the whole frame. */
   protected readonly videoAspect = signal('4 / 3');
@@ -274,7 +274,7 @@ export class GameComponent implements OnInit, OnDestroy {
     // it — the dart row and the keypad — leaves that mode.
     const onDocumentPointerDown = (event: Event) => {
       const target = event.target as HTMLElement | null;
-      if (!target?.closest('.turn__darts, .scorepad')) {
+      if (!target?.closest('.turn__darts, .turn__undo, .scorepad')) {
         this.pickedDart.set(null);
       }
     };
@@ -383,14 +383,9 @@ export class GameComponent implements OnInit, OnDestroy {
     this.book(value, this.multiplier());
   }
 
-  /** The face a side key currently shows: the bull reads 50 while D is held. */
-  protected fixedLabel(key: FixedKey): string {
-    return this.isDoubled(key) ? '50' : key.label;
-  }
-
-  /** A bull/miss key: its own fixed field, so only the bull follows D. */
+  /** A miss/bull key: booked as its own fixed field. */
   protected enterFixed(key: FixedKey): void {
-    this.book(key.value, this.isDoubled(key) ? 2 : key.multiplier);
+    this.book(key.value, key.multiplier);
   }
 
   /** One keypad tap: the picked dart's new field, or the next dart of the visit.
@@ -415,10 +410,6 @@ export class GameComponent implements OnInit, OnDestroy {
 
   private openTurnIndex(): number {
     return (this.game.state()?.turns.length ?? 1) - 1;
-  }
-
-  private isDoubled(key: FixedKey): boolean {
-    return key.doubles && this.multiplier() === 2;
   }
 
   protected toggleDouble(): void {
