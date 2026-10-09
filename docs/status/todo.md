@@ -15,6 +15,9 @@ Feedback:
 Wenig Aufwand:
 - rand bei virtual board ist sehr schmal, es passt derzeit nicht zu den millimetern hab ich das gefühl
 - versionierung verbessern, nicht stur nach pipeline nummer
+- report script generierung soll mit timestamp passieren
+- json für client diff nochmal anschauen, was muss da bleiben was nicht
+- undo button sollte links von den darts sein, wie der accept button
 
 Viel Aufwand:
 

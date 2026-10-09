@@ -45,16 +45,21 @@ def _unpack(snapshot: dict) -> tuple[np.ndarray, np.ndarray]:
     return luma, bits[: width * height].reshape(height, width).astype(bool)
 
 
-def _state_runs(timeline: list[dict]) -> list[tuple[str, float, float]]:
-    """Contiguous runs of one state as (state, start s, end s), each frame half a step wide."""
+def _state_runs(timeline: list[dict], capture_ms: float) -> list[tuple[str, float, float]]:
+    """Contiguous runs of one state as (state, start s, end s), each frame half a step wide.
+
+    The capturing frame is logged after the reset, so it closes the run before it."""
     times = [sample["tMs"] / 1000 for sample in timeline]
     step = np.median(np.diff(times)) if len(times) > 1 else 0.06
     runs = []
     for sample, t in zip(timeline, times):
-        if runs and runs[-1][0] == sample["state"]:
-            runs[-1][2] = t + step / 2
+        captured = bool(runs) and sample["tMs"] == capture_ms
+        state = runs[-1][0] if captured else sample["state"]
+        end = t if captured else t + step / 2
+        if runs and runs[-1][0] == state:
+            runs[-1][2] = end
         else:
-            runs.append([sample["state"], t - step / 2, t + step / 2])
+            runs.append([state, t - step / 2, end])
     return [tuple(run) for run in runs]
 
 
@@ -63,7 +68,7 @@ def _draw_timeline(ax, timeline: list[dict], moments: list[dict]) -> None:
     active = [sample["activeBlocks"] for sample in timeline]
     ambient = np.array([sample["ambientBlocks"] for sample in timeline])
 
-    for state, start, end in _state_runs(timeline):
+    for state, start, end in _state_runs(timeline, moments[-1]["tMs"]):
         if state in _STATE_COLOURS:
             ax.axvspan(start, end, color=_STATE_COLOURS[state], alpha=0.5, lw=0)
     ax.step(times, active, where="mid", color=BLACK, lw=1.0, label="Active cells")
