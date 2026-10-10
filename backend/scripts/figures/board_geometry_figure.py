@@ -211,7 +211,7 @@ def _draw_ruler(ax) -> None:
     ax.text(
         bar_centre,
         182,
-        "outside: no score",
+        "surround: no score",
         ha="center",
         va="center",
         fontsize=8,

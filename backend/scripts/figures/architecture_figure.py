@@ -122,7 +122,7 @@ def render(out_path: Path) -> None:
     for offset, (tier, content) in enumerate(
         (
             ("persisted", "games, visits, darts"),
-            ("session-scoped", "calibrations, camera claim"),
+            ("session-scoped", "calibrations"),
             ("process-local", "connections, reference frame"),
         )
     ):
