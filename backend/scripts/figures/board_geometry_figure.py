@@ -165,8 +165,8 @@ def _draw_coordinate_system(ax) -> None:
 def _draw_ruler(ax) -> None:
     # Last field is the y the name is written at; None means it fits inside the band.
     bands = (
-        (0.0, BULLSEYE_RADIUS, RED, "inner bull", "50", 22.0),
-        (BULLSEYE_RADIUS, BULL_RADIUS, GREEN, "outer bull", "25", 52.0),
+        (0.0, BULLSEYE_RADIUS, RED, "inner bull", "50", 2.0),
+        (BULLSEYE_RADIUS, BULL_RADIUS, GREEN, "outer bull", "25", 15.0),
         (BULL_RADIUS, TRIPLE_INNER_RADIUS, BLACK, "single", r"$\times 1$", None),
         (TRIPLE_INNER_RADIUS, TRIPLE_OUTER_RADIUS, RED, "triple ring", r"$\times 3$", 103.0),
         (TRIPLE_OUTER_RADIUS, DOUBLE_INNER_RADIUS, BLACK, "single", r"$\times 1$", None),

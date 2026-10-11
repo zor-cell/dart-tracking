@@ -153,8 +153,7 @@ def render_figure(folder: Path, series: str, dart: str, out: Path) -> None:
     for index, snapshot in enumerate(moments):
         ax = fig.add_subplot(frame_slots[index])
         _draw_snapshot(ax, snapshot, samples.get(snapshot["tMs"]), grid, aspect)
-        title = " and ".join(_MOMENT_TITLES[s["moment"]] for s in trigger["snapshots"]
-                             if s["tMs"] == snapshot["tMs"])
+        title = _MOMENT_TITLES[snapshot["moment"]]
         ax.text(0.5, -0.03, f"({chr(ord('b') + index)}) {title}",
                 transform=ax.transAxes, ha="center", va="top", fontsize=8, color=BLACK)
 

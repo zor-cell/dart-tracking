@@ -39,6 +39,9 @@ _CROP_FACTOR = 1.2
 # Zoom crop side as a multiple of the dart's length in the image.
 _ZOOM_FACTOR = 1.4
 
+# Exponent applied to the normalized difference; below 1 brightens weak changes.
+_DIFFERENCE_GAMMA = 0.5
+
 # Space kept above and left of the tip for its label, as a share of the dart extent.
 _LABEL_ROOM = 0.3
 
@@ -101,6 +104,15 @@ def _chain(folder: Path, series: str, target: str, raw: bool):
     raise SystemExit(f"no {target} in {series}")
 
 
+def _difference(trace) -> np.ndarray:
+    """The per-pixel difference with the region outlines, lifted by a gamma curve for print."""
+    stretched = cv2.normalize(trace.difference, None, 0.0, 1.0, cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    canvas = cv2.applyColorMap(np.uint8(255 * stretched**_DIFFERENCE_GAMMA), cv2.COLORMAP_INFERNO)
+    render._outline(canvas, trace.region_outline, render._COLOUR_REGION)
+    render._outline(canvas, trace.search_outline, render._COLOUR_SEARCH)
+    return canvas
+
+
 def render_figure(target: Path, dart: str, out: Path, raw: bool) -> None:
     resolved = resolve_series(target)
     if resolved is None:
@@ -121,7 +133,7 @@ def render_figure(target: Path, dart: str, out: Path, raw: bool) -> None:
     stages = [
         ("Reference", first),
         ("Throw frame", framed),
-        ("Difference", render._draw_difference(trace)),
+        ("Difference", _difference(trace)),
         ("Change mask", render._draw_mask(trace)),
         ("Fragment fusion", render._draw_components(trace)),
         ("Axis and flight end", render._draw_axis(trace)),
