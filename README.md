@@ -115,16 +115,25 @@ er über einen **Cloudflare Tunnel**, nicht über Portfreigaben im Router.
 
 ```
 git push (main)
-   → GitLab CI, Stage "deploy"
-   → self-hosted Runner mit Tag "rpi5" (läuft auf dem Pi)
+   → GitHub Actions, Workflow "Deploy"
+   → self-hosted Runner mit Label "rpi5" (läuft auf dem Pi)
    → docker compose up -d --build
    → frontend-Container (nginx) auf Host-Port 10020
    → cloudflared auf dem Pi → öffentliche Domain
 ```
 
-Definiert in [.gitlab-ci.yml](.gitlab-ci.yml). Der Job läuft nur auf `main` und
-nur, wenn die Pipeline kein Schedule ist. Es gibt keinen Build-Artefakt-Transfer:
-der Runner steht auf derselben Maschine wie Docker, gebaut wird direkt dort.
+Definiert in [deploy.yaml](.github/workflows/deploy.yaml). Der Job läuft nur auf
+`main`, bei jedem Push oder von Hand über „Run workflow“. Es gibt keinen
+Build-Artefakt-Transfer: der Runner steht auf derselben Maschine wie Docker,
+gebaut wird direkt dort.
+
+Compose liest seine Werte aus der Umgebung des Jobs. Im Repository müssen dafür
+unter Settings → Secrets and variables → Actions angelegt sein:
+
+| Art | Name |
+|---|---|
+| Variable | `POSTGRES_USER`, `POSTGRES_DB` |
+| Secret | `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `JWT_SECRET` |
 
 ### Was Docker Compose aufsetzt
 
@@ -152,8 +161,8 @@ einen einzigen Port veröffentlichen, und es ist keine Domain im Build hartkodie
 In einem Testlauf legt das Backend jede Runde als Wurfserie unter
 `/app/testdata/evaluation` ab ([auswertung.md](docs/feature/auswertung.md)). Der
 Host-Pfad dahinter kommt aus `TESTDATA_DIR`, das der Deploy-Job in
-[.gitlab-ci.yml](.gitlab-ci.yml) auf `/srv/dart-tracking/testdata` setzt. Er
-**muss auf dem Pi außerhalb des Runner-Build-Verzeichnisses liegen**: GitLab räumt das Verzeichnis bei jedem Checkout mit `git clean -ffdx`
+[deploy.yaml](.github/workflows/deploy.yaml) auf `/srv/dart-tracking/testdata` setzt. Er
+**muss auf dem Pi außerhalb des Runner-Build-Verzeichnisses liegen**: der Runner räumt das Verzeichnis bei jedem Checkout mit `git clean -ffdx`
 auf, und das schließt ignorierte Pfade wie `backend/testdata/` ein. Lag der Mount
 dort, hat der Container die Dateien als `root` angelegt, worauf der Checkout mit
 `failed to remove ...: Permission denied` abbrach — und wären die Rechte gepasst,
@@ -182,14 +191,8 @@ Er erfüllt hier zwei Zwecke über die Erreichbarkeit hinaus:
 Ändert sich der Host-Port in `compose.yaml`, muss die Tunnel-Konfiguration auf
 dem Pi mitgezogen werden — der Zusammenhang ist an keiner Stelle automatisiert.
 
-### Zeiterfassung (zweite Pipeline)
+### Zeiterfassung
 
-Die Stage `maintenance` in `.gitlab-ci.yml` läuft ausschließlich per Schedule,
-nicht bei Pushes. Sie erzeugt mit [backend/scripts/wiki_timelogs.py](backend/scripts/wiki_timelogs.py)
-eine `Zeiterfassung.md` aus den GitLab-Timelogs und committet sie ins Wiki des
-Projekts.
-
-Dafür braucht es die CI-Variable `TIMETRACKING_TOKEN`. Sie wird zweimal
-verwendet: vom Skript für die GraphQL-Abfrage (`read_api`) und im Job für den
-`git push` ins Wiki-Repository (`write_repository`) — der Token muss also beide
-Scopes tragen.
+[backend/scripts/wiki_timelogs.py](backend/scripts/wiki_timelogs.py) erzeugt eine
+`Zeiterfassung.md` aus den Timelogs des Projekts im GitLab der TU. Das Skript wird
+von Hand gestartet und braucht dafür `TIMETRACKING_TOKEN` mit dem Scope `read_api`.

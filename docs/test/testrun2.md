@@ -19,7 +19,7 @@ Fortsetzung von [testrun1.md](testrun1.md); das Messinstrument selbst steht in
   1.3 – 1.4 in den steilen Setups aus Testlauf 1.
 - Erster Lauf mit vollständigen Serien: alle 70 Visits haben ein
   `throwN_frames.txt`, der Checkout-Visit fehlt nicht mehr
-  ([testrun1 §8a](testrun1.md#8-testserien-vollständig-und-treu-schreiben), `6fa1daf`).
+  ([testrun1 §8a](testrun1.md#8-testserien-vollständig-und-treu-schreiben), `f0f9542`).
   Von 193 Dart-Frames sind 188 `booked` und 5 `absorbed`; `unbooked` kommt
   nicht vor.
 

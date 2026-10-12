@@ -6,7 +6,7 @@ RUN npm ci
 
 COPY . .
 
-# The build counter shown in the app; the deploy passes CI_PIPELINE_IID, and a
+# The build counter shown in the app; the deploy passes its build number, and a
 # build without it labels itself a local one.
 ARG APP_BUILD
 ENV APP_BUILD=$APP_BUILD

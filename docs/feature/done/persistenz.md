@@ -508,11 +508,11 @@ ebenfalls `redis_container` hieß. Ohne die Zeile leitet Compose die Namen aus
 konstruktiv ausgeschlossen. Zugriff läuft über `docker compose exec <service>`
 statt `docker exec <container>`.
 
-**Deployment.** Der GitLab-Runner auf dem RPi führt `docker compose up -d
+**Deployment.** Der GitHub-Actions-Runner auf dem RPi führt `docker compose up -d
 --build` im ausgecheckten Repo aus. Die `.env` liegt dort *nicht* — sie ist
 gitignored, und das Build-Verzeichnis des Runners wird ohnehin mit
-`git clean -ffdx` geleert. Die Werte kommen stattdessen aus den
-CI/CD-Variablen des Projekts, weil Compose auch aus der Prozessumgebung
+`git clean -ffdx` geleert. Die Werte kommen stattdessen aus den Secrets und
+Variablen des Repositories, weil Compose auch aus der Prozessumgebung
 interpoliert.
 
 **Migrationen laufen beim Containerstart**, nicht als CI-Schritt:

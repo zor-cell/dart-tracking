@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     refresh_token_days: int = 30
     cookie_secure: bool = False
 
-    # CI pipeline number the image was built from; unset in a local run.
+    # Deploy build number the image was built from; unset in a local run.
     app_build: int | None = None
 
     @field_validator("app_build", mode="before")

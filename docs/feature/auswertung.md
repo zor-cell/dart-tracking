@@ -557,15 +557,22 @@ Scheibe sah.
 
 ### Version
 
-`games.tracker_version`, gesetzt beim Anlegen des Spiels: die GitLab-
-Pipelinenummer (`CI_PIPELINE_IID`), die die Deploy-Pipeline als Build-Arg
-`APP_BUILD` an das Backend-Image übergibt und `Settings.app_build` liest. Als
-Build-Arg und nicht als Laufzeit-Variable, damit die Nummer am Image klebt und
-nicht davon abhängt, mit welcher Umgebung `docker compose up` zuletzt lief.
-Welcher Commit dahintersteht, zeigt die Pipeline in GitLab — die Nummer ist pro
-Projekt eindeutig, der Commit wird deshalb nicht mitgespeichert.
+`games.tracker_version`, gesetzt beim Anlegen des Spiels: die Build-Nummer, die
+der Deploy-Workflow als Build-Arg `APP_BUILD` an das Backend-Image übergibt und
+`Settings.app_build` liest. Als Build-Arg und nicht als Laufzeit-Variable, damit
+die Nummer am Image klebt und nicht davon abhängt, mit welcher Umgebung
+`docker compose up` zuletzt lief.
 
-Das Frontend bekommt dieselbe `APP_BUILD` aus derselben Pipeline — eine Zahl
+Die Nummer ist die Laufnummer des Workflows (`GITHUB_RUN_NUMBER`) plus 1000,
+gesetzt in [deploy.yaml](../../.github/workflows/deploy.yaml). Bis einschließlich
+187 war sie die GitLab-Pipelinenummer (`CI_PIPELINE_IID`); der Versatz hält die
+Reihe über den Umzug auf GitHub hinweg aufsteigend, damit `--min-version`
+weiter trägt und keine Nummer doppelt vergeben wird. Welcher Commit
+dahintersteht, zeigt der Lauf `Build − 1000` unter Actions — die Nummer ist pro
+Workflow eindeutig, der Commit wird deshalb nicht mitgespeichert. Für Builds bis
+187 steht diese Zuordnung nur im GitLab der TU.
+
+Das Frontend bekommt dieselbe `APP_BUILD` aus demselben Lauf — eine Zahl
 beschreibt also Trigger im Browser und CV-Pipeline gemeinsam. Lokal und bei
 allen Spielen vor dieser Spalte ist sie leer, Report und Seite zeigen dann
 `unknown` bzw. „unbekannt“.
