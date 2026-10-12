@@ -1,6 +1,6 @@
 """Whether the scoring camera's latest calibration attempt failed.
 
-Redis-backed. See docs/feature/done/multi-device.md §5c.
+Redis-backed.
 """
 
 from app.infrastructure import redis_client

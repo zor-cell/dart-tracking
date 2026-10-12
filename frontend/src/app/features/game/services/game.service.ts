@@ -23,7 +23,7 @@ import { ACTIVE_GAME_KEY } from "./active-game";
  *
  * It also owns the socket's lifetime, because the connection follows the game
  * and not the camera: a device that only keeps score joins the same room and
- * must see every change (see docs/feature/done/multi-device.md).
+ * must see every change.
  */
 @Injectable({ providedIn: 'root' })
 export class GameService {

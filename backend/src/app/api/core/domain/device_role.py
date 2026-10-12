@@ -2,7 +2,7 @@ from enum import StrEnum
 
 
 class DeviceRole(StrEnum):
-    """What a device does in a game (see docs/feature/done/multi-device.md).
+    """What a device does in a game.
 
     Says nothing about what the device may change — a scoreboard is explicitly
     the way to correct a misread — only whether it films the board.

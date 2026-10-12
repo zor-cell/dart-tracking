@@ -1,6 +1,6 @@
 """Automatic dartboard detection.
 
-Pipeline (see docs/roadmap.md §6.1 for the literature this follows):
+Pipeline:
 
 1. Segment the red and green double/triple segments in HSV. They are by far the
    most distinctive feature of a board and survive poor lighting better than

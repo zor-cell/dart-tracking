@@ -4,8 +4,7 @@ Revision ID: 5b8d2f6e1a47
 Revises: 9a6e2c4d7f31
 Create Date: 2026-09-25 18:00:00.000000
 
-Holds the darts the camera located after a win or bust closed the open visit
-(docs/feature/done/korrektur.md §7).
+Holds the darts the camera located after a win or bust closed the open visit.
 """
 from typing import Sequence, Union
 

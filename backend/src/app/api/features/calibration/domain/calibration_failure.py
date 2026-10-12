@@ -2,7 +2,7 @@
 
 Each value names the stage that gave up, which is what makes it actionable:
 the client turns it into advice ("get closer", "avoid shadows") instead of a
-bare "not recognised", and the evaluation in zeitplan.md Phase 4 can count how
+bare "not recognised", and an evaluation can count how
 often each cause occurs rather than just the failure rate.
 """
 

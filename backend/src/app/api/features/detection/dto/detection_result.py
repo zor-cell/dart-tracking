@@ -23,7 +23,7 @@ class DetectionResultDto(CamelModel):
     Everything here is in **this camera's image space**, and deliberately only
     that. Where the dart landed on the board travels in board millimetres on
     `DartDto.position` instead: that is camera-independent, so every device in
-    the room can draw it (docs/feature/done/multi-device.md §4a). Carrying both here
+    the room can draw it. Carrying both here
     would put two coordinate systems in one message, whose numbers look alike
     and may never be mixed.
     """

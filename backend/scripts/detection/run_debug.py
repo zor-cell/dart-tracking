@@ -147,7 +147,7 @@ def describe(outcome: Dart | DetectionFailure) -> str:
 
 
 def fusion_summary(trace: DetectionTrace) -> str:
-    """How the dart came together, the goal being one component (erkennung-blob.md §1).
+    """How the dart came together, the goal being one component.
 
     In the console because it is the number a run is judged on now, and reading
     it off 07_components.jpg means opening an image to count grey patches.

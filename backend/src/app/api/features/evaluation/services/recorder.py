@@ -2,7 +2,7 @@
 
 Cross-feature by nature — measuring the tracker means reading the game's
 commands and the detector's trace — which is exactly why it lives here and not
-in the socket (docs/feature/auswertung.md §2).
+in the socket.
 """
 
 import logging
@@ -142,7 +142,7 @@ def for_shadow_booking(dart: Dart, at: VisitPosition) -> GameEvent:
 
 def metrics_of(trace: DetectionTrace) -> dict[str, float]:
     """Detector figures worth keeping per throw: how the dart arrived, how big
-    it was, how far the camera had moved (docs/feature/erkennung.md §4)."""
+    it was, how far the camera had moved."""
     figures = {
         "fragment_count": trace.fragment_count,
         "largest_fragment_share": round(trace.largest_fragment_share, 4),

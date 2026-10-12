@@ -7,9 +7,9 @@ refused. So exactly one camera per game scores; the others detect, answer their
 own `detection_result`, and roll their own reference frame forward.
 
 That is deliberately not fusion. Merging two views of the same throw into one
-better estimate is the open research question (see docs/feature/done/multi-device.md
-§5); this is what makes running two cameras possible without it, and it yields
-the pairs of independent observations that studying it needs.
+better estimate is the open research question; this is what makes running two
+cameras possible without it, and it yields the pairs of independent observations
+that studying it needs.
 
 **The claim is made on a successful calibration** — the first moment a camera
 can actually detect anything — and is released only when the device stops being

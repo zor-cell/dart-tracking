@@ -465,7 +465,7 @@ def median(values: Iterable[float]) -> float:
 def cohesion_table(labelled: list[Result]) -> list[str]:
     """Accuracy against how many components the scored dart was fused from.
 
-    The goal in docs/feature/erkennung-blob.md §1 is one component per dart, and
+    The goal is one component per dart, and
     the segment rate alone cannot say whether a change moved towards it. This
     can: it counts the fusing itself, and shows what each extra piece costs.
     """

@@ -3,7 +3,7 @@ import { Button } from 'primeng/button';
 import { CameraService } from '../../services/camera.service';
 
 /** Light button: switches the camera light, on devices that have one and let
- * the browser at it (docs/feature/done/kamera.md §2). */
+ * the browser at it. */
 @Component({
   selector: 'app-torch-toggle',
   imports: [Button],

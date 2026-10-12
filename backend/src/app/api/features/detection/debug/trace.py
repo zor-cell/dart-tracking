@@ -1,6 +1,6 @@
 """What dart detection saw at each stage, so a run can be judged by eye.
 
-Data only — rendering is `render.py`. See docs/feature/erkennung.md §4.
+Data only — rendering is `render.py`.
 """
 
 from dataclasses import dataclass, field

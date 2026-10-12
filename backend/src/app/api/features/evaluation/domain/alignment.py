@@ -1,7 +1,7 @@
 """Pairs up what the tracker claimed with what the players accepted.
 
 Counting corrections overstates the error: one missed dart shifts the whole
-visit and costs several undos (docs/feature/auswertung.md §3).
+visit and costs several undos.
 """
 
 from collections.abc import Sequence

@@ -25,8 +25,7 @@ Pipeline:
 4. Check the blob is dart-sized before believing it. Nothing up to here has an
    upper bound, and the fit lays an axis through whatever it is given —
    including a player standing in front of the board to pull their darts, which
-   the client's trigger sends and cannot itself rule out (see
-   docs/feature/client-diff-verbesserungen.md).
+   the client's trigger sends and cannot itself rule out.
 5. Fit the dart's principal axis and take the tip as the end opposite the
    flight, the flight being the wider, feathered end. Orienting by the dart's own
    shape rather than by "nearest the board centre" keeps a dart high on the board
@@ -417,7 +416,7 @@ def _saturation_thresholds(
     """Per-pixel threshold on the saturation difference: finite only on light beds.
 
     Where the bed sits between black and cream is read off this frame's own board
-    through the homography. See docs/feature/erkennung.md §2.2.
+    through the homography.
     """
     size = _odd_size(_BED_BLUR_MM, pixels_per_mm)
     brightness = cv2.GaussianBlur(reference.max(axis=2).astype(np.float32), (size, size), 0)

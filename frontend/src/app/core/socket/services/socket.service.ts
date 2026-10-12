@@ -18,7 +18,7 @@ const CLIENT_ID_KEY = 'dart-tracking.clientId';
  * The connection to the game's room on the server. Every device playing the
  * same game holds one, and it carries everything that is not the session
  * lifecycle: the camera frames of whichever device films the board, and the
- * commands any device issues (see docs/feature/done/multi-device.md).
+ * commands any device issues.
  */
 @Injectable({ providedIn: 'root' })
 export class SocketService {
@@ -120,7 +120,7 @@ export class SocketService {
   /**
    * The stream of one kind of server message, in arrival order. Deliberately not
    * a signal: two messages arriving back to back would collapse into one value,
-   * and the first would never be observed (docs/feature/done/multi-device.md §6a).
+   * and the first would never be observed.
    */
   on<T extends ServerMessage['type']>(type: T): Observable<Extract<ServerMessage, { type: T }>> {
     return this.messages.pipe(

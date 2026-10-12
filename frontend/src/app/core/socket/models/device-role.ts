@@ -1,5 +1,5 @@
 /**
- * What this device does in the game (see docs/feature/done/multi-device.md §1).
+ * What this device does in the game.
  *
  * It belongs to the device, not the connection: the server keeps it on the
  * client record, where it outlives the socket, and a `set_role` command is what

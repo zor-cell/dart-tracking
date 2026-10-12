@@ -341,7 +341,7 @@ async def _publish_state(game: Game) -> None:
 
 
 async def _current_announcer(game_id: str) -> str | None:
-    """The device in the room that speaks booked darts (docs/feature/ansage.md §1)."""
+    """The device in the room that speaks booked darts."""
     return choose_announcer(
         [c.client for c in hub.connections(game_id)],
         await announcer_store.chosen(game_id),

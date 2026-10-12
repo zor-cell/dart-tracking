@@ -26,12 +26,12 @@ const UTTERANCE_TIMEOUT_PER_CHAR = 120;
 type WebAudioWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
 
 /** What the synthesiser did with the self-test's utterance. `spoken` says it ran
- * to the end, not that anything was audible (docs/feature/done/ansage.md §4). */
+ * to the end, not that anything was audible. */
 export type AnnouncerTestResult = 'spoken' | 'failed' | 'no_answer' | 'muted' | 'unsupported';
 
 /**
  * Speaks the darts the camera books, on the one device the server picked as
- * announcer (docs/feature/done/ansage.md). Muting is local to this device.
+ * announcer. Muting is local to this device.
  */
 @Injectable({ providedIn: 'root' })
 export class AnnouncerService {
@@ -173,7 +173,7 @@ export class AnnouncerService {
   /**
    * Say one phrase out loud and report what the synthesiser made of it. Speaks
    * from inside the caller's click, the one moment WebKit allows a first
-   * utterance (docs/feature/done/ansage.md §4).
+   * utterance.
    */
   test(): Promise<AnnouncerTestResult> {
     const synth = this.synth();
@@ -214,8 +214,7 @@ export class AnnouncerService {
 
   /**
    * Open and resume an audio context, from inside a gesture. iOS keeps speech
-   * silent while the page holds no running audio session
-   * (docs/feature/done/ansage.md §4).
+   * silent while the page holds no running audio session.
    */
   private primeAudio(): void {
     const view = this.document.defaultView as WebAudioWindow | null;

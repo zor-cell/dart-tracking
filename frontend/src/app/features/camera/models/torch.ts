@@ -1,5 +1,5 @@
 /** The camera light. Not in the DOM typings: `torch` is an extension to the
- * media-track capabilities (docs/feature/done/kamera.md §2). */
+ * media-track capabilities. */
 interface TorchCapabilities extends MediaTrackCapabilities {
   readonly torch?: boolean;
 }

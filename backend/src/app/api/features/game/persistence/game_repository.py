@@ -1,8 +1,7 @@
 """Loads and stores the game aggregate.
 
 The server is the source of truth for every score, so a game is read fresh for
-each command and written back inside the same transaction (see
-docs/feature/done/persistenz.md §5.1/§5.2).
+each command and written back inside the same transaction.
 """
 
 from typing import Any
@@ -160,8 +159,7 @@ class GameRepository:
         """The games this account took part in or wrote down, newest first.
 
         Both branches are needed: a game set up by a fellow player belongs in my
-        history too, and one I only kept score for has no seat for me at all
-        (docs/feature/done/persistenz.md §4.2).
+        history too, and one I only kept score for has no seat for me at all.
         """
         mine = (
             select(GamePlayerTable.game_id)

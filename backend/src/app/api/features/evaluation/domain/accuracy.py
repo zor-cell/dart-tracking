@@ -1,5 +1,5 @@
 """What the event log says about the tracker: one judged dart per aligned
-throw, and the totals over a set of them (docs/feature/auswertung.md §3)."""
+throw, and the totals over a set of them."""
 
 import statistics
 from collections import Counter

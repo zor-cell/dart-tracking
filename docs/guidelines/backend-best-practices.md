@@ -120,13 +120,12 @@ src/app/
   the program's result, not a diagnostic.
 
 ## State & Persistence
-- Game/session state is server-authoritative (see roadmap §4 and §7); the client
-  holds only a synchronized cache.
+- Game/session state is server-authoritative; the client holds only a
+  synchronized cache.
 - Games live in Postgres, the hot game-scoped state (clients, calibrations,
   scoring claim) in Redis with a TTL. Process-local dicts remain only for what
   cannot leave the process — the WebSocket hub — or is large and cheap to rebuild
-  (the reference frame). Which store a new piece of state belongs in is decided
-  in [persistenz.md §2](../feature/done/persistenz.md).
+  (the reference frame).
 - Auth is optional on the HTTP endpoints: `CurrentUser` may be None, and an
   anonymous game still works. A token that is *sent* but does not hold up is a
   401, never a fallback to anonymous.

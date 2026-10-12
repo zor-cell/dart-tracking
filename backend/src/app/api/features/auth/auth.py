@@ -1,7 +1,7 @@
 """Accounts over HTTP: register, sign in, refresh, sign out.
 
 The refresh token rides in an httpOnly cookie and is rotated on every use; the
-access token goes to the client in the body (docs/feature/done/persistenz.md §6)."""
+access token goes to the client in the body."""
 
 from typing import Annotated
 

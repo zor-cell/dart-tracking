@@ -1,7 +1,4 @@
-"""Where the camera stood, as viewing angles onto the board, read off a calibration.
-
-Method and test-set validation: docs/feature/auswertung.md §8.
-"""
+"""Where the camera stood, as viewing angles onto the board, read off a calibration."""
 
 import math
 from dataclasses import dataclass

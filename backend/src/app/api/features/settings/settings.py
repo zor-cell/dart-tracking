@@ -3,7 +3,7 @@
 Reading is open to anyone — an anonymous session is told the defaults, which is
 what it runs on. Writing needs an account: there is nowhere to put the answer
 otherwise. The debug switches are an admin's and are masked off both ways for
-everyone else (docs/feature/done/einstellungen.md §3a).
+everyone else.
 """
 
 from fastapi import APIRouter

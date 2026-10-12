@@ -1,6 +1,6 @@
 import { DartAnnouncementDto } from '../dto/dart-announcement.dto';
 
-/** The phrases to speak for one booked dart, in order (docs/feature/ansage.md §2). */
+/** The phrases to speak for one booked dart, in order. */
 export function announcementPhrases(announcement: DartAnnouncementDto): string[] {
   const phrases = [dartPhrase(announcement.value, announcement.multiplier)];
 

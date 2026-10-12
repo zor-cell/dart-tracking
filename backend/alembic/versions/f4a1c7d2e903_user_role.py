@@ -6,7 +6,7 @@ Create Date: 2026-09-08 10:00:00.000000
 
 Adds the role that gates the evaluation page. Existing accounts become plain
 users; the address below is seeded as the admin, since the page is only useful
-to whoever runs the test games (docs/feature/auswertung.md §7c).
+to whoever runs the test games.
 """
 from typing import Sequence, Union
 

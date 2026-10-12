@@ -1,23 +1,14 @@
 # Dart-Tracking-System
 
 ## Projektkontext
-Bachelorarbeit-Projekt. Ziel: automatisches Dart-Scoring per Smartphone-Kamera
-statt teurer Multi-Kamera-Hardware. Details: @docs/konzept.md
+Als Bachelorarbeit entstanden. Ziel: automatisches Dart-Scoring per
+Smartphone-Kamera statt teurer Multi-Kamera-Hardware.
 
 ## Architektur
 Hybrid: Frontend (Browser, Frame-Differenz via Canvas API) erkennt Wurf-Events,
 schickt nur bei Trigger ein JPEG-Standbild per WebSocket ans Backend.
 Backend (FastAPI/Flask + OpenCV) macht Board-Kalibrierung (Homographie),
 Pfeil-Erkennung und Scoring.
-
-Die Kalibrierungs-Pipeline ist im Detail dokumentiert (Algorithmen, Parameter,
-verworfene Ansätze): @docs/feature/done/kalibrierung.md
-
-Die Erkennungs-Pipeline ist im Detail dokumentiert (Algorithmen, Parameter,
-verworfene Ansätze): @docs/feature/erkennung.md
-
-## Zeitplan / aktuelle Phase
-Siehe @docs/zeitplan.md — aktuell in Phase X, Fokus auf Y.
 
 ## Frontend-Konventionen
 Angular, siehe @docs/guidelines/frontend-best-practices.md
@@ -27,19 +18,18 @@ PrimeNG für Styling, die Dokumentation siehe @docs/guidelines/primeng-documenta
 FastAPI, siehe @docs/guidelines/backend-best-practices.md
 
 ## Doku-Struktur
-- `docs/feature/` — Features, an denen noch gearbeitet wird.
-- `docs/feature/done/` — abgeschlossen oder bewusst nicht weiter verfolgt.
-  Wird ein Feature fertig, wandert seine Datei hierher; Links in den anderen
-  Dokumenten und in Code-Kommentaren mitziehen.
-- `docs/status/` — Stichwortsammlungen zum jeweiligen Zwischenstand.
+- `docs/guidelines/` — Konventionen für Frontend und Backend.
+- Offene Arbeit und Planung stehen in den GitHub-Issues, nicht im Repo.
+- Begründungen zu einer Änderung stehen im Issue oder in der Beschreibung des
+  Pull Requests.
 
 ## Kommentar-Regeln
 Diese Regeln gelten für **alle** Fließtext-Zeilen im Code: `#`, `//`, `<!-- -->`,
 Python-Docstrings und TSDoc-Blöcke. Docstrings sind hier ausdrücklich keine
 Ausnahme — dort sammelt sich der meiste überflüssige Text an.
 
-**Harte Obergrenzen** (bei Überschreitung: kürzen oder nach `docs/feature/`
-verschieben, nicht "begründen"):
+**Harte Obergrenzen** (bei Überschreitung: kürzen oder ins Issue bzw. in den
+Pull Request verschieben, nicht "begründen"):
 - Modul-Docstring / Datei-Kopf: max. **3 Zeilen**
 - Funktions- oder Methoden-Docstring: max. **3 Zeilen**
 - Inline-Kommentar über einer Konstante, einem Feld oder einem Statement:
@@ -55,9 +45,9 @@ hat. Er sagt nicht:
 - was gemessen wurde
 - wie andere Teile des Systems reagieren, wenn man es ändert
 
-Das alles gehört nach `docs/feature/<feature>.md`. Diese Dateien existieren genau
-dafür. Wenn ein Kommentar länger werden will als die Grenze oben: ein Satz im
-Code, der Rest als Absatz in `docs/feature/`.
+Das alles gehört ins zugehörige GitHub-Issue oder in die Beschreibung des Pull
+Requests. Wenn ein Kommentar länger werden will als die Grenze oben: ein Satz im
+Code, der Rest dort.
 
 **Sprache:** Kommentare immer auf Englisch.
 

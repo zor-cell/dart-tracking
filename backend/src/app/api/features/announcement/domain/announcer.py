@@ -1,4 +1,4 @@
-"""Which device in a game's room speaks the booked darts (docs/feature/ansage.md §1)."""
+"""Which device in a game's room speaks the booked darts."""
 
 from app.api.core.domain.client import Client
 from app.api.core.domain.device_role import DeviceRole

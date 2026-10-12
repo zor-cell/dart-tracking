@@ -1,7 +1,7 @@
 """One recorded step of a game, exactly as it happened.
 
 Append-only: an undone dart keeps what the tracker originally claimed, which the
-game's own turn list no longer holds (docs/feature/auswertung.md §2).
+game's own turn list no longer holds.
 """
 
 from dataclasses import dataclass

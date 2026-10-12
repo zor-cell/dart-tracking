@@ -1,7 +1,4 @@
-"""How far the game's board calibration is, as every device in the room shows it.
-
-See docs/feature/done/multi-device.md §5c.
-"""
+"""How far the game's board calibration is, as every device in the room shows it."""
 
 from enum import StrEnum
 

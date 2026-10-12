@@ -1,7 +1,7 @@
 """Holds the scoring camera's frames of the open visit.
 
 In a test run every visit is written out as a throw series, otherwise thrown
-away (docs/feature/auswertung.md §4). Process-local, about a megabyte per game.
+away. Process-local, about a megabyte per game.
 """
 
 import logging

@@ -7,7 +7,7 @@ from app.api.core.dto.base import CamelModel
 
 class PlayerSlotDto(CamelModel):
     """One seat in a new game: either an identity from the address book or a
-    name typed for a guest (docs/feature/done/persistenz.md §4.4)."""
+    name typed for a guest."""
 
     player_id: str | None = None
     name: str | None = Field(default=None, max_length=64)

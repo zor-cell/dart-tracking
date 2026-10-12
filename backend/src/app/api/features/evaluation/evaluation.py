@@ -1,7 +1,6 @@
 """How well the tracker scored, read off the games that were played.
 
-Admin-only: it reports on every account's games, not on the caller's own
-(docs/feature/auswertung.md §7c).
+Admin-only: it reports on every account's games, not on the caller's own.
 """
 
 from fastapi import APIRouter

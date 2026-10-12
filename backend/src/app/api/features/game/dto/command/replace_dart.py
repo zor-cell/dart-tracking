@@ -9,7 +9,7 @@ from app.api.features.game.domain.dart import Dart
 class ReplaceDartDto(CamelModel):
     """Client -> server: book a different field for one dart of the open visit.
     The dart keeps its place; the replacement is a manual booking and so carries
-    no tip (docs/feature/done/korrektur.md §2)."""
+    no tip."""
 
     type: Literal["replace_dart"]
     index: int = Field(ge=0)

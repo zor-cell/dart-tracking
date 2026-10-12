@@ -9,7 +9,7 @@ from app.api.features.detection.dto.trigger_snapshot import TriggerSnapshotDto
 
 class ThrowTriggerDto(CamelModel):
     """The client's own trigger metrics, logged beside the detector's so the two
-    halves of a false trigger can be told apart (docs/feature/client-diff-verbesserungen.md)."""
+    halves of a false trigger can be told apart."""
 
     peak_blocks: NonNegativeInt  # highest active-cell count in the episode
     peak_excess: NonNegativeFloat  # highest count above the steady baseline

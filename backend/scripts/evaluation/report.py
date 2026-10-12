@@ -2,7 +2,7 @@
 
 Compares what the camera booked against what the players signed off on, per
 visit, by sequence alignment - so one missed dart reads as one missed dart and
-not as the two or three corrections it cost (docs/feature/auswertung.md §3).
+not as the two or three corrections it cost.
 
 Usage:
     uv run python scripts/evaluation/report.py                       # finished games, as the page
@@ -331,7 +331,7 @@ def build_report(
         "# Tracking accuracy",
         "",
         "What the camera booked against what the players accepted, aligned per",
-        "visit (docs/feature/auswertung.md). *Correct* is a dart booked in the",
+        "visit. *Correct* is a dart booked in the",
         "right segment; *missed* is a dart thrown that the camera never booked -",
         "a detection that came back empty included, since nothing was scored.",
         "*Phantom* is one it booked with no dart behind it.",
@@ -368,8 +368,7 @@ def build_report(
         "",
         "## Per camera angle",
         "",
-        "Median over the scoring camera's calibrations in each game "
-        "(docs/feature/auswertung.md §8).",
+        "Median over the scoring camera's calibrations in each game.",
         "",
         *grouped_table(games, camera_key(tilt_band), "tilt"),
         "",

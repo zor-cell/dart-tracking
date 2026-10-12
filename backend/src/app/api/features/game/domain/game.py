@@ -78,7 +78,7 @@ class Game:
     def elimination(self) -> list[str] | None:
         """A route that lands exactly on an opponent's score, resetting them, or
         None when none fits the darts left. The easiest target wins: fewest
-        darts first, then the smallest gap (docs/feature/spielmodi.md §3)."""
+        darts first, then the smallest gap."""
         if self.variant is not GameVariant.ELIMINATION or self.winner is not None:
             return None
 
@@ -110,7 +110,7 @@ class Game:
     def _scores(self) -> dict[int, int]:
         """Points scored per player, replayed in throwing order. An elimination
         reset depends on what everyone stood at when the dart landed, so this
-        cannot be a per-player sum (docs/feature/spielmodi.md §2)."""
+        cannot be a per-player sum."""
         scores = {player.id: 0 for player in self.players}
         for turn in self.turns:
             if turn.busted:
@@ -134,7 +134,7 @@ class Game:
     def register_dart(self, dart: Dart) -> bool:
         """Book a tracked dart into the open visit; whether it was booked. After a
         win or bust it is kept as a shadow dart instead, and past the third
-        physical dart it is dropped (docs/feature/done/korrektur.md §7)."""
+        physical dart it is dropped."""
         if self.winner is None and self.darts_remaining > 0:
             turn = self.current_turn
             turn.darts.append(dart)
@@ -220,7 +220,7 @@ class Game:
     def replace_dart(self, index: int, dart: Dart) -> None:
         """Book a different field for one dart of the open visit, in its place.
         Open to a full or busted visit, unlike `register_dart`: correcting the
-        dart that caused the bust is the point (docs/feature/done/korrektur.md §5)."""
+        dart that caused the bust is the point."""
         turn = self.current_turn
         if not 0 <= index < len(turn.darts):
             return

@@ -43,7 +43,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 /**
  * Signs each request with the access token and, on a 401, trades the refresh
  * cookie for a new one and repeats the request once. Runs inside
- * `errorInterceptor` and waits for the restore (docs/feature/done/persistenz.md §8.4).
+ * `errorInterceptor` and waits for the restore.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
