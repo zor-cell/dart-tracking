@@ -22,6 +22,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:?missing in .env}
       COOKIE_SECURE: true
       CORS_ORIGINS: "[]" # nginx serves the app and /api under one origin, so nothing here is ever cross-origin
+      FORWARDED_ALLOW_IPS: "172.16.0.0/12" # trust nginx's X-Forwarded-For on the compose network
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,7 +45,7 @@ services:
         BUILD_NUMBER: ${BUILD_NUMBER:-}
     restart: unless-stopped
     ports:
-      - "10020:8080"
+      - "127.0.0.1:10020:8080" # only cloudflared on the host connects
 
   postgres:
     image: postgres:18-alpine
