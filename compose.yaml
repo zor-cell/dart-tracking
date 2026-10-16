@@ -44,7 +44,7 @@ services:
         BUILD_NUMBER: ${BUILD_NUMBER:-}
     restart: unless-stopped
     ports:
-      - "10020:80"
+      - "10020:8080"
 
   postgres:
     image: postgres:18-alpine

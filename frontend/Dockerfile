@@ -12,9 +12,9 @@ ENV BUILD_NUMBER=$BUILD_NUMBER
 
 RUN npm run build
 
-FROM nginx:1.25-alpine
+FROM nginxinc/nginx-unprivileged:1.30-alpine
 
 COPY --from=build /app/dist/frontend/browser /usr/share/nginx/html
 COPY default.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+EXPOSE 8080
