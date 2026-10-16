@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
+import { tooManyRequestsMessage } from '../../../../core/notification/models/too-many-requests';
 import {
   DISPLAY_NAME_MAX_LENGTH,
   USERNAME_MAX_LENGTH,
@@ -62,6 +63,9 @@ export class RegisterComponent {
   private describe(failure: unknown): string {
     if (failure instanceof HttpErrorResponse && failure.status === 409) {
       return 'E-Mail oder Benutzername ist bereits vergeben.';
+    }
+    if (failure instanceof HttpErrorResponse && failure.status === 429) {
+      return tooManyRequestsMessage(failure);
     }
     return 'Registrierung fehlgeschlagen. Bitte Eingaben prüfen.';
   }

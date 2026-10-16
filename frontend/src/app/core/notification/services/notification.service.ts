@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { MessageService } from 'primeng/api';
+import { tooManyRequestsMessage } from '../models/too-many-requests';
 
 /** PrimeNG's own default, restated so callers can raise it per message. */
 const DEFAULT_TOAST_LIFE = 3000;
@@ -56,6 +57,9 @@ export class NotificationService {
     }
     if (error.status === 404) {
       return 'Der angeforderte Eintrag wurde nicht gefunden.';
+    }
+    if (error.status === 429) {
+      return tooManyRequestsMessage(error);
     }
     if (error.status === 422 || error.status === 400) {
       return 'Die Eingabe ist ungültig.';

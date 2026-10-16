@@ -1,9 +1,11 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
+import { tooManyRequestsMessage } from '../../../../core/notification/models/too-many-requests';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -37,8 +39,12 @@ export class LoginComponent {
       await this.auth.login(this.form.getRawValue());
       const redirect = this.route.snapshot.queryParamMap.get('redirect');
       await this.router.navigateByUrl(redirect ?? '/account');
-    } catch {
-      this.error.set('E-Mail oder Passwort stimmen nicht.');
+    } catch (failure) {
+      this.error.set(
+        failure instanceof HttpErrorResponse && failure.status === 429
+          ? tooManyRequestsMessage(failure)
+          : 'E-Mail oder Passwort stimmen nicht.',
+      );
     } finally {
       this.busy.set(false);
     }
