@@ -5,8 +5,9 @@ access token goes to the client in the body."""
 
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie, HTTPException, Response
+from fastapi import APIRouter, Cookie, HTTPException, Request, Response
 
+from app.api.core.services import rate_limit
 from app.api.features.auth.dto.login import LoginDto
 from app.api.features.auth.dto.profile import ProfileDto
 from app.api.features.auth.dto.register import RegisterDto
@@ -29,6 +30,10 @@ _COOKIE_NAME = "refresh_token"
 _COOKIE_PATH = "/api/auth"
 
 RefreshCookie = Annotated[str | None, Cookie(alias=_COOKIE_NAME)]
+
+# Failed sign-ins per account per window, and registrations per IP per hour.
+_LOGIN_FAILURE_LIMIT, _LOGIN_FAILURE_WINDOW = 10, 15 * 60
+_REGISTER_LIMIT, _REGISTER_WINDOW = 5, 60 * 60
 
 
 def _expired_session() -> HTTPException:
@@ -64,7 +69,10 @@ async def _begin_session(response: Response, user: User) -> SessionDto:
 
 
 @router.post("/register", response_model=SessionDto, status_code=201)
-async def register(body: RegisterDto, response: Response) -> SessionDto:
+async def register(body: RegisterDto, request: Request, response: Response) -> SessionDto:
+    await rate_limit.enforce(
+        "register", rate_limit.client_ip(request), _REGISTER_LIMIT, _REGISTER_WINDOW
+    )
     email = body.email.strip().lower()
     username = body.username.strip()
     display_name = body.display_name
@@ -91,14 +99,19 @@ async def register(body: RegisterDto, response: Response) -> SessionDto:
 
 @router.post("/login", response_model=SessionDto)
 async def login(body: LoginDto, response: Response) -> SessionDto:
+    email = body.email.strip().lower()
+    await rate_limit.check("login-failures", email, _LOGIN_FAILURE_LIMIT)
+
     async with database.session_scope() as session:
-        found = await repository.find_by_email(session, body.email.strip().lower())
+        found = await repository.find_by_email(session, email)
 
     # One message for both failures, so the endpoint does not reveal which
     # addresses have an account.
     if found is None or not passwords.verify_password(body.password, found[1]):
+        await rate_limit.count("login-failures", email, _LOGIN_FAILURE_WINDOW)
         raise HTTPException(status_code=401, detail="invalid email or password")
 
+    await rate_limit.reset("login-failures", email)
     return await _begin_session(response, found[0])
 
 

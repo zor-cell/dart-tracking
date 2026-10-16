@@ -9,9 +9,10 @@ Everything that *changes* a game runs over the WebSocket instead, so one
 mutation reaches every device in the room on one path (core/socket/socket.py).
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.core.services import rate_limit
 from app.api.core.socket.services.game_hub import hub
 from app.api.features.auth.services.current_user import AuthenticatedUser, CurrentUser
 from app.api.features.game.domain.game_status import GameStatus
@@ -27,6 +28,9 @@ from app.api.features.player.persistence.player_repository import repository as 
 from app.infrastructure import database
 
 router = APIRouter(prefix="/games", tags=["Game"])
+
+# Games started without an account, per IP per hour.
+_ANONYMOUS_GAME_LIMIT, _ANONYMOUS_GAME_WINDOW = 30, 60 * 60
 
 
 async def _resolve_players(
@@ -59,9 +63,16 @@ async def _resolve_players(
 
 
 @router.post("", response_model=GameStateDto, status_code=201)
-async def create_game(body: GameConfigDto, user: CurrentUser) -> GameStateDto:
+async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) -> GameStateDto:
     if not body.players:
         raise HTTPException(status_code=422, detail="at least one player is required")
+    if user is None:
+        await rate_limit.enforce(
+            "anonymous-game",
+            rate_limit.client_ip(request),
+            _ANONYMOUS_GAME_LIMIT,
+            _ANONYMOUS_GAME_WINDOW,
+        )
 
     # Anonymous play stays possible: without an account the game simply has no
     # owner, and every seat is a fresh guest.
@@ -76,7 +87,7 @@ async def create_game(body: GameConfigDto, user: CurrentUser) -> GameStateDto:
             body.variant,
             body.checkout_mode,
             owner_user_id=owner_id,
-            evaluation_enabled=body.evaluation_enabled,
+            evaluation_enabled=body.evaluation_enabled and user is not None and user.is_admin,
         )
 
     if body.rematch_of:
