@@ -13,7 +13,7 @@ Usage:
     uv run python scripts/evaluation/report.py <game-id> ...
     uv run python scripts/evaluation/report.py --out results/evening-1
 
-Writes `accuracy.md` to `testdata/evaluation/_report` and, into each game's frame
+Writes `accuracy_<timestamp>.md` to `testdata/_reports` and, into each game's frame
 folder, the `ground_truth.txt` the offline runner reads - so a corrected visit
 becomes a test case without being labelled by hand.
 """
@@ -24,6 +24,7 @@ import math
 import sys
 from collections import Counter
 from collections.abc import Callable
+from datetime import datetime
 from pathlib import Path
 
 # Import app.* from src/ (as `--app-dir src` does at runtime) and scripts.* from
@@ -57,10 +58,7 @@ from app.infrastructure.config import get_settings  # noqa: E402
 from scripts.common import rate_table, write_markdown  # noqa: E402
 from scripts.evaluation.selection import add_selection_arguments  # noqa: E402
 
-# Not `_results`: that is where `run_all.py` writes when pointed at this tree,
-# and it wipes the folder before each run.
-REPORT_DIR = _BACKEND / "testdata" / "evaluation" / "_report"
-REPORT_NAME = "accuracy.md"
+REPORT_DIR = _BACKEND / "testdata" / "_reports"
 GROUND_TRUTH_NAME = "ground_truth.txt"
 # What a frame holding no new dart is called in the offline runner's truth files.
 NO_CHANGE_LABEL = "NO_CHANGE"
@@ -431,7 +429,7 @@ def main() -> int:
     parser.add_argument("games", nargs="*", help="game ids; default is every finished game")
     add_selection_arguments(parser)
     parser.add_argument(
-        "--out", type=Path, default=REPORT_DIR, help="where accuracy.md goes"
+        "--out", type=Path, default=REPORT_DIR, help="where the report goes"
     )
     args = parser.parse_args()
 
@@ -463,8 +461,9 @@ def main() -> int:
 
     accuracy = summarise(len(games), all_visits, judgements)
     args.out.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     path = write_markdown(
-        args.out, REPORT_NAME, build_report(accuracy, games, judgements, failures)
+        args.out, f"accuracy_{stamp}.md", build_report(accuracy, games, judgements, failures)
     )
 
     print(
