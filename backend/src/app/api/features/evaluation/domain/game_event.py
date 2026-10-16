@@ -62,6 +62,7 @@ class GameEvent:
     # Detector figures for this throw (fragment count, blob size, alignment
     # shift), so a mis-scored dart can be correlated with how it arrived.
     metrics: dict[str, float] | None = None
+    tracker_version: int | None = None  # pipeline version of the server that wrote it
     created_at: datetime | None = None
 
     @property

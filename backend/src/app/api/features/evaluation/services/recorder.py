@@ -7,6 +7,7 @@ in the socket.
 
 import logging
 from collections.abc import Callable
+from dataclasses import replace
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -39,6 +40,7 @@ from app.api.features.game.dto.command.replace_dart import ReplaceDartDto
 from app.api.features.game.dto.command.undo import UndoDto
 from app.api.features.game.persistence.game_repository import repository as game_repository
 from app.infrastructure import database
+from app.infrastructure.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +80,9 @@ def position_of(game: Game) -> VisitPosition:
 def append(session: AsyncSession, game_id: str, event: GameEvent | None) -> None:
     """Queue an event in the transaction that carries the change it describes."""
     if event is not None:
-        events.append(session, game_id, event)
+        events.append(
+            session, game_id, replace(event, tracker_version=get_settings().tracker_version)
+        )
 
 
 def for_command(command: GameCommand, *, camera_armed: bool) -> Recording:
@@ -208,7 +212,7 @@ async def note_failure(
             if game is None:
                 return
             at = position_of(game)
-            events.append(
+            append(
                 session,
                 game_id,
                 GameEvent(
@@ -235,7 +239,7 @@ async def note_calibration(game_id: str, client_id: str, angle: CameraAngle) -> 
             if game is None:
                 return
             at = position_of(game)
-            events.append(
+            append(
                 session,
                 game_id,
                 GameEvent(

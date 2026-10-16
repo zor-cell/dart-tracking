@@ -37,3 +37,4 @@ class GameEventTable(Base):
     target_index: Mapped[int | None] = mapped_column(Integer, default=None)
     failure: Mapped[str | None] = mapped_column(String(32), default=None)
     metrics: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=None)
+    tracker_version: Mapped[int | None] = mapped_column(Integer, default=None)

@@ -16,9 +16,9 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY . .
 RUN uv sync --frozen --no-dev
 
-# The build recorded with every game; the deploy passes its build number.
-ARG APP_BUILD
-ENV APP_BUILD=$APP_BUILD
+# the tracker version passed from the deploy
+ARG TRACKER_VERSION
+ENV TRACKER_VERSION=$TRACKER_VERSION
 
 EXPOSE 8000
 

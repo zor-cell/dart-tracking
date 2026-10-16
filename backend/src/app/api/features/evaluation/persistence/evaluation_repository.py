@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import distinct, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.evaluation.domain.accuracy import LoggedGame
@@ -36,6 +36,7 @@ class EvaluationRepository:
                 target_index=event.target_index,
                 failure=event.failure,
                 metrics=event.metrics,
+                tracker_version=event.tracker_version,
             )
         )
 
@@ -69,6 +70,7 @@ class EvaluationRepository:
                 target_index=row.target_index,
                 failure=row.failure,
                 metrics=row.metrics,
+                tracker_version=row.tracker_version,
                 created_at=row.created_at,
             )
             for row in rows
@@ -79,19 +81,20 @@ class EvaluationRepository:
     ) -> list[LoggedGame]:
         """Games that have a log, oldest first. `evaluation_only` narrows it to
         the ones marked as a test run, `finished_only` to the ones with a winner."""
-        # `created_at` is selected as well as ordered on: Postgres rejects a
-        # DISTINCT whose ORDER BY names a column that is not in the list.
+        versions = func.array_agg(distinct(GameEventTable.tracker_version)).filter(
+            GameEventTable.tracker_version.is_not(None)
+        )
         statement = (
             select(
                 GameTable.id,
                 GameTable.mode,
                 GameTable.created_at,
                 GameTable.evaluation_enabled,
-                GameTable.tracker_version,
+                versions.label("tracker_versions"),
             )
             .join(GameEventTable, GameEventTable.game_id == GameTable.id)
+            .group_by(GameTable.id)
             .order_by(GameTable.created_at)
-            .distinct()
         )
         if evaluation_only:
             statement = statement.where(GameTable.evaluation_enabled.is_(True))
@@ -104,7 +107,7 @@ class EvaluationRepository:
                 mode=row.mode,
                 created_at=row.created_at,
                 evaluation_enabled=row.evaluation_enabled,
-                tracker_version=row.tracker_version,
+                tracker_versions=tuple(sorted(row.tracker_versions or ())),
             )
             for row in (await session.execute(statement)).all()
         ]

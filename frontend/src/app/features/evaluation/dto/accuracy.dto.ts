@@ -49,7 +49,7 @@ export interface GameAccuracyDto {
   readonly mode: GameMode;
   readonly createdAt: string;
   readonly evaluationEnabled: boolean;
-  readonly trackerVersion: number | null;
+  readonly trackerVersions: readonly number[];
   readonly camera: CameraAngleDto | null;
   readonly summary: AccuracySummaryDto;
 }

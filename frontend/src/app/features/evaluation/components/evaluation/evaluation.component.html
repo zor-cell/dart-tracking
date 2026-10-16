@@ -94,7 +94,9 @@
           <ul class="rows">
             <li class="row">
               <span class="row__label">Tracker-Version</span>
-              <span class="row__value">{{ game.trackerVersion ?? 'unbekannt' }}</span>
+              <span class="row__value">{{
+                game.trackerVersions.length ? game.trackerVersions.join(', ') : 'unbekannt'
+              }}</span>
             </li>
             @if (game.camera; as camera) {
               <li class="row">

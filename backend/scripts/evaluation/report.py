@@ -8,7 +8,8 @@ Usage:
     uv run python scripts/evaluation/report.py                       # finished games, as the page
     uv run python scripts/evaluation/report.py --test-runs-only
     uv run python scripts/evaluation/report.py --include-unfinished
-    uv run python scripts/evaluation/report.py --min-version 170
+    uv run python scripts/evaluation/report.py --min-version 42
+    uv run python scripts/evaluation/report.py --version 42
     uv run python scripts/evaluation/report.py <game-id> ...
     uv run python scripts/evaluation/report.py --out results/evening-1
 
@@ -245,8 +246,8 @@ def miss_table(judgements: list[Judgement]) -> list[str]:
 
 
 def version_of(game: JudgedGame) -> str:
-    version = game.game.tracker_version
-    return "unknown" if version is None else str(version)
+    versions = game.game.tracker_versions
+    return ", ".join(map(str, versions)) if versions else "unknown"
 
 
 def tilt_band(angle: CameraAngle) -> str:
@@ -407,6 +408,7 @@ async def gather(
     test_runs_only: bool,
     include_unfinished: bool,
     min_version: int | None,
+    version: int | None,
 ) -> list[JudgedGame]:
     """The games asked for, selected exactly as the evaluation page selects them."""
     database.init(get_settings().database_url)
@@ -418,6 +420,7 @@ async def gather(
                 test_runs_only=test_runs_only,
                 include_unfinished=include_unfinished,
                 min_version=min_version,
+                version=version,
             )
     finally:
         await database.close()
@@ -438,6 +441,7 @@ def main() -> int:
             args.test_runs_only,
             args.include_unfinished,
             args.min_version,
+            args.version,
         )
     )
     if not games:

@@ -247,7 +247,7 @@ class LoggedGame:
     mode: int
     created_at: datetime
     evaluation_enabled: bool
-    tracker_version: int | None = None
+    tracker_versions: tuple[int, ...] = ()  # the ones its events were recorded with, ascending
 
 
 @dataclass(frozen=True)

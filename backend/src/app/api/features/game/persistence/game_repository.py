@@ -40,7 +40,6 @@ class GameRepository:
         checkout_mode: CheckoutMode,
         owner_user_id: str | None = None,
         evaluation_enabled: bool = False,
-        tracker_version: int | None = None,
     ) -> Game:
         """The identities are resolved by the router, which owns the rules about
         who may take a seat. Here they are only seated, in the order given."""
@@ -65,7 +64,6 @@ class GameRepository:
             current_player_index=game.current_player_index,
             revision=game.revision,
             evaluation_enabled=evaluation_enabled,
-            tracker_version=tracker_version,
             owner_user_id=owner_user_id,
         )
         session.add(row)

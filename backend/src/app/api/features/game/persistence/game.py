@@ -21,15 +21,11 @@ class GameTable(Base):
     current_player_index: Mapped[int] = mapped_column(Integer)
     revision: Mapped[int] = mapped_column(Integer)
     evaluation_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
-    tracker_version: Mapped[int | None] = mapped_column(Integer, default=None)
-    # The open visit's shadow darts as {value, multiplier, position}; only that visit has any.
     shadow_darts: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
     owner_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
-    # Touched on every write, so a game that nobody has come back to can be told
-    # from one still being played.
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

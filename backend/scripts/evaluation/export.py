@@ -73,7 +73,10 @@ async def _rows(session, table: Table, key, game_ids: list[str]) -> list[Any]:
 
 
 async def list_games(
-    test_runs_only: bool, include_unfinished: bool, min_version: int | None
+    test_runs_only: bool,
+    include_unfinished: bool,
+    min_version: int | None,
+    version: int | None,
 ) -> list[tuple[LoggedGame, int]]:
     """The games the report would read, with their event counts, oldest first."""
     database.init(get_settings().database_url)
@@ -84,6 +87,7 @@ async def list_games(
                 test_runs_only=test_runs_only,
                 include_unfinished=include_unfinished,
                 min_version=min_version,
+                version=version,
             )
             counts = dict(
                 (
@@ -148,7 +152,9 @@ def main() -> int:
 
     def selected() -> list[tuple[LoggedGame, int]]:
         return asyncio.run(
-            list_games(args.test_runs_only, args.include_unfinished, args.min_version)
+            list_games(
+                args.test_runs_only, args.include_unfinished, args.min_version, args.version
+            )
         )
 
     if args.list:

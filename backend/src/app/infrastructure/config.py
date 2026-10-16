@@ -41,10 +41,10 @@ class Settings(BaseSettings):
     refresh_token_days: int = 30
     cookie_secure: bool = False
 
-    # Deploy build number the image was built from; unset in a local run.
-    app_build: int | None = None
+    # Pipeline version the image was built from (see deploy.yaml); unset in a local run.
+    tracker_version: int | None = None
 
-    @field_validator("app_build", mode="before")
+    @field_validator("tracker_version", mode="before")
     @classmethod
     def _blank_is_unset(cls, value: object) -> object:
         return None if value == "" else value

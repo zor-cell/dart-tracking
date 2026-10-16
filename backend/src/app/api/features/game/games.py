@@ -25,7 +25,6 @@ from app.api.features.game.persistence.game_repository import repository
 from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.persistence.player_repository import repository as players
 from app.infrastructure import database
-from app.infrastructure.config import get_settings
 
 router = APIRouter(prefix="/games", tags=["Game"])
 
@@ -78,7 +77,6 @@ async def create_game(body: GameConfigDto, user: CurrentUser) -> GameStateDto:
             body.checkout_mode,
             owner_user_id=owner_id,
             evaluation_enabled=body.evaluation_enabled,
-            tracker_version=get_settings().app_build,
         )
 
     if body.rematch_of:

@@ -6,7 +6,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       args:
-        APP_BUILD: ${APP_BUILD:-}
+        TRACKER_VERSION: ${TRACKER_VERSION:-}
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?missing in .env}
@@ -41,7 +41,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        APP_BUILD: ${APP_BUILD:-}
+        BUILD_NUMBER: ${BUILD_NUMBER:-}
     restart: unless-stopped
     ports:
       - "10020:80"

@@ -25,5 +25,16 @@ jobs:
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # the tracker version counts commits over the whole history
       - name: Build and start the stack
-        run: APP_BUILD=$((GITHUB_RUN_NUMBER + 1000)) docker compose up -d --build --wait
+        run: |
+          # Tracker version: commits that changed the calibration or detection pipeline.
+          TRACKER_VERSION=$(git rev-list --count HEAD -- \
+            backend/src/app/api/features/calibration/domain \
+            backend/src/app/api/features/calibration/services \
+            backend/src/app/api/features/detection/domain \
+            backend/src/app/api/features/detection/services)
+          export TRACKER_VERSION
+          export BUILD_NUMBER=$((GITHUB_RUN_NUMBER + 1000))
+          docker compose up -d --build --wait
