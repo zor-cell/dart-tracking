@@ -48,6 +48,7 @@ from app.api.features.calibration.domain.board_geometry import (
 from app.api.features.calibration.domain.calibration import Calibration
 from app.api.features.calibration.domain.calibration_failure import CalibrationFailure
 from app.api.features.calibration.debug.trace import CalibrationTrace
+from app.api.features.calibration.services.ring_measurement import measure_rings
 
 # HSV bounds. Red wraps around the hue axis, so it needs two ranges.
 _RED_LOWER_1 = np.array([0, 90, 60])
@@ -170,7 +171,11 @@ def detect_board(image: np.ndarray) -> Calibration | CalibrationFailure:
         if shift < _CENTRE_CONVERGENCE_PX:
             break
 
-    return Calibration(homography=homography, image_width=width, image_height=height)
+    # Unsmoothed: the cleaning kernel would shift the ring edges by its own width.
+    rings = measure_rings(homography, cv2.bitwise_or(*_raw_colour_masks(image)))
+    return Calibration(
+        homography=homography, image_width=width, image_height=height, rings=rings
+    )
 
 
 def _record_failure(failure: CalibrationFailure) -> CalibrationFailure:
@@ -190,15 +195,19 @@ def _project_board_centre(homography: np.ndarray) -> tuple[float, float]:
     return _project_to_image(np.linalg.inv(homography), 0.0, 0.0)
 
 
-def _colour_masks(image: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Binary masks of the red and green board segments."""
+def _raw_colour_masks(image: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Red and green as the HSV bounds see them, before any cleaning."""
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-
     red = cv2.bitwise_or(
         cv2.inRange(hsv, _RED_LOWER_1, _RED_UPPER_1),
         cv2.inRange(hsv, _RED_LOWER_2, _RED_UPPER_2),
     )
-    green = cv2.inRange(hsv, _GREEN_LOWER, _GREEN_UPPER)
+    return red, cv2.inRange(hsv, _GREEN_LOWER, _GREEN_UPPER)
+
+
+def _colour_masks(image: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Binary masks of the red and green board segments."""
+    red, green = _raw_colour_masks(image)
 
     # Close the wire gaps between segments, then drop isolated speckle.
     red = cv2.morphologyEx(red, cv2.MORPH_CLOSE, _MORPH_KERNEL)

@@ -13,8 +13,8 @@ import numpy as np
 
 from app.api.features.calibration.domain.board_geometry import (
     BULL_RADIUS,
+    BULLSEYE_RADIUS,
     DOUBLE_OUTER_RADIUS,
-    RING_RADII,
     sector_boundary_angles,
 )
 from app.api.features.calibration.domain.calibration import Calibration
@@ -27,9 +27,17 @@ _CIRCLE_SEGMENTS = 72
 def build_overlay(calibration: Calibration) -> list[list[list[float]]]:
     """Ring circles and sector wires as normalized polylines."""
     inverse = calibration.inverse
-    polylines = [
-        _project(_circle_points(radius), inverse, calibration) for radius in RING_RADII
-    ]
+    rings = calibration.rings
+    # Outermost last so it paints on top.
+    radii = (
+        BULLSEYE_RADIUS,
+        BULL_RADIUS,
+        rings.triple_inner,
+        rings.triple_outer,
+        rings.double_inner,
+        rings.double_outer,
+    )
+    polylines = [_project(_circle_points(radius), inverse, calibration) for radius in radii]
     polylines.extend(
         _project(_sector_wire_points(angle), inverse, calibration)
         for angle in sector_boundary_angles()

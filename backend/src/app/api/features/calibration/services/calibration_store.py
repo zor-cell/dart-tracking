@@ -11,9 +11,11 @@ must never be a source of arbitrary objects to unpickle.
 """
 
 import json
+from dataclasses import asdict
 
 import numpy as np
 
+from app.api.features.calibration.domain.board_geometry import STANDARD_RINGS, RingRadii
 from app.api.features.calibration.domain.calibration import Calibration
 from app.infrastructure import redis_client
 
@@ -33,6 +35,7 @@ class CalibrationStore:
                 "homography": calibration.homography.tolist(),
                 "image_width": calibration.image_width,
                 "image_height": calibration.image_height,
+                "rings": asdict(calibration.rings),
             }
         )
         await redis_client.client().set(_key(game_id, client_id), payload, ex=_TTL_SECONDS)
@@ -47,6 +50,7 @@ class CalibrationStore:
             homography=np.asarray(data["homography"], dtype=np.float64),
             image_width=data["image_width"],
             image_height=data["image_height"],
+            rings=RingRadii(**data["rings"]) if "rings" in data else STANDARD_RINGS,
         )
 
 

@@ -214,7 +214,7 @@ def detect_dart(
     tip, far_end = _tip_and_far_end(blob, pixels_per_mm)
     trace.anchor_to_tip_mm = _anchor_distance(tip, pixels_per_mm)
     board_point = _to_board(calibration.homography, tip)
-    segment = segment_at(*board_point)
+    segment = segment_at(*board_point, calibration.rings)
     if segment == MISS and trace.dart_area_mm2 < _MIN_MISS_AREA_MM2:
         trace.rejected_miss = True
         return _record_failure(DetectionFailure.NO_CHANGE)

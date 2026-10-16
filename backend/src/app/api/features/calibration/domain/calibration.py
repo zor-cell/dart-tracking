@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from app.api.features.calibration.domain.board_geometry import STANDARD_RINGS, RingRadii
+
 
 @dataclass
 class Calibration:
@@ -17,6 +19,7 @@ class Calibration:
     homography: np.ndarray  # 3x3, image -> board
     image_width: int
     image_height: int
+    rings: RingRadii = STANDARD_RINGS  # as measured on this board's picture
 
     @property
     def inverse(self) -> np.ndarray:

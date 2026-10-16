@@ -19,15 +19,18 @@ TRIPLE_INNER_RADIUS = TRIPLE_OUTER_RADIUS - RING_WIDTH
 DOUBLE_OUTER_RADIUS = 170.0  # outer edge of scoring area
 DOUBLE_INNER_RADIUS = DOUBLE_OUTER_RADIUS - RING_WIDTH
 
-# Drawn as the overlay, outermost last so it paints on top.
-RING_RADII = (
-    BULLSEYE_RADIUS,
-    BULL_RADIUS,
-    TRIPLE_INNER_RADIUS,
-    TRIPLE_OUTER_RADIUS,
-    DOUBLE_INNER_RADIUS,
-    DOUBLE_OUTER_RADIUS,
-)
+
+@dataclass(frozen=True)
+class RingRadii:
+    """Where the triple and double ring of one board lie, in mm from the centre."""
+
+    triple_inner: float = TRIPLE_INNER_RADIUS
+    triple_outer: float = TRIPLE_OUTER_RADIUS
+    double_inner: float = DOUBLE_INNER_RADIUS
+    double_outer: float = DOUBLE_OUTER_RADIUS
+
+
+STANDARD_RINGS = RingRadii()
 
 SECTOR_COUNT = 20
 SECTOR_ANGLE = 2 * math.pi / SECTOR_COUNT  # 18 degrees
@@ -110,11 +113,11 @@ class Segment:
 MISS = Segment(value=0, multiplier=0)
 
 
-def segment_at(x: float, y: float) -> Segment:
+def segment_at(x: float, y: float, rings: RingRadii = STANDARD_RINGS) -> Segment:
     """Which segment the board coordinate (mm) falls in.
 
     This is the last step of scoring: the homography has already turned a pixel
-    into millimetres, and from here it is pure geometry against the standard.
+    into millimetres, and from here it is pure geometry against the board's rings.
     """
     radius = math.hypot(x, y)
 
@@ -122,7 +125,7 @@ def segment_at(x: float, y: float) -> Segment:
         return Segment(value=25, multiplier=2)
     if radius <= BULL_RADIUS:
         return Segment(value=25, multiplier=1)
-    if radius > DOUBLE_OUTER_RADIUS:
+    if radius > rings.double_outer:
         return MISS
 
     # Sectors run clockwise from 20 at the top, so the angle decreases as the
@@ -130,9 +133,9 @@ def segment_at(x: float, y: float) -> Segment:
     index = round((FIRST_SECTOR_CENTRE_ANGLE - math.atan2(y, x)) / SECTOR_ANGLE)
     value = SECTOR_ORDER[index % SECTOR_COUNT]
 
-    if TRIPLE_INNER_RADIUS <= radius <= TRIPLE_OUTER_RADIUS:
+    if rings.triple_inner <= radius <= rings.triple_outer:
         return Segment(value=value, multiplier=3)
-    if DOUBLE_INNER_RADIUS <= radius <= DOUBLE_OUTER_RADIUS:
+    if rings.double_inner <= radius <= rings.double_outer:
         return Segment(value=value, multiplier=2)
     return Segment(value=value, multiplier=1)
 
