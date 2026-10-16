@@ -114,13 +114,14 @@ unter Settings → Secrets and variables → Actions angelegt sein:
 | Container | Image | Ports |
 |---|---|---|
 | `backend_container` | `python:3.12-slim` + uv, uvicorn auf `:8000` | keine Host-Freigabe |
-| `frontend_container` | `nginx:1.25-alpine` mit dem gebauten Angular-Bundle | `10020:80` |
+| `frontend_container` | `nginxinc/nginx-unprivileged:1.30-alpine` mit dem gebauten Angular-Bundle | `10020:8080` |
 
 Das Backend ist **bewusst nicht nach außen freigegeben**. Erreichbar ist nur
-nginx, der laut [frontend/default.conf](frontend/default.conf) `/api/` an
-`backend:8000` weiterreicht — inklusive `Upgrade`/`Connection`-Headern für den
-WebSocket und 3600 s Timeouts, damit eine ruhende Verbindung während eines
-Spiels nicht abgeräumt wird.
+nginx, der laut [frontend/nginx/default.conf](frontend/nginx/default.conf) `/api/` an
+`backend:8000` weiterreicht. Nur `/api/ws/` bekommt die `Upgrade`/`Connection`-Header
+und 3600 s Timeouts, damit eine ruhende Verbindung während eines Spiels nicht
+abgeräumt wird. Die Security-Header stehen in
+[frontend/nginx/snippets/security-headers.conf](frontend/nginx/snippets/security-headers.conf).
 
 Weil Frontend und API damit dieselbe Origin teilen, leitet das Frontend seine
 URLs zur Laufzeit ab ([environment.ts](frontend/src/environments/environment.ts)):
