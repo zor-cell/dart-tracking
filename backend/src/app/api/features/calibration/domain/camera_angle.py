@@ -28,14 +28,7 @@ class CameraAngle:
 
 def camera_angle(calibration: Calibration) -> CameraAngle | None:
     """The viewing angles of the camera this calibration was taken with."""
-    width, height = calibration.image_width, calibration.image_height
-    to_centre = np.array([[1.0, 0.0, -width / 2], [0.0, 1.0, -height / 2], [0.0, 0.0, 1.0]])
-    board_to_image = to_centre @ calibration.inverse
-
-    focal = _estimate_focal(board_to_image, max(width, height))
-    if focal is None:
-        focal = _FALLBACK_FOCAL_35MM * math.hypot(width, height) / _FULL_FRAME_DIAGONAL_MM
-
+    board_to_image, focal = _centred_projection(calibration)
     centre = _camera_centre(board_to_image, focal)
     if centre is None:
         return None
@@ -46,6 +39,36 @@ def camera_angle(calibration: Calibration) -> CameraAngle | None:
         vertical=math.degrees(math.atan2(y, z)),
         focal_px=focal,
     )
+
+
+def outward_direction(calibration: Calibration, x: float, y: float) -> np.ndarray | None:
+    """Image displacement (px) of a point 1 mm off the board at (x, y), towards the camera."""
+    board_to_image, focal = _centred_projection(calibration)
+    scaled = np.diag([1.0 / focal, 1.0 / focal, 1.0]) @ board_to_image
+    norm = (np.linalg.norm(scaled[:, 0]) + np.linalg.norm(scaled[:, 1])) / 2
+    if norm == 0.0:
+        return None
+    sign = 1.0 if scaled[2, 2] > 0 else -1.0
+    normal = np.cross(scaled[:, 0], scaled[:, 1])
+    lift = np.diag([focal, focal, 1.0]) @ (normal / np.linalg.norm(normal)) * norm * sign
+
+    on_board = board_to_image @ np.array([x, y, 1.0])
+    raised = on_board + lift
+    if on_board[2] == 0.0 or raised[2] == 0.0:
+        return None
+    return raised[:2] / raised[2] - on_board[:2] / on_board[2]
+
+
+def _centred_projection(calibration: Calibration) -> tuple[np.ndarray, float]:
+    """Board -> image with the image centre as origin, and the focal length in pixels."""
+    width, height = calibration.image_width, calibration.image_height
+    to_centre = np.array([[1.0, 0.0, -width / 2], [0.0, 1.0, -height / 2], [0.0, 0.0, 1.0]])
+    board_to_image = to_centre @ calibration.inverse
+
+    focal = _estimate_focal(board_to_image, max(width, height))
+    if focal is None:
+        focal = _FALLBACK_FOCAL_35MM * math.hypot(width, height) / _FULL_FRAME_DIAGONAL_MM
+    return board_to_image, focal
 
 
 def _estimate_focal(board_to_image: np.ndarray, long_edge: int) -> float | None:

@@ -27,11 +27,11 @@ Pipeline:
    including a player standing in front of the board to pull their darts, which
    the client's trigger sends and cannot itself rule out.
 5. Fit the dart's principal axis and take the tip as the end opposite the
-   flight, the flight being the wider, feathered end. Orienting by the dart's own
-   shape rather than by "nearest the board centre" keeps a dart high on the board
-   — flight leaning back over the bull — from being scored off its flight. Only
-   the tip touches the board plane, which is the only part the homography is
-   valid for.
+   flight: the end sticking out towards the camera, or the wider one where the
+   view is too frontal. Orienting by the dart itself rather than by "nearest the
+   board centre" keeps a dart high on the board — flight leaning back over the
+   bull — from being scored off its flight. Only the tip touches the board plane,
+   which is the only part the homography is valid for.
 6. Map the tip through the homography and read off the segment.
 
 Because differencing is against the previous frame rather than an empty board,
@@ -51,6 +51,7 @@ from app.api.features.calibration.domain.board_geometry import (
     single_bed_centres,
 )
 from app.api.features.calibration.domain.calibration import Calibration
+from app.api.features.calibration.domain.camera_angle import outward_direction
 from app.api.features.detection.domain.detection import Dart
 from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.detection.debug.trace import DetectionTrace
@@ -130,9 +131,14 @@ _MIN_SPECKLE_AREA_PX = 4.0
 # not affect how far out the tip sits — that is always the axis extreme.
 _TIP_SPAN_MM = 4.0
 
-# Band at each axis end used to measure its width. The wider end is the flight,
-# which is what orients the dart and so decides which end is the tip.
+# Band at each axis end used to measure its width; the wider end is the flight
+# when the camera geometry cannot tell.
 _FLIGHT_SPAN_MM = 12.0
+
+# The camera geometry orients the dart when height off the board shows in the image
+# at this many px per in-plane px, and the axis runs at least this close to it (cos).
+_MIN_HEIGHT_VISIBILITY = 0.3
+_MIN_AXIS_ALIGNMENT = 0.5
 
 # How far the warp's valid area is pulled in from its own edge. Bilinear
 # interpolation blends the fill value into the last row of real pixels, so the
@@ -211,7 +217,9 @@ def detect_dart(
         if trace.changed_from_empty < _MIN_CHANGED_FROM_EMPTY:
             return _record_failure(DetectionFailure.DARTS_REMOVED)
 
-    tip, far_end = _tip_and_far_end(blob, pixels_per_mm)
+    centre = _to_board(calibration.homography, tuple(blob.mean(axis=0)))
+    outward = outward_direction(calibration, *centre)
+    tip, far_end = _tip_and_far_end(blob, pixels_per_mm, outward)
     trace.anchor_to_tip_mm = _anchor_distance(tip, pixels_per_mm)
     board_point = _to_board(calibration.homography, tip)
     segment = segment_at(*board_point, calibration.rings)
@@ -710,16 +718,10 @@ def _measure_blob(points: np.ndarray, pixels_per_mm: float) -> None:
 
 
 def _tip_and_far_end(
-    points: np.ndarray, pixels_per_mm: float
+    points: np.ndarray, pixels_per_mm: float, outward: np.ndarray | None
 ) -> tuple[tuple[float, float], tuple[float, float]]:
-    """The dart's two ends along its principal axis, tip first.
-
-    The tip is the end opposite the flight, and the flight is the wider end:
-    the feathers spread the silhouette while the barrel and point stay thin.
-    Orienting the dart by its own shape rather than by "nearest the board
-    centre" is what lets a dart high on the board — flight leaning back over the
-    bull — still be read tip-inward instead of scored off its flight.
-    """
+    """The dart's two ends along its principal axis, tip first. The flight is the end lying
+    `outward` (image direction off the board) where that is clear, else the wider end."""
     mean, eigenvectors = cv2.PCACompute(points, mean=None, maxComponents=1)
     axis = eigenvectors[0]
     centred = points - mean
@@ -744,6 +746,13 @@ def _tip_and_far_end(
         end_widths.append(float(np.percentile(widths[band], 90)))
 
     flight = int(np.argmax(end_widths))
+    trace.oriented_by = "width"
+    if outward is not None and np.linalg.norm(outward) / pixels_per_mm >= _MIN_HEIGHT_VISIBILITY:
+        along = ends[1] - ends[0]
+        alignment = float(along @ outward) / (np.linalg.norm(along) * np.linalg.norm(outward))
+        if abs(alignment) >= _MIN_AXIS_ALIGNMENT:
+            flight = 1 if alignment > 0 else 0
+            trace.oriented_by = "geometry"
     tip, far_end = ends[1 - flight], ends[flight]
     trace.axis_ends = (tip, far_end)
     trace.end_widths = (float(end_widths[1 - flight]), float(end_widths[flight]))

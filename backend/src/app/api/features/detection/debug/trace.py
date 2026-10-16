@@ -67,10 +67,11 @@ class DetectionTrace:
     # Share of the blob still differing from the empty board; -1 when not measured.
     changed_from_empty: float = -1.0
 
-    # Axis fit on the fused blob: both ends (tip first) and the width at each,
-    # which is what decided which end is the flight.
+    # Axis fit on the fused blob: both ends (tip first), the width at each, and
+    # whether "geometry" (camera pose) or "width" decided which end is the flight.
     axis_ends: tuple[np.ndarray, np.ndarray] | None = None
     end_widths: tuple[float, float] | None = None
+    oriented_by: str | None = None
 
     pixels_per_mm: float = 0.0
     # Area floors in force for this frame, in pixels, derived from `pixels_per_mm`.
