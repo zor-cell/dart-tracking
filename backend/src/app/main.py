@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(
     title="Dart Tracking API",
     description="Backend for automatic dart-tracking",
-    version="0.1.0",
+    version="1.0.0",
     lifespan=lifespan,
 )
 

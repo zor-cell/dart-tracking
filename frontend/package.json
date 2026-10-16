@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "0.7.0",
+  "version": "1.0.0",
   "scripts": {
     "ng": "ng",
     "version:generate": "node scripts/generate-version.mjs",
