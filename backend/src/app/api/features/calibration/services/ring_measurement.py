@@ -51,7 +51,12 @@ _EDGE_INSET_MM = 0.5
 def measure_rings(homography: np.ndarray, colour: np.ndarray) -> RingRadii:
     """The board's ring radii read off its red/green mask; standard where too few rays agree."""
     inverse = np.linalg.inv(homography)
-    edges: dict[str, list[float]] = {"triple_inner": [], "triple_outer": [], "double_inner": []}
+    edges: dict[str, list[float]] = {
+        "triple_inner": [],
+        "triple_outer": [],
+        "double_inner": [],
+        "double_outer": [],
+    }
     scales: list[float] = []
 
     for index in range(SECTOR_COUNT):
@@ -69,6 +74,7 @@ def measure_rings(homography: np.ndarray, colour: np.ndarray) -> RingRadii:
             double = _ring_run(coloured, DOUBLE_INNER_RADIUS, DOUBLE_OUTER_RADIUS, bridge)
             if double is not None:
                 edges["double_inner"].append(double[0])
+                edges["double_outer"].append(double[1])
 
     if not scales or statistics.median(scales) < _MIN_PX_PER_MM:
         return STANDARD_RINGS
@@ -78,10 +84,12 @@ def measure_rings(homography: np.ndarray, colour: np.ndarray) -> RingRadii:
         "triple_inner": _settle(edges["triple_inner"], TRIPLE_INNER_RADIUS, _EDGE_INSET_MM, rays),
         "triple_outer": _settle(edges["triple_outer"], TRIPLE_OUTER_RADIUS, -_EDGE_INSET_MM, rays),
         "double_inner": _settle(edges["double_inner"], DOUBLE_INNER_RADIUS, _EDGE_INSET_MM, rays),
+        "double_outer": _settle(edges["double_outer"], DOUBLE_OUTER_RADIUS, -_EDGE_INSET_MM, rays),
     }
-    if not measured["triple_inner"] < measured["triple_outer"] < measured["double_inner"]:
+    radii = list(measured.values())
+    if radii != sorted(radii):
         return STANDARD_RINGS
-    return RingRadii(**measured, double_outer=STANDARD_RINGS.double_outer)
+    return RingRadii(**measured)
 
 
 def _settle(edges: list[float], standard: float, inset: float, rays: int) -> float:
