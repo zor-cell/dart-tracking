@@ -22,7 +22,7 @@ from app.api.core.domain.device_role import DeviceRole
 from app.api.core.socket.dto.server_message import ServerMessage
 
 
-@dataclass(frozen=True)
+@dataclass
 class Connection:
     """One device in a room: its socket, and which device it is.
 
@@ -33,6 +33,7 @@ class Connection:
 
     websocket: WebSocket
     client: Client
+    admin: bool = False
 
 
 class GameHub:

@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, effect, inject, signal, untracked } from '@angular/core';
 import { Observable, Subject, filter } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ClientStateDto } from '../dto/client-state.dto';
@@ -6,6 +6,7 @@ import { ServerMessage } from '../dto/server-message';
 import { ClientFrame, ClientMessage } from '../dto/client-message';
 import { DeviceRole } from '../models/device-role';
 import { ThrowTriggerDto } from '../../../features/detection/dto/throw-trigger.dto';
+import { AuthService } from '../../../features/auth/services/auth.service';
 
 export type SocketConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
@@ -22,6 +23,8 @@ const CLIENT_ID_KEY = 'dart-tracking.clientId';
  */
 @Injectable({ providedIn: 'root' })
 export class SocketService {
+  private readonly auth = inject(AuthService);
+
   readonly connectionStatus = signal<SocketConnectionStatus>('disconnected');
 
   /**
@@ -47,6 +50,15 @@ export class SocketService {
   // A role asked for but not yet confirmed. The handshake answers with the role
   // the device had *before* the command, which must not overwrite the new one.
   private requestedRole: DeviceRole | null = null;
+
+  constructor() {
+    // An admin's connection is signed in on every connect and on a sign-in while connected.
+    effect(() => {
+      if (this.auth.isAdmin() && this.connectionStatus() === 'connected') {
+        untracked(() => void this.authenticate());
+      }
+    });
+  }
 
   /**
    * Tell the server what this device does in the game. Requires a socket, so it
@@ -166,6 +178,14 @@ export class SocketService {
     const message: ClientFrame =
       type === 'detection_frame' ? { type, image, debug, trigger } : { type, image, debug };
     this.socket.send(JSON.stringify(message));
+  }
+
+  /** A fresh token, since the one in memory may have expired while no request needed it. */
+  private async authenticate(): Promise<void> {
+    const accessToken = await this.auth.refresh();
+    if (accessToken) {
+      this.send({ type: 'authenticate', accessToken });
+    }
   }
 
   /**

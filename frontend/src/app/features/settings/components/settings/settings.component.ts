@@ -47,8 +47,8 @@ export class SettingsComponent {
   private readonly game = inject(GameService);
   private readonly auth = inject(AuthService);
 
-  /** The debug switches make the server write images per frame, so they are an
-   * admin's; the server masks them off for everyone else as well. */
+  /** The debug and recording switches make the server write camera images, so
+   * they are an admin's; the server masks them off for everyone else as well. */
   protected readonly isAdmin = this.auth.isAdmin;
 
   /** Values of the accordion panels that start expanded. */

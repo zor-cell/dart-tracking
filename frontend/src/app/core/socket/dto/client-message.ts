@@ -1,3 +1,4 @@
+import { AuthenticateDto } from './authenticate.dto';
 import { SetRoleDto } from './set-role.dto';
 import { ClaimAnnouncerDto } from '../../../features/announcement/dto/claim-announcer.dto';
 import { CalibrationFrameDto } from '../../../features/calibration/dto/calibration-frame.dto';
@@ -23,6 +24,7 @@ export type ClientMessage =
   | RequestCalibrationDto
   | DetectionFrameDto
   | SetRoleDto
+  | AuthenticateDto
   | RegisterDartDto
   | ReplaceDartDto
   | MoveDartDto

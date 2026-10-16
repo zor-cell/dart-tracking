@@ -14,6 +14,7 @@ import logging
 from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import cv2
 import numpy as np
@@ -23,6 +24,7 @@ from pydantic import ValidationError
 from app.api.core.domain.device_role import DeviceRole
 from app.api.core.services.client_store import store as client_store
 from app.api.core.socket.dto.client_state import ClientStateDto
+from app.api.core.socket.dto.command.authenticate import AuthenticateDto
 from app.api.core.socket.dto.command.client_command import ClientCommand
 from app.api.core.socket.dto.command.set_role import SetRoleDto
 from app.api.core.socket.dto.client_message import (
@@ -30,10 +32,13 @@ from app.api.core.socket.dto.client_message import (
     client_message_adapter,
 )
 from app.api.core.socket.services.game_hub import Connection, hub
+from app.api.core.socket.services.jpeg_header import jpeg_size
 from app.api.features.announcement.domain.announcer import choose_announcer
 from app.api.features.announcement.dto.announcer_state import AnnouncerStateDto
 from app.api.features.announcement.dto.command.claim_announcer import ClaimAnnouncerDto
 from app.api.features.announcement.dto.dart_announcement import DartAnnouncementDto
+from app.api.features.auth.persistence.user_repository import repository as user_repository
+from app.api.features.auth.services import access_tokens
 from app.api.features.announcement.services.announcer_store import store as announcer_store
 from app.api.features.calibration.dto.calibration_frame import CalibrationFrameDto
 from app.api.features.calibration.dto.calibration_requested import (
@@ -83,6 +88,8 @@ from app.api.features.game.domain.dart import Dart as ScoredDart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.persistence.game_repository import repository as game_repository
 from app.infrastructure import database
+from app.infrastructure.config import get_settings
+from app.infrastructure.token_bucket import TokenBucket
 
 router = APIRouter(prefix="/ws", tags=["Tracking"])
 
@@ -95,6 +102,13 @@ _DETECTION_DEBUG_ROOT = _TESTDATA_ROOT / "detection" / "_socket_debug"
 # Both detectors keep their trace in a module global, so two runs at once would
 # read each other's. Holds until the trace has been read out.
 _detector_lock = asyncio.Lock()
+
+# Per connection: messages of any kind, and camera frames (each one a detector run).
+_MESSAGES_PER_SECOND, _MESSAGE_BURST = 20, 40
+_FRAMES_PER_SECOND, _FRAME_BURST = 2, 6
+_MAX_CONNECTIONS_PER_GAME = 8
+# Longest side of a frame the decoder accepts, in pixels.
+_MAX_FRAME_SIDE = 4096
 
 @router.websocket("/games/{game_id}")
 async def websocket_endpoint(
@@ -112,10 +126,14 @@ async def websocket_endpoint(
     A device that has never said otherwise counts as a scoreboard, so a
     forgotten role costs a picture, never a wrong one.
     """
+    if not _origin_allowed(websocket):
+        await websocket.close(code=1008)
+        return
+
     async with database.session_scope() as session:
         game = await game_repository.get(session, game_id)
 
-    if game is None:
+    if game is None or len(hub.connections(game_id)) >= _MAX_CONNECTIONS_PER_GAME:
         await websocket.close(code=1008)
         return
 
@@ -136,14 +154,25 @@ async def websocket_endpoint(
     ):
         await hub.send(connection, CalibrationRequestedDto())
 
+    messages = TokenBucket(_MESSAGES_PER_SECOND, _MESSAGE_BURST)
+    frames = TokenBucket(_FRAMES_PER_SECOND, _FRAME_BURST)
+    throttled = False
+
     try:
         while True:
             raw = await websocket.receive_text()
+            if not messages.take():
+                throttled = _note_throttled(connection, throttled)
+                continue
 
             try:
                 message = client_message_adapter.validate_json(raw)
             except ValidationError as error:
                 logger.warning("[socket] ignored malformed message: %s", error)
+                continue
+
+            if isinstance(message, CalibrationFrameDto | DetectionFrameDto) and not frames.take():
+                throttled = _note_throttled(connection, throttled)
                 continue
 
             await _dispatch(connection, game_id, message)
@@ -153,6 +182,22 @@ async def websocket_endpoint(
         hub.leave(game_id, websocket)
         await _publish_announcer(game_id)
         await _publish_calibration_state(game_id)
+
+
+def _origin_allowed(websocket: WebSocket) -> bool:
+    """A browser connecting from another site is refused; clients without an Origin are not browsers."""
+    origin = websocket.headers.get("origin")
+    if origin is None or origin in get_settings().cors_origins:
+        return True
+    host = websocket.headers.get("host", "")
+    return urlsplit(origin).hostname == urlsplit(f"//{host}").hostname
+
+
+def _note_throttled(connection: Connection, throttled: bool) -> bool:
+    """Log the first dropped message of a connection, not every one."""
+    if not throttled:
+        logger.warning("[socket] throttling messages from %s", connection.client.id)
+    return True
 
 
 async def _dispatch(
@@ -197,9 +242,13 @@ async def _dispatch(
         case SetRoleDto():
             await _handle_client_command(connection, game_id, message)
             await _publish_announcer(game_id)
+        case AuthenticateDto():
+            connection.admin = await _is_admin(message.access_token)
         case ClaimAnnouncerDto():
             await announcer_store.choose(game_id, connection.client.id)
             await _publish_announcer(game_id)
+        case SetEvaluationDto() if not connection.admin:
+            logger.warning("[socket] ignored set_evaluation from a non-admin connection")
         case SetEvaluationDto():
             await _handle_set_evaluation(game_id, message)
         case (
@@ -211,6 +260,16 @@ async def _dispatch(
             | NextPlayerDto()
         ):
             await _handle_game_command(game_id, message)
+
+
+async def _is_admin(access_token: str) -> bool:
+    """Whether the token is valid and belongs to an admin account."""
+    user_id = access_tokens.read_subject(access_token)
+    if user_id is None:
+        return False
+    async with database.session_scope() as session:
+        user = await user_repository.get(session, user_id)
+    return user is not None and user.is_admin
 
 
 async def _handle_client_command(
@@ -429,7 +488,7 @@ async def _handle_calibration_frame(
         image, raw = decoded
         async with _detector_lock:
             outcome = await asyncio.to_thread(board_detector.detect_board, image)
-            if frame.debug:
+            if frame.debug and connection.admin:
                 _write_calibration_debug(game_id, client_id, outcome)
 
     if isinstance(outcome, CalibrationFailure):
@@ -504,7 +563,7 @@ async def _handle_throw_frame(
             outcome = await asyncio.to_thread(
                 dart_detector.detect_dart, reference, image, calibration, empty_board
             )
-            if frame.debug:
+            if frame.debug and connection.admin:
                 _write_detection_debug(game_id, client_id, outcome)
             # Both read under the lock: the trace is a module global that the
             # next run replaces.
@@ -608,6 +667,9 @@ def _decode_jpeg(encoded: str) -> tuple[np.ndarray, bytes] | None:
     try:
         raw = base64.b64decode(encoded)
     except (ValueError, TypeError):
+        return None
+    size = jpeg_size(raw)
+    if size is None or max(size) > _MAX_FRAME_SIDE or min(size) == 0:
         return None
     image = cv2.imdecode(np.frombuffer(raw, dtype=np.uint8), cv2.IMREAD_COLOR)
     return None if image is None else (image, raw)

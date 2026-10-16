@@ -21,10 +21,11 @@ class AppSettings:
     debug_client_detection: bool = False
 
     def without_diagnostics(self) -> Self:
-        """This set with every debug switch off: what an account that is not an
-        admin runs on, whatever happens to be stored for it."""
+        """This set with every debug and recording switch off: what an account
+        that is not an admin runs on, whatever happens to be stored for it."""
         return replace(
             self,
+            evaluation_enabled=False,
             debug_calibration=False,
             debug_detection=False,
             debug_client_detection=False,
