@@ -30,5 +30,5 @@ EXPOSE 8000
 
 USER zorphy-darts
 
-# run migration before serving the app
-CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --app-dir src --host 0.0.0.0 --port 8000"]
+# run migration before serving the app with limited ws messages size
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --app-dir src --host 0.0.0.0 --port 8000 --ws-max-size 2097152"]
