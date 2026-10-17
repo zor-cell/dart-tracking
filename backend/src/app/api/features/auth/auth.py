@@ -138,19 +138,22 @@ async def register(
 
 @router.post("/login", response_model=SessionDto)
 async def login(body: LoginDto, response: Response) -> SessionDto:
-    email = body.email.strip().lower()
-    await rate_limit.check("login-failures", email, _LOGIN_FAILURE_LIMIT)
+    identifier = body.identifier.strip()
 
     async with database.session_scope() as session:
-        found = await repository.find_by_email(session, email)
+        found = await repository.find_for_login(session, identifier)
+
+    # Failures count per account, so alternating email and username gains nothing.
+    limit_key = found[0].email if found is not None else identifier.lower()
+    await rate_limit.check("login-failures", limit_key, _LOGIN_FAILURE_LIMIT)
 
     # One message for both failures, so the endpoint does not reveal which
-    # addresses have an account.
+    # accounts exist.
     if found is None or not passwords.verify_password(body.password, found[1]):
-        await rate_limit.count("login-failures", email, _LOGIN_FAILURE_WINDOW)
-        raise HTTPException(status_code=401, detail="invalid email or password")
+        await rate_limit.count("login-failures", limit_key, _LOGIN_FAILURE_WINDOW)
+        raise HTTPException(status_code=401, detail="invalid credentials")
 
-    await rate_limit.reset("login-failures", email)
+    await rate_limit.reset("login-failures", limit_key)
     return await _begin_session(response, found[0])
 
 

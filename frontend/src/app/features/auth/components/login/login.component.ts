@@ -22,7 +22,7 @@ export class LoginComponent {
   private readonly route = inject(ActivatedRoute);
 
   protected readonly form = this.fb.nonNullable.group({
-    email: ['', [Validators.required, Validators.email]],
+    identifier: ['', [Validators.required, Validators.maxLength(254)]],
     password: ['', [Validators.required, Validators.minLength(8)]],
   });
 
@@ -43,7 +43,7 @@ export class LoginComponent {
       this.error.set(
         failure instanceof HttpErrorResponse && failure.status === 429
           ? tooManyRequestsMessage(failure)
-          : 'E-Mail oder Passwort stimmen nicht.',
+          : 'Anmeldedaten stimmen nicht.',
       );
     } finally {
       this.busy.set(false);

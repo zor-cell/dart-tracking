@@ -11,9 +11,9 @@ from app.infrastructure.database import Base, uuid_primary_key
 
 
 class UserTable(Base):
-    """`email` is what one signs in with, `username` is the unique handle a guest
-    player can later be handed over to; `display_name` is the name the player
-    list shows and is not unique."""
+    """One signs in with `email` or `username`; the username is also the handle a
+    guest player can later be handed over to. `display_name` is the name the
+    player list shows and is not unique."""
 
     __tablename__ = "users"
 

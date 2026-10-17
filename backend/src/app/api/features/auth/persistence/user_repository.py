@@ -1,6 +1,6 @@
 """Reads and writes accounts."""
 
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import ColumnElement, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.auth.domain.user import User
@@ -55,9 +55,24 @@ class UserRepository:
         self, session: AsyncSession, email: str
     ) -> tuple[User, str] | None:
         """The account plus its password hash — the one place the hash leaves
-        the persistence layer, for the login check."""
+        the persistence layer, for the password checks."""
+        return await self._with_hash(session, UserTable.email == email)
+
+    async def find_for_login(
+        self, session: AsyncSession, identifier: str
+    ) -> tuple[User, str] | None:
+        """By email if the identifier holds an `@`, which no username may contain."""
+        if "@" in identifier:
+            return await self.find_by_email(session, identifier.lower())
+        return await self._with_hash(
+            session, func.lower(UserTable.username) == identifier.lower()
+        )
+
+    async def _with_hash(
+        self, session: AsyncSession, condition: ColumnElement[bool]
+    ) -> tuple[User, str] | None:
         row = (
-            await session.execute(select(UserTable).where(UserTable.email == email))
+            await session.execute(select(UserTable).where(condition))
         ).scalar_one_or_none()
         return None if row is None else (_to_domain(row), row.password_hash)
 

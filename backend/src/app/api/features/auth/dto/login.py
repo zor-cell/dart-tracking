@@ -1,12 +1,11 @@
-from pydantic import EmailStr, Field
+from pydantic import Field
 
 from app.api.core.dto.base import CamelModel
 
 
 class LoginDto(CamelModel):
-    """Deliberately not the same constraints as `RegisterDto`: what counts as a
-    valid password is a rule for choosing one. Here a too-short password is a
-    wrong password (401), and only the upper bound keeps argon2 off huge input."""
+    """`identifier` is the email or the username. The password only has an upper
+    bound: a too-short one is a wrong password (401), not a schema error."""
 
-    email: EmailStr
+    identifier: str = Field(min_length=1, max_length=254)
     password: str = Field(max_length=128)
