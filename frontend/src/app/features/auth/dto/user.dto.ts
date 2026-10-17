@@ -7,4 +7,5 @@ export interface UserDto {
   readonly displayName: string;
   readonly createdAt: string;
   readonly role: UserRole;
+  readonly emailVerified: boolean;
 }

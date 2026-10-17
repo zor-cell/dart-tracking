@@ -23,6 +23,14 @@ services:
       COOKIE_SECURE: true
       CORS_ORIGINS: "[]" # nginx serves the app and /api under one origin, so nothing here is ever cross-origin
       FORWARDED_ALLOW_IPS: "172.16.0.0/12" # trust nginx's X-Forwarded-For on the compose network
+
+      SMTP_HOST: ${SMTP_HOST:?missing in .env}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_SECURITY: ${SMTP_SECURITY:-starttls}
+      MAIL_FROM: ${MAIL_FROM:?missing in .env}
+      APP_URL: ${APP_URL:?missing in .env}
     depends_on:
       postgres:
         condition: service_healthy

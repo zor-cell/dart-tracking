@@ -23,6 +23,13 @@ jobs:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      SMTP_HOST: ${{ vars.SMTP_HOST }}
+      SMTP_PORT: ${{ vars.SMTP_PORT }}
+      SMTP_USERNAME: ${{ vars.SMTP_USERNAME }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      SMTP_SECURITY: ${{ vars.SMTP_SECURITY }}
+      MAIL_FROM: ${{ vars.MAIL_FROM }}
+      APP_URL: https://darts.zorphy.net
     steps:
       - uses: actions/checkout@v5
         with:

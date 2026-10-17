@@ -12,6 +12,7 @@ class UserDto(CamelModel):
     display_name: str
     created_at: datetime
     role: UserRole
+    email_verified: bool
 
     @classmethod
     def from_entity(cls, user: User) -> "UserDto":
@@ -22,4 +23,5 @@ class UserDto(CamelModel):
             display_name=user.display_name,
             created_at=user.created_at,
             role=user.role,
+            email_verified=user.email_verified,
         )

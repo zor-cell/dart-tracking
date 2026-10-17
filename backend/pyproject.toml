@@ -23,4 +23,6 @@ dependencies = [
     "email-validator>=2.2.0",
     # config
     "pydantic-settings>=2.15.0",
+    # mail
+    "aiosmtplib>=5.1.3",
 ]

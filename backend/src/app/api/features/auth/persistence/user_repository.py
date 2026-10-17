@@ -1,6 +1,6 @@
 """Reads and writes accounts."""
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.auth.domain.user import User
@@ -16,6 +16,7 @@ def _to_domain(row: UserTable) -> User:
         display_name=row.display_name,
         created_at=row.created_at,
         role=UserRole(row.role),
+        email_verified=row.email_verified_at is not None,
     )
 
 
@@ -71,6 +72,45 @@ class UserRepository:
         row.display_name = display_name
         await session.flush()
         return _to_domain(row)
+
+    async def mark_email_verified(self, session: AsyncSession, user_id: str) -> User | None:
+        """Stamp the address as confirmed; an earlier confirmation keeps its time."""
+        row = await session.get(UserTable, user_id)
+        if row is None:
+            return None
+        if row.email_verified_at is None:
+            row.email_verified_at = func.now()
+            await session.flush()
+            await session.refresh(row)
+        return _to_domain(row)
+
+    async def set_email(self, session: AsyncSession, user_id: str, email: str) -> User | None:
+        """Switch to an address confirmed by a mailed link, so it counts as verified."""
+        row = await session.get(UserTable, user_id)
+        if row is None:
+            return None
+        row.email = email
+        row.email_verified_at = func.now()
+        await session.flush()
+        await session.refresh(row)
+        return _to_domain(row)
+
+    async def set_password(
+        self,
+        session: AsyncSession,
+        user_id: str,
+        password_hash: str,
+        *,
+        confirms_email: bool = False,
+    ) -> bool:
+        """Replace the hash; with `confirms_email` the address counts as confirmed too."""
+        values: dict[str, object] = {"password_hash": password_hash}
+        if confirms_email:
+            values["email_verified_at"] = func.coalesce(UserTable.email_verified_at, func.now())
+        result = await session.execute(
+            update(UserTable).where(UserTable.id == user_id).values(**values)
+        )
+        return result.rowcount > 0
 
     async def taken(self, session: AsyncSession, email: str, username: str) -> str | None:
         """Which of the two is already in use, for a message that names the

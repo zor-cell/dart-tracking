@@ -42,6 +42,35 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./features/auth/components/forgot-password/forgot-password.component').then(
+        (m) => m.ForgotPasswordComponent,
+      ),
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./features/auth/components/reset-password/reset-password.component').then(
+        (m) => m.ResetPasswordComponent,
+      ),
+  },
+  {
+    path: 'verify-email',
+    loadComponent: () =>
+      import('./features/auth/components/verify-email/verify-email.component').then(
+        (m) => m.VerifyEmailComponent,
+      ),
+  },
+  {
+    path: 'confirm-email',
+    data: { emailChange: true },
+    loadComponent: () =>
+      import('./features/auth/components/verify-email/verify-email.component').then(
+        (m) => m.VerifyEmailComponent,
+      ),
+  },
+  {
     path: 'account',
     loadComponent: () =>
       import('./features/auth/components/account/account.component').then(

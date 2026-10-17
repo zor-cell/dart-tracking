@@ -1,0 +1,33 @@
+<section class="view">
+  <header class="view__header">
+    <h1 class="view__title">E-Mail bestätigen</h1>
+  </header>
+
+  @switch (state()) {
+    @case ('pending') {
+      <div class="loading" role="status">
+        <p-progress-spinner
+          ariaLabel="Adresse wird bestätigt"
+          [style]="{ width: '2.5rem', height: '2.5rem' }"
+        />
+        <p>Adresse wird bestätigt …</p>
+      </div>
+    }
+    @case ('verified') {
+      <p-message severity="success" [text]="verifiedText" />
+    }
+    @case ('failed') {
+      <p-message severity="error" [text]="failedText()" />
+    }
+  }
+
+  @if (state() !== 'pending') {
+    <div class="view__actions">
+      @if (isAuthenticated()) {
+        <p-button fluid label="Zum Konto" icon="pi pi-user" routerLink="/account" />
+      } @else {
+        <p-button fluid label="Anmelden" icon="pi pi-sign-in" routerLink="/login" />
+      }
+    </div>
+  }
+</section>

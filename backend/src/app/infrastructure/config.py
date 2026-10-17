@@ -4,6 +4,7 @@ Credentials have no defaults on purpose: nothing reaches the repository, and a
 missing `.env` fails loudly instead of silently using a guessable account.
 """
 
+from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -14,6 +15,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # One `.env` at the repository root, shared with docker compose. Absent inside
 # the container, where the values arrive as environment variables.
 _ENV_FILE = Path(__file__).resolve().parents[4] / ".env"
+
+
+class SmtpSecurity(StrEnum):
+    """How the SMTP connection is encrypted: not at all, upgraded, or TLS from the start."""
+
+    NONE = "none"
+    STARTTLS = "starttls"
+    TLS = "tls"
 
 
 class Settings(BaseSettings):
@@ -41,10 +50,18 @@ class Settings(BaseSettings):
     refresh_token_days: int = 30
     cookie_secure: bool = False
 
+    smtp_host: str = "localhost"
+    smtp_port: int = 10024
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_security: SmtpSecurity = SmtpSecurity.NONE
+    mail_from: str = "Dart-Tracking <noreply@localhost>"
+    app_url: str = "http://localhost:4200"
+
     # Pipeline version the image was built from (see deploy.yaml); unset in a local run.
     tracker_version: int | None = None
 
-    @field_validator("tracker_version", mode="before")
+    @field_validator("tracker_version", "smtp_username", "smtp_password", mode="before")
     @classmethod
     def _blank_is_unset(cls, value: object) -> object:
         return None if value == "" else value

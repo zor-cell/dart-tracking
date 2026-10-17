@@ -63,6 +63,37 @@ body {
   margin-left: -0.75rem;
 }
 
+/* Secondary links below the sign-in and registration forms. */
+.auth-switch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--p-text-muted-color, #6b7280);
+
+  p {
+    margin: 0;
+  }
+
+  a {
+    color: var(--p-primary-color);
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 0.25rem;
+
+    &:hover {
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--p-primary-color);
+      outline-offset: 2px;
+    }
+  }
+}
+
 .view__actions {
   display: flex;
   flex-direction: column;

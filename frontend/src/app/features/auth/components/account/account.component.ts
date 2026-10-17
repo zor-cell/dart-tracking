@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { DOCUMENT } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -6,8 +6,9 @@ import { RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
+import { Popover } from 'primeng/popover';
 import { ProgressSpinner } from 'primeng/progressspinner';
-import { FitTextDirective } from '../../../../core/ui/directives/fit-text.directive';
+import { tooManyRequestsMessage } from '../../../../core/notification/models/too-many-requests';
 import { APP_VERSION } from '../../../../../environments/version';
 import {
   DISPLAY_NAME_MAX_LENGTH,
@@ -16,6 +17,8 @@ import {
   USERNAME_PATTERN,
 } from '../../models/profile-rules';
 import { AuthService } from '../../services/auth.service';
+import { ChangeEmailDialogComponent } from '../change-email-dialog/change-email-dialog.component';
+import { ChangePasswordDialogComponent } from '../change-password-dialog/change-password-dialog.component';
 
 /** The rows that can be edited in place. */
 type EditableField = 'displayName' | 'username';
@@ -24,10 +27,11 @@ type EditableField = 'displayName' | 'username';
   selector: 'app-account',
   imports: [
     Button,
-    DatePipe,
-    FitTextDirective,
+    ChangeEmailDialogComponent,
+    ChangePasswordDialogComponent,
     InputText,
     Message,
+    Popover,
     ProgressSpinner,
     ReactiveFormsModule,
     RouterLink,
@@ -44,21 +48,13 @@ type EditableField = 'displayName' | 'username';
 export class AccountComponent {
   private readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
+  private readonly document = inject(DOCUMENT);
 
   protected readonly user = this.auth.user;
   protected readonly isAdmin = this.auth.isAdmin;
 
   protected readonly version = APP_VERSION;
 
-  /** The address in two parts, so the row breaks on the `@` instead of mid-word
-   * when it is too long for one line. */
-  protected readonly email = computed(() => {
-    const address = this.user()?.email ?? '';
-    const at = address.lastIndexOf('@');
-    return at < 0
-      ? { local: address, domain: '' }
-      : { local: address.slice(0, at), domain: address.slice(at) };
-  });
   protected readonly busy = signal(false);
   protected readonly restoring = signal(true);
 
@@ -67,6 +63,26 @@ export class AccountComponent {
   protected readonly editingField = signal<EditableField | null>(null);
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
+
+  protected readonly resending = signal(false);
+  protected readonly verificationSent = signal(false);
+  private readonly resendError = signal<string | null>(null);
+  protected readonly emailDialogOpen = signal(false);
+  protected readonly passwordDialogOpen = signal(false);
+  protected readonly emailStatus = computed(() =>
+    this.user()?.emailVerified ? 'E-Mail-Adresse bestätigt' : 'E-Mail-Adresse nicht bestätigt',
+  );
+  protected readonly verifyNotice = computed(() => {
+    if (this.user()?.emailVerified) {
+      return 'Deine E-Mail-Adresse ist bestätigt.';
+    }
+    return (
+      this.resendError() ??
+      (this.verificationSent()
+        ? 'Ein neuer Bestätigungslink ist unterwegs. Er ist 24 Stunden gültig.'
+        : 'Deine E-Mail-Adresse ist noch nicht bestätigt. Den Link dazu findest du in deinem Postfach.')
+    );
+  });
 
   /** Both names, because the write sends both; only the open one is shown as an
    * input, the other rides along unchanged. */
@@ -132,6 +148,43 @@ export class AccountComponent {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  protected async resendVerification(): Promise<void> {
+    if (this.resending()) {
+      return;
+    }
+    this.resending.set(true);
+    this.resendError.set(null);
+    try {
+      await this.auth.resendVerification();
+      this.verificationSent.set(true);
+    } catch (failure) {
+      this.resendError.set(
+        failure instanceof HttpErrorResponse && failure.status === 429
+          ? tooManyRequestsMessage(failure)
+          : 'Senden fehlgeschlagen. Bitte später erneut versuchen.',
+      );
+    } finally {
+      this.resending.set(false);
+    }
+  }
+
+  /** Points the arrow at the button's center, measured on the layout box since
+   * PrimeNG aligns it while the opening animation still scales the popover. */
+  protected centerArrow(popover: Popover): void {
+    const container = popover.container;
+    const target = popover.target as HTMLElement | null;
+    if (!container || !target) {
+      return;
+    }
+    const rect = target.getBoundingClientRect();
+    const scrollX = this.document.defaultView?.scrollX ?? 0;
+    const center = rect.left + scrollX + rect.width / 2 - container.offsetLeft;
+    container.style.setProperty(
+      '--p-popover-arrow-left',
+      `calc(${center}px - var(--p-popover-arrow-offset))`,
+    );
   }
 
   protected async logout(): Promise<void> {

@@ -7,11 +7,16 @@ import {
   SILENT_ERROR_HANDLER,
   SKIP_AUTH_RETRY,
 } from '../../../core/interceptors';
+import { EmailChangeDto } from '../dto/email-change.dto';
 import { LoginDto } from '../dto/login.dto';
+import { PasswordChangeDto } from '../dto/password-change.dto';
+import { PasswordResetRequestDto } from '../dto/password-reset-request.dto';
+import { PasswordResetDto } from '../dto/password-reset.dto';
 import { ProfileDto } from '../dto/profile.dto';
 import { RegisterDto } from '../dto/register.dto';
 import { SessionDto } from '../dto/session.dto';
 import { UserDto } from '../dto/user.dto';
+import { VerifyEmailDto } from '../dto/verify-email.dto';
 
 /**
  * The signed-in account, if there is one — accounts are optional. The access
@@ -61,6 +66,61 @@ export class AuthService {
         }),
       ),
     );
+  }
+
+  /** The server signs out every device and answers with a fresh session for this one. */
+  async changePassword(change: PasswordChangeDto): Promise<void> {
+    this.adopt(
+      await firstValueFrom(
+        this.http.put<SessionDto>(`${this.baseUrl}/me/password`, change, {
+          withCredentials: true,
+          context: SILENT_ERROR_CONTEXT,
+        }),
+      ),
+    );
+  }
+
+  /** Mails a link to the new address; the account keeps the old one until it is opened. */
+  async requestEmailChange(change: EmailChangeDto): Promise<void> {
+    await firstValueFrom(
+      this.http.put<void>(`${this.baseUrl}/me/email`, change, { context: SILENT_ERROR_CONTEXT }),
+    );
+  }
+
+  async verifyEmail(token: string): Promise<void> {
+    await this.redeemMailLink('verify-email', token);
+  }
+
+  async confirmEmailChange(token: string): Promise<void> {
+    await this.redeemMailLink('email-change/confirm', token);
+  }
+
+  /** The signed-in account adopts the result if the link was issued for it. */
+  private async redeemMailLink(path: string, token: string): Promise<void> {
+    await this.ready;
+    const body: VerifyEmailDto = { token };
+    const updated = await this.post<UserDto>(path, body);
+    if (this._user()?.id === updated.id) {
+      this._user.set(updated);
+    }
+  }
+
+  async resendVerification(): Promise<void> {
+    await firstValueFrom(
+      this.http.post<void>(`${this.baseUrl}/verify-email/resend`, {}, {
+        context: SILENT_ERROR_CONTEXT,
+      }),
+    );
+  }
+
+  async requestPasswordReset(request: PasswordResetRequestDto): Promise<void> {
+    await this.post<void>('password-reset', request);
+  }
+
+  /** The server ends every session of the account, this one included. */
+  async resetPassword(reset: PasswordResetDto): Promise<void> {
+    await this.post<void>('password-reset/confirm', reset);
+    this.clear();
   }
 
   async logout(): Promise<void> {

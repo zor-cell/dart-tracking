@@ -2,9 +2,20 @@ services:
   backend:
     ports:
       - "10021:8000"
+    environment:
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_SECURITY: none
+      APP_URL: http://localhost:10020
   postgres:
     ports:
       - "10022:5432"
   redis:
     ports:
       - "10023:6379"
+  mailpit:
+    image: axllent/mailpit:v1.31.6
+    restart: unless-stopped
+    ports:
+      - "10024:1025"
+      - "10025:8025" # web inbox

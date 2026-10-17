@@ -1,0 +1,61 @@
+<p-dialog
+  header="E-Mail-Adresse ändern"
+  [modal]="true"
+  [draggable]="false"
+  [(visible)]="visible"
+  [style]="{ width: '24rem', maxWidth: '92vw' }"
+  appendTo="body"
+  (onHide)="reset()"
+>
+  <form class="email-form" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="email-form__field">
+      <label class="email-form__label" for="new-email">Neue E-Mail-Adresse</label>
+      <input
+        pInputText
+        id="new-email"
+        type="email"
+        formControlName="newEmail"
+        autocomplete="email"
+        aria-describedby="new-email-hint"
+        fluid
+      />
+      <small class="email-form__hint" id="new-email-hint">
+        Wir schicken dir einen Link an die neue Adresse. Erst wenn du ihn öffnest, wird sie aktiv.
+      </small>
+    </div>
+
+    <div class="email-form__field">
+      <label class="email-form__label" for="email-current-password">Aktuelles Passwort</label>
+      <input
+        pInputText
+        id="email-current-password"
+        type="password"
+        formControlName="currentPassword"
+        autocomplete="current-password"
+        fluid
+      />
+    </div>
+
+    @if (error(); as message) {
+      <p-message severity="error" [text]="message" />
+    }
+
+    <div class="email-form__actions">
+      <p-button
+        type="button"
+        label="Abbrechen"
+        severity="secondary"
+        [text]="true"
+        [disabled]="busy()"
+        (onClick)="visible.set(false)"
+      />
+      <p-button
+        type="submit"
+        label="Link senden"
+        icon="pi pi-envelope"
+        [loading]="busy()"
+        [disabled]="form.invalid"
+      />
+    </div>
+  </form>
+</p-dialog>

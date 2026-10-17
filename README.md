@@ -103,8 +103,9 @@ unter Settings → Secrets and variables → Actions angelegt sein:
 
 | Art | Name |
 |---|---|
-| Variable | `POSTGRES_USER`, `POSTGRES_DB` |
-| Secret | `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `JWT_SECRET` |
+| Variable | `POSTGRES_USER`, `POSTGRES_DB`, `SMTP_HOST`, `MAIL_FROM` |
+| Variable (optional) | `SMTP_PORT` (Standard `587`), `SMTP_SECURITY` (`starttls`, `tls` oder `none`), `SMTP_USERNAME` |
+| Secret | `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `JWT_SECRET`, `SMTP_PASSWORD` |
 
 ### Was Docker Compose aufsetzt
 
@@ -146,6 +147,11 @@ Backend zusätzlich auf `10021` offen:
 ```bash
 docker compose -f compose.yaml -f compose.dev.yaml up -d --build
 ```
+
+Dazu startet [Mailpit](https://mailpit.axllent.org/), das jede ausgehende Mail
+abfängt statt sie zuzustellen. Das Postfach liegt unter http://localhost:10025,
+SMTP auf `10024`, wohin auch ein lokal gestartetes Backend ohne weitere
+Konfiguration sendet.
 
 ### Cloudflare Tunnel
 

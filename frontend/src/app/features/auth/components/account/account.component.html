@@ -131,20 +131,66 @@
 
         <div class="account__row">
           <span class="account__label">E-Mail</span>
-          <span class="account__value" [appFitText]="account.email"
-            >{{ email().local }}<wbr />{{ email().domain }}</span
-          >
+          <span class="account__value account__value--scroll" tabindex="0">{{ account.email }}</span>
+          <p-button
+            type="button"
+            [icon]="account.emailVerified ? 'pi pi-verified' : 'pi pi-exclamation-triangle'"
+            [severity]="account.emailVerified ? 'success' : 'warn'"
+            [ariaLabel]="emailStatus()"
+            [rounded]="true"
+            [text]="true"
+            (onClick)="statusPopover.toggle($event, $any($event).currentTarget)"
+          />
+          <p-button
+            type="button"
+            icon="pi pi-pencil"
+            ariaLabel="E-Mail-Adresse ändern"
+            severity="secondary"
+            [rounded]="true"
+            [text]="true"
+            [disabled]="saving()"
+            (onClick)="emailDialogOpen.set(true)"
+          />
         </div>
+        <p-popover #statusPopover (onShow)="centerArrow(statusPopover)">
+          <div class="email-status">
+            <p class="email-status__text">{{ verifyNotice() }}</p>
+            @if (!account.emailVerified && !verificationSent()) {
+              <p-button
+                fluid
+                size="small"
+                label="Bestätigungslink erneut senden"
+                icon="pi pi-envelope"
+                severity="secondary"
+                [outlined]="true"
+                [loading]="resending()"
+                (onClick)="resendVerification()"
+              />
+            }
+          </div>
+        </p-popover>
 
         <div class="account__row">
-          <span class="account__label">Registriert</span>
-          <span class="account__value">{{ account.createdAt | date: 'dd.MM.yyyy' }}</span>
+          <span class="account__label">Passwort</span>
+          <span class="account__value" aria-hidden="true">••••••••</span>
+          <p-button
+            type="button"
+            icon="pi pi-pencil"
+            ariaLabel="Passwort ändern"
+            severity="secondary"
+            [rounded]="true"
+            [text]="true"
+            [disabled]="saving()"
+            (onClick)="passwordDialogOpen.set(true)"
+          />
         </div>
 
         @if (error(); as message) {
           <p-message severity="error" [text]="message" />
         }
       </form>
+      <app-change-email-dialog [(visible)]="emailDialogOpen" />
+      <app-change-password-dialog [(visible)]="passwordDialogOpen" />
     } @else {
       <div class="view__actions">
         <p-button fluid label="Anmelden" icon="pi pi-sign-in" routerLink="/login" />
