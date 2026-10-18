@@ -4,6 +4,10 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
 import { PlayerIdentityDto } from '../dto/player-identity.dto';
+import { PlayerNameDto } from '../dto/player-name.dto';
+
+/** Upper bound for the full address book, matching the server's maximum. */
+const ADDRESS_BOOK_LIMIT = 500;
 
 /**
  * The people this account has played with. Requires a session — without one
@@ -27,5 +31,36 @@ export class PlayerService {
     } catch {
       return [];
     }
+  }
+
+  /** The whole address book, own entry first. */
+  list(): Promise<PlayerIdentityDto[]> {
+    return firstValueFrom(
+      this.http.get<PlayerIdentityDto[]>(this.baseUrl, {
+        params: new HttpParams().set('limit', ADDRESS_BOOK_LIMIT),
+      }),
+    );
+  }
+
+  /** Rejects with a 409 when the address book already holds the name. */
+  create(name: string): Promise<PlayerIdentityDto> {
+    const body: PlayerNameDto = { name };
+    return firstValueFrom(
+      this.http.post<PlayerIdentityDto>(this.baseUrl, body, { context: SILENT_ERROR_CONTEXT }),
+    );
+  }
+
+  rename(id: string, name: string): Promise<PlayerIdentityDto> {
+    const body: PlayerNameDto = { name };
+    return firstValueFrom(
+      this.http.put<PlayerIdentityDto>(`${this.baseUrl}/${id}`, body, {
+        context: SILENT_ERROR_CONTEXT,
+      }),
+    );
+  }
+
+  /** Take a player out of the address book; past games keep the name. */
+  remove(id: string): Promise<void> {
+    return firstValueFrom(this.http.delete<void>(`${this.baseUrl}/${id}`));
   }
 }

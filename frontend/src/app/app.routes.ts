@@ -86,6 +86,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'account/players',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/player/components/player-list/player-list.component').then(
+        (m) => m.PlayerListComponent,
+      ),
+  },
+  {
     path: 'account/settings',
     canActivate: [authGuard],
     loadComponent: () =>

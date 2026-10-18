@@ -36,9 +36,9 @@ _ANONYMOUS_GAME_LIMIT, _ANONYMOUS_GAME_WINDOW = 30, 60 * 60
 async def _resolve_players(
     session: AsyncSession, slots: list[PlayerSlotDto], owner_user_id: str | None
 ) -> list[PlayerIdentity]:
-    """Turn the seats into identities: look up the chosen ones, create a row for
-    every typed name. The display name of a chosen identity comes from the
-    database, never from the request."""
+    """Turn the seats into identities: look up the chosen ones, reuse or create a
+    row for every typed name. The display name of a chosen identity comes from
+    the database, never from the request."""
     claimed = [slot.player_id for slot in slots if slot.player_id]
     if claimed and owner_user_id is None:
         raise HTTPException(status_code=401, detail="authentication required")
@@ -55,10 +55,19 @@ async def _resolve_players(
     for slot in slots:
         if slot.player_id:
             resolved.append(known[slot.player_id])
-        else:
-            resolved.append(
-                await players.create(session, slot.name, owner_user_id=owner_user_id)
-            )
+            continue
+        existing = (
+            await players.find_by_name(session, owner_user_id, slot.name)
+            if owner_user_id
+            else None
+        )
+        resolved.append(
+            existing
+            or await players.create(session, slot.name, owner_user_id=owner_user_id)
+        )
+
+    if len({identity.id for identity in resolved}) != len(resolved):
+        raise HTTPException(status_code=422, detail="a player can only take one seat")
     return resolved
 
 

@@ -1,0 +1,50 @@
+.create {
+  display: flex;
+  gap: 0.5rem;
+
+  p-button {
+    flex-shrink: 0;
+  }
+}
+
+.players {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 3.25rem;
+    border-bottom: 1px solid var(--p-content-border-color);
+  }
+
+  &__name {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+
+    &--self {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
+
+  &__edit {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  &__hint {
+    margin: 0;
+    color: var(--p-text-muted-color);
+    font-size: 0.9rem;
+  }
+}

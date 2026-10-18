@@ -260,6 +260,8 @@ async def update_profile(body: ProfileDto, user: AuthenticatedUser) -> UserDto:
     async with database.session_scope() as session:
         if await repository.username_taken(session, username, user.id):
             raise HTTPException(status_code=409, detail="username already in use")
+        if await players.name_taken(session, user.id, body.display_name, except_self=True):
+            raise HTTPException(status_code=409, detail="display name in address book")
         updated = await repository.update_profile(
             session, user.id, username, body.display_name
         )

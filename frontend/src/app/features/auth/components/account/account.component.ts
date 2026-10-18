@@ -198,7 +198,9 @@ export class AccountComponent {
 
   private describe(failure: unknown): string {
     if (failure instanceof HttpErrorResponse && failure.status === 409) {
-      return 'Dieser Benutzername ist bereits vergeben.';
+      return failure.error?.detail === 'display name in address book'
+        ? 'Diesen Namen gibt es schon in deiner Spielerliste.'
+        : 'Dieser Benutzername ist bereits vergeben.';
     }
     return 'Speichern fehlgeschlagen. Bitte Eingaben prüfen.';
   }

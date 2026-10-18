@@ -1,0 +1,160 @@
+<section class="view">
+  <header class="view__header">
+    <p-button
+      class="view__back"
+      label="Konto"
+      icon="pi pi-arrow-left"
+      severity="secondary"
+      [text]="true"
+      routerLink="/account"
+    />
+    <h1 class="view__title">Spieler</h1>
+    <p class="view__subtitle">Die Spieler, die du im neuen Spiel auswählen kannst</p>
+  </header>
+
+  <form class="create" [formGroup]="createForm" (ngSubmit)="create()">
+    <input
+      pInputText
+      formControlName="name"
+      placeholder="Name des Spielers"
+      aria-label="Name des neuen Spielers"
+      autocomplete="off"
+      fluid
+    />
+    <p-button
+      type="submit"
+      label="Hinzufügen"
+      icon="pi pi-plus"
+      [loading]="creating()"
+      [disabled]="createForm.invalid"
+    />
+  </form>
+  @if (createError(); as message) {
+    <p-message severity="error" [text]="message" />
+  }
+
+  @if (loading()) {
+    <div class="loading" role="status">
+      <p-progress-spinner
+        ariaLabel="Spieler werden geladen"
+        [style]="{ width: '2.5rem', height: '2.5rem' }"
+      />
+      <p>Spieler werden geladen …</p>
+    </div>
+  } @else if (failed()) {
+    <div class="placeholder">
+      <p>Die Spielerliste konnte nicht geladen werden.</p>
+      <p-button label="Erneut versuchen" icon="pi pi-refresh" (onClick)="load()" />
+    </div>
+  } @else {
+    <ul class="players">
+      @if (self(); as me) {
+        <li class="players__row">
+          @if (editingId() === me.id) {
+            <ng-container *ngTemplateOutlet="editRow; context: { $implicit: me }" />
+          } @else {
+            <span class="players__name players__name--self">
+              <span>{{ me.name }}</span>
+              <p-tag value="Du" severity="secondary" />
+            </span>
+            <p-button
+              type="button"
+              icon="pi pi-pencil"
+              ariaLabel="Deinen Namen ändern"
+              severity="secondary"
+              [rounded]="true"
+              [text]="true"
+              [disabled]="busyId() !== null"
+              (onClick)="edit(me)"
+            />
+          }
+        </li>
+      }
+
+      @for (player of others(); track player.id) {
+        <li class="players__row">
+          @if (editingId() === player.id) {
+            <ng-container *ngTemplateOutlet="editRow; context: { $implicit: player }" />
+          } @else {
+            <span class="players__name">{{ player.name }}</span>
+            <span pTooltip="Mit einem Konto verknüpfen – kommt bald" tooltipPosition="top">
+              <p-button
+                type="button"
+                icon="pi pi-link"
+                [ariaLabel]="player.name + ' mit einem Konto verknüpfen (kommt bald)'"
+                severity="secondary"
+                [rounded]="true"
+                [text]="true"
+                [disabled]="true"
+              />
+            </span>
+            <p-button
+              type="button"
+              icon="pi pi-pencil"
+              [ariaLabel]="player.name + ' umbenennen'"
+              severity="secondary"
+              [rounded]="true"
+              [text]="true"
+              [disabled]="busyId() !== null"
+              (onClick)="edit(player)"
+            />
+            <p-button
+              type="button"
+              icon="pi pi-trash"
+              [ariaLabel]="player.name + ' entfernen'"
+              severity="danger"
+              [rounded]="true"
+              [text]="true"
+              [loading]="busyId() === player.id"
+              [disabled]="busyId() !== null"
+              (onClick)="confirmRemove(player)"
+            />
+          }
+        </li>
+      }
+    </ul>
+    @if (editError(); as message) {
+      <p-message severity="error" [text]="message" />
+    }
+
+    @if (others().length === 0) {
+      <p class="players__hint">
+        Noch keine weiteren Spieler. Lege hier welche an oder trage im neuen Spiel einen Namen ein.
+      </p>
+    }
+  }
+</section>
+
+<ng-template #editRow let-player>
+  <form class="players__edit" [formGroup]="editForm" (ngSubmit)="save()">
+    <input
+      pInputText
+      [pAutoFocus]="true"
+      formControlName="name"
+      [attr.aria-label]="'Neuer Name für ' + player.name"
+      (keydown.escape)="cancel()"
+      fluid
+    />
+    <p-button
+      type="submit"
+      icon="pi pi-check"
+      ariaLabel="Namen speichern"
+      [rounded]="true"
+      [text]="true"
+      [loading]="busyId() === player.id"
+      [disabled]="editForm.invalid"
+    />
+    <p-button
+      type="button"
+      icon="pi pi-times"
+      ariaLabel="Bearbeiten abbrechen"
+      severity="secondary"
+      [rounded]="true"
+      [text]="true"
+      [disabled]="busyId() === player.id"
+      (onClick)="cancel()"
+    />
+  </form>
+</ng-template>
+
+<p-confirmdialog />

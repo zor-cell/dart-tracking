@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.player.domain.player_identity import PlayerIdentity
@@ -41,7 +41,11 @@ class PlayerRepository:
         return _to_domain(row)
 
     async def search(
-        self, session: AsyncSession, owner_user_id: str, prefix: str
+        self,
+        session: AsyncSession,
+        owner_user_id: str,
+        prefix: str,
+        limit: int = _SEARCH_LIMIT,
     ) -> list[PlayerIdentity]:
         """Names starting with `prefix`, own entry first, then alphabetical. An
         empty prefix lists the whole address book."""
@@ -53,10 +57,91 @@ class PlayerRepository:
             await session.execute(
                 statement.order_by(
                     PlayerTable.user_id.is_(None), PlayerTable.display_name
-                ).limit(_SEARCH_LIMIT)
+                ).limit(limit)
             )
         ).scalars().all()
         return [_to_domain(row) for row in rows]
+
+    async def find_by_name(
+        self, session: AsyncSession, owner_user_id: str, display_name: str
+    ) -> PlayerIdentity | None:
+        """The address-book entry with this name, ignoring case; the oldest one if
+        earlier games left duplicates."""
+        row = (
+            await session.execute(
+                select(PlayerTable)
+                .where(
+                    PlayerTable.owner_user_id == owner_user_id,
+                    func.lower(PlayerTable.display_name) == display_name.lower(),
+                )
+                .order_by(PlayerTable.created_at)
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        return _to_domain(row) if row else None
+
+    async def name_taken(
+        self,
+        session: AsyncSession,
+        owner_user_id: str,
+        display_name: str,
+        except_id: str | None = None,
+        *,
+        except_self: bool = False,
+    ) -> bool:
+        """Whether this address book already holds the name, ignoring case. The
+        row being renamed, or the account's own entry, does not count."""
+        statement = select(PlayerTable.id).where(
+            PlayerTable.owner_user_id == owner_user_id,
+            func.lower(PlayerTable.display_name) == display_name.lower(),
+        )
+        if except_id is not None and _is_uuid(except_id):
+            statement = statement.where(PlayerTable.id != except_id)
+        if except_self:
+            statement = statement.where(
+                or_(PlayerTable.user_id.is_(None), PlayerTable.user_id != owner_user_id)
+            )
+        return (await session.execute(statement.limit(1))).first() is not None
+
+    async def rename(
+        self, session: AsyncSession, owner_user_id: str, player_id: str, display_name: str
+    ) -> PlayerIdentity | None:
+        """Rename a player of this address book; the name changes in past games too.
+        None when there is no such player."""
+        row = await self._editable(session, owner_user_id, player_id)
+        if row is None:
+            return None
+        row.display_name = display_name
+        await session.flush()
+        return _to_domain(row)
+
+    async def release(
+        self, session: AsyncSession, owner_user_id: str, player_id: str
+    ) -> bool:
+        """Take a player out of the address book. The row stays, so the games it
+        played keep their seat. Returns whether a player matched."""
+        row = await self._editable(session, owner_user_id, player_id)
+        if row is None:
+            return False
+        row.owner_user_id = None
+        await session.flush()
+        return True
+
+    async def _editable(
+        self, session: AsyncSession, owner_user_id: str, player_id: str
+    ) -> PlayerTable | None:
+        # The account's own entry is not editable here: it follows the account.
+        if not _is_uuid(player_id):
+            return None
+        return (
+            await session.execute(
+                select(PlayerTable).where(
+                    PlayerTable.id == player_id,
+                    PlayerTable.owner_user_id == owner_user_id,
+                    PlayerTable.user_id.is_(None),
+                )
+            )
+        ).scalar_one_or_none()
 
     async def rename_self(
         self, session: AsyncSession, user_id: str, display_name: str
