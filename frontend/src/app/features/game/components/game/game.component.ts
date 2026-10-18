@@ -27,6 +27,7 @@ import {PlayerDto} from '../../dto/player.dto';
 import {DARTS_PER_TURN} from '../../models/visit';
 import {GameService} from '../../services/game.service';
 import {GameSessionService} from '../../services/game-session.service';
+import {ScreenWakeLockService} from '../../services/screen-wake-lock.service';
 import {GameTopBarComponent} from '../game-top-bar/game-top-bar.component';
 import {VirtualBoardComponent} from '../virtual-board/virtual-board.component';
 
@@ -86,6 +87,7 @@ export class GameComponent implements OnInit, OnDestroy {
   private readonly calibration = inject(CalibrationService);
   private readonly throwCapture = inject(FrameDiffService);
   private readonly detection = inject(DetectionService);
+  private readonly wakeLock = inject(ScreenWakeLockService);
   private readonly document = inject(DOCUMENT);
   private readonly router = inject(Router);
 
@@ -304,6 +306,7 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.wakeLock.hold();
     // Refetch the game after a full reload so the view — and with it the camera
     // elements — can render; wiring and camera resume then happen on attach.
     const persisted = this.restoring();
@@ -443,5 +446,6 @@ export class GameComponent implements OnInit, OnDestroy {
     // Leaving the game screen only pauses the loop; the session (camera + socket)
     // keeps running so returning is instant. Teardown is leave() alone.
     this.session.detachView();
+    this.wakeLock.release();
   }
 }
