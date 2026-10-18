@@ -28,4 +28,6 @@ export interface GameStateDto {
   readonly checkout: readonly string[] | null;
   readonly elimination: readonly string[] | null;
   readonly evaluationEnabled: boolean;
+  /** Whether a device that left the game open should still be put back into it. */
+  readonly resumable: boolean;
 }

@@ -7,6 +7,7 @@ from app.api.features.game.dto.turn import TurnDto
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.game_mode import GameMode
+from app.api.features.game.domain.game_status import is_resumable
 from app.api.features.game.domain.game_variant import GameVariant
 
 
@@ -34,6 +35,7 @@ class GameStateDto(CamelModel):
     checkout: list[str] | None
     elimination: list[str] | None
     evaluation_enabled: bool
+    resumable: bool
 
     @classmethod
     def from_entity(cls, game: Game) -> Self:
@@ -56,4 +58,5 @@ class GameStateDto(CamelModel):
             checkout=game.checkout,
             elimination=game.elimination,
             evaluation_enabled=game.evaluation_enabled,
+            resumable=is_resumable(game.winner is not None, game.updated_at),
         )

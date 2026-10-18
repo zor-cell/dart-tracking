@@ -228,29 +228,32 @@
       }
     </ul>
 
-    @if (!game.settledWinner()) {
-      <div class="turn">
-        @if (game.currentTurn(); as turn) {
-          <div class="turn__row">
-            <!-- Takes the picked dart instead of the last one; see undoOrDelete. -->
-            <p-button
-              class="turn__undo"
-              [icon]="selectedDart() === null ? 'pi pi-arrow-left' : 'pi pi-trash'"
-              [rounded]="true"
-              [severity]="selectedDart() === null ? 'secondary' : 'danger'"
-              [ariaLabel]="selectedDart() === null ? 'Zurück' : 'Ausgewählten Dart löschen'"
-              [disabled]="selectedDart() === null && !state.canUndo"
-              (onClick)="undoOrDelete()"
-            />
+    <div class="turn">
+      @if (game.currentTurn(); as turn) {
+        <div class="turn__row">
+          <!-- Takes the picked dart instead of the last one; see undoOrDelete. -->
+          <p-button
+            class="turn__undo"
+            [icon]="selectedDart() === null ? 'pi pi-arrow-left' : 'pi pi-trash'"
+            [rounded]="true"
+            severity="secondary"
+            [ariaLabel]="selectedDart() === null ? 'Zurück' : 'Ausgewählten Dart löschen'"
+            [disabled]="selectedDart() === null && !state.canUndo"
+            (onClick)="undoOrDelete()"
+          />
 
-            <ul
-              class="turn__darts"
-              aria-label="Darts dieser Runde"
-              cdkDropList
-              cdkDropListOrientation="horizontal"
-              (cdkDropListDropped)="dropDart($event)"
-            >
-              @for (dart of turn.darts; track $index) {
+          <ul
+            class="turn__darts"
+            aria-label="Darts dieser Runde"
+            cdkDropList
+            cdkDropListOrientation="horizontal"
+            [cdkDropListDisabled]="game.settledWinner() !== null"
+            (cdkDropListDropped)="dropDart($event)"
+          >
+            @for (dart of turn.darts; track $index) {
+              @if (game.settledWinner()) {
+                <li class="turn__dart" [class.turn__dart--busted]="turn.busted">{{ dart.label }}</li>
+              } @else {
                 <li class="turn__slot" cdkDrag [cdkDragStartDelay]="{ touch: 150, mouse: 0 }">
                   <button
                     type="button"
@@ -265,110 +268,120 @@
                   </button>
                 </li>
               }
-              @for (slot of checkoutSlots(); track $index) {
-                <li
-                  class="turn__dart turn__dart--empty"
-                  [class.turn__dart--checkout]="slot.label !== null && !slot.shadow"
-                  [class.turn__dart--elimination]="slot.eliminating && slot.label !== null"
-                  [class.turn__dart--shadow]="slot.shadow"
-                  [attr.aria-hidden]="slot.shadow ? null : 'true'"
-                  [attr.aria-label]="slot.shadow ? slot.label + ', erkannt, nicht gewertet' : null"
-                >
-                  {{ slot.label ?? '–' }}
-                </li>
-              }
-            </ul>
+            }
+            @for (slot of checkoutSlots(); track $index) {
+              <li
+                class="turn__dart turn__dart--empty"
+                [class.turn__dart--checkout]="slot.label !== null && !slot.shadow"
+                [class.turn__dart--elimination]="slot.eliminating && slot.label !== null"
+                [class.turn__dart--shadow]="slot.shadow"
+                [attr.aria-hidden]="slot.shadow ? null : 'true'"
+                [attr.aria-label]="slot.shadow ? slot.label + ', erkannt, nicht gewertet' : null"
+              >
+                {{ slot.label ?? '–' }}
+              </li>
+            }
+          </ul>
 
-            @if (settings.confirmThrowEnabled()) {
-              <p-button
-                class="turn__confirm"
-                icon="pi pi-check"
-                [rounded]="true"
-                severity="success"
-                [ariaLabel]="confirmLabel()"
-                [disabled]="turn.darts.length === 0"
-                (onClick)="confirmTurn()"
-              />
+          @if (game.settledWinner()) {
+            <p-button
+              class="turn__stats"
+              icon="pi pi-chart-bar"
+              [rounded]="true"
+              severity="secondary"
+              ariaLabel="Spielstatistik"
+            />
+          } @else if (settings.confirmThrowEnabled() || state.dartsRemaining === 0) {
+            <p-button
+              class="turn__confirm"
+              icon="pi pi-check"
+              [rounded]="true"
+              severity="success"
+              [ariaLabel]="confirmLabel()"
+              [disabled]="turn.darts.length === 0"
+              (onClick)="confirmTurn()"
+            />
+          }
+        </div>
+      }
+
+      @if (settings.manualEntryEnabled() && !game.settledWinner()) {
+        <div class="scorepad" role="group" aria-label="Punkte-Eingabe">
+          @for (row of padRows; track $index) {
+            @for (n of row; track n) {
+              <button
+                type="button"
+                class="scorepad__key"
+                [disabled]="!padAccepts()"
+                [attr.aria-label]="multiplierPrefix() + n"
+                (click)="enterNumber(n)"
+              >
+                {{ multiplierPrefix() }}{{ n }}
+              </button>
+            }
+          }
+
+          <div class="scorepad__side">
+            @for (side of sideKeys; track side.label) {
+              <button
+                type="button"
+                class="scorepad__key"
+                [disabled]="!padAccepts()"
+                (click)="enterFixed(side)"
+              >
+                {{ side.label }}
+              </button>
             }
           </div>
-        }
 
-        @if (settings.manualEntryEnabled() && !game.settledWinner()) {
-          <div class="scorepad" role="group" aria-label="Punkte-Eingabe">
-            @for (row of padRows; track $index) {
-              @for (n of row; track n) {
-                <button
-                  type="button"
-                  class="scorepad__key"
-                  [disabled]="!padAccepts()"
-                  [attr.aria-label]="multiplierPrefix() + n"
-                  (click)="enterNumber(n)"
-                >
-                  {{ multiplierPrefix() }}{{ n }}
-                </button>
-              }
-            }
+          <button
+            type="button"
+            class="scorepad__key scorepad__mod"
+            [class.scorepad__mod--active]="multiplier() === 2"
+            [attr.aria-pressed]="multiplier() === 2"
+            [disabled]="!padAccepts()"
+            (click)="toggleDouble()"
+          >
+            Double
+          </button>
+          <button
+            type="button"
+            class="scorepad__key scorepad__mod"
+            [class.scorepad__mod--active]="multiplier() === 3"
+            [attr.aria-pressed]="multiplier() === 3"
+            [disabled]="!padAccepts()"
+            (click)="toggleTriple()"
+          >
+            Triple
+          </button>
+        </div>
+      }
 
-            <div class="scorepad__side">
-              @for (side of sideKeys; track side.label) {
-                <button
-                  type="button"
-                  class="scorepad__key"
-                  [disabled]="!padAccepts()"
-                  (click)="enterFixed(side)"
-                >
-                  {{ side.label }}
-                </button>
-              }
-            </div>
-
-            <button
-              type="button"
-              class="scorepad__key scorepad__mod"
-              [class.scorepad__mod--active]="multiplier() === 2"
-              [attr.aria-pressed]="multiplier() === 2"
-              [disabled]="!padAccepts()"
-              (click)="toggleDouble()"
-            >
-              Double
-            </button>
-            <button
-              type="button"
-              class="scorepad__key scorepad__mod"
-              [class.scorepad__mod--active]="multiplier() === 3"
-              [attr.aria-pressed]="multiplier() === 3"
-              [disabled]="!padAccepts()"
-              (click)="toggleTriple()"
-            >
-              Triple
-            </button>
-          </div>
-        }
-      </div>
-    }
-
-    <!-- Takes over the input's slot so the picture above keeps its height and the
-         player cards stay put. Where the post-game actions go. -->
-    @if (game.settledWinner()) {
-      <div class="finish" [class.finish--reserved]="settings.manualEntryEnabled()">
-        <p-button
-          fluid
-          label="Revanche"
-          icon="pi pi-replay"
-          routerLink="/game/new"
-          [queryParams]="{ rematch: state.id }"
-        />
-        <p-button
-          fluid
-          label="Zurück"
-          icon="pi pi-undo"
-          severity="secondary"
-          [text]="true"
-          [disabled]="!state.canUndo"
-          (onClick)="game.undo()"
-        />
-      </div>
-    }
+      @if (game.settledWinner()) {
+        <!-- Takes the keypad's slot, so the picture above keeps its height. -->
+        <div class="finish" [class.finish--reserved]="settings.manualEntryEnabled()">
+          <p-button
+            fluid
+            size="small"
+            [dt]="finishButtonTokens"
+            label="Revanche"
+            icon="pi pi-replay"
+            routerLink="/game/new"
+            [queryParams]="{ rematch: state.id }"
+          />
+          <p-button
+            fluid
+            size="small"
+            [dt]="finishButtonTokens"
+            label="Fertig"
+            icon="pi pi-check"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="leaveGame()"
+          />
+        </div>
+      }
+    </div>
 
   </section>
 } @else if (restoring()) {

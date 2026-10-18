@@ -73,7 +73,9 @@ type Recording = Callable[[VisitPosition, bool], GameEvent | None]
 def position_of(game: Game) -> VisitPosition:
     """Which visit is open, read before a command moves it on."""
     return VisitPosition(
-        turn_index=len(game.turns) - 1, player_index=game.current_player_index
+        turn_index=len(game.turns) - 1,
+        player_index=game.current_player_index,
+        darts=len(game.current_turn.darts),
     )
 
 
@@ -95,8 +97,9 @@ def for_command(command: GameCommand, *, camera_armed: bool) -> Recording:
             if isinstance(command, RemoveDartDto | ReplaceDartDto | MoveDartDto)
             else None
         )
+        reopens = isinstance(command, UndoDto) and at.darts == 0
         return GameEvent(
-            kind=_KINDS[type(command)],
+            kind=GameEventKind.VISIT_REOPENED if reopens else _KINDS[type(command)],
             turn_index=at.turn_index,
             player_index=at.player_index,
             accepted=accepted,

@@ -6,6 +6,7 @@ throw history stays available for the statistics planned in the roadmap.
 """
 
 from dataclasses import dataclass, field
+from datetime import datetime
 
 from app.api.features.game.domain.checkout import checkout_route
 from app.api.features.game.domain.checkout_mode import CheckoutMode
@@ -32,6 +33,8 @@ class Game:
     # throwing order. They score nothing until a correction reopens the visit.
     shadow_darts: list[Dart] = field(default_factory=list)
     revision: int = 0
+    # When the stored game last changed; None until it has been written once.
+    updated_at: datetime | None = None
 
     def __post_init__(self) -> None:
         # Invariant: a turn is always open for the current player, so `turns` is
@@ -175,39 +178,27 @@ class Game:
         return remaining == 1
 
     def undo(self) -> None:
-        """Take back the last dart thrown, across turn boundaries.
-
-        When the open turn has no darts yet, the preceding `next_player` is
-        undone as part of the same step and the previous turn's last dart is
-        removed too — an empty turn holds nothing to take back, so stopping there
-        would cost a second undo to change anything.
-
-        Deliberately not guarded by `winner`: correcting a misrecorded winning
-        dart is exactly when undo is needed.
-        """
-        # `can_undo` is exactly the condition under which the loop below changes
-        # something, so the revision can be bumped up front.
+        """Take back the last dart of the open turn, or, when it has none yet,
+        reopen the previous turn with its darts intact. Not guarded by `winner`:
+        correcting a misrecorded winning dart is exactly when undo is needed."""
         if not self.can_undo:
             return
         self.revision += 1
 
-        while True:
-            turn = self.current_turn
-            if turn.darts:
-                turn.darts.pop()
-                # A bust is always caused by the turn's last dart, so removing
-                # that dart necessarily clears it.
-                turn.busted = False
-                self._book_shadow_darts()
-                return
-            if len(self.turns) == 1:
-                return
-            self.turns.pop()
-            self.current_player_index = next(
-                index
-                for index, player in enumerate(self.players)
-                if player.id == self.current_turn.player_id
-            )
+        turn = self.current_turn
+        if turn.darts:
+            turn.darts.pop()
+            # A bust is always caused by the turn's last dart, so removing
+            # that dart necessarily clears it.
+            turn.busted = False
+            self._book_shadow_darts()
+            return
+        self.turns.pop()
+        self.current_player_index = next(
+            index
+            for index, player in enumerate(self.players)
+            if player.id == self.current_turn.player_id
+        )
 
     def remove_dart(self, index: int) -> None:
         """Take one dart out of the open visit — what a phantom booking is

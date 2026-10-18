@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
-import {RouterLink} from '@angular/router';
+import {Router, RouterLink} from '@angular/router';
 import {Button} from 'primeng/button';
 import {ProgressSpinner} from 'primeng/progressspinner';
 import {Skeleton} from 'primeng/skeleton';
@@ -87,6 +87,7 @@ export class GameComponent implements OnInit, OnDestroy {
   private readonly throwCapture = inject(FrameDiffService);
   private readonly detection = inject(DetectionService);
   private readonly document = inject(DOCUMENT);
+  private readonly router = inject(Router);
 
   // Optional: these live behind the "game active" gate, so they are absent until
   // the state is (re)loaded — which after a full reload is a few ticks after init.
@@ -129,6 +130,9 @@ export class GameComponent implements OnInit, OnDestroy {
    * for "no game", which is a different answer from "not yet known". Without a
    * persisted id there is nothing to fetch, so the answer is known at once. */
   protected readonly restoring = signal(this.game.peekGameId() !== null);
+
+  /** Rematch and done: small text in a taller button. */
+  protected readonly finishButtonTokens = { root: { sm: { paddingY: '0.625rem' } } };
 
   /** Placeholder rows while the state is on its way: two, the smallest game. */
   protected readonly skeletonPlayers = [0, 1];
@@ -302,7 +306,22 @@ export class GameComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Refetch the game after a full reload so the view — and with it the camera
     // elements — can render; wiring and camera resume then happen on attach.
-    void this.session.restore().finally(() => this.restoring.set(false));
+    const persisted = this.restoring();
+    void this.session
+      .restore()
+      .then((restored) => {
+        // A stored game that is over leads back to the start screen.
+        if (persisted && !restored) {
+          void this.router.navigate(['/start'], { replaceUrl: true });
+        }
+      })
+      .finally(() => this.restoring.set(false));
+  }
+
+  /** Leave the finished game on this device and return to the start screen. */
+  protected leaveGame(): void {
+    this.session.leave();
+    void this.router.navigate(['/start']);
   }
 
   protected startCamera(): Promise<void> {
@@ -422,7 +441,7 @@ export class GameComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     // Leaving the game screen only pauses the loop; the session (camera + socket)
-    // keeps running so returning is instant. Teardown is endGame() alone.
+    // keeps running so returning is instant. Teardown is leave() alone.
     this.session.detachView();
   }
 }

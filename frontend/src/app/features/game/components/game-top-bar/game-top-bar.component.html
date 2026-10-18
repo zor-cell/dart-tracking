@@ -1,25 +1,26 @@
 @if (game.state(); as state) {
   <header class="top-bar">
     <div class="top-bar__heading">
+      <p-button
+        icon="pi pi-times"
+        severity="secondary"
+        [outlined]="true"
+        size="small"
+        ariaLabel="Spiel verlassen"
+        (onClick)="confirmLeaveGame()"
+      />
       <span class="top-bar__title">{{ title() }}</span>
-      <app-announcer-toggle />
-      <app-torch-toggle />
     </div>
 
-    <div class="top-bar__actions">      <p-button
+    <div class="top-bar__actions">
+      <app-torch-toggle />
+      <app-announcer-toggle />
+      <p-button
         icon="pi pi-share-alt"
         severity="secondary"
         size="small"
         ariaLabel="Spiel teilen"
         (onClick)="openShareDialog()"
-      />
-      <p-button
-        icon="pi pi-sign-out"
-        severity="danger"
-        outlined
-        size="small"
-        ariaLabel="Spiel beenden"
-        (onClick)="confirmEndGame()"
       />
     </div>
   </header>

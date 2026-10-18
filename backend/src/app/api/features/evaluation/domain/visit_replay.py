@@ -71,6 +71,8 @@ def replay(events: Iterable[GameEvent]) -> list[Visit]:
                     corrected[open_index] = True
             case GameEventKind.UNDO if event.accepted:
                 open_index = _undo(accepted, corrected, open_index)
+            case GameEventKind.VISIT_REOPENED if event.accepted:
+                open_index = max(open_index - 1, 0)
             case GameEventKind.DART_REMOVED if event.accepted:
                 if event.dart_index is not None and event.dart_index < len(accepted[open_index]):
                     accepted[open_index].pop(event.dart_index)
@@ -105,9 +107,8 @@ def replay(events: Iterable[GameEvent]) -> list[Visit]:
 def _undo(
     accepted: dict[int, list[GameEvent]], corrected: dict[int, bool], open_index: int
 ) -> int:
-    """Take back the last dart, across visit boundaries — `Game.undo`'s rule:
-    an empty visit holds nothing to take back, so it is dropped and the previous
-    visit's last dart goes instead."""
+    """Take back the last dart. An undo on an empty visit, logged before
+    `VISIT_REOPENED` existed, dropped it and took the previous visit's last dart."""
     while True:
         corrected[open_index] = True
         if accepted[open_index]:

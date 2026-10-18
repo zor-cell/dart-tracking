@@ -101,7 +101,7 @@ class GameRepository:
         """
         finished = game.winner is not None
         derived = (GameStatus.FINISHED if finished else GameStatus.ACTIVE).value
-        await session.execute(
+        game.updated_at = await session.scalar(
             update(GameTable)
             .where(GameTable.id == game.id)
             .values(
@@ -118,6 +118,7 @@ class GameRepository:
                 finished_at=func.now() if finished else None,
                 updated_at=func.now(),
             )
+            .returning(GameTable.updated_at)
         )
 
         # The delete cascades to this game's darts.
@@ -363,6 +364,7 @@ class GameRepository:
             ],
             shadow_darts=[_dart_from_json(dart) for dart in row.shadow_darts],
             revision=row.revision,
+            updated_at=row.updated_at,
         )
 
 

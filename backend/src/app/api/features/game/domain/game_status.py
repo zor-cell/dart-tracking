@@ -16,6 +16,9 @@ class GameStatus(StrEnum):
 # An open game nobody has touched for this long is over, whatever it says.
 ABANDON_AFTER = timedelta(hours=24)
 
+# How long a won game is still reopened on a device that left it open.
+RESUME_FINISHED_FOR = timedelta(minutes=15)
+
 # Below this, an abandoned game is a calibration test rather than a session:
 # three visits is the shortest thing that still says something about scoring.
 MIN_ABANDONED_DARTS = 9
@@ -28,6 +31,14 @@ def effective_status(status: GameStatus, updated_at: datetime) -> GameStatus:
         return status
     stale = datetime.now(UTC) - updated_at > ABANDON_AFTER
     return GameStatus.ABANDONED if stale else status
+
+
+def is_resumable(finished: bool, updated_at: datetime | None) -> bool:
+    """Whether a device that left the game open should still be put back into it."""
+    if updated_at is None:
+        return True
+    window = RESUME_FINISHED_FOR if finished else ABANDON_AFTER
+    return datetime.now(UTC) - updated_at <= window
 
 
 def counts_in_statistics(status: GameStatus, own_darts: int) -> bool:

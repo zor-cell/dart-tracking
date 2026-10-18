@@ -20,7 +20,7 @@ const PHASE_KEY = 'dart-tracking.cameraPhase';
  * hands it its `<video>`/canvas elements on mount (`attachView`) and merely
  * pauses the loop on unmount (`detachView`) — the stream stays up, so returning
  * to the game screen is instant. Full teardown happens only on `endSession`
- * ("Spiel beenden").
+ * ("Spiel verlassen").
  *
  * The socket is deliberately not its business: it belongs to the game, not to
  * the camera, since a device that only keeps score holds one too (`GameService`).
@@ -186,16 +186,24 @@ export class GameSessionService {
    * independent of the DOM, so a full reload restores the state even before the
    * camera elements exist. Stash the phase to resume the camera into; the resume
    * itself happens on the following view attach. Cleared if there is no game. */
-  async restore(): Promise<void> {
+  async restore(): Promise<boolean> {
     // No role check: a stored phase can only come from a device that was
     // filming, and the resume waits for the camera elements — which exist only
     // in the camera view.
     this.pendingResumePhase = this.persistedPhase;
     this.persistedPhase = null;
 
-    if (!(await this.game.ensureRestored())) {
+    const restored = await this.game.ensureRestored();
+    if (!restored) {
       this.pendingResumePhase = null; // no game, or the server forgot it → stay idle
     }
+    return restored;
+  }
+
+  /** Leave the game on this device: the live session and the cached game go. */
+  leave(): void {
+    this.endSession();
+    this.game.reset();
   }
 
   /** Restart the camera after a refresh, landing in the phase the session was

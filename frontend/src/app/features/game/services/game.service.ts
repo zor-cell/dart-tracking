@@ -85,8 +85,9 @@ export class GameService {
       .on('game_state')
       .pipe(takeUntilDestroyed())
       .subscribe((state) => {
+        const previous = this._state();
         if (this.setState(state)) {
-          this.maybeAutoAdvance(state);
+          this.maybeAutoAdvance(previous, state);
         }
       });
 
@@ -213,12 +214,9 @@ export class GameService {
     return true;
   }
 
-  /**
-   * Ensure the game state is loaded, refetching from the persisted id after a
-   * page refresh. Resolves to whether a game is active — false when there is no
-   * persisted id or the server no longer knows it (a stale id is cleared).
-   * Idempotent: a no-op once the state is already in hand.
-   */
+  /** Ensure the game state is loaded, refetching from the persisted id after a
+   * page refresh. Resolves to whether a game is active; an unknown or no longer
+   * resumable game is cleared. A no-op once the state is already in hand. */
   async ensureRestored(): Promise<boolean> {
     if (this._state() !== null) {
       return true;
@@ -227,7 +225,10 @@ export class GameService {
     if (!id) {
       return false;
     }
-    if (await this.join(id)) {
+    const state = await this.fetch(id);
+    if (state?.resumable) {
+      this.setState(state);
+      this.connect();
       return true;
     }
     this.reset();
@@ -241,16 +242,15 @@ export class GameService {
     this.socket.disconnect();
   }
 
-  /**
-   * Advance to the next player once a visit is complete — but only when the
-   * confirm button is turned off.
-   */
-  private maybeAutoAdvance(state: GameStateDto): void {
-    if (
-      state.dartsRemaining === 0 &&
-      state.winnerId === null &&
-      !this.settings.confirmThrowEnabled()
-    ) {
+  /** Advance to the next player when this push completed the visit — but only
+   * when the confirm button is turned off. A visit reopened by undo stays open. */
+  private maybeAutoAdvance(previous: GameStateDto | null, state: GameStateDto): void {
+    const completed =
+      previous?.id === state.id &&
+      previous.turns.length === state.turns.length &&
+      previous.dartsRemaining > 0 &&
+      state.dartsRemaining === 0;
+    if (completed && state.winnerId === null && !this.settings.confirmThrowEnabled()) {
       this.nextPlayer();
     }
   }

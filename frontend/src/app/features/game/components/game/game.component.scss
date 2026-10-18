@@ -441,8 +441,7 @@
 // Gives way once the picture is down to its minimum, down to the keypad's
 // minimum — that is what compresses the key rows from 2.75rem to 2rem rather
 // than dropping the last one.
-.turn,
-.finish {
+.turn {
   flex: 0 1 auto;
   min-height: 0;
   display: flex;
@@ -450,12 +449,19 @@
   gap: var(--turn-gap);
 }
 
-// The picture above is sized by whatever the blocks below leave, so this one has
-// to claim what the input claimed — otherwise the picture grows into the freed
-// space and pushes the player cards down with it. Only where there was a keypad:
-// without one the input block was a single row and there is nothing to reserve.
+// Rematch and done side by side, at the top of the keypad's slot, indented to
+// the width of the dart boxes above.
+.finish {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 0.75rem;
+  padding: 0.5rem 3rem 0;
+}
+
+// Claims the keypad's height, so the picture above does not grow into the freed space.
 .finish--reserved {
-  height: var(--input-height);
+  height: var(--pad-height);
 }
 
 // The back button, the dart boxes and, in camera mode, the confirm button sit on one row.
@@ -478,7 +484,8 @@
 
 // Keep their size next to the growing dart boxes.
 .turn__undo,
-.turn__confirm {
+.turn__confirm,
+.turn__stats {
   flex-shrink: 0;
 }
 

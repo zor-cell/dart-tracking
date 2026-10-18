@@ -17,6 +17,7 @@ class GameEventKind(StrEnum):
     DETECTION_FAILED = "detection_failed"  # the camera looked and found nothing
     MANUAL = "manual"  # a device booked a dart by hand
     UNDO = "undo"
+    VISIT_REOPENED = "visit_reopened"  # an undo on an empty visit went back to the previous one
     DART_REMOVED = "dart_removed"  # a device took one dart out of the open visit
     DART_REPLACED = "dart_replaced"  # a device booked another field for one dart
     DART_MOVED = "dart_moved"  # a device moved one dart to another place in the visit
@@ -30,6 +31,7 @@ class VisitPosition:
 
     turn_index: int
     player_index: int
+    darts: int = 0  # darts in the open visit
 
 
 @dataclass(frozen=True)

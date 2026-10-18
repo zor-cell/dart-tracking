@@ -1,5 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { ConfirmationService } from 'primeng/api';
 import { Button } from 'primeng/button';
@@ -43,6 +44,7 @@ export class GameTopBarComponent {
   private readonly session = inject(GameSessionService);
   private readonly notification = inject(NotificationService);
   private readonly confirmation = inject(ConfirmationService);
+  private readonly router = inject(Router);
 
   protected readonly shareDialogVisible = signal(false);
 
@@ -93,22 +95,25 @@ export class GameTopBarComponent {
     }
   }
 
-  /** Ending the game tears down the running session and cannot be undone, so
-   * confirm it in a modal dialog before acting. */
-  protected confirmEndGame(): void {
+  /** Leaving a running game stops this device's part in it, so that asks first;
+   * a finished one is left at once. */
+  protected confirmLeaveGame(): void {
+    if (this.game.settledWinner() !== null) {
+      this.leaveGame();
+      return;
+    }
     this.confirmation.confirm({
-      header: 'Spiel beenden',
-      message: 'Spiel wirklich beenden? Die Daten gehen dann verloren.',
+      header: 'Spiel verlassen',
+      message: 'Spiel auf diesem Gerät verlassen? Der bisherige Spielstand bleibt gespeichert.',
       icon: 'pi pi-exclamation-triangle',
       rejectButtonProps: { label: 'Abbrechen', severity: 'secondary', text: true },
-      acceptButtonProps: { label: 'Beenden', severity: 'danger' },
-      accept: () => this.endGame(),
+      acceptButtonProps: { label: 'Verlassen', severity: 'danger' },
+      accept: () => this.leaveGame(),
     });
   }
 
-  /** End the game entirely: tear down the live session and clear the state. */
-  private endGame(): void {
-    this.session.endSession();
-    this.game.reset();
+  private leaveGame(): void {
+    this.session.leave();
+    void this.router.navigate(['/start']);
   }
 }
