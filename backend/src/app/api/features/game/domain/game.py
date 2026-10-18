@@ -183,16 +183,13 @@ class Game:
         correcting a misrecorded winning dart is exactly when undo is needed."""
         if not self.can_undo:
             return
-        self.revision += 1
 
         turn = self.current_turn
         if turn.darts:
-            turn.darts.pop()
-            # A bust is always caused by the turn's last dart, so removing
-            # that dart necessarily clears it.
-            turn.busted = False
-            self._book_shadow_darts()
+            # The bust can sit on an earlier dart once one was inserted or moved.
+            self._rescore(turn.darts[:-1])
             return
+        self.revision += 1
         self.turns.pop()
         self.current_player_index = next(
             index
