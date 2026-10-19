@@ -345,16 +345,22 @@ class GameRepository:
                 remaining[(row.id, player.id)] = game.remaining(player.id)
         return remaining
 
-    async def rematch_owner(self, session: AsyncSession, game_id: str) -> str | None:
-        """The owner of the game a rematch follows, while that game is still recent
-        enough to be resumed; None otherwise."""
-        row = await self._recent(session, game_id)
-        return row.owner_user_id if row is not None else None
-
     async def is_recent(self, session: AsyncSession, game_id: str) -> bool:
-        """Whether the game is still recent enough to be resumed, or followed by a
-        rematch that takes over its seats and owner."""
-        return await self._recent(session, game_id) is not None
+        """Whether the game can still be resumed, or followed by a rematch that
+        takes over its seats."""
+        try:
+            UUID(game_id)
+        except ValueError:
+            return False
+
+        row = (
+            await session.execute(
+                select(GameTable.status, GameTable.updated_at).where(GameTable.id == game_id)
+            )
+        ).one_or_none()
+        if row is None:
+            return False
+        return is_resumable(row.status == GameStatus.FINISHED.value, row.updated_at)
 
     async def rematch_seats(
         self, session: AsyncSession, game_id: str
@@ -376,25 +382,6 @@ class GameRepository:
             row.id: PlayerIdentity(id=row.id, display_name=row.display_name, user_id=row.user_id)
             for row in rows
         }
-
-    async def _recent(self, session: AsyncSession, game_id: str) -> Row[Any] | None:
-        """The game's owner row if it can still be resumed, i.e. followed by a rematch."""
-        try:
-            UUID(game_id)
-        except ValueError:
-            return None
-
-        row = (
-            await session.execute(
-                select(GameTable.owner_user_id, GameTable.status, GameTable.updated_at).where(
-                    GameTable.id == game_id
-                )
-            )
-        ).one_or_none()
-        if row is None:
-            return None
-        finished = row.status == GameStatus.FINISHED.value
-        return row if is_resumable(finished, row.updated_at) else None
 
     async def set_status(
         self, session: AsyncSession, game_id: str, user_id: str, status: GameStatus

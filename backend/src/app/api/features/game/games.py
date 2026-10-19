@@ -87,8 +87,8 @@ async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) 
             _ANONYMOUS_GAME_WINDOW,
         )
 
-    # Without an account the game has no owner and every seat is a guest, unless
-    # it is a rematch: that keeps the previous game's owner and its address book.
+    # Without an account the game has no owner, and every seat a rematch does not
+    # carry over is a fresh guest.
     owner_id = user.id if user else None
 
     async with database.session_scope() as session:
@@ -97,13 +97,11 @@ async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) 
         if body.rematch_of:
             seated = await repository.rematch_seats(session, body.rematch_of)
             recent = await repository.is_recent(session, body.rematch_of)
-            if owner_id is None:
-                owner_id = await repository.rematch_owner(session, body.rematch_of)
         identities = await _resolve_players(
             session,
             body.players,
             owner_id,
-            user_id=user.id if user else None,
+            user_id=owner_id,
             seated=seated,
             recent=recent,
         )
