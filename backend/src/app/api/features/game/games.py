@@ -34,13 +34,17 @@ _ANONYMOUS_GAME_LIMIT, _ANONYMOUS_GAME_WINDOW = 30, 60 * 60
 
 
 async def _resolve_players(
-    session: AsyncSession, slots: list[PlayerSlotDto], owner_user_id: str | None
+    session: AsyncSession,
+    slots: list[PlayerSlotDto],
+    owner_user_id: str | None,
+    *,
+    may_claim: bool,
 ) -> list[PlayerIdentity]:
     """Turn the seats into identities: look up the chosen ones, reuse or create a
     row for every typed name. The display name of a chosen identity comes from
     the database, never from the request."""
     claimed = [slot.player_id for slot in slots if slot.player_id]
-    if claimed and owner_user_id is None:
+    if claimed and not may_claim:
         raise HTTPException(status_code=401, detail="authentication required")
     if len(set(claimed)) != len(claimed):
         raise HTTPException(status_code=422, detail="a player can only take one seat")
@@ -83,12 +87,16 @@ async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) 
             _ANONYMOUS_GAME_WINDOW,
         )
 
-    # Anonymous play stays possible: without an account the game simply has no
-    # owner, and every seat is a fresh guest.
+    # Without an account the game has no owner and every seat is a guest, unless
+    # it is a rematch: that keeps the previous game's owner and its address book.
     owner_id = user.id if user else None
 
     async with database.session_scope() as session:
-        identities = await _resolve_players(session, body.players, owner_id)
+        if owner_id is None and body.rematch_of:
+            owner_id = await repository.rematch_owner(session, body.rematch_of)
+        identities = await _resolve_players(
+            session, body.players, owner_id, may_claim=user is not None
+        )
         game = await repository.create(
             session,
             body.mode,

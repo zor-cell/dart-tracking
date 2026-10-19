@@ -15,7 +15,11 @@ from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.game_mode import GameMode
-from app.api.features.game.domain.game_status import GameStatus, effective_status
+from app.api.features.game.domain.game_status import (
+    GameStatus,
+    effective_status,
+    is_resumable,
+)
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.game_summary import GameSummary, GameSummaryPlayer
 from app.api.features.game.domain.player import Player
@@ -340,6 +344,26 @@ class GameRepository:
             for player in game.players:
                 remaining[(row.id, player.id)] = game.remaining(player.id)
         return remaining
+
+    async def rematch_owner(self, session: AsyncSession, game_id: str) -> str | None:
+        """The owner of the game a rematch follows, while that game is still recent
+        enough to be resumed; None otherwise."""
+        try:
+            UUID(game_id)
+        except ValueError:
+            return None
+
+        row = (
+            await session.execute(
+                select(GameTable.owner_user_id, GameTable.status, GameTable.updated_at).where(
+                    GameTable.id == game_id
+                )
+            )
+        ).one_or_none()
+        if row is None or row.owner_user_id is None:
+            return None
+        finished = row.status == GameStatus.FINISHED.value
+        return row.owner_user_id if is_resumable(finished, row.updated_at) else None
 
     async def set_status(
         self, session: AsyncSession, game_id: str, user_id: str, status: GameStatus
