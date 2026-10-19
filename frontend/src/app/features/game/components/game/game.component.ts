@@ -80,6 +80,7 @@ const SIDE_KEYS: readonly FixedKey[] = [MISS, BULL, BULLSEYE];
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[class.camera-expanded]': 'cameraExpanded()' },
 })
 export class GameComponent implements OnInit, OnDestroy {
   protected readonly game = inject(GameService);
@@ -95,7 +96,6 @@ export class GameComponent implements OnInit, OnDestroy {
 
   // Optional: these live behind the "game active" gate, so they are absent until
   // the state is (re)loaded — which after a full reload is a few ticks after init.
-  private readonly cameraRef = viewChild<ElementRef<HTMLDivElement>>('camera');
   private readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('video');
   private readonly diffCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('diffCanvas');
   private readonly captureCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('captureCanvas');
@@ -341,15 +341,15 @@ export class GameComponent implements OnInit, OnDestroy {
     return this.session.startCamera();
   }
 
-  /** Fills the screen with the camera; browser fullscreen where supported, a
-   * fixed overlay otherwise (iPhone). */
+  /** Fills the screen with the camera below the top bar; browser fullscreen where
+   * supported, a fixed overlay otherwise (iPhone). */
   protected toggleCameraExpanded(): void {
     if (this.cameraExpanded()) {
       this.collapseCamera();
       return;
     }
     this.cameraExpanded.set(true);
-    this.cameraRef()?.nativeElement.requestFullscreen?.().catch(() => {});
+    this.document.documentElement.requestFullscreen?.().catch(() => {});
   }
 
   protected switchRole(): void {

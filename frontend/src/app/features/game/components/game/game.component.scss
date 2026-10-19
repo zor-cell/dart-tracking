@@ -9,6 +9,23 @@
   min-height: 0;
 }
 
+// Fullscreen camera: the top bar stays, the picture takes the rest of the screen.
+:host(.camera-expanded) {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #000;
+
+  .game {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .game > :not(.game__camera) {
+    display: none;
+  }
+}
+
 // `.view`'s auto side margins suppress the flex stretch that would otherwise
 // size these to the shell, so the width is stated outright.
 :host > .view {
@@ -68,21 +85,17 @@
 }
 
 .game__camera--expanded {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
+  flex: 1;
   min-height: 0;
   border: none;
   border-radius: 0;
   background: #000;
 
   .game__recalibrate {
-    top: calc(0.5rem + env(safe-area-inset-top));
     right: calc(0.5rem + env(safe-area-inset-right));
   }
 
   .game__switch-role {
-    top: calc(0.5rem + env(safe-area-inset-top));
     left: calc(0.5rem + env(safe-area-inset-left));
   }
 
