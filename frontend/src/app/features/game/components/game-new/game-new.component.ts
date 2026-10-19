@@ -1,4 +1,12 @@
-import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
+import {
+  CdkDrag,
+  CdkDragDrop,
+  CdkDragHandle,
+  CdkDragPlaceholder,
+  CdkDragPreview,
+  CdkDropList,
+} from '@angular/cdk/drag-drop';
+import { DOCUMENT } from '@angular/common';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -44,6 +52,8 @@ type Seat = PlayerIdentityDto | string;
     CdkDropList,
     CdkDrag,
     CdkDragHandle,
+    CdkDragPreview,
+    CdkDragPlaceholder,
   ],
   templateUrl: './game-new.component.html',
   styleUrl: './game-new.component.scss',
@@ -54,6 +64,7 @@ export class GameNewComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly injector = inject(Injector);
+  private readonly document = inject(DOCUMENT);
   private readonly game = inject(GameService);
   private readonly session = inject(GameSessionService);
   private readonly auth = inject(AuthService);
@@ -122,6 +133,11 @@ export class GameNewComponent {
 
   protected dropSeat(event: CdkDragDrop<unknown>): void {
     this.moveSeat(event.previousIndex, event.currentIndex);
+  }
+
+  /** Closes the on-screen keyboard, so the viewport does not resize mid-drag. */
+  protected releaseFocus(): void {
+    (this.document.activeElement as HTMLElement | null)?.blur();
   }
 
   /** Keyboard counterpart to dragging: arrow keys on the grip move the seat by one. */

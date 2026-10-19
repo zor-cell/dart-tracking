@@ -51,7 +51,17 @@
           (cdkDropListDropped)="dropSeat($event)"
         >
           @for (seat of seats.controls; track seat) {
-            <div class="setup__player" cdkDrag cdkDragPreviewContainer="parent">
+            <div
+              class="setup__player"
+              cdkDrag
+              cdkDragPreviewContainer="parent"
+              (cdkDragStarted)="releaseFocus()"
+            >
+              <div *cdkDragPreview matchSize class="setup__player setup__preview">
+                <i class="pi pi-bars setup__preview-grip" aria-hidden="true"></i>
+                <span class="setup__preview-name">{{ label(seat.value) }}</span>
+              </div>
+              <div *cdkDragPlaceholder class="setup__placeholder"></div>
               <button
                 type="button"
                 class="setup__grip"

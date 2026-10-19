@@ -71,8 +71,29 @@
   cursor: grabbing;
 }
 
-.setup__player.cdk-drag-placeholder {
-  opacity: 0.3;
+/* Plain text instead of a cloned input, which iOS would focus. */
+.setup__preview {
+  padding-right: 0.75rem;
+  border: 1px solid var(--p-form-field-border-color, #cbd5e1);
+  cursor: grabbing;
+}
+
+.setup__preview-grip {
+  width: 2.75rem;
+  text-align: center;
+  color: var(--p-text-muted-color, #6b7280);
+}
+
+.setup__preview-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setup__placeholder {
+  height: 2.4375rem;
+  border: 1px dashed var(--p-form-field-border-color, #cbd5e1);
+  border-radius: var(--p-border-radius-md, 6px);
 }
 
 .setup__players.cdk-drop-list-dragging .setup__player:not(.cdk-drag-placeholder) {
