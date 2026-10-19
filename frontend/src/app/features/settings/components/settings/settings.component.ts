@@ -26,7 +26,7 @@ const TEST_RESULTS: Record<AnnouncerTestResult, string> = {
 /** The finishing doubles a player can prefer, as the checkout labels them. */
 const DOUBLE_OPTIONS = [
   ...Array.from({ length: 20 }, (_, i) => ({ label: `D${20 - i}`, value: 20 - i })),
-  { label: 'Bull', value: 25 },
+  { label: 'Double Bull', value: 25 },
 ];
 
 @Component({
