@@ -8,7 +8,7 @@ throw history stays available for the statistics planned in the roadmap.
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from app.api.features.game.domain.checkout import checkout_route
+from app.api.features.game.domain.checkout import Setup, checkout_route, setup_route
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game_mode import GameMode
@@ -77,6 +77,19 @@ class Game:
             self.current_player.preferred_doubles,
         )
         return list(route) if route is not None else None
+
+    @property
+    def setup(self) -> Setup | None:
+        """What to throw when this visit cannot finish, so the next one can. x01
+        only: in elimination the reset route fills that gap."""
+        if self.variant is not GameVariant.X01 or self.winner is not None:
+            return None
+        return setup_route(
+            self.remaining(self.current_player.id),
+            self.darts_remaining,
+            self.checkout_mode is CheckoutMode.DOUBLE_OUT,
+            self.current_player.preferred_doubles,
+        )
 
     @property
     def elimination(self) -> list[str] | None:

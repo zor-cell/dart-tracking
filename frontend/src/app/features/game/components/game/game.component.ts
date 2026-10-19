@@ -38,11 +38,13 @@ type FixedKey = {
   readonly multiplier: number;
 };
 
-/** One suggestion box: its label, and whether it resets an opponent rather than
- * winning the leg. */
+/** One suggestion box: its label, and whether it resets an opponent or only sets
+ * up the next visit rather than winning the leg. `leave` marks a setup's last dart. */
 type CheckoutSlot = {
   readonly label: string | null;
   readonly eliminating: boolean;
+  readonly setup: boolean;
+  readonly leave: number | null;
   readonly shadow: boolean;
 };
 
@@ -191,22 +193,30 @@ export class GameComponent implements OnInit, OnDestroy {
    * The slots after the darts already thrown, carrying the suggested route where
    * there is one. Sized off the darts thrown rather than `dartsRemaining`: a
    * busted visit has none remaining, which would drop the boxes from the row.
-   * A winning finish outranks a reset, so the elimination route only fills the
-   * slots when there is no checkout. Shadow darts take the first free slots.
+   * A winning finish outranks a reset or a setup, which only fill the slots when
+   * there is no checkout. Shadow darts take the first free slots.
    */
   protected readonly checkoutSlots = computed<readonly CheckoutSlot[]>(() => {
     const thrown = this.game.currentTurn()?.darts.length ?? 0;
     const state = this.game.state();
     const checkout = state?.checkout ?? null;
     const elimination = state?.elimination ?? null;
-    const route = checkout ?? elimination;
-    const eliminating = checkout === null && elimination !== null;
+    const setup = checkout === null ? (state?.setup ?? null) : null;
+    const route = checkout ?? setup?.darts ?? elimination;
+    const eliminating = checkout === null && setup === null && elimination !== null;
     const shadows = this.game.shadowDarts();
     return Array.from({ length: DARTS_PER_TURN - thrown }, (_, index) => {
       const shadow = shadows[index];
+      const last = setup !== null && index === setup.darts.length - 1;
       return shadow
-        ? { label: shadow.label, eliminating: false, shadow: true }
-        : { label: route?.[index] ?? null, eliminating, shadow: false };
+        ? { label: shadow.label, eliminating: false, setup: false, leave: null, shadow: true }
+        : {
+            label: route?.[index] ?? null,
+            eliminating,
+            setup: setup !== null && index < setup.darts.length,
+            leave: last ? setup.leave : null,
+            shadow: false,
+          };
     });
   });
 

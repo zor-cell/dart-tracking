@@ -274,11 +274,15 @@
                 class="turn__dart turn__dart--empty"
                 [class.turn__dart--checkout]="slot.label !== null && !slot.shadow"
                 [class.turn__dart--elimination]="slot.eliminating && slot.label !== null"
+                [class.turn__dart--setup]="slot.setup"
                 [class.turn__dart--shadow]="slot.shadow"
                 [attr.aria-hidden]="slot.shadow ? null : 'true'"
                 [attr.aria-label]="slot.shadow ? slot.label + ', erkannt, nicht gewertet' : null"
               >
                 {{ slot.label ?? '–' }}
+                @if (slot.leave !== null) {
+                  <span class="turn__leave">→{{ slot.leave }}</span>
+                }
               </li>
             }
           </ul>

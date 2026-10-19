@@ -537,6 +537,21 @@
   color: var(--p-red-500, #ef4444);
 }
 
+// No finish this visit: what to throw so the next one can finish.
+.turn__dart--setup {
+  overflow: hidden;
+  color: var(--p-amber-500, #f59e0b);
+  font-style: italic;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.turn__leave {
+  margin-left: 0.15rem;
+  font-size: 0.7em;
+  font-weight: 400;
+}
+
 // Located after the visit closed: shown, but not counted until a correction reopens it.
 .turn__dart--shadow {
   border-style: dashed;

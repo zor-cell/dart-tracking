@@ -3,6 +3,7 @@ import { CheckoutMode } from '../models/checkout-mode';
 import { GameVariant } from '../models/game-variant';
 import { DartDto } from './dart.dto';
 import { PlayerDto } from './player.dto';
+import { SetupDto } from './setup.dto';
 import { TurnDto } from './turn.dto';
 
 /**
@@ -26,6 +27,7 @@ export interface GameStateDto {
   readonly canUndo: boolean;
   readonly winnerId: number | null;
   readonly checkout: readonly string[] | null;
+  readonly setup: SetupDto | null;
   readonly elimination: readonly string[] | null;
   readonly evaluationEnabled: boolean;
   /** Whether a device that left the game open should still be put back into it. */

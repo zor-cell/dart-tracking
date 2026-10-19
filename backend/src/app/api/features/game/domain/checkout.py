@@ -4,7 +4,7 @@ Given the points a player has left and how many darts still remain in the curren
 turn, find a short dart sequence that finishes the leg. Under double-out the
 final dart must land in a double (the bullseye counts as the double bull); under
 single-out any field finishes. Returns None when no finish fits into the
-available darts — precisely the "no checkout" case the UI must leave blank.
+available darts — precisely the case `setup_route` then fills.
 
 Among the valid routes the search prefers, in order: fewer darts, a more
 conventional finishing double, then concentrating the setup into high-value darts
@@ -12,6 +12,8 @@ conventional finishing double, then concentrating the setup into high-value dart
 claim to reproduce any specific professional checkout table.
 """
 
+from collections.abc import Callable
+from dataclasses import dataclass
 from functools import lru_cache
 from itertools import combinations_with_replacement
 
@@ -63,8 +65,7 @@ def checkout_route(
         return None
 
     finishes = _DOUBLES if double_out else _ALL_FIELDS
-    double_rank = _double_out_rank(preferred)
-    rank = (lambda label: double_rank[label]) if double_out else _single_out_rank
+    rank = _finish_rank(double_out, preferred)
 
     best_cost: tuple[int, int, int] | None = None
     best_route: tuple[str, ...] | None = None
@@ -90,3 +91,73 @@ def checkout_route(
                     best_route = tuple(label for label, _ in ordered) + (finish_label,)
 
     return best_route
+
+
+@dataclass(frozen=True)
+class Setup:
+    """Darts to throw when the visit cannot finish, and the points they leave."""
+
+    darts: tuple[str, ...]
+    leave: int
+
+
+# Highest leave `setup_route` aims for: two darts finish at most 110 double-out, 120 single-out.
+_MAX_SETUP_LEAVE = 120
+
+
+@lru_cache(maxsize=None)
+def setup_route(
+    remaining: int, darts: int, double_out: bool, preferred: tuple[int, ...] = ()
+) -> Setup | None:
+    """When `darts` cannot finish `remaining`: the setup after which the next
+    visit finishes in as few darts as possible. None when a checkout exists or no
+    leave of at most two darts can be reached."""
+    if darts <= 0 or remaining - 60 * darts > _MAX_SETUP_LEAVE:
+        return None
+    if checkout_route(remaining, darts, double_out, preferred) is not None:
+        return None
+
+    rank = _finish_rank(double_out, preferred)
+    lowest_leave = 2 if double_out else 1
+
+    best_cost: tuple[int, int, int, int, int] | None = None
+    best: Setup | None = None
+    for setup_size in range(1, darts + 1):
+        for total, ((risky, spread), labels) in _setups_by_total(setup_size).items():
+            leave = remaining - total
+            if not lowest_leave <= leave <= _MAX_SETUP_LEAVE:
+                continue
+            route = checkout_route(leave, 2, double_out, preferred)
+            if route is None:
+                continue
+            cost = (len(route), rank(route[-1]), risky, setup_size, spread)
+            if best_cost is None or cost < best_cost:
+                best_cost = cost
+                best = Setup(darts=labels, leave=leave)
+
+    return best
+
+
+@lru_cache(maxsize=None)
+def _setups_by_total(size: int) -> dict[int, tuple[tuple[int, int], tuple[str, ...]]]:
+    """The easiest `size`-dart setup for every total it makes, with its cost: the
+    fewest trebles, doubles and bulls, then the highest-value darts."""
+    best: dict[int, tuple[tuple[int, int], tuple[str, ...]]] = {}
+    for setup in combinations_with_replacement(_ALL_FIELDS, size):
+        total = sum(value for _, value in setup)
+        cost = (
+            sum(1 for label, _ in setup if not label.isdigit() or label == "50"),
+            -sum(value * value for _, value in setup),
+        )
+        if total not in best or cost < best[total][0]:
+            ordered = sorted(setup, key=lambda field: field[1], reverse=True)
+            best[total] = (cost, tuple(label for label, _ in ordered))
+    return best
+
+
+def _finish_rank(double_out: bool, preferred: tuple[int, ...]) -> Callable[[str], int]:
+    """How much a finishing dart is preferred, lower first."""
+    if not double_out:
+        return _single_out_rank
+    double_rank = _double_out_rank(preferred)
+    return lambda label: double_rank[label]

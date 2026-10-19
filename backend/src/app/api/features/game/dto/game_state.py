@@ -3,6 +3,7 @@ from typing import Literal, Self
 from app.api.core.dto.base import CamelModel
 from app.api.features.game.dto.dart import DartDto
 from app.api.features.game.dto.player import PlayerDto
+from app.api.features.game.dto.setup import SetupDto
 from app.api.features.game.dto.turn import TurnDto
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.game import Game
@@ -33,6 +34,7 @@ class GameStateDto(CamelModel):
     can_undo: bool
     winner_id: int | None
     checkout: list[str] | None
+    setup: SetupDto | None
     elimination: list[str] | None
     evaluation_enabled: bool
     resumable: bool
@@ -56,6 +58,7 @@ class GameStateDto(CamelModel):
             can_undo=game.can_undo,
             winner_id=game.winner.id if game.winner is not None else None,
             checkout=game.checkout,
+            setup=SetupDto.from_entity(game.setup) if game.setup is not None else None,
             elimination=game.elimination,
             evaluation_enabled=game.evaluation_enabled,
             resumable=is_resumable(game.winner is not None, game.updated_at),
