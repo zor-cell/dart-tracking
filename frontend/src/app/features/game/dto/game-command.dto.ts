@@ -1,4 +1,6 @@
-/** Client -> server: what every game command carries besides its own fields. */
+/** Client -> server: what every game command carries besides its own fields —
+ * the open visit as the device saw it, so the server can refuse an outdated one. */
 export interface GameCommandDto {
-  readonly revision?: number; // revision of the state the command was made against
+  readonly turnIndex?: number;
+  readonly dartCount?: number;
 }

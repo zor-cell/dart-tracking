@@ -5,6 +5,7 @@ import { Observable, firstValueFrom, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
 import { SocketService } from '../../../core/socket/services/socket.service';
+import { GameCommandDto } from '../dto/game-command.dto';
 import { GameStateDto } from '../dto/game-state.dto';
 import { PlayerDto } from '../dto/player.dto';
 import { TurnDto } from '../dto/turn.dto';
@@ -115,17 +116,17 @@ export class GameService {
   /** Book one dart as the field it landed in — the server derives its points and
    * the called-out label from that. */
   registerDart(value: number, multiplier: number): void {
-    this.socket.send({ type: 'register_dart', value, multiplier, revision: this.revision() });
+    this.socket.send({ type: 'register_dart', value, multiplier, ...this.seenVisit() });
   }
 
   /** Step back one action — a dart, or the switch to the current player. */
   undo(): void {
-    this.socket.send({ type: 'undo', revision: this.revision() });
+    this.socket.send({ type: 'undo', ...this.seenVisit() });
   }
 
   /** Take one dart out of the open visit; the darts after it move up. */
   removeDart(index: number): void {
-    this.socket.send({ type: 'remove_dart', index, revision: this.revision() });
+    this.socket.send({ type: 'remove_dart', index, ...this.seenVisit() });
   }
 
   /** Book a different field for one dart of the open visit, in its place. */
@@ -135,18 +136,18 @@ export class GameService {
       index,
       value,
       multiplier,
-      revision: this.revision(),
+      ...this.seenVisit(),
     });
   }
 
   /** Move one dart of the open visit to another place in it. */
   moveDart(index: number, toIndex: number): void {
-    this.socket.send({ type: 'move_dart', index, toIndex, revision: this.revision() });
+    this.socket.send({ type: 'move_dart', index, toIndex, ...this.seenVisit() });
   }
 
   /** Switch to the next player */
   nextPlayer(): void {
-    this.socket.send({ type: 'next_player', revision: this.revision() });
+    this.socket.send({ type: 'next_player', ...this.seenVisit() });
   }
 
   /** Take the winning dart as thrown. Local to this device: the server has
@@ -248,9 +249,13 @@ export class GameService {
     this.socket.disconnect();
   }
 
-  /** The revision of the state this device shows, stamped on every game command. */
-  private revision(): number | undefined {
-    return this._state()?.revision;
+  /** The open visit as this device shows it, stamped on every game command. */
+  private seenVisit(): GameCommandDto {
+    const state = this._state();
+    if (!state) {
+      return {};
+    }
+    return { turnIndex: state.turns.length - 1, dartCount: state.turns.at(-1)?.darts.length ?? 0 };
   }
 
   /** Advance to the next player when this push completed the visit — but only
