@@ -41,12 +41,17 @@
   padding: 0.5rem 0.5rem 0;
 }
 
+/* The dot sits on the centre line, over the play button, whatever the text lengths. */
 .replay__rounds {
   margin: 0;
-  text-align: center;
-  color: var(--p-text-muted-color, #6b7280);
-  font-size: 0.8rem;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0.4rem;
   font-variant-numeric: tabular-nums;
+}
+
+.replay__rounds-round {
+  text-align: right;
 }
 
 .replay__controls {

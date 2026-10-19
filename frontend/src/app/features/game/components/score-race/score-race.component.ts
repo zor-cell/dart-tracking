@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import type { ChartData, ChartOptions, Plugin } from 'chart.js';
+import type { ChartData, ChartOptions, Plugin, ScriptableLineSegmentContext } from 'chart.js';
 import { UIChart } from 'primeng/chart';
 import { PlayerDto } from '../../dto/player.dto';
 import { VisitDto } from '../../dto/visit.dto';
@@ -49,12 +49,16 @@ export class ScoreRaceComponent {
   private readonly rounds = computed(() => {
     const seats = this.players().length;
     const visits = this.visits();
-    const rounds: { standings: readonly number[]; closedBy: number }[] = [
-      { standings: this.players().map(() => this.mode()), closedBy: -1 },
+    const everyone = new Set(this.players().map((player) => player.id));
+    const rounds: { standings: readonly number[]; closedBy: number; threw: ReadonlySet<number> }[] = [
+      { standings: this.players().map(() => this.mode()), closedBy: -1, threw: everyone },
     ];
+    let threw = new Set<number>();
     visits.forEach((visit, index) => {
+      threw.add(visit.playerId);
       if (index % seats === seats - 1 || index === visits.length - 1) {
-        rounds.push({ standings: visit.standings, closedBy: index });
+        rounds.push({ standings: visit.standings, closedBy: index, threw });
+        threw = new Set<number>();
       }
     });
     return rounds;
@@ -131,13 +135,21 @@ export class ScoreRaceComponent {
       datasets: this.players().map((player) => {
         const base = SERIES_COLORS[player.id % SERIES_COLORS.length];
         const color = highlight === null || highlight === player.id ? base : `${base}40`;
-        const points = this.rounds()
-          .filter(({ closedBy }) => closedBy < finished)
-          .map(({ standings }, round) => ({ x: round, y: this.value(standings[player.id]) }));
+        const reached = this.rounds().filter(({ closedBy }) => closedBy < finished);
+        const points = reached.map(({ standings }, round) => ({
+          x: round,
+          y: this.value(standings[player.id]),
+        }));
+        // A round the game ended before this player threw in: the score stands, nothing was thrown.
+        const idle = reached.map(({ threw }) => !threw.has(player.id));
         const partial = this.partial(player.id);
         return {
           label: player.name,
           data: partial === null ? points : [...points, partial],
+          segment: {
+            borderDash: (segment: ScriptableLineSegmentContext) =>
+              idle[segment.p1DataIndex] ? [4, 4] : undefined,
+          },
           borderColor: color,
           backgroundColor: color,
           borderWidth: 2,

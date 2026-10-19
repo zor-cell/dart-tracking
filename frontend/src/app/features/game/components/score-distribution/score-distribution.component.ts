@@ -22,9 +22,6 @@ const LANE_DISTANCE = 7;
 /** Half the height of the average mark, in row units. */
 const AVERAGE_HALF_HEIGHT = 0.36;
 
-/** Height of one player's row, in pixels. */
-const ROW_HEIGHT = 56;
-
 /** Dot radius for a single visit, and for one that stands for several equal ones. */
 const DOT_RADIUS = 5;
 const MERGED_DOT_RADIUS = 8;
@@ -58,8 +55,6 @@ export class ScoreDistributionComponent {
   private readonly decimal = inject(DecimalPipe);
 
   protected readonly plugins: Plugin<'scatter'>[] = [countLabelsPlugin];
-
-  protected readonly height = computed(() => `${this.players().length * ROW_HEIGHT + 48}px`);
 
   /** The visits played so far, each with the round it belongs to. */
   private readonly played = computed(() => {
@@ -144,7 +139,7 @@ export class ScoreDistributionComponent {
             scale.ticks = Array.from({ length: MAX_VISIT / 20 + 1 }, (_, i) => ({ value: i * 20 }));
           },
           ticks: { color: muted, font: { family: font, size: 10 } },
-          title: { display: true, text: 'Punkte pro Aufnahme', color: muted, font: { family: font, size: 10 } },
+          title: { display: true, text: 'Punkte pro Visit', color: muted, font: { family: font, size: 10 } },
         },
         y: {
           reverse: true,

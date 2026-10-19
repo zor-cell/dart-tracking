@@ -22,7 +22,7 @@ import { ScoreboardEntry } from '../../models/scoreboard-entry';
 import { labelPoints, ReplayPosition } from '../../models/visit';
 import { ScoreDistributionComponent } from '../score-distribution/score-distribution.component';
 import { ScoreRaceComponent } from '../score-race/score-race.component';
-import { ScoreboardComponent } from '../scoreboard/scoreboard.component';
+// import { ScoreboardComponent } from '../scoreboard/scoreboard.component';
 import { VirtualBoardComponent } from '../virtual-board/virtual-board.component';
 
 /** Time per dart at normal speed, in milliseconds. */
@@ -47,7 +47,7 @@ const VIEWS: readonly { label: string; value: ReplayView }[] = [
     FormsModule,
     ScoreDistributionComponent,
     ScoreRaceComponent,
-    ScoreboardComponent,
+    // ScoreboardComponent,
     Select,
     SelectButton,
     Slider,
@@ -102,7 +102,7 @@ export class GameReplayComponent implements OnInit {
     );
   });
 
-  private readonly step = computed(() => this.steps()[this.cursor() - 1] ?? null);
+  protected readonly step = computed(() => this.steps()[this.cursor() - 1] ?? null);
 
   protected readonly visit = computed(() => {
     const step = this.step();

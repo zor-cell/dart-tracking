@@ -55,15 +55,19 @@
   }
 
   <div class="replay__playback">
+    <!-- Carousel off while #25 decides whether the replay needs it.
     <app-scoreboard
       [entries]="scoreboardEntries()"
       [activeIndex]="activeIndex()"
       [winnerId]="winnerId()"
     />
+    -->
 
     <div class="replay__timeline">
       <p class="replay__rounds" aria-live="polite">
-        Runde {{ round() }}&thinsp;/&thinsp;{{ totalRounds() }}
+        <span class="replay__rounds-round">Runde {{ round() }}&thinsp;/&thinsp;{{ totalRounds() }}</span>
+        <span aria-hidden="true">&middot;</span>
+        <span>Dart {{ (step()?.dart ?? -1) + 1 }}</span>
       </p>
       <p-slider
         [min]="0"
