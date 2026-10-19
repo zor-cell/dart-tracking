@@ -56,10 +56,15 @@ export const endLabelsPlugin: Plugin<'line'> = {
     const { ctx, chartArea } = chart;
     const labels = chart.data.datasets
       .map((dataset, index) => {
-        const points = chart.getDatasetMeta(index).data;
-        const last = points[points.length - 1];
-        const value = dataset.data[dataset.data.length - 1];
-        return last ? { y: last.y, text: `${dataset.label} ${value}` } : null;
+        // The last value drawn so far: a series cut short ends in nulls.
+        let at = dataset.data.length - 1;
+        while (at >= 0 && dataset.data[at] === null) {
+          at--;
+        }
+        const point = chart.getDatasetMeta(index).data[at];
+        const raw = dataset.data[at];
+        const value = typeof raw === 'object' && raw !== null && 'y' in raw ? raw.y : raw;
+        return point ? { y: point.y, text: `${dataset.label} ${value}` } : null;
       })
       .filter((label) => label !== null)
       .sort((a, b) => a.y - b.y);
@@ -98,3 +103,27 @@ export const countLabelsPlugin: Plugin<'scatter'> = {
     ctx.restore();
   },
 };
+
+/** A dashed vertical line at the x index `index()` names; nothing while it is null. */
+export function indexMarkerPlugin(index: () => number | null): Plugin<'line'> {
+  return {
+    id: 'indexMarker',
+    afterDatasetsDraw(chart: Chart<'line'>) {
+      const at = index();
+      if (at === null) {
+        return;
+      }
+      const { ctx, chartArea } = chart;
+      const x = chart.scales['x'].getPixelForValue(at);
+      ctx.save();
+      ctx.strokeStyle = '#6b7280';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x, chartArea.top);
+      ctx.lineTo(x, chartArea.bottom);
+      ctx.stroke();
+      ctx.restore();
+    },
+  };
+}

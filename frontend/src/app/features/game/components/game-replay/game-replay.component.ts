@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  effect,
+  input,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Select } from 'primeng/select';
@@ -11,17 +19,25 @@ import { VisitDto } from '../../dto/visit.dto';
 import { GameMode } from '../../models/game-mode';
 import { GameVariant } from '../../models/game-variant';
 import { ScoreboardEntry } from '../../models/scoreboard-entry';
+import { labelPoints, ReplayPosition } from '../../models/visit';
+import { ScoreDistributionComponent } from '../score-distribution/score-distribution.component';
+import { ScoreRaceComponent } from '../score-race/score-race.component';
 import { ScoreboardComponent } from '../scoreboard/scoreboard.component';
 import { VirtualBoardComponent } from '../virtual-board/virtual-board.component';
 
 /** Time per dart at normal speed, in milliseconds. */
 const DART_INTERVAL_MS = 500;
 
-/** One dart of the replay: which visit, and which dart within it. */
-interface ReplayStep {
-  readonly visit: number;
-  readonly dart: number;
-}
+/** Where the last chosen view is kept, so the next game opens on it. */
+const VIEW_KEY = 'dart-tracking.gameView';
+
+type ReplayView = 'board' | 'race' | 'distribution';
+
+const VIEWS: readonly { label: string; value: ReplayView }[] = [
+  { label: 'Scheibe', value: 'board' },
+  { label: 'Punkte', value: 'race' },
+  { label: 'Visits', value: 'distribution' },
+];
 
 @Component({
   selector: 'app-game-replay',
@@ -29,6 +45,8 @@ interface ReplayStep {
     BoardHeatmapComponent,
     Button,
     FormsModule,
+    ScoreDistributionComponent,
+    ScoreRaceComponent,
     ScoreboardComponent,
     Select,
     SelectButton,
@@ -39,11 +57,15 @@ interface ReplayStep {
   styleUrl: './game-replay.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GameReplayComponent {
+/** The game played back in one of three views, all driven by the same timeline. */
+export class GameReplayComponent implements OnInit {
   readonly visits = input.required<readonly VisitDto[]>();
   readonly players = input.required<readonly PlayerDto[]>();
   readonly mode = input.required<GameMode>();
   readonly variant = input.required<GameVariant>();
+
+  protected readonly viewOptions = [...VIEWS];
+  protected readonly view = signal<ReplayView>(storedView());
 
   protected readonly speedOptions = [1, 2, 4].map((value) => ({ label: `${value}×`, value }));
   protected readonly playerOptions = computed(() => [
@@ -59,7 +81,19 @@ export class GameReplayComponent {
   /** How many darts of the replay are shown. */
   protected readonly cursor = signal(0);
 
-  protected readonly steps = computed<ReplayStep[]>(() => {
+  /** The replay's spot for the charts; before the first dart, no dart of visit 0. */
+  protected readonly position = computed<ReplayPosition>(() => this.step() ?? { visit: 0, dart: -1 });
+
+  /** Visits whose last dart has been shown, counted in throwing order. */
+  protected readonly shownVisits = computed(() => {
+    const step = this.step();
+    if (step === null) {
+      return 0;
+    }
+    return this.visitComplete() ? step.visit + 1 : step.visit;
+  });
+
+  protected readonly steps = computed<ReplayPosition[]>(() => {
     const playerId = this.playerId();
     return this.visits().flatMap((visit, index) =>
       playerId !== null && visit.playerId !== playerId
@@ -98,6 +132,10 @@ export class GameReplayComponent {
     return step !== null && step.dart === this.visits()[step.visit].darts.length - 1;
   });
 
+  protected readonly totalRounds = computed(() =>
+    Math.ceil(this.visits().length / this.players().length),
+  );
+
   /** Round of the visit on the board, counted over all players. */
   protected readonly round = computed(() => {
     const step = this.step();
@@ -117,8 +155,13 @@ export class GameReplayComponent {
 
   /** Cards as in the live game: points still needed in x01, points gathered in elimination. */
   protected readonly scoreboardEntries = computed<ScoreboardEntry[]>(() => {
-    const standings = this.standings();
+    const standings = [...this.standings()];
     const elimination = this.variant() === 'elimination';
+    // The thrower counts down dart by dart, as in the live game; a bust keeps the old score.
+    const visit = this.visit();
+    if (visit !== null && !this.visitComplete() && !visit.busted) {
+      standings[visit.playerId] -= this.boardDarts().reduce((sum, d) => sum + labelPoints(d.label), 0);
+    }
     return this.players().map((player) => ({
       id: player.id,
       name: player.name,
@@ -138,6 +181,20 @@ export class GameReplayComponent {
       ? visit.playerId
       : null;
   });
+
+  /** Opens on the finished game; playing starts over from the first dart. */
+  ngOnInit(): void {
+    this.cursor.set(this.steps().length);
+  }
+
+  protected selectView(view: ReplayView): void {
+    this.view.set(view);
+    try {
+      localStorage.setItem(VIEW_KEY, view);
+    } catch {
+      // Storage can be unavailable (private mode); the choice then lasts this visit only.
+    }
+  }
 
   constructor() {
     effect((onCleanup) => {
@@ -199,7 +256,7 @@ export class GameReplayComponent {
     this.cursor.set(reached.length);
   }
 
-  private roundOf(step: ReplayStep): number {
+  private roundOf(step: ReplayPosition): number {
     return Math.floor(step.visit / this.players().length) + 1;
   }
 
@@ -209,5 +266,14 @@ export class GameReplayComponent {
       return;
     }
     this.cursor.update((cursor) => cursor + 1);
+  }
+}
+
+function storedView(): ReplayView {
+  try {
+    const stored = localStorage.getItem(VIEW_KEY);
+    return VIEWS.some((view) => view.value === stored) ? (stored as ReplayView) : 'board';
+  } catch {
+    return 'board';
   }
 }

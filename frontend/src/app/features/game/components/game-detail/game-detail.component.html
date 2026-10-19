@@ -113,7 +113,7 @@
               </tr>
             }
             <tr>
-              <th scope="row">Überworfen</th>
+              <th scope="row">Busts</th>
               @for (player of standings(); track player.id) {
                 <td>{{ player.busts }}</td>
               }
@@ -124,23 +124,7 @@
     </section>
 
     @if (detail.visits.length > 0) {
-      <section class="panel">
-        <h2 class="panel__title">Verlauf</h2>
-        <app-score-race
-          [visits]="detail.visits"
-          [players]="detail.game.players"
-          [mode]="detail.game.mode"
-          [variant]="detail.game.variant"
-        />
-      </section>
-
-      <section class="panel">
-        <h2 class="panel__title">Konstanz</h2>
-        <app-score-distribution [visits]="detail.visits" [players]="detail.game.players" />
-      </section>
-
-      <section class="panel">
-        <h2 class="panel__title">Replay</h2>
+      <section class="panel" aria-label="Spielverlauf">
         <app-game-replay
           [visits]="detail.visits"
           [players]="detail.game.players"

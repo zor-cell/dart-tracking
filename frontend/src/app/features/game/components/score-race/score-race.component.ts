@@ -6,7 +6,13 @@ import { PlayerDto } from '../../dto/player.dto';
 import { VisitDto } from '../../dto/visit.dto';
 import { GameMode } from '../../models/game-mode';
 import { GameVariant } from '../../models/game-variant';
-import { chartTheme, crosshairPlugin, endLabelsPlugin } from '../../../../core/charts/models/chart-plugins';
+import { DARTS_PER_TURN, labelPoints, ReplayPosition } from '../../models/visit';
+import {
+  chartTheme,
+  crosshairPlugin,
+  endLabelsPlugin,
+  indexMarkerPlugin,
+} from '../../../../core/charts/models/chart-plugins';
 import { SERIES_COLORS } from '../../../../core/charts/models/series-colors';
 
 /**
@@ -25,42 +31,113 @@ export class ScoreRaceComponent {
   readonly players = input.required<readonly PlayerDto[]>();
   readonly mode = input.required<GameMode>();
   readonly variant = input.required<GameVariant>();
+  /** How far a replay has got; null shows the whole game unmarked. */
+  readonly position = input<ReplayPosition | null>(null);
+  /** The player to bring forward; the others fade. */
+  readonly highlightId = input<number | null>(null);
 
   private readonly theme = chartTheme(inject(DOCUMENT));
-  protected readonly plugins: Plugin<'line'>[] = [crosshairPlugin, endLabelsPlugin];
+  protected readonly plugins: Plugin<'line'>[] = [
+    crosshairPlugin,
+    endLabelsPlugin,
+    indexMarkerPlugin(() => this.markerX()),
+  ];
 
   private readonly elimination = computed(() => this.variant() === 'elimination');
 
-  /** Standings after each completed round, starting with everyone at the mode. */
+  /** Standings after each round, with the index of the visit that closed it. */
   private readonly rounds = computed(() => {
     const seats = this.players().length;
     const visits = this.visits();
-    const rounds: (readonly number[])[] = [this.players().map(() => this.mode())];
+    const rounds: { standings: readonly number[]; closedBy: number }[] = [
+      { standings: this.players().map(() => this.mode()), closedBy: -1 },
+    ];
     visits.forEach((visit, index) => {
       if (index % seats === seats - 1 || index === visits.length - 1) {
-        rounds.push(visit.standings);
+        rounds.push({ standings: visit.standings, closedBy: index });
       }
     });
     return rounds;
   });
 
-  protected readonly unitLabel = computed(() =>
-    this.elimination() ? 'Punkte nach jeder Runde' : 'Restpunkte nach jeder Runde',
-  );
+  private readonly seats = computed(() => this.players().length);
 
-  protected readonly data = computed<ChartData<'line'>>(() => {
-    const rounds = this.rounds();
-    const mode = this.mode();
-    const elimination = this.elimination();
+  /** Visits finished at the current position, in throwing order. */
+  private readonly finishedVisits = computed(() => {
+    const position = this.position();
+    if (position === null) {
+      return this.visits().length;
+    }
+    const visit = this.visits()[position.visit];
+    return visit !== undefined && position.dart === visit.darts.length - 1
+      ? position.visit + 1
+      : position.visit;
+  });
+
+  /** Where on the round axis the replay stands: a third of a round per dart. */
+  private readonly markerX = computed(() => {
+    const position = this.position();
+    if (position === null) {
+      return null;
+    }
+    const round = Math.floor(position.visit / this.seats());
+    // A finished visit closes its slot, even one that ended early on a checkout.
+    const visit = this.visits()[position.visit];
+    const finished = visit !== undefined && position.dart === visit.darts.length - 1;
+    return round + (finished ? 1 : (position.dart + 1) / DARTS_PER_TURN);
+  });
+
+  /** The number plotted for a standing: what is left in x01, what is gathered in elimination. */
+  private value(remaining: number): number {
+    return this.elimination() ? this.mode() - remaining : remaining;
+  }
+
+  /** A player's points in the round under way: after their visit, or live during it. */
+  private partial(playerId: number): { x: number; y: number } | null {
+    const position = this.position();
+    const finished = this.finishedVisits();
+    const seats = this.seats();
+    const visits = this.visits();
+    if (position === null || position.dart < 0) {
+      return null;
+    }
+    const round = Math.floor(position.visit / seats);
+    // A round closed at this very dart is already among the completed ones.
+    if (finished >= Math.min((round + 1) * seats, visits.length)) {
+      return null;
+    }
+    for (let index = round * seats; index < Math.min((round + 1) * seats, visits.length); index++) {
+      const visit = visits[index];
+      if (visit.playerId !== playerId) {
+        continue;
+      }
+      if (index < finished) {
+        return { x: round + 1, y: this.value(visit.standings[playerId]) };
+      }
+      if (index === position.visit && position.dart >= 0) {
+        const before = visits[index - 1]?.standings[playerId] ?? this.mode();
+        const thrown = visit.darts.slice(0, position.dart + 1);
+        const live = visit.busted ? before : before - thrown.reduce((sum, d) => sum + labelPoints(d.label), 0);
+        return { x: round + thrown.length / DARTS_PER_TURN, y: this.value(live) };
+      }
+    }
+    return null;
+  }
+
+  protected readonly data = computed<ChartData<'line', { x: number; y: number }[]>>(() => {
+    const finished = this.finishedVisits();
+    const highlight = this.highlightId();
     return {
-      labels: rounds.map((_, round) => round),
       datasets: this.players().map((player) => {
-        const color = SERIES_COLORS[player.id % SERIES_COLORS.length];
+        const base = SERIES_COLORS[player.id % SERIES_COLORS.length];
+        const color = highlight === null || highlight === player.id ? base : `${base}40`;
+        const points = this.rounds()
+          .filter(({ closedBy }) => closedBy < finished)
+          .map(({ standings }, round) => ({ x: round, y: this.value(standings[player.id]) }));
+        const partial = this.partial(player.id);
         return {
           label: player.name,
-          data: rounds.map((standings) =>
-            elimination ? mode - standings[player.id] : standings[player.id],
-          ),
+          data: partial === null ? points : [...points, partial],
           borderColor: color,
           backgroundColor: color,
           borderWidth: 2,
@@ -86,10 +163,13 @@ export class ScoreRaceComponent {
       layout: { padding: { right: 72 } },
       scales: {
         x: {
+          type: 'linear',
+          min: 0,
+          max: this.rounds().length - 1,
           title: { display: true, text: 'Runde', color: muted, font: { family: font, size: 10 } },
           grid: { display: false },
           border: { display: false },
-          ticks: { color: muted, font: { family: font, size: 10 } },
+          ticks: { color: muted, font: { family: font, size: 10 }, stepSize: 1 },
         },
         y: {
           // The goal sits at the top: remaining 0 in x01, the target score in elimination.
@@ -134,7 +214,7 @@ export class ScoreRaceComponent {
           boxHeight: 8,
           boxPadding: 4,
           callbacks: {
-            title: (items) => `Runde ${items[0]?.label ?? ''}`,
+            title: (items) => `Runde ${Math.ceil(items[0]?.parsed.x ?? 0)}`,
             labelColor: (item) => {
               const color = item.dataset.borderColor as string;
               return { borderColor: color, backgroundColor: color, borderWidth: 0, borderRadius: 2 };
@@ -148,9 +228,9 @@ export class ScoreRaceComponent {
   });
 
   protected readonly ariaLabel = computed(() => {
-    const finals = this.data()
-      .datasets.map((set) => `${set.label} ${set.data[set.data.length - 1]}`)
+    const standings = this.data()
+      .datasets.map((set) => `${set.label} ${set.data.at(-1)?.y ?? ''}`)
       .join(', ');
-    return `Verlauf über ${this.rounds().length - 1} Runden. Endstand: ${finals}`;
+    return `Verlauf über ${this.rounds().length - 1} Runden. Stand: ${standings}`;
   });
 }

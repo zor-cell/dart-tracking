@@ -49,6 +49,10 @@ interface StripPoint {
 export class ScoreDistributionComponent {
   readonly visits = input.required<readonly VisitDto[]>();
   readonly players = input.required<readonly PlayerDto[]>();
+  /** How many visits have been played so far; null shows the whole game. */
+  readonly shownVisits = input<number | null>(null);
+  /** The player to bring forward; the others fade. */
+  readonly highlightId = input<number | null>(null);
 
   private readonly theme = chartTheme(inject(DOCUMENT));
   private readonly decimal = inject(DecimalPipe);
@@ -57,9 +61,19 @@ export class ScoreDistributionComponent {
 
   protected readonly height = computed(() => `${this.players().length * ROW_HEIGHT + 48}px`);
 
+  /** The visits played so far, each with the round it belongs to. */
+  private readonly played = computed(() => {
+    const seats = this.players().length;
+    const shown = this.shownVisits() ?? Infinity;
+    return this.visits()
+      .map((visit, index) => ({ visit, index, round: Math.floor(index / seats) + 1 }))
+      .filter(({ index }) => index < shown);
+  });
+
   private readonly averages = computed(() =>
     this.players().map((player) => {
-      const points = this.visits()
+      const points = this.played()
+        .map(({ visit }) => visit)
         .filter((visit) => visit.playerId === player.id)
         .map((visit) => visit.points);
       return points.length === 0 ? null : points.reduce((sum, p) => sum + p, 0) / points.length;
@@ -67,22 +81,19 @@ export class ScoreDistributionComponent {
   );
 
   protected readonly data = computed<ChartData<'scatter', StripPoint[]>>(() => {
-    const seats = this.players().length;
-    const visits = this.visits();
+    const highlight = this.highlightId();
     const dots = this.players().map((player, row) => {
-      const color = SERIES_COLORS[player.id % SERIES_COLORS.length];
-      const own = visits
-        .map((visit, index) => ({ visit, round: Math.floor(index / seats) + 1 }))
-        .filter(({ visit }) => visit.playerId === player.id);
+      const base = SERIES_COLORS[player.id % SERIES_COLORS.length];
+      const color = highlight === null || highlight === player.id ? `${base}cc` : `${base}33`;
+      const own = this.played().filter(({ visit }) => visit.playerId === player.id);
       return {
-        type: 'scatter' as const,
         label: player.name,
         data: spread(merge(own.map(({ visit, round }) => ({ x: visit.points, round }))), row),
-        backgroundColor: `${color}cc`,
+        backgroundColor: color,
         borderColor: this.theme.surface,
         borderWidth: 1.5,
-        pointRadius: (context: ScriptableContext<'scatter'>) => radius(context),
-        pointHoverRadius: (context: ScriptableContext<'scatter'>) => radius(context) + 1,
+        pointRadius: (context: ScriptableContext<'line'>) => radius(context),
+        pointHoverRadius: (context: ScriptableContext<'line'>) => radius(context) + 1,
         order: 0,
       };
     });
@@ -91,13 +102,17 @@ export class ScoreDistributionComponent {
         ? []
         : [
             {
-              type: 'line' as const,
+              // Two points joined into a vertical stroke.
+              showLine: true,
               label: `Durchschnitt ${this.players()[row].name}`,
               data: [
                 { x: average, y: row - AVERAGE_HALF_HEIGHT, count: 1, rounds: [] },
                 { x: average, y: row + AVERAGE_HALF_HEIGHT, count: 1, rounds: [] },
               ],
-              borderColor: this.theme.text,
+              borderColor:
+                highlight === null || highlight === this.players()[row].id
+                  ? this.theme.text
+                  : this.theme.grid,
               borderWidth: 2,
               pointRadius: 0,
               pointHoverRadius: 0,
@@ -106,7 +121,7 @@ export class ScoreDistributionComponent {
             },
           ],
     );
-    return { datasets: [...dots, ...averages] as ChartData<'scatter', StripPoint[]>['datasets'] };
+    return { datasets: [...dots, ...averages] };
   });
 
   protected readonly options = computed<ChartOptions<'scatter'>>(() => {
@@ -181,9 +196,9 @@ export class ScoreDistributionComponent {
 
   protected readonly ariaLabel = computed(() => {
     const rows = this.players().map((player, row) => {
-      const points = this.visits()
-        .filter((visit) => visit.playerId === player.id)
-        .map((visit) => visit.points)
+      const points = this.played()
+        .filter(({ visit }) => visit.playerId === player.id)
+        .map(({ visit }) => visit.points)
         .join(', ');
       const average = this.averages()[row];
       const shown = average === null ? '' : `, Durchschnitt ${this.decimal.transform(average, '1.1-1')}`;
@@ -215,6 +230,6 @@ function spread(points: readonly { x: number; rounds: number[] }[], row: number)
     });
 }
 
-function radius(context: ScriptableContext<'scatter'>): number {
+function radius(context: ScriptableContext<'line'>): number {
   return ((context.raw as StripPoint | undefined)?.count ?? 1) > 1 ? MERGED_DOT_RADIUS : DOT_RADIUS;
 }

@@ -1,3 +1,8 @@
+/* Sections get more air than the shared view spacing; each is a block of its own. */
+.view {
+  gap: 2.25rem;
+}
+
 .panel {
   display: flex;
   flex-direction: column;
