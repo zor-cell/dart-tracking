@@ -38,36 +38,36 @@ async def _resolve_players(
     slots: list[PlayerSlotDto],
     owner_user_id: str | None,
     *,
-    may_claim: bool,
+    user_id: str | None,
+    seated: dict[str, PlayerIdentity],
+    recent: bool,
 ) -> list[PlayerIdentity]:
     """Turn the seats into identities: look up the chosen ones, reuse or create a
-    row for every typed name. The display name of a chosen identity comes from
-    the database, never from the request."""
+    row for every typed name. A chosen identity is the caller's, or `seated` in the
+    game this is a rematch of: taken as is while that is `recent`, by name after."""
     claimed = [slot.player_id for slot in slots if slot.player_id]
-    if claimed and not may_claim:
+    if claimed and user_id is None and not seated:
         raise HTTPException(status_code=401, detail="authentication required")
     if len(set(claimed)) != len(claimed):
         raise HTTPException(status_code=422, detail="a player can only take one seat")
 
-    known = (
-        await players.owned(session, claimed, owner_user_id) if owner_user_id else {}
-    )
-    if len(known) != len(claimed):
+    owned = await players.owned(session, claimed, user_id) if user_id else {}
+    if any(id not in owned and id not in seated for id in claimed):
         raise HTTPException(status_code=422, detail="unknown player identity")
 
     resolved: list[PlayerIdentity] = []
     for slot in slots:
-        if slot.player_id:
-            resolved.append(known[slot.player_id])
+        if slot.player_id in owned or (slot.player_id in seated and recent):
+            resolved.append(owned.get(slot.player_id) or seated[slot.player_id])
             continue
+        name = seated[slot.player_id].display_name if slot.player_id else slot.name
         existing = (
-            await players.find_by_name(session, owner_user_id, slot.name)
+            await players.find_by_name(session, owner_user_id, name)
             if owner_user_id
             else None
         )
         resolved.append(
-            existing
-            or await players.create(session, slot.name, owner_user_id=owner_user_id)
+            existing or await players.create(session, name, owner_user_id=owner_user_id)
         )
 
     if len({identity.id for identity in resolved}) != len(resolved):
@@ -92,10 +92,20 @@ async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) 
     owner_id = user.id if user else None
 
     async with database.session_scope() as session:
-        if owner_id is None and body.rematch_of:
-            owner_id = await repository.rematch_owner(session, body.rematch_of)
+        seated: dict[str, PlayerIdentity] = {}
+        recent = False
+        if body.rematch_of:
+            seated = await repository.rematch_seats(session, body.rematch_of)
+            recent = await repository.is_recent(session, body.rematch_of)
+            if owner_id is None:
+                owner_id = await repository.rematch_owner(session, body.rematch_of)
         identities = await _resolve_players(
-            session, body.players, owner_id, may_claim=user is not None
+            session,
+            body.players,
+            owner_id,
+            user_id=user.id if user else None,
+            seated=seated,
+            recent=recent,
         )
         game = await repository.create(
             session,

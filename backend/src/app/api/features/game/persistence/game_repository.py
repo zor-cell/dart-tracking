@@ -348,6 +348,37 @@ class GameRepository:
     async def rematch_owner(self, session: AsyncSession, game_id: str) -> str | None:
         """The owner of the game a rematch follows, while that game is still recent
         enough to be resumed; None otherwise."""
+        row = await self._recent(session, game_id)
+        return row.owner_user_id if row is not None else None
+
+    async def is_recent(self, session: AsyncSession, game_id: str) -> bool:
+        """Whether the game is still recent enough to be resumed, or followed by a
+        rematch that takes over its seats and owner."""
+        return await self._recent(session, game_id) is not None
+
+    async def rematch_seats(
+        self, session: AsyncSession, game_id: str
+    ) -> dict[str, PlayerIdentity]:
+        """The identities seated in the game a rematch follows, keyed by id."""
+        try:
+            UUID(game_id)
+        except ValueError:
+            return {}
+
+        rows = (
+            await session.execute(
+                select(PlayerTable)
+                .join(GamePlayerTable, GamePlayerTable.player_id == PlayerTable.id)
+                .where(GamePlayerTable.game_id == game_id)
+            )
+        ).scalars().all()
+        return {
+            row.id: PlayerIdentity(id=row.id, display_name=row.display_name, user_id=row.user_id)
+            for row in rows
+        }
+
+    async def _recent(self, session: AsyncSession, game_id: str) -> Row[Any] | None:
+        """The game's owner row if it can still be resumed, i.e. followed by a rematch."""
         try:
             UUID(game_id)
         except ValueError:
@@ -360,10 +391,10 @@ class GameRepository:
                 )
             )
         ).one_or_none()
-        if row is None or row.owner_user_id is None:
+        if row is None:
             return None
         finished = row.status == GameStatus.FINISHED.value
-        return row.owner_user_id if is_resumable(finished, row.updated_at) else None
+        return row if is_resumable(finished, row.updated_at) else None
 
     async def set_status(
         self, session: AsyncSession, game_id: str, user_id: str, status: GameStatus

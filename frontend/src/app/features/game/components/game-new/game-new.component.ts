@@ -220,14 +220,17 @@ export class GameNewComponent {
     this.sessionResolved.set(true);
   }
 
-  /** The identity behind a previous seat, if it is in this account's address
-   * book; otherwise its name, taken as a guest. */
+  /** The identity behind a previous seat: this account's address-book entry if
+   * it has one, otherwise the seat itself, which the server accepts for a rematch. */
   private async reseat(player: PlayerDto): Promise<Seat> {
-    if (!this.signedIn()) {
-      return player.name;
-    }
-    const found = await this.players.search(player.name);
-    return found.find((identity) => identity.id === player.identityId) ?? player.name;
+    const found = this.signedIn() ? await this.players.search(player.name) : [];
+    return (
+      found.find((identity) => identity.id === player.identityId) ?? {
+        id: player.identityId,
+        name: player.name,
+        isSelf: false,
+      }
+    );
   }
 
   /** Signed out there is no address book, so a placeholder name saves typing;
