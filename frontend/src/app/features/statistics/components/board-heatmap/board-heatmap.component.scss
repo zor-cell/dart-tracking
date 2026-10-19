@@ -18,6 +18,11 @@
   &--green { fill: #1e8449; }
 }
 
+/* Fades the board so tinted fields read as the foreground. */
+.heatmap--muted .heatmap__segment {
+  fill-opacity: 0.3;
+}
+
 .heatmap__number {
   fill: var(--p-text-color, #18181b);
   font-size: 16px;
@@ -34,4 +39,21 @@
   stroke: #0284c7;
   stroke-width: 0.8;
   stroke-opacity: 0.5;
+}
+
+.heatmap__field {
+  fill: #f59e0b;
+  stroke: #b45309;
+  stroke-width: 1.2;
+}
+
+.heatmap__count {
+  fill: #ffffff;
+  stroke: #78350f;
+  stroke-width: 2.5;
+  paint-order: stroke;
+  font-size: 13px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: middle;
 }

@@ -25,11 +25,13 @@ import {FrameDiffService} from '../../../detection/services/frame-diff.service';
 import {SettingsService} from '../../../settings/services/settings.service';
 import {DartDto} from '../../dto/dart.dto';
 import {PlayerDto} from '../../dto/player.dto';
+import {ScoreboardEntry} from '../../models/scoreboard-entry';
 import {DARTS_PER_TURN} from '../../models/visit';
 import {GameService} from '../../services/game.service';
 import {GameSessionService} from '../../services/game-session.service';
 import {ScreenWakeLockService} from '../../services/screen-wake-lock.service';
 import {GameTopBarComponent} from '../game-top-bar/game-top-bar.component';
+import {ScoreboardComponent} from '../scoreboard/scoreboard.component';
 import {VirtualBoardComponent} from '../virtual-board/virtual-board.component';
 
 /** A side-column key: a fixed field, booked as it stands whatever D or T is set to. */
@@ -69,6 +71,7 @@ const SIDE_KEYS: readonly FixedKey[] = [MISS, BULL, BULLSEYE];
   selector: 'app-game',
   imports: [
     RouterLink,
+    ScoreboardComponent,
     Button,
     ProgressSpinner,
     Skeleton,
@@ -101,7 +104,6 @@ export class GameComponent implements OnInit, OnDestroy {
   private readonly diffCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('diffCanvas');
   private readonly captureCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('captureCanvas');
   private readonly detectionDebugCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('detectionDebugCanvas');
-  private readonly scoreboardRef = viewChild<ElementRef<HTMLUListElement>>('scoreboard');
 
   protected readonly signedIn = inject(AuthService).isAuthenticated;
   protected readonly deviceRole = this.session.role;
@@ -140,8 +142,7 @@ export class GameComponent implements OnInit, OnDestroy {
   /** Rematch and done: small text in a taller button. */
   protected readonly finishButtonTokens = { root: { sm: { paddingY: '0.625rem' } } };
 
-  /** Placeholder rows while the state is on its way: two, the smallest game. */
-  protected readonly skeletonPlayers = [0, 1];
+  /** Placeholder rows while the state is on its way. */
   protected readonly skeletonDarts = [0, 1, 2];
 
   /** Reads as the handover for a normal visit and as the win for the last one. */
@@ -183,12 +184,12 @@ export class GameComponent implements OnInit, OnDestroy {
     () => this.game.currentTurn()?.darts ?? [],
   );
 
-  /**
-   * How many player cards share the row's width. Up to three, so the thrower
-   * keeps a neighbour on each side; beyond that the row scrolls.
-   */
-  protected readonly visiblePlayers = computed(() =>
-    Math.min(this.game.state()?.players.length ?? 1, 3),
+  protected readonly scoreboardEntries = computed<ScoreboardEntry[]>(() =>
+    (this.game.state()?.players ?? []).map((player) => ({
+      id: player.id,
+      name: player.name,
+      score: this.score(player),
+    })),
   );
 
   /**
@@ -233,20 +234,6 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   constructor() {
-    // Follow play along the row, so the thrower stays in the middle and the two
-    // around them stay in view. A no-op while everyone fits.
-    effect(() => {
-      const index = this.game.state()?.currentPlayerIndex;
-      const list = this.scoreboardRef()?.nativeElement;
-      if (list === undefined || index === undefined) {
-        return;
-      }
-      const card = list.children.item(index) as HTMLElement | null;
-      if (card !== null) {
-        list.scrollTo({ left: card.offsetLeft + card.offsetWidth / 2 - list.clientWidth / 2 });
-      }
-    });
-
     // Attach the change-mask canvas whenever the debug panel is on screen, and
     // detach it the moment it leaves — keeping the loop's debug work off unless
     // someone is watching.

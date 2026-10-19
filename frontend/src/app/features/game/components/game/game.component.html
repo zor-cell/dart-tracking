@@ -205,27 +205,11 @@
       <p class="game__winner-status" role="status">{{ winner.name }} gewinnt!</p>
     }
 
-    <ul
-      #scoreboard
-      class="scoreboard"
-      tabindex="0"
-      aria-label="Spielstand, horizontal scrollbar"
-      [attr.data-visible]="visiblePlayers()"
-    >
-      @for (player of state.players; track player.id) {
-        <li
-          class="scoreboard__row"
-          [class.scoreboard__row--active]="$index === state.currentPlayerIndex"
-          [class.scoreboard__row--winner]="player.id === game.settledWinner()?.id"
-          [attr.aria-current]="$index === state.currentPlayerIndex ? 'true' : null"
-        >
-          <span class="scoreboard__name">
-            {{ player.name }}
-          </span>
-          <span class="scoreboard__remaining">{{ score(player) }}</span>
-        </li>
-      }
-    </ul>
+    <app-scoreboard
+      [entries]="scoreboardEntries()"
+      [activeIndex]="state.currentPlayerIndex"
+      [winnerId]="game.settledWinner()?.id ?? null"
+    />
 
     <div class="turn">
       @if (game.currentTurn(); as turn) {
@@ -411,14 +395,7 @@
       </div>
     </div>
 
-    <ul class="scoreboard" data-visible="2">
-      @for (player of skeletonPlayers; track $index) {
-        <li class="scoreboard__row">
-          <p-skeleton width="4rem" height="1.0625rem" />
-          <p-skeleton width="3rem" height="1.6875rem" />
-        </li>
-      }
-    </ul>
+    <app-scoreboard [entries]="null" />
 
     <div class="turn">
       <div class="turn__row">

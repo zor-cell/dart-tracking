@@ -1,0 +1,108 @@
+<div class="replay">
+  <div class="replay__board">
+    <p-button
+      class="replay__keep"
+      icon="pi pi-chart-scatter"
+      [rounded]="true"
+      size="small"
+      [severity]="keepDarts() ? 'primary' : 'secondary'"
+      [outlined]="!keepDarts()"
+      [ariaLabel]="keepDarts() ? 'Heatmap ausblenden' : 'Darts liegen lassen (Heatmap)'"
+      [attr.aria-pressed]="keepDarts()"
+      (onClick)="setKeepDarts(!keepDarts())"
+    />
+    @if (keepDarts()) {
+      <app-board-heatmap [points]="trail().points" [fields]="trail().fields" />
+    } @else {
+      <app-virtual-board [darts]="boardDarts()" />
+    }
+  </div>
+
+  <p class="replay__status" aria-live="polite">
+    {{ visit() ? 'Runde ' + round() : 'Start' }}
+  </p>
+
+  <app-scoreboard
+    [entries]="scoreboardEntries()"
+    [activeIndex]="activeIndex()"
+    [winnerId]="winnerId()"
+  />
+
+  <p-slider
+    class="replay__timeline"
+    [min]="0"
+    [max]="steps().length"
+    [ngModel]="cursor()"
+    (ngModelChange)="playing.set(false); seek($event)"
+    ariaLabel="Position im Replay"
+  />
+
+  <div class="replay__controls">
+    <p-button
+      icon="pi pi-angle-double-left"
+      severity="secondary"
+      [text]="true"
+      [rounded]="true"
+      ariaLabel="Zum Anfang"
+      [disabled]="cursor() === 0"
+      (onClick)="jumpTo('start')"
+    />
+    <p-button
+      icon="pi pi-step-backward"
+      severity="secondary"
+      [text]="true"
+      [rounded]="true"
+      ariaLabel="Einen Dart zurück"
+      [disabled]="cursor() === 0"
+      (onClick)="stepBy(-1)"
+    />
+    <p-button
+      [icon]="playing() ? 'pi pi-pause' : 'pi pi-play'"
+      [rounded]="true"
+      [ariaLabel]="playing() ? 'Pause' : 'Abspielen'"
+      [disabled]="steps().length === 0"
+      (onClick)="togglePlay()"
+    />
+    <p-button
+      icon="pi pi-step-forward"
+      severity="secondary"
+      [text]="true"
+      [rounded]="true"
+      ariaLabel="Einen Dart weiter"
+      [disabled]="cursor() >= steps().length"
+      (onClick)="stepBy(1)"
+    />
+    <p-button
+      icon="pi pi-angle-double-right"
+      severity="secondary"
+      [text]="true"
+      [rounded]="true"
+      ariaLabel="Zum Ende"
+      [disabled]="cursor() >= steps().length"
+      (onClick)="jumpTo('end')"
+    />
+  </div>
+
+  <div class="replay__options">
+    <p-selectbutton
+      [options]="speedOptions"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+      [ngModel]="speed()"
+      (ngModelChange)="speed.set($event)"
+      ariaLabel="Geschwindigkeit"
+      size="small"
+    />
+    <p-select
+      class="replay__player"
+      [options]="playerOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="playerId()"
+      (ngModelChange)="selectPlayer($event)"
+      ariaLabel="Spieler im Replay"
+      size="small"
+    />
+  </div>
+</div>

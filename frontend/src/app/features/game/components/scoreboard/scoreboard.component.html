@@ -1,0 +1,30 @@
+@if (entries(); as entries) {
+  <ul
+    #list
+    class="scoreboard"
+    tabindex="0"
+    aria-label="Spielstand, horizontal scrollbar"
+    [attr.data-visible]="visibleCards()"
+  >
+    @for (entry of entries; track entry.id) {
+      <li
+        class="scoreboard__row"
+        [class.scoreboard__row--active]="$index === activeIndex()"
+        [class.scoreboard__row--winner]="entry.id === winnerId()"
+        [attr.aria-current]="$index === activeIndex() ? 'true' : null"
+      >
+        <span class="scoreboard__name">{{ entry.name }}</span>
+        <span class="scoreboard__remaining">{{ entry.score }}</span>
+      </li>
+    }
+  </ul>
+} @else {
+  <ul class="scoreboard" data-visible="2">
+    @for (entry of skeletonEntries; track $index) {
+      <li class="scoreboard__row">
+        <p-skeleton width="4rem" height="1.0625rem" />
+        <p-skeleton width="3rem" height="1.6875rem" />
+      </li>
+    }
+  </ul>
+}

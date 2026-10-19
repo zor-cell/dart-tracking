@@ -7,10 +7,11 @@ import { GameDetailDto } from '../../dto/game-detail.dto';
 import { GAME_STATUS_LABELS } from '../../models/game-filter';
 import { CHECKOUT_MODES } from '../../models/checkout-mode';
 import { GameHistoryService } from '../../services/game-history.service';
+import { GameReplayComponent } from '../game-replay/game-replay.component';
 
 @Component({
   selector: 'app-game-detail',
-  imports: [Button, DatePipe, DecimalPipe, ProgressSpinner, RouterLink],
+  imports: [Button, DatePipe, DecimalPipe, GameReplayComponent, ProgressSpinner, RouterLink],
   templateUrl: './game-detail.component.html',
   styleUrl: './game-detail.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,7 +23,6 @@ export class GameDetailComponent {
   protected readonly detail = signal<GameDetailDto | null>(null);
   protected readonly loading = signal(true);
   protected readonly missing = signal(false);
-  protected readonly busy = signal(false);
   protected readonly statusLabels = GAME_STATUS_LABELS;
 
   protected readonly isElimination = computed(() => this.detail()?.game.variant === 'elimination');
@@ -61,21 +61,6 @@ export class GameDetailComponent {
 
   constructor() {
     void this.load(this.route.snapshot.paramMap.get('gameId') ?? '');
-  }
-
-  /** Take the game out of the statistics, or let it count again. */
-  protected async toggleCounted(): Promise<void> {
-    const detail = this.detail();
-    if (!detail) {
-      return;
-    }
-    this.busy.set(true);
-    try {
-      await this.history.setCounted(detail.game.id, detail.status === 'discarded');
-      this.detail.set(await this.history.detail(detail.game.id));
-    } finally {
-      this.busy.set(false);
-    }
   }
 
   protected rate(hits: number, attempts: number): number | null {

@@ -6,6 +6,6 @@ export interface VisitDto {
   /** Zero for a bust. */
   readonly points: number;
   readonly busted: boolean;
-  /** What the thrower still needed after this visit. */
-  readonly remaining: number;
+  /** Points each player still needed after this visit, indexed by player id. */
+  readonly standings: readonly number[];
 }

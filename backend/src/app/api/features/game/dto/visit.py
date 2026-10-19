@@ -10,15 +10,15 @@ class VisitDto(CamelModel):
     darts: list[DartDto]
     points: int
     busted: bool
-    # What the thrower still needed after this visit.
-    remaining: int
+    # Points each player still needed after this visit, indexed by player id.
+    standings: list[int]
 
     @classmethod
-    def from_entity(cls, turn: Turn, remaining: int) -> Self:
+    def from_entity(cls, turn: Turn, standings: dict[int, int]) -> Self:
         return cls(
             player_id=turn.player_id,
             darts=[DartDto.from_entity(dart) for dart in turn.darts],
             points=0 if turn.busted else turn.points,
             busted=turn.busted,
-            remaining=remaining,
+            standings=[standings[player_id] for player_id in sorted(standings)],
         )

@@ -1,0 +1,50 @@
+.replay {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.replay__status {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 1.5rem;
+}
+
+.replay__board {
+  position: relative;
+  width: min(100%, 20rem);
+  align-self: center;
+}
+
+.replay__timeline {
+  margin: 0.5rem 0.5rem 0;
+}
+
+.replay__controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.replay__options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.replay__player {
+  min-width: 0;
+  max-width: 11rem;
+}
+
+.replay__keep {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+}

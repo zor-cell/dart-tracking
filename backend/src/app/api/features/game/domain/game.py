@@ -129,9 +129,12 @@ class Game:
         than the score is what lets both share the bust, win and checkout rules."""
         return self.mode - self._scores()[player_id]
 
-    def remaining_after_turns(self) -> list[int]:
-        """What the thrower still needed after each turn, in turn order."""
-        return [self.mode - scores[turn.player_id] for turn, scores in self._replay()]
+    def standings_after_turns(self) -> list[dict[int, int]]:
+        """Points every player still needed after each turn, in turn order."""
+        return [
+            {player_id: self.mode - score for player_id, score in scores.items()}
+            for _, scores in self._replay()
+        ]
 
     def _scores(self) -> dict[int, int]:
         scores = {player.id: 0 for player in self.players}

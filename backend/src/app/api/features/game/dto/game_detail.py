@@ -25,8 +25,8 @@ class GameDetailDto(CamelModel):
         cls, game: Game, record: GameRecord, statistics: list[PlayerStatistics]
     ) -> Self:
         visits = [
-            VisitDto.from_entity(turn, remaining)
-            for turn, remaining in zip(game.turns, game.remaining_after_turns(), strict=True)
+            VisitDto.from_entity(turn, standings)
+            for turn, standings in zip(game.turns, game.standings_after_turns(), strict=True)
             if turn.darts
         ]
         return cls(

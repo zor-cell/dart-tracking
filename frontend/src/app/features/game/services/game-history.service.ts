@@ -41,13 +41,4 @@ export class GameHistoryService {
   detail(gameId: string): Promise<GameDetailDto> {
     return firstValueFrom(this.http.get<GameDetailDto>(`${this.baseUrl}/${gameId}/detail`));
   }
-
-  /** Take a game out of the statistics, or let it count again. */
-  setCounted(gameId: string, counted: boolean): Promise<void> {
-    return firstValueFrom(
-      this.http.patch<void>(`${this.baseUrl}/${gameId}`, {
-        status: counted ? 'active' : 'discarded',
-      }),
-    );
-  }
 }

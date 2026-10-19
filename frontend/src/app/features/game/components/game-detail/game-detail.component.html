@@ -128,14 +128,16 @@
       </div>
     </section>
 
-    <p-button
-      fluid
-      severity="secondary"
-      [outlined]="true"
-      [loading]="busy()"
-      [label]="detail.status === 'discarded' ? 'Wieder werten' : 'Nicht in der Statistik werten'"
-      [icon]="detail.status === 'discarded' ? 'pi pi-eye' : 'pi pi-eye-slash'"
-      (onClick)="toggleCounted()"
-    />
+    @if (detail.visits.length > 0) {
+      <section class="panel">
+        <h2 class="panel__title">Replay</h2>
+        <app-game-replay
+          [visits]="detail.visits"
+          [players]="detail.game.players"
+          [mode]="detail.game.mode"
+          [variant]="detail.game.variant"
+        />
+      </section>
+    }
   }
 </section>

@@ -1,8 +1,9 @@
 <svg
   class="heatmap"
+  [class.heatmap--muted]="fieldMarks().length > 0"
   [attr.viewBox]="viewBox"
   role="img"
-  [attr.aria-label]="'Dartscheibe mit ' + marks().length + ' erkannten Treffern'"
+  [attr.aria-label]="ariaLabel()"
 >
   <circle class="heatmap__backing" cx="0" cy="0" [attr.r]="backingRadius" />
 
@@ -15,6 +16,11 @@
 
   @for (number of sectorNumbers; track number.value) {
     <text class="heatmap__number" [attr.x]="number.x" [attr.y]="number.y">{{ number.value }}</text>
+  }
+
+  @for (field of fieldMarks(); track field.d) {
+    <path class="heatmap__field" [attr.d]="field.d" [attr.fill-opacity]="field.opacity" />
+    <text class="heatmap__count" [attr.x]="field.x" [attr.y]="field.y">{{ field.count }}</text>
   }
 
   @for (mark of marks(); track $index) {
