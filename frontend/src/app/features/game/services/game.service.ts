@@ -255,7 +255,7 @@ export class GameService {
     if (!state) {
       return {};
     }
-    return { turnIndex: state.turns.length - 1, dartCount: state.turns.at(-1)?.darts.length ?? 0 };
+    return { turnIndex: state.turns.length - 1, dartIndex: state.turns.at(-1)?.darts.length ?? 0 };
   }
 
   /** Advance to the next player when this push completed the visit — but only

@@ -2,5 +2,5 @@
  * the open visit as the device saw it, so the server can refuse an outdated one. */
 export interface GameCommandDto {
   readonly turnIndex?: number;
-  readonly dartCount?: number;
+  readonly dartIndex?: number;
 }
