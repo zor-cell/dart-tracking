@@ -130,6 +130,16 @@
 
     @if (detail.visits.length > 0) {
       <section class="panel">
+        <h2 class="panel__title">Verlauf</h2>
+        <app-score-race
+          [visits]="detail.visits"
+          [players]="detail.game.players"
+          [mode]="detail.game.mode"
+          [variant]="detail.game.variant"
+        />
+      </section>
+
+      <section class="panel">
         <h2 class="panel__title">Replay</h2>
         <app-game-replay
           [visits]="detail.visits"

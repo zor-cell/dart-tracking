@@ -8,10 +8,19 @@ import { GAME_STATUS_LABELS } from '../../models/game-filter';
 import { CHECKOUT_MODES } from '../../models/checkout-mode';
 import { GameHistoryService } from '../../services/game-history.service';
 import { GameReplayComponent } from '../game-replay/game-replay.component';
+import { ScoreRaceComponent } from '../score-race/score-race.component';
 
 @Component({
   selector: 'app-game-detail',
-  imports: [Button, DatePipe, DecimalPipe, GameReplayComponent, ProgressSpinner, RouterLink],
+  imports: [
+    Button,
+    DatePipe,
+    DecimalPipe,
+    GameReplayComponent,
+    ProgressSpinner,
+    RouterLink,
+    ScoreRaceComponent,
+  ],
   templateUrl: './game-detail.component.html',
   styleUrl: './game-detail.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

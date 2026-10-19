@@ -23,6 +23,7 @@
     "@angular/router": "^21.2.0",
     "@primeuix/themes": "^2.0.3",
     "angularx-qrcode": "^21.0.5",
+    "chart.js": "^4.5.1",
     "primeicons": "^7.0.0",
     "primeng": "^21.1.9",
     "rxjs": "~7.8.0",
