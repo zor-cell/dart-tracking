@@ -6,7 +6,8 @@ from app.api.features.game.domain.game import Game
 
 
 class DartAnnouncementDto(CamelModel):
-    """Server -> announcer: a dart the camera just booked, for the client to phrase.
+    """Server -> announcer: a dart just booked, tracked or entered by hand, for
+    the client to phrase.
 
     `visit_points` is set once the visit is full, busted or won.
     """

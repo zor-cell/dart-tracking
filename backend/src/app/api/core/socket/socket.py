@@ -384,6 +384,8 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
     await _publish_state(game)
     if isinstance(command, NextPlayerDto):
         await _request_calibration(game.id)
+    if isinstance(command, RegisterDartDto | ReplaceDartDto):
+        await _announce(game, command.to_entity())
 
 
 async def _handle_set_evaluation(game_id: str, command: SetEvaluationDto) -> None:
@@ -406,6 +408,13 @@ async def _current_announcer(game_id: str) -> str | None:
         await announcer_store.chosen(game_id),
         await scoring_camera_store.holder(game_id),
     )
+
+
+async def _announce(game: Game, dart: ScoredDart) -> None:
+    """Have the room's announcer speak a dart just booked."""
+    announcer = await _current_announcer(game.id)
+    if announcer is not None:
+        await hub.send_to_client(game.id, announcer, DartAnnouncementDto.from_entity(dart, game))
 
 
 async def _publish_announcer(game_id: str) -> None:
@@ -622,9 +631,8 @@ async def _handle_throw_frame(
     recorder.settle_win(game)
     await _publish_state(game)
 
-    announcer = await _current_announcer(game_id)
-    if booked and announcer is not None:
-        await hub.send_to_client(game_id, announcer, DartAnnouncementDto.from_entity(dart, game))
+    if booked:
+        await _announce(game, dart)
 
 
 
