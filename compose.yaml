@@ -1,6 +1,6 @@
 name: dart-tracking
 
-# Caps each container's json-file log at 3 x 10 MB.
+# caps each container's json-file log at 3 x 10 MB.
 x-logging: &logging
   driver: json-file
   options:
