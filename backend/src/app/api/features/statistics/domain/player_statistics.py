@@ -14,10 +14,10 @@ _HIGH_VISIT = 100
 _FIRST_NINE = 9
 
 
-def _on_double(remaining: int) -> bool:
-    """Whether a single dart at a double would finish from here — 50 is the
-    double bull, everything else has to be an even number up to 40."""
-    return remaining == 50 or (remaining <= 40 and remaining > 0 and remaining % 2 == 0)
+# Scores one dart can finish on: the doubles and the double bull in double out,
+# any field in single out.
+_DOUBLE_FINISHES = frozenset({*range(2, 41, 2), 50})
+_SINGLE_FINISHES = frozenset({*range(1, 21), *range(2, 41, 2), *range(3, 61, 3), 25, 50})
 
 
 @dataclass
@@ -32,9 +32,9 @@ class PlayerStatistics:
     best_visit: int = 0
     visits_180: int = 0
     visits_100_plus: int = 0
-    checkout_chances: int = 0
-    double_attempts: int = 0
-    double_hits: int = 0
+    legs_with_chance: int = 0
+    checkout_attempts: int = 0
+    checkout_hits: int = 0
     first_nine_darts: int = 0
     first_nine_points: int = 0
     heatmap: list[tuple[float, float]] = field(default_factory=list)
@@ -52,7 +52,9 @@ class PlayerStatistics:
         return 3 * self.first_nine_points / self.first_nine_darts
 
     def add_leg(self, mode: int, checkout_mode: CheckoutMode, turns: list[Turn]) -> None:
-        double_out = checkout_mode is CheckoutMode.DOUBLE_OUT
+        finishes = (
+            _DOUBLE_FINISHES if checkout_mode is CheckoutMode.DOUBLE_OUT else _SINGLE_FINISHES
+        )
         remaining = mode
         had_chance = False
         thrown = 0
@@ -71,11 +73,11 @@ class PlayerStatistics:
                     self.first_nine_darts += 1
                     if not turn.busted:
                         self.first_nine_points += dart.points
-                if double_out and _on_double(live):
-                    self.double_attempts += 1
+                if live in finishes:
+                    self.checkout_attempts += 1
                 live -= dart.points
-                if live == 0 and not turn.busted and double_out:
-                    self.double_hits += 1
+                if live == 0 and not turn.busted:
+                    self.checkout_hits += 1
                 if dart.position is not None:
                     self.heatmap.append(dart.position)
 
@@ -92,6 +94,6 @@ class PlayerStatistics:
 
         self.legs += 1
         if had_chance:
-            self.checkout_chances += 1
+            self.legs_with_chance += 1
         if remaining == 0:
             self.legs_won += 1

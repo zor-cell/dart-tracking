@@ -44,25 +44,29 @@
           <div class="figure">
             <dt class="figure__label">Checkout-Quote</dt>
             <dd class="figure__value">
-              @if (checkoutRate(); as rate) {
-                {{ rate * 100 | number: '1.0-0' }} %
-              } @else {
-                &ndash;
-              }
-            </dd>
-            <dd class="figure__hint">{{ totals.legsWon }} von {{ totals.checkoutChances }} Legs</dd>
-          </div>
-          <div class="figure">
-            <dt class="figure__label">Doppel-Quote</dt>
-            <dd class="figure__value">
-              @if (doubleRate(); as rate) {
-                {{ rate * 100 | number: '1.0-0' }} %
+              @let checkout = checkoutRate();
+              @if (checkout !== null) {
+                {{ checkout * 100 | number: '1.0-0' }} %
               } @else {
                 &ndash;
               }
             </dd>
             <dd class="figure__hint">
-              {{ totals.doubleHits }} von {{ totals.doubleAttempts }} Darts
+              {{ totals.checkoutHits }} von {{ totals.checkoutAttempts }} Darts
+            </dd>
+          </div>
+          <div class="figure">
+            <dt class="figure__label">Legs ausgecheckt</dt>
+            <dd class="figure__value">
+              @let legs = legRate();
+              @if (legs !== null) {
+                {{ legs * 100 | number: '1.0-0' }} %
+              } @else {
+                &ndash;
+              }
+            </dd>
+            <dd class="figure__hint">
+              {{ totals.legsWon }} von {{ totals.legsWithChance }} Legs mit Chance
             </dd>
           </div>
           <div class="figure">

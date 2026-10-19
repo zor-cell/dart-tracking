@@ -11,8 +11,8 @@ export interface PlayerStatisticsDto {
   readonly bestVisit: number;
   readonly visits180: number;
   readonly visits100Plus: number;
-  readonly checkoutChances: number;
-  readonly doubleAttempts: number;
-  readonly doubleHits: number;
+  readonly legsWithChance: number;
+  readonly checkoutAttempts: number;
+  readonly checkoutHits: number;
   readonly heatmap: readonly HeatmapPoint[];
 }

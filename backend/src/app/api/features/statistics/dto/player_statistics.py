@@ -17,9 +17,9 @@ class PlayerStatisticsDto(CamelModel):
     best_visit: int
     visits180: int
     visits100_plus: int
-    checkout_chances: int
-    double_attempts: int
-    double_hits: int
+    legs_with_chance: int
+    checkout_attempts: int
+    checkout_hits: int
     heatmap: list[tuple[float, float]]
 
     @classmethod
@@ -34,8 +34,8 @@ class PlayerStatisticsDto(CamelModel):
             best_visit=statistics.best_visit,
             visits180=statistics.visits_180,
             visits100_plus=statistics.visits_100_plus,
-            checkout_chances=statistics.checkout_chances,
-            double_attempts=statistics.double_attempts,
-            double_hits=statistics.double_hits,
+            legs_with_chance=statistics.legs_with_chance,
+            checkout_attempts=statistics.checkout_attempts,
+            checkout_hits=statistics.checkout_hits,
             heatmap=statistics.heatmap[-_HEATMAP_LIMIT:],
         )

@@ -94,24 +94,19 @@
                 <td>{{ player.statistics.bestVisit }}</td>
               }
             </tr>
-            <tr>
-              <th scope="row">180er &middot; 100+</th>
-              @for (player of standings(); track player.id) {
-                <td>{{ player.statistics.visits180 }} &middot; {{ player.statistics.visits100Plus }}</td>
-              }
-            </tr>
-            @if (!isElimination() && detail.game.checkoutMode === 'double_out') {
+            @if (!isElimination()) {
               <tr>
-                <th scope="row">Doppel-Quote</th>
+                <th scope="row">Checkout-Quote</th>
                 @for (player of standings(); track player.id) {
                   <td>
-                    @if (rate(player.statistics.doubleHits, player.statistics.doubleAttempts); as value) {
-                      {{ value * 100 | number: '1.0-0' }} %
+                    @let checkout = rate(player.statistics.checkoutHits, player.statistics.checkoutAttempts);
+                    @if (checkout !== null) {
+                      {{ checkout * 100 | number: '1.0-0' }} %
                     } @else {
                       &ndash;
                     }
                     <span class="figures__hint">
-                      {{ player.statistics.doubleHits }}/{{ player.statistics.doubleAttempts }}
+                      {{ player.statistics.checkoutHits }}/{{ player.statistics.checkoutAttempts }}
                     </span>
                   </td>
                 }

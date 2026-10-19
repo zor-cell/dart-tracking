@@ -20,18 +20,18 @@ export class StatisticsComponent {
   protected readonly totals = signal<PlayerStatisticsDto | null>(null);
   protected readonly loading = signal(true);
 
-  /** Legs won out of legs that reached a finishable score at least once. */
+  /** Darts that finished a leg, out of darts thrown while one dart could finish. */
   protected readonly checkoutRate = computed(() => {
     const totals = this.totals();
-    return !totals || totals.checkoutChances === 0 ? null : totals.legsWon / totals.checkoutChances;
+    return !totals || totals.checkoutAttempts === 0
+      ? null
+      : totals.checkoutHits / totals.checkoutAttempts;
   });
 
-  /** Darts that finished a leg, out of darts thrown while on a double. */
-  protected readonly doubleRate = computed(() => {
+  /** Legs won out of legs that reached a finishable score at least once. */
+  protected readonly legRate = computed(() => {
     const totals = this.totals();
-    return !totals || totals.doubleAttempts === 0
-      ? null
-      : totals.doubleHits / totals.doubleAttempts;
+    return !totals || totals.legsWithChance === 0 ? null : totals.legsWon / totals.legsWithChance;
   });
 
   constructor() {
