@@ -71,6 +71,13 @@ export class GameSessionService {
       }
     });
 
+    // Lock the picture as the board was calibrated in; the reference frame is this one.
+    effect(() => {
+      if (this.calibration.status() === 'success') {
+        void this.camera.lockExposure();
+      }
+    });
+
     // A recalibration asked for elsewhere: the scoreboard's button, the end of
     // a visit, or joining a game the server holds no calibration for. The server
     // sends it to camera devices only; the phase is what says whether this one
