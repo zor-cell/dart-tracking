@@ -87,6 +87,7 @@ from app.api.features.game.dto.command.undo import UndoDto
 from app.api.features.game.domain.dart import Dart as ScoredDart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.persistence.game_repository import repository as game_repository
+from app.api.features.game.services.writer_store import store as writer_store
 from app.infrastructure import database
 from app.infrastructure.config import get_settings
 from app.infrastructure.token_bucket import TokenBucket
@@ -250,7 +251,7 @@ async def _dispatch(
         case SetEvaluationDto() if not connection.admin:
             logger.warning("[socket] ignored set_evaluation from a non-admin connection")
         case SetEvaluationDto():
-            await _handle_set_evaluation(game_id, message)
+            await _handle_set_evaluation(connection, game_id, message)
         case (
             RegisterDartDto()
             | ReplaceDartDto()
@@ -259,7 +260,7 @@ async def _dispatch(
             | RemoveDartDto()
             | NextPlayerDto()
         ):
-            await _handle_game_command(game_id, message)
+            await _handle_game_command(connection, game_id, message)
 
 
 async def _is_admin(access_token: str) -> bool:
@@ -302,8 +303,10 @@ async def _handle_client_command(
 
 async def _apply(
     game_id: str,
+    client_id: str,
     mutate: Callable[[Game], None],
     record: recorder.Recording | None = None,
+    seen_revision: int | None = None,
 ) -> tuple[Game, bool] | None:
     """Run one mutation on the game under a row lock: the state afterwards and
     whether anything changed, or None if the game is gone.
@@ -325,10 +328,19 @@ async def _apply(
         at = recorder.position_of(game)
         revision = game.revision
         shadows = list(game.shadow_darts)
-        mutate(game)
+        if await writer_store.admits(game_id, client_id, seen_revision, revision):
+            mutate(game)
+        else:
+            logger.info(
+                "[socket] refused a command from %s made at revision %d, game is at %d",
+                client_id,
+                seen_revision,
+                revision,
+            )
         changed = game.revision != revision
         if changed:
             await game_repository.save(session, game)
+            await writer_store.note(game_id, client_id, revision)
 
         if record is not None:
             recorder.append(session, game_id, record(at, changed))
@@ -340,7 +352,9 @@ async def _apply(
     return game, changed
 
 
-async def _handle_game_command(game_id: str, command: GameCommand) -> None:
+async def _handle_game_command(
+    connection: Connection, game_id: str, command: GameCommand
+) -> None:
     """Apply one command and push the result to the room.
 
     A command that changes nothing is not broadcast — a fourth dart in a visit,
@@ -369,7 +383,13 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
             case NextPlayerDto():
                 game.next_player()
 
-    applied = await _apply(game_id, mutate, recorder.for_command(command, camera_armed=armed))
+    applied = await _apply(
+        game_id,
+        connection.client.id,
+        mutate,
+        recorder.for_command(command, camera_armed=armed),
+        command.revision,
+    )
     if applied is None:
         return
 
@@ -388,10 +408,14 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
         await _announce(game, command.to_entity())
 
 
-async def _handle_set_evaluation(game_id: str, command: SetEvaluationDto) -> None:
+async def _handle_set_evaluation(
+    connection: Connection, game_id: str, command: SetEvaluationDto
+) -> None:
     """Mark the game as a test run, or stop. Pushed to the room, so the switch
     reads the same on every device."""
-    applied = await _apply(game_id, lambda game: game.set_evaluation(command.enabled))
+    applied = await _apply(
+        game_id, connection.client.id, lambda game: game.set_evaluation(command.enabled)
+    )
     if applied is not None and applied[1]:
         await _publish_state(applied[0])
 
@@ -620,7 +644,7 @@ async def _handle_throw_frame(
         booked = game.register_dart(dart)
 
     record = recorder.for_detection(dart, client_id, metrics)
-    applied = await _apply(game_id, mutate, lambda at, _: record(at, booked))
+    applied = await _apply(game_id, client_id, mutate, lambda at, _: record(at, booked))
     if applied is None:
         return
 

@@ -1,9 +1,9 @@
 from typing import Literal
 
-from app.api.core.dto.base import CamelModel
+from app.api.features.game.dto.command.game_command_base import GameCommandBase
 
 
-class UndoDto(CamelModel):
+class UndoDto(GameCommandBase):
     """Client -> server: step back one action — a dart, or the switch to the
     current player."""
 

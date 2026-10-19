@@ -2,10 +2,10 @@ from typing import Literal
 
 from pydantic import Field
 
-from app.api.core.dto.base import CamelModel
+from app.api.features.game.dto.command.game_command_base import GameCommandBase
 
 
-class MoveDartDto(CamelModel):
+class MoveDartDto(GameCommandBase):
     """Client -> server: move one dart of the open visit to another place in it —
     a throw the camera missed lands last when entered by hand."""
 

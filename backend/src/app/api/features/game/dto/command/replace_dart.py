@@ -2,11 +2,11 @@ from typing import Literal
 
 from pydantic import Field
 
-from app.api.core.dto.base import CamelModel
 from app.api.features.game.domain.dart import Dart
+from app.api.features.game.dto.command.game_command_base import GameCommandBase
 
 
-class ReplaceDartDto(CamelModel):
+class ReplaceDartDto(GameCommandBase):
     """Client -> server: book a different field for one dart of the open visit.
     The dart keeps its place; the replacement is a manual booking and so carries
     no tip."""

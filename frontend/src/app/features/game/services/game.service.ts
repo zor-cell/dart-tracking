@@ -115,32 +115,38 @@ export class GameService {
   /** Book one dart as the field it landed in — the server derives its points and
    * the called-out label from that. */
   registerDart(value: number, multiplier: number): void {
-    this.socket.send({ type: 'register_dart', value, multiplier });
+    this.socket.send({ type: 'register_dart', value, multiplier, revision: this.revision() });
   }
 
   /** Step back one action — a dart, or the switch to the current player. */
   undo(): void {
-    this.socket.send({ type: 'undo' });
+    this.socket.send({ type: 'undo', revision: this.revision() });
   }
 
   /** Take one dart out of the open visit; the darts after it move up. */
   removeDart(index: number): void {
-    this.socket.send({ type: 'remove_dart', index });
+    this.socket.send({ type: 'remove_dart', index, revision: this.revision() });
   }
 
   /** Book a different field for one dart of the open visit, in its place. */
   replaceDart(index: number, value: number, multiplier: number): void {
-    this.socket.send({ type: 'replace_dart', index, value, multiplier });
+    this.socket.send({
+      type: 'replace_dart',
+      index,
+      value,
+      multiplier,
+      revision: this.revision(),
+    });
   }
 
   /** Move one dart of the open visit to another place in it. */
   moveDart(index: number, toIndex: number): void {
-    this.socket.send({ type: 'move_dart', index, toIndex });
+    this.socket.send({ type: 'move_dart', index, toIndex, revision: this.revision() });
   }
 
   /** Switch to the next player */
   nextPlayer(): void {
-    this.socket.send({ type: 'next_player' });
+    this.socket.send({ type: 'next_player', revision: this.revision() });
   }
 
   /** Take the winning dart as thrown. Local to this device: the server has
@@ -240,6 +246,11 @@ export class GameService {
     this._state.set(null);
     localStorage.removeItem(ACTIVE_GAME_KEY);
     this.socket.disconnect();
+  }
+
+  /** The revision of the state this device shows, stamped on every game command. */
+  private revision(): number | undefined {
+    return this._state()?.revision;
   }
 
   /** Advance to the next player when this push completed the visit — but only
