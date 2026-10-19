@@ -135,6 +135,11 @@
       </section>
 
       <section class="panel">
+        <h2 class="panel__title">Konstanz</h2>
+        <app-score-distribution [visits]="detail.visits" [players]="detail.game.players" />
+      </section>
+
+      <section class="panel">
         <h2 class="panel__title">Replay</h2>
         <app-game-replay
           [visits]="detail.visits"

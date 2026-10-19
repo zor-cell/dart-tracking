@@ -8,6 +8,7 @@ import { GAME_STATUS_LABELS } from '../../models/game-filter';
 import { CHECKOUT_MODES } from '../../models/checkout-mode';
 import { GameHistoryService } from '../../services/game-history.service';
 import { GameReplayComponent } from '../game-replay/game-replay.component';
+import { ScoreDistributionComponent } from '../score-distribution/score-distribution.component';
 import { ScoreRaceComponent } from '../score-race/score-race.component';
 
 @Component({
@@ -19,6 +20,7 @@ import { ScoreRaceComponent } from '../score-race/score-race.component';
     GameReplayComponent,
     ProgressSpinner,
     RouterLink,
+    ScoreDistributionComponent,
     ScoreRaceComponent,
   ],
   templateUrl: './game-detail.component.html',

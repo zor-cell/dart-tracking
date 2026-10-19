@@ -76,3 +76,25 @@ export const endLabelsPlugin: Plugin<'line'> = {
     ctx.restore();
   },
 };
+
+/** Writes the `count` of a merged point inside its dot, for points that stand for more than one. */
+export const countLabelsPlugin: Plugin<'scatter'> = {
+  id: 'countLabels',
+  afterDatasetsDraw(chart: Chart<'scatter'>) {
+    const { ctx } = chart;
+    ctx.save();
+    ctx.font = `600 9px ${chart.options.font?.family ?? 'sans-serif'}`;
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    chart.data.datasets.forEach((dataset, index) => {
+      chart.getDatasetMeta(index).data.forEach((element, point) => {
+        const count = (dataset.data[point] as { count?: number } | undefined)?.count ?? 1;
+        if (count > 1) {
+          ctx.fillText(String(count), element.x, element.y + 0.5);
+        }
+      });
+    });
+    ctx.restore();
+  },
+};
