@@ -19,6 +19,8 @@ class AppSettings:
     debug_calibration: bool = False
     debug_detection: bool = False
     debug_client_detection: bool = False
+    # Finishing doubles by sector (25 for bull) the checkout suggests first, in order.
+    preferred_doubles: tuple[int, ...] = ()
 
     def without_diagnostics(self) -> Self:
         """This set with every debug and recording switch off: what an account

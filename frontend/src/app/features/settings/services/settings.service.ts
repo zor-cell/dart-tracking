@@ -34,6 +34,7 @@ export class SettingsService {
   readonly debugCalibration = computed(() => this._settings().debugCalibration);
   readonly debugDetection = computed(() => this._settings().debugDetection);
   readonly debugClientDetection = computed(() => this._settings().debugClientDetection);
+  readonly preferredDoubles = computed(() => this._settings().preferredDoubles);
 
   constructor() {
     // Left over from when these lived in the browser; the server owns them now.
@@ -76,6 +77,10 @@ export class SettingsService {
 
   setDebugClientDetection(enabled: boolean): void {
     this.patch({ debugClientDetection: enabled });
+  }
+
+  setPreferredDoubles(doubles: readonly number[]): void {
+    this.patch({ preferredDoubles: doubles });
   }
 
   /** Apply a change locally so the switch answers at once, then let the server

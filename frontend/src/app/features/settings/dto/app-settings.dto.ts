@@ -10,4 +10,5 @@ export interface AppSettingsDto {
   readonly debugCalibration: boolean;
   readonly debugDetection: boolean;
   readonly debugClientDetection: boolean;
+  readonly preferredDoubles: readonly number[]; // by sector, 25 for bull, in order
 }

@@ -9,4 +9,5 @@ export const DEFAULT_SETTINGS: AppSettingsDto = {
   debugCalibration: false,
   debugDetection: false,
   debugClientDetection: false,
+  preferredDoubles: [],
 };

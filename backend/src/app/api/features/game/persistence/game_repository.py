@@ -26,6 +26,7 @@ from app.api.features.game.persistence.game_player import GamePlayerTable
 from app.api.features.game.persistence.turn import TurnTable
 from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.persistence.player import PlayerTable
+from app.api.features.settings.persistence.user_settings import UserSettingsTable
 
 # Games carry a foreign key to `users`, so that table has to be registered too.
 from app.api import tables  # noqa: F401
@@ -81,6 +82,9 @@ class GameRepository:
 
         game.id = row.id
         await self.save(session, game)
+        preferred = await self._preferred_doubles(session, [i.id for i in identities])
+        for player in game.players:
+            player.preferred_doubles = preferred.get(player.identity_id, ())
         return game
 
     async def get(self, session: AsyncSession, game_id: str) -> Game | None:
@@ -406,12 +410,19 @@ class GameRepository:
                 Dart(value=dart.value, multiplier=dart.multiplier, position=position)
             )
 
+        preferred = await self._preferred_doubles(session, [entry[2] for entry in entries])
+
         return Game(
             id=row.id,
             mode=GameMode(row.mode),
             variant=GameVariant(row.variant),
             players=[
-                Player(id=index, name=name, identity_id=identity_id)
+                Player(
+                    id=index,
+                    name=name,
+                    identity_id=identity_id,
+                    preferred_doubles=preferred.get(identity_id, ()),
+                )
                 for index, name, identity_id in entries
             ],
             checkout_mode=CheckoutMode(row.checkout_mode),
@@ -429,6 +440,20 @@ class GameRepository:
             revision=row.revision,
             updated_at=row.updated_at,
         )
+
+
+    async def _preferred_doubles(
+        self, session: AsyncSession, identity_ids: list[str]
+    ) -> dict[str, tuple[int, ...]]:
+        """The preferred finishing doubles of each identity linked to an account."""
+        rows = (
+            await session.execute(
+                select(PlayerTable.id, UserSettingsTable.preferred_doubles)
+                .join(UserSettingsTable, UserSettingsTable.user_id == PlayerTable.user_id)
+                .where(PlayerTable.id.in_(identity_ids))
+            )
+        ).all()
+        return {row.id: tuple(row.preferred_doubles) for row in rows}
 
 
 def _dart_json(dart: Dart) -> dict[str, Any]:

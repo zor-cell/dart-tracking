@@ -57,6 +57,28 @@
                 (ngModelChange)="settings.setConfirmThrowEnabled($event)"
               />
             </div>
+
+            <div class="setting setting--stacked">
+              <div class="setting__text">
+                <label class="setting__label" for="preferred-doubles">Lieblingsdoppel</label>
+                <p class="setting__hint" id="preferred-doubles-hint">
+                  Der Checkout-Vorschlag endet bevorzugt auf diesen Doppeln, in der Reihenfolge, in
+                  der du sie auswählst. Gilt in jedem Spiel, in dem du mit deinem Konto mitspielst.
+                </p>
+              </div>
+              <p-multiselect
+                inputId="preferred-doubles"
+                ariaLabelledBy="preferred-doubles-hint"
+                display="chip"
+                placeholder="Standard"
+                [options]="doubleOptions"
+                [showToggleAll]="false"
+                [filter]="false"
+                [fluid]="true"
+                [ngModel]="settings.preferredDoubles()"
+                (ngModelChange)="settings.setPreferredDoubles($event)"
+              />
+            </div>
           </div>
         </p-accordion-content>
       </p-accordion-panel>

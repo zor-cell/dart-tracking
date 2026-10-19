@@ -29,6 +29,7 @@ class SettingsRepository:
             debug_calibration=row.debug_calibration,
             debug_detection=row.debug_detection,
             debug_client_detection=row.debug_client_detection,
+            preferred_doubles=tuple(row.preferred_doubles),
         )
 
     async def save(
@@ -36,7 +37,7 @@ class SettingsRepository:
     ) -> None:
         """Write the whole set. Upsert rather than read-then-write: the first
         change an account makes is also the row's insert."""
-        values = asdict(settings)
+        values = asdict(settings) | {"preferred_doubles": list(settings.preferred_doubles)}
         await session.execute(
             insert(UserSettingsTable)
             .values(user_id=user_id, **values)

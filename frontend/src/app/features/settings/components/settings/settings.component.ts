@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Accordion, AccordionContent, AccordionHeader, AccordionPanel } from 'primeng/accordion';
 import { Button } from 'primeng/button';
+import { MultiSelect } from 'primeng/multiselect';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 import {
@@ -22,6 +23,12 @@ const TEST_RESULTS: Record<AnnouncerTestResult, string> = {
   unsupported: 'dieser Browser kann keine Sprachausgabe',
 };
 
+/** The finishing doubles a player can prefer, as the checkout labels them. */
+const DOUBLE_OPTIONS = [
+  ...Array.from({ length: 20 }, (_, i) => ({ label: `D${20 - i}`, value: 20 - i })),
+  { label: 'Bull', value: 25 },
+];
+
 @Component({
   selector: 'app-settings',
   imports: [
@@ -30,6 +37,7 @@ const TEST_RESULTS: Record<AnnouncerTestResult, string> = {
     Button,
     ProgressSpinner,
     ToggleSwitch,
+    MultiSelect,
     Accordion,
     AccordionPanel,
     AccordionHeader,
@@ -50,6 +58,8 @@ export class SettingsComponent {
   /** The debug and recording switches make the server write camera images, so
    * they are an admin's; the server masks them off for everyone else as well. */
   protected readonly isAdmin = this.auth.isAdmin;
+
+  protected readonly doubleOptions = DOUBLE_OPTIONS;
 
   /** Values of the accordion panels that start expanded. */
   protected readonly openSections = signal<string[]>(['game']);

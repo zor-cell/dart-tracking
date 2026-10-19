@@ -74,6 +74,7 @@ class Game:
             self.remaining(self.current_player.id),
             self.darts_remaining,
             self.checkout_mode is CheckoutMode.DOUBLE_OUT,
+            self.current_player.preferred_doubles,
         )
         return list(route) if route is not None else None
 

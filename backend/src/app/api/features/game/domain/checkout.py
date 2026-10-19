@@ -24,9 +24,16 @@ _TRIPLES: list[Field] = [(f"T{n}", 3 * n) for n in range(1, 21)]
 
 _ALL_FIELDS: list[Field] = _SINGLES + _DOUBLES + _TRIPLES
 
-_DOUBLE_PREFERENCE = [20, 16, 8, 4, 2, 18, 10, 12, 14, 6, 19, 17, 15, 13, 11, 9, 7, 5, 3, 1]
-_DOUBLE_OUT_RANK: dict[str, int] = {f"D{n}": rank for rank, n in enumerate(_DOUBLE_PREFERENCE)}
-_DOUBLE_OUT_RANK["50"] = len(_DOUBLE_PREFERENCE)  # the bullseye (double bull), a last-resort finish
+# Doubles by sector, 25 being the bullseye (double bull), a last-resort finish.
+_DOUBLE_PREFERENCE = [20, 16, 8, 4, 2, 18, 10, 12, 14, 6, 19, 17, 15, 13, 11, 9, 7, 5, 3, 1, 25]
+
+
+@lru_cache(maxsize=None)
+def _double_out_rank(preferred: tuple[int, ...]) -> dict[str, int]:
+    """Rank of each finishing double: the player's preferred ones first, in their
+    order, then the conventional order."""
+    order = [*preferred, *(n for n in _DOUBLE_PREFERENCE if n not in preferred)]
+    return {("50" if n == 25 else f"D{n}"): rank for rank, n in enumerate(order)}
 
 
 def _single_out_rank(label: str) -> int:
@@ -43,8 +50,11 @@ def _single_out_rank(label: str) -> int:
 
 
 @lru_cache(maxsize=None)
-def checkout_route(remaining: int, darts: int, double_out: bool) -> tuple[str, ...] | None:
+def checkout_route(
+    remaining: int, darts: int, double_out: bool, preferred: tuple[int, ...] = ()
+) -> tuple[str, ...] | None:
     """A dart sequence finishing `remaining` points within `darts` darts, or None.
+    `preferred` lists the doubles (by sector, 25 for bull) to finish on first.
 
     The returned labels are ordered as thrown: setup darts (highest value first)
     then the finishing dart.
@@ -53,7 +63,8 @@ def checkout_route(remaining: int, darts: int, double_out: bool) -> tuple[str, .
         return None
 
     finishes = _DOUBLES if double_out else _ALL_FIELDS
-    rank = (lambda label: _DOUBLE_OUT_RANK[label]) if double_out else _single_out_rank
+    double_rank = _double_out_rank(preferred)
+    rank = (lambda label: double_rank[label]) if double_out else _single_out_rank
 
     best_cost: tuple[int, int, int] | None = None
     best_route: tuple[str, ...] | None = None
