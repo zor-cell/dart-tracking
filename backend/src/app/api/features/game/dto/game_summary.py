@@ -6,6 +6,7 @@ from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_status import GameStatus
 from app.api.features.game.domain.game_summary import GameSummary, GameSummaryPlayer
+from app.api.features.game.domain.game_variant import GameVariant
 
 
 class GameSummaryPlayerDto(CamelModel):
@@ -21,6 +22,7 @@ class GameSummaryPlayerDto(CamelModel):
 class GameSummaryDto(CamelModel):
     id: str
     mode: GameMode
+    variant: GameVariant
     checkout_mode: CheckoutMode
     status: GameStatus
     players: list[GameSummaryPlayerDto]
@@ -36,6 +38,7 @@ class GameSummaryDto(CamelModel):
         return cls(
             id=summary.id,
             mode=summary.mode,
+            variant=summary.variant,
             checkout_mode=summary.checkout_mode,
             status=summary.status,
             players=[GameSummaryPlayerDto.from_entity(p) for p in summary.players],

@@ -91,55 +91,5 @@
         </section>
       }
     }
-
-    <section class="panel">
-      <h2 class="panel__title">Meine Spiele</h2>
-      @for (game of games(); track game.id) {
-        <article class="game-row" [class.game-row--muted]="!game.counted">
-          <div class="game-row__head">
-            <span class="game-row__mode">{{ game.mode }}</span>
-            <span class="game-row__status">{{ statusLabels[game.status] }}</span>
-            <span class="game-row__date">{{ game.createdAt | date: 'dd.MM.yy' }}</span>
-          </div>
-          <ul class="game-row__players">
-            @for (player of game.players; track $index) {
-              <li
-                class="game-row__player"
-                [class.game-row__player--winner]="$index === game.winnerIndex"
-                [class.game-row__player--me]="player.isMe"
-              >
-                <span>{{ player.name }}</span>
-                <span class="game-row__remaining">{{ player.remaining }}</span>
-              </li>
-            }
-          </ul>
-          <div class="game-row__foot">
-            <span class="game-row__darts">{{ game.dartCount }} Darts</span>
-            <p-button
-              size="small"
-              [text]="true"
-              severity="secondary"
-              [loading]="busyGameId() === game.id"
-              [label]="game.counted ? 'Nicht werten' : 'Werten'"
-              [icon]="game.counted ? 'pi pi-eye-slash' : 'pi pi-eye'"
-              (onClick)="toggleCounted(game)"
-            />
-          </div>
-        </article>
-      } @empty {
-        <p class="panel__hint">Noch keine Spiele.</p>
-      }
-
-      @if (moreAvailable()) {
-        <p-button
-          fluid
-          [text]="true"
-          severity="secondary"
-          label="Mehr laden"
-          icon="pi pi-angle-down"
-          (onClick)="loadMore()"
-        />
-      }
-    </section>
   }
 </section>

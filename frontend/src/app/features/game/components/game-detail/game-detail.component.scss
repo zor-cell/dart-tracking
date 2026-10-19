@@ -1,0 +1,172 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.panel__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.panel__hint {
+  margin: 0;
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.8rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.standings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border-radius: 0.5rem;
+}
+
+.standings__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+
+  & + & {
+    border-top: 1px solid var(--p-content-border-color, #e5e7eb);
+  }
+}
+
+.standings__row--winner {
+  font-weight: 700;
+}
+
+.standings__rank {
+  width: 1.5rem;
+  color: var(--p-text-muted-color, #6b7280);
+  font-variant-numeric: tabular-nums;
+}
+
+.standings__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.standings__trophy {
+  color: var(--p-yellow-600, #ca8a04);
+}
+
+.standings__remaining {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.standings__unit {
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.figures,
+.visits {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+
+  th,
+  td {
+    padding: 0.45rem 0.5rem;
+    border-bottom: 1px solid var(--p-content-border-color, #e5e7eb);
+  }
+
+  thead th {
+    color: var(--p-text-muted-color, #6b7280);
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+}
+
+.figures {
+  th[scope='row'] {
+    text-align: left;
+    font-weight: 400;
+    color: var(--p-text-muted-color, #6b7280);
+    white-space: nowrap;
+  }
+
+  thead th,
+  td {
+    text-align: right;
+  }
+}
+
+.figures__strong {
+  font-weight: 700;
+}
+
+.figures__hint {
+  display: block;
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.7rem;
+}
+
+.visits {
+  th,
+  td {
+    text-align: left;
+  }
+
+  .visits__number {
+    text-align: right;
+  }
+}
+
+/* A rule between rounds, so the log reads round by round. */
+.visits__row--round td {
+  border-top: 2px solid var(--p-content-border-color, #e5e7eb);
+}
+
+.visits__round {
+  color: var(--p-text-muted-color, #6b7280);
+}
+
+.visits__name {
+  max-width: 6rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.visits__darts {
+  white-space: nowrap;
+}
+
+.visits__dart {
+  display: inline-block;
+  min-width: 2.2rem;
+}
+
+.visits__dart--manual {
+  font-style: italic;
+  color: var(--p-text-muted-color, #6b7280);
+}
+
+.visits__bust {
+  color: var(--p-red-600, #dc2626);
+  font-size: 0.8rem;
+  font-weight: 600;
+}

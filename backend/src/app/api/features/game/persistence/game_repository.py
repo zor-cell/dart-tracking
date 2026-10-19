@@ -5,17 +5,21 @@ each command and written back inside the same transaction.
 """
 
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Row, case, delete, func, or_, select, update
+from sqlalchemy import ColumnElement, Row, and_, case, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game import Game
+from app.api.features.game.domain.game_filter import GameFilter
+from app.api.features.game.domain.game_record import GameRecord
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_status import (
+    ABANDON_AFTER,
     GameStatus,
     effective_status,
     is_resumable,
@@ -95,6 +99,36 @@ class GameRepository:
         """Read without locking — for the endpoints that only display a game."""
         return await self._load(session, game_id, lock=False)
 
+    async def record_for(
+        self, session: AsyncSession, game_id: str, user_id: str
+    ) -> GameRecord | None:
+        """The game's record, or None unless this account set it up or holds a seat in it."""
+        try:
+            UUID(game_id)
+        except ValueError:
+            return None
+
+        seated = (
+            select(GamePlayerTable.game_id)
+            .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
+            .where(GamePlayerTable.game_id == game_id, PlayerTable.user_id == user_id)
+        )
+        row = (
+            await session.execute(
+                select(GameTable).where(
+                    GameTable.id == game_id,
+                    or_(GameTable.owner_user_id == user_id, GameTable.id.in_(seated)),
+                )
+            )
+        ).scalar_one_or_none()
+        if row is None:
+            return None
+        return GameRecord(
+            status=effective_status(GameStatus(row.status), row.updated_at),
+            created_at=row.created_at,
+            finished_at=row.finished_at,
+        )
+
     async def lock(self, session: AsyncSession, game_id: str) -> Game | None:
         """Read for a command. `SELECT … FOR UPDATE` holds the row until the
         transaction ends, so two devices ending the same visit are serialised
@@ -162,28 +196,24 @@ class GameRepository:
 
 
     async def summaries(
-        self, session: AsyncSession, user_id: str, *, limit: int, offset: int
+        self,
+        session: AsyncSession,
+        user_id: str,
+        *,
+        limit: int,
+        offset: int,
+        criteria: GameFilter = GameFilter(),
     ) -> list[GameSummary]:
         """The games this account took part in or wrote down, newest first.
 
         Both branches are needed: a game set up by a fellow player belongs in my
         history too, and one I only kept score for has no seat for me at all.
         """
-        mine = (
-            select(GamePlayerTable.game_id)
-            .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
-            .where(PlayerTable.user_id == user_id)
-        )
         rows = (
             await session.execute(
                 select(GameTable)
-                .where(
-                    or_(
-                        GameTable.owner_user_id == user_id,
-                        GameTable.id.in_(mine),
-                    )
-                )
-                .order_by(GameTable.updated_at.desc())
+                .where(*_history_clauses(user_id, criteria))
+                .order_by(GameTable.created_at.desc())
                 .limit(limit)
                 .offset(offset)
             )
@@ -268,6 +298,7 @@ class GameRepository:
                 GameSummary(
                     id=row.id,
                     mode=GameMode(row.mode),
+                    variant=GameVariant(row.variant),
                     checkout_mode=CheckoutMode(row.checkout_mode),
                     status=effective_status(GameStatus(row.status), row.updated_at),
                     players=players,
@@ -287,6 +318,12 @@ class GameRepository:
                 )
             )
         return summaries
+
+    async def count(self, session: AsyncSession, user_id: str, criteria: GameFilter) -> int:
+        """How many games `summaries` would page through."""
+        return await session.scalar(
+            select(func.count()).select_from(GameTable).where(*_history_clauses(user_id, criteria))
+        ) or 0
 
     async def _elimination_remaining(
         self, session: AsyncSession, rows: Sequence[GameTable], seats: Sequence[Row[Any]]
@@ -514,5 +551,43 @@ def _dart_from_json(data: dict[str, Any]) -> Dart:
         position=(position[0], position[1]) if position is not None else None,
     )
 
+
+def _history_clauses(user_id: str, criteria: GameFilter) -> list[ColumnElement[bool]]:
+    """The account's games narrowed by `criteria`, with `abandoned` derived as `effective_status` does."""
+    seated = (
+        select(GamePlayerTable.game_id)
+        .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
+        .where(PlayerTable.user_id == user_id)
+    )
+    clauses: list[ColumnElement[bool]] = [
+        or_(GameTable.owner_user_id == user_id, GameTable.id.in_(seated))
+    ]
+    if criteria.variant is not None:
+        clauses.append(GameTable.variant == criteria.variant.value)
+    if criteria.mode is not None:
+        clauses.append(GameTable.mode == int(criteria.mode))
+    if criteria.status is not None:
+        cutoff = datetime.now(UTC) - ABANDON_AFTER
+        active = GameTable.status == GameStatus.ACTIVE.value
+        match criteria.status:
+            case GameStatus.ACTIVE:
+                clauses.append(and_(active, GameTable.updated_at > cutoff))
+            case GameStatus.ABANDONED:
+                clauses.append(and_(active, GameTable.updated_at <= cutoff))
+            case _:
+                clauses.append(GameTable.status == criteria.status.value)
+    if criteria.opponent_id is not None:
+        clauses.append(
+            GameTable.id.in_(
+                select(GamePlayerTable.game_id).where(
+                    GamePlayerTable.player_id == criteria.opponent_id
+                )
+            )
+        )
+    if criteria.since is not None:
+        clauses.append(GameTable.created_at >= criteria.since)
+    if criteria.until is not None:
+        clauses.append(GameTable.created_at < criteria.until)
+    return clauses
 
 repository = GameRepository()

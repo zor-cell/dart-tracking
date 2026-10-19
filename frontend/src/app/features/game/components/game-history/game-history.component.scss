@@ -1,0 +1,85 @@
+:host {
+  --p-datatable-body-cell-sm-padding: 0.8rem 0.4rem;
+  --p-datatable-header-cell-sm-padding: 0.6rem 0.4rem;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+}
+
+.toolbar__count {
+  margin-right: auto;
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.9rem;
+}
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: min(18rem, calc(100vw - 4rem));
+}
+
+.filters__label {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.filters__reset {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+}
+
+.games__head > th,
+.games__row > td {
+  text-align: center;
+}
+
+.games__row {
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color, #10b981);
+    outline-offset: -2px;
+  }
+}
+
+.games__number {
+  font-variant-numeric: tabular-nums;
+}
+
+.games__when {
+  white-space: nowrap;
+}
+
+.games__time {
+  margin-left: 0.6rem;
+  color: var(--p-text-muted-color, #6b7280);
+}
+
+.games__variant {
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.8rem;
+}
+
+.games__status {
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: var(--p-content-hover-background, #f3f4f6);
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.games__status--active {
+  background: var(--p-green-100, #dcfce7);
+  color: var(--p-green-800, #166534);
+}
+
+.games__empty {
+  padding: 1.5rem 0;
+  text-align: center;
+  color: var(--p-text-muted-color, #6b7280);
+}

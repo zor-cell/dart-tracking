@@ -9,14 +9,22 @@ Everything that *changes* a game runs over the WebSocket instead, so one
 mutation reaches every device in the room on one path (core/socket/socket.py).
 """
 
+from datetime import datetime
+from uuid import UUID
+
 from fastapi import APIRouter, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.core.services import rate_limit
 from app.api.core.socket.services.game_hub import hub
 from app.api.features.auth.services.current_user import AuthenticatedUser, CurrentUser
+from app.api.features.game.domain.game_filter import GameFilter
+from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_status import GameStatus
+from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.dto.game_config import GameConfigDto
+from app.api.features.game.dto.game_detail import GameDetailDto
+from app.api.features.game.dto.game_page import GamePageDto
 from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.dto.game_status_update import GameStatusUpdateDto
 from app.api.features.game.dto.game_summary import GameSummaryDto
@@ -25,6 +33,7 @@ from app.api.features.game.dto.rematch_started import RematchStartedDto
 from app.api.features.game.persistence.game_repository import repository
 from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.persistence.player_repository import repository as players
+from app.api.features.statistics.domain.player_statistics import PlayerStatistics
 from app.infrastructure import database
 
 router = APIRouter(prefix="/games", tags=["Game"])
@@ -121,15 +130,36 @@ async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) 
     return GameStateDto.from_entity(game)
 
 
-@router.get("", response_model=list[GameSummaryDto])
+@router.get("", response_model=GamePageDto)
 async def list_games(
-    user: AuthenticatedUser, limit: int = Query(20, ge=1, le=100), offset: int = Query(0, ge=0)
-) -> list[GameSummaryDto]:
-    """My games — played in or written down."""
+    user: AuthenticatedUser,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    variant: GameVariant | None = None,
+    mode: GameMode | None = None,
+    status: GameStatus | None = None,
+    opponent: UUID | None = None,
+    since: datetime | None = None,
+    until: datetime | None = None,
+) -> GamePageDto:
+    """My games — played in or written down — one page at a time."""
+    criteria = GameFilter(
+        variant=variant,
+        mode=mode,
+        status=status,
+        opponent_id=str(opponent) if opponent else None,
+        since=since,
+        until=until,
+    )
     async with database.session_scope() as session:
-        summaries = await repository.summaries(session, user.id, limit=limit, offset=offset)
+        summaries = await repository.summaries(
+            session, user.id, limit=limit, offset=offset, criteria=criteria
+        )
+        total = await repository.count(session, user.id, criteria)
 
-    return [GameSummaryDto.from_entity(summary) for summary in summaries]
+    return GamePageDto(
+        items=[GameSummaryDto.from_entity(summary) for summary in summaries], total=total
+    )
 
 
 @router.patch("/{game_id}", status_code=204)
@@ -166,3 +196,23 @@ async def get_game(game_id: str) -> GameStateDto:
         raise HTTPException(status_code=404, detail="game not found")
 
     return GameStateDto.from_entity(game)
+
+
+@router.get("/{game_id}/detail", response_model=GameDetailDto)
+async def get_game_detail(game_id: str, user: AuthenticatedUser) -> GameDetailDto:
+    """A game with its visits and per-player figures, for its players and its owner only."""
+    async with database.session_scope() as session:
+        record = await repository.record_for(session, game_id, user.id)
+        game = await repository.get(session, game_id) if record is not None else None
+
+    if record is None or game is None:
+        raise HTTPException(status_code=404, detail="game not found")
+
+    statistics = []
+    for player in game.players:
+        entry = PlayerStatistics()
+        turns = [turn for turn in game.turns if turn.player_id == player.id and turn.darts]
+        entry.add_leg(game.mode, game.checkout_mode, turns)
+        statistics.append(entry)
+
+    return GameDetailDto.from_entity(game, record, statistics)

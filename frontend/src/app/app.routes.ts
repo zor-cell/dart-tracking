@@ -86,6 +86,22 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'account/games',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/game/components/game-history/game-history.component').then(
+        (m) => m.GameHistoryComponent,
+      ),
+  },
+  {
+    path: 'account/games/:gameId',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/game/components/game-detail/game-detail.component').then(
+        (m) => m.GameDetailComponent,
+      ),
+  },
+  {
     path: 'account/players',
     canActivate: [authGuard],
     loadComponent: () =>

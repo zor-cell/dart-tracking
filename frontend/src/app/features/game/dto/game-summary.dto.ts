@@ -1,5 +1,6 @@
 import { CheckoutMode } from '../models/checkout-mode';
 import { GameMode } from '../models/game-mode';
+import { GameVariant } from '../models/game-variant';
 
 /** Derived on the server: `abandoned` is what an untouched open game becomes. */
 export type GameStatus = 'active' | 'finished' | 'abandoned' | 'discarded';
@@ -13,6 +14,7 @@ export interface GameSummaryPlayerDto {
 export interface GameSummaryDto {
   readonly id: string;
   readonly mode: GameMode;
+  readonly variant: GameVariant;
   readonly checkoutMode: CheckoutMode;
   readonly status: GameStatus;
   readonly players: readonly GameSummaryPlayerDto[];

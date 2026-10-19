@@ -5,6 +5,7 @@ winner, darts left) is derived from it. Nothing is stored twice, and the full
 throw history stays available for the statistics planned in the roadmap.
 """
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -128,19 +129,28 @@ class Game:
         than the score is what lets both share the bust, win and checkout rules."""
         return self.mode - self._scores()[player_id]
 
+    def remaining_after_turns(self) -> list[int]:
+        """What the thrower still needed after each turn, in turn order."""
+        return [self.mode - scores[turn.player_id] for turn, scores in self._replay()]
+
     def _scores(self) -> dict[int, int]:
-        """Points scored per player, replayed in throwing order. An elimination
-        reset depends on what everyone stood at when the dart landed, so this
-        cannot be a per-player sum."""
+        scores = {player.id: 0 for player in self.players}
+        for _, scores in self._replay():
+            pass
+        return scores
+
+    def _replay(self) -> Iterator[tuple[Turn, dict[int, int]]]:
+        """Points scored per player after each turn, replayed in throwing order. An
+        elimination reset depends on what everyone stood at when the dart landed,
+        so this cannot be a per-player sum."""
         scores = {player.id: 0 for player in self.players}
         for turn in self.turns:
-            if turn.busted:
-                continue
-            for dart in turn.darts:
-                scores[turn.player_id] += dart.points
-                if self.variant is GameVariant.ELIMINATION:
-                    self._eliminate(scores, turn.player_id)
-        return scores
+            if not turn.busted:
+                for dart in turn.darts:
+                    scores[turn.player_id] += dart.points
+                    if self.variant is GameVariant.ELIMINATION:
+                        self._eliminate(scores, turn.player_id)
+            yield turn, scores
 
     def _eliminate(self, scores: dict[int, int], thrower_id: int) -> None:
         """Reset every other player the thrower just drew level with. Zero is
