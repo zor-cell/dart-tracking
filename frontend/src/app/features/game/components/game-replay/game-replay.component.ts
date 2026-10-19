@@ -101,7 +101,7 @@ export class GameReplayComponent {
   /** Round of the visit on the board, counted over all players. */
   protected readonly round = computed(() => {
     const step = this.step();
-    return step === null ? 0 : Math.floor(step.visit / this.players().length) + 1;
+    return step === null ? 0 : this.roundOf(step);
   });
 
   /** Points each player needed: after the visit once it is complete, before it until then. */
@@ -178,10 +178,29 @@ export class GameReplayComponent {
     this.cursor.set(Math.min(Math.max(cursor, 0), this.steps().length));
   }
 
+  /** Switch whose darts are replayed, staying at the same round and dart. */
   protected selectPlayer(playerId: number | null): void {
+    const current = this.step();
     this.playerId.set(playerId);
-    this.playing.set(false);
-    this.cursor.set(0);
+    if (current === null) {
+      return;
+    }
+    const steps = this.steps();
+    const same = steps.findIndex((s) => s.visit === current.visit && s.dart === current.dart);
+    if (same !== -1) {
+      this.cursor.set(same + 1);
+      return;
+    }
+    // A single player's steps run round by round, so the ones reached form a prefix.
+    const round = this.roundOf(current);
+    const reached = steps.filter(
+      (s) => this.roundOf(s) < round || (this.roundOf(s) === round && s.dart <= current.dart),
+    );
+    this.cursor.set(reached.length);
+  }
+
+  private roundOf(step: ReplayStep): number {
+    return Math.floor(step.visit / this.players().length) + 1;
   }
 
   private advance(): void {
