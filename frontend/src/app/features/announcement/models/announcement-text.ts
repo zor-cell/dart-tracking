@@ -16,10 +16,10 @@ export function announcementPhrases(announcement: DartAnnouncementDto): string[]
 
 function dartPhrase(value: number, multiplier: number): string {
   if (multiplier === 0) {
-    return 'Daneben';
+    return 'Miss';
   }
   if (value === 25) {
-    return multiplier === 2 ? 'Bullseye' : 'Bull';
+    return multiplier === 2 ? 'Double Bull' : 'Bull';
   }
   return `${['Single', 'Double', 'Triple'][multiplier - 1]} ${value}`;
 }
