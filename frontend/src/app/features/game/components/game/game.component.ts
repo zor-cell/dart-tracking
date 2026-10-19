@@ -17,6 +17,7 @@ import {Router, RouterLink} from '@angular/router';
 import {Button} from 'primeng/button';
 import {ProgressSpinner} from 'primeng/progressspinner';
 import {Skeleton} from 'primeng/skeleton';
+import {AuthService} from '../../../auth/services/auth.service';
 import {OverlayComponent} from '../../../calibration/components/overlay/overlay.component';
 import {CalibrationService} from '../../../calibration/services/calibration.service';
 import {DetectionService} from '../../../detection/services/detection.service';
@@ -102,6 +103,7 @@ export class GameComponent implements OnInit, OnDestroy {
   private readonly detectionDebugCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('detectionDebugCanvas');
   private readonly scoreboardRef = viewChild<ElementRef<HTMLUListElement>>('scoreboard');
 
+  protected readonly signedIn = inject(AuthService).isAuthenticated;
   protected readonly deviceRole = this.session.role;
   protected readonly cameraPhase = this.session.phase;
   protected readonly cameraError = this.session.cameraError;

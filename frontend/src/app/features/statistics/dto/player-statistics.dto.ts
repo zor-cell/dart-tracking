@@ -7,6 +7,7 @@ export interface PlayerStatisticsDto {
   readonly darts: number;
   readonly points: number;
   readonly average: number;
+  readonly firstNineAverage: number;
   readonly bestVisit: number;
   readonly visits180: number;
   readonly visits100Plus: number;

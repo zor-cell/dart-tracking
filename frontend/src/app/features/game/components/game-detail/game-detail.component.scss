@@ -80,8 +80,7 @@
   overflow-x: auto;
 }
 
-.figures,
-.visits {
+.figures {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
@@ -122,51 +121,4 @@
   display: block;
   color: var(--p-text-muted-color, #6b7280);
   font-size: 0.7rem;
-}
-
-.visits {
-  th,
-  td {
-    text-align: left;
-  }
-
-  .visits__number {
-    text-align: right;
-  }
-}
-
-/* A rule between rounds, so the log reads round by round. */
-.visits__row--round td {
-  border-top: 2px solid var(--p-content-border-color, #e5e7eb);
-}
-
-.visits__round {
-  color: var(--p-text-muted-color, #6b7280);
-}
-
-.visits__name {
-  max-width: 6rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.visits__darts {
-  white-space: nowrap;
-}
-
-.visits__dart {
-  display: inline-block;
-  min-width: 2.2rem;
-}
-
-.visits__dart--manual {
-  font-style: italic;
-  color: var(--p-text-muted-color, #6b7280);
-}
-
-.visits__bust {
-  color: var(--p-red-600, #dc2626);
-  font-size: 0.8rem;
-  font-weight: 600;
 }

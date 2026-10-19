@@ -287,13 +287,16 @@
           </ul>
 
           @if (game.settledWinner()) {
-            <p-button
-              class="turn__stats"
-              icon="pi pi-chart-bar"
-              [rounded]="true"
-              severity="secondary"
-              ariaLabel="Spielstatistik"
-            />
+            @if (signedIn()) {
+              <p-button
+                class="turn__stats"
+                icon="pi pi-chart-bar"
+                [rounded]="true"
+                severity="secondary"
+                ariaLabel="Spielstatistik"
+                [routerLink]="['/account/games', state.id]"
+              />
+            }
           } @else if (settings.confirmThrowEnabled() || state.dartsRemaining === 0) {
             <p-button
               class="turn__confirm"

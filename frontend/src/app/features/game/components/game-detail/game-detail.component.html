@@ -77,6 +77,12 @@
               }
             </tr>
             <tr>
+              <th scope="row">First-9-Average</th>
+              @for (player of standings(); track player.id) {
+                <td>{{ player.statistics.firstNineAverage | number: '1.2-2' }}</td>
+              }
+            </tr>
+            <tr>
               <th scope="row">Darts</th>
               @for (player of standings(); track player.id) {
                 <td>{{ player.statistics.darts }}</td>
@@ -120,49 +126,6 @@
           </tbody>
         </table>
       </div>
-    </section>
-
-    <section class="panel">
-      <h2 class="panel__title">Aufnahmen</h2>
-      @if (rounds().length > 0) {
-        <table class="visits">
-          <thead>
-            <tr>
-              <th scope="col">Runde</th>
-              <th scope="col">Spieler</th>
-              <th scope="col">Darts</th>
-              <th scope="col" class="visits__number">Punkte</th>
-              <th scope="col" class="visits__number">{{ isElimination() ? 'Fehlen' : 'Rest' }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (visit of rounds(); track $index) {
-              <tr [class.visits__row--round]="visit.firstOfRound && $index > 0">
-                <td class="visits__round">{{ visit.firstOfRound ? visit.round : '' }}</td>
-                <td class="visits__name">{{ visit.name }}</td>
-                <td class="visits__darts">
-                  @for (dart of visit.darts; track $index) {
-                    <span class="visits__dart" [class.visits__dart--manual]="dart.position === null">
-                      {{ dart.label }}
-                    </span>
-                  }
-                </td>
-                <td class="visits__number">
-                  @if (visit.busted) {
-                    <span class="visits__bust">Bust</span>
-                  } @else {
-                    {{ visit.points }}
-                  }
-                </td>
-                <td class="visits__number">{{ visit.remaining }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-        <p class="panel__hint">Kursiv: von Hand eingetragen</p>
-      } @else {
-        <p class="panel__hint">Noch keine Aufnahmen.</p>
-      }
     </section>
 
     <p-button

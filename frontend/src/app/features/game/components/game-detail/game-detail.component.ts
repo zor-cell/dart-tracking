@@ -59,22 +59,6 @@ export class GameDetailComponent {
       .sort((a, b) => Number(b.won) - Number(a.won) || a.remaining - b.remaining);
   });
 
-  /** The visit log, numbered by round. */
-  protected readonly rounds = computed(() => {
-    const detail = this.detail();
-    if (!detail) {
-      return [];
-    }
-    const names = new Map(detail.game.players.map((player) => [player.id, player.name]));
-    const seats = detail.game.players.length;
-    return detail.visits.map((visit, index) => ({
-      ...visit,
-      round: Math.floor(index / seats) + 1,
-      firstOfRound: index % seats === 0,
-      name: names.get(visit.playerId) ?? '',
-    }));
-  });
-
   constructor() {
     void this.load(this.route.snapshot.paramMap.get('gameId') ?? '');
   }

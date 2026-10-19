@@ -13,14 +13,13 @@ class PlayerStatisticsDto(CamelModel):
     darts: int
     points: int
     average: float
+    first_nine_average: float
     best_visit: int
     visits180: int
     visits100_plus: int
     checkout_chances: int
     double_attempts: int
     double_hits: int
-    # Board millimetres, newest last. Capped, so a long history stays a response
-    # rather than a download.
     heatmap: list[tuple[float, float]]
 
     @classmethod
@@ -31,6 +30,7 @@ class PlayerStatisticsDto(CamelModel):
             darts=statistics.darts,
             points=statistics.points,
             average=round(statistics.average, 2),
+            first_nine_average=round(statistics.first_nine_average, 2),
             best_visit=statistics.best_visit,
             visits180=statistics.visits_180,
             visits100_plus=statistics.visits_100_plus,
