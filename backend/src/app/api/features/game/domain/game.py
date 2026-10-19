@@ -80,13 +80,17 @@ class Game:
 
     @property
     def setup(self) -> Setup | None:
-        """What to throw when this visit cannot finish, so the next one can. x01
-        only: in elimination the reset route fills that gap."""
-        if self.variant is not GameVariant.X01 or self.winner is not None:
+        """What to throw with the last dart when this visit cannot finish, so the
+        next one can. x01 only: in elimination the reset route fills that gap."""
+        if (
+            self.variant is not GameVariant.X01
+            or self.winner is not None
+            or self.darts_remaining != 1
+        ):
             return None
         return setup_route(
             self.remaining(self.current_player.id),
-            self.darts_remaining,
+            1,
             self.checkout_mode is CheckoutMode.DOUBLE_OUT,
             self.current_player.preferred_doubles,
         )
