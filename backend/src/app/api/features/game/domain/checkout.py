@@ -104,15 +104,20 @@ class Setup:
 # Highest leave `setup_route` aims for: two darts finish at most 110 double-out, 120 single-out.
 _MAX_SETUP_LEAVE = 120
 
+# Highest three-dart finish; above it a setup suggestion is only noise.
+_MAX_FINISH_DOUBLE_OUT = 170
+_MAX_FINISH_SINGLE_OUT = 180
+
 
 @lru_cache(maxsize=None)
 def setup_route(
     remaining: int, darts: int, double_out: bool, preferred: tuple[int, ...] = ()
 ) -> Setup | None:
-    """When `darts` cannot finish `remaining`: the setup after which the next
-    visit finishes in as few darts as possible. None when a checkout exists or no
-    leave of at most two darts can be reached."""
-    if darts <= 0 or remaining - 60 * darts > _MAX_SETUP_LEAVE:
+    """When `darts` cannot finish `remaining` but it is within finishing range: the
+    setup after which the next visit finishes in as few darts as possible. None
+    otherwise, or when no leave of at most two darts can be reached."""
+    max_finish = _MAX_FINISH_DOUBLE_OUT if double_out else _MAX_FINISH_SINGLE_OUT
+    if darts <= 0 or remaining > max_finish or remaining - 60 * darts > _MAX_SETUP_LEAVE:
         return None
     if checkout_route(remaining, darts, double_out, preferred) is not None:
         return None
