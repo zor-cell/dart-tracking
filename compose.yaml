@@ -1,5 +1,12 @@
 name: dart-tracking
 
+# Caps each container's json-file log at 3 x 10 MB.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
 services:
   backend:
     build:
@@ -8,6 +15,7 @@ services:
       args:
         TRACKER_VERSION: ${TRACKER_VERSION:-}
     restart: unless-stopped
+    logging: *logging
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?missing in .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?missing in .env}
@@ -52,12 +60,14 @@ services:
       args:
         BUILD_NUMBER: ${BUILD_NUMBER:-}
     restart: unless-stopped
+    logging: *logging
     ports:
       - "127.0.0.1:10020:8080" # only cloudflared on the host connects
 
   postgres:
     image: postgres:18-alpine
     restart: unless-stopped
+    logging: *logging
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?missing in .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?missing in .env}
@@ -73,6 +83,7 @@ services:
   redis:
     image: redis:8-alpine
     restart: unless-stopped
+    logging: *logging
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?missing in .env}
     command: ["sh", "-c", "exec redis-server --requirepass \"$$REDIS_PASSWORD\""]
