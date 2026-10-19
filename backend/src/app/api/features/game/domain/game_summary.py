@@ -1,6 +1,6 @@
-"""A game as it appears in a list, without its turns. Aggregated in the query
-rather than replayed, because a list of a hundred games must not load a hundred
-aggregates."""
+"""A game as it appears in a list, without its turns. Aggregated in the query,
+because a list of a hundred games must not load a hundred aggregates; only
+elimination games are replayed, in one batch."""
 
 from dataclasses import dataclass
 from datetime import datetime

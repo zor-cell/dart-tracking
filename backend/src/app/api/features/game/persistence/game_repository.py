@@ -4,10 +4,11 @@ The server is the source of truth for every score, so a game is read fresh for
 each command and written back inside the same transaction.
 """
 
+from collections.abc import Sequence
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import case, delete, func, or_, select, update
+from sqlalchemy import Row, case, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
@@ -190,6 +191,7 @@ class GameRepository:
                     GamePlayerTable.player_index,
                     PlayerTable.display_name,
                     PlayerTable.user_id,
+                    GamePlayerTable.player_id,
                 )
                 .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
                 .where(GamePlayerTable.game_id.in_(ids))
@@ -230,6 +232,7 @@ class GameRepository:
 
         scored = {(t.game_id, t.player_index): t.scored for t in tallies}
         thrown = {(t.game_id, t.player_index): t.darts for t in tallies}
+        replayed = await self._elimination_remaining(session, rows, seats)
 
         summaries: list[GameSummary] = []
         for row in rows:
@@ -237,7 +240,10 @@ class GameRepository:
             players = [
                 GameSummaryPlayer(
                     name=seat.display_name,
-                    remaining=row.mode - scored.get((row.id, seat.player_index), 0),
+                    remaining=replayed.get(
+                        (row.id, seat.player_index),
+                        row.mode - scored.get((row.id, seat.player_index), 0),
+                    ),
                     is_me=seat.user_id == user_id,
                 )
                 for seat in entries
@@ -273,6 +279,63 @@ class GameRepository:
                 )
             )
         return summaries
+
+    async def _elimination_remaining(
+        self, session: AsyncSession, rows: Sequence[GameTable], seats: Sequence[Row[Any]]
+    ) -> dict[tuple[str, int], int]:
+        """Remaining points per seat of the elimination games among `rows`, replayed
+        in throwing order because a reset depends on everyone's score at the time."""
+        ids = [row.id for row in rows if GameVariant(row.variant) is GameVariant.ELIMINATION]
+        if not ids:
+            return {}
+
+        turn_rows = (
+            await session.execute(
+                select(TurnTable)
+                .where(TurnTable.game_id.in_(ids))
+                .order_by(TurnTable.game_id, TurnTable.turn_index)
+            )
+        ).scalars().all()
+        dart_rows = (
+            await session.execute(
+                select(DartTable)
+                .where(DartTable.game_id.in_(ids))
+                .order_by(DartTable.game_id, DartTable.turn_index, DartTable.dart_index)
+            )
+        ).scalars().all()
+
+        darts: dict[tuple[str, int], list[Dart]] = {}
+        for dart in dart_rows:
+            darts.setdefault((dart.game_id, dart.turn_index), []).append(
+                Dart(value=dart.value, multiplier=dart.multiplier)
+            )
+
+        remaining: dict[tuple[str, int], int] = {}
+        for row in rows:
+            if row.id not in ids:
+                continue
+            game = Game(
+                id=row.id,
+                mode=GameMode(row.mode),
+                variant=GameVariant.ELIMINATION,
+                players=[
+                    Player(id=seat.player_index, name=seat.display_name, identity_id=seat.player_id)
+                    for seat in seats
+                    if seat.game_id == row.id
+                ],
+                turns=[
+                    Turn(
+                        player_id=turn.player_index,
+                        darts=darts.get((turn.game_id, turn.turn_index), []),
+                        busted=turn.busted,
+                    )
+                    for turn in turn_rows
+                    if turn.game_id == row.id
+                ],
+            )
+            for player in game.players:
+                remaining[(row.id, player.id)] = game.remaining(player.id)
+        return remaining
 
     async def set_status(
         self, session: AsyncSession, game_id: str, user_id: str, status: GameStatus
