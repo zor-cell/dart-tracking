@@ -19,8 +19,9 @@
   filter: grayscale(1);
 }
 
+/* Wires in the background colour, so they recede alike in light and dark mode. */
 .board__segment {
-  stroke: #1f1f1f;
+  stroke: var(--p-content-background, #ffffff);
   stroke-width: 0.6;
   fill-opacity: 0.12;
 
