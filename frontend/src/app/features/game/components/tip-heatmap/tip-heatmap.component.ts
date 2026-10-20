@@ -7,7 +7,10 @@ import {
 } from '../../models/board-face';
 import { toSvg } from '../../models/board-geometry';
 import { BoardFaceComponent } from '../board-face/board-face.component';
-import { DartMarkersComponent, MARKER_RADIUS } from '../dart-markers/dart-markers.component';
+import { DartMarkersComponent } from '../dart-markers/dart-markers.component';
+
+/** Radius of every tip, old and current alike, in board millimetres. */
+const TIP_RADIUS = 4;
 
 /**
  * Every located tip on one board. Drawn as translucent dots that add up where
@@ -27,7 +30,7 @@ export class TipHeatmapComponent {
   readonly current = input<readonly DartDto[]>([]);
 
   protected readonly viewBox = BOARD_VIEW_BOX;
-  protected readonly markRadius = MARKER_RADIUS;
+  protected readonly markRadius = TIP_RADIUS;
 
   protected readonly ariaLabel = computed(
     () => `Dartscheibe mit ${this.points().length} erkannten Treffern`,

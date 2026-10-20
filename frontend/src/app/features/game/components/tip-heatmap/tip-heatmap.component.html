@@ -5,5 +5,5 @@
     <circle class="heatmap__mark" [attr.cx]="mark.x" [attr.cy]="mark.y" [attr.r]="markRadius" />
   }
 
-  <g app-dart-markers [darts]="current()"></g>
+  <g app-dart-markers [darts]="current()" [radius]="markRadius"></g>
 </svg>

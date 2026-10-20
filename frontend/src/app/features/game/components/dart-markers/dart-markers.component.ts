@@ -10,8 +10,8 @@ const OFF_BOARD_LABEL_OFFSET = 18;
 /** An arrowhead pointing along +x, aimed by the marker's own rotation. */
 const ARROW_PATH = 'M 9.5 0 L -5 -7 L -5 7 Z';
 
-/** Radius of the dot marking a located tip, in board millimetres. */
-export const MARKER_RADIUS = 5.5;
+/** Radius of the dot marking a located tip on the live board, in board millimetres. */
+const MARKER_RADIUS = 5.5;
 
 /** A dart drawn where its tip was located, or aimed off the board. */
 interface DartMarker {
@@ -41,9 +41,10 @@ export class DartMarkersComponent {
   readonly darts = input.required<readonly DartDto[]>();
   /** Darts located after a win or bust closed the visit, drawn faded after the booked ones. */
   readonly shadowDarts = input<readonly DartDto[]>([]);
+  /** Dot radius in board millimetres. */
+  readonly radius = input(MARKER_RADIUS);
 
   protected readonly arrowPath = ARROW_PATH;
-  protected readonly markerRadius = MARKER_RADIUS;
 
   protected readonly markers = computed<DartMarker[]>(() =>
     [...this.darts(), ...this.shadowDarts()].flatMap((dart, index): DartMarker[] => {
