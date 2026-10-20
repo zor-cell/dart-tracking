@@ -10,7 +10,7 @@ import { BoardFaceComponent } from '../board-face/board-face.component';
 import { DartMarkersComponent } from '../dart-markers/dart-markers.component';
 
 /** Radius of every tip, old and current alike, in board millimetres. */
-const TIP_RADIUS = 4;
+const TIP_RADIUS = 4.5;
 
 /**
  * Every located tip on one board. Drawn as translucent dots that add up where
