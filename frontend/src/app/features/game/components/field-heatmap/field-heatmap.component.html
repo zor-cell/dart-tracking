@@ -35,6 +35,14 @@
       (pointerenter)="onFieldEnter($event, '50')"
       (pointerleave)="onFieldLeave()"
     />
+    <path class="board__segment board__segment--dark board__miss" [attr.d]="missBand" />
+    <path
+      class="board__miss-hit"
+      [attr.d]="missHitArea"
+      data-label="0"
+      (pointerenter)="onFieldEnter($event, '0')"
+      (pointerleave)="onFieldLeave()"
+    />
   </g>
 
   @for (number of sectorNumbers; track number.value) {
@@ -82,7 +90,7 @@
   @if (selected(); as field) {
     <strong>{{ field.name }}</strong> &middot;
     @if (field.count === 0) {
-      keine Treffer
+      {{ field.label === '0' ? 'keine Darts' : 'keine Treffer' }}
     } @else {
       {{ field.count }} {{ field.count === 1 ? 'Dart' : 'Darts' }} &middot;
       {{ field.share | number: '1.0-0' }}&nbsp;%

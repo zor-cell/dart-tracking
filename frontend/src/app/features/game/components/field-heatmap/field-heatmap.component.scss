@@ -38,7 +38,20 @@
   }
 }
 
+/* Misses are rare; the band stays thin so it never outweighs a real field. */
+.board__miss {
+  fill-rule: evenodd;
+}
+
+.board__miss-hit {
+  fill: transparent;
+  fill-rule: evenodd;
+  stroke: none;
+  cursor: pointer;
+}
+
 .board__number {
+  pointer-events: none;
   fill: var(--p-text-color, #18181b);
   font-size: 16px;
   font-weight: 600;
