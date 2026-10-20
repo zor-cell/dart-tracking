@@ -1,6 +1,12 @@
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import type { ChartData, ChartOptions, Plugin, ScriptableLineSegmentContext } from 'chart.js';
+import type {
+  ChartData,
+  ChartOptions,
+  Plugin,
+  ScriptableContext,
+  ScriptableLineSegmentContext,
+} from 'chart.js';
 import { UIChart } from 'primeng/chart';
 import { PlayerDto } from '../../dto/player.dto';
 import { VisitDto } from '../../dto/visit.dto';
@@ -15,8 +21,31 @@ import {
 } from '../../../../core/charts/models/chart-plugins';
 import { SERIES_COLORS } from '../../../../core/charts/models/series-colors';
 
+/** A dart slot on the race: the standing after it, and the dart thrown there, if any. */
+interface RacePoint {
+  readonly x: number;
+  readonly y: number;
+  readonly dart?: string;
+  readonly bust?: boolean;
+  /** Not thrown: the game ended before this player's visit. */
+  readonly idle?: boolean;
+}
+
+function pointOf(context: ScriptableContext<'line'>): RacePoint {
+  return (context.raw ?? { x: 0, y: 0 }) as RacePoint;
+}
+
+/** "Runde 3 · Dart 2" for a slot index past the start. */
+function slotTitle(index: number): string {
+  return `Runde ${Math.ceil(index / DARTS_PER_TURN)} · Dart ${((index - 1) % DARTS_PER_TURN) + 1}`;
+}
+
+function slotLabel(name: string, point: RacePoint): string {
+  return `${name}: ${point.dart}${point.bust ? ' (Bust)' : ''}`;
+}
+
 /**
- * Every player's progress round by round, the goal at the top: points still
+ * Every player's progress dart by dart, the goal at the top: points still
  * needed in x01, points gathered in elimination.
  */
 @Component({
@@ -44,27 +73,8 @@ export class ScoreRaceComponent {
   ];
 
   private readonly elimination = computed(() => this.variant() === 'elimination');
-
-  /** Standings after each round, with the index of the visit that closed it. */
-  private readonly rounds = computed(() => {
-    const seats = this.players().length;
-    const visits = this.visits();
-    const everyone = new Set(this.players().map((player) => player.id));
-    const rounds: { standings: readonly number[]; closedBy: number; threw: ReadonlySet<number> }[] = [
-      { standings: this.players().map(() => this.mode()), closedBy: -1, threw: everyone },
-    ];
-    let threw = new Set<number>();
-    visits.forEach((visit, index) => {
-      threw.add(visit.playerId);
-      if (index % seats === seats - 1 || index === visits.length - 1) {
-        rounds.push({ standings: visit.standings, closedBy: index, threw });
-        threw = new Set<number>();
-      }
-    });
-    return rounds;
-  });
-
   private readonly seats = computed(() => this.players().length);
+  private readonly totalRounds = computed(() => Math.ceil(this.visits().length / this.seats()));
 
   /** Visits finished at the current position, in throwing order. */
   private readonly finishedVisits = computed(() => {
@@ -96,68 +106,84 @@ export class ScoreRaceComponent {
     return this.elimination() ? this.mode() - remaining : remaining;
   }
 
-  /** A player's points in the round under way: after their visit, or live during it. */
-  private partial(playerId: number): { x: number; y: number } | null {
+  /** How many darts of the visit at `index` the replay has reached. */
+  private shownDarts(index: number): number {
     const position = this.position();
-    const finished = this.finishedVisits();
-    const seats = this.seats();
-    const visits = this.visits();
-    if (position === null || position.dart < 0) {
-      return null;
+    if (position === null || index < position.visit) {
+      return this.visits()[index].darts.length;
     }
-    const round = Math.floor(position.visit / seats);
-    // A round closed at this very dart is already among the completed ones.
-    if (finished >= Math.min((round + 1) * seats, visits.length)) {
-      return null;
-    }
-    for (let index = round * seats; index < Math.min((round + 1) * seats, visits.length); index++) {
-      const visit = visits[index];
-      if (visit.playerId !== playerId) {
-        continue;
-      }
-      if (index < finished) {
-        return { x: round + 1, y: this.value(visit.standings[playerId]) };
-      }
-      if (index === position.visit && position.dart >= 0) {
-        const before = visits[index - 1]?.standings[playerId] ?? this.mode();
-        const thrown = visit.darts.slice(0, position.dart + 1);
-        const live = visit.busted ? before : before - thrown.reduce((sum, d) => sum + labelPoints(d.label), 0);
-        return { x: round + thrown.length / DARTS_PER_TURN, y: this.value(live) };
-      }
-    }
-    return null;
+    return index === position.visit ? position.dart + 1 : 0;
   }
 
-  protected readonly data = computed<ChartData<'line', { x: number; y: number }[]>>(() => {
-    const finished = this.finishedVisits();
+  /** One point per dart slot, three per round, so every series shares the same x per index. */
+  private series(playerId: number): RacePoint[] {
+    const visits = this.visits();
+    const seats = this.seats();
+    const points: RacePoint[] = [{ x: 0, y: this.value(this.mode()) }];
+    for (let round = 0; round < this.totalRounds(); round++) {
+      const first = round * seats;
+      const index = visits.findIndex(
+        (visit, at) => at >= first && at < first + seats && visit.playerId === playerId,
+      );
+      if (index === -1) {
+        // The game ended before this player threw in the round: the score stands.
+        if (this.finishedVisits() < visits.length) {
+          break;
+        }
+        const y = this.value(visits[visits.length - 1].standings[playerId]);
+        for (let slot = 1; slot <= DARTS_PER_TURN; slot++) {
+          points.push({ x: round + slot / DARTS_PER_TURN, y, idle: true });
+        }
+        continue;
+      }
+      const visit = visits[index];
+      const shown = this.shownDarts(index);
+      let remaining = visits[index - 1]?.standings[playerId] ?? this.mode();
+      visit.darts.slice(0, shown).forEach((dart, at) => {
+        const last = at === visit.darts.length - 1;
+        remaining = last ? visit.standings[playerId] : remaining - labelPoints(dart.label);
+        points.push({
+          x: round + (at + 1) / DARTS_PER_TURN,
+          y: this.value(remaining),
+          dart: dart.label,
+          bust: last && visit.busted,
+        });
+      });
+      if (shown < visit.darts.length) {
+        break;
+      }
+      for (let slot = visit.darts.length + 1; slot <= DARTS_PER_TURN; slot++) {
+        points.push({ x: round + slot / DARTS_PER_TURN, y: this.value(remaining) });
+      }
+    }
+    return points;
+  }
+
+  protected readonly data = computed<ChartData<'line', RacePoint[]>>(() => {
     const highlight = this.highlightId();
     return {
       datasets: this.players().map((player) => {
         const base = SERIES_COLORS[player.id % SERIES_COLORS.length];
         const color = highlight === null || highlight === player.id ? base : `${base}40`;
-        const reached = this.rounds().filter(({ closedBy }) => closedBy < finished);
-        const points = reached.map(({ standings }, round) => ({
-          x: round,
-          y: this.value(standings[player.id]),
-        }));
-        // A round the game ended before this player threw in: the score stands, nothing was thrown.
-        const idle = reached.map(({ threw }) => !threw.has(player.id));
-        const partial = this.partial(player.id);
+        const points = this.series(player.id);
         return {
           label: player.name,
-          data: partial === null ? points : [...points, partial],
+          data: points,
           segment: {
             borderDash: (segment: ScriptableLineSegmentContext) =>
-              idle[segment.p1DataIndex] ? [4, 4] : undefined,
+              points[segment.p1DataIndex]?.idle ? [4, 4] : undefined,
           },
           borderColor: color,
           backgroundColor: color,
           borderWidth: 2,
-          pointRadius: 0,
+          pointRadius: (context: ScriptableContext<'line'>) => (pointOf(context).bust ? 5 : 0),
+          pointStyle: (context: ScriptableContext<'line'>) => (pointOf(context).bust ? 'crossRot' : 'circle'),
+          pointBorderWidth: (context: ScriptableContext<'line'>) => (pointOf(context).bust ? 2 : 1),
           pointHoverRadius: 4,
           pointHoverBorderWidth: 2,
           pointHoverBorderColor: this.theme.surface,
           tension: 0,
+          clip: 4,
         };
       }),
     };
@@ -177,7 +203,7 @@ export class ScoreRaceComponent {
         x: {
           type: 'linear',
           min: 0,
-          max: this.rounds().length - 1,
+          max: this.totalRounds(),
           title: { display: true, text: 'Runde', color: muted, font: { family: font, size: 10 } },
           grid: { display: false },
           border: { display: false },
@@ -207,9 +233,10 @@ export class ScoreRaceComponent {
           labels: {
             color: text,
             font: { family: font, size: 11 },
-            usePointStyle: true,
-            pointStyle: 'line',
-            boxWidth: 12,
+            boxWidth: 10,
+            boxHeight: 10,
+            useBorderRadius: true,
+            borderRadius: 2,
             padding: 8,
           },
         },
@@ -226,12 +253,15 @@ export class ScoreRaceComponent {
           boxHeight: 8,
           boxPadding: 4,
           callbacks: {
-            title: (items) => `Runde ${Math.ceil(items[0]?.parsed.x ?? 0)}`,
+            // No title on a slot without a dart, so no empty tooltip is drawn there.
+            title: (items) => (items.length === 0 ? '' : slotTitle(items[0].dataIndex)),
+            label: (item) => slotLabel(item.dataset.label ?? '', item.raw as RacePoint),
             labelColor: (item) => {
               const color = item.dataset.borderColor as string;
               return { borderColor: color, backgroundColor: color, borderWidth: 0, borderRadius: 2 };
             },
           },
+          filter: (item) => (item.raw as RacePoint).dart !== undefined,
           // Closest to the goal first.
           itemSort: (a, b) => ((elimination ? -1 : 1) * ((a.parsed.y ?? 0) - (b.parsed.y ?? 0))),
         },
@@ -243,6 +273,6 @@ export class ScoreRaceComponent {
     const standings = this.data()
       .datasets.map((set) => `${set.label} ${set.data.at(-1)?.y ?? ''}`)
       .join(', ');
-    return `Verlauf über ${this.rounds().length - 1} Runden. Stand: ${standings}`;
+    return `Verlauf über ${this.totalRounds()} Runden. Stand: ${standings}`;
   });
 }

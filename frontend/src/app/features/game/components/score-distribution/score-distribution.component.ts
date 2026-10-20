@@ -22,6 +22,10 @@ const LANE_DISTANCE = 7;
 /** Half the height of the average mark, in row units. */
 const AVERAGE_HALF_HEIGHT = 0.36;
 
+/** Hoverable points along each average mark, and how far around each one a hover reaches, in pixels. */
+const AVERAGE_STEPS = 13;
+const AVERAGE_HIT_RADIUS = 4;
+
 /** Dot radius for a single visit, and for one that stands for several equal ones. */
 const DOT_RADIUS = 5;
 const MERGED_DOT_RADIUS = 8;
@@ -97,13 +101,15 @@ export class ScoreDistributionComponent {
         ? []
         : [
             {
-              // Two points joined into a vertical stroke.
+              // Points joined into a vertical stroke, close enough that hovering anywhere on it hits one.
               showLine: true,
               label: `Durchschnitt ${this.players()[row].name}`,
-              data: [
-                { x: average, y: row - AVERAGE_HALF_HEIGHT, count: 1, rounds: [] },
-                { x: average, y: row + AVERAGE_HALF_HEIGHT, count: 1, rounds: [] },
-              ],
+              data: Array.from({ length: AVERAGE_STEPS }, (_, step) => ({
+                x: average,
+                y: row - AVERAGE_HALF_HEIGHT + (2 * AVERAGE_HALF_HEIGHT * step) / (AVERAGE_STEPS - 1),
+                count: 1,
+                rounds: [],
+              })),
               borderColor:
                 highlight === null || highlight === this.players()[row].id
                   ? this.theme.text
@@ -111,6 +117,7 @@ export class ScoreDistributionComponent {
               borderWidth: 2,
               pointRadius: 0,
               pointHoverRadius: 0,
+              pointHitRadius: AVERAGE_HIT_RADIUS,
               // Drawn beneath the dots, which carry the detail.
               order: 1,
             },
@@ -169,19 +176,21 @@ export class ScoreDistributionComponent {
           bodyFont: { family: font, size: 12 },
           padding: 8,
           displayColors: false,
-          // The dot datasets come first, one per player; the average marks follow.
-          filter: (item) => item.datasetIndex < names.length,
+          // An average mark is many points; one entry per mark is enough.
+          filter: (item, index, items) =>
+            item.datasetIndex < names.length ||
+            items.findIndex((other) => other.datasetIndex === item.datasetIndex) === index,
           callbacks: {
-            title: (items) => {
-              const row = Math.round(items[0]?.parsed.y ?? 0);
-              const average = averages[row];
-              const shown = average === null ? '' : ` · Ø ${this.decimal.transform(average, '1.1-1')}`;
-              return `${names[row] ?? ''}${shown}`;
-            },
+            title: (items) => names[Math.round(items[0]?.parsed.y ?? 0)] ?? '',
             label: (item) => {
+              // The dot datasets come first, one per player; the average marks follow.
+              if (item.datasetIndex >= names.length) {
+                const average = averages[Math.round(item.parsed.y ?? 0)] ?? 0;
+                return `Durchschnitt: ${this.decimal.transform(average, '1.1-1')}`;
+              }
               const point = item.raw as StripPoint;
               const rounds = point.rounds.join(', ');
-              return point.count === 1 ? `Runde ${rounds}: ${point.x}` : `Runden ${rounds}: je ${point.x}`;
+              return point.count === 1 ? `Runde ${rounds}: ${point.x}` : `Runden ${rounds}: ${point.x}`;
             },
           },
         },

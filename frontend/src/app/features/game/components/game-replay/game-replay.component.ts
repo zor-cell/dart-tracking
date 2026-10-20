@@ -23,7 +23,6 @@ import { labelPoints, ReplayPosition } from '../../models/visit';
 import { ScoreDistributionComponent } from '../score-distribution/score-distribution.component';
 import { ScoreRaceComponent } from '../score-race/score-race.component';
 // import { ScoreboardComponent } from '../scoreboard/scoreboard.component';
-import { VirtualBoardComponent } from '../virtual-board/virtual-board.component';
 
 /** Time per dart at normal speed, in milliseconds. */
 const DART_INTERVAL_MS = 500;
@@ -31,11 +30,11 @@ const DART_INTERVAL_MS = 500;
 /** Where the last chosen view is kept, so the next game opens on it. */
 const VIEW_KEY = 'dart-tracking.gameView';
 
-type ReplayView = 'board' | 'race' | 'distribution';
+type ReplayView = 'heatmap' | 'race' | 'distribution';
 
 const VIEWS: readonly { label: string; value: ReplayView }[] = [
-  { label: 'Scheibe', value: 'board' },
-  { label: 'Punkte', value: 'race' },
+  { label: 'Heatmap', value: 'heatmap' },
+  { label: 'Verlauf', value: 'race' },
   { label: 'Visits', value: 'distribution' },
 ];
 
@@ -51,7 +50,6 @@ const VIEWS: readonly { label: string; value: ReplayView }[] = [
     Select,
     SelectButton,
     Slider,
-    VirtualBoardComponent,
   ],
   templateUrl: './game-replay.component.html',
   styleUrl: './game-replay.component.scss',
@@ -76,8 +74,6 @@ export class GameReplayComponent implements OnInit {
   protected readonly speed = signal(1);
   protected readonly playerId = signal<number | null>(null);
   protected readonly playing = signal(false);
-  /** Keep every dart so far on the board, as a heatmap, instead of only the visit's. */
-  protected readonly keepDarts = signal(false);
   /** How many darts of the replay are shown. */
   protected readonly cursor = signal(0);
 
@@ -213,14 +209,6 @@ export class GameReplayComponent implements OnInit {
     this.playing.update((playing) => !playing);
   }
 
-  /** Turning the trail on while nothing is shown jumps to the end: the whole game at once. */
-  protected setKeepDarts(keep: boolean): void {
-    this.keepDarts.set(keep);
-    if (keep && this.cursor() === 0 && !this.playing()) {
-      this.cursor.set(this.steps().length);
-    }
-  }
-
   protected jumpTo(edge: 'start' | 'end'): void {
     this.playing.set(false);
     this.cursor.set(edge === 'start' ? 0 : this.steps().length);
@@ -272,8 +260,8 @@ export class GameReplayComponent implements OnInit {
 function storedView(): ReplayView {
   try {
     const stored = localStorage.getItem(VIEW_KEY);
-    return VIEWS.some((view) => view.value === stored) ? (stored as ReplayView) : 'board';
+    return VIEWS.some((view) => view.value === stored) ? (stored as ReplayView) : 'heatmap';
   } catch {
-    return 'board';
+    return 'heatmap';
   }
 }

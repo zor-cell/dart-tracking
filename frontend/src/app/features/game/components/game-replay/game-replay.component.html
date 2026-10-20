@@ -1,6 +1,6 @@
 <div class="replay">
   <header class="replay__header">
-    <h2 class="replay__title">Spielverlauf</h2>
+    <h2 class="replay__title">Replay</h2>
     <p-selectbutton
       [options]="viewOptions"
       optionLabel="label"
@@ -14,24 +14,9 @@
   </header>
 
   @switch (view()) {
-    @case ('board') {
-      <div class="replay__board">
-        <p-button
-          class="replay__keep"
-          icon="pi pi-chart-scatter"
-          [rounded]="true"
-          size="small"
-          [severity]="keepDarts() ? 'primary' : 'secondary'"
-          [outlined]="!keepDarts()"
-          [ariaLabel]="keepDarts() ? 'Heatmap ausblenden' : 'Darts liegen lassen (Heatmap)'"
-          [attr.aria-pressed]="keepDarts()"
-          (onClick)="setKeepDarts(!keepDarts())"
-        />
-        @if (keepDarts()) {
-          <app-board-heatmap [points]="trail().points" [fields]="trail().fields" />
-        } @else {
-          <app-virtual-board [darts]="boardDarts()" />
-        }
+    @case ('heatmap') {
+      <div class="replay__heatmap">
+        <app-board-heatmap [points]="trail().points" [fields]="trail().fields" />
       </div>
     }
     @case ('race') {
@@ -65,11 +50,12 @@
 
     <div class="replay__timeline">
       <p class="replay__rounds" aria-live="polite">
+        <span class="replay__rounds-side replay__rounds-side--start">Visit {{ (step()?.visit ?? -1) + 1 }}</span>
         <span class="replay__rounds-round">Runde {{ round() }}&thinsp;/&thinsp;{{ totalRounds() }}</span>
-        <span aria-hidden="true">&middot;</span>
-        <span>Dart {{ (step()?.dart ?? -1) + 1 }}</span>
+        <span class="replay__rounds-side">Dart {{ (step()?.dart ?? -1) + 1 }}</span>
       </p>
       <p-slider
+        class="replay__slider"
         [min]="0"
         [max]="steps().length"
         [ngModel]="cursor()"
