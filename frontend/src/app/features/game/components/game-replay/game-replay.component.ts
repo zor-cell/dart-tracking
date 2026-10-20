@@ -179,10 +179,18 @@ export class GameReplayComponent implements OnInit {
     Math.ceil(this.visits().length / this.players().length),
   );
 
-  /** Visits in the replay, only the chosen player's when one is picked. */
-  protected readonly visitCount = computed(
-    () => new Set(this.steps().map((step) => step.visit)).size,
-  );
+  /** Visits in the replay in throwing order, only the chosen player's when one is picked. */
+  private readonly replayedVisits = computed(() => [
+    ...new Set(this.steps().map((step) => step.visit)),
+  ]);
+
+  protected readonly visitCount = computed(() => this.replayedVisits().length);
+
+  /** Number of the visit on the board among the replayed ones, so it ends at `visitCount`. */
+  protected readonly visitNumber = computed(() => {
+    const step = this.step();
+    return step === null ? 0 : this.replayedVisits().indexOf(step.visit) + 1;
+  });
 
   /** Round of the visit on the board, counted over all players. */
   protected readonly round = computed(() => {

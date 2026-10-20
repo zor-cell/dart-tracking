@@ -79,7 +79,7 @@
         @let current = atEnd() ? null : step();
         <span class="replay__rounds-side replay__rounds-side--start">
           @if (current) {
-            Visit {{ current.visit + 1 }}
+            Visit {{ visitNumber() }}
           } @else if (atEnd()) {
             {{ visitCount() }} {{ visitCount() === 1 ? 'Visit' : 'Visits' }}
           }
