@@ -8,9 +8,15 @@
   fill: var(--p-content-background, #ffffff);
 }
 
+/* A grey, faded board, so the tips on it carry the contrast. */
+.heatmap__face {
+  filter: grayscale(1);
+}
+
 .heatmap__segment {
   stroke: #1f1f1f;
   stroke-width: 0.6;
+  fill-opacity: 0.2;
 
   &--dark {
     fill: #17171a;
@@ -37,16 +43,14 @@
 /* Translucent, so overlapping throws darken the spot they share — that
    accumulation is the whole point of the plot. */
 .heatmap__mark {
-  fill: #38bdf8;
-  fill-opacity: 0.45;
-  stroke: #0284c7;
-  stroke-width: 0.8;
-  stroke-opacity: 0.5;
+  fill: var(--p-text-color, #18181b);
+  fill-opacity: 0.7;
+  stroke: var(--p-content-background, #ffffff);
+  stroke-width: 1.2;
 }
 
 .heatmap__mark--highlighted {
   fill-opacity: 1;
-  stroke: #ffffff;
-  stroke-width: 1.5;
-  stroke-opacity: 1;
+  stroke: var(--p-content-background, #ffffff);
+  stroke-width: 2;
 }

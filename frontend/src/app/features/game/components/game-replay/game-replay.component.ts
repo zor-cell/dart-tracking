@@ -34,6 +34,9 @@ const DART_INTERVAL_MS = 500;
 /** Where the last chosen view is kept, so the next game opens on it. */
 const VIEW_KEY = 'dart-tracking.gameView';
 
+/** Where the last chosen heatmap layer is kept. */
+const LAYER_KEY = 'dart-tracking.heatmapLayer';
+
 type ReplayView = 'heatmap' | 'race' | 'distribution';
 
 type HeatmapLayer = 'fields' | 'tips';
@@ -70,7 +73,13 @@ export class GameReplayComponent implements OnInit {
   readonly variant = input.required<GameVariant>();
 
   protected readonly viewOptions = [...VIEWS];
-  protected readonly view = signal<ReplayView>(storedView());
+  protected readonly view = signal<ReplayView>(
+    stored(
+      VIEW_KEY,
+      VIEWS.map((view) => view.value),
+      'heatmap',
+    ),
+  );
 
   protected readonly speedOptions = [1, 2, 4].map((value) => ({ label: `${value}×`, value }));
   protected readonly playerOptions = computed(() => [
@@ -82,7 +91,13 @@ export class GameReplayComponent implements OnInit {
     { label: 'Felder', value: 'fields' },
     { label: 'Treffer', value: 'tips' },
   ];
-  protected readonly layer = signal<HeatmapLayer>('fields');
+  protected readonly layer = signal<HeatmapLayer>(
+    stored(
+      LAYER_KEY,
+      this.layerOptions.map((option) => option.value),
+      'fields',
+    ),
+  );
 
   protected readonly speed = signal(1);
   protected readonly playerId = signal<number | null>(null);
@@ -210,11 +225,12 @@ export class GameReplayComponent implements OnInit {
 
   protected selectView(view: ReplayView): void {
     this.view.set(view);
-    try {
-      localStorage.setItem(VIEW_KEY, view);
-    } catch {
-      // Storage can be unavailable (private mode); the choice then lasts this visit only.
-    }
+    store(VIEW_KEY, view);
+  }
+
+  protected selectLayer(layer: HeatmapLayer): void {
+    this.layer.set(layer);
+    store(LAYER_KEY, layer);
   }
 
   constructor() {
@@ -282,12 +298,21 @@ export class GameReplayComponent implements OnInit {
   }
 }
 
-function storedView(): ReplayView {
+/** The value kept under `key`, if it is still one of `allowed`. */
+function stored<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
   try {
-    const stored = localStorage.getItem(VIEW_KEY);
-    return VIEWS.some((view) => view.value === stored) ? (stored as ReplayView) : 'heatmap';
+    const value = localStorage.getItem(key);
+    return allowed.find((option) => option === value) ?? fallback;
   } catch {
-    return 'heatmap';
+    return fallback;
+  }
+}
+
+function store(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Storage can be unavailable (private mode); the choice then lasts this visit only.
   }
 }
 

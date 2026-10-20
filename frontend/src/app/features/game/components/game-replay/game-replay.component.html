@@ -23,7 +23,7 @@
           optionValue="value"
           [allowEmpty]="false"
           [ngModel]="layer()"
-          (ngModelChange)="layer.set($event)"
+          (ngModelChange)="selectLayer($event)"
           ariaLabel="Darstellung der Heatmap"
           size="small"
         />
