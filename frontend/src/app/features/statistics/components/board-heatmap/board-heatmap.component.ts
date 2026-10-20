@@ -11,6 +11,8 @@ import { HeatmapPoint } from '../../dto/player-statistics.dto';
 export interface HighlightedTip {
   readonly point: HeatmapPoint;
   readonly color: string;
+  /** Position within the visit (1–3), written beside the tip. */
+  readonly ordinal: number;
 }
 
 /**
@@ -41,7 +43,11 @@ export class BoardHeatmapComponent {
 
   protected readonly marks = computed(() => this.points().map(svgPoint));
   protected readonly highlightMarks = computed(() =>
-    this.highlighted().map((tip) => ({ ...svgPoint(tip.point), color: tip.color })),
+    this.highlighted().map((tip) => ({
+      ...svgPoint(tip.point),
+      color: tip.color,
+      ordinal: tip.ordinal,
+    })),
   );
 }
 

@@ -62,6 +62,16 @@
     />
   }
 
+  @for (field of ordinals(); track $index) {
+    <text class="board__ordinal" [attr.x]="field.x" [attr.y]="field.y">
+      @for (ordinal of field.values; track ordinal.value) {
+        <tspan [style.fill]="ordinal.color" [attr.dx]="$first ? null : 5">
+          {{ ordinal.value }}
+        </tspan>
+      }
+    </text>
+  }
+
   @if (selected(); as field) {
     <path class="board__selected board__selected--halo" [attr.d]="field.d" />
     <path class="board__selected" [attr.d]="field.d" />

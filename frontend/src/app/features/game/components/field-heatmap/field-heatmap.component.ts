@@ -5,6 +5,7 @@ import {
   BOARD_SECTOR_NUMBERS,
   BOARD_SEGMENTS,
   BOARD_VIEW_BOX,
+  fieldLabelPoint,
   fieldOutline,
 } from '../../models/board-face';
 import { BULLSEYE_RADIUS, BULL_RADIUS } from '../../models/board-geometry';
@@ -75,6 +76,24 @@ export class FieldHeatmapComponent {
   protected readonly misses = computed(
     () => this.labels().filter((label) => fieldOutline(label, 0) === null).length,
   );
+
+  /** The visit's ordinals per field, written where the field has room, each in its dart's colour. */
+  protected readonly ordinals = computed(() => {
+    const fields = new Map<
+      string,
+      { x: number; y: number; values: { value: number; color: string }[] }
+    >();
+    this.current().forEach((label, index) => {
+      const point = fieldLabelPoint(label);
+      if (point === null) {
+        return;
+      }
+      const field = fields.get(label) ?? { x: point[0], y: point[1], values: [] };
+      field.values.push({ value: index + 1, color: dartColor(index) });
+      fields.set(label, field);
+    });
+    return [...fields.values()];
+  });
 
   /** The field under the pointer or last tapped, hit or not. */
   protected readonly selected = computed(() => {

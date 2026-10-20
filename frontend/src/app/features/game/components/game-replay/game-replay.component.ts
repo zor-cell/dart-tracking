@@ -150,13 +150,13 @@ export class GameReplayComponent implements OnInit {
     return { labels: darts.map((dart) => dart.label), points: located(darts) };
   });
 
-  /** The visit under way, the same two ways; tips keep their dart's colour. */
+  /** The visit under way, the same two ways; tips keep their dart's colour and ordinal. */
   protected readonly currentDarts = computed(() => ({
     labels: this.boardDarts().map((dart) => dart.label),
     tips: this.boardDarts().flatMap((dart, index): HighlightedTip[] =>
       dart.position === null
         ? []
-        : [{ point: dart.position as HeatmapPoint, color: dartColor(index) }],
+        : [{ point: dart.position as HeatmapPoint, color: dartColor(index), ordinal: index + 1 }],
     ),
   }));
 
