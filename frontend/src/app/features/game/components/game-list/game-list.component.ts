@@ -20,7 +20,7 @@ import { GameHistoryService } from '../../services/game-history.service';
 const PAGE_SIZE = 15;
 
 @Component({
-  selector: 'app-game-history',
+  selector: 'app-game-list',
   imports: [
     Button,
     DatePicker,
@@ -31,11 +31,11 @@ const PAGE_SIZE = 15;
     Select,
     TableModule,
   ],
-  templateUrl: './game-history.component.html',
-  styleUrl: './game-history.component.scss',
+  templateUrl: './game-list.component.html',
+  styleUrl: './game-list.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GameHistoryComponent {
+export class GameListComponent {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly history = inject(GameHistoryService);

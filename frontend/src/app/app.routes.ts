@@ -89,8 +89,8 @@ export const routes: Routes = [
     path: 'account/games',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./features/game/components/game-history/game-history.component').then(
-        (m) => m.GameHistoryComponent,
+      import('./features/game/components/game-list/game-list.component').then(
+        (m) => m.GameListComponent,
       ),
   },
   {
