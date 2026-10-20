@@ -1,11 +1,10 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, model, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
-import { tooManyRequestsMessage } from '../../../../core/notification/models/too-many-requests';
+import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
 import { NotificationService } from '../../../../core/notification/services/notification.service';
 import { AuthService } from '../../services/auth.service';
 
@@ -57,19 +56,16 @@ export class ChangeEmailDialogComponent {
   }
 
   private describe(failure: unknown): string {
-    if (failure instanceof HttpErrorResponse) {
-      if (failure.status === 403) {
-        return 'Das aktuelle Passwort stimmt nicht.';
-      }
-      if (failure.status === 409) {
-        return failure.error?.detail === 'email unchanged'
-          ? 'Das ist bereits deine aktuelle Adresse.'
-          : 'Diese Adresse wird bereits von einem anderen Konto verwendet.';
-      }
-      if (failure.status === 429) {
-        return tooManyRequestsMessage(failure);
-      }
-    }
-    return 'Anfrage fehlgeschlagen. Bitte erneut versuchen.';
+    return httpErrorMessage(
+      failure,
+      {
+        403: 'Das aktuelle Passwort stimmt nicht.',
+        409: (error) =>
+          error.error?.detail === 'email unchanged'
+            ? 'Das ist bereits deine aktuelle Adresse.'
+            : 'Diese Adresse wird bereits von einem anderen Konto verwendet.',
+      },
+      'Anfrage fehlgeschlagen. Bitte erneut versuchen.',
+    );
   }
 }

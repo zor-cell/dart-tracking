@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { DeviceRole } from '../../../../core/socket/models/device-role';
 import { GameService } from '../../services/game.service';
 import { GameSessionService } from '../../services/game-session.service';
+import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
+import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 
 /** Resolving the link, then the choice of what this device will do, or a dead link. */
 type JoinStatus = 'resolving' | 'choosing' | 'failed';
@@ -20,7 +21,7 @@ type JoinStatus = 'resolving' | 'choosing' | 'failed';
  */
 @Component({
   selector: 'app-game-join',
-  imports: [Button, ProgressSpinner, RouterLink],
+  imports: [Button, LoadingStateComponent, EmptyStateComponent, RouterLink],
   templateUrl: './game-join.component.html',
   styleUrl: './game-join.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

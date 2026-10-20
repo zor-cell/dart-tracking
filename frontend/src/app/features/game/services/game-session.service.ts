@@ -7,6 +7,7 @@ import { DeviceRole } from '../../../core/socket/models/device-role';
 import { SocketService } from '../../../core/socket/services/socket.service';
 import { CameraPhase } from '../models/camera-phase';
 import { GameService } from './game.service';
+import { readStored, writeStored } from '../../../core/storage/models/browser-storage';
 
 // Kept across a refresh — which wipes the stream, socket and every signal — so
 // the session can tell that a live camera was in progress and resume it. In
@@ -54,7 +55,7 @@ export class GameSessionService {
 
   // The phase from before a refresh, captured once at construction. Consumed by
   // restore() to seed pendingResumePhase.
-  private persistedPhase = sessionStorage.getItem(PHASE_KEY) as CameraPhase | null;
+  private persistedPhase = readStored(PHASE_KEY, 'session') as CameraPhase | null;
 
   // Phase to resume the camera into on the next view attach, set by restore()
   // after a reload once the game is confirmed. Consumed once the elements exist.
@@ -94,11 +95,7 @@ export class GameSessionService {
     // Mirror the live phase into storage so a refresh can resume from it.
     effect(() => {
       const phase = this.phase();
-      if (phase === 'idle') {
-        sessionStorage.removeItem(PHASE_KEY);
-      } else {
-        sessionStorage.setItem(PHASE_KEY, phase);
-      }
+      writeStored(PHASE_KEY, phase === 'idle' ? null : phase, 'session');
     });
   }
 

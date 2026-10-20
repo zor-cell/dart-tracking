@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, input, signal } from '@an
 import { DartDto } from '../../dto/dart.dto';
 import { BOARD_VIEW_BOX, fieldOutline } from '../../models/board-face';
 import { dartColor } from '../../models/dart-colors';
+import { fieldName } from '../../models/field-label';
 import { BoardFaceComponent, FieldEnter } from '../board-face/board-face.component';
 import { FieldFramesComponent } from '../field-frames/field-frames.component';
 
@@ -131,12 +132,4 @@ export class FieldHeatmapComponent {
   protected toggleMiss(): void {
     this.pinned.update((pinned) => (pinned === MISS ? null : MISS));
   }
-}
-
-/** How a field is named in the caption: T20, D16, 20, Bull, Double Bull, Daneben. */
-function fieldName(label: string): string {
-  if (label === MISS) {
-    return 'Daneben';
-  }
-  return label === '50' ? 'Double Bull' : label === '25' ? 'Bull' : label;
 }

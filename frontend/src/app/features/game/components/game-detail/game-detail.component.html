@@ -1,16 +1,9 @@
 <section class="view">
   <header class="view__header">
-    <p-button
-      class="view__back"
-      label="Spiele"
-      icon="pi pi-arrow-left"
-      severity="secondary"
-      [text]="true"
-      routerLink="/account/games"
-    />
+    <app-back-link label="Spiele" link="/account/games" />
     @if (detail(); as detail) {
       <h1 class="view__title">
-        {{ isElimination() ? 'Elimination' : 'X01' }} {{ detail.game.mode }}
+        {{ variantLabel() }} {{ detail.game.mode }}
       </h1>
       <p class="view__subtitle">
         {{ detail.createdAt | date: 'dd.MM.yy, HH:mm' }}
@@ -25,18 +18,11 @@
   </header>
 
   @if (loading()) {
-    <div class="loading" role="status">
-      <p-progress-spinner
-        ariaLabel="Spiel wird geladen"
-        [style]="{ width: '2.5rem', height: '2.5rem' }"
-      />
-      <p>Spiel wird geladen …</p>
-    </div>
+    <app-loading-state label="Spiel wird geladen" />
   } @else if (missing()) {
-    <div class="placeholder">
-      <i class="pi pi-question-circle placeholder__icon" aria-hidden="true"></i>
+    <app-empty-state icon="pi-question-circle">
       <p>Dieses Spiel gibt es nicht, oder du hast nicht mitgespielt.</p>
-    </div>
+    </app-empty-state>
   } @else if (detail(); as detail) {
     <section class="panel">
       <h2 class="panel__title">Spieler</h2>

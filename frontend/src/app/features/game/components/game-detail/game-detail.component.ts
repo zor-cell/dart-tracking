@@ -1,23 +1,25 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Button } from 'primeng/button';
-import { ProgressSpinner } from 'primeng/progressspinner';
+import { ActivatedRoute } from '@angular/router';
 import { GameDetailDto } from '../../dto/game-detail.dto';
 import { GAME_STATUS_LABELS } from '../../models/game-filter';
 import { CHECKOUT_MODES } from '../../models/checkout-mode';
+import { GAME_VARIANTS } from '../../models/game-variant';
 import { GameHistoryService } from '../../services/game-history.service';
 import { GameReplayComponent } from '../game-replay/game-replay.component';
+import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
+import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
+import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 
 @Component({
   selector: 'app-game-detail',
   imports: [
-    Button,
+    BackLinkComponent,
     DatePipe,
     DecimalPipe,
     GameReplayComponent,
-    ProgressSpinner,
-    RouterLink,
+    LoadingStateComponent,
+    EmptyStateComponent,
   ],
   templateUrl: './game-detail.component.html',
   styleUrl: './game-detail.component.scss',
@@ -33,6 +35,11 @@ export class GameDetailComponent {
   protected readonly statusLabels = GAME_STATUS_LABELS;
 
   protected readonly isElimination = computed(() => this.detail()?.game.variant === 'elimination');
+
+  protected readonly variantLabel = computed(() => {
+    const variant = this.detail()?.game.variant;
+    return GAME_VARIANTS.find((option) => option.value === variant)?.label ?? '';
+  });
 
   protected readonly checkoutLabel = computed(() => {
     const mode = this.detail()?.game.checkoutMode;

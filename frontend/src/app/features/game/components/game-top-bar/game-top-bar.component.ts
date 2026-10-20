@@ -1,6 +1,5 @@
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { ConfirmationService } from 'primeng/api';
 import { Button } from 'primeng/button';
@@ -44,7 +43,6 @@ export class GameTopBarComponent {
   private readonly session = inject(GameSessionService);
   private readonly notification = inject(NotificationService);
   private readonly confirmation = inject(ConfirmationService);
-  private readonly router = inject(Router);
 
   protected readonly shareDialogVisible = signal(false);
 
@@ -114,6 +112,5 @@ export class GameTopBarComponent {
 
   private leaveGame(): void {
     this.session.leave();
-    void this.router.navigate(['/start']);
   }
 }

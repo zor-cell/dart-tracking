@@ -1,12 +1,12 @@
 import { DatePipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { Button } from 'primeng/button';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { Select } from 'primeng/select';
 import { AccuracySummaryDto, FieldKind, GameAccuracyDto } from '../../dto/accuracy.dto';
 import { EvaluationService } from '../../services/evaluation.service';
+import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
+import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
+import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 
 /** What the outcome counts are called on the page, in reading order. */
 const OUTCOMES: readonly { key: keyof AccuracySummaryDto; label: string; hint: string }[] = [
@@ -31,12 +31,12 @@ interface ScopeOption {
 @Component({
   selector: 'app-evaluation',
   imports: [
-    Button,
+    BackLinkComponent,
     DecimalPipe,
     FormsModule,
+    LoadingStateComponent,
     NgTemplateOutlet,
-    ProgressSpinner,
-    RouterLink,
+    EmptyStateComponent,
     Select,
   ],
   templateUrl: './evaluation.component.html',

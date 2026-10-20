@@ -198,7 +198,7 @@
 
     <!-- The win is shown on the player card; this only voices it. -->
     @if (game.settledWinner(); as winner) {
-      <p class="game__winner-status" role="status">{{ winner.name }} gewinnt!</p>
+      <p class="sr-only" role="status">{{ winner.name }} gewinnt!</p>
     }
 
     <app-scoreboard
@@ -428,9 +428,9 @@
   </section>
 } @else {
   <section class="view view--empty">
-    <div class="placeholder">
+    <app-empty-state>
       <div>Kein aktives Spiel.</div>
       <p-button label="Neues Spiel" icon="pi pi-play-circle" routerLink="/game/new" />
-    </div>
+    </app-empty-state>
   </section>
 }

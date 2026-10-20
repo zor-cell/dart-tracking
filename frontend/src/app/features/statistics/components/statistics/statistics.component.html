@@ -1,49 +1,35 @@
 <section class="view">
   <header class="view__header">
-    <p-button
-      class="view__back"
-      label="Konto"
-      icon="pi pi-arrow-left"
-      severity="secondary"
-      [text]="true"
-      routerLink="/account"
-    />
+    <app-back-link label="Konto" link="/account" />
     <h1 class="view__title">Statistik</h1>
     <p class="view__subtitle">Deine Würfe aus gewerteten Spielen</p>
   </header>
 
   @if (loading()) {
-    <div class="loading" role="status">
-      <p-progress-spinner
-        ariaLabel="Statistik wird geladen"
-        [style]="{ width: '2.5rem', height: '2.5rem' }"
-      />
-      <p>Statistik wird geladen …</p>
-    </div>
+    <app-loading-state label="Statistik wird geladen" />
   } @else {
     @if (totals(); as totals) {
       @if (totals.legs === 0) {
-        <div class="placeholder">
-          <i class="pi pi-chart-bar placeholder__icon" aria-hidden="true"></i>
+        <app-empty-state icon="pi-chart-bar">
           <p>Noch keine gewerteten Spiele.</p>
-        </div>
+        </app-empty-state>
       } @else {
-        <dl class="figures">
-          <div class="figure figure--wide">
-            <dt class="figure__label">3-Dart-Average</dt>
-            <dd class="figure__value">{{ totals.average | number: '1.2-2' }}</dd>
+        <dl class="stat-grid">
+          <div class="stat stat--wide">
+            <dt class="stat__label">3-Dart-Average</dt>
+            <dd class="stat__value">{{ totals.average | number: '1.2-2' }}</dd>
           </div>
-          <div class="figure">
-            <dt class="figure__label">Legs gewonnen</dt>
-            <dd class="figure__value">{{ totals.legsWon }} / {{ totals.legs }}</dd>
+          <div class="stat">
+            <dt class="stat__label">Legs gewonnen</dt>
+            <dd class="stat__value">{{ totals.legsWon }} / {{ totals.legs }}</dd>
           </div>
-          <div class="figure">
-            <dt class="figure__label">Darts geworfen</dt>
-            <dd class="figure__value">{{ totals.darts }}</dd>
+          <div class="stat">
+            <dt class="stat__label">Darts geworfen</dt>
+            <dd class="stat__value">{{ totals.darts }}</dd>
           </div>
-          <div class="figure">
-            <dt class="figure__label">Checkout-Quote</dt>
-            <dd class="figure__value">
+          <div class="stat">
+            <dt class="stat__label">Checkout-Quote</dt>
+            <dd class="stat__value">
               @let checkout = checkoutRate();
               @if (checkout !== null) {
                 {{ checkout * 100 | number: '1.0-0' }} %
@@ -51,13 +37,13 @@
                 &ndash;
               }
             </dd>
-            <dd class="figure__hint">
+            <dd class="stat__hint">
               {{ totals.checkoutHits }} von {{ totals.checkoutAttempts }} Darts
             </dd>
           </div>
-          <div class="figure">
-            <dt class="figure__label">Legs ausgecheckt</dt>
-            <dd class="figure__value">
+          <div class="stat">
+            <dt class="stat__label">Legs ausgecheckt</dt>
+            <dd class="stat__value">
               @let legs = legRate();
               @if (legs !== null) {
                 {{ legs * 100 | number: '1.0-0' }} %
@@ -65,19 +51,17 @@
                 &ndash;
               }
             </dd>
-            <dd class="figure__hint">
+            <dd class="stat__hint">
               {{ totals.legsWon }} von {{ totals.legsWithChance }} Legs mit Chance
             </dd>
           </div>
-          <div class="figure">
-            <dt class="figure__label">Bestes Visit</dt>
-            <dd class="figure__value">{{ totals.bestVisit }}</dd>
+          <div class="stat">
+            <dt class="stat__label">Bestes Visit</dt>
+            <dd class="stat__value">{{ totals.bestVisit }}</dd>
           </div>
-          <div class="figure">
-            <dt class="figure__label">180er &middot; 100+</dt>
-            <dd class="figure__value">
-              {{ totals.visits180 }} &middot; {{ totals.visits100Plus }}
-            </dd>
+          <div class="stat">
+            <dt class="stat__label">180er &middot; 100+</dt>
+            <dd class="stat__value">{{ totals.visits180 }} &middot; {{ totals.visits100Plus }}</dd>
           </div>
         </dl>
 

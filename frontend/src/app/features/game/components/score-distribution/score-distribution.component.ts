@@ -3,7 +3,12 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import type { ChartData, ChartOptions, Plugin, ScriptableContext } from 'chart.js';
 import { UIChart } from 'primeng/chart';
 import { chartTheme, countLabelsPlugin } from '../../../../core/charts/models/chart-plugins';
-import { SERIES_COLORS } from '../../../../core/charts/models/series-colors';
+import {
+  axisTicks,
+  axisTitle,
+  seriesColor,
+  tooltipStyle,
+} from '../../../../core/charts/models/chart-styles';
 import { PlayerDto } from '../../dto/player.dto';
 import { VisitDto } from '../../dto/visit.dto';
 
@@ -82,8 +87,7 @@ export class ScoreDistributionComponent {
   protected readonly data = computed<ChartData<'scatter', StripPoint[]>>(() => {
     const highlight = this.highlightId();
     const dots = this.players().map((player, row) => {
-      const base = SERIES_COLORS[player.id % SERIES_COLORS.length];
-      const color = highlight === null || highlight === player.id ? `${base}cc` : `${base}33`;
+      const color = seriesColor(player.id, highlight, { shown: 'cc', faded: '33' });
       const own = this.played().filter(({ visit }) => visit.playerId === player.id);
       return {
         label: player.name,
@@ -127,7 +131,7 @@ export class ScoreDistributionComponent {
   });
 
   protected readonly options = computed<ChartOptions<'scatter'>>(() => {
-    const { text, muted, grid, surface, border, font } = this.theme;
+    const { text, grid, font } = this.theme;
     const names = this.players().map((player) => player.name);
     const averages = this.averages();
     return {
@@ -145,8 +149,8 @@ export class ScoreDistributionComponent {
           afterBuildTicks: (scale) => {
             scale.ticks = Array.from({ length: MAX_VISIT / 20 + 1 }, (_, i) => ({ value: i * 20 }));
           },
-          ticks: { color: muted, font: { family: font, size: 10 } },
-          title: { display: true, text: 'Punkte pro Visit', color: muted, font: { family: font, size: 10 } },
+          ticks: axisTicks(this.theme),
+          title: axisTitle(this.theme, 'Punkte pro Visit'),
         },
         y: {
           reverse: true,
@@ -167,14 +171,7 @@ export class ScoreDistributionComponent {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: surface,
-          borderColor: border,
-          borderWidth: 1,
-          titleColor: muted,
-          bodyColor: text,
-          titleFont: { family: font, size: 11, weight: 'normal' },
-          bodyFont: { family: font, size: 12 },
-          padding: 8,
+          ...tooltipStyle(this.theme),
           displayColors: false,
           // An average mark is many points; one entry per mark is enough.
           filter: (item, index, items) =>

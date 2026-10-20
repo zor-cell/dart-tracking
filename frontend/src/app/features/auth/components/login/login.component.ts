@@ -1,11 +1,10 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
-import { tooManyRequestsMessage } from '../../../../core/notification/models/too-many-requests';
+import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -40,11 +39,7 @@ export class LoginComponent {
       const redirect = this.route.snapshot.queryParamMap.get('redirect');
       await this.router.navigateByUrl(redirect ?? '/account');
     } catch (failure) {
-      this.error.set(
-        failure instanceof HttpErrorResponse && failure.status === 429
-          ? tooManyRequestsMessage(failure)
-          : 'Anmeldedaten stimmen nicht.',
-      );
+      this.error.set(httpErrorMessage(failure, {}, 'Anmeldedaten stimmen nicht.'));
     } finally {
       this.busy.set(false);
     }

@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
-import {Router, RouterLink} from '@angular/router';
+import {RouterLink} from '@angular/router';
 import {Button} from 'primeng/button';
 import {ProgressSpinner} from 'primeng/progressspinner';
 import {Skeleton} from 'primeng/skeleton';
@@ -33,6 +33,7 @@ import {ScreenWakeLockService} from '../../services/screen-wake-lock.service';
 import {GameTopBarComponent} from '../game-top-bar/game-top-bar.component';
 import {ScoreboardComponent} from '../scoreboard/scoreboard.component';
 import {VirtualBoardComponent} from '../virtual-board/virtual-board.component';
+import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 
 /** A side-column key: a fixed field, booked as it stands whatever D or T is set to. */
 type FixedKey = {
@@ -78,6 +79,7 @@ const SIDE_KEYS: readonly FixedKey[] = [MISS, BULL, BULLSEYE];
     OverlayComponent,
     VirtualBoardComponent,
     GameTopBarComponent,
+    EmptyStateComponent,
     CdkDropList,
     CdkDrag,
   ],
@@ -96,7 +98,6 @@ export class GameComponent implements OnInit, OnDestroy {
   private readonly detection = inject(DetectionService);
   private readonly wakeLock = inject(ScreenWakeLockService);
   private readonly document = inject(DOCUMENT);
-  private readonly router = inject(Router);
 
   // Optional: these live behind the "game active" gate, so they are absent until
   // the state is (re)loaded — which after a full reload is a few ticks after init.
@@ -288,22 +289,12 @@ export class GameComponent implements OnInit, OnDestroy {
     this.wakeLock.hold();
     // Refetch the game after a full reload so the view — and with it the camera
     // elements — can render; wiring and camera resume then happen on attach.
-    const persisted = this.restoring();
-    void this.session
-      .restore()
-      .then((restored) => {
-        // A stored game that is over leads back to the start screen.
-        if (persisted && !restored) {
-          void this.router.navigate(['/start'], { replaceUrl: true });
-        }
-      })
-      .finally(() => this.restoring.set(false));
+    void this.session.restore().finally(() => this.restoring.set(false));
   }
 
-  /** Leave the finished game on this device and return to the start screen. */
+  /** Leave the finished game on this device; the view stays, offering a new game. */
   protected leaveGame(): void {
     this.session.leave();
-    void this.router.navigate(['/start']);
   }
 
   protected startCamera(): Promise<void> {

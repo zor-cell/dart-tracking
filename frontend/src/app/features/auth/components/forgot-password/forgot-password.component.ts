@@ -1,16 +1,15 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
-import { tooManyRequestsMessage } from '../../../../core/notification/models/too-many-requests';
+import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
 import { AuthService } from '../../services/auth.service';
+import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 
 @Component({
   selector: 'app-forgot-password',
-  imports: [ReactiveFormsModule, RouterLink, Button, InputText, Message],
+  imports: [BackLinkComponent, Button, InputText, Message, ReactiveFormsModule],
   templateUrl: './forgot-password.component.html',
   styleUrl: './forgot-password.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,9 +37,7 @@ export class ForgotPasswordComponent {
       this.sent.set(true);
     } catch (failure) {
       this.error.set(
-        failure instanceof HttpErrorResponse && failure.status === 429
-          ? tooManyRequestsMessage(failure)
-          : 'Anfrage fehlgeschlagen. Bitte später erneut versuchen.',
+        httpErrorMessage(failure, {}, 'Anfrage fehlgeschlagen. Bitte später erneut versuchen.'),
       );
     } finally {
       this.busy.set(false);

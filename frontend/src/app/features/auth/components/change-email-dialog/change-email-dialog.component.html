@@ -7,9 +7,9 @@
   appendTo="body"
   (onHide)="reset()"
 >
-  <form class="email-form" [formGroup]="form" (ngSubmit)="submit()">
-    <div class="email-form__field">
-      <label class="email-form__label" for="new-email">Neue E-Mail-Adresse</label>
+  <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="auth-form__field">
+      <label class="auth-form__label" for="new-email">Neue E-Mail-Adresse</label>
       <input
         pInputText
         id="new-email"
@@ -19,13 +19,13 @@
         aria-describedby="new-email-hint"
         fluid
       />
-      <small class="email-form__hint" id="new-email-hint">
+      <small class="auth-form__hint" id="new-email-hint">
         Wir schicken dir einen Link an die neue Adresse. Erst wenn du ihn öffnest, wird sie aktiv.
       </small>
     </div>
 
-    <div class="email-form__field">
-      <label class="email-form__label" for="email-current-password">Aktuelles Passwort</label>
+    <div class="auth-form__field">
+      <label class="auth-form__label" for="email-current-password">Aktuelles Passwort</label>
       <input
         pInputText
         id="email-current-password"
@@ -40,7 +40,7 @@
       <p-message severity="error" [text]="message" />
     }
 
-    <div class="email-form__actions">
+    <div class="auth-form__actions">
       <p-button
         type="button"
         label="Abbrechen"

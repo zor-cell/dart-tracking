@@ -1,11 +1,10 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, model, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
-import { tooManyRequestsMessage } from '../../../../core/notification/models/too-many-requests';
+import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
 import { NotificationService } from '../../../../core/notification/services/notification.service';
 import { AuthService } from '../../services/auth.service';
 
@@ -54,14 +53,10 @@ export class ChangePasswordDialogComponent {
   }
 
   private describe(failure: unknown): string {
-    if (failure instanceof HttpErrorResponse) {
-      if (failure.status === 403) {
-        return 'Das aktuelle Passwort stimmt nicht.';
-      }
-      if (failure.status === 429) {
-        return tooManyRequestsMessage(failure);
-      }
-    }
-    return 'Speichern fehlgeschlagen. Bitte erneut versuchen.';
+    return httpErrorMessage(
+      failure,
+      { 403: 'Das aktuelle Passwort stimmt nicht.' },
+      'Speichern fehlgeschlagen. Bitte erneut versuchen.',
+    );
   }
 }

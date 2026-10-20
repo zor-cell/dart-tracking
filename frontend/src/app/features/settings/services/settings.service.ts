@@ -6,6 +6,7 @@ import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
 import { AuthService } from '../../auth/services/auth.service';
 import { AppSettingsDto } from '../dto/app-settings.dto';
 import { DEFAULT_SETTINGS } from '../models/app-settings';
+import { writeStored } from '../../../core/storage/models/browser-storage';
 
 /**
  * How this account wants the app to behave. Kept on the server rather than in
@@ -38,7 +39,7 @@ export class SettingsService {
 
   constructor() {
     // Left over from when these lived in the browser; the server owns them now.
-    localStorage.removeItem('dart-tracking.settings');
+    writeStored('dart-tracking.settings', null);
 
     // Kicks off the session restore. The effect below is what reacts to it, and
     // to a later sign-in or sign-out.

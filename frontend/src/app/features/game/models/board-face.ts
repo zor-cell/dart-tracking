@@ -17,6 +17,7 @@ import {
   sectorCentreAngle,
   toSvg,
 } from './board-geometry';
+import { parseField } from './field-label';
 
 /** One drawn ring band of one sector; `tone` picks the colour from the stylesheet. */
 export interface BoardSegment {
@@ -100,26 +101,6 @@ export const BOARD_SECTOR_NUMBERS: readonly SectorNumber[] = SECTOR_ORDER.map(
     return { x, y, value };
   },
 );
-
-/** A board field as named by a called-out label: 20, D20, T20, 25, 50. */
-type Field =
-  | { readonly ring: 'single' | 'double' | 'triple'; readonly index: number }
-  | { readonly ring: 'bull' | 'bullseye' };
-
-function parseField(label: string): Field | null {
-  if (label === '50') {
-    return { ring: 'bullseye' };
-  }
-  if (label === '25') {
-    return { ring: 'bull' };
-  }
-  const match = /^([DT]?)(\d+)$/.exec(label);
-  const index = match ? SECTOR_ORDER.indexOf(Number(match[2])) : -1;
-  if (match === null || index < 0) {
-    return null;
-  }
-  return { ring: match[1] === 'D' ? 'double' : match[1] === 'T' ? 'triple' : 'single', index };
-}
 
 /** Outline of the field `label` names, `inset` mm inside its edges; null for a miss. */
 export function fieldOutline(label: string, inset: number): string | null {

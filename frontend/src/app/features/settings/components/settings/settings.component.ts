@@ -1,10 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { Accordion, AccordionContent, AccordionHeader, AccordionPanel } from 'primeng/accordion';
 import { Button } from 'primeng/button';
 import { MultiSelect } from 'primeng/multiselect';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 import {
   AnnouncerService,
@@ -13,6 +11,8 @@ import {
 import { AuthService } from '../../../auth/services/auth.service';
 import { GameService } from '../../../game/services/game.service';
 import { SettingsService } from '../../services/settings.service';
+import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
+import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 
 /** What the self-test's outcome is called on the page. */
 const TEST_RESULTS: Record<AnnouncerTestResult, string> = {
@@ -32,16 +32,16 @@ const DOUBLE_OPTIONS = [
 @Component({
   selector: 'app-settings',
   imports: [
-    FormsModule,
-    RouterLink,
-    Button,
-    ProgressSpinner,
-    ToggleSwitch,
-    MultiSelect,
     Accordion,
-    AccordionPanel,
-    AccordionHeader,
     AccordionContent,
+    AccordionHeader,
+    AccordionPanel,
+    BackLinkComponent,
+    Button,
+    FormsModule,
+    LoadingStateComponent,
+    MultiSelect,
+    ToggleSwitch,
   ],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss',

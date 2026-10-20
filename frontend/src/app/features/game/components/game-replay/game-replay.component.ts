@@ -18,13 +18,12 @@ import { DartDto } from '../../dto/dart.dto';
 import { VisitDto } from '../../dto/visit.dto';
 import { GameMode } from '../../models/game-mode';
 import { GameVariant } from '../../models/game-variant';
-import { ScoreboardEntry } from '../../models/scoreboard-entry';
-import { labelPoints, ReplayPosition } from '../../models/visit';
+import { ReplayPosition } from '../../models/visit';
 import { ScoreDistributionComponent } from '../score-distribution/score-distribution.component';
 import { FieldHeatmapComponent } from '../field-heatmap/field-heatmap.component';
 import { ScoreRaceComponent } from '../score-race/score-race.component';
 import { TipHeatmapComponent } from '../tip-heatmap/tip-heatmap.component';
-// import { ScoreboardComponent } from '../scoreboard/scoreboard.component';
+import { readStored, writeStored } from '../../../../core/storage/models/browser-storage';
 
 /** Time per dart at normal speed, in milliseconds. */
 const DART_INTERVAL_MS = 500;
@@ -53,7 +52,6 @@ const VIEWS: readonly { label: string; value: ReplayView }[] = [
     FormsModule,
     ScoreDistributionComponent,
     ScoreRaceComponent,
-    // ScoreboardComponent,
     Select,
     SelectButton,
     Slider,
@@ -136,11 +134,6 @@ export class GameReplayComponent implements OnInit {
     () => this.steps()[Math.min(this.cursor(), this.steps().length) - 1] ?? null,
   );
 
-  protected readonly visit = computed(() => {
-    const step = this.step();
-    return step === null ? null : this.visits()[step.visit];
-  });
-
   /** The darts of the visit on the board so far; none at the end state. */
   protected readonly boardDarts = computed(() => {
     const step = this.step();
@@ -186,49 +179,6 @@ export class GameReplayComponent implements OnInit {
     return step === null ? 0 : this.roundOf(step);
   });
 
-  /** Points each player needed: after the visit once it is complete, before it until then. */
-  protected readonly standings = computed(() => {
-    const step = this.step();
-    const players = this.players();
-    if (step === null) {
-      return players.map(() => this.mode());
-    }
-    const index = this.visitComplete() ? step.visit : step.visit - 1;
-    return this.visits()[index]?.standings ?? players.map(() => this.mode());
-  });
-
-  /** Cards as in the live game: points still needed in x01, points gathered in elimination. */
-  protected readonly scoreboardEntries = computed<ScoreboardEntry[]>(() => {
-    const standings = [...this.standings()];
-    const elimination = this.variant() === 'elimination';
-    // The thrower counts down dart by dart, as in the live game; a bust keeps the old score.
-    const visit = this.visit();
-    if (visit !== null && !this.visitComplete() && !visit.busted) {
-      standings[visit.playerId] -= this.boardDarts().reduce(
-        (sum, d) => sum + labelPoints(d.label),
-        0,
-      );
-    }
-    return this.players().map((player) => ({
-      id: player.id,
-      name: player.name,
-      score: elimination ? this.mode() - standings[player.id] : standings[player.id],
-    }));
-  });
-
-  protected readonly activeIndex = computed(() => {
-    const visit = this.visit();
-    return visit === null ? null : this.players().findIndex((p) => p.id === visit.playerId);
-  });
-
-  /** The thrower once their visit finished the game. */
-  protected readonly winnerId = computed(() => {
-    const visit = this.visit();
-    return visit !== null && this.visitComplete() && visit.standings[visit.playerId] === 0
-      ? visit.playerId
-      : null;
-  });
-
   /** Opens on the end state; playing starts over from the first dart. */
   ngOnInit(): void {
     this.cursor.set(this.end());
@@ -236,12 +186,12 @@ export class GameReplayComponent implements OnInit {
 
   protected selectView(view: ReplayView): void {
     this.view.set(view);
-    store(VIEW_KEY, view);
+    writeStored(VIEW_KEY, view);
   }
 
   protected selectLayer(layer: HeatmapLayer): void {
     this.layer.set(layer);
-    store(LAYER_KEY, layer);
+    writeStored(LAYER_KEY, layer);
   }
 
   constructor() {
@@ -316,20 +266,8 @@ export class GameReplayComponent implements OnInit {
 
 /** The value kept under `key`, if it is still one of `allowed`. */
 function stored<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
-  try {
-    const value = localStorage.getItem(key);
-    return allowed.find((option) => option === value) ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function store(key: string, value: string): void {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    // Storage can be unavailable (private mode); the choice then lasts this visit only.
-  }
+  const value = readStored(key);
+  return allowed.find((option) => option === value) ?? fallback;
 }
 
 function located(darts: readonly DartDto[]): HeatmapPoint[] {

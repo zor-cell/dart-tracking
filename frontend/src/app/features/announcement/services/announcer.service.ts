@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SocketService } from '../../../core/socket/services/socket.service';
 import { DartAnnouncementDto } from '../dto/dart-announcement.dto';
 import { announcementPhrases } from '../models/announcement-text';
+import { readStored, writeStored } from '../../../core/storage/models/browser-storage';
 
 const MUTED_KEY = 'dart-tracking.announcerMuted';
 const ANNOUNCEMENT_LANG = 'de-DE';
@@ -39,7 +40,7 @@ export class AnnouncerService {
   private readonly document = inject(DOCUMENT);
 
   private readonly announcerId = signal<string | null>(null);
-  private readonly _muted = signal(localStorage.getItem(MUTED_KEY) === 'true');
+  private readonly _muted = signal(readStored(MUTED_KEY) === 'true');
 
   private readonly pending: string[] = [];
   private audio: AudioContext | null = null;
@@ -89,7 +90,7 @@ export class AnnouncerService {
   toggleMuted(): void {
     const muted = !this._muted();
     this._muted.set(muted);
-    localStorage.setItem(MUTED_KEY, String(muted));
+    writeStored(MUTED_KEY, String(muted));
     if (muted) {
       this.stop();
     }

@@ -3,8 +3,8 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { Message } from 'primeng/message';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { AuthService } from '../../services/auth.service';
+import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 
 type VerifyState = 'pending' | 'verified' | 'failed';
 
@@ -12,7 +12,7 @@ type VerifyState = 'pending' | 'verified' | 'failed';
  * data `emailChange` the switch to a new one. */
 @Component({
   selector: 'app-verify-email',
-  imports: [RouterLink, Button, Message, ProgressSpinner],
+  imports: [Button, LoadingStateComponent, Message, RouterLink],
   templateUrl: './verify-email.component.html',
   styleUrl: './verify-email.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

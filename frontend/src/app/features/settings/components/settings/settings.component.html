@@ -1,25 +1,12 @@
 <section class="view">
   <header class="view__header">
-    <p-button
-      class="view__back"
-      label="Konto"
-      icon="pi pi-arrow-left"
-      severity="secondary"
-      [text]="true"
-      routerLink="/account"
-    />
+    <app-back-link label="Konto" link="/account" />
     <h1 class="view__title">Einstellungen</h1>
     <p class="view__subtitle">Parameter der Wurf-Erkennung zum schnellen Testen</p>
   </header>
 
   @if (settings.loading()) {
-    <div class="loading" role="status">
-      <p-progress-spinner
-        ariaLabel="Einstellungen werden geladen"
-        [style]="{ width: '2.5rem', height: '2.5rem' }"
-      />
-      <p>Einstellungen werden geladen …</p>
-    </div>
+    <app-loading-state label="Einstellungen werden geladen" />
   } @else {
     <p-accordion [multiple]="true" [(value)]="openSections">
       <p-accordion-panel value="game">

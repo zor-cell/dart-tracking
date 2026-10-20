@@ -1,13 +1,6 @@
 <section class="view">
   <header class="view__header">
-    <p-button
-      class="view__back"
-      label="Konto"
-      icon="pi pi-arrow-left"
-      severity="secondary"
-      [text]="true"
-      routerLink="/account"
-    />
+    <app-back-link label="Konto" link="/account" />
     <h1 class="view__title">Auswertung</h1>
     <p class="view__subtitle">
       Was die Kamera gebucht hat, gegen das, was die Spieler übernommen haben
@@ -15,18 +8,11 @@
   </header>
 
   @if (loading()) {
-    <div class="loading" role="status">
-      <p-progress-spinner
-        ariaLabel="Auswertung wird geladen"
-        [style]="{ width: '2.5rem', height: '2.5rem' }"
-      />
-      <p>Auswertung wird geladen …</p>
-    </div>
+    <app-loading-state label="Auswertung wird geladen" />
   } @else if (games().length === 0) {
-    <div class="placeholder">
-      <i class="pi pi-video placeholder__icon" aria-hidden="true"></i>
+    <app-empty-state icon="pi-video">
       <p>Noch kein gefilmtes Spiel aufgezeichnet.</p>
-    </div>
+    </app-empty-state>
   } @else {
     <div class="scope">
       <label class="scope__label" for="scope">Umfang</label>
@@ -43,45 +29,45 @@
     </div>
 
     @if (summary(); as summary) {
-      <dl class="figures">
-        <div class="figure figure--wide">
-          <dt class="figure__label">Korrekte Segmente</dt>
-          <dd class="figure__value">
+      <dl class="stat-grid">
+        <div class="stat stat--wide">
+          <dt class="stat__label">Korrekte Segmente</dt>
+          <dd class="stat__value">
             @if (accuracy(); as rate) {
               {{ rate * 100 | number: '1.1-1' }} %
             } @else {
               &ndash;
             }
           </dd>
-          <dd class="figure__hint">
+          <dd class="stat__hint">
             {{ summary.correct }} von {{ summary.dartsThrown }} geworfenen Pfeilen
           </dd>
         </div>
-        <div class="figure">
-          <dt class="figure__label">Visits gewertet</dt>
-          <dd class="figure__value">{{ summary.visits }}</dd>
+        <div class="stat">
+          <dt class="stat__label">Visits gewertet</dt>
+          <dd class="stat__value">{{ summary.visits }}</dd>
           @if (summary.games > 1) {
-            <dd class="figure__hint">aus {{ summary.games }} Spielen</dd>
+            <dd class="stat__hint">aus {{ summary.games }} Spielen</dd>
           }
         </div>
-        <div class="figure">
-          <dt class="figure__label">Ohne Korrektur</dt>
-          <dd class="figure__value">
+        <div class="stat">
+          <dt class="stat__label">Ohne Korrektur</dt>
+          <dd class="stat__value">
             @if (cleanVisitRate(); as rate) {
               {{ rate * 100 | number: '1.0-0' }} %
             } @else {
               &ndash;
             }
           </dd>
-          <dd class="figure__hint">{{ summary.cleanVisits }} von {{ summary.visits }} Visits</dd>
+          <dd class="stat__hint">{{ summary.cleanVisits }} von {{ summary.visits }} Visits</dd>
         </div>
-        <div class="figure">
-          <dt class="figure__label">Pfeile geworfen</dt>
-          <dd class="figure__value">{{ summary.dartsThrown }}</dd>
+        <div class="stat">
+          <dt class="stat__label">Pfeile geworfen</dt>
+          <dd class="stat__value">{{ summary.dartsThrown }}</dd>
         </div>
-        <div class="figure">
-          <dt class="figure__label">Von der Kamera gebucht</dt>
-          <dd class="figure__value">{{ summary.dartsBooked }}</dd>
+        <div class="stat">
+          <dt class="stat__label">Von der Kamera gebucht</dt>
+          <dd class="stat__value">{{ summary.dartsBooked }}</dd>
         </div>
       </dl>
 

@@ -13,6 +13,7 @@ import { DARTS_PER_TURN } from '../models/visit';
 import {GameConfigDto} from "../dto/game-config.dto";
 import {SettingsService} from "../../settings/services/settings.service";
 import { ACTIVE_GAME_KEY } from "./active-game";
+import { readStored, writeStored } from '../../../core/storage/models/browser-storage';
 
 
 /**
@@ -165,7 +166,7 @@ export class GameService {
   /** The active game's id, even before its state has been (re)fetched — read
    * from the live state, falling back to the id persisted across refreshes. */
   peekGameId(): string | null {
-    return this._state()?.id ?? localStorage.getItem(ACTIVE_GAME_KEY);
+    return this._state()?.id ?? readStored(ACTIVE_GAME_KEY);
   }
 
   /**
@@ -228,7 +229,7 @@ export class GameService {
     if (this._state() !== null) {
       return true;
     }
-    const id = localStorage.getItem(ACTIVE_GAME_KEY);
+    const id = readStored(ACTIVE_GAME_KEY);
     if (!id) {
       return false;
     }
@@ -245,7 +246,7 @@ export class GameService {
   /** Leave the game entirely: the cached state goes, and with it the room. */
   reset(): void {
     this._state.set(null);
-    localStorage.removeItem(ACTIVE_GAME_KEY);
+    writeStored(ACTIVE_GAME_KEY, null);
     this.socket.disconnect();
   }
 
@@ -288,7 +289,7 @@ export class GameService {
     if (state.winnerId === null) {
       this._winConfirmed.set(false);
     }
-    localStorage.setItem(ACTIVE_GAME_KEY, state.id);
+    writeStored(ACTIVE_GAME_KEY, state.id);
     return true;
   }
 }

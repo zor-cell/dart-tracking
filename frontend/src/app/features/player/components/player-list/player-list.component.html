@@ -1,13 +1,6 @@
 <section class="view">
   <header class="view__header">
-    <p-button
-      class="view__back"
-      label="Konto"
-      icon="pi pi-arrow-left"
-      severity="secondary"
-      [text]="true"
-      routerLink="/account"
-    />
+    <app-back-link label="Konto" link="/account" />
     <h1 class="view__title">Spieler</h1>
     <p class="view__subtitle">Die Spieler, die du im neuen Spiel auswählen kannst</p>
   </header>
@@ -34,18 +27,12 @@
   }
 
   @if (loading()) {
-    <div class="loading" role="status">
-      <p-progress-spinner
-        ariaLabel="Spieler werden geladen"
-        [style]="{ width: '2.5rem', height: '2.5rem' }"
-      />
-      <p>Spieler werden geladen …</p>
-    </div>
+    <app-loading-state label="Spieler werden geladen" />
   } @else if (failed()) {
-    <div class="placeholder">
+    <app-empty-state>
       <p>Die Spielerliste konnte nicht geladen werden.</p>
       <p-button label="Erneut versuchen" icon="pi pi-refresh" (onClick)="load()" />
-    </div>
+    </app-empty-state>
   } @else {
     <ul class="players">
       @if (self(); as me) {

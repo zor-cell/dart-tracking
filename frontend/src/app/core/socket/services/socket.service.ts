@@ -7,6 +7,7 @@ import { ClientFrame, ClientMessage } from '../dto/client-message';
 import { DeviceRole } from '../models/device-role';
 import { ThrowTriggerDto } from '../../../features/detection/dto/throw-trigger.dto';
 import { AuthService } from '../../../features/auth/services/auth.service';
+import { readStored, writeStored } from '../../storage/models/browser-storage';
 
 export type SocketConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
@@ -39,7 +40,7 @@ export class SocketService {
 
   private readonly messages = new Subject<ServerMessage>();
 
-  private readonly _clientId = signal<string | null>(localStorage.getItem(CLIENT_ID_KEY));
+  private readonly _clientId = signal<string | null>(readStored(CLIENT_ID_KEY));
   readonly clientId = this._clientId.asReadonly();
 
   // Commands issued before the socket finished opening, flushed on connect.
@@ -203,7 +204,7 @@ export class SocketService {
    * anything before it still carries the old role. */
   private adopt(message: ClientStateDto): void {
     this._clientId.set(message.clientId);
-    localStorage.setItem(CLIENT_ID_KEY, message.clientId);
+    writeStored(CLIENT_ID_KEY, message.clientId);
 
     if (this.requestedRole !== null && message.role !== this.requestedRole) {
       return;

@@ -1,15 +1,21 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { Button } from 'primeng/button';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
 import { StatisticsService } from '../../services/statistics.service';
 import { TipHeatmapComponent } from '../../../game/components/tip-heatmap/tip-heatmap.component';
+import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
+import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
+import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 
 @Component({
   selector: 'app-statistics',
-  imports: [Button, DecimalPipe, ProgressSpinner, RouterLink, TipHeatmapComponent],
+  imports: [
+    BackLinkComponent,
+    DecimalPipe,
+    LoadingStateComponent,
+    EmptyStateComponent,
+    TipHeatmapComponent,
+  ],
   templateUrl: './statistics.component.html',
   styleUrl: './statistics.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

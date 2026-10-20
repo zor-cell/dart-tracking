@@ -1,13 +1,7 @@
 <section class="view">
   @switch (status()) {
     @case ('resolving') {
-      <div class="loading" role="status">
-        <p-progress-spinner
-          ariaLabel="Spiel wird geladen"
-          [style]="{ width: '2.5rem', height: '2.5rem' }"
-        />
-        <p>Spiel wird beigetreten …</p>
-      </div>
+      <app-loading-state label="Spiel wird beigetreten" />
     }
     @case ('choosing') {
       <div class="join">
@@ -33,14 +27,13 @@
       </div>
     }
     @case ('failed') {
-      <div class="placeholder">
-        <i class="pi pi-link placeholder__icon" aria-hidden="true"></i>
+      <app-empty-state icon="pi-link">
         <p>Dieses Spiel gibt es nicht mehr.</p>
         <p class="join__hint">
           Der Link ist abgelaufen — vielleicht wurde das Spiel beendet oder der Server neu gestartet.
         </p>
         <p-button label="Neues Spiel" icon="pi pi-play-circle" routerLink="/game/new" />
-      </div>
+      </app-empty-state>
     }
   }
 </section>

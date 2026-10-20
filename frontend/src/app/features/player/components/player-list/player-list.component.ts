@@ -1,22 +1,23 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { AutoFocus } from 'primeng/autofocus';
 import { Button } from 'primeng/button';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 import { DISPLAY_NAME_MAX_LENGTH } from '../../../auth/models/profile-rules';
 import { AuthService } from '../../../auth/services/auth.service';
 import { PlayerIdentityDto } from '../../dto/player-identity.dto';
 import { PlayerService } from '../../services/player.service';
+import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
+import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
+import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
+import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 
 const nameValidators = [Validators.required, Validators.maxLength(DISPLAY_NAME_MAX_LENGTH)];
 
@@ -24,14 +25,15 @@ const nameValidators = [Validators.required, Validators.maxLength(DISPLAY_NAME_M
   selector: 'app-player-list',
   imports: [
     AutoFocus,
+    BackLinkComponent,
     Button,
     ConfirmDialog,
     InputText,
+    LoadingStateComponent,
     Message,
     NgTemplateOutlet,
-    ProgressSpinner,
+    EmptyStateComponent,
     ReactiveFormsModule,
-    RouterLink,
     Tag,
     Tooltip,
   ],
@@ -174,8 +176,9 @@ function ordered(list: PlayerIdentityDto[]): PlayerIdentityDto[] {
 }
 
 function describe(failure: unknown): string {
-  if (failure instanceof HttpErrorResponse && failure.status === 409) {
-    return 'Diesen Namen gibt es schon in deiner Spielerliste.';
-  }
-  return 'Speichern fehlgeschlagen. Bitte später erneut versuchen.';
+  return httpErrorMessage(
+    failure,
+    { 409: 'Diesen Namen gibt es schon in deiner Spielerliste.' },
+    'Speichern fehlgeschlagen. Bitte später erneut versuchen.',
+  );
 }

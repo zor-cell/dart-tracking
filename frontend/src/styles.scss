@@ -100,9 +100,9 @@ body {
   gap: 0.75rem;
 }
 
-/* Centred block for a view with nothing to show: `.placeholder` when there is
+/* Centred block for a view with nothing to show: `.empty-state` when there is
    nothing, `.loading` while that is still being decided. */
-.placeholder,
+.empty-state,
 .loading {
   display: flex;
   flex-direction: column;
@@ -113,6 +113,105 @@ body {
   text-align: center;
 }
 
-.placeholder__icon {
-  font-size: 2.25rem;
+/* Visible to screen readers only. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* A titled section inside a view. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.panel__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.panel__hint {
+  margin: 0;
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.85rem;
+}
+
+/* Key figures as tiles, two per row; `--wide` gives the headline one the full row. */
+.stat-grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border-radius: 0.5rem;
+}
+
+.stat--wide {
+  grid-column: 1 / -1;
+
+  .stat__value {
+    font-size: 2.25rem;
+  }
+}
+
+.stat__label {
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.8rem;
+}
+
+.stat__value {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat__hint {
+  margin: 0;
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The sign-in, registration and account forms. */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.auth-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.auth-form__label {
+  font-size: 0.875rem;
+  color: var(--p-text-muted-color);
+}
+
+.auth-form__hint {
+  color: var(--p-text-muted-color);
+}
+
+.auth-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }

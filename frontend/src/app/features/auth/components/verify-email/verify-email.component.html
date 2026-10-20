@@ -5,13 +5,7 @@
 
   @switch (state()) {
     @case ('pending') {
-      <div class="loading" role="status">
-        <p-progress-spinner
-          ariaLabel="Adresse wird bestätigt"
-          [style]="{ width: '2.5rem', height: '2.5rem' }"
-        />
-        <p>Adresse wird bestätigt …</p>
-      </div>
+      <app-loading-state label="Adresse wird bestätigt" />
     }
     @case ('verified') {
       <p-message severity="success" [text]="verifiedText" />

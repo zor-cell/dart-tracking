@@ -1,6 +1,6 @@
 <div class="replay">
   <header class="replay__header">
-    <h2 class="replay__title">Replay</h2>
+    <h2 class="panel__title">Replay</h2>
     <p-selectbutton
       [options]="viewOptions"
       optionLabel="label"
@@ -66,14 +66,6 @@
   }
 
   <div class="replay__playback">
-    <!-- Carousel off while #25 decides whether the replay needs it.
-    <app-scoreboard
-      [entries]="scoreboardEntries()"
-      [activeIndex]="activeIndex()"
-      [winnerId]="winnerId()"
-    />
-    -->
-
     <div class="replay__timeline">
       <p class="replay__rounds" aria-live="polite">
         @let current = atEnd() ? null : step();

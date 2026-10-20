@@ -336,19 +336,6 @@
   color: var(--p-text-muted-color, #6b7280);
 }
 
-// Carries the win for screen readers alone — on screen it is the highlighted
-// player card that says it.
-.game__winner-status {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 // Gives way once the picture is down to its minimum, down to the keypad's
 // minimum — that is what compresses the key rows from 2.75rem to 2rem rather
 // than dropping the last one.
@@ -594,4 +581,3 @@
   align-items: center;
   gap: 0.25rem;
 }
-

@@ -13,13 +13,7 @@
   </header>
 
   @if (restoring()) {
-    <div class="loading" role="status">
-      <p-progress-spinner
-        ariaLabel="Sitzung wird geprüft"
-        [style]="{ width: '2.5rem', height: '2.5rem' }"
-      />
-      <p>Sitzung wird geprüft …</p>
-    </div>
+    <app-loading-state label="Sitzung wird geprüft" />
   } @else {
     @if (user(); as account) {
       <form class="account" [formGroup]="form" (ngSubmit)="confirm()">

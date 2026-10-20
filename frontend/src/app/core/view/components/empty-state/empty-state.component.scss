@@ -1,0 +1,4 @@
+// Scoped, so it outranks PrimeNG's own `.pi` size, which is injected after the global styles.
+.empty-state__icon {
+  font-size: 2.25rem;
+}

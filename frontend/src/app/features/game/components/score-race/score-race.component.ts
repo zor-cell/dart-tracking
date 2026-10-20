@@ -12,14 +12,20 @@ import { PlayerDto } from '../../dto/player.dto';
 import { VisitDto } from '../../dto/visit.dto';
 import { GameMode } from '../../models/game-mode';
 import { GameVariant } from '../../models/game-variant';
-import { DARTS_PER_TURN, labelPoints, ReplayPosition } from '../../models/visit';
+import { labelPoints } from '../../models/field-label';
+import { DARTS_PER_TURN, ReplayPosition } from '../../models/visit';
 import {
   chartTheme,
   crosshairPlugin,
   endLabelsPlugin,
   indexMarkerPlugin,
 } from '../../../../core/charts/models/chart-plugins';
-import { SERIES_COLORS } from '../../../../core/charts/models/series-colors';
+import {
+  axisTicks,
+  axisTitle,
+  seriesColor,
+  tooltipStyle,
+} from '../../../../core/charts/models/chart-styles';
 
 /** A dart slot on the race: the standing after it, and the dart thrown there, if any. */
 interface RacePoint {
@@ -163,8 +169,7 @@ export class ScoreRaceComponent {
     const highlight = this.highlightId();
     return {
       datasets: this.players().map((player) => {
-        const base = SERIES_COLORS[player.id % SERIES_COLORS.length];
-        const color = highlight === null || highlight === player.id ? base : `${base}40`;
+        const color = seriesColor(player.id, highlight, { shown: '', faded: '40' });
         const points = this.series(player.id);
         return {
           label: player.name,
@@ -190,7 +195,7 @@ export class ScoreRaceComponent {
   });
 
   protected readonly options = computed<ChartOptions<'line'>>(() => {
-    const { text, muted, grid, surface, border, font } = this.theme;
+    const { text, grid, font } = this.theme;
     const elimination = this.elimination();
     return {
       responsive: true,
@@ -204,10 +209,10 @@ export class ScoreRaceComponent {
           type: 'linear',
           min: 0,
           max: this.totalRounds(),
-          title: { display: true, text: 'Runde', color: muted, font: { family: font, size: 10 } },
+          title: axisTitle(this.theme, 'Runde'),
           grid: { display: false },
           border: { display: false },
-          ticks: { color: muted, font: { family: font, size: 10 }, stepSize: 1 },
+          ticks: { ...axisTicks(this.theme), stepSize: 1 },
         },
         y: {
           // The goal sits at the top: remaining 0 in x01, the target score in elimination.
@@ -216,7 +221,7 @@ export class ScoreRaceComponent {
           max: this.mode(),
           grid: { color: grid },
           border: { display: false },
-          ticks: { color: muted, font: { family: font, size: 10 } },
+          ticks: axisTicks(this.theme),
           // Round steps only; the mode itself (501) would sit just above 500.
           afterBuildTicks: (scale) => {
             const step = this.mode() > 400 ? 100 : 50;
@@ -241,14 +246,7 @@ export class ScoreRaceComponent {
           },
         },
         tooltip: {
-          backgroundColor: surface,
-          borderColor: border,
-          borderWidth: 1,
-          titleColor: muted,
-          bodyColor: text,
-          titleFont: { family: font, size: 11, weight: 'normal' },
-          bodyFont: { family: font, size: 12 },
-          padding: 8,
+          ...tooltipStyle(this.theme),
           boxWidth: 8,
           boxHeight: 8,
           boxPadding: 4,

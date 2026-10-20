@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { Button } from 'primeng/button';
 import { DatePicker } from 'primeng/datepicker';
 import { Popover } from 'primeng/popover';
@@ -15,6 +15,7 @@ import { GAME_STATUS_LABELS, GameFilter } from '../../models/game-filter';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { GAME_VARIANTS, GameVariant } from '../../models/game-variant';
 import { GameHistoryService } from '../../services/game-history.service';
+import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 
 /** How many games one page of the table holds. */
 const PAGE_SIZE = 15;
@@ -22,12 +23,12 @@ const PAGE_SIZE = 15;
 @Component({
   selector: 'app-game-list',
   imports: [
+    BackLinkComponent,
     Button,
     DatePicker,
     DatePipe,
     Popover,
     ReactiveFormsModule,
-    RouterLink,
     Select,
     TableModule,
   ],

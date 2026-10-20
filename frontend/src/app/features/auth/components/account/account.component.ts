@@ -1,5 +1,4 @@
 import { DOCUMENT } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -7,8 +6,7 @@ import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Popover } from 'primeng/popover';
-import { ProgressSpinner } from 'primeng/progressspinner';
-import { tooManyRequestsMessage } from '../../../../core/notification/models/too-many-requests';
+import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
 import { APP_VERSION } from '../../../../../environments/version';
 import {
   DISPLAY_NAME_MAX_LENGTH,
@@ -19,6 +17,7 @@ import {
 import { AuthService } from '../../services/auth.service';
 import { ChangeEmailDialogComponent } from '../change-email-dialog/change-email-dialog.component';
 import { ChangePasswordDialogComponent } from '../change-password-dialog/change-password-dialog.component';
+import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 
 /** The rows that can be edited in place. */
 type EditableField = 'displayName' | 'username';
@@ -30,9 +29,9 @@ type EditableField = 'displayName' | 'username';
     ChangeEmailDialogComponent,
     ChangePasswordDialogComponent,
     InputText,
+    LoadingStateComponent,
     Message,
     Popover,
-    ProgressSpinner,
     ReactiveFormsModule,
     RouterLink,
   ],
@@ -161,9 +160,7 @@ export class AccountComponent {
       this.verificationSent.set(true);
     } catch (failure) {
       this.resendError.set(
-        failure instanceof HttpErrorResponse && failure.status === 429
-          ? tooManyRequestsMessage(failure)
-          : 'Senden fehlgeschlagen. Bitte später erneut versuchen.',
+        httpErrorMessage(failure, {}, 'Senden fehlgeschlagen. Bitte später erneut versuchen.'),
       );
     } finally {
       this.resending.set(false);
@@ -197,11 +194,15 @@ export class AccountComponent {
   }
 
   private describe(failure: unknown): string {
-    if (failure instanceof HttpErrorResponse && failure.status === 409) {
-      return failure.error?.detail === 'display name in address book'
-        ? 'Diesen Namen gibt es schon in deiner Spielerliste.'
-        : 'Dieser Benutzername ist bereits vergeben.';
-    }
-    return 'Speichern fehlgeschlagen. Bitte Eingaben prüfen.';
+    return httpErrorMessage(
+      failure,
+      {
+        409: (error) =>
+          error.error?.detail === 'display name in address book'
+            ? 'Diesen Namen gibt es schon in deiner Spielerliste.'
+            : 'Dieser Benutzername ist bereits vergeben.',
+      },
+      'Speichern fehlgeschlagen. Bitte Eingaben prüfen.',
+    );
   }
 }
