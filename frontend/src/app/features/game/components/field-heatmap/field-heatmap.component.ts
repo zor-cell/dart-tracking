@@ -19,6 +19,9 @@ const MAX_OPACITY = 0.9;
 const OUTLINE_WIDTH = 3;
 const OUTLINE_STEP = 3;
 
+/** Points along the legend's gradient, as fractions of the highest count. */
+const LEGEND_STOPS = [0.05, 0.1, 0.2, 0.35, 0.5, 0.7, 1];
+
 /** Label of a dart that hit no field. */
 const MISS = '0';
 
@@ -57,9 +60,21 @@ export class FieldHeatmapComponent {
 
   /** Fill opacity for a count; the square root keeps one heavily hit field from washing out the rest. */
   private readonly opacity = computed(() => {
-    const most = Math.max(1, ...this.counts().values());
+    const most = this.most();
     return (count: number) =>
       count === 0 ? 0 : MIN_OPACITY + (MAX_OPACITY - MIN_OPACITY) * Math.sqrt(count / most);
+  });
+
+  /** The highest count on any field, the dark end of the scale. */
+  protected readonly most = computed(() => Math.max(1, ...this.counts().values()));
+
+  /** The fill scale as a gradient from no hits to the highest count, on the same square root. */
+  protected readonly legendGradient = computed(() => {
+    const stops = LEGEND_STOPS.map((share) => {
+      const opacity = MIN_OPACITY + (MAX_OPACITY - MIN_OPACITY) * Math.sqrt(share);
+      return `color-mix(in srgb, var(--p-text-color) ${(opacity * 100).toFixed(0)}%, transparent) ${share * 100}%`;
+    });
+    return `linear-gradient(to right, transparent 0%, ${stops.join(', ')})`;
   });
 
   protected readonly fields = computed(() =>

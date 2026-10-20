@@ -97,6 +97,14 @@
   }
 </button>
 
+@if (labels().length > 0) {
+  <div class="legend" aria-hidden="true">
+    <span>0</span>
+    <span class="legend__bar" [style.background]="legendGradient()"></span>
+    <span>{{ most() }}</span>
+  </div>
+}
+
 <p class="caption" aria-live="polite">
   @if (selected(); as field) {
     <strong>{{ field.name }}</strong> &middot;

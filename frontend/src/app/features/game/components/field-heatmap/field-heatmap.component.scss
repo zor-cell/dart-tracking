@@ -160,3 +160,23 @@
 .miss__ordinal {
   font-weight: 700;
 }
+
+/* The fill scale in the bottom-right corner, opposite the miss field. */
+.legend {
+  position: absolute;
+  right: 0;
+  bottom: 0.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.legend__bar {
+  width: 4.5rem;
+  height: 0.55rem;
+  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border-radius: 0.2rem;
+}
