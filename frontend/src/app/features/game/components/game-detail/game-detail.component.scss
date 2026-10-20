@@ -83,6 +83,8 @@
 
 .table-scroll {
   overflow-x: auto;
+  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border-radius: 0.5rem;
 }
 
 .figures {
@@ -94,7 +96,20 @@
   th,
   td {
     padding: 0.45rem 0.5rem;
-    border-bottom: 1px solid var(--p-content-border-color, #e5e7eb);
+  }
+
+  th:first-child {
+    padding-left: 1rem;
+  }
+
+  th:last-child,
+  td:last-child {
+    padding-right: 1rem;
+  }
+
+  tr + tr,
+  tbody tr {
+    border-top: 1px solid var(--p-content-border-color, #e5e7eb);
   }
 
   thead th {

@@ -71,13 +71,13 @@
           </thead>
           <tbody>
             <tr>
-              <th scope="row">3-Dart-Average</th>
+              <th scope="row" aria-label="3-Dart-Average">3-Dart-Ø</th>
               @for (player of standings(); track player.id) {
                 <td class="figures__strong">{{ player.statistics.average | number: '1.2-2' }}</td>
               }
             </tr>
             <tr>
-              <th scope="row">First-9-Average</th>
+              <th scope="row" aria-label="First-9-Average">First-9-Ø</th>
               @for (player of standings(); track player.id) {
                 <td>{{ player.statistics.firstNineAverage | number: '1.2-2' }}</td>
               }
@@ -89,14 +89,14 @@
               }
             </tr>
             <tr>
-              <th scope="row">Beste Aufnahme</th>
+              <th scope="row">Bester Visit</th>
               @for (player of standings(); track player.id) {
                 <td>{{ player.statistics.bestVisit }}</td>
               }
             </tr>
             @if (!isElimination()) {
               <tr>
-                <th scope="row">Checkout-Quote</th>
+                <th scope="row">Checkout</th>
                 @for (player of standings(); track player.id) {
                   <td>
                     @let checkout = rate(player.statistics.checkoutHits, player.statistics.checkoutAttempts);
