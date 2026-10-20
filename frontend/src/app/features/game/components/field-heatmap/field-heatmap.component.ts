@@ -8,7 +8,7 @@ import {
   fieldLabelPoint,
   fieldOutline,
 } from '../../models/board-face';
-import { BULLSEYE_RADIUS, BULL_RADIUS, DOUBLE_OUTER_RADIUS } from '../../models/board-geometry';
+import { BULLSEYE_RADIUS, BULL_RADIUS } from '../../models/board-geometry';
 import { dartColor } from '../../models/dart-colors';
 
 /** Fill opacity of the least and the most hit field. */
@@ -21,14 +21,6 @@ const OUTLINE_STEP = 3;
 
 /** Label of a dart that hit no field. */
 const MISS = '0';
-
-/** The thin band just outside the double ring that stands for misses, in board millimetres. */
-const MISS_INNER_RADIUS = DOUBLE_OUTER_RADIUS + 2;
-const MISS_OUTER_RADIUS = DOUBLE_OUTER_RADIUS + 8;
-const MISS_BAND = annulus(MISS_INNER_RADIUS, MISS_OUTER_RADIUS);
-
-/** Where a missed dart's ordinal is written: out past the numbers, bottom right, in SVG units. */
-const MISS_LABEL_POINT: readonly [number, number] = [146, 146];
 
 /** Every dart counted into the field it hit, tinted by how often; a tap or hover names the count. */
 @Component({
@@ -50,9 +42,7 @@ export class FieldHeatmapComponent {
   protected readonly bullseyeRadius = BULLSEYE_RADIUS;
   protected readonly backingRadius = BOARD_BACKING_RADIUS;
   protected readonly viewBox = BOARD_VIEW_BOX;
-  protected readonly missBand = MISS_BAND;
-  /** Everything outside the double ring, so a miss is easy to tap even though its band is thin. */
-  protected readonly missHitArea = annulus(DOUBLE_OUTER_RADIUS, BOARD_BACKING_RADIUS);
+  protected readonly miss = MISS;
 
   private readonly pinned = signal<string | null>(null);
   private readonly hovered = signal<string | null>(null);
@@ -65,16 +55,21 @@ export class FieldHeatmapComponent {
     return counts;
   });
 
-  protected readonly fields = computed(() => {
-    const counts = this.counts();
-    const most = Math.max(1, ...counts.values());
-    return [...counts].flatMap(([label, count]) => {
-      const d = outlineOf(label);
-      // Square root, so one heavily hit field does not wash out all others.
-      const opacity = MIN_OPACITY + (MAX_OPACITY - MIN_OPACITY) * Math.sqrt(count / most);
-      return d === null ? [] : [{ label, d, count, opacity, name: fieldName(label) }];
-    });
+  /** Fill opacity for a count; the square root keeps one heavily hit field from washing out the rest. */
+  private readonly opacity = computed(() => {
+    const most = Math.max(1, ...this.counts().values());
+    return (count: number) =>
+      count === 0 ? 0 : MIN_OPACITY + (MAX_OPACITY - MIN_OPACITY) * Math.sqrt(count / most);
   });
+
+  protected readonly fields = computed(() =>
+    [...this.counts()].flatMap(([label, count]) => {
+      const d = fieldOutline(label, 0);
+      return d === null
+        ? []
+        : [{ label, d, count, opacity: this.opacity()(count), name: fieldName(label) }];
+    }),
+  );
 
   protected readonly outlineWidth = OUTLINE_WIDTH;
   protected readonly outlines = computed(() => {
@@ -82,15 +77,20 @@ export class FieldHeatmapComponent {
     return this.current().flatMap((label, index) => {
       const before = seen.get(label) ?? 0;
       seen.set(label, before + 1);
-      const d =
-        label === MISS
-          ? circle((MISS_INNER_RADIUS + MISS_OUTER_RADIUS) / 2 + before * OUTLINE_STEP)
-          : fieldOutline(label, OUTLINE_WIDTH / 2 + before * OUTLINE_STEP);
+      const d = fieldOutline(label, OUTLINE_WIDTH / 2 + before * OUTLINE_STEP);
       return d === null ? [] : [{ d, color: dartColor(index) }];
     });
   });
 
   protected readonly misses = computed(() => this.counts().get(MISS) ?? 0);
+  protected readonly missOpacity = computed(() => this.opacity()(this.misses()));
+
+  /** Ordinals of the visit's darts that missed, shown beside the miss tile. */
+  protected readonly missOrdinals = computed(() =>
+    this.current().flatMap((label, index) =>
+      label === MISS ? [{ value: index + 1, color: dartColor(index) }] : [],
+    ),
+  );
 
   /** The visit's ordinals per field, written where the field has room, each in its dart's colour. */
   protected readonly ordinals = computed(() => {
@@ -99,7 +99,7 @@ export class FieldHeatmapComponent {
       { x: number; y: number; values: { value: number; color: string }[] }
     >();
     this.current().forEach((label, index) => {
-      const point = label === MISS ? MISS_LABEL_POINT : fieldLabelPoint(label);
+      const point = fieldLabelPoint(label);
       if (point === null) {
         return;
       }
@@ -113,8 +113,8 @@ export class FieldHeatmapComponent {
   /** The field under the pointer or last tapped, hit or not. */
   protected readonly selected = computed(() => {
     const label = this.hovered() ?? this.pinned();
-    const d = label === null ? null : outlineOf(label);
-    if (label === null || d === null) {
+    const d = label === null ? null : fieldOutline(label, 0);
+    if (label === null || (d === null && label !== MISS)) {
       return null;
     }
     const count = this.counts().get(label) ?? 0;
@@ -155,6 +155,10 @@ export class FieldHeatmapComponent {
   protected onFieldFocus(label: string): void {
     this.pinned.set(label);
   }
+
+  protected toggleMiss(): void {
+    this.pinned.update((pinned) => (pinned === MISS ? null : MISS));
+  }
 }
 
 /** How a field is named in the caption: T20, D16, 20, Bull, Double Bull, Daneben. */
@@ -163,18 +167,4 @@ function fieldName(label: string): string {
     return 'Daneben';
   }
   return label === '50' ? 'Double Bull' : label === '25' ? 'Bull' : label;
-}
-
-/** A field's outline, with misses drawn as the band outside the double ring. */
-function outlineOf(label: string): string | null {
-  return label === MISS ? MISS_BAND : fieldOutline(label, 0);
-}
-
-function circle(radius: number): string {
-  return `M ${radius} 0 A ${radius} ${radius} 0 1 0 ${-radius} 0 A ${radius} ${radius} 0 1 0 ${radius} 0 Z`;
-}
-
-/** A ring between two radii; filled with the even-odd rule, its hole stays open. */
-function annulus(inner: number, outer: number): string {
-  return `${circle(outer)} ${circle(inner)}`;
 }

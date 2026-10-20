@@ -35,14 +35,6 @@
       (pointerenter)="onFieldEnter($event, '50')"
       (pointerleave)="onFieldLeave()"
     />
-    <path class="board__segment board__segment--dark board__miss" [attr.d]="missBand" />
-    <path
-      class="board__miss-hit"
-      [attr.d]="missHitArea"
-      data-label="0"
-      (pointerenter)="onFieldEnter($event, '0')"
-      (pointerleave)="onFieldLeave()"
-    />
   </g>
 
   @for (number of sectorNumbers; track number.value) {
@@ -80,11 +72,30 @@
     </text>
   }
 
-  @if (selected(); as field) {
-    <path class="board__selected board__selected--halo" [attr.d]="field.d" />
-    <path class="board__selected" [attr.d]="field.d" />
+  @if (selected()?.d; as d) {
+    <path class="board__selected board__selected--halo" [attr.d]="d" />
+    <path class="board__selected" [attr.d]="d" />
   }
 </svg>
+
+<button
+  type="button"
+  class="miss"
+  [class.miss--selected]="selected()?.label === miss"
+  [attr.aria-pressed]="selected()?.label === miss"
+  [attr.aria-label]="'Daneben: ' + misses() + (misses() === 1 ? ' Dart' : ' Darts')"
+  (click)="toggleMiss()"
+  (pointerenter)="onFieldEnter($event, miss)"
+  (pointerleave)="onFieldLeave()"
+>
+  <span class="miss__swatch" [style.border-color]="missOrdinals()[0]?.color">
+    <span class="miss__fill" [style.opacity]="missOpacity()"></span>
+  </span>
+  Daneben
+  @for (ordinal of missOrdinals(); track ordinal.value) {
+    <span class="miss__ordinal" [style.color]="ordinal.color">{{ ordinal.value }}</span>
+  }
+</button>
 
 <p class="caption" aria-live="polite">
   @if (selected(); as field) {
@@ -96,11 +107,6 @@
       {{ field.share | number: '1.0-0' }}&nbsp;%
     }
   } @else {
-    <span class="caption__summary">
-      {{ labels().length }} Darts
-      @if (misses() > 0) {
-        &middot; {{ misses() }} daneben
-      }
-    </span>
+    <span class="caption__summary">{{ labels().length }} Darts</span>
   }
 </p>

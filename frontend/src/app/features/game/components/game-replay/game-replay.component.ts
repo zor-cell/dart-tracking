@@ -102,12 +102,18 @@ export class GameReplayComponent implements OnInit {
   protected readonly speed = signal(1);
   protected readonly playerId = signal<number | null>(null);
   protected readonly playing = signal(false);
-  /** How many darts of the replay are shown. */
+  /** How many darts of the replay are shown; one past the last dart is the end state. */
   protected readonly cursor = signal(0);
 
-  /** The replay's spot for the charts; before the first dart, no dart of visit 0. */
-  protected readonly position = computed<ReplayPosition>(
-    () => this.step() ?? { visit: 0, dart: -1 },
+  /** The cursor of the end state: the whole game, with no visit highlighted. */
+  protected readonly end = computed(() =>
+    this.steps().length === 0 ? 0 : this.steps().length + 1,
+  );
+  protected readonly atEnd = computed(() => this.end() > 0 && this.cursor() === this.end());
+
+  /** The replay's spot for the charts; before the first dart, no dart of visit 0; at the end, none. */
+  protected readonly position = computed<ReplayPosition | null>(() =>
+    this.atEnd() ? null : (this.step() ?? { visit: 0, dart: -1 }),
   );
 
   /** Visits whose last dart has been shown, counted in throwing order. */
@@ -128,17 +134,21 @@ export class GameReplayComponent implements OnInit {
     );
   });
 
-  protected readonly step = computed(() => this.steps()[this.cursor() - 1] ?? null);
+  protected readonly step = computed(
+    () => this.steps()[Math.min(this.cursor(), this.steps().length) - 1] ?? null,
+  );
 
   protected readonly visit = computed(() => {
     const step = this.step();
     return step === null ? null : this.visits()[step.visit];
   });
 
-  /** The darts of the visit on the board so far. */
+  /** The darts of the visit on the board so far; none at the end state. */
   protected readonly boardDarts = computed(() => {
     const step = this.step();
-    return step === null ? [] : this.visits()[step.visit].darts.slice(0, step.dart + 1);
+    return step === null || this.atEnd()
+      ? []
+      : this.visits()[step.visit].darts.slice(0, step.dart + 1);
   });
 
   /** Every dart up to the cursor, by field and, where located, by tip. */
@@ -167,6 +177,11 @@ export class GameReplayComponent implements OnInit {
 
   protected readonly totalRounds = computed(() =>
     Math.ceil(this.visits().length / this.players().length),
+  );
+
+  /** Visits in the replay, only the chosen player's when one is picked. */
+  protected readonly visitCount = computed(
+    () => new Set(this.steps().map((step) => step.visit)).size,
   );
 
   /** Round of the visit on the board, counted over all players. */
@@ -218,9 +233,9 @@ export class GameReplayComponent implements OnInit {
       : null;
   });
 
-  /** Opens on the finished game; playing starts over from the first dart. */
+  /** Opens on the end state; playing starts over from the first dart. */
   ngOnInit(): void {
-    this.cursor.set(this.steps().length);
+    this.cursor.set(this.end());
   }
 
   protected selectView(view: ReplayView): void {
@@ -244,7 +259,7 @@ export class GameReplayComponent implements OnInit {
   }
 
   protected togglePlay(): void {
-    if (!this.playing() && this.cursor() >= this.steps().length) {
+    if (!this.playing() && this.cursor() >= this.end()) {
       this.cursor.set(0);
     }
     this.playing.update((playing) => !playing);
@@ -252,7 +267,7 @@ export class GameReplayComponent implements OnInit {
 
   protected jumpTo(edge: 'start' | 'end'): void {
     this.playing.set(false);
-    this.cursor.set(edge === 'start' ? 0 : this.steps().length);
+    this.cursor.set(edge === 'start' ? 0 : this.end());
   }
 
   protected stepBy(delta: -1 | 1): void {
@@ -261,13 +276,18 @@ export class GameReplayComponent implements OnInit {
   }
 
   protected seek(cursor: number): void {
-    this.cursor.set(Math.min(Math.max(cursor, 0), this.steps().length));
+    this.cursor.set(Math.min(Math.max(cursor, 0), this.end()));
   }
 
   /** Switch whose darts are replayed, staying at the same round and dart. */
   protected selectPlayer(playerId: number | null): void {
     const current = this.step();
+    const atEnd = this.atEnd();
     this.playerId.set(playerId);
+    if (atEnd) {
+      this.cursor.set(this.end());
+      return;
+    }
     if (current === null) {
       return;
     }
@@ -290,7 +310,7 @@ export class GameReplayComponent implements OnInit {
   }
 
   private advance(): void {
-    if (this.cursor() >= this.steps().length) {
+    if (this.cursor() >= this.end()) {
       this.playing.set(false);
       return;
     }
