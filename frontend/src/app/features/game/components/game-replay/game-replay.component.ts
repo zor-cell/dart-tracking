@@ -12,13 +12,10 @@ import { Button } from 'primeng/button';
 import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
 import { Slider } from 'primeng/slider';
-import { BoardHeatmapComponent } from '../../../statistics/components/board-heatmap/board-heatmap.component';
 import { HeatmapPoint } from '../../../statistics/dto/player-statistics.dto';
-import { HighlightedTip } from '../../../statistics/components/board-heatmap/board-heatmap.component';
 import { PlayerDto } from '../../dto/player.dto';
 import { DartDto } from '../../dto/dart.dto';
 import { VisitDto } from '../../dto/visit.dto';
-import { dartColor } from '../../models/dart-colors';
 import { GameMode } from '../../models/game-mode';
 import { GameVariant } from '../../models/game-variant';
 import { ScoreboardEntry } from '../../models/scoreboard-entry';
@@ -26,6 +23,7 @@ import { labelPoints, ReplayPosition } from '../../models/visit';
 import { ScoreDistributionComponent } from '../score-distribution/score-distribution.component';
 import { FieldHeatmapComponent } from '../field-heatmap/field-heatmap.component';
 import { ScoreRaceComponent } from '../score-race/score-race.component';
+import { TipHeatmapComponent } from '../tip-heatmap/tip-heatmap.component';
 // import { ScoreboardComponent } from '../scoreboard/scoreboard.component';
 
 /** Time per dart at normal speed, in milliseconds. */
@@ -50,7 +48,6 @@ const VIEWS: readonly { label: string; value: ReplayView }[] = [
 @Component({
   selector: 'app-game-replay',
   imports: [
-    BoardHeatmapComponent,
     Button,
     FieldHeatmapComponent,
     FormsModule,
@@ -60,6 +57,7 @@ const VIEWS: readonly { label: string; value: ReplayView }[] = [
     Select,
     SelectButton,
     Slider,
+    TipHeatmapComponent,
   ],
   templateUrl: './game-replay.component.html',
   styleUrl: './game-replay.component.scss',
@@ -159,16 +157,6 @@ export class GameReplayComponent implements OnInit {
       .map((step) => visits[step.visit].darts[step.dart]);
     return { labels: darts.map((dart) => dart.label), points: located(darts) };
   });
-
-  /** The visit under way, the same two ways; tips keep their dart's colour and ordinal. */
-  protected readonly currentDarts = computed(() => ({
-    labels: this.boardDarts().map((dart) => dart.label),
-    tips: this.boardDarts().flatMap((dart, index): HighlightedTip[] =>
-      dart.position === null
-        ? []
-        : [{ point: dart.position as HeatmapPoint, color: dartColor(index), ordinal: index + 1 }],
-    ),
-  }));
 
   protected readonly visitComplete = computed(() => {
     const step = this.step();

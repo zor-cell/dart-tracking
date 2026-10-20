@@ -1,23 +1,14 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
-import {
-  BOARD_BACKING_RADIUS,
-  BOARD_SECTOR_NUMBERS,
-  BOARD_SEGMENTS,
-  BOARD_VIEW_BOX,
-  fieldLabelPoint,
-  fieldOutline,
-} from '../../models/board-face';
-import { BULLSEYE_RADIUS, BULL_RADIUS } from '../../models/board-geometry';
+import { DartDto } from '../../dto/dart.dto';
+import { BOARD_VIEW_BOX, fieldOutline } from '../../models/board-face';
 import { dartColor } from '../../models/dart-colors';
+import { BoardFaceComponent, FieldEnter } from '../board-face/board-face.component';
+import { FieldFramesComponent } from '../field-frames/field-frames.component';
 
 /** Fill opacity of the least and the most hit field. */
 const MIN_OPACITY = 0.2;
 const MAX_OPACITY = 0.9;
-
-/** Stroke width of a current dart's outline, and how far each further one on the same field moves in. */
-const OUTLINE_WIDTH = 3;
-const OUTLINE_STEP = 3;
 
 /** Points along the legend's gradient, as fractions of the highest count. */
 const LEGEND_STOPS = [0.05, 0.1, 0.2, 0.35, 0.5, 0.7, 1];
@@ -28,7 +19,7 @@ const MISS = '0';
 /** Every dart counted into the field it hit, tinted by how often; a tap or hover names the count. */
 @Component({
   selector: 'app-field-heatmap',
-  imports: [DecimalPipe],
+  imports: [BoardFaceComponent, DecimalPipe, FieldFramesComponent],
   templateUrl: './field-heatmap.component.html',
   styleUrl: './field-heatmap.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,14 +27,9 @@ const MISS = '0';
 export class FieldHeatmapComponent {
   /** Called-out fields of every dart so far, one entry per dart. */
   readonly labels = input.required<readonly string[]>();
-  /** Fields of the visit under way, in throwing order, outlined in their dart's colour. */
-  readonly current = input<readonly string[]>([]);
+  /** The visit under way, in throwing order, framed in each dart's colour. */
+  readonly current = input<readonly DartDto[]>([]);
 
-  protected readonly segments = BOARD_SEGMENTS;
-  protected readonly sectorNumbers = BOARD_SECTOR_NUMBERS;
-  protected readonly bullRadius = BULL_RADIUS;
-  protected readonly bullseyeRadius = BULLSEYE_RADIUS;
-  protected readonly backingRadius = BOARD_BACKING_RADIUS;
   protected readonly viewBox = BOARD_VIEW_BOX;
   protected readonly miss = MISS;
 
@@ -86,44 +72,15 @@ export class FieldHeatmapComponent {
     }),
   );
 
-  protected readonly outlineWidth = OUTLINE_WIDTH;
-  protected readonly outlines = computed(() => {
-    const seen = new Map<string, number>();
-    return this.current().flatMap((label, index) => {
-      const before = seen.get(label) ?? 0;
-      seen.set(label, before + 1);
-      const d = fieldOutline(label, OUTLINE_WIDTH / 2 + before * OUTLINE_STEP);
-      return d === null ? [] : [{ d, color: dartColor(index) }];
-    });
-  });
-
   protected readonly misses = computed(() => this.counts().get(MISS) ?? 0);
   protected readonly missOpacity = computed(() => this.opacity()(this.misses()));
 
   /** Ordinals of the visit's darts that missed, shown beside the miss tile. */
   protected readonly missOrdinals = computed(() =>
-    this.current().flatMap((label, index) =>
-      label === MISS ? [{ value: index + 1, color: dartColor(index) }] : [],
+    this.current().flatMap((dart, index) =>
+      dart.label === MISS ? [{ value: index + 1, color: dartColor(index) }] : [],
     ),
   );
-
-  /** The visit's ordinals per field, written where the field has room, each in its dart's colour. */
-  protected readonly ordinals = computed(() => {
-    const fields = new Map<
-      string,
-      { x: number; y: number; values: { value: number; color: string }[] }
-    >();
-    this.current().forEach((label, index) => {
-      const point = fieldLabelPoint(label);
-      if (point === null) {
-        return;
-      }
-      const field = fields.get(label) ?? { x: point[0], y: point[1], values: [] };
-      field.values.push({ value: index + 1, color: dartColor(index) });
-      fields.set(label, field);
-    });
-    return [...fields.values()];
-  });
 
   /** The field under the pointer or last tapped, hit or not. */
   protected readonly selected = computed(() => {
@@ -157,7 +114,7 @@ export class FieldHeatmapComponent {
     this.pinned.update((pinned) => (label === null || label === pinned ? null : label));
   }
 
-  protected onFieldEnter(event: PointerEvent, label: string): void {
+  protected onFieldEnter({ event, label }: FieldEnter): void {
     if (event.pointerType === 'mouse') {
       this.hovered.set(label);
     }

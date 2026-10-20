@@ -1,12 +1,3 @@
-// The board's own colours are the physical board's, not the theme's: a dartboard
-// is red/green/black/cream in every light, and recognising it at a glance is the
-// point of drawing it.
-$board-dark: #14110f;
-$board-light: #e8d7a8;
-$board-red: #c0392b;
-$board-green: #1e8449;
-$board-wire: #9aa0a6;
-
 :host {
   display: flex;
   flex-direction: column;
@@ -28,11 +19,7 @@ $board-wire: #9aa0a6;
   max-height: 100%;
 }
 
-.board__backing {
-  fill: #1b1b1b;
-}
-
-// Green like the confirm button: reads on light and dark pages and against the board's dark rim.
+// Green like the confirm button: reads on light and dark pages alike.
 .board__ring {
   fill: none;
   stroke: var(--p-green-500, #22c55e);
@@ -55,85 +42,4 @@ $board-wire: #9aa0a6;
     animation: none;
     opacity: 0.5;
   }
-}
-
-.board__segment {
-  stroke: $board-wire;
-  stroke-width: 0.7;
-}
-
-.board__segment--dark {
-  fill: $board-dark;
-}
-
-.board__segment--light {
-  fill: $board-light;
-}
-
-.board__segment--red {
-  fill: $board-red;
-}
-
-.board__segment--green {
-  fill: $board-green;
-}
-
-.board__number {
-  fill: #f5f5f5;
-  font-size: 17px;
-  font-weight: 600;
-  text-anchor: middle;
-  dominant-baseline: central;
-}
-
-// Dark outline around dot and number, so both read on the light beds as well as
-// on the dark, red and green ones. The fill comes from the template: it is the
-// dart's colour for its place in the visit, matching the camera's outlines.
-.board__marker {
-  circle,
-  path {
-    stroke: #1b1b1b;
-    stroke-width: 2;
-    stroke-linejoin: round;
-  }
-
-  // In viewBox units, which the board renders at roughly 0.74 CSS px each — so
-  // this lands near the camera overlay's label, the same dart on the other view.
-  text {
-    font-size: 19px;
-    font-weight: 700;
-    paint-order: stroke;
-    stroke: #1b1b1b;
-    stroke-width: 3.5;
-  }
-}
-
-// Frames stay open, so the field's own colour and every inner frame show through.
-.board__field {
-  path {
-    fill: none;
-    stroke-linejoin: round;
-  }
-
-  text {
-    font-size: 19px;
-    font-weight: 700;
-    text-anchor: middle;
-    dominant-baseline: central;
-    paint-order: stroke;
-    stroke: #1b1b1b;
-    stroke-width: 3.5;
-  }
-}
-
-// Located after the visit closed: there, but not counted.
-.board__marker--shadow {
-  opacity: 0.6;
-}
-
-// The off-board ordinal is centred on its point instead of hung off a corner,
-// so it stays inside the drawn area out at the rim.
-.board__marker--aimed {
-  text-anchor: middle;
-  dominant-baseline: central;
 }

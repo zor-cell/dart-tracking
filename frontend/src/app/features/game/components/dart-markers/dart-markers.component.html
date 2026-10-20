@@ -1,0 +1,27 @@
+<!-- Coloured by position in the visit, the same order the camera outlines the darts in. -->
+@for (marker of markers(); track $index) {
+  <svg:g class="marker" [class.marker--shadow]="marker.shadow">
+    @if (marker.arrowTransform === null) {
+      <svg:circle
+        [attr.cx]="marker.x"
+        [attr.cy]="marker.y"
+        [attr.r]="markerRadius"
+        [attr.fill]="marker.color"
+      />
+    } @else {
+      <svg:path
+        [attr.d]="arrowPath"
+        [attr.fill]="marker.color"
+        [attr.transform]="marker.arrowTransform"
+      />
+    }
+    <svg:text
+      [class.marker--aimed]="marker.arrowTransform !== null"
+      [attr.x]="marker.labelX"
+      [attr.y]="marker.labelY"
+      [attr.fill]="marker.color"
+    >
+      {{ marker.ordinal }}
+    </svg:text>
+  </svg:g>
+}

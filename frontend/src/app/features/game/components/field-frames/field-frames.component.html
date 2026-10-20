@@ -1,0 +1,14 @@
+@for (field of fields(); track $index) {
+  <svg:g class="field">
+    @for (frame of field.frames; track $index) {
+      <svg:path [attr.d]="frame.d" [attr.stroke]="frame.color" [attr.stroke-width]="frameWidth" />
+    }
+    <svg:text [attr.x]="field.x" [attr.y]="field.y">
+      @for (ordinal of field.ordinals; track ordinal.value) {
+        <svg:tspan [attr.fill]="ordinal.color" [attr.dx]="$first ? null : 5">
+          {{ ordinal.value }}
+        </svg:tspan>
+      }
+    </svg:text>
+  </svg:g>
+}

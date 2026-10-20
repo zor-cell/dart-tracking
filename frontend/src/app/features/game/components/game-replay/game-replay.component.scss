@@ -33,11 +33,11 @@
 
 /* Same height as the charts, so switching views does not move the controls. */
 .replay__heatmap > app-field-heatmap,
-.replay__heatmap > app-board-heatmap {
+.replay__heatmap > app-tip-heatmap {
   height: 100%;
 }
 
-.replay__heatmap > app-board-heatmap {
+.replay__heatmap > app-tip-heatmap {
   display: block;
 }
 

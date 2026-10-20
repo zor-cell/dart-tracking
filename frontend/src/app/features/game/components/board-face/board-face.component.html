@@ -1,0 +1,37 @@
+<svg:circle class="face__backing" cx="0" cy="0" [attr.r]="backingRadius" />
+
+<svg:g class="face__fields">
+  @for (segment of segments; track $index) {
+    <svg:path
+      class="face__segment face__segment--{{ segment.tone }}"
+      [attr.d]="segment.d"
+      [attr.data-label]="segment.label"
+      (pointerenter)="enter($event, segment.label)"
+      (pointerleave)="leave()"
+    />
+  }
+  <svg:circle
+    class="face__segment face__segment--green"
+    cx="0"
+    cy="0"
+    [attr.r]="bullRadius"
+    data-label="25"
+    (pointerenter)="enter($event, '25')"
+    (pointerleave)="leave()"
+  />
+  <svg:circle
+    class="face__segment face__segment--red"
+    cx="0"
+    cy="0"
+    [attr.r]="bullseyeRadius"
+    data-label="50"
+    (pointerenter)="enter($event, '50')"
+    (pointerleave)="leave()"
+  />
+</svg:g>
+
+@for (number of sectorNumbers; track number.value) {
+  <svg:text class="face__number" [attr.x]="number.x" [attr.y]="number.y">
+    {{ number.value }}
+  </svg:text>
+}

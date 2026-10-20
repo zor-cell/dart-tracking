@@ -84,7 +84,7 @@
         <section class="panel">
           <h2 class="panel__title">Trefferbild</h2>
           @if (totals.heatmap.length > 0) {
-            <app-board-heatmap [points]="totals.heatmap" />
+            <app-tip-heatmap [points]="totals.heatmap" />
             <p class="panel__hint">{{ totals.heatmap.length }} erkannte Treffer</p>
           } @else {
             <p class="panel__hint">

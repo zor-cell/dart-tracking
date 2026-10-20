@@ -1,0 +1,34 @@
+:host {
+  pointer-events: none;
+}
+
+// Dark outline around dot and number, so both read on the light beds as well as on
+// the dark, red and green ones. The fill is the dart's colour for its place in the visit.
+.marker {
+  circle,
+  path {
+    stroke: #1b1b1b;
+    stroke-width: 2;
+    stroke-linejoin: round;
+  }
+
+  // In viewBox units, which the board renders at roughly 0.74 CSS px each.
+  text {
+    font-size: 19px;
+    font-weight: 700;
+    paint-order: stroke;
+    stroke: #1b1b1b;
+    stroke-width: 3.5;
+  }
+}
+
+// Located after the visit closed: there, but not counted.
+.marker--shadow {
+  opacity: 0.6;
+}
+
+// The off-board ordinal is centred on its point, so it stays inside the drawn area.
+.marker--aimed {
+  text-anchor: middle;
+  dominant-baseline: central;
+}

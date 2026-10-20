@@ -28,9 +28,9 @@
           size="small"
         />
         @if (layer() === 'fields') {
-          <app-field-heatmap [labels]="trail().labels" [current]="currentDarts().labels" />
+          <app-field-heatmap [labels]="trail().labels" [current]="boardDarts()" />
         } @else {
-          <app-board-heatmap [points]="trail().points" [highlighted]="currentDarts().tips" />
+          <app-tip-heatmap [points]="trail().points" [current]="boardDarts()" />
           @let tracked = trail().points.length;
           @let thrown = trail().labels.length;
           <p class="replay__tracked">

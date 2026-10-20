@@ -5,41 +5,13 @@
   [attr.aria-label]="ariaLabel()"
   (click)="onBoardClick($event)"
 >
-  <circle class="board__backing" cx="0" cy="0" [attr.r]="backingRadius" />
-
-  <g class="board__face">
-    @for (segment of segments; track $index) {
-      <path
-        class="board__segment board__segment--{{ segment.tone }}"
-        [attr.d]="segment.d"
-        [attr.data-label]="segment.label"
-        (pointerenter)="onFieldEnter($event, segment.label)"
-        (pointerleave)="onFieldLeave()"
-      />
-    }
-    <circle
-      class="board__segment board__segment--green"
-      cx="0"
-      cy="0"
-      [attr.r]="bullRadius"
-      data-label="25"
-      (pointerenter)="onFieldEnter($event, '25')"
-      (pointerleave)="onFieldLeave()"
-    />
-    <circle
-      class="board__segment board__segment--red"
-      cx="0"
-      cy="0"
-      [attr.r]="bullseyeRadius"
-      data-label="50"
-      (pointerenter)="onFieldEnter($event, '50')"
-      (pointerleave)="onFieldLeave()"
-    />
-  </g>
-
-  @for (number of sectorNumbers; track number.value) {
-    <text class="board__number" [attr.x]="number.x" [attr.y]="number.y">{{ number.value }}</text>
-  }
+  <g
+    app-board-face
+    [faded]="true"
+    [interactive]="true"
+    (fieldEnter)="onFieldEnter($event)"
+    (fieldLeave)="onFieldLeave()"
+  ></g>
 
   @for (field of fields(); track field.label) {
     <path
@@ -53,24 +25,7 @@
     />
   }
 
-  @for (outline of outlines(); track $index) {
-    <path
-      class="board__current"
-      [attr.d]="outline.d"
-      [attr.stroke]="outline.color"
-      [attr.stroke-width]="outlineWidth"
-    />
-  }
-
-  @for (field of ordinals(); track $index) {
-    <text class="board__ordinal" [attr.x]="field.x" [attr.y]="field.y">
-      @for (ordinal of field.values; track ordinal.value) {
-        <tspan [style.fill]="ordinal.color" [attr.dx]="$first ? null : 5">
-          {{ ordinal.value }}
-        </tspan>
-      }
-    </text>
-  }
+  <g app-field-frames [darts]="current()" [includeLocated]="true"></g>
 
   @if (selected()?.d; as d) {
     <path class="board__selected board__selected--halo" [attr.d]="d" />
@@ -85,7 +40,7 @@
   [attr.aria-pressed]="selected()?.label === miss"
   [attr.aria-label]="'Daneben: ' + misses() + (misses() === 1 ? ' Dart' : ' Darts')"
   (click)="toggleMiss()"
-  (pointerenter)="onFieldEnter($event, miss)"
+  (pointerenter)="onFieldEnter({ event: $event, label: miss })"
   (pointerleave)="onFieldLeave()"
 >
   <span class="miss__swatch" [style.border-color]="missOrdinals()[0]?.color">

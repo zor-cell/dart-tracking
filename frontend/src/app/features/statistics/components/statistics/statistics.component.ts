@@ -5,11 +5,11 @@ import { Button } from 'primeng/button';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
 import { StatisticsService } from '../../services/statistics.service';
-import { BoardHeatmapComponent } from '../board-heatmap/board-heatmap.component';
+import { TipHeatmapComponent } from '../../../game/components/tip-heatmap/tip-heatmap.component';
 
 @Component({
   selector: 'app-statistics',
-  imports: [Button, BoardHeatmapComponent, DecimalPipe, ProgressSpinner, RouterLink],
+  imports: [Button, DecimalPipe, ProgressSpinner, RouterLink, TipHeatmapComponent],
   templateUrl: './statistics.component.html',
   styleUrl: './statistics.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

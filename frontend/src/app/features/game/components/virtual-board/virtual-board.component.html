@@ -1,16 +1,5 @@
 <svg class="board" [attr.viewBox]="viewBox" role="img" [attr.aria-label]="ariaLabel()">
-  <circle class="board__backing" cx="0" cy="0" [attr.r]="backingRadius" />
-
-  @for (segment of segments; track $index) {
-    <path class="board__segment board__segment--{{ segment.tone }}" [attr.d]="segment.d" />
-  }
-
-  <circle class="board__segment board__segment--green" cx="0" cy="0" [attr.r]="bullRadius" />
-  <circle class="board__segment board__segment--red" cx="0" cy="0" [attr.r]="bullseyeRadius" />
-
-  @for (number of sectorNumbers; track number.value) {
-    <text class="board__number" [attr.x]="number.x" [attr.y]="number.y">{{ number.value }}</text>
-  }
+  <g app-board-face></g>
 
   @if (calibration() === 'calibrated' || calibration() === 'calibrating') {
     <circle
@@ -22,36 +11,6 @@
     />
   }
 
-  @for (field of enteredFields(); track $index) {
-    <g class="board__field">
-      @for (frame of field.frames; track $index) {
-        <path [attr.d]="frame.d" [attr.stroke]="frame.color" [attr.stroke-width]="frameWidth" />
-      }
-      <text [attr.x]="field.x" [attr.y]="field.y">
-        @for (ordinal of field.ordinals; track ordinal.value) {
-          <tspan [attr.fill]="ordinal.color" [attr.dx]="$first ? null : 5">{{ ordinal.value }}</tspan>
-        }
-      </text>
-    </g>
-  }
-
-  <!-- Coloured by position in the visit, the same order the camera outlines the
-       darts in, so one throw is one colour on both screens. -->
-  @for (marker of markers(); track $index) {
-    <g class="board__marker" [class.board__marker--shadow]="marker.shadow">
-      @if (marker.arrowTransform === null) {
-        <circle [attr.cx]="marker.x" [attr.cy]="marker.y" [attr.r]="markerRadius" [attr.fill]="marker.color" />
-      } @else {
-        <path [attr.d]="arrowPath" [attr.fill]="marker.color" [attr.transform]="marker.arrowTransform" />
-      }
-      <text
-        [class.board__marker--aimed]="marker.arrowTransform !== null"
-        [attr.x]="marker.labelX"
-        [attr.y]="marker.labelY"
-        [attr.fill]="marker.color"
-      >
-        {{ marker.ordinal }}
-      </text>
-    </g>
-  }
+  <g app-field-frames [darts]="darts()"></g>
+  <g app-dart-markers [darts]="darts()" [shadowDarts]="shadowDarts()"></g>
 </svg>

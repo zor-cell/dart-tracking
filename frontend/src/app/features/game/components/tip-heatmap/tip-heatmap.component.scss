@@ -1,0 +1,13 @@
+.heatmap {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* White with a dark rim, so a tip reads on every board colour; overlaps brighten. */
+.heatmap__mark {
+  fill: #ffffff;
+  fill-opacity: 0.85;
+  stroke: #1b1b1b;
+  stroke-width: 1.5;
+}

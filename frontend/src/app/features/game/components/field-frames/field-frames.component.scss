@@ -1,0 +1,22 @@
+:host {
+  pointer-events: none;
+}
+
+// Frames stay open, so the field's own colour and every inner frame show through.
+.field {
+  path {
+    fill: none;
+    fill-rule: evenodd;
+    stroke-linejoin: round;
+  }
+
+  text {
+    font-size: 19px;
+    font-weight: 700;
+    text-anchor: middle;
+    dominant-baseline: central;
+    paint-order: stroke;
+    stroke: #1b1b1b;
+    stroke-width: 3.5;
+  }
+}

@@ -1,0 +1,56 @@
+// The physical board's colours, not the theme's: a dartboard is red/green/black/cream
+// in every light, and recognising it at a glance is the point of drawing it.
+$board-dark: #14110f;
+$board-light: #e8d7a8;
+$board-red: #c0392b;
+$board-green: #1e8449;
+$board-wire: #9aa0a6;
+
+// No dark surround: the number ring is the page itself, alike in light and dark mode.
+.face__backing {
+  fill: var(--p-content-background, #ffffff);
+}
+
+.face__segment {
+  stroke: $board-wire;
+  stroke-width: 0.7;
+
+  &--dark {
+    fill: $board-dark;
+  }
+  &--light {
+    fill: $board-light;
+  }
+  &--red {
+    fill: $board-red;
+  }
+  &--green {
+    fill: $board-green;
+  }
+}
+
+.face__number {
+  fill: var(--p-text-color, #18181b);
+  font-size: 17px;
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+// Faded: grey beds, wires as gaps, so fills drawn on top carry the contrast.
+:host(.face--faded) {
+  .face__fields {
+    filter: grayscale(1);
+  }
+
+  .face__segment {
+    stroke: var(--p-content-background, #ffffff);
+    stroke-width: 0.6;
+    fill-opacity: 0.12;
+  }
+}
+
+:host(.face--interactive) .face__segment {
+  cursor: pointer;
+}
