@@ -130,8 +130,6 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly padRows = PAD_ROWS;
   protected readonly sideKeys = SIDE_KEYS;
 
-  /** The stream's aspect ratio as CSS, so the preview shows the whole frame. */
-  protected readonly videoAspect = signal('4 / 3');
   protected readonly cameraExpanded = signal(false);
 
   /** Whether the game is still being fetched — the placeholder below the view is
@@ -242,24 +240,6 @@ export class GameComponent implements OnInit, OnDestroy {
       this.throwCapture.setDebugCanvas(this.settings.debugClientDetection() ? canvas : null);
     });
 
-    effect((onCleanup) => {
-      const video = this.videoRef()?.nativeElement;
-      if (!video) {
-        return;
-      }
-      const update = () => {
-        if (video.videoWidth && video.videoHeight) {
-          this.videoAspect.set(`${video.videoWidth} / ${video.videoHeight}`);
-        }
-      };
-      update();
-      video.addEventListener('loadedmetadata', update);
-      video.addEventListener('resize', update);
-      onCleanup(() => {
-        video.removeEventListener('loadedmetadata', update);
-        video.removeEventListener('resize', update);
-      });
-    });
 
     effect(() => {
       if (this.cameraPhase() === 'idle') {

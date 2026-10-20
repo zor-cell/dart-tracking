@@ -56,18 +56,20 @@
   padding: 0.35rem;
 }
 
-.game__camera {
+// Camera and board share one box: whatever the keypad leaves, the same height
+// in either role, so switching or the stream loading never moves the keypad.
+.game__camera,
+.game__board {
   position: relative;
-  // Takes whatever the keypad leaves, and gives way to its minimum before the
-  // keypad does. The aspect ratio is the stream's, bound in the template.
-  flex: 1 6 auto;
-  // A floor the picture keeps whatever else is on screen. Tying it to the
-  // viewport instead let the browser bars take it down to 79 px.
+  flex: 1 1 0;
+  // A floor the picture keeps whatever else is on screen.
   min-height: 12rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--p-content-border-color, #e5e7eb);
+}
+
+.game__camera {
   border-radius: 0.75rem;
   overflow: hidden;
 }
@@ -87,7 +89,6 @@
 .game__camera--expanded {
   flex: 1;
   min-height: 0;
-  border: none;
   border-radius: 0;
   background: #000;
 
@@ -205,15 +206,6 @@
 // button; a labelled one is wide enough to reach the sector numbers.
 // Sized like the camera box. The drawing caps itself at 20rem and stays centred
 // in whatever box that leaves.
-.game__board {
-  position: relative;
-  flex: 1 6 auto;
-  min-height: 10rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .game__recalibrate {
   position: absolute;
   top: 0.5rem;

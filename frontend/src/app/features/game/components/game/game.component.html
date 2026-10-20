@@ -53,11 +53,7 @@
         }
       </div>
     } @else {
-      <div
-        class="game__camera"
-        [class.game__camera--expanded]="cameraExpanded()"
-        [style.aspect-ratio]="cameraExpanded() ? null : videoAspect()"
-      >
+      <div class="game__camera" [class.game__camera--expanded]="cameraExpanded()">
         <video
           #video
           class="game__video"

@@ -1,22 +1,17 @@
 :host {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
   width: 100%;
-  min-height: 0;
-  max-height: 100%;
+  height: 100%;
 }
 
-// Capped by height as well as width, so the board gives way on a short screen.
-// The drawing stays square inside whatever box that leaves — `preserveAspectRatio`
-// centres it — rather than being stretched.
+// Fills the box it is given; the drawing stays square inside it, centred by
+// `preserveAspectRatio`, rather than being stretched.
 .board {
   display: block;
   width: 100%;
   max-width: 20rem;
-  height: auto;
-  max-height: 100%;
+  height: 100%;
 }
 
 // Green like the confirm button: reads on light and dark pages alike.
