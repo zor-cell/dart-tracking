@@ -1,0 +1,88 @@
+<svg
+  class="board"
+  [attr.viewBox]="viewBox"
+  role="group"
+  [attr.aria-label]="ariaLabel()"
+  (click)="onBoardClick($event)"
+>
+  <circle class="board__backing" cx="0" cy="0" [attr.r]="backingRadius" />
+
+  <g class="board__face">
+    @for (segment of segments; track $index) {
+      <path
+        class="board__segment board__segment--{{ segment.tone }}"
+        [attr.d]="segment.d"
+        [attr.data-label]="segment.label"
+        (pointerenter)="onFieldEnter($event, segment.label)"
+        (pointerleave)="onFieldLeave()"
+      />
+    }
+    <circle
+      class="board__segment board__segment--green"
+      cx="0"
+      cy="0"
+      [attr.r]="bullRadius"
+      data-label="25"
+      (pointerenter)="onFieldEnter($event, '25')"
+      (pointerleave)="onFieldLeave()"
+    />
+    <circle
+      class="board__segment board__segment--red"
+      cx="0"
+      cy="0"
+      [attr.r]="bullseyeRadius"
+      data-label="50"
+      (pointerenter)="onFieldEnter($event, '50')"
+      (pointerleave)="onFieldLeave()"
+    />
+  </g>
+
+  @for (number of sectorNumbers; track number.value) {
+    <text class="board__number" [attr.x]="number.x" [attr.y]="number.y">{{ number.value }}</text>
+  }
+
+  @for (field of fields(); track field.label) {
+    <path
+      class="board__field"
+      [attr.d]="field.d"
+      [attr.fill-opacity]="field.opacity"
+      tabindex="0"
+      role="button"
+      [attr.aria-label]="field.name + ': ' + field.count + (field.count === 1 ? ' Dart' : ' Darts')"
+      (focus)="onFieldFocus(field.label)"
+    />
+  }
+
+  @for (outline of outlines(); track $index) {
+    <path
+      class="board__current"
+      [attr.d]="outline.d"
+      [attr.stroke]="outline.color"
+      [attr.stroke-width]="outlineWidth"
+    />
+  }
+
+  @if (selected(); as field) {
+    <path class="board__selected board__selected--halo" [attr.d]="field.d" />
+    <path class="board__selected" [attr.d]="field.d" />
+  }
+</svg>
+
+<p class="caption" aria-live="polite">
+  @if (selected(); as field) {
+    <strong>{{ field.name }}</strong> &middot;
+    @if (field.count === 0) {
+      keine Treffer
+    } @else {
+      {{ field.count }} {{ field.count === 1 ? 'Dart' : 'Darts' }} &middot;
+      {{ field.share | number: '1.0-0' }}&nbsp;%
+    }
+  } @else {
+    <span class="caption__summary">
+      {{ labels().length }} Darts
+      @if (misses() > 0) {
+        &middot; {{ misses() }} daneben
+      }
+    </span>
+  }
+</p>

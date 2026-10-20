@@ -22,6 +22,8 @@ import {
 export interface BoardSegment {
   readonly d: string;
   readonly tone: 'dark' | 'light' | 'red' | 'green';
+  /** The field the band belongs to, called out: 20, T20, D20. */
+  readonly label: string;
 }
 
 /** A sector value drawn outside the double ring. */
@@ -82,11 +84,12 @@ export const BOARD_SEGMENTS: readonly BoardSegment[] = Array.from(
 ).flatMap((index) => {
   const single = isRedSector(index) ? 'dark' : 'light';
   const ring = isRedSector(index) ? 'red' : 'green';
+  const value = SECTOR_ORDER[index];
   return [
-    { d: band(index, BULL_RADIUS, TRIPLE_INNER_RADIUS), tone: single },
-    { d: band(index, TRIPLE_INNER_RADIUS, TRIPLE_OUTER_RADIUS), tone: ring },
-    { d: band(index, TRIPLE_OUTER_RADIUS, DOUBLE_INNER_RADIUS), tone: single },
-    { d: band(index, DOUBLE_INNER_RADIUS, DOUBLE_OUTER_RADIUS), tone: ring },
+    { d: band(index, BULL_RADIUS, TRIPLE_INNER_RADIUS), tone: single, label: `${value}` },
+    { d: band(index, TRIPLE_INNER_RADIUS, TRIPLE_OUTER_RADIUS), tone: ring, label: `T${value}` },
+    { d: band(index, TRIPLE_OUTER_RADIUS, DOUBLE_INNER_RADIUS), tone: single, label: `${value}` },
+    { d: band(index, DOUBLE_INNER_RADIUS, DOUBLE_OUTER_RADIUS), tone: ring, label: `D${value}` },
   ] satisfies BoardSegment[];
 });
 

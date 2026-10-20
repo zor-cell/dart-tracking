@@ -14,13 +14,17 @@ import { SelectButton } from 'primeng/selectbutton';
 import { Slider } from 'primeng/slider';
 import { BoardHeatmapComponent } from '../../../statistics/components/board-heatmap/board-heatmap.component';
 import { HeatmapPoint } from '../../../statistics/dto/player-statistics.dto';
+import { HighlightedTip } from '../../../statistics/components/board-heatmap/board-heatmap.component';
 import { PlayerDto } from '../../dto/player.dto';
+import { DartDto } from '../../dto/dart.dto';
 import { VisitDto } from '../../dto/visit.dto';
+import { dartColor } from '../../models/dart-colors';
 import { GameMode } from '../../models/game-mode';
 import { GameVariant } from '../../models/game-variant';
 import { ScoreboardEntry } from '../../models/scoreboard-entry';
 import { labelPoints, ReplayPosition } from '../../models/visit';
 import { ScoreDistributionComponent } from '../score-distribution/score-distribution.component';
+import { FieldHeatmapComponent } from '../field-heatmap/field-heatmap.component';
 import { ScoreRaceComponent } from '../score-race/score-race.component';
 // import { ScoreboardComponent } from '../scoreboard/scoreboard.component';
 
@@ -31,6 +35,8 @@ const DART_INTERVAL_MS = 500;
 const VIEW_KEY = 'dart-tracking.gameView';
 
 type ReplayView = 'heatmap' | 'race' | 'distribution';
+
+type HeatmapLayer = 'fields' | 'tips';
 
 const VIEWS: readonly { label: string; value: ReplayView }[] = [
   { label: 'Heatmap', value: 'heatmap' },
@@ -43,6 +49,7 @@ const VIEWS: readonly { label: string; value: ReplayView }[] = [
   imports: [
     BoardHeatmapComponent,
     Button,
+    FieldHeatmapComponent,
     FormsModule,
     ScoreDistributionComponent,
     ScoreRaceComponent,
@@ -71,6 +78,12 @@ export class GameReplayComponent implements OnInit {
     ...this.players().map((player) => ({ label: player.name, value: player.id })),
   ]);
 
+  protected readonly layerOptions: { label: string; value: HeatmapLayer }[] = [
+    { label: 'Felder', value: 'fields' },
+    { label: 'Treffer', value: 'tips' },
+  ];
+  protected readonly layer = signal<HeatmapLayer>('fields');
+
   protected readonly speed = signal(1);
   protected readonly playerId = signal<number | null>(null);
   protected readonly playing = signal(false);
@@ -78,7 +91,9 @@ export class GameReplayComponent implements OnInit {
   protected readonly cursor = signal(0);
 
   /** The replay's spot for the charts; before the first dart, no dart of visit 0. */
-  protected readonly position = computed<ReplayPosition>(() => this.step() ?? { visit: 0, dart: -1 });
+  protected readonly position = computed<ReplayPosition>(
+    () => this.step() ?? { visit: 0, dart: -1 },
+  );
 
   /** Visits whose last dart has been shown, counted in throwing order. */
   protected readonly shownVisits = computed(() => {
@@ -111,17 +126,24 @@ export class GameReplayComponent implements OnInit {
     return step === null ? [] : this.visits()[step.visit].darts.slice(0, step.dart + 1);
   });
 
-  /** Every dart up to the cursor: located ones as points, entered ones by field. */
+  /** Every dart up to the cursor, by field and, where located, by tip. */
   protected readonly trail = computed(() => {
     const visits = this.visits();
     const darts = this.steps()
       .slice(0, this.cursor())
       .map((step) => visits[step.visit].darts[step.dart]);
-    return {
-      points: darts.flatMap((dart) => (dart.position === null ? [] : [dart.position as HeatmapPoint])),
-      fields: darts.flatMap((dart) => (dart.position === null ? [dart.label] : [])),
-    };
+    return { labels: darts.map((dart) => dart.label), points: located(darts) };
   });
+
+  /** The visit under way, the same two ways; tips keep their dart's colour. */
+  protected readonly currentDarts = computed(() => ({
+    labels: this.boardDarts().map((dart) => dart.label),
+    tips: this.boardDarts().flatMap((dart, index): HighlightedTip[] =>
+      dart.position === null
+        ? []
+        : [{ point: dart.position as HeatmapPoint, color: dartColor(index) }],
+    ),
+  }));
 
   protected readonly visitComplete = computed(() => {
     const step = this.step();
@@ -156,7 +178,10 @@ export class GameReplayComponent implements OnInit {
     // The thrower counts down dart by dart, as in the live game; a bust keeps the old score.
     const visit = this.visit();
     if (visit !== null && !this.visitComplete() && !visit.busted) {
-      standings[visit.playerId] -= this.boardDarts().reduce((sum, d) => sum + labelPoints(d.label), 0);
+      standings[visit.playerId] -= this.boardDarts().reduce(
+        (sum, d) => sum + labelPoints(d.label),
+        0,
+      );
     }
     return this.players().map((player) => ({
       id: player.id,
@@ -264,4 +289,8 @@ function storedView(): ReplayView {
   } catch {
     return 'heatmap';
   }
+}
+
+function located(darts: readonly DartDto[]): HeatmapPoint[] {
+  return darts.flatMap((dart) => (dart.position === null ? [] : [dart.position as HeatmapPoint]));
 }

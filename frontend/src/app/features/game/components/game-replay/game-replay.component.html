@@ -16,7 +16,33 @@
   @switch (view()) {
     @case ('heatmap') {
       <div class="replay__heatmap">
-        <app-board-heatmap [points]="trail().points" [fields]="trail().fields" />
+        <p-selectbutton
+          class="replay__layer"
+          [options]="layerOptions"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          [ngModel]="layer()"
+          (ngModelChange)="layer.set($event)"
+          ariaLabel="Darstellung der Heatmap"
+          size="small"
+        />
+        @if (layer() === 'fields') {
+          <app-field-heatmap [labels]="trail().labels" [current]="currentDarts().labels" />
+        } @else {
+          <app-board-heatmap [points]="trail().points" [highlighted]="currentDarts().tips" />
+          @let tracked = trail().points.length;
+          @let thrown = trail().labels.length;
+          <p class="replay__tracked">
+            @if (tracked === thrown) {
+              {{ thrown }} Darts
+            } @else if (tracked === 0) {
+              Keine Darts getrackt
+            } @else {
+              {{ tracked }} von {{ thrown }} Darts getrackt
+            }
+          </p>
+        }
       </div>
     }
     @case ('race') {
@@ -51,8 +77,12 @@
     <div class="replay__timeline">
       <p class="replay__rounds" aria-live="polite">
         @let current = step();
-        <span class="replay__rounds-side replay__rounds-side--start">{{ current ? 'Visit ' + (current.visit + 1) : '–' }}</span>
-        <span class="replay__rounds-round">Runde {{ round() }}&thinsp;/&thinsp;{{ totalRounds() }}</span>
+        <span class="replay__rounds-side replay__rounds-side--start">{{
+          current ? 'Visit ' + (current.visit + 1) : '–'
+        }}</span>
+        <span class="replay__rounds-round"
+          >Runde {{ round() }}&thinsp;/&thinsp;{{ totalRounds() }}</span
+        >
         <span class="replay__rounds-side">{{ current ? 'Dart ' + (current.dart + 1) : '–' }}</span>
       </p>
       <p-slider

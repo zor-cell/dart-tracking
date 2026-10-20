@@ -1,10 +1,4 @@
-<svg
-  class="heatmap"
-  [class.heatmap--muted]="fieldMarks().length > 0"
-  [attr.viewBox]="viewBox"
-  role="img"
-  [attr.aria-label]="ariaLabel()"
->
+<svg class="heatmap" [attr.viewBox]="viewBox" role="img" [attr.aria-label]="ariaLabel()">
   <circle class="heatmap__backing" cx="0" cy="0" [attr.r]="backingRadius" />
 
   @for (segment of segments; track $index) {
@@ -18,12 +12,17 @@
     <text class="heatmap__number" [attr.x]="number.x" [attr.y]="number.y">{{ number.value }}</text>
   }
 
-  @for (field of fieldMarks(); track field.d) {
-    <path class="heatmap__field" [attr.d]="field.d" [attr.fill-opacity]="field.opacity" />
-    <text class="heatmap__count" [attr.x]="field.x" [attr.y]="field.y">{{ field.count }}</text>
-  }
-
   @for (mark of marks(); track $index) {
     <circle class="heatmap__mark" [attr.cx]="mark.x" [attr.cy]="mark.y" r="5" />
+  }
+
+  @for (mark of highlightMarks(); track $index) {
+    <circle
+      class="heatmap__mark heatmap__mark--highlighted"
+      [attr.cx]="mark.x"
+      [attr.cy]="mark.y"
+      [attr.fill]="mark.color"
+      r="6"
+    />
   }
 </svg>

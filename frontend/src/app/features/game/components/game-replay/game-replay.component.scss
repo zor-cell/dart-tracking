@@ -23,8 +23,40 @@
 }
 
 .replay__heatmap {
-  width: min(100%, 20rem);
-  align-self: center;
+  --p-togglebutton-sm-padding: 0.2rem;
+  --p-togglebutton-content-sm-padding: 0.2rem 0.5rem;
+  --p-togglebutton-sm-font-size: 0.75rem;
+
+  position: relative;
+  height: 20rem;
+}
+
+/* Same height as the charts, so switching views does not move the controls. */
+.replay__heatmap > app-field-heatmap,
+.replay__heatmap > app-board-heatmap {
+  height: 100%;
+}
+
+.replay__heatmap > app-board-heatmap {
+  display: block;
+}
+
+/* Top-left corner, where the field view writes its caption. */
+.replay__tracked {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.replay__layer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
 }
 
 .replay__playback {
