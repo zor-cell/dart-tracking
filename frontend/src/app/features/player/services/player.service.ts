@@ -3,7 +3,11 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
+import { InvitationAcceptanceDto } from '../dto/invitation-acceptance.dto';
+import { InvitationDto } from '../dto/invitation.dto';
+import { InviteLinkDto } from '../dto/invite-link.dto';
 import { PlayerIdentityDto } from '../dto/player-identity.dto';
+import { PlayerLinkDto } from '../dto/player-link.dto';
 import { PlayerNameDto } from '../dto/player-name.dto';
 
 /** Upper bound for the full address book, matching the server's maximum. */
@@ -62,5 +66,47 @@ export class PlayerService {
   /** Take a player out of the address book; past games keep the name. */
   remove(id: string): Promise<void> {
     return firstValueFrom(this.http.delete<void>(`${this.baseUrl}/${id}`));
+  }
+
+  /** A fresh invitation for an unlinked player; it voids the previous one. */
+  invite(id: string): Promise<InviteLinkDto> {
+    return firstValueFrom(this.http.post<InviteLinkDto>(`${this.baseUrl}/${id}/invitation`, null));
+  }
+
+  /** Detach a player from its account, which keeps the past games. Resolves to the
+   * entry that now stands in the address book, a new one if there were games. */
+  unlink(id: string): Promise<PlayerIdentityDto> {
+    return firstValueFrom(this.http.delete<PlayerIdentityDto>(`${this.baseUrl}/${id}/link`));
+  }
+
+  /** Where this account is linked in someone else's address book. */
+  links(): Promise<PlayerLinkDto[]> {
+    return firstValueFrom(this.http.get<PlayerLinkDto[]>(`${this.baseUrl}/links`));
+  }
+
+  /** Undo a link to this account; `keepHistory` keeps the games played so far. */
+  leave(playerId: string, keepHistory: boolean): Promise<void> {
+    return firstValueFrom(
+      this.http.delete<void>(`${this.baseUrl}/links/${playerId}`, {
+        params: new HttpParams().set('keepHistory', keepHistory),
+      }),
+    );
+  }
+
+  previewInvitation(token: string): Promise<InvitationDto> {
+    return firstValueFrom(
+      this.http.get<InvitationDto>(`${this.baseUrl}/invitations/${encodeURIComponent(token)}`, {
+        context: SILENT_ERROR_CONTEXT,
+      }),
+    );
+  }
+
+  acceptInvitation(token: string, reciprocal: boolean): Promise<void> {
+    const body: InvitationAcceptanceDto = { reciprocal };
+    return firstValueFrom(
+      this.http.post<void>(`${this.baseUrl}/invitations/${encodeURIComponent(token)}`, body, {
+        context: SILENT_ERROR_CONTEXT,
+      }),
+    );
   }
 }

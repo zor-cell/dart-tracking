@@ -40,7 +40,7 @@
           @if (editingId() === me.id) {
             <ng-container *ngTemplateOutlet="editRow; context: { $implicit: me }" />
           } @else {
-            <span class="players__name players__name--self">
+            <span class="players__name players__name--tagged">
               <span>{{ me.name }}</span>
               <p-tag value="Du" severity="secondary" />
             </span>
@@ -63,18 +63,26 @@
           @if (editingId() === player.id) {
             <ng-container *ngTemplateOutlet="editRow; context: { $implicit: player }" />
           } @else {
-            <span class="players__name">{{ player.name }}</span>
-            <span pTooltip="Mit einem Konto verknüpfen – kommt bald" tooltipPosition="top">
-              <p-button
-                type="button"
-                icon="pi pi-link"
-                [ariaLabel]="player.name + ' mit einem Konto verknüpfen (kommt bald)'"
-                severity="secondary"
-                [rounded]="true"
-                [text]="true"
-                [disabled]="true"
-              />
+            <span class="players__name players__name--tagged">
+              <span>{{ player.name }}</span>
+              @if (player.linked) {
+                <p-tag value="Verknüpft" icon="pi pi-link" severity="success" />
+              }
             </span>
+            <p-button
+              type="button"
+              icon="pi pi-link"
+              [ariaLabel]="
+                player.linked
+                  ? 'Verknüpfung von ' + player.name + ' lösen'
+                  : player.name + ' mit einem Konto verknüpfen'
+              "
+              [severity]="player.linked ? 'success' : 'secondary'"
+              [rounded]="true"
+              [text]="true"
+              [disabled]="busyId() !== null"
+              (onClick)="player.linked ? confirmUnlink(player) : invite(player)"
+            />
             <p-button
               type="button"
               icon="pi pi-pencil"
@@ -110,6 +118,8 @@
       </p>
     }
   }
+
+  <app-player-links />
 </section>
 
 <ng-template #editRow let-player>
@@ -143,5 +153,22 @@
     />
   </form>
 </ng-template>
+
+@defer (when invitation(); prefetch on idle) {
+  @if (invitation(); as current) {
+    <app-share-dialog
+      header="Spieler verknüpfen"
+      [hint]="invitationHint()"
+      [shareText]="invitationShareText()"
+      qrAlt="QR-Code zum Verknüpfen"
+      [url]="current.url"
+      [(visible)]="invitationOpen"
+    >
+      <p class="invitation__expiry">
+        Gültig bis {{ current.expiresAt | date: 'dd.MM.yy, HH:mm' }} und nur einmal verwendbar.
+      </p>
+    </app-share-dialog>
+  }
+}
 
 <p-confirmdialog />

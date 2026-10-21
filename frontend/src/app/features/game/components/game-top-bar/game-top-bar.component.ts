@@ -1,15 +1,11 @@
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { QRCodeComponent } from 'angularx-qrcode';
 import { ConfirmationService } from 'primeng/api';
 import { Button } from 'primeng/button';
 import { ConfirmDialog } from 'primeng/confirmdialog';
-import { Dialog } from 'primeng/dialog';
-import { Divider } from 'primeng/divider';
-import { InputText } from 'primeng/inputtext';
 import { AnnouncerToggleComponent } from '../../../announcement/components/announcer-toggle/announcer-toggle.component';
 import { TorchToggleComponent } from '../../../camera/components/torch-toggle/torch-toggle.component';
-import { NotificationService } from '../../../../core/notification/services/notification.service';
+import { ShareDialogComponent } from '../../../../core/view/components/share-dialog/share-dialog.component';
 import { GameService } from '../../services/game.service';
 import { GameSessionService } from '../../services/game-session.service';
 
@@ -25,10 +21,7 @@ import { GameSessionService } from '../../services/game-session.service';
     TorchToggleComponent,
     Button,
     ConfirmDialog,
-    Dialog,
-    Divider,
-    InputText,
-    QRCodeComponent,
+    ShareDialogComponent,
   ],
   templateUrl: './game-top-bar.component.html',
   styleUrl: './game-top-bar.component.scss',
@@ -41,7 +34,6 @@ export class GameTopBarComponent {
 
   private readonly document = inject(DOCUMENT);
   private readonly session = inject(GameSessionService);
-  private readonly notification = inject(NotificationService);
   private readonly confirmation = inject(ConfirmationService);
 
   protected readonly shareDialogVisible = signal(false);
@@ -66,31 +58,8 @@ export class GameTopBarComponent {
     return id ? `${this.document.location.origin}/game/join/${id}` : '';
   });
 
-  private get window(): (Window & typeof globalThis) | null {
-    return this.document.defaultView;
-  }
-
   protected openShareDialog(): void {
     this.shareDialogVisible.set(true);
-  }
-
-  /** Select the whole link on focus, so copying by hand is one keystroke away. */
-  protected selectLink(event: Event): void {
-    (event.target as HTMLInputElement).select();
-  }
-
-  /**
-   * Copy the link. The Clipboard API needs a secure context, which the dev setup
-   * over plain HTTP on a LAN address is not — so a failure is expected there and
-   * says what to do instead, rather than reading as a bug.
-   */
-  protected async copyLink(): Promise<void> {
-    try {
-      await this.window?.navigator.clipboard.writeText(this.shareUrl());
-      this.notification.showSuccess('Link kopiert.');
-    } catch {
-      this.notification.showWarning('Kopieren nicht möglich — bitte den QR-Code scannen.');
-    }
   }
 
   /** Leaving a running game stops this device's part in it, so that asks first;

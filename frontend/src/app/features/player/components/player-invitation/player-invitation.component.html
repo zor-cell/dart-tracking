@@ -1,0 +1,69 @@
+<section class="view">
+  <header class="view__header">
+    <h1 class="view__title">Spieler verknüpfen</h1>
+  </header>
+
+  @switch (state()) {
+    @case ('loading') {
+      <app-loading-state label="Einladung wird geladen" />
+    }
+    @case ('ready') {
+      @if (invitation(); as current) {
+        <div class="invitation">
+          <p class="invitation__text">
+            <strong>{{ current.inviterName }}</strong> möchte den Spieler
+            <strong>„{{ current.playerName }}“</strong> mit deinem Konto verknüpfen.
+          </p>
+          <p class="invitation__hint">
+            {{ historyText() }} Du kannst die Verknüpfung jederzeit wieder lösen.
+          </p>
+
+          @if (current.reciprocal !== 'none') {
+            <div class="invitation__option">
+              <p-checkbox inputId="reciprocal" [binary]="true" [formControl]="reciprocal" />
+              <label for="reciprocal">{{ reciprocalLabel() }}</label>
+            </div>
+          }
+        </div>
+
+        <div class="view__actions">
+          <p-button
+            fluid
+            label="Verknüpfen"
+            icon="pi pi-link"
+            [loading]="accepting()"
+            (onClick)="accept()"
+          />
+          <p-button
+            fluid
+            label="Ablehnen"
+            severity="secondary"
+            [outlined]="true"
+            [disabled]="accepting()"
+            routerLink="/account"
+          />
+        </div>
+      }
+    }
+    @case ('accepted') {
+      <p-message severity="success" [text]="acceptedText()" />
+      <div class="view__actions">
+        <p-button fluid label="Zur Statistik" icon="pi pi-chart-bar" routerLink="/account/stats" />
+        <p-button
+          fluid
+          label="Zu deinen Spielern"
+          icon="pi pi-users"
+          severity="secondary"
+          [outlined]="true"
+          routerLink="/account/players"
+        />
+      </div>
+    }
+    @case ('failed') {
+      <p-message severity="error" [text]="error()" />
+      <div class="view__actions">
+        <p-button fluid label="Zum Konto" icon="pi pi-user" routerLink="/account" />
+      </div>
+    }
+  }
+</section>

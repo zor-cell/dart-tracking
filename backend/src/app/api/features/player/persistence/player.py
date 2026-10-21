@@ -8,7 +8,7 @@ autocomplete. Both stay NULL until M4.
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, func
+from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database import Base, uuid_primary_key
@@ -16,11 +16,17 @@ from app.infrastructure.database import Base, uuid_primary_key
 
 class PlayerTable(Base):
     __tablename__ = "players"
+    # One address book links an account at most once.
+    __table_args__ = (UniqueConstraint("owner_user_id", "user_id"),)
 
     id: Mapped[str] = uuid_primary_key()
     display_name: Mapped[str] = mapped_column(String(64))
     user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), default=None)
     owner_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), default=None)
+    # The address book a linked entry was taken out of; lets the linked account still find it.
+    former_owner_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id"), default=None
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

@@ -23,7 +23,7 @@ from app.api.features.auth.persistence.user_repository import repository
 from app.api.features.auth.services import (
     access_tokens,
     account_mails,
-    one_time_tokens,
+    account_tokens,
     passwords,
 )
 from app.api.features.auth.services.current_user import AuthenticatedUser
@@ -100,7 +100,7 @@ async def _require_password(user: User, password: str) -> None:
 
 
 async def _send_verification(user: User, background: BackgroundTasks) -> None:
-    token = await one_time_tokens.email_verification.issue(user.id)
+    token = await account_tokens.email_verification.issue(user.id)
     background.add_task(mailer.send, account_mails.email_verification(user, token))
 
 
@@ -185,12 +185,12 @@ async def logout(response: Response, refresh_token: RefreshCookie = None) -> Non
 
 @router.post("/verify-email", response_model=UserDto)
 async def verify_email(body: VerifyEmailDto) -> UserDto:
-    redeemed = await one_time_tokens.email_verification.consume(body.token)
+    redeemed = await account_tokens.email_verification.consume(body.token)
     if redeemed is None:
         raise _invalid_link()
 
     async with database.session_scope() as session:
-        user = await repository.mark_email_verified(session, redeemed.user_id)
+        user = await repository.mark_email_verified(session, redeemed.subject)
 
     if user is None:
         raise _invalid_link()
@@ -221,28 +221,28 @@ async def request_password_reset(
 
     if found is not None:
         user = found[0]
-        token = await one_time_tokens.password_reset.issue(user.id)
+        token = await account_tokens.password_reset.issue(user.id)
         background.add_task(mailer.send, account_mails.password_reset(user, token))
 
 
 @router.post("/password-reset/confirm", status_code=204)
 async def reset_password(body: PasswordResetDto) -> None:
     """Set the new password and end every session the account had."""
-    redeemed = await one_time_tokens.password_reset.consume(body.token)
+    redeemed = await account_tokens.password_reset.consume(body.token)
     if redeemed is None:
         raise _invalid_link()
 
     async with database.session_scope() as session:
         changed = await repository.set_password(
             session,
-            redeemed.user_id,
+            redeemed.subject,
             passwords.hash_password(body.password),
             confirms_email=True,
         )
 
     if not changed:
         raise _invalid_link()
-    await refresh_store.revoke_all(redeemed.user_id)
+    await refresh_store.revoke_all(redeemed.subject)
 
 
 @router.get("/me", response_model=UserDto)
@@ -303,22 +303,22 @@ async def request_email_change(
         if await repository.find_by_email(session, email) is not None:
             raise HTTPException(status_code=409, detail="email already in use")
 
-    token = await one_time_tokens.email_change.issue(user.id, email)
+    token = await account_tokens.email_change.issue(user.id, email)
     background.add_task(mailer.send, account_mails.email_change(user, email, token))
 
 
 @router.post("/email-change/confirm", response_model=UserDto)
 async def confirm_email_change(body: VerifyEmailDto) -> UserDto:
-    redeemed = await one_time_tokens.email_change.consume(body.token)
+    redeemed = await account_tokens.email_change.consume(body.token)
     if redeemed is None or redeemed.payload is None:
         raise _invalid_link()
 
     try:
         async with database.session_scope() as session:
             found = await repository.find_by_email(session, redeemed.payload)
-            if found is not None and found[0].id != redeemed.user_id:
+            if found is not None and found[0].id != redeemed.subject:
                 raise HTTPException(status_code=409, detail="email already in use")
-            user = await repository.set_email(session, redeemed.user_id, redeemed.payload)
+            user = await repository.set_email(session, redeemed.subject, redeemed.payload)
     except IntegrityError:
         raise HTTPException(status_code=409, detail="email already in use") from None
 

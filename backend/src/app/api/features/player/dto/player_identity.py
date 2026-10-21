@@ -8,6 +8,7 @@ class PlayerIdentityDto(CamelModel):
     id: str
     name: str
     is_self: bool
+    linked: bool
 
     @classmethod
     def from_entity(cls, identity: PlayerIdentity, viewer_id: str) -> Self:
@@ -17,4 +18,5 @@ class PlayerIdentityDto(CamelModel):
             id=identity.id,
             name=identity.display_name,
             is_self=identity.user_id == viewer_id,
+            linked=identity.user_id not in (None, viewer_id),
         )

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
@@ -24,6 +24,7 @@ export class RegisterComponent {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -51,7 +52,8 @@ export class RegisterComponent {
     this.error.set(null);
     try {
       await this.auth.register(this.form.getRawValue());
-      await this.router.navigateByUrl('/account');
+      const redirect = this.route.snapshot.queryParamMap.get('redirect');
+      await this.router.navigateByUrl(redirect ?? '/account');
     } catch (failure) {
       this.error.set(this.describe(failure));
     } finally {

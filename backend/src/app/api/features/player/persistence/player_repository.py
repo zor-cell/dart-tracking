@@ -5,7 +5,11 @@ from uuid import UUID
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.features.auth.persistence.user import UserTable
+from app.api.features.game.persistence.game_player import GamePlayerTable
 from app.api.features.player.domain.player_identity import PlayerIdentity
+from app.api.features.player.domain.player_link import PlayerLink
+from app.api.features.player.domain.reciprocal_link import ReciprocalLink
 from app.api.features.player.persistence.player import PlayerTable
 
 _SEARCH_LIMIT = 20
@@ -56,27 +60,31 @@ class PlayerRepository:
         rows = (
             await session.execute(
                 statement.order_by(
-                    PlayerTable.user_id.is_(None), PlayerTable.display_name
+                    PlayerTable.user_id.is_distinct_from(owner_user_id),
+                    PlayerTable.display_name,
                 ).limit(limit)
             )
         ).scalars().all()
         return [_to_domain(row) for row in rows]
 
     async def find_by_name(
-        self, session: AsyncSession, owner_user_id: str, display_name: str
+        self,
+        session: AsyncSession,
+        owner_user_id: str,
+        display_name: str,
+        *,
+        except_self: bool = False,
     ) -> PlayerIdentity | None:
         """The address-book entry with this name, ignoring case; the oldest one if
         earlier games left duplicates."""
+        statement = select(PlayerTable).where(
+            PlayerTable.owner_user_id == owner_user_id,
+            func.lower(PlayerTable.display_name) == display_name.lower(),
+        )
+        if except_self:
+            statement = statement.where(PlayerTable.user_id.is_distinct_from(owner_user_id))
         row = (
-            await session.execute(
-                select(PlayerTable)
-                .where(
-                    PlayerTable.owner_user_id == owner_user_id,
-                    func.lower(PlayerTable.display_name) == display_name.lower(),
-                )
-                .order_by(PlayerTable.created_at)
-                .limit(1)
-            )
+            await session.execute(statement.order_by(PlayerTable.created_at).limit(1))
         ).scalar_one_or_none()
         return _to_domain(row) if row else None
 
@@ -119,10 +127,12 @@ class PlayerRepository:
         self, session: AsyncSession, owner_user_id: str, player_id: str
     ) -> bool:
         """Take a player out of the address book. The row stays, so the games it
-        played keep their seat. Returns whether a player matched."""
+        played keep their seat and a linked account keeps them. Returns whether a player matched."""
         row = await self._editable(session, owner_user_id, player_id)
         if row is None:
             return False
+        if row.user_id is not None:
+            row.former_owner_user_id = row.owner_user_id
         row.owner_user_id = None
         await session.flush()
         return True
@@ -138,7 +148,7 @@ class PlayerRepository:
                 select(PlayerTable).where(
                     PlayerTable.id == player_id,
                     PlayerTable.owner_user_id == owner_user_id,
-                    PlayerTable.user_id.is_(None),
+                    PlayerTable.user_id.is_distinct_from(owner_user_id),
                 )
             )
         ).scalar_one_or_none()
@@ -181,6 +191,132 @@ class PlayerRepository:
             )
         ).scalars().all()
         return {row.id: _to_domain(row) for row in rows}
+
+    async def invitable(
+        self, session: AsyncSession, owner_user_id: str, player_id: str
+    ) -> PlayerIdentity | None:
+        """An entry of this address book that is not linked to any account yet."""
+        row = await self._editable(session, owner_user_id, player_id)
+        return _to_domain(row) if row is not None and row.user_id is None else None
+
+    async def game_count(self, session: AsyncSession, player_id: str) -> int:
+        return await session.scalar(
+            select(func.count()).where(GamePlayerTable.player_id == player_id)
+        ) or 0
+
+    async def linked_to(
+        self, session: AsyncSession, owner_user_id: str, user_id: str
+    ) -> PlayerIdentity | None:
+        """The entry of this address book that is linked to `user_id`, if any."""
+        row = (
+            await session.execute(
+                select(PlayerTable).where(
+                    PlayerTable.owner_user_id == owner_user_id,
+                    PlayerTable.user_id == user_id,
+                )
+            )
+        ).scalar_one_or_none()
+        return _to_domain(row) if row else None
+
+    async def link(
+        self, session: AsyncSession, owner_user_id: str, player_id: str, user_id: str
+    ) -> bool:
+        """Link an unlinked entry of this address book to an account. Returns
+        whether one matched; a second entry for the same account fails on flush."""
+        row = await self._editable(session, owner_user_id, player_id)
+        if row is None or row.user_id is not None:
+            return False
+        row.user_id = user_id
+        await session.flush()
+        return True
+
+    async def unlink(
+        self, session: AsyncSession, owner_user_id: str, player_id: str
+    ) -> PlayerIdentity | None:
+        """Detach an entry of this address book from its account, which keeps the games
+        played so far. Returns the entry that now stands in the address book."""
+        row = await self._editable(session, owner_user_id, player_id)
+        if row is None or row.user_id is None:
+            return None
+        return await self._detach(session, row)
+
+    async def _detach(self, session: AsyncSession, row: PlayerTable) -> PlayerIdentity:
+        """Retire a linked row with the games it played and give its owner an
+        unlinked entry of the same name; a row without games is simply unlinked."""
+        if await self.game_count(session, row.id) == 0:
+            row.user_id = None
+            await session.flush()
+            return _to_domain(row)
+        owner_user_id = row.owner_user_id
+        row.former_owner_user_id = owner_user_id
+        row.owner_user_id = None
+        await session.flush()
+        return await self.create(session, row.display_name, owner_user_id=owner_user_id)
+
+    async def reciprocal(
+        self, session: AsyncSession, owner_user_id: str, user_id: str, display_name: str
+    ) -> tuple[ReciprocalLink, str | None]:
+        """How this address book can link `user_id` under `display_name`, and the
+        entry to link if there already is one by that name."""
+        if await self.linked_to(session, owner_user_id, user_id) is not None:
+            return ReciprocalLink.NONE, None
+        named = await self.find_by_name(session, owner_user_id, display_name, except_self=True)
+        if named is None:
+            return ReciprocalLink.CREATE, None
+        if named.user_id is None:
+            return ReciprocalLink.LINK, named.id
+        return ReciprocalLink.NONE, None
+
+    async def links_of(self, session: AsyncSession, user_id: str) -> list[PlayerLink]:
+        """The entries in other address books that are linked to this account,
+        including retired ones that only hold past games."""
+        owner_id = func.coalesce(PlayerTable.owner_user_id, PlayerTable.former_owner_user_id)
+        rows = (
+            await session.execute(
+                select(
+                    PlayerTable.id,
+                    PlayerTable.display_name,
+                    UserTable.display_name,
+                    PlayerTable.owner_user_id.is_(None),
+                )
+                .join(UserTable, UserTable.id == owner_id)
+                .where(PlayerTable.user_id == user_id, owner_id != user_id)
+                .order_by(UserTable.display_name, PlayerTable.display_name)
+            )
+        ).all()
+        return [
+            PlayerLink(
+                player_id=id, player_name=player_name, owner_name=owner_name, retired=retired
+            )
+            for id, player_name, owner_name, retired in rows
+        ]
+
+    async def leave(
+        self, session: AsyncSession, user_id: str, player_id: str, *, keep_history: bool
+    ) -> bool:
+        """Undo a link from the linked account's side, keeping the games played so far
+        or not. A retired entry can only be dropped along with its games."""
+        if not _is_uuid(player_id):
+            return False
+        row = (
+            await session.execute(
+                select(PlayerTable).where(
+                    PlayerTable.id == player_id,
+                    PlayerTable.user_id == user_id,
+                    PlayerTable.owner_user_id.is_distinct_from(user_id),
+                )
+            )
+        ).scalar_one_or_none()
+        if row is None:
+            return False
+
+        if keep_history and row.owner_user_id is not None:
+            await self._detach(session, row)
+        else:
+            row.user_id = None
+            row.former_owner_user_id = None
+            await session.flush()
+        return True
 
 
 repository = PlayerRepository()

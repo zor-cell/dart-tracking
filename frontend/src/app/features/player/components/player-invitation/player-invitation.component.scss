@@ -1,0 +1,23 @@
+.invitation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &__text {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+
+  &__hint {
+    margin: 0;
+    color: var(--p-text-muted-color);
+    font-size: 0.9rem;
+  }
+
+  &__option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 0.25rem;
+  }
+}

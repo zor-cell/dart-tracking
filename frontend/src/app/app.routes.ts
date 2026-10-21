@@ -110,6 +110,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'invite/:token',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/player/components/player-invitation/player-invitation.component').then(
+        (m) => m.PlayerInvitationComponent,
+      ),
+  },
+  {
     path: 'account/settings',
     canActivate: [authGuard],
     loadComponent: () =>

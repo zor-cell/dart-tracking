@@ -1,0 +1,112 @@
+@if (active().length > 0) {
+  <section class="panel" aria-labelledby="player-links-title">
+    <h2 class="panel__title" id="player-links-title">Bei anderen verknüpft</h2>
+    <p class="panel__hint">Spiele dieser Spieler zählen in deinem Verlauf und deiner Statistik.</p>
+
+    <ul class="links">
+      @for (link of active(); track link.playerId) {
+        <li class="links__row">
+          <span class="links__text">
+            <span class="links__owner">{{ link.ownerName }}</span>
+            <span class="links__player">als „{{ link.playerName }}“</span>
+          </span>
+          <p-button
+            type="button"
+            icon="pi pi-times"
+            [ariaLabel]="'Verknüpfung bei ' + link.ownerName + ' lösen'"
+            severity="secondary"
+            [rounded]="true"
+            [text]="true"
+            (onClick)="ask(link)"
+          />
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+@if (retired().length > 0) {
+  <section class="panel" aria-labelledby="player-links-retired-title">
+    <h2 class="panel__title" id="player-links-retired-title">Nur bisherige Spiele</h2>
+    <p class="panel__hint">
+      Nicht mehr verknüpft, die bisherigen Spiele zählen aber weiter in deiner Statistik.
+    </p>
+
+    <ul class="links">
+      @for (link of retired(); track link.playerId) {
+        <li class="links__row">
+          <span class="links__text">
+            <span class="links__owner">{{ link.ownerName }}</span>
+            <span class="links__player">als „{{ link.playerName }}“</span>
+          </span>
+          <p-button
+            type="button"
+            icon="pi pi-trash"
+            [ariaLabel]="'Bisherige Spiele mit ' + link.ownerName + ' entfernen'"
+            severity="danger"
+            [rounded]="true"
+            [text]="true"
+            (onClick)="ask(link)"
+          />
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+<p-dialog
+  [header]="leaving()?.retired ? 'Bisherige Spiele entfernen' : 'Verknüpfung lösen'"
+  [modal]="true"
+  [draggable]="false"
+  [(visible)]="dialogOpen"
+  [style]="{ width: '28rem', maxWidth: '92vw' }"
+  appendTo="body"
+>
+  @if (leaving(); as link) {
+    <div class="leave">
+      @if (link.retired) {
+        <p class="leave__text">
+          Die bisherigen Spiele von {{ link.ownerName }} mit „{{ link.playerName }}“ zählen danach
+          nicht mehr in deinem Verlauf und deiner Statistik.
+        </p>
+        <p-button
+          fluid
+          label="Entfernen"
+          icon="pi pi-trash"
+          severity="danger"
+          [loading]="busy()"
+          (onClick)="leave(false)"
+        />
+      } @else {
+        <p class="leave__text">
+          Neue Spiele von {{ link.ownerName }} mit „{{ link.playerName }}“ zählen danach nicht mehr
+          für dich. Was soll mit den bisherigen Spielen passieren?
+        </p>
+        <p-button
+          fluid
+          label="Bisherige Spiele behalten"
+          icon="pi pi-history"
+          [loading]="busy()"
+          (onClick)="leave(true)"
+        />
+        <p-button
+          fluid
+          label="Auch bisherige entfernen"
+          icon="pi pi-trash"
+          severity="danger"
+          [outlined]="true"
+          [disabled]="busy()"
+          (onClick)="leave(false)"
+        />
+      }
+      <p-button
+        fluid
+        label="Abbrechen"
+        severity="secondary"
+        [text]="true"
+        [disabled]="busy()"
+        (onClick)="dialogOpen.set(false)"
+      />
+    </div>
+  }
+</p-dialog>

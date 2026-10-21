@@ -1,0 +1,53 @@
+<p-dialog
+  [header]="header()"
+  [modal]="true"
+  [draggable]="false"
+  [(visible)]="visible"
+  [style]="{ width: '30rem', maxWidth: '92vw' }"
+  [focusOnShow]="false"
+  appendTo="body"
+>
+  <div class="share">
+    @if (hint()) {
+      <p class="share__hint">{{ hint() }}</p>
+    }
+
+    <!-- White backdrop regardless of theme: a dark-on-dark QR does not scan. -->
+    <div class="share__code">
+      <qrcode [qrdata]="url()" [width]="220" [margin]="1" errorCorrectionLevel="M" [alt]="qrAlt()" />
+    </div>
+
+    <p-divider class="share__divider" align="center">
+      <span class="share__divider-label">oder sende den Link</span>
+    </p-divider>
+
+    <div class="share__link">
+      <input
+        pInputText
+        readonly
+        class="share__link-input"
+        [value]="url()"
+        aria-label="Link"
+        (focus)="selectLink($event)"
+      />
+      <p-button
+        icon="pi pi-copy"
+        severity="secondary"
+        ariaLabel="Link kopieren"
+        (onClick)="copyLink()"
+      />
+    </div>
+
+    @if (canShare) {
+      <p-button
+        fluid
+        class="share__native"
+        label="Teilen"
+        icon="pi pi-share-alt"
+        (onClick)="share()"
+      />
+    }
+
+    <ng-content />
+  </div>
+</p-dialog>

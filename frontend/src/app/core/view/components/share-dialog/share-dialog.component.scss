@@ -1,0 +1,53 @@
+.share {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.share__hint {
+  margin: 0;
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.9rem;
+}
+
+/* The code stays black on white in every theme — a dark-on-dark QR will not
+   scan, and the camera app has no theme toggle. */
+.share__code {
+  display: flex;
+  padding: 0.5rem;
+  background: #ffffff;
+  border-radius: 0.5rem;
+}
+
+.share__divider {
+  width: 100%;
+  /* The surrounding column already spaces its children. */
+  margin: -0.5rem 0;
+}
+
+.share__divider-label {
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.85rem;
+}
+
+.share__link {
+  display: flex;
+  /* Stretch, so the input matches the button's height rather than sitting 4px
+     shorter. */
+  align-items: stretch;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.share__link-input {
+  /* A link is long: shown small and scrolling, so the row stays one line. */
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+}
+
+.share__native {
+  width: 100%;
+}

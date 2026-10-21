@@ -27,7 +27,7 @@
     min-width: 0;
     overflow-wrap: anywhere;
 
-    &--self {
+    &--tagged {
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -47,4 +47,11 @@
     color: var(--p-text-muted-color);
     font-size: 0.9rem;
   }
+}
+
+.invitation__expiry {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-size: 0.8rem;
+  text-align: center;
 }

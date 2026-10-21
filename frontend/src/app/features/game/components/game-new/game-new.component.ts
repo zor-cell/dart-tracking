@@ -245,6 +245,7 @@ export class GameNewComponent {
         id: player.identityId,
         name: player.name,
         isSelf: false,
+        linked: false,
       }
     );
   }
