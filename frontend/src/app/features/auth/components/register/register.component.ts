@@ -8,14 +8,16 @@ import { httpErrorMessage } from '../../../../core/notification/models/http-erro
 import {
   DISPLAY_NAME_MAX_LENGTH,
   USERNAME_MAX_LENGTH,
+  USERNAME_MESSAGES,
   USERNAME_MIN_LENGTH,
   USERNAME_PATTERN,
 } from '../../models/profile-rules';
 import { AuthService } from '../../services/auth.service';
+import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
 
 @Component({
   selector: 'app-register',
-  imports: [ReactiveFormsModule, RouterLink, Button, InputText, Message],
+  imports: [ReactiveFormsModule, RouterLink, Button, InputText, Message, FieldErrorComponent],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,6 +43,7 @@ export class RegisterComponent {
     password: ['', [Validators.required, Validators.minLength(8)]],
   });
 
+  protected readonly usernameMessages = USERNAME_MESSAGES;
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 

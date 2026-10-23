@@ -113,6 +113,11 @@ body {
   text-align: center;
 }
 
+.empty-state__hint {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
 /* Visible to screen readers only. */
 .sr-only {
   position: absolute;
@@ -208,6 +213,23 @@ body {
 
 .auth-form__hint {
   color: var(--p-text-muted-color);
+}
+
+/* The field's own error replaces its hint while it is shown. */
+.auth-form__field:has(.field-error:not(:empty)) .auth-form__hint {
+  display: none;
+}
+
+/* Invalid fields turn red once left as well as once edited; the placeholder stays grey.
+   `html` outranks PrimeNG's equally specific rules, which are injected later. */
+html .p-inputtext.ng-invalid.ng-touched,
+html p-autocomplete.ng-invalid.ng-touched .p-inputtext {
+  border-color: var(--p-inputtext-invalid-border-color);
+}
+
+html .p-inputtext.ng-invalid.ng-dirty::placeholder,
+html p-autocomplete.ng-invalid.ng-dirty .p-autocomplete-input::placeholder {
+  color: var(--p-inputtext-placeholder-color);
 }
 
 .auth-form__actions {

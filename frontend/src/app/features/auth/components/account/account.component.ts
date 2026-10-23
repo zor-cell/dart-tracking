@@ -11,12 +11,14 @@ import { APP_VERSION } from '../../../../../environments/version';
 import {
   DISPLAY_NAME_MAX_LENGTH,
   USERNAME_MAX_LENGTH,
+  USERNAME_MESSAGES,
   USERNAME_MIN_LENGTH,
   USERNAME_PATTERN,
 } from '../../models/profile-rules';
 import { AuthService } from '../../services/auth.service';
 import { ChangeEmailDialogComponent } from '../change-email-dialog/change-email-dialog.component';
 import { ChangePasswordDialogComponent } from '../change-password-dialog/change-password-dialog.component';
+import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 
 /** The rows that can be edited in place. */
@@ -28,6 +30,7 @@ type EditableField = 'displayName' | 'username';
     Button,
     ChangeEmailDialogComponent,
     ChangePasswordDialogComponent,
+    FieldErrorComponent,
     InputText,
     LoadingStateComponent,
     Message,
@@ -82,6 +85,8 @@ export class AccountComponent {
         : 'Deine E-Mail-Adresse ist noch nicht bestätigt. Den Link dazu findest du in deinem Postfach.')
     );
   });
+
+  protected readonly usernameMessages = USERNAME_MESSAGES;
 
   /** Both names, because the write sends both; only the open one is shown as an
    * input, the other rides along unchanged. */

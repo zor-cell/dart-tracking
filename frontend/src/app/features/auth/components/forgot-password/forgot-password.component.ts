@@ -6,10 +6,18 @@ import { Message } from 'primeng/message';
 import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
 import { AuthService } from '../../services/auth.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
+import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
 
 @Component({
   selector: 'app-forgot-password',
-  imports: [BackLinkComponent, Button, InputText, Message, ReactiveFormsModule],
+  imports: [
+    BackLinkComponent,
+    Button,
+    FieldErrorComponent,
+    InputText,
+    Message,
+    ReactiveFormsModule,
+  ],
   templateUrl: './forgot-password.component.html',
   styleUrl: './forgot-password.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -99,6 +99,7 @@
                   class="setup__input"
                   [formControl]="seat"
                   [attr.aria-label]="'Spieler ' + ($index + 1)"
+                  [attr.aria-describedby]="'seat-' + $index + '-error'"
                   placeholder="Name"
                 />
               }
@@ -110,6 +111,12 @@
                 [disabled]="seats.length <= 1"
                 [ariaLabel]="'Spieler ' + ($index + 1) + ' entfernen'"
                 (onClick)="removePlayer($index)"
+              />
+              <app-field-error
+                class="setup__error"
+                [attr.id]="'seat-' + $index + '-error'"
+                [control]="seat"
+                [messages]="seatMessages"
               />
             </div>
           }

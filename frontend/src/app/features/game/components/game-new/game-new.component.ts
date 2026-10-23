@@ -36,6 +36,7 @@ import { PlayerDto } from '../../dto/player.dto';
 import { PlayerSlotDto } from '../../dto/player-slot.dto';
 import { GameService } from '../../services/game.service';
 import { GameSessionService } from '../../services/game-session.service';
+import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
 
 /** What a seat holds: a known identity, or the name typed for a guest. */
 type Seat = PlayerIdentityDto | string;
@@ -54,6 +55,7 @@ type Seat = PlayerIdentityDto | string;
     CdkDragHandle,
     CdkDragPreview,
     CdkDragPlaceholder,
+    FieldErrorComponent,
   ],
   templateUrl: './game-new.component.html',
   styleUrl: './game-new.component.scss',
@@ -86,6 +88,7 @@ export class GameNewComponent {
    * visibly change under the user. */
   protected readonly sessionResolved = signal(false);
   protected readonly suggestions = signal<PlayerIdentityDto[]>([]);
+  protected readonly seatMessages = { required: 'Bitte einen Namen eingeben.' };
 
   protected readonly form = this.fb.group({
     mode: this.fb.nonNullable.control<GameMode>(501, Validators.required),

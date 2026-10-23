@@ -11,6 +11,7 @@
       formControlName="name"
       placeholder="Name des Spielers"
       aria-label="Name des neuen Spielers"
+      aria-describedby="create-name-error"
       autocomplete="off"
       fluid
     />
@@ -22,6 +23,7 @@
       [disabled]="createForm.invalid"
     />
   </form>
+  <app-field-error id="create-name-error" [control]="createForm.controls.name" />
   @if (createError(); as message) {
     <p-message severity="error" [text]="message" />
   }
@@ -29,7 +31,7 @@
   @if (loading()) {
     <app-loading-state label="Spieler werden geladen" />
   } @else if (failed()) {
-    <app-empty-state>
+    <app-empty-state icon="pi-exclamation-circle">
       <p>Die Spielerliste konnte nicht geladen werden.</p>
       <p-button label="Erneut versuchen" icon="pi pi-refresh" (onClick)="load()" />
     </app-empty-state>
@@ -108,6 +110,9 @@
         </li>
       }
     </ul>
+    @if (editingId() !== null) {
+      <app-field-error id="edit-name-error" [control]="editForm.controls.name" />
+    }
     @if (editError(); as message) {
       <p-message severity="error" [text]="message" />
     }
@@ -129,6 +134,7 @@
       [pAutoFocus]="true"
       formControlName="name"
       [attr.aria-label]="'Neuer Name für ' + player.name"
+      aria-describedby="edit-name-error"
       (keydown.escape)="cancel()"
       fluid
     />

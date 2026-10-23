@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import {CameraStatus} from "../models/camera-status";
+import { cameraErrorMessage } from '../models/camera-error';
 import { lockExposure, unlockExposure } from '../models/exposure';
 import { applyTorch, hasTorch } from '../models/torch';
 
@@ -41,7 +42,7 @@ export class CameraService {
       this.status.set('active');
       return this.stream;
     } catch (err) {
-      this.error.set(err instanceof Error ? err.message : 'Kamerazugriff fehlgeschlagen');
+      this.error.set(cameraErrorMessage(err));
       this.status.set('error');
       throw err;
     }

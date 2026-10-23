@@ -29,6 +29,7 @@
                 formControlName="displayName"
                 autocomplete="nickname"
                 aria-labelledby="label-displayName"
+                aria-describedby="displayName-error"
                 (keydown.escape)="cancel()"
                 fluid
               />
@@ -82,6 +83,7 @@
                 formControlName="username"
                 autocomplete="username"
                 aria-labelledby="label-username"
+                aria-describedby="username-error"
                 (keydown.escape)="cancel()"
                 fluid
               />
@@ -179,6 +181,18 @@
           />
         </div>
 
+        @switch (editingField()) {
+          @case ('displayName') {
+            <app-field-error id="displayName-error" [control]="form.controls.displayName" />
+          }
+          @case ('username') {
+            <app-field-error
+              id="username-error"
+              [control]="form.controls.username"
+              [messages]="usernameMessages"
+            />
+          }
+        }
         @if (error(); as message) {
           <p-message severity="error" [text]="message" />
         }

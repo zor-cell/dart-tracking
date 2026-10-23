@@ -18,6 +18,7 @@ import { httpErrorMessage } from '../../../../core/notification/models/http-erro
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
+import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
 import { ShareDialogComponent } from '../../../../core/view/components/share-dialog/share-dialog.component';
 
 const nameValidators = [Validators.required, Validators.maxLength(DISPLAY_NAME_MAX_LENGTH)];
@@ -42,6 +43,7 @@ interface Invitation {
     Message,
     NgTemplateOutlet,
     EmptyStateComponent,
+    FieldErrorComponent,
     PlayerLinksComponent,
     ReactiveFormsModule,
     ShareDialogComponent,
@@ -97,7 +99,7 @@ export class PlayerListComponent {
     this.loading.set(true);
     this.failed.set(false);
     try {
-      this.entries.set(await this.players.list());
+      this.entries.set(await this.players.list(true));
     } catch {
       this.failed.set(true);
     } finally {

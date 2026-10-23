@@ -9,19 +9,45 @@
     }
     @case ('verified') {
       <p-message severity="success" [text]="verifiedText" />
+      <div class="view__actions">
+        @if (isAuthenticated()) {
+          <p-button fluid label="Zum Konto" icon="pi pi-user" routerLink="/account" />
+        } @else {
+          <p-button fluid label="Anmelden" icon="pi pi-sign-in" routerLink="/login" />
+        }
+      </div>
+    }
+    @case ('resent') {
+      <p-message severity="success" text="Ein neuer Bestätigungslink ist unterwegs." />
+      <div class="view__actions">
+        <p-button fluid label="Zum Konto" icon="pi pi-user" routerLink="/account" />
+      </div>
+    }
+    @case ('taken') {
+      <app-empty-state icon="pi-envelope">
+        <p>Diese Adresse wird inzwischen von einem anderen Konto verwendet.</p>
+        <p-button label="Zum Konto" icon="pi pi-user" routerLink="/account" />
+      </app-empty-state>
     }
     @case ('failed') {
-      <p-message severity="error" [text]="failedText()" />
+      <app-empty-state icon="pi-link">
+        <p>Der Link ist ungültig oder abgelaufen.</p>
+        @if (canResend()) {
+          <p-button
+            label="Neuen Link senden"
+            icon="pi pi-envelope"
+            [loading]="resending()"
+            (onClick)="resend()"
+          />
+          @if (resendError(); as message) {
+            <p-message severity="error" [text]="message" />
+          }
+        } @else if (isAuthenticated()) {
+          <p-button label="Zum Konto" icon="pi pi-user" routerLink="/account" />
+        } @else {
+          <p-button label="Anmelden" icon="pi pi-sign-in" routerLink="/login" />
+        }
+      </app-empty-state>
     }
-  }
-
-  @if (state() !== 'pending') {
-    <div class="view__actions">
-      @if (isAuthenticated()) {
-        <p-button fluid label="Zum Konto" icon="pi pi-user" routerLink="/account" />
-      } @else {
-        <p-button fluid label="Anmelden" icon="pi pi-sign-in" routerLink="/login" />
-      }
-    </div>
   }
 </section>

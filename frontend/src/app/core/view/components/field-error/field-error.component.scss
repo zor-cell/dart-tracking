@@ -1,0 +1,8 @@
+:host {
+  color: var(--p-message-error-simple-color, var(--p-red-600));
+  font-size: 0.875rem;
+}
+
+:host:empty {
+  display: none;
+}

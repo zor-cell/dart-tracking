@@ -7,10 +7,11 @@ import { Message } from 'primeng/message';
 import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
 import { NotificationService } from '../../../../core/notification/services/notification.service';
 import { AuthService } from '../../services/auth.service';
+import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
 
 @Component({
   selector: 'app-change-email-dialog',
-  imports: [ReactiveFormsModule, Button, Dialog, InputText, Message],
+  imports: [ReactiveFormsModule, Button, Dialog, InputText, Message, FieldErrorComponent],
   templateUrl: './change-email-dialog.component.html',
   styleUrl: './change-email-dialog.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -26,6 +26,10 @@
           }
         </div>
 
+        @if (acceptError(); as message) {
+          <p-message severity="error" [text]="message" />
+        }
+
         <div class="view__actions">
           <p-button
             fluid
@@ -60,10 +64,10 @@
       </div>
     }
     @case ('failed') {
-      <p-message severity="error" [text]="error()" />
-      <div class="view__actions">
-        <p-button fluid label="Zum Konto" icon="pi pi-user" routerLink="/account" />
-      </div>
+      <app-empty-state icon="pi-link">
+        <p>{{ error() }}</p>
+        <p-button label="Zum Konto" icon="pi pi-user" routerLink="/account" />
+      </app-empty-state>
     }
   }
 </section>

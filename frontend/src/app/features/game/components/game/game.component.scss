@@ -32,13 +32,6 @@
   width: 100%;
 }
 
-// Nothing above or below it, so it sits in the middle of the screen rather
-// than under the top edge.
-.view--empty {
-  flex: 1;
-  justify-content: center;
-}
-
 .game {
   --pad-gap: 0.4rem;
   --pad-height: calc(6 * 2.75rem + 5 * var(--pad-gap));
@@ -146,8 +139,8 @@
 
 .game__camera-error {
   margin: 0;
-  color: var(--p-red-500, #ef4444);
-  font-size: 0.85rem;
+  color: var(--p-message-error-simple-color, var(--p-red-600));
+  font-size: 0.875rem;
   text-align: center;
 }
 

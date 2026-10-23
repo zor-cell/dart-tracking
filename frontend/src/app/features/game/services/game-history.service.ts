@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
 import { environment } from '../../../../environments/environment';
 import { GameDetailDto } from '../dto/game-detail.dto';
 import { GamePageDto } from '../dto/game-page.dto';
@@ -39,6 +40,10 @@ export class GameHistoryService {
 
   /** Rejects with a 404 unless the account plays in the game or set it up. */
   detail(gameId: string): Promise<GameDetailDto> {
-    return firstValueFrom(this.http.get<GameDetailDto>(`${this.baseUrl}/${gameId}/detail`));
+    return firstValueFrom(
+      this.http.get<GameDetailDto>(`${this.baseUrl}/${gameId}/detail`, {
+        context: SILENT_ERROR_CONTEXT,
+      }),
+    );
   }
 }

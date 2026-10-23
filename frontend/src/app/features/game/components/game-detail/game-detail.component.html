@@ -22,6 +22,12 @@
   } @else if (missing()) {
     <app-empty-state icon="pi-question-circle">
       <p>Dieses Spiel gibt es nicht, oder du hast nicht mitgespielt.</p>
+      <p-button label="Zu deinen Spielen" icon="pi pi-history" routerLink="/account/games" />
+    </app-empty-state>
+  } @else if (failed()) {
+    <app-empty-state icon="pi-exclamation-circle">
+      <p>Das Spiel konnte nicht geladen werden.</p>
+      <p-button label="Erneut versuchen" icon="pi pi-refresh" (onClick)="load()" />
     </app-empty-state>
   } @else if (detail(); as detail) {
     <section class="panel">

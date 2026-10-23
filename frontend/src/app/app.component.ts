@@ -11,6 +11,8 @@ import {Toast} from "primeng/toast";
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {
+  /** Just above the bottom nav, which is 3.5rem tall plus the home-indicator inset. */
+  protected readonly toastStyle = { bottom: 'calc(4.25rem + env(safe-area-inset-bottom))' };
   protected readonly toastBreakpoints = {
     '640px': { width: '100%', right: '0', left: '0', transform: 'none' },
   };

@@ -11,11 +11,13 @@
         pInputText
         id="identifier"
         formControlName="identifier"
+        aria-describedby="identifier-error"
         autocomplete="username"
         autocapitalize="none"
         spellcheck="false"
         fluid
       />
+      <app-field-error id="identifier-error" [control]="form.controls.identifier" />
     </div>
 
     <div class="auth-form__field">
@@ -25,9 +27,11 @@
         id="password"
         type="password"
         formControlName="password"
+        aria-describedby="password-error"
         autocomplete="current-password"
         fluid
       />
+      <app-field-error id="password-error" [control]="form.controls.password" />
     </div>
 
     @if (error(); as message) {

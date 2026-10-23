@@ -16,12 +16,13 @@
         type="email"
         formControlName="newEmail"
         autocomplete="email"
-        aria-describedby="new-email-hint"
+        aria-describedby="new-email-hint new-email-error"
         fluid
       />
       <small class="auth-form__hint" id="new-email-hint">
         Wir schicken dir einen Link an die neue Adresse. Erst wenn du ihn öffnest, wird sie aktiv.
       </small>
+      <app-field-error id="new-email-error" [control]="form.controls.newEmail" />
     </div>
 
     <div class="auth-form__field">
@@ -31,8 +32,13 @@
         id="email-current-password"
         type="password"
         formControlName="currentPassword"
+        aria-describedby="email-current-password-error"
         autocomplete="current-password"
         fluid
+      />
+      <app-field-error
+        id="email-current-password-error"
+        [control]="form.controls.currentPassword"
       />
     </div>
 

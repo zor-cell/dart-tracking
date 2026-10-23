@@ -5,11 +5,21 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
+import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { AuthService } from '../../services/auth.service';
+import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
 
 @Component({
   selector: 'app-reset-password',
-  imports: [ReactiveFormsModule, RouterLink, Button, InputText, Message],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    Button,
+    EmptyStateComponent,
+    FieldErrorComponent,
+    InputText,
+    Message,
+  ],
   templateUrl: './reset-password.component.html',
   styleUrl: './reset-password.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

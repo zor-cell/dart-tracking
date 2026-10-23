@@ -37,11 +37,13 @@ export class PlayerService {
     }
   }
 
-  /** The whole address book, own entry first. */
-  list(): Promise<PlayerIdentityDto[]> {
+  /** The whole address book, own entry first. `silent` skips the error toast, for
+   * callers that show the failure themselves. */
+  list(silent = false): Promise<PlayerIdentityDto[]> {
     return firstValueFrom(
       this.http.get<PlayerIdentityDto[]>(this.baseUrl, {
         params: new HttpParams().set('limit', ADDRESS_BOOK_LIMIT),
+        context: silent ? SILENT_ERROR_CONTEXT : undefined,
       }),
     );
   }

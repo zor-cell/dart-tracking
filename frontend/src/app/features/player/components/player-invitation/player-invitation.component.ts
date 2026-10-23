@@ -5,6 +5,7 @@ import { Button } from 'primeng/button';
 import { Checkbox } from 'primeng/checkbox';
 import { Message } from 'primeng/message';
 import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
+import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { InvitationDto } from '../../dto/invitation.dto';
 import { PlayerService } from '../../services/player.service';
@@ -15,7 +16,15 @@ type InvitationState = 'loading' | 'ready' | 'accepted' | 'failed';
  * linked and links it once the signed-in account agrees. */
 @Component({
   selector: 'app-player-invitation',
-  imports: [Button, Checkbox, LoadingStateComponent, Message, ReactiveFormsModule, RouterLink],
+  imports: [
+    Button,
+    Checkbox,
+    EmptyStateComponent,
+    LoadingStateComponent,
+    Message,
+    ReactiveFormsModule,
+    RouterLink,
+  ],
   templateUrl: './player-invitation.component.html',
   styleUrl: './player-invitation.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,6 +36,7 @@ export class PlayerInvitationComponent {
   protected readonly state = signal<InvitationState>('loading');
   protected readonly invitation = signal<InvitationDto | null>(null);
   protected readonly error = signal('');
+  protected readonly acceptError = signal<string | null>(null);
   protected readonly accepting = signal(false);
   protected readonly reciprocal = new FormControl(true, { nonNullable: true });
 
@@ -63,7 +73,8 @@ export class PlayerInvitationComponent {
       this.invitation.set(await this.players.previewInvitation(this.token));
       this.state.set('ready');
     } catch (failure) {
-      this.fail(failure);
+      this.error.set(describe(failure, 'Die Einladung konnte nicht geladen werden.'));
+      this.state.set('failed');
     }
   }
 
@@ -73,6 +84,7 @@ export class PlayerInvitationComponent {
       return;
     }
     this.accepting.set(true);
+    this.acceptError.set(null);
     try {
       await this.players.acceptInvitation(
         this.token,
@@ -80,24 +92,23 @@ export class PlayerInvitationComponent {
       );
       this.state.set('accepted');
     } catch (failure) {
-      this.fail(failure);
+      this.acceptError.set(
+        describe(failure, 'Die Verknüpfung ist fehlgeschlagen. Bitte später erneut versuchen.'),
+      );
     } finally {
       this.accepting.set(false);
     }
   }
+}
 
-  private fail(failure: unknown): void {
-    this.error.set(
-      httpErrorMessage(
-        failure,
-        {
-          400: 'Das ist dein eigener Link. Öffne ihn auf dem Gerät der Person, die du verknüpfen möchtest.',
-          404: 'Der Link ist ungültig, abgelaufen oder wurde schon verwendet.',
-          409: 'Du bist in dieser Spielerliste schon mit einem anderen Spieler verknüpft.',
-        },
-        'Die Verknüpfung ist fehlgeschlagen. Bitte später erneut versuchen.',
-      ),
-    );
-    this.state.set('failed');
-  }
+function describe(failure: unknown, fallback: string): string {
+  return httpErrorMessage(
+    failure,
+    {
+      400: 'Das ist dein eigener Link. Öffne ihn auf dem Gerät der Person, die du verknüpfen möchtest.',
+      404: 'Der Link ist ungültig, abgelaufen oder wurde schon verwendet.',
+      409: 'Du bist in dieser Spielerliste schon mit einem anderen Spieler verknüpft.',
+    },
+    fallback,
+  );
 }

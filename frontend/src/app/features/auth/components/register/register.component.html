@@ -7,7 +7,16 @@
   <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
     <div class="auth-form__field">
       <label class="auth-form__label" for="email">E-Mail</label>
-      <input pInputText id="email" type="email" formControlName="email" autocomplete="email" fluid />
+      <input
+        pInputText
+        id="email"
+        type="email"
+        formControlName="email"
+        aria-describedby="email-error"
+        autocomplete="email"
+        fluid
+      />
+      <app-field-error id="email-error" [control]="form.controls.email" />
     </div>
 
     <div class="auth-form__field">
@@ -17,12 +26,17 @@
         id="username"
         formControlName="username"
         autocomplete="username"
-        aria-describedby="username-hint"
+        aria-describedby="username-hint username-error"
         fluid
       />
       <small class="auth-form__hint" id="username-hint">
         3–32 Zeichen, Buchstaben, Ziffern, Punkt, Bindestrich oder Unterstrich.
       </small>
+      <app-field-error
+        id="username-error"
+        [control]="form.controls.username"
+        [messages]="usernameMessages"
+      />
     </div>
 
     <div class="auth-form__field">
@@ -32,12 +46,13 @@
         id="displayName"
         formControlName="displayName"
         autocomplete="nickname"
-        aria-describedby="displayName-hint"
+        aria-describedby="displayName-hint displayName-error"
         fluid
       />
       <small class="auth-form__hint" id="displayName-hint">
         So erscheinst du in der Spielerliste. Muss nicht eindeutig sein.
       </small>
+      <app-field-error id="displayName-error" [control]="form.controls.displayName" />
     </div>
 
     <div class="auth-form__field">
@@ -48,10 +63,11 @@
         type="password"
         formControlName="password"
         autocomplete="new-password"
-        aria-describedby="password-hint"
+        aria-describedby="password-hint password-error"
         fluid
       />
       <small class="auth-form__hint" id="password-hint">Mindestens 8 Zeichen.</small>
+      <app-field-error id="password-error" [control]="form.controls.password" />
     </div>
 
     @if (error(); as message) {

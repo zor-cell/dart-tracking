@@ -1,6 +1,8 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Button } from 'primeng/button';
 import { GameDetailDto } from '../../dto/game-detail.dto';
 import { GAME_STATUS_LABELS } from '../../models/game-filter';
 import { CHECKOUT_MODES } from '../../models/checkout-mode';
@@ -15,11 +17,13 @@ import { EmptyStateComponent } from '../../../../core/view/components/empty-stat
   selector: 'app-game-detail',
   imports: [
     BackLinkComponent,
+    Button,
     DatePipe,
     DecimalPipe,
     GameReplayComponent,
     LoadingStateComponent,
     EmptyStateComponent,
+    RouterLink,
   ],
   templateUrl: './game-detail.component.html',
   styleUrl: './game-detail.component.scss',
@@ -32,6 +36,7 @@ export class GameDetailComponent {
   protected readonly detail = signal<GameDetailDto | null>(null);
   protected readonly loading = signal(true);
   protected readonly missing = signal(false);
+  protected readonly failed = signal(false);
   protected readonly statusLabels = GAME_STATUS_LABELS;
 
   protected readonly isElimination = computed(() => this.detail()?.game.variant === 'elimination');
@@ -74,18 +79,25 @@ export class GameDetailComponent {
   });
 
   constructor() {
-    void this.load(this.route.snapshot.paramMap.get('gameId') ?? '');
+    void this.load();
   }
 
   protected rate(hits: number, attempts: number): number | null {
     return attempts === 0 ? null : hits / attempts;
   }
 
-  private async load(gameId: string): Promise<void> {
+  protected async load(): Promise<void> {
+    const gameId = this.route.snapshot.paramMap.get('gameId') ?? '';
+    this.loading.set(true);
+    this.failed.set(false);
     try {
       this.detail.set(await this.history.detail(gameId));
-    } catch {
-      this.missing.set(true);
+    } catch (failure) {
+      if (failure instanceof HttpErrorResponse && failure.status === 404) {
+        this.missing.set(true);
+      } else {
+        this.failed.set(true);
+      }
     } finally {
       this.loading.set(false);
     }

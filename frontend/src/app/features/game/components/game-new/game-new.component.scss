@@ -22,7 +22,8 @@
 
 .setup__player {
   display: flex;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
   align-items: center;
   background: var(--p-content-background, #fff);
 }
@@ -103,6 +104,12 @@
 .setup__input {
   flex: 1;
   min-width: 0;
+}
+
+/* Below the name field, indented past the grip. */
+.setup__error {
+  flex-basis: 100%;
+  padding-left: calc(2.75rem + 0.5rem);
 }
 
 /* Marks the account's own entry in the suggestion list. */
