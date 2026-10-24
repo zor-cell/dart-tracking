@@ -139,6 +139,8 @@ async def list_games(
     mode: GameMode | None = None,
     status: GameStatus | None = None,
     opponent: UUID | None = None,
+    min_players: int | None = Query(None, ge=1, alias="minPlayers"),
+    max_players: int | None = Query(None, ge=1, alias="maxPlayers"),
     since: datetime | None = None,
     until: datetime | None = None,
 ) -> GamePageDto:
@@ -148,6 +150,8 @@ async def list_games(
         mode=mode,
         status=status,
         opponent_id=str(opponent) if opponent else None,
+        min_players=min_players,
+        max_players=max_players,
         since=since,
         until=until,
     )

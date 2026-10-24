@@ -584,6 +584,18 @@ def _history_clauses(user_id: str, criteria: GameFilter) -> list[ColumnElement[b
                 )
             )
         )
+    if criteria.min_players is not None or criteria.max_players is not None:
+        seats = (
+            select(func.count())
+            .select_from(GamePlayerTable)
+            .where(GamePlayerTable.game_id == GameTable.id)
+            .correlate(GameTable)
+            .scalar_subquery()
+        )
+        if criteria.min_players is not None:
+            clauses.append(seats >= criteria.min_players)
+        if criteria.max_players is not None:
+            clauses.append(seats <= criteria.max_players)
     if criteria.since is not None:
         clauses.append(GameTable.created_at >= criteria.since)
     if criteria.until is not None:

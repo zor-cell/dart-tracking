@@ -22,6 +22,8 @@ import {
   GAME_STATUS_SEVERITIES,
   GameFilter,
   GameStatusSeverity,
+  PLAYER_COUNTS,
+  PlayerCount,
 } from '../../models/game-filter';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { GAME_VARIANTS, GameVariant } from '../../models/game-variant';
@@ -66,6 +68,10 @@ export class GameListComponent {
     label,
     value: value as GameStatus,
   }));
+  protected readonly playerCountOptions = Object.entries(PLAYER_COUNTS).map(([value, count]) => ({
+    label: count.label,
+    value: value as PlayerCount,
+  }));
   protected readonly opponents = signal<PlayerIdentityDto[]>([]);
 
   protected readonly filters = this.fb.group({
@@ -73,6 +79,7 @@ export class GameListComponent {
     mode: this.fb.control<GameMode | null>(null),
     status: this.fb.control<GameStatus | null>(null),
     opponentId: this.fb.control<string | null>(null),
+    players: this.fb.control<PlayerCount | null>(null),
     period: this.fb.control<(Date | null)[] | null>(null),
   });
 
@@ -85,7 +92,7 @@ export class GameListComponent {
   });
   /** The filters in use, as chips above the table. */
   protected readonly chips = computed<FilterChip[]>(() => {
-    const { variant, mode, status, opponentId, period } = this.filterValue();
+    const { variant, mode, status, opponentId, players, period } = this.filterValue();
     const chips: FilterChip[] = [];
     if (variant) {
       const label = GAME_VARIANTS.find((option) => option.value === variant)?.label ?? variant;
@@ -100,6 +107,9 @@ export class GameListComponent {
     if (opponentId) {
       const name = this.opponents().find((player) => player.id === opponentId)?.name;
       chips.push({ key: 'opponentId', label: `Mit ${name ?? 'Mitspieler'}` });
+    }
+    if (players) {
+      chips.push({ key: 'players', label: PLAYER_COUNTS[players].label });
     }
     const [start, end] = period ?? [];
     if (start) {
@@ -138,13 +148,16 @@ export class GameListComponent {
 
   /** The form as a filter; a range with one day picked covers that day. */
   private criteria(): GameFilter {
-    const { variant, mode, status, opponentId, period } = this.filters.getRawValue();
+    const { variant, mode, status, opponentId, players, period } = this.filters.getRawValue();
     const [start, end] = period ?? [];
+    const count = players ? PLAYER_COUNTS[players] : null;
     return {
       variant,
       mode,
       status,
       opponentId,
+      minPlayers: count?.min ?? null,
+      maxPlayers: count?.max ?? null,
       since: start ?? null,
       until: start ? nextDay(end ?? start) : null,
     };

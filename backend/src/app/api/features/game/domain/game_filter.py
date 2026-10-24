@@ -15,6 +15,9 @@ class GameFilter:
     status: GameStatus | None = None
     # A player identity that has to hold a seat in the game.
     opponent_id: str | None = None
+    # Bounds on the number of seats, both inclusive.
+    min_players: int | None = None
+    max_players: int | None = None
     # Bounds on the start of the game; `until` is exclusive.
     since: datetime | None = None
     until: datetime | None = None

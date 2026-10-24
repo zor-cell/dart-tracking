@@ -59,6 +59,17 @@
         [showClear]="true"
         fluid
       />
+      <label class="list-filters__label" for="filter-players">Spieleranzahl</label>
+      <p-select
+        inputId="filter-players"
+        formControlName="players"
+        [options]="playerCountOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Alle"
+        [showClear]="true"
+        fluid
+      />
       <label class="list-filters__label" for="filter-period">Zeitraum</label>
       <p-datepicker
         inputId="filter-period"
