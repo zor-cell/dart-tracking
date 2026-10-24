@@ -1,8 +1,3 @@
-:host {
-  --p-datatable-body-cell-sm-padding: 0.8rem 0.4rem;
-  --p-datatable-header-cell-sm-padding: 0.6rem 0.4rem;
-}
-
 .toolbar {
   display: flex;
   align-items: center;
@@ -32,25 +27,8 @@
   margin-top: 0.5rem;
 }
 
-.games__head > th,
-.games__row > td {
-  text-align: center;
-}
-
-.games__row {
-  cursor: pointer;
-
-  &:focus-visible {
-    outline: 2px solid var(--p-primary-color, #10b981);
-    outline-offset: -2px;
-  }
-}
-
-.games__number {
-  font-variant-numeric: tabular-nums;
-}
-
 .games__when {
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 

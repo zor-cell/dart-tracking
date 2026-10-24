@@ -104,30 +104,32 @@
       [totalRecords]="total()"
       [loading]="loading()"
       [pageLinks]="3"
+      [rowHover]="true"
       (onLazyLoad)="onLazyLoad($event)"
+      class="data-table"
       size="small"
     >
       <ng-template #loadingicon>
         <app-loading-state label="Spiele werden geladen" />
       </ng-template>
       <ng-template #header>
-        <tr class="games__head">
+        <tr>
           <th scope="col">Datum</th>
           <th scope="col">Spiel</th>
-          <th scope="col">Spieler</th>
+          <th scope="col" class="data-table__number">Spieler</th>
           <th scope="col">Status</th>
         </tr>
       </ng-template>
       <ng-template #body let-game>
         <tr
-          class="games__row"
+          class="data-table__link"
           tabindex="0"
           role="link"
           [attr.aria-label]="'Spiel vom ' + (game.createdAt | date: 'dd.MM.yy HH:mm') + ' öffnen'"
           (click)="open(game)"
           (keydown.enter)="open(game)"
         >
-          <td class="games__number games__when">
+          <td class="games__when">
             {{ game.createdAt | date: 'dd.MM.yy' }}
             <span class="games__time">{{ game.createdAt | date: 'HH:mm' }}</span>
           </td>
@@ -137,7 +139,7 @@
             }
             {{ game.mode }}
           </td>
-          <td class="games__number">{{ game.players.length }}</td>
+          <td class="data-table__number">{{ game.players.length }}</td>
           <td>
             <span class="games__status" [class]="'games__status--' + game.status">
               {{ statusLabel(game) }}

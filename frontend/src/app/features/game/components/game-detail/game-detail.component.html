@@ -49,66 +49,72 @@
     <section class="panel">
       <h2 class="panel__title">Statistik</h2>
       <div class="table-scroll" tabindex="0" role="region" aria-label="Statistik pro Spieler">
-        <table class="figures">
-          <thead>
+        <p-table [value]="figureRows()" class="data-table" size="small">
+          <ng-template #header>
             <tr>
               <th scope="col"><span class="sr-only">Kennzahl</span></th>
               @for (player of standings(); track player.id) {
-                <th scope="col">{{ player.name }}</th>
+                <th scope="col" class="data-table__number">{{ player.name }}</th>
               }
             </tr>
-          </thead>
-          <tbody>
+          </ng-template>
+          <ng-template #body let-row>
             <tr>
-              <th scope="row" aria-label="3-Dart-Average">3-Dart-Ø</th>
-              @for (player of standings(); track player.id) {
-                <td class="figures__strong">{{ player.statistics.average | number: '1.2-2' }}</td>
-              }
-            </tr>
-            <tr>
-              <th scope="row" aria-label="First-9-Average">First-9-Ø</th>
-              @for (player of standings(); track player.id) {
-                <td>{{ player.statistics.firstNineAverage | number: '1.2-2' }}</td>
-              }
-            </tr>
-            <tr>
-              <th scope="row">Darts</th>
-              @for (player of standings(); track player.id) {
-                <td>{{ player.statistics.darts }}</td>
-              }
-            </tr>
-            <tr>
-              <th scope="row">Bester Visit</th>
-              @for (player of standings(); track player.id) {
-                <td>{{ player.statistics.bestVisit }}</td>
-              }
-            </tr>
-            @if (!isElimination()) {
-              <tr>
-                <th scope="row">Checkout</th>
-                @for (player of standings(); track player.id) {
-                  <td>
-                    @let checkout = rate(player.statistics.checkoutHits, player.statistics.checkoutAttempts);
-                    @if (checkout !== null) {
-                      {{ checkout * 100 | number: '1.0-0' }} %
-                    } @else {
-                      &ndash;
-                    }
-                    <span class="figures__hint">
-                      {{ player.statistics.checkoutHits }}/{{ player.statistics.checkoutAttempts }}
-                    </span>
-                  </td>
+              @switch (row) {
+                @case ('average') {
+                  <th scope="row" class="figures__label" aria-label="3-Dart-Average">3-Dart-Ø</th>
+                  @for (player of standings(); track player.id) {
+                    <td class="data-table__number figures__strong">
+                      {{ player.statistics.average | number: '1.2-2' }}
+                    </td>
+                  }
                 }
-              </tr>
-            }
-            <tr>
-              <th scope="row">Busts</th>
-              @for (player of standings(); track player.id) {
-                <td>{{ player.busts }}</td>
+                @case ('firstNine') {
+                  <th scope="row" class="figures__label" aria-label="First-9-Average">First-9-Ø</th>
+                  @for (player of standings(); track player.id) {
+                    <td class="data-table__number">
+                      {{ player.statistics.firstNineAverage | number: '1.2-2' }}
+                    </td>
+                  }
+                }
+                @case ('darts') {
+                  <th scope="row" class="figures__label">Darts</th>
+                  @for (player of standings(); track player.id) {
+                    <td class="data-table__number">{{ player.statistics.darts }}</td>
+                  }
+                }
+                @case ('bestVisit') {
+                  <th scope="row" class="figures__label">Bester Visit</th>
+                  @for (player of standings(); track player.id) {
+                    <td class="data-table__number">{{ player.statistics.bestVisit }}</td>
+                  }
+                }
+                @case ('checkout') {
+                  <th scope="row" class="figures__label">Checkout</th>
+                  @for (player of standings(); track player.id) {
+                    <td class="data-table__number">
+                      @let checkout = rate(player.statistics.checkoutHits, player.statistics.checkoutAttempts);
+                      @if (checkout !== null) {
+                        {{ checkout * 100 | number: '1.0-0' }} %
+                      } @else {
+                        &ndash;
+                      }
+                      <span class="data-table__hint">
+                        {{ player.statistics.checkoutHits }}/{{ player.statistics.checkoutAttempts }}
+                      </span>
+                    </td>
+                  }
+                }
+                @case ('busts') {
+                  <th scope="row" class="figures__label">Busts</th>
+                  @for (player of standings(); track player.id) {
+                    <td class="data-table__number">{{ player.busts }}</td>
+                  }
+                }
               }
             </tr>
-          </tbody>
-        </table>
+          </ng-template>
+        </p-table>
       </div>
     </section>
 

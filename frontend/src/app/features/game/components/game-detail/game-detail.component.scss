@@ -56,62 +56,17 @@
 
 .table-scroll {
   overflow-x: auto;
-  border: 1px solid var(--p-content-border-color, #e5e7eb);
-  border-radius: 0.5rem;
 }
 
-.figures {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-  font-variant-numeric: tabular-nums;
-
-  th,
-  td {
-    padding: 0.45rem 0.5rem;
-  }
-
-  th:first-child {
-    padding-left: 1rem;
-  }
-
-  th:last-child,
-  td:last-child {
-    padding-right: 1rem;
-  }
-
-  tr + tr,
-  tbody tr {
-    border-top: 1px solid var(--p-content-border-color, #e5e7eb);
-  }
-
-  thead th {
-    color: var(--p-text-muted-color, #6b7280);
-    font-size: 0.75rem;
-    font-weight: 500;
-  }
-}
-
-.figures {
-  th[scope='row'] {
-    text-align: left;
-    font-weight: 400;
-    color: var(--p-text-muted-color, #6b7280);
-    white-space: nowrap;
-  }
-
-  thead th,
-  td {
-    text-align: center;
-  }
+.figures__label {
+  padding: var(--p-datatable-body-cell-sm-padding);
+  border-bottom: 1px solid var(--p-datatable-body-cell-border-color);
+  color: var(--p-text-muted-color);
+  font-weight: 400;
+  text-align: start;
+  white-space: nowrap;
 }
 
 .figures__strong {
   font-weight: 700;
-}
-
-.figures__hint {
-  display: block;
-  color: var(--p-text-muted-color, #6b7280);
-  font-size: 0.7rem;
 }

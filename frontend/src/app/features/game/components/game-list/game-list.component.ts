@@ -16,11 +16,9 @@ import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { GAME_VARIANTS, GameVariant } from '../../models/game-variant';
 import { GameHistoryService } from '../../services/game-history.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
+import { PAGE_SIZE } from '../../../../core/view/models/page-size';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
-
-/** How many games one page of the table holds. */
-const PAGE_SIZE = 15;
 
 @Component({
   selector: 'app-game-list',

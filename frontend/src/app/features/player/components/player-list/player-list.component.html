@@ -33,80 +33,83 @@
   } @else if (failed()) {
     <app-load-error message="Die Spielerliste konnte nicht geladen werden." (retry)="load()" />
   } @else {
-    <ul class="players">
-      @if (self(); as me) {
-        <li class="players__row">
-          @if (editingId() === me.id) {
-            <ng-container *ngTemplateOutlet="editRow; context: { $implicit: me }" />
-          } @else {
-            <span class="players__name players__name--tagged">
-              <span>{{ me.name }}</span>
-              <p-tag value="Du" severity="secondary" />
-            </span>
-            <p-button
-              type="button"
-              icon="pi pi-pencil"
-              ariaLabel="Deinen Namen ändern"
-              severity="secondary"
-              [rounded]="true"
-              [text]="true"
-              [disabled]="busyId() !== null"
-              (onClick)="edit(me)"
-            />
-          }
-        </li>
-      }
-
-      @for (player of others(); track player.id) {
-        <li class="players__row">
+    <p-table
+      [value]="entries()"
+      [paginator]="entries().length > pageSize"
+      [rows]="pageSize"
+      [pageLinks]="3"
+      dataKey="id"
+      class="data-table"
+      size="small"
+    >
+      <ng-template #header>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col" class="data-table__actions"><span class="sr-only">Aktionen</span></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-player>
+        <tr>
           @if (editingId() === player.id) {
-            <ng-container *ngTemplateOutlet="editRow; context: { $implicit: player }" />
+            <td colspan="2">
+              <ng-container *ngTemplateOutlet="editRow; context: { $implicit: player }" />
+            </td>
           } @else {
-            <span class="players__name players__name--tagged">
-              <span>{{ player.name }}</span>
-              @if (player.linked) {
-                <p-tag value="Verknüpft" icon="pi pi-link" severity="success" />
+            <td>
+              <span class="players__name">
+                <span>{{ player.name }}</span>
+                @if (player.isSelf) {
+                  <p-tag value="Du" severity="secondary" />
+                } @else if (player.linked) {
+                  <p-tag value="Verknüpft" icon="pi pi-link" severity="success" />
+                }
+              </span>
+            </td>
+            <td class="data-table__actions">
+              @if (!player.isSelf) {
+                <p-button
+                  type="button"
+                  icon="pi pi-link"
+                  [ariaLabel]="
+                    player.linked
+                      ? 'Verknüpfung von ' + player.name + ' lösen'
+                      : player.name + ' mit einem Konto verknüpfen'
+                  "
+                  [severity]="player.linked ? 'success' : 'secondary'"
+                  [rounded]="true"
+                  [text]="true"
+                  [disabled]="busyId() !== null"
+                  (onClick)="player.linked ? confirmUnlink(player) : invite(player)"
+                />
               }
-            </span>
-            <p-button
-              type="button"
-              icon="pi pi-link"
-              [ariaLabel]="
-                player.linked
-                  ? 'Verknüpfung von ' + player.name + ' lösen'
-                  : player.name + ' mit einem Konto verknüpfen'
-              "
-              [severity]="player.linked ? 'success' : 'secondary'"
-              [rounded]="true"
-              [text]="true"
-              [disabled]="busyId() !== null"
-              (onClick)="player.linked ? confirmUnlink(player) : invite(player)"
-            />
-            <p-button
-              type="button"
-              icon="pi pi-pencil"
-              [ariaLabel]="player.name + ' umbenennen'"
-              severity="secondary"
-              [rounded]="true"
-              [text]="true"
-              [disabled]="busyId() !== null"
-              (onClick)="edit(player)"
-            />
-            <p-button
-              type="button"
-              icon="pi pi-trash"
-              [ariaLabel]="player.name + ' entfernen'"
-              severity="danger"
-              [rounded]="true"
-              [text]="true"
-              [loading]="busyId() === player.id"
-              [disabled]="busyId() !== null"
-              (onClick)="confirmRemove(player)"
-            />
+              <p-button
+                type="button"
+                icon="pi pi-pencil"
+                [ariaLabel]="player.isSelf ? 'Deinen Namen ändern' : player.name + ' umbenennen'"
+                severity="secondary"
+                [rounded]="true"
+                [text]="true"
+                [disabled]="busyId() !== null"
+                (onClick)="edit(player)"
+              />
+              @if (!player.isSelf) {
+                <p-button
+                  type="button"
+                  icon="pi pi-trash"
+                  [ariaLabel]="player.name + ' entfernen'"
+                  severity="danger"
+                  [rounded]="true"
+                  [text]="true"
+                  [loading]="busyId() === player.id"
+                  [disabled]="busyId() !== null"
+                  (onClick)="confirmRemove(player)"
+                />
+              }
+            </td>
           }
-        </li>
-      }
-    </ul>
+        </tr>
+      </ng-template>
+    </p-table>
     @if (editingId() !== null) {
       <app-field-error id="edit-name-error" [control]="editForm.controls.name" />
     }

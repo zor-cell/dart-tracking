@@ -8,6 +8,7 @@ import { Button } from 'primeng/button';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
+import { TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
 import { DISPLAY_NAME_MAX_LENGTH } from '../../../auth/models/profile-rules';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -20,6 +21,7 @@ import { LoadingStateComponent } from '../../../../core/view/components/loading-
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
 import { ShareDialogComponent } from '../../../../core/view/components/share-dialog/share-dialog.component';
+import { PAGE_SIZE } from '../../../../core/view/models/page-size';
 
 const nameValidators = [Validators.required, Validators.maxLength(DISPLAY_NAME_MAX_LENGTH)];
 
@@ -47,6 +49,7 @@ interface Invitation {
     PlayerLinksComponent,
     ReactiveFormsModule,
     ShareDialogComponent,
+    TableModule,
     Tag,
   ],
   templateUrl: './player-list.component.html',
@@ -63,7 +66,8 @@ export class PlayerListComponent {
 
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
-  private readonly entries = signal<PlayerIdentityDto[]>([]);
+  protected readonly pageSize = PAGE_SIZE;
+  protected readonly entries = signal<PlayerIdentityDto[]>([]);
 
   protected readonly self = computed(() => this.entries().find((entry) => entry.isSelf));
   protected readonly others = computed(() => this.entries().filter((entry) => !entry.isSelf));

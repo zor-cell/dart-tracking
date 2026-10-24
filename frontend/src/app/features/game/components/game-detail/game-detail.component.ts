@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
+import { TableModule } from 'primeng/table';
 import { GameDetailDto } from '../../dto/game-detail.dto';
 import { GAME_STATUS_LABELS } from '../../models/game-filter';
 import { CHECKOUT_MODES } from '../../models/checkout-mode';
@@ -13,6 +14,8 @@ import { BackLinkComponent } from '../../../../core/view/components/back-link/ba
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
+
+const FIGURES = ['average', 'firstNine', 'darts', 'bestVisit', 'checkout', 'busts'] as const;
 
 @Component({
   selector: 'app-game-detail',
@@ -26,6 +29,7 @@ import { LoadErrorComponent } from '../../../../core/view/components/load-error/
     EmptyStateComponent,
     LoadErrorComponent,
     RouterLink,
+    TableModule,
   ],
   templateUrl: './game-detail.component.html',
   styleUrl: './game-detail.component.scss',
@@ -83,6 +87,11 @@ export class GameDetailComponent {
   constructor() {
     void this.load();
   }
+
+  /** The figures compared per player; elimination has no checkout. */
+  protected readonly figureRows = computed(() =>
+    FIGURES.filter((figure) => figure !== 'checkout' || !this.isElimination()),
+  );
 
   protected rate(hits: number, attempts: number): number | null {
     return attempts === 0 ? null : hits / attempts;
