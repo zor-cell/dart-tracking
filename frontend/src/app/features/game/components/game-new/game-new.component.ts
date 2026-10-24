@@ -24,6 +24,7 @@ import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { SelectButton } from 'primeng/selectbutton';
 import { Skeleton } from 'primeng/skeleton';
+import { Tag } from 'primeng/tag';
 import { SocketService } from '../../../../core/socket/services/socket.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { PlayerIdentityDto } from '../../../player/dto/player-identity.dto';
@@ -50,6 +51,7 @@ type Seat = PlayerIdentityDto | string;
     InputText,
     SelectButton,
     Skeleton,
+    Tag,
     CdkDropList,
     CdkDrag,
     CdkDragHandle,

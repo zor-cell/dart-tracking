@@ -141,9 +141,7 @@
           </td>
           <td class="data-table__number">{{ game.players.length }}</td>
           <td>
-            <span class="games__status" [class]="'games__status--' + game.status">
-              {{ statusLabel(game) }}
-            </span>
+            <p-tag [value]="statusLabel(game)" [severity]="statusSeverity(game)" />
           </td>
         </tr>
       </ng-template>

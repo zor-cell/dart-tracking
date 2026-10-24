@@ -18,3 +18,13 @@ export const GAME_STATUS_LABELS: Record<GameStatus, string> = {
   abandoned: 'abgebrochen',
   discarded: 'verworfen',
 };
+
+export type GameStatusSeverity = 'success' | 'secondary' | 'warn' | 'danger';
+
+/** The p-tag colour each status is shown in. */
+export const GAME_STATUS_SEVERITIES: Record<GameStatus, GameStatusSeverity> = {
+  active: 'success',
+  finished: 'secondary',
+  abandoned: 'warn',
+  discarded: 'danger',
+};

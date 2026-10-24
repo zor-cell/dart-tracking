@@ -42,16 +42,3 @@
   font-size: 0.8rem;
 }
 
-.games__status {
-  padding: 0.05rem 0.5rem;
-  border-radius: 999px;
-  background: var(--p-content-hover-background, #f3f4f6);
-  color: var(--p-text-muted-color, #6b7280);
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-.games__status--active {
-  background: var(--p-green-100, #dcfce7);
-  color: var(--p-green-800, #166534);
-}

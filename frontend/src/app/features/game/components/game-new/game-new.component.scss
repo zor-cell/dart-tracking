@@ -112,12 +112,6 @@
   padding-left: calc(2.75rem + 0.5rem);
 }
 
-/* Marks the account's own entry in the suggestion list. */
 .setup__self {
   margin-left: 0.5rem;
-  padding: 0.05rem 0.4rem;
-  border-radius: 999px;
-  background: var(--p-content-hover-background, #f3f4f6);
-  color: var(--p-text-muted-color, #6b7280);
-  font-size: 0.75rem;
 }

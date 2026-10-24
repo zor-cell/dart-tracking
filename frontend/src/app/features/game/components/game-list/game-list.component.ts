@@ -8,10 +8,16 @@ import { DatePicker } from 'primeng/datepicker';
 import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
+import { Tag } from 'primeng/tag';
 import { PlayerIdentityDto } from '../../../player/dto/player-identity.dto';
 import { PlayerService } from '../../../player/services/player.service';
 import { GameStatus, GameSummaryDto } from '../../dto/game-summary.dto';
-import { GAME_STATUS_LABELS, GameFilter } from '../../models/game-filter';
+import {
+  GAME_STATUS_LABELS,
+  GAME_STATUS_SEVERITIES,
+  GameFilter,
+  GameStatusSeverity,
+} from '../../models/game-filter';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { GAME_VARIANTS, GameVariant } from '../../models/game-variant';
 import { GameHistoryService } from '../../services/game-history.service';
@@ -35,6 +41,7 @@ import { LoadingStateComponent } from '../../../../core/view/components/loading-
     ReactiveFormsModule,
     Select,
     TableModule,
+    Tag,
   ],
   templateUrl: './game-list.component.html',
   styleUrl: './game-list.component.scss',
@@ -101,6 +108,10 @@ export class GameListComponent {
 
   protected statusLabel(game: GameSummaryDto): string {
     return GAME_STATUS_LABELS[game.status];
+  }
+
+  protected statusSeverity(game: GameSummaryDto): GameStatusSeverity {
+    return GAME_STATUS_SEVERITIES[game.status];
   }
 
   protected resetFilters(): void {

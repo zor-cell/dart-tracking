@@ -89,7 +89,7 @@
                   <ng-template #item let-identity>
                     <span>{{ identity.name }}</span>
                     @if (identity.isSelf) {
-                      <span class="setup__self">du</span>
+                      <p-tag class="setup__self" value="Du" severity="secondary" />
                     }
                   </ng-template>
                 </p-autocomplete>
