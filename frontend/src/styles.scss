@@ -113,6 +113,12 @@ body {
   text-align: center;
 }
 
+/* A table reloading a page shows the same loading state over its rows. */
+.p-datatable-loading-icon:has(> .loading) {
+  width: auto;
+  height: auto;
+}
+
 .empty-state__hint {
   margin: 0;
   font-size: 0.85rem;

@@ -16,6 +16,7 @@ import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { GAME_VARIANTS, GameVariant } from '../../models/game-variant';
 import { GameHistoryService } from '../../services/game-history.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
+import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 
 /** How many games one page of the table holds. */
 const PAGE_SIZE = 15;
@@ -27,6 +28,7 @@ const PAGE_SIZE = 15;
     Button,
     DatePicker,
     DatePipe,
+    LoadingStateComponent,
     Popover,
     ReactiveFormsModule,
     Select,
@@ -63,6 +65,8 @@ export class GameListComponent {
   protected readonly total = signal(0);
   protected readonly first = signal(0);
   protected readonly loading = signal(true);
+  /** Whether the first page has arrived; until then the whole view shows the spinner. */
+  protected readonly loaded = signal(false);
 
   private readonly filterValue = toSignal(this.filters.valueChanges, {
     initialValue: this.filters.value,
@@ -75,6 +79,7 @@ export class GameListComponent {
   private generation = 0;
 
   constructor() {
+    void this.load();
     void this.players.list().then((all) => this.opponents.set(all.filter((p) => !p.isSelf)));
     this.filters.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
       this.first.set(0);
@@ -107,6 +112,7 @@ export class GameListComponent {
       if (generation === this.generation) {
         this.games.set([...page.items]);
         this.total.set(page.total);
+        this.loaded.set(true);
       }
     } finally {
       if (generation === this.generation) {

@@ -89,60 +89,67 @@
     </p-popover>
   </div>
 
-
-  <p-table
-    [value]="games()"
-    [lazy]="true"
-    [paginator]="total() > pageSize"
-    [rows]="pageSize"
-    [first]="first()"
-    [totalRecords]="total()"
-    [loading]="loading()"
-    [pageLinks]="3"
-    (onLazyLoad)="onLazyLoad($event)"
-    size="small"
-  >
-    <ng-template #header>
-      <tr class="games__head">
-        <th scope="col">Datum</th>
-        <th scope="col">Spiel</th>
-        <th scope="col">Spieler</th>
-        <th scope="col">Status</th>
-      </tr>
-    </ng-template>
-    <ng-template #body let-game>
-      <tr
-        class="games__row"
-        tabindex="0"
-        role="link"
-        [attr.aria-label]="'Spiel vom ' + (game.createdAt | date: 'dd.MM.yy HH:mm') + ' öffnen'"
-        (click)="open(game)"
-        (keydown.enter)="open(game)"
-      >
-        <td class="games__number games__when">
-          {{ game.createdAt | date: 'dd.MM.yy' }}
-          <span class="games__time">{{ game.createdAt | date: 'HH:mm' }}</span>
-        </td>
-        <td>
-          @if (game.variant === 'elimination') {
-            <span class="games__variant">Elim.</span>
-          }
-          {{ game.mode }}
-        </td>
-        <td class="games__number">{{ game.players.length }}</td>
-        <td>
-          <span class="games__status" [class]="'games__status--' + game.status">
-            {{ statusLabel(game) }}
-          </span>
-        </td>
-      </tr>
-    </ng-template>
-    <ng-template #emptymessage>
-      <tr>
-        <td colspan="4" class="games__empty">
-          {{ activeFilters() > 0 ? 'Keine Spiele für diese Filter.' : 'Noch keine Spiele.' }}
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
+  @if (!loaded()) {
+    <app-loading-state label="Spiele werden geladen" />
+  } @else {
+    <p-table
+      [value]="games()"
+      [lazy]="true"
+      [lazyLoadOnInit]="false"
+      [paginator]="total() > pageSize"
+      [rows]="pageSize"
+      [first]="first()"
+      [totalRecords]="total()"
+      [loading]="loading()"
+      [pageLinks]="3"
+      (onLazyLoad)="onLazyLoad($event)"
+      size="small"
+    >
+      <ng-template #loadingicon>
+        <app-loading-state label="Spiele werden geladen" />
+      </ng-template>
+      <ng-template #header>
+        <tr class="games__head">
+          <th scope="col">Datum</th>
+          <th scope="col">Spiel</th>
+          <th scope="col">Spieler</th>
+          <th scope="col">Status</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-game>
+        <tr
+          class="games__row"
+          tabindex="0"
+          role="link"
+          [attr.aria-label]="'Spiel vom ' + (game.createdAt | date: 'dd.MM.yy HH:mm') + ' öffnen'"
+          (click)="open(game)"
+          (keydown.enter)="open(game)"
+        >
+          <td class="games__number games__when">
+            {{ game.createdAt | date: 'dd.MM.yy' }}
+            <span class="games__time">{{ game.createdAt | date: 'HH:mm' }}</span>
+          </td>
+          <td>
+            @if (game.variant === 'elimination') {
+              <span class="games__variant">Elim.</span>
+            }
+            {{ game.mode }}
+          </td>
+          <td class="games__number">{{ game.players.length }}</td>
+          <td>
+            <span class="games__status" [class]="'games__status--' + game.status">
+              {{ statusLabel(game) }}
+            </span>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="4" class="games__empty">
+            {{ activeFilters() > 0 ? 'Keine Spiele für diese Filter.' : 'Noch keine Spiele.' }}
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
 </section>
