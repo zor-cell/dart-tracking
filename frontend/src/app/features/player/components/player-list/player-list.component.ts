@@ -1,6 +1,6 @@
 import { DOCUMENT, DatePipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ConfirmationService } from 'primeng/api';
 import { AutoFocus } from 'primeng/autofocus';
@@ -8,11 +8,13 @@ import { Button } from 'primeng/button';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
+import { Select } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
 import { DISPLAY_NAME_MAX_LENGTH } from '../../../auth/models/profile-rules';
 import { AuthService } from '../../../auth/services/auth.service';
 import { PlayerIdentityDto } from '../../dto/player-identity.dto';
+import { LINK_STATE_LABELS, LinkState } from '../../models/player-filter';
 import { PlayerService } from '../../services/player.service';
 import { PlayerLinksComponent } from '../player-links/player-links.component';
 import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
@@ -22,6 +24,8 @@ import { EmptyStateComponent } from '../../../../core/view/components/empty-stat
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
 import { ShareDialogComponent } from '../../../../core/view/components/share-dialog/share-dialog.component';
+import { ListToolbarComponent } from '../../../../core/view/components/list-toolbar/list-toolbar.component';
+import { FilterChip } from '../../../../core/view/models/filter-chip';
 import { PagedTable } from '../../../../core/view/models/paged-table';
 
 const nameValidators = [Validators.required, Validators.maxLength(DISPLAY_NAME_MAX_LENGTH)];
@@ -46,10 +50,12 @@ interface Invitation {
     LoadingStateComponent,
     Message,
     NgTemplateOutlet,
+    ListToolbarComponent,
     LoadErrorComponent,
     FieldErrorComponent,
     PlayerLinksComponent,
     ReactiveFormsModule,
+    Select,
     ShareDialogComponent,
     TableModule,
     Tag,
@@ -66,8 +72,27 @@ export class PlayerListComponent {
   private readonly fb = inject(FormBuilder);
   private readonly document = inject(DOCUMENT);
 
+  protected readonly query = signal('');
+  protected readonly filters = this.fb.group({ linked: this.fb.control<LinkState | null>(null) });
+  protected readonly linkOptions = Object.entries(LINK_STATE_LABELS).map(([value, label]) => ({
+    label,
+    value: value as LinkState,
+  }));
+  private readonly filterValue = toSignal(this.filters.valueChanges, {
+    initialValue: this.filters.value,
+  });
+  protected readonly chips = computed<FilterChip[]>(() => {
+    const linked = this.filterValue().linked;
+    return linked ? [{ key: 'linked', label: LINK_STATE_LABELS[linked] }] : [];
+  });
+  /** Whether the search or a filter narrows the list. */
+  protected readonly filtered = computed(() => this.query() !== '' || this.chips().length > 0);
+
   protected readonly entries = new PagedTable<PlayerIdentityDto>((limit, offset) =>
-    this.players.page(limit, offset),
+    this.players.page(limit, offset, {
+      query: this.query() || null,
+      linked: this.filters.getRawValue().linked,
+    }),
   );
   private readonly self = computed(() => this.entries.items().find((entry) => entry.isSelf));
 
@@ -96,6 +121,16 @@ export class PlayerListComponent {
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.createError.set(null));
     this.editForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.editError.set(null));
+    this.filters.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.entries.restart());
+  }
+
+  protected onSearch(query: string): void {
+    this.query.set(query);
+    this.entries.restart();
+  }
+
+  protected clearFilter(key: string): void {
+    this.filters.get(key)?.reset();
   }
 
   protected async create(): Promise<void> {

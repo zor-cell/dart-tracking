@@ -10,6 +10,7 @@ from app.api.features.auth.domain.user import User
 from app.api.features.auth.persistence.user_repository import repository as users
 from app.api.features.auth.services.current_user import AuthenticatedUser
 from app.api.features.player.domain.invitation import Invitation, InvitationPreview
+from app.api.features.player.domain.player_filter import PlayerFilter
 from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.domain.reciprocal_link import ReciprocalLink
 from app.api.features.player.dto.invitation import InvitationDto
@@ -79,11 +80,16 @@ async def list_players(
     user: AuthenticatedUser,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    q: str = Query("", max_length=64),
+    linked: bool | None = None,
 ) -> PlayerPageDto:
     """The address book one page at a time."""
+    criteria = PlayerFilter(query=q.strip() or None, linked=linked)
     async with database.session_scope() as session:
-        identities = await repository.page(session, user.id, limit=limit, offset=offset)
-        total = await repository.count(session, user.id)
+        identities = await repository.page(
+            session, user.id, limit=limit, offset=offset, criteria=criteria
+        )
+        total = await repository.count(session, user.id, criteria)
 
     return PlayerPageDto(
         items=[PlayerIdentityDto.from_entity(identity, user.id) for identity in identities],

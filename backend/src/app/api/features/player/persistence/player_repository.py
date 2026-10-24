@@ -8,6 +8,7 @@ from sqlalchemy.orm import aliased
 
 from app.api.features.auth.persistence.user import UserTable
 from app.api.features.game.persistence.game_player import GamePlayerTable
+from app.api.features.player.domain.player_filter import PlayerFilter
 from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.domain.player_link import PlayerLink
 from app.api.features.player.domain.reciprocal_link import ReciprocalLink
@@ -24,8 +25,18 @@ def _is_uuid(value: str) -> bool:
     return True
 
 
-def _address_book_clauses(owner_user_id: str) -> list[ColumnElement[bool]]:
-    return [PlayerTable.owner_user_id == owner_user_id]
+def _address_book_clauses(
+    owner_user_id: str, criteria: PlayerFilter
+) -> list[ColumnElement[bool]]:
+    clauses = [PlayerTable.owner_user_id == owner_user_id]
+    if criteria.query:
+        clauses.append(PlayerTable.display_name.icontains(criteria.query, autoescape=True))
+    if criteria.linked is True:
+        clauses.append(PlayerTable.user_id.is_not(None))
+        clauses.append(PlayerTable.user_id != owner_user_id)
+    elif criteria.linked is False:
+        clauses.append(PlayerTable.user_id.is_(None))
+    return clauses
 
 
 def _to_domain(row: PlayerTable) -> PlayerIdentity:
@@ -73,13 +84,19 @@ class PlayerRepository:
         return [_to_domain(row) for row in rows]
 
     async def page(
-        self, session: AsyncSession, owner_user_id: str, *, limit: int, offset: int
+        self,
+        session: AsyncSession,
+        owner_user_id: str,
+        *,
+        limit: int,
+        offset: int,
+        criteria: PlayerFilter,
     ) -> list[PlayerIdentity]:
         """One page of the address book, own entry first, then alphabetical."""
         rows = (
             await session.execute(
                 select(PlayerTable)
-                .where(*_address_book_clauses(owner_user_id))
+                .where(*_address_book_clauses(owner_user_id, criteria))
                 .order_by(
                     PlayerTable.user_id.is_distinct_from(owner_user_id),
                     PlayerTable.display_name,
@@ -91,12 +108,14 @@ class PlayerRepository:
         ).scalars().all()
         return [_to_domain(row) for row in rows]
 
-    async def count(self, session: AsyncSession, owner_user_id: str) -> int:
+    async def count(
+        self, session: AsyncSession, owner_user_id: str, criteria: PlayerFilter
+    ) -> int:
         """How many entries `page` pages through."""
         return await session.scalar(
             select(func.count())
             .select_from(PlayerTable)
-            .where(*_address_book_clauses(owner_user_id))
+            .where(*_address_book_clauses(owner_user_id, criteria))
         ) or 0
 
     async def find_by_name(

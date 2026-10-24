@@ -28,6 +28,31 @@
     <p-message severity="error" [text]="message" />
   }
 
+  <app-list-toolbar
+    [count]="entries.total()"
+    [noun]="['Spieler', 'Spieler']"
+    searchLabel="Spieler suchen"
+    [filterable]="true"
+    [chips]="chips()"
+    (search)="onSearch($event)"
+    (chipRemove)="clearFilter($event)"
+    (reset)="filters.reset()"
+  >
+    <form class="list-filters" [formGroup]="filters">
+      <label class="list-filters__label" for="filter-linked">Verknüpfung</label>
+      <p-select
+        inputId="filter-linked"
+        formControlName="linked"
+        [options]="linkOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Alle"
+        [showClear]="true"
+        fluid
+      />
+    </form>
+  </app-list-toolbar>
+
   @if (entries.failed()) {
     <app-load-error
       message="Die Spielerliste konnte nicht geladen werden."
@@ -121,6 +146,15 @@
           }
         </tr>
       </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="2">
+            <app-empty-state icon="pi-filter-slash">
+              <p>Keine Spieler für diese Suche.</p>
+            </app-empty-state>
+          </td>
+        </tr>
+      </ng-template>
     </p-table>
     @if (editingId() !== null) {
       <app-field-error id="edit-name-error" [control]="editForm.controls.name" />
@@ -129,7 +163,7 @@
       <p-message severity="error" [text]="message" />
     }
 
-    @if (entries.total() <= 1) {
+    @if (!filtered() && entries.total() <= 1) {
       <app-empty-state icon="pi-users">
         <p>Noch keine weiteren Spieler.</p>
         <p class="empty-state__hint">Lege hier welche an oder trage im neuen Spiel einen Namen ein.</p>

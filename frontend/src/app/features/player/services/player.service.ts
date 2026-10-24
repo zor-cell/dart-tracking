@@ -10,6 +10,7 @@ import { PlayerIdentityDto } from '../dto/player-identity.dto';
 import { PlayerLinkDto } from '../dto/player-link.dto';
 import { PlayerNameDto } from '../dto/player-name.dto';
 import { PlayerPageDto } from '../dto/player-page.dto';
+import { PlayerFilter } from '../models/player-filter';
 
 /** Upper bound for the full address book, matching the server's maximum. */
 const ADDRESS_BOOK_LIMIT = 500;
@@ -48,10 +49,17 @@ export class PlayerService {
   }
 
   /** One page of the address book, own entry first; failures are left to the caller. */
-  page(limit: number, offset: number): Promise<PlayerPageDto> {
+  page(limit: number, offset: number, filter: PlayerFilter): Promise<PlayerPageDto> {
+    let params = new HttpParams().set('limit', limit).set('offset', offset);
+    if (filter.query) {
+      params = params.set('q', filter.query);
+    }
+    if (filter.linked) {
+      params = params.set('linked', filter.linked === 'linked');
+    }
     return firstValueFrom(
       this.http.get<PlayerPageDto>(`${this.baseUrl}/page`, {
-        params: new HttpParams().set('limit', limit).set('offset', offset),
+        params,
         context: SILENT_ERROR_CONTEXT,
       }),
     );
