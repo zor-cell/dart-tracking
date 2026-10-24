@@ -4,6 +4,7 @@ from uuid import UUID
 
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from app.api.features.auth.persistence.user import UserTable
 from app.api.features.game.persistence.game_player import GamePlayerTable
@@ -269,26 +270,26 @@ class PlayerRepository:
 
     async def links_of(self, session: AsyncSession, user_id: str) -> list[PlayerLink]:
         """The entries in other address books that are linked to this account,
-        including retired ones that only hold past games."""
+        including retired ones that only hold past games. Each owner is named as
+        this account's own address book names them, else by their display name."""
         owner_id = func.coalesce(PlayerTable.owner_user_id, PlayerTable.former_owner_user_id)
+        own_entry = aliased(PlayerTable)
+        owner_name = func.coalesce(own_entry.display_name, UserTable.display_name)
         rows = (
             await session.execute(
-                select(
-                    PlayerTable.id,
-                    PlayerTable.display_name,
-                    UserTable.display_name,
-                    PlayerTable.owner_user_id.is_(None),
-                )
+                select(PlayerTable.id, owner_name, PlayerTable.owner_user_id.is_(None))
                 .join(UserTable, UserTable.id == owner_id)
+                .outerjoin(
+                    own_entry,
+                    (own_entry.owner_user_id == user_id) & (own_entry.user_id == owner_id),
+                )
                 .where(PlayerTable.user_id == user_id, owner_id != user_id)
-                .order_by(UserTable.display_name, PlayerTable.display_name)
+                .order_by(owner_name)
             )
         ).all()
         return [
-            PlayerLink(
-                player_id=id, player_name=player_name, owner_name=owner_name, retired=retired
-            )
-            for id, player_name, owner_name, retired in rows
+            PlayerLink(player_id=id, owner_name=name, retired=retired)
+            for id, name, retired in rows
         ]
 
     async def leave(

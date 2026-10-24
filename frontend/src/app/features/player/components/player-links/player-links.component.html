@@ -6,10 +6,7 @@
     <ul class="links">
       @for (link of active(); track link.playerId) {
         <li class="links__row">
-          <span class="links__text">
-            <span class="links__owner">{{ link.ownerName }}</span>
-            <span class="links__player">als „{{ link.playerName }}“</span>
-          </span>
+          <span class="links__name">{{ link.ownerName }}</span>
           <p-button
             type="button"
             icon="pi pi-times"
@@ -35,10 +32,7 @@
     <ul class="links">
       @for (link of retired(); track link.playerId) {
         <li class="links__row">
-          <span class="links__text">
-            <span class="links__owner">{{ link.ownerName }}</span>
-            <span class="links__player">als „{{ link.playerName }}“</span>
-          </span>
+          <span class="links__name">{{ link.ownerName }}</span>
           <p-button
             type="button"
             icon="pi pi-trash"
@@ -66,8 +60,8 @@
     <div class="leave">
       @if (link.retired) {
         <p class="leave__text">
-          Die bisherigen Spiele von {{ link.ownerName }} mit „{{ link.playerName }}“ zählen danach
-          nicht mehr in deinem Verlauf und deiner Statistik.
+          Die bisherigen Spiele von {{ link.ownerName }} zählen danach nicht mehr in deinem Verlauf
+          und deiner Statistik.
         </p>
         <p-button
           fluid
@@ -79,8 +73,8 @@
         />
       } @else {
         <p class="leave__text">
-          Neue Spiele von {{ link.ownerName }} mit „{{ link.playerName }}“ zählen danach nicht mehr
-          für dich. Was soll mit den bisherigen Spielen passieren?
+          Neue Spiele von {{ link.ownerName }} zählen danach nicht mehr für dich. Was soll mit den
+          bisherigen Spielen passieren?
         </p>
         <p-button
           fluid

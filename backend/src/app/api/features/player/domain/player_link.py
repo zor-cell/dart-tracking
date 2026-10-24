@@ -7,6 +7,5 @@ class PlayerLink:
     A retired one has left that address book and only holds past games."""
 
     player_id: str
-    player_name: str
     owner_name: str
     retired: bool = False
