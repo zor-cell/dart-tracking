@@ -1,0 +1,26 @@
+/* Same compact toggle and layout as the replay's heatmap. */
+.heatmap {
+  --p-togglebutton-sm-padding: 0.2rem;
+  --p-togglebutton-content-sm-padding: 0.2rem 0.5rem;
+  --p-togglebutton-sm-font-size: 0.75rem;
+
+  position: relative;
+  height: 22rem;
+}
+
+.heatmap > app-field-heatmap,
+.heatmap > app-tip-heatmap {
+  height: 100%;
+}
+
+.heatmap__layer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+}
+
+/* Clear of the toggle above it. */
+.heatmap__empty {
+  padding-top: 2.5rem;
+}

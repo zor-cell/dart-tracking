@@ -1,10 +1,10 @@
 from typing import Self
 
 from app.api.core.dto.base import CamelModel
-from app.api.features.statistics.domain.player_statistics import PlayerStatistics
-
-# Enough points for a heatmap to be readable; beyond that it is a black disc.
-_HEATMAP_LIMIT = 2000
+from app.api.features.statistics.domain.player_statistics import (
+    HEATMAP_CELL,
+    PlayerStatistics,
+)
 
 
 class PlayerStatisticsDto(CamelModel):
@@ -20,7 +20,8 @@ class PlayerStatisticsDto(CamelModel):
     legs_with_chance: int
     checkout_attempts: int
     checkout_hits: int
-    heatmap: list[tuple[float, float]]
+    fields: dict[str, int]
+    heatmap: list[tuple[int, int, int]]
 
     @classmethod
     def from_entity(cls, statistics: PlayerStatistics) -> Self:
@@ -37,5 +38,9 @@ class PlayerStatisticsDto(CamelModel):
             legs_with_chance=statistics.legs_with_chance,
             checkout_attempts=statistics.checkout_attempts,
             checkout_hits=statistics.checkout_hits,
-            heatmap=statistics.heatmap[-_HEATMAP_LIMIT:],
+            fields=dict(statistics.fields),
+            heatmap=[
+                (column * HEATMAP_CELL, row * HEATMAP_CELL, count)
+                for (column, row), count in statistics.heatmap.items()
+            ],
         )

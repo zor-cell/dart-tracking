@@ -1,3 +1,9 @@
+:host {
+  position: relative;
+  display: block;
+  height: 100%;
+}
+
 .heatmap {
   display: block;
   width: 100%;
@@ -10,4 +16,23 @@
   fill-opacity: 0.85;
   stroke: #1b1b1b;
   stroke-width: 1.5;
+}
+
+/* Top-left corner, as the field view writes its caption. */
+.caption {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Bottom-right corner, as on the field view. */
+.legend {
+  position: absolute;
+  right: 0;
+  bottom: 0.15rem;
 }

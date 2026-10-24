@@ -2,6 +2,7 @@
 bust and checkout are decided in the game domain, and a second copy of them in a
 query would be a second truth."""
 
+from collections import Counter
 from dataclasses import dataclass, field
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
@@ -12,6 +13,9 @@ _HIGH_VISIT = 100
 
 # The opening darts of a leg, before the checkout changes how a player aims.
 _FIRST_NINE = 9
+
+# Edge of a heatmap cell, in board millimetres.
+HEATMAP_CELL = 2
 
 
 # Scores one dart can finish on: the doubles and the double bull in double out,
@@ -37,7 +41,8 @@ class PlayerStatistics:
     checkout_hits: int = 0
     first_nine_darts: int = 0
     first_nine_points: int = 0
-    heatmap: list[tuple[float, float]] = field(default_factory=list)
+    fields: Counter[str] = field(default_factory=Counter)
+    heatmap: Counter[tuple[int, int]] = field(default_factory=Counter)
 
     @property
     def average(self) -> float:
@@ -68,6 +73,7 @@ class PlayerStatistics:
             live = remaining
             for dart in turn.darts:
                 self.darts += 1
+                self.fields[dart.label] += 1
                 thrown += 1
                 if thrown <= _FIRST_NINE:
                     self.first_nine_darts += 1
@@ -79,7 +85,8 @@ class PlayerStatistics:
                 if live == 0 and not turn.busted:
                     self.checkout_hits += 1
                 if dart.position is not None:
-                    self.heatmap.append(dart.position)
+                    x, y = dart.position
+                    self.heatmap[round(x / HEATMAP_CELL), round(y / HEATMAP_CELL)] += 1
 
             if turn.busted:
                 continue

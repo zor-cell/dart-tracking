@@ -1,5 +1,5 @@
-/** Board millimetres: x right, y up, origin at the bullseye. */
-export type HeatmapPoint = readonly [number, number];
+/** A 2 mm cell's centre in board millimetres (x right, y up, origin at the bullseye) and its tips. */
+export type HeatmapCell = readonly [x: number, y: number, count: number];
 
 export interface PlayerStatisticsDto {
   readonly legs: number;
@@ -14,5 +14,6 @@ export interface PlayerStatisticsDto {
   readonly legsWithChance: number;
   readonly checkoutAttempts: number;
   readonly checkoutHits: number;
-  readonly heatmap: readonly HeatmapPoint[];
+  readonly fields: Readonly<Record<string, number>>;
+  readonly heatmap: readonly HeatmapCell[];
 }

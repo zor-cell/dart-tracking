@@ -52,12 +52,8 @@
   }
 </button>
 
-@if (labels().length > 0) {
-  <div class="legend" aria-hidden="true">
-    <span>0</span>
-    <span class="legend__bar" [style.background]="legendGradient()"></span>
-    <span>{{ most() }}</span>
-  </div>
+@if (total() > 0) {
+  <app-heat-legend class="legend" [color]="legendColor">{{ most() }}</app-heat-legend>
 }
 
 <p class="caption" aria-live="polite">
@@ -70,6 +66,6 @@
       {{ field.share | number: '1.0-0' }}&nbsp;%
     }
   } @else {
-    <span class="caption__summary">{{ labels().length }} Darts</span>
+    <span class="caption__summary">{{ total() }} Darts</span>
   }
 </p>

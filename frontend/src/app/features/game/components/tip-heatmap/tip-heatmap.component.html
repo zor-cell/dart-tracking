@@ -1,9 +1,30 @@
 <svg class="heatmap" [attr.viewBox]="viewBox" role="img" [attr.aria-label]="ariaLabel()">
   <g app-board-face></g>
 
-  @for (mark of marks(); track $index) {
-    <circle class="heatmap__mark" [attr.cx]="mark.x" [attr.cy]="mark.y" [attr.r]="markRadius" />
-  }
+  @if (cloud(); as cloud) {
+    <image
+      [attr.href]="cloud"
+      [attr.x]="-extent"
+      [attr.y]="-extent"
+      [attr.width]="extent * 2"
+      [attr.height]="extent * 2"
+      preserveAspectRatio="none"
+    />
+  } @else {
+    @for (dot of dots(); track $index) {
+      <circle class="heatmap__mark" [attr.cx]="dot.x" [attr.cy]="dot.y" [attr.r]="markRadius" />
+    }
+    @for (arrow of arrows(); track $index) {
+      <path class="heatmap__mark" [attr.d]="arrowPath" [attr.transform]="arrow" />
+    }
 
-  <g app-dart-markers [darts]="current()" [radius]="markRadius"></g>
+    <g app-dart-markers [darts]="current()" [radius]="markRadius"></g>
+  }
 </svg>
+
+@if (density(); as density) {
+  <p class="caption">{{ density.inside + density.outside }} Treffer</p>
+  <app-heat-legend class="legend" [color]="legendColor">
+    <span>{{ density.peak | number: '1.0-1' }} Darts/cm²</span>
+  </app-heat-legend>
+}

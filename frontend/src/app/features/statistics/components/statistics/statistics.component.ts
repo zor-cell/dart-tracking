@@ -2,7 +2,16 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { DecimalPipe } from '@angular/common';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
 import { StatisticsService } from '../../services/statistics.service';
+import { FormsModule } from '@angular/forms';
+import { SelectButton } from 'primeng/selectbutton';
+import { FieldHeatmapComponent } from '../../../game/components/field-heatmap/field-heatmap.component';
 import { TipHeatmapComponent } from '../../../game/components/tip-heatmap/tip-heatmap.component';
+import {
+  HEATMAP_LAYERS,
+  HeatmapLayer,
+  storeHeatmapLayer,
+  storedHeatmapLayer,
+} from '../../../game/models/heatmap-layer';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
@@ -14,6 +23,9 @@ import { EmptyStateComponent } from '../../../../core/view/components/empty-stat
     DecimalPipe,
     LoadingStateComponent,
     EmptyStateComponent,
+    FieldHeatmapComponent,
+    FormsModule,
+    SelectButton,
     TipHeatmapComponent,
   ],
   templateUrl: './statistics.component.html',
@@ -25,6 +37,13 @@ export class StatisticsComponent {
 
   protected readonly totals = signal<PlayerStatisticsDto | null>(null);
   protected readonly loading = signal(true);
+
+  protected readonly layerOptions = [...HEATMAP_LAYERS];
+  protected readonly layer = signal(storedHeatmapLayer());
+
+  protected readonly fieldCounts = computed(
+    () => new Map(Object.entries(this.totals()?.fields ?? {})),
+  );
 
   /** Darts that finished a leg, out of darts thrown while one dart could finish. */
   protected readonly checkoutRate = computed(() => {
@@ -42,6 +61,11 @@ export class StatisticsComponent {
 
   constructor() {
     void this.load();
+  }
+
+  protected selectLayer(layer: HeatmapLayer): void {
+    this.layer.set(layer);
+    storeHeatmapLayer(layer);
   }
 
   private async load(): Promise<void> {

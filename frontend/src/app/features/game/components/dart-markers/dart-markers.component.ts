@@ -1,14 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { DartDto } from '../../dto/dart.dto';
-import { BOARD_BACKING_RADIUS, OFF_BOARD_MARKER_RADIUS } from '../../models/board-face';
+import {
+  BOARD_BACKING_RADIUS,
+  OFF_BOARD_MARKER_RADIUS,
+  offBoardArrowPath,
+  offBoardMark,
+} from '../../models/board-face';
 import { toSvg } from '../../models/board-geometry';
 import { dartColor, SHADOW_DART_COLOR } from '../../models/dart-colors';
 
 /** How far the ordinal sits from the arrow, across the direction it points. */
 const OFF_BOARD_LABEL_OFFSET = 18;
-
-/** An arrowhead pointing along +x, aimed by the marker's own rotation. */
-const ARROW_PATH = 'M 9.5 0 L -5 -7 L -5 7 Z';
 
 /** Radius of the dot marking a located tip on the live board, in board millimetres. */
 const MARKER_RADIUS = 5.5;
@@ -44,7 +46,7 @@ export class DartMarkersComponent {
   /** Dot radius in board millimetres. */
   readonly radius = input(MARKER_RADIUS);
 
-  protected readonly arrowPath = ARROW_PATH;
+  protected readonly arrowPath = computed(() => offBoardArrowPath(this.radius()));
 
   protected readonly markers = computed<DartMarker[]>(() =>
     [...this.darts(), ...this.shadowDarts()].flatMap((dart, index): DartMarker[] => {
@@ -63,11 +65,9 @@ export class DartMarkersComponent {
 
       // Off the board there is nothing to point at, so the marker keeps only the
       // direction: an arrow on the margin ring, aimed the way the dart flew.
-      const unitX = x / radius;
-      const unitY = y / radius;
-      const markerX = unitX * OFF_BOARD_MARKER_RADIUS;
-      const markerY = unitY * OFF_BOARD_MARKER_RADIUS;
-      const angle = (Math.atan2(unitY, unitX) * 180) / Math.PI;
+      const { x: markerX, y: markerY, angle } = offBoardMark(x, y);
+      const unitX = markerX / OFF_BOARD_MARKER_RADIUS;
+      const unitY = markerY / OFF_BOARD_MARKER_RADIUS;
       return [
         {
           ...shared,

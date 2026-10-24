@@ -6,13 +6,11 @@ import { dartColor } from '../../models/dart-colors';
 import { fieldName } from '../../models/field-label';
 import { BoardFaceComponent, FieldEnter } from '../board-face/board-face.component';
 import { FieldFramesComponent } from '../field-frames/field-frames.component';
+import { HeatLegendComponent } from '../heat-legend/heat-legend.component';
 
 /** Fill opacity of the least and the most hit field. */
 const MIN_OPACITY = 0.2;
 const MAX_OPACITY = 0.9;
-
-/** Points along the legend's gradient, as fractions of the highest count. */
-const LEGEND_STOPS = [0.05, 0.1, 0.2, 0.35, 0.5, 0.7, 1];
 
 /** Label of a dart that hit no field. */
 const MISS = '0';
@@ -20,14 +18,14 @@ const MISS = '0';
 /** Every dart counted into the field it hit, tinted by how often; a tap or hover names the count. */
 @Component({
   selector: 'app-field-heatmap',
-  imports: [BoardFaceComponent, DecimalPipe, FieldFramesComponent],
+  imports: [BoardFaceComponent, DecimalPipe, FieldFramesComponent, HeatLegendComponent],
   templateUrl: './field-heatmap.component.html',
   styleUrl: './field-heatmap.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FieldHeatmapComponent {
-  /** Called-out fields of every dart so far, one entry per dart. */
-  readonly labels = input.required<readonly string[]>();
+  /** Darts per field so far, keyed by called-out label. */
+  readonly counts = input.required<ReadonlyMap<string, number>>();
   /** The visit under way, in throwing order, framed in each dart's colour. */
   readonly current = input<readonly DartDto[]>([]);
 
@@ -37,32 +35,30 @@ export class FieldHeatmapComponent {
   private readonly pinned = signal<string | null>(null);
   private readonly hovered = signal<string | null>(null);
 
-  private readonly counts = computed(() => {
-    const counts = new Map<string, number>();
-    for (const label of this.labels()) {
-      counts.set(label, (counts.get(label) ?? 0) + 1);
-    }
-    return counts;
-  });
+  protected readonly total = computed(() =>
+    [...this.counts().values()].reduce((sum, count) => sum + count, 0),
+  );
 
-  /** Fill opacity for a count; the square root keeps one heavily hit field from washing out the rest. */
+  /** Fill opacity for a share of the highest count; the square root keeps one heavily hit
+   * field from washing out the rest. */
+  private readonly scale = (share: number): number =>
+    MIN_OPACITY + (MAX_OPACITY - MIN_OPACITY) * Math.sqrt(share);
+
+  protected readonly legendColor = (share: number): string =>
+    `color-mix(in srgb, var(--p-text-color) ${(this.scale(share) * 100).toFixed(0)}%, transparent)`;
+
   private readonly opacity = computed(() => {
     const most = this.most();
-    return (count: number) =>
-      count === 0 ? 0 : MIN_OPACITY + (MAX_OPACITY - MIN_OPACITY) * Math.sqrt(count / most);
+    return (count: number) => (count === 0 ? 0 : this.scale(Math.min(1, count / most)));
   });
 
-  /** The highest count on any field, the dark end of the scale. */
-  protected readonly most = computed(() => Math.max(1, ...this.counts().values()));
-
-  /** The fill scale as a gradient from no hits to the highest count, on the same square root. */
-  protected readonly legendGradient = computed(() => {
-    const stops = LEGEND_STOPS.map((share) => {
-      const opacity = MIN_OPACITY + (MAX_OPACITY - MIN_OPACITY) * Math.sqrt(share);
-      return `color-mix(in srgb, var(--p-text-color) ${(opacity * 100).toFixed(0)}%, transparent) ${share * 100}%`;
-    });
-    return `linear-gradient(to right, transparent 0%, ${stops.join(', ')})`;
-  });
+  /** The highest count on a board field, the dark end of the scale; misses stay out. */
+  protected readonly most = computed(() =>
+    Math.max(
+      1,
+      ...[...this.counts()].filter(([label]) => label !== MISS).map(([, count]) => count),
+    ),
+  );
 
   protected readonly fields = computed(() =>
     [...this.counts()].flatMap(([label, count]) => {
@@ -96,7 +92,7 @@ export class FieldHeatmapComponent {
       d,
       count,
       name: fieldName(label),
-      share: (count / Math.max(1, this.labels().length)) * 100,
+      share: (count / Math.max(1, this.total())) * 100,
     };
   });
 
@@ -106,7 +102,7 @@ export class FieldHeatmapComponent {
       .slice(0, 5)
       .map((field) => `${field.name} ${field.count}-mal`)
       .join(', ');
-    return `Dartscheibe mit ${this.labels().length} Darts nach Feld. ${top}`;
+    return `Dartscheibe mit ${this.total()} Darts nach Feld. ${top}`;
   });
 
   /** A tap on a hit field pins its count; a tap anywhere else clears it. */

@@ -10,7 +10,7 @@
       />
     } @else {
       <svg:path
-        [attr.d]="arrowPath"
+        [attr.d]="arrowPath()"
         [attr.fill]="marker.color"
         [attr.transform]="marker.arrowTransform"
       />

@@ -21,6 +21,15 @@ export function parseField(label: string): Field | null {
   return { ring: match[1] === 'D' ? 'double' : match[1] === 'T' ? 'triple' : 'single', index };
 }
 
+/** How many darts landed in each field, keyed by called-out label. */
+export function countFields(labels: readonly string[]): ReadonlyMap<string, number> {
+  const counts = new Map<string, number>();
+  for (const label of labels) {
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+  return counts;
+}
+
 /** Points of a called-out field: 20, D20, T20, 25, 50, 0. */
 export function labelPoints(label: string): number {
   const multiplier = label.startsWith('T') ? 3 : label.startsWith('D') ? 2 : 1;

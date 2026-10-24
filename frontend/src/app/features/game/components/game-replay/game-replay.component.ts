@@ -12,7 +12,14 @@ import { Button } from 'primeng/button';
 import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
 import { Slider } from 'primeng/slider';
-import { HeatmapPoint } from '../../../statistics/dto/player-statistics.dto';
+import { countFields } from '../../models/field-label';
+import {
+  HEATMAP_LAYERS,
+  HeatmapLayer,
+  storeHeatmapLayer,
+  storedHeatmapLayer,
+} from '../../models/heatmap-layer';
+import { TipPoint } from '../../models/tip-density';
 import { PlayerDto } from '../../dto/player.dto';
 import { DartDto } from '../../dto/dart.dto';
 import { VisitDto } from '../../dto/visit.dto';
@@ -31,17 +38,12 @@ const DART_INTERVAL_MS = 500;
 /** Where the last chosen view is kept, so the next game opens on it. */
 const VIEW_KEY = 'dart-tracking.gameView';
 
-/** Where the last chosen heatmap layer is kept. */
-const LAYER_KEY = 'dart-tracking.heatmapLayer';
-
 type ReplayView = 'heatmap' | 'race' | 'distribution';
-
-type HeatmapLayer = 'fields' | 'tips';
 
 const VIEWS: readonly { label: string; value: ReplayView }[] = [
   { label: 'Heatmap', value: 'heatmap' },
   { label: 'Verlauf', value: 'race' },
-  { label: 'Visits', value: 'distribution' },
+  { label: 'Streuung', value: 'distribution' },
 ];
 
 @Component({
@@ -83,17 +85,8 @@ export class GameReplayComponent implements OnInit {
     ...this.players().map((player) => ({ label: player.name, value: player.id })),
   ]);
 
-  protected readonly layerOptions: { label: string; value: HeatmapLayer }[] = [
-    { label: 'Felder', value: 'fields' },
-    { label: 'Treffer', value: 'tips' },
-  ];
-  protected readonly layer = signal<HeatmapLayer>(
-    stored(
-      LAYER_KEY,
-      this.layerOptions.map((option) => option.value),
-      'fields',
-    ),
-  );
+  protected readonly layerOptions = [...HEATMAP_LAYERS];
+  protected readonly layer = signal(storedHeatmapLayer());
 
   protected readonly speed = signal(1);
   protected readonly playerId = signal<number | null>(null);
@@ -151,6 +144,8 @@ export class GameReplayComponent implements OnInit {
     return { labels: darts.map((dart) => dart.label), points: located(darts) };
   });
 
+  protected readonly fieldCounts = computed(() => countFields(this.trail().labels));
+
   protected readonly visitComplete = computed(() => {
     const step = this.step();
     return step !== null && step.dart === this.visits()[step.visit].darts.length - 1;
@@ -191,7 +186,7 @@ export class GameReplayComponent implements OnInit {
 
   protected selectLayer(layer: HeatmapLayer): void {
     this.layer.set(layer);
-    writeStored(LAYER_KEY, layer);
+    storeHeatmapLayer(layer);
   }
 
   constructor() {
@@ -270,6 +265,6 @@ function stored<T extends string>(key: string, allowed: readonly T[], fallback: 
   return allowed.find((option) => option === value) ?? fallback;
 }
 
-function located(darts: readonly DartDto[]): HeatmapPoint[] {
-  return darts.flatMap((dart) => (dart.position === null ? [] : [dart.position as HeatmapPoint]));
+function located(darts: readonly DartDto[]): TipPoint[] {
+  return darts.flatMap((dart) => (dart.position === null ? [] : [dart.position as TipPoint]));
 }

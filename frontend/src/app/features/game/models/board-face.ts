@@ -43,11 +43,28 @@ export const BOARD_BACKING_RADIUS = 200;
 /** Where a dart that landed off the board is marked, in the margin around it. */
 export const OFF_BOARD_MARKER_RADIUS = 202;
 
+/** An arrowhead pointing along +x, about as large as a dot of `radius`; aimed by the
+ * marker's own rotation. */
+export function offBoardArrowPath(radius: number): string {
+  return `M ${1.2 * radius} 0 L ${-0.8 * radius} ${-0.9 * radius} L ${-0.8 * radius} ${0.9 * radius} Z`;
+}
+
+/** Where on the margin ring an off-board tip at SVG `[x, y]` is marked, and the
+ * direction it lies in, in degrees. */
+export function offBoardMark(x: number, y: number): { x: number; y: number; angle: number } {
+  const radius = Math.hypot(x, y);
+  return {
+    x: (x / radius) * OFF_BOARD_MARKER_RADIUS,
+    y: (y / radius) * OFF_BOARD_MARKER_RADIUS,
+    angle: (Math.atan2(y, x) * 180) / Math.PI,
+  };
+}
+
 /** Half the drawn area's edge length: the board, the off-board margin, and room
  * for the ordinal beside a marker out on it. */
-const VIEW_EXTENT = 218;
+export const BOARD_VIEW_EXTENT = 218;
 
-export const BOARD_VIEW_BOX = `${-VIEW_EXTENT} ${-VIEW_EXTENT} ${VIEW_EXTENT * 2} ${VIEW_EXTENT * 2}`;
+export const BOARD_VIEW_BOX = `${-BOARD_VIEW_EXTENT} ${-BOARD_VIEW_EXTENT} ${BOARD_VIEW_EXTENT * 2} ${BOARD_VIEW_EXTENT * 2}`;
 
 /**
  * One ring band of one sector as an SVG path, shrunk by `inset` mm on every side.
