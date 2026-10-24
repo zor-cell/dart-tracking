@@ -1,11 +1,10 @@
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ConfirmationService } from 'primeng/api';
 import { Button } from 'primeng/button';
-import { ConfirmDialog } from 'primeng/confirmdialog';
 import { AnnouncerToggleComponent } from '../../../announcement/components/announcer-toggle/announcer-toggle.component';
 import { TorchToggleComponent } from '../../../camera/components/torch-toggle/torch-toggle.component';
 import { ShareDialogComponent } from '../../../../core/view/components/share-dialog/share-dialog.component';
+import { ConfirmService } from '../../../../core/view/services/confirm.service';
 import { GameService } from '../../services/game.service';
 import { GameSessionService } from '../../services/game-session.service';
 
@@ -20,13 +19,11 @@ import { GameSessionService } from '../../services/game-session.service';
     AnnouncerToggleComponent,
     TorchToggleComponent,
     Button,
-    ConfirmDialog,
     ShareDialogComponent,
   ],
   templateUrl: './game-top-bar.component.html',
   styleUrl: './game-top-bar.component.scss',
   // Scoped to this component so its <p-confirmdialog> shares the same instance.
-  providers: [ConfirmationService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GameTopBarComponent {
@@ -34,7 +31,7 @@ export class GameTopBarComponent {
 
   private readonly document = inject(DOCUMENT);
   private readonly session = inject(GameSessionService);
-  private readonly confirmation = inject(ConfirmationService);
+  private readonly confirm = inject(ConfirmService);
 
   protected readonly shareDialogVisible = signal(false);
 
@@ -69,14 +66,12 @@ export class GameTopBarComponent {
       this.leaveGame();
       return;
     }
-    this.confirmation.confirm({
-      header: 'Spiel verlassen',
-      message: 'Spiel auf diesem Gerät verlassen? Der bisherige Spielstand bleibt gespeichert.',
-      icon: 'pi pi-exclamation-triangle',
-      rejectButtonProps: { label: 'Abbrechen', severity: 'secondary', text: true },
-      acceptButtonProps: { label: 'Verlassen', severity: 'danger' },
-      accept: () => this.leaveGame(),
-    });
+    this.confirm.ask(
+      'Spiel verlassen',
+      'Spiel auf diesem Gerät verlassen? Der bisherige Spielstand bleibt gespeichert.',
+      'Verlassen',
+      () => this.leaveGame(),
+    );
   }
 
   private leaveGame(): void {

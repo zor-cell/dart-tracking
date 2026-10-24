@@ -7,6 +7,7 @@ import { PlayerService } from '../../services/player.service';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
+import { DIALOG_STYLE } from '../../../../core/view/models/dialog-style';
 
 /** The players in other people's lists that are linked to this account, and the
  * retired ones that only hold past games, each with a way to undo the link. */
@@ -25,6 +26,7 @@ import { LoadingStateComponent } from '../../../../core/view/components/loading-
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlayerLinksComponent {
+  protected readonly dialogStyle = DIALOG_STYLE;
   private readonly players = inject(PlayerService);
 
   protected readonly links = signal<PlayerLinkDto[]>([]);

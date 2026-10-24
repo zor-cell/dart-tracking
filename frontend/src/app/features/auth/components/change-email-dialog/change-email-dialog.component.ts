@@ -8,6 +8,7 @@ import { httpErrorMessage } from '../../../../core/notification/models/http-erro
 import { NotificationService } from '../../../../core/notification/services/notification.service';
 import { AuthService } from '../../services/auth.service';
 import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
+import { DIALOG_STYLE } from '../../../../core/view/models/dialog-style';
 
 @Component({
   selector: 'app-change-email-dialog',
@@ -17,6 +18,7 @@ import { FieldErrorComponent } from '../../../../core/view/components/field-erro
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChangeEmailDialogComponent {
+  protected readonly dialogStyle = DIALOG_STYLE;
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly notification = inject(NotificationService);

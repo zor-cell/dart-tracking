@@ -6,6 +6,7 @@ import { Dialog } from 'primeng/dialog';
 import { Divider } from 'primeng/divider';
 import { InputText } from 'primeng/inputtext';
 import { NotificationService } from '../../../notification/services/notification.service';
+import { DIALOG_STYLE } from '../../models/dialog-style';
 
 /** A link to hand to another phone: as QR code, as copyable text and through the
  * system share sheet where the browser offers one. */
@@ -17,6 +18,7 @@ import { NotificationService } from '../../../notification/services/notification
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ShareDialogComponent {
+  protected readonly dialogStyle = DIALOG_STYLE;
   private readonly document = inject(DOCUMENT);
   private readonly notification = inject(NotificationService);
 

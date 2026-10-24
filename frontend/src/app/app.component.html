@@ -6,3 +6,6 @@
 </div>
 
 <p-toast position="bottom-center" [style]="toastStyle" [breakpoints]="toastBreakpoints" />
+@defer (on idle) {
+  <p-confirmdialog [style]="dialogStyle" />
+}

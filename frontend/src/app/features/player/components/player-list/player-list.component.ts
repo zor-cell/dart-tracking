@@ -2,10 +2,8 @@ import { DOCUMENT, DatePipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ConfirmationService } from 'primeng/api';
 import { AutoFocus } from 'primeng/autofocus';
 import { Button } from 'primeng/button';
-import { ConfirmDialog } from 'primeng/confirmdialog';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
@@ -28,6 +26,7 @@ import { ShareDialogComponent } from '../../../../core/view/components/share-dia
 import { ListToolbarComponent } from '../../../../core/view/components/list-toolbar/list-toolbar.component';
 import { FilterChip } from '../../../../core/view/models/filter-chip';
 import { PagedTable } from '../../../../core/view/models/paged-table';
+import { ConfirmService } from '../../../../core/view/services/confirm.service';
 
 const nameValidators = [Validators.required, Validators.maxLength(DISPLAY_NAME_MAX_LENGTH)];
 
@@ -44,7 +43,6 @@ interface Invitation {
     AutoFocus,
     BackLinkComponent,
     Button,
-    ConfirmDialog,
     DatePipe,
     EmptyStateComponent,
     InputText,
@@ -68,13 +66,12 @@ interface Invitation {
   ],
   templateUrl: './player-list.component.html',
   styleUrl: './player-list.component.scss',
-  providers: [ConfirmationService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlayerListComponent {
   private readonly players = inject(PlayerService);
   private readonly auth = inject(AuthService);
-  private readonly confirmation = inject(ConfirmationService);
+  private readonly confirm = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
   private readonly document = inject(DOCUMENT);
 
@@ -192,16 +189,14 @@ export class PlayerListComponent {
   }
 
   protected confirmRemove(player: PlayerIdentityDto): void {
-    this.confirmation.confirm({
-      header: 'Spieler entfernen',
-      message: player.linked
+    this.confirm.ask(
+      'Spieler entfernen',
+      player.linked
         ? `${player.name} aus deiner Spielerliste entfernen? Das verknüpfte Konto behält die bisherigen Spiele in seiner Statistik.`
         : `${player.name} aus deiner Spielerliste entfernen? Bisherige Spiele behalten den Namen.`,
-      icon: 'pi pi-exclamation-triangle',
-      rejectButtonProps: { label: 'Abbrechen', severity: 'secondary', text: true },
-      acceptButtonProps: { label: 'Entfernen', severity: 'danger' },
-      accept: () => void this.remove(player),
-    });
+      'Entfernen',
+      () => void this.remove(player),
+    );
   }
 
   protected async invite(player: PlayerIdentityDto): Promise<void> {
@@ -222,14 +217,12 @@ export class PlayerListComponent {
   }
 
   protected confirmUnlink(player: PlayerIdentityDto): void {
-    this.confirmation.confirm({
-      header: 'Verknüpfung lösen',
-      message: `${player.name} ist dann nicht mehr mit einem Konto verknüpft. Die bisherigen Spiele bleiben in dessen Statistik, neue zählen dort nicht mehr.`,
-      icon: 'pi pi-exclamation-triangle',
-      rejectButtonProps: { label: 'Abbrechen', severity: 'secondary', text: true },
-      acceptButtonProps: { label: 'Lösen', severity: 'danger' },
-      accept: () => void this.unlink(player),
-    });
+    this.confirm.ask(
+      'Verknüpfung lösen',
+      `${player.name} ist dann nicht mehr mit einem Konto verknüpft. Die bisherigen Spiele bleiben in dessen Statistik, neue zählen dort nicht mehr.`,
+      'Lösen',
+      () => void this.unlink(player),
+    );
   }
 
   private async unlink(player: PlayerIdentityDto): Promise<void> {
