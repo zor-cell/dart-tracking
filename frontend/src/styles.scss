@@ -117,6 +117,7 @@ body {
 .p-datatable-loading-icon:has(> .loading) {
   width: auto;
   height: auto;
+  font-size: 1rem;
 }
 
 .empty-state__hint {
