@@ -12,28 +12,28 @@
 
 /* Hits fall through to the board beneath, which knows every field, hit or not. */
 .board__field {
-  fill: var(--p-text-color, #18181b);
+  fill: var(--p-text-color);
   fill-rule: evenodd;
   stroke: none;
   pointer-events: none;
   outline: none;
 
   &:focus-visible {
-    stroke: var(--p-text-color, #18181b);
+    stroke: var(--p-text-color);
     stroke-width: 2.5;
   }
 }
 
 .board__selected {
   fill: none;
-  stroke: var(--p-text-color, #18181b);
+  stroke: var(--p-text-color);
   stroke-width: 2;
   stroke-linejoin: round;
   pointer-events: none;
 
   /* Keeps the outline visible on a field filled in the same colour. */
   &--halo {
-    stroke: var(--p-content-background, #ffffff);
+    stroke: var(--p-content-background);
     stroke-width: 5;
   }
 }
@@ -50,7 +50,7 @@
 }
 
 .caption__summary {
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
 }
 
 /* Misses as a field of their own in the bottom-left corner, off the board itself. */
@@ -64,13 +64,13 @@
   padding: 0.15rem 0.3rem 0.15rem 0;
   border: none;
   background: none;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
   font: inherit;
   font-size: 0.85rem;
   cursor: pointer;
 
   &:focus-visible {
-    outline: 2px solid var(--p-primary-color, #10b981);
+    outline: 2px solid var(--p-primary-color);
     outline-offset: 2px;
     border-radius: 0.25rem;
   }
@@ -80,13 +80,13 @@
   display: block;
   width: 0.9rem;
   height: 0.9rem;
-  border: 2px solid var(--p-content-border-color, #e5e7eb);
+  border: 2px solid var(--p-content-border-color);
   border-radius: 0.2rem;
   overflow: hidden;
 }
 
 .miss--selected .miss__swatch {
-  outline: 2px solid var(--p-text-color, #18181b);
+  outline: 2px solid var(--p-text-color);
   outline-offset: 1px;
 }
 
@@ -94,7 +94,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  background: var(--p-text-color, #18181b);
+  background: var(--p-text-color);
 }
 
 .miss__ordinal {

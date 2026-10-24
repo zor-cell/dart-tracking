@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
   font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
 }
@@ -10,6 +10,6 @@
 .bar {
   width: 4.5rem;
   height: 0.55rem;
-  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border: 1px solid var(--p-content-border-color);
   border-radius: 0.2rem;
 }

@@ -25,7 +25,7 @@
   flex-wrap: wrap;
   gap: 0.25rem 0.5rem;
   align-items: center;
-  background: var(--p-content-background, #fff);
+  background: var(--p-content-background);
 }
 
 .setup__grip {
@@ -41,16 +41,16 @@
   border: none;
   border-radius: var(--p-border-radius-md, 6px);
   background: transparent;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
   cursor: grab;
   touch-action: none;
 
   &:hover {
-    background: var(--p-content-hover-background, #f3f4f6);
+    background: var(--p-content-hover-background);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--p-primary-color, #10b981);
+    outline: 2px solid var(--p-primary-color);
     outline-offset: 1px;
   }
 
@@ -75,14 +75,14 @@
 /* Plain text instead of a cloned input, which iOS would focus. */
 .setup__preview {
   padding-right: 0.75rem;
-  border: 1px solid var(--p-form-field-border-color, #cbd5e1);
+  border: 1px solid var(--p-form-field-border-color);
   cursor: grabbing;
 }
 
 .setup__preview-grip {
   width: 2.75rem;
   text-align: center;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
 }
 
 .setup__preview-name {
@@ -93,7 +93,7 @@
 
 .setup__placeholder {
   height: 2.4375rem;
-  border: 1px dashed var(--p-form-field-border-color, #cbd5e1);
+  border: 1px dashed var(--p-form-field-border-color);
   border-radius: var(--p-border-radius-md, 6px);
 }
 

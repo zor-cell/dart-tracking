@@ -10,7 +10,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem;
-  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border: 1px solid var(--p-content-border-color);
   border-radius: 0.5rem;
 
   // Without this the toggle shrinks along with the flex row and its hit target
@@ -39,7 +39,7 @@
 
 .setting__hint {
   margin: 0;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
   font-size: 0.85rem;
 }
 
@@ -58,7 +58,7 @@
   }
 
   dt {
-    color: var(--p-text-muted-color, #6b7280);
+    color: var(--p-text-muted-color);
   }
 
   dd {

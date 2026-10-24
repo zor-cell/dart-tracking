@@ -56,7 +56,7 @@
   align-items: center;
   gap: 0.1rem;
   padding: 0.4rem 0.5rem;
-  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border: 1px solid var(--p-content-border-color);
   border-radius: 0.5rem;
 }
 
@@ -65,17 +65,17 @@
   // --p-highlight-background: that token is a *strong* fill meant to be paired
   // with --p-highlight-color, which would make the row solid black in light
   // mode. Mixing keeps the default text color readable in both schemes.
-  border-color: var(--p-primary-color, #09090b);
-  background: color-mix(in srgb, var(--p-primary-color, #09090b) 8%, var(--p-content-background, #ffffff));
-  box-shadow: inset 0 3px 0 0 var(--p-primary-color, #09090b);
+  border-color: var(--p-primary-color);
+  background: color-mix(in srgb, var(--p-primary-color) 8%, var(--p-content-background));
+  box-shadow: inset 0 3px 0 0 var(--p-primary-color);
 }
 
 // Declared after the active tint so it outranks it: the game is over, so whose
 // turn it is no longer matters.
 .scoreboard__row--winner {
-  border-color: var(--p-green-500, #22c55e);
-  background: color-mix(in srgb, var(--p-green-500, #22c55e) 22%, var(--p-content-background, #ffffff));
-  box-shadow: inset 0 3px 0 0 var(--p-green-500, #22c55e);
+  border-color: var(--p-green-500);
+  background: color-mix(in srgb, var(--p-green-500) 22%, var(--p-content-background));
+  box-shadow: inset 0 3px 0 0 var(--p-green-500);
 }
 
 // Long names shorten rather than widen the card, which would break the sharing.

@@ -17,9 +17,9 @@
 // Green like the confirm button: reads on light and dark pages alike.
 .board__ring {
   fill: none;
-  stroke: var(--p-green-500, #22c55e);
+  stroke: var(--p-green-500);
   stroke-width: 4;
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--p-green-500, #22c55e) 80%, transparent));
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--p-green-500) 80%, transparent));
 }
 
 .board__ring--pulsing {

@@ -15,8 +15,8 @@
   padding: 0.5rem 0.75rem;
   /* Keep the bar clear of the notch / status bar. */
   padding-top: calc(0.5rem + env(safe-area-inset-top));
-  background: var(--p-content-background, #ffffff);
-  border-bottom: 1px solid var(--p-content-border-color, #e5e7eb);
+  background: var(--p-content-background);
+  border-bottom: 1px solid var(--p-content-border-color);
 }
 
 .top-bar__heading {
@@ -28,7 +28,7 @@
 .top-bar__title {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: var(--p-text-color, #18181b);
+  color: var(--p-text-color);
 }
 
 .top-bar__actions {

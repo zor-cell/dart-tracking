@@ -9,7 +9,7 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border: 1px solid var(--p-content-border-color);
   border-radius: 0.5rem;
 }
 
@@ -20,7 +20,7 @@
   padding: 0.6rem 1rem;
 
   & + & {
-    border-top: 1px solid var(--p-content-border-color, #e5e7eb);
+    border-top: 1px solid var(--p-content-border-color);
   }
 }
 
@@ -30,7 +30,7 @@
 
 .standings__rank {
   width: 1.5rem;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
   font-variant-numeric: tabular-nums;
 }
 
@@ -40,7 +40,7 @@
 }
 
 .standings__trophy {
-  color: var(--p-yellow-600, #ca8a04);
+  color: var(--p-yellow-600);
 }
 
 .standings__remaining {
@@ -49,7 +49,7 @@
 }
 
 .standings__unit {
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
   font-size: 0.75rem;
   font-weight: 400;
 }

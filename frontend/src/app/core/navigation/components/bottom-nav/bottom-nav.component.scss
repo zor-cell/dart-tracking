@@ -5,8 +5,8 @@
 .bottom-nav {
   display: flex;
   justify-content: space-around;
-  background: var(--p-content-background, #ffffff);
-  border-top: 1px solid var(--p-content-border-color, #e5e7eb);
+  background: var(--p-content-background);
+  border-top: 1px solid var(--p-content-border-color);
   /* Keep the tab bar clear of the iOS/Android home indicator. */
   padding-bottom: env(safe-area-inset-bottom);
 
@@ -19,17 +19,17 @@
     gap: 0.2rem;
     min-height: 3.5rem;
     padding: 0.5rem 0;
-    color: var(--p-text-muted-color, #6b7280);
+    color: var(--p-text-muted-color);
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
 
     &--active {
-      color: var(--p-primary-color, #09090b);
+      color: var(--p-primary-color);
       font-weight: 600;
     }
 
     &:focus-visible {
-      outline: 2px solid var(--p-primary-color, #09090b);
+      outline: 2px solid var(--p-primary-color);
       outline-offset: -2px;
     }
   }

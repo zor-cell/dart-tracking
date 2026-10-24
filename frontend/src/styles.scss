@@ -15,8 +15,8 @@ body {
 }
 
 body {
-  background: var(--p-content-background, #ffffff);
-  color: var(--p-text-color, #1f2937);
+  background: var(--p-content-background);
+  color: var(--p-text-color);
   font-family:
     system-ui,
     -apple-system,
@@ -53,7 +53,7 @@ body {
 
 .view__subtitle {
   margin: 0;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
   font-size: 0.95rem;
 }
 
@@ -70,7 +70,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
 
   p {
     margin: 0;
@@ -109,7 +109,7 @@ body {
   align-items: center;
   gap: 0.75rem;
   padding: 2.5rem 1.5rem;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
   text-align: center;
 }
 
@@ -202,7 +202,7 @@ body {
 
 .panel__hint {
   margin: 0;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
   font-size: 0.85rem;
 }
 
@@ -219,7 +219,7 @@ body {
   flex-direction: column;
   gap: 0.15rem;
   padding: 0.75rem 1rem;
-  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border: 1px solid var(--p-content-border-color);
   border-radius: 0.5rem;
 }
 
@@ -232,7 +232,7 @@ body {
 }
 
 .stat__label {
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
   font-size: 0.8rem;
 }
 
@@ -245,7 +245,7 @@ body {
 
 .stat__hint {
   margin: 0;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
   font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
 }

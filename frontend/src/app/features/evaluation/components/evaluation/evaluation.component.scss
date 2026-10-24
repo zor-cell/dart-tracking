@@ -5,7 +5,7 @@
 }
 
 .scope__label {
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
   font-size: 0.8rem;
 }
 
@@ -24,7 +24,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.6rem 1rem;
-  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border: 1px solid var(--p-content-border-color);
   border-radius: 0.5rem;
 }
 
@@ -52,7 +52,7 @@
 }
 
 .row__hint {
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
   font-size: 0.75rem;
 }
 
@@ -65,7 +65,7 @@
 }
 
 .row__share {
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--p-text-muted-color);
   font-size: 0.8rem;
   font-weight: 400;
 }
