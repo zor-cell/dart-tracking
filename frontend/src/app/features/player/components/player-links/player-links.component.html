@@ -1,51 +1,66 @@
-@if (active().length > 0) {
-  <section class="panel" aria-labelledby="player-links-title">
-    <h2 class="panel__title" id="player-links-title">Bei anderen verknüpft</h2>
-    <p class="panel__hint">Spiele dieser Spieler zählen in deinem Verlauf und deiner Statistik.</p>
-
-    <ul class="links">
-      @for (link of active(); track link.playerId) {
-        <li class="links__row">
-          <span class="links__name">{{ link.ownerName }}</span>
-          <p-button
-            type="button"
-            icon="pi pi-times"
-            [ariaLabel]="'Verknüpfung bei ' + link.ownerName + ' lösen'"
-            severity="secondary"
-            [rounded]="true"
-            [text]="true"
-            (onClick)="ask(link)"
-          />
-        </li>
-      }
-    </ul>
-  </section>
-}
-
-@if (retired().length > 0) {
-  <section class="panel" aria-labelledby="player-links-retired-title">
-    <h2 class="panel__title" id="player-links-retired-title">Nur bisherige Spiele</h2>
-    <p class="panel__hint">
-      Nicht mehr verknüpft, die bisherigen Spiele zählen aber weiter in deiner Statistik.
+@if (loading()) {
+  <app-loading-state label="Verknüpfungen werden geladen" />
+} @else if (failed()) {
+  <app-load-error message="Die Verknüpfungen konnten nicht geladen werden." (retry)="load()" />
+} @else if (links().length === 0) {
+  <app-empty-state icon="pi-link">
+    <p>Du bist bei niemandem verknüpft.</p>
+    <p class="empty-state__hint">
+      Wer dich in seiner Spielerliste führt, kann dir einen Einladungslink schicken.
     </p>
+  </app-empty-state>
+} @else {
+  @if (active().length > 0) {
+    <section class="panel" aria-labelledby="player-links-title">
+      <h2 class="panel__title" id="player-links-title">Aktuell verknüpft</h2>
+      <p class="panel__hint">
+        Spiele dieser Spieler zählen in deinem Verlauf und deiner Statistik.
+      </p>
 
-    <ul class="links">
-      @for (link of retired(); track link.playerId) {
-        <li class="links__row">
-          <span class="links__name">{{ link.ownerName }}</span>
-          <p-button
-            type="button"
-            icon="pi pi-trash"
-            [ariaLabel]="'Bisherige Spiele mit ' + link.ownerName + ' entfernen'"
-            severity="danger"
-            [rounded]="true"
-            [text]="true"
-            (onClick)="ask(link)"
-          />
-        </li>
-      }
-    </ul>
-  </section>
+      <ul class="links">
+        @for (link of active(); track link.playerId) {
+          <li class="links__row">
+            <span class="links__name">{{ link.ownerName }}</span>
+            <p-button
+              type="button"
+              icon="pi pi-times"
+              [ariaLabel]="'Verknüpfung bei ' + link.ownerName + ' lösen'"
+              severity="secondary"
+              [rounded]="true"
+              [text]="true"
+              (onClick)="ask(link)"
+            />
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (retired().length > 0) {
+    <section class="panel" aria-labelledby="player-links-retired-title">
+      <h2 class="panel__title" id="player-links-retired-title">Nur bisherige Spiele</h2>
+      <p class="panel__hint">
+        Nicht mehr verknüpft, die bisherigen Spiele zählen aber weiter in deiner Statistik.
+      </p>
+
+      <ul class="links">
+        @for (link of retired(); track link.playerId) {
+          <li class="links__row">
+            <span class="links__name">{{ link.ownerName }}</span>
+            <p-button
+              type="button"
+              icon="pi pi-trash"
+              [ariaLabel]="'Bisherige Spiele mit ' + link.ownerName + ' entfernen'"
+              severity="danger"
+              [rounded]="true"
+              [text]="true"
+              (onClick)="ask(link)"
+            />
+          </li>
+        }
+      </ul>
+    </section>
+  }
 }
 
 <p-dialog

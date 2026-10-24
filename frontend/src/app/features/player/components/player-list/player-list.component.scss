@@ -1,3 +1,13 @@
+:host {
+  --p-tabs-tabpanel-padding: 1.25rem 0 0;
+}
+
+.tab:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
 .create {
   display: flex;
   gap: 0.5rem;

@@ -10,6 +10,7 @@ import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
 import { TableModule } from 'primeng/table';
+import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { Tag } from 'primeng/tag';
 import { DISPLAY_NAME_MAX_LENGTH } from '../../../auth/models/profile-rules';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -57,7 +58,12 @@ interface Invitation {
     ReactiveFormsModule,
     Select,
     ShareDialogComponent,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
     TableModule,
+    Tabs,
     Tag,
   ],
   templateUrl: './player-list.component.html',
@@ -72,6 +78,7 @@ export class PlayerListComponent {
   private readonly fb = inject(FormBuilder);
   private readonly document = inject(DOCUMENT);
 
+  protected readonly tab = signal<'own' | 'links'>('own');
   protected readonly query = signal('');
   protected readonly filters = this.fb.group({ linked: this.fb.control<LinkState | null>(null) });
   protected readonly linkOptions = Object.entries(LINK_STATE_LABELS).map(([value, label]) => ({

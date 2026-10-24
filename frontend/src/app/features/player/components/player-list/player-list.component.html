@@ -5,173 +5,186 @@
     <p class="view__subtitle">Die Spieler, die du im neuen Spiel auswählen kannst</p>
   </header>
 
-  <form class="create" [formGroup]="createForm" (ngSubmit)="create()">
-    <input
-      pInputText
-      formControlName="name"
-      placeholder="Name des Spielers"
-      aria-label="Name des neuen Spielers"
-      aria-describedby="create-name-error"
-      autocomplete="off"
-      fluid
-    />
-    <p-button
-      type="submit"
-      label="Hinzufügen"
-      icon="pi pi-plus"
-      [loading]="creating()"
-      [disabled]="createForm.invalid"
-    />
-  </form>
-  <app-field-error id="create-name-error" [control]="createForm.controls.name" />
-  @if (createError(); as message) {
-    <p-message severity="error" [text]="message" />
-  }
+  <p-tabs [(value)]="tab">
+    <p-tablist>
+      <p-tab value="own">Meine Spieler</p-tab>
+      <p-tab value="links">Bei anderen verknüpft</p-tab>
+    </p-tablist>
+    <p-tabpanels>
+      <p-tabpanel value="own" class="tab">
+        <form class="create" [formGroup]="createForm" (ngSubmit)="create()">
+          <input
+            pInputText
+            formControlName="name"
+            placeholder="Name des Spielers"
+            aria-label="Name des neuen Spielers"
+            aria-describedby="create-name-error"
+            autocomplete="off"
+            fluid
+          />
+          <p-button
+            type="submit"
+            label="Hinzufügen"
+            icon="pi pi-plus"
+            [loading]="creating()"
+            [disabled]="createForm.invalid"
+          />
+        </form>
+        <app-field-error id="create-name-error" [control]="createForm.controls.name" />
+        @if (createError(); as message) {
+          <p-message severity="error" [text]="message" />
+        }
 
-  <app-list-toolbar
-    [count]="entries.total()"
-    [noun]="['Spieler', 'Spieler']"
-    searchLabel="Spieler suchen"
-    [filterable]="true"
-    [chips]="chips()"
-    (search)="onSearch($event)"
-    (chipRemove)="clearFilter($event)"
-    (reset)="filters.reset()"
-  >
-    <form class="list-filters" [formGroup]="filters">
-      <label class="list-filters__label" for="filter-linked">Verknüpfung</label>
-      <p-select
-        inputId="filter-linked"
-        formControlName="linked"
-        [options]="linkOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Alle"
-        [showClear]="true"
-        fluid
-      />
-    </form>
-  </app-list-toolbar>
+        <app-list-toolbar
+          [count]="entries.total()"
+          [noun]="['Spieler', 'Spieler']"
+          searchLabel="Spieler suchen"
+          [filterable]="true"
+          [chips]="chips()"
+          (search)="onSearch($event)"
+          (chipRemove)="clearFilter($event)"
+          (reset)="filters.reset()"
+        >
+          <form class="list-filters" [formGroup]="filters">
+            <label class="list-filters__label" for="filter-linked">Verknüpfung</label>
+            <p-select
+              inputId="filter-linked"
+              formControlName="linked"
+              [options]="linkOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Alle"
+              [showClear]="true"
+              fluid
+            />
+          </form>
+        </app-list-toolbar>
 
-  @if (entries.failed()) {
-    <app-load-error
-      message="Die Spielerliste konnte nicht geladen werden."
-      (retry)="entries.load()"
-    />
-  } @else if (!entries.loaded()) {
-    <app-loading-state label="Spieler werden geladen" />
-  } @else {
-    <p-table
-      [value]="entries.items()"
-      [lazy]="true"
-      [lazyLoadOnInit]="false"
-      [paginator]="entries.total() > entries.pageSize"
-      [rows]="entries.pageSize"
-      [first]="entries.first()"
-      [totalRecords]="entries.total()"
-      [loading]="entries.loading()"
-      [pageLinks]="3"
-      (onLazyLoad)="entries.onLazyLoad($event)"
-      dataKey="id"
-      class="data-table"
-      size="small"
-    >
-      <ng-template #loadingicon>
-        <app-loading-state label="Spieler werden geladen" />
-      </ng-template>
-      <ng-template #header>
-        <tr>
-          <th scope="col">Name</th>
-          <th scope="col" class="data-table__actions"><span class="sr-only">Aktionen</span></th>
-        </tr>
-      </ng-template>
-      <ng-template #body let-player>
-        <tr>
-          @if (editingId() === player.id) {
-            <td colspan="2">
-              <ng-container *ngTemplateOutlet="editRow; context: { $implicit: player }" />
-            </td>
-          } @else {
-            <td>
-              <span class="players__name">
-                <span>{{ player.name }}</span>
-                @if (player.isSelf) {
-                  <p-tag value="Du" severity="secondary" />
-                } @else if (player.linked) {
-                  <p-tag value="Verknüpft" icon="pi pi-link" severity="success" />
+        @if (entries.failed()) {
+          <app-load-error
+            message="Die Spielerliste konnte nicht geladen werden."
+            (retry)="entries.load()"
+          />
+        } @else if (!entries.loaded()) {
+          <app-loading-state label="Spieler werden geladen" />
+        } @else {
+          <p-table
+            [value]="entries.items()"
+            [lazy]="true"
+            [lazyLoadOnInit]="false"
+            [paginator]="entries.total() > entries.pageSize"
+            [rows]="entries.pageSize"
+            [first]="entries.first()"
+            [totalRecords]="entries.total()"
+            [loading]="entries.loading()"
+            [pageLinks]="3"
+            (onLazyLoad)="entries.onLazyLoad($event)"
+            dataKey="id"
+            class="data-table"
+            size="small"
+          >
+            <ng-template #loadingicon>
+              <app-loading-state label="Spieler werden geladen" />
+            </ng-template>
+            <ng-template #header>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col" class="data-table__actions"><span class="sr-only">Aktionen</span></th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-player>
+              <tr>
+                @if (editingId() === player.id) {
+                  <td colspan="2">
+                    <ng-container *ngTemplateOutlet="editRow; context: { $implicit: player }" />
+                  </td>
+                } @else {
+                  <td>
+                    <span class="players__name">
+                      <span>{{ player.name }}</span>
+                      @if (player.isSelf) {
+                        <p-tag value="Du" severity="secondary" />
+                      } @else if (player.linked) {
+                        <p-tag value="Verknüpft" icon="pi pi-link" severity="success" />
+                      }
+                    </span>
+                  </td>
+                  <td class="data-table__actions">
+                    @if (!player.isSelf) {
+                      <p-button
+                        type="button"
+                        icon="pi pi-link"
+                        [ariaLabel]="
+                          player.linked
+                            ? 'Verknüpfung von ' + player.name + ' lösen'
+                            : player.name + ' mit einem Konto verknüpfen'
+                        "
+                        [severity]="player.linked ? 'success' : 'secondary'"
+                        [rounded]="true"
+                        [text]="true"
+                        [disabled]="busyId() !== null"
+                        (onClick)="player.linked ? confirmUnlink(player) : invite(player)"
+                      />
+                    }
+                    <p-button
+                      type="button"
+                      icon="pi pi-pencil"
+                      [ariaLabel]="player.isSelf ? 'Deinen Namen ändern' : player.name + ' umbenennen'"
+                      severity="secondary"
+                      [rounded]="true"
+                      [text]="true"
+                      [disabled]="busyId() !== null"
+                      (onClick)="edit(player)"
+                    />
+                    @if (!player.isSelf) {
+                      <p-button
+                        type="button"
+                        icon="pi pi-trash"
+                        [ariaLabel]="player.name + ' entfernen'"
+                        severity="danger"
+                        [rounded]="true"
+                        [text]="true"
+                        [loading]="busyId() === player.id"
+                        [disabled]="busyId() !== null"
+                        (onClick)="confirmRemove(player)"
+                      />
+                    }
+                  </td>
                 }
-              </span>
-            </td>
-            <td class="data-table__actions">
-              @if (!player.isSelf) {
-                <p-button
-                  type="button"
-                  icon="pi pi-link"
-                  [ariaLabel]="
-                    player.linked
-                      ? 'Verknüpfung von ' + player.name + ' lösen'
-                      : player.name + ' mit einem Konto verknüpfen'
-                  "
-                  [severity]="player.linked ? 'success' : 'secondary'"
-                  [rounded]="true"
-                  [text]="true"
-                  [disabled]="busyId() !== null"
-                  (onClick)="player.linked ? confirmUnlink(player) : invite(player)"
-                />
-              }
-              <p-button
-                type="button"
-                icon="pi pi-pencil"
-                [ariaLabel]="player.isSelf ? 'Deinen Namen ändern' : player.name + ' umbenennen'"
-                severity="secondary"
-                [rounded]="true"
-                [text]="true"
-                [disabled]="busyId() !== null"
-                (onClick)="edit(player)"
-              />
-              @if (!player.isSelf) {
-                <p-button
-                  type="button"
-                  icon="pi pi-trash"
-                  [ariaLabel]="player.name + ' entfernen'"
-                  severity="danger"
-                  [rounded]="true"
-                  [text]="true"
-                  [loading]="busyId() === player.id"
-                  [disabled]="busyId() !== null"
-                  (onClick)="confirmRemove(player)"
-                />
-              }
-            </td>
+              </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+              <tr>
+                <td colspan="2">
+                  <app-empty-state icon="pi-filter-slash">
+                    <p>Keine Spieler für diese Suche.</p>
+                  </app-empty-state>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+          @if (editingId() !== null) {
+            <app-field-error id="edit-name-error" [control]="editForm.controls.name" />
           }
-        </tr>
-      </ng-template>
-      <ng-template #emptymessage>
-        <tr>
-          <td colspan="2">
-            <app-empty-state icon="pi-filter-slash">
-              <p>Keine Spieler für diese Suche.</p>
+          @if (editError(); as message) {
+            <p-message severity="error" [text]="message" />
+          }
+
+          @if (!filtered() && entries.total() <= 1) {
+            <app-empty-state icon="pi-users">
+              <p>Noch keine weiteren Spieler.</p>
+              <p class="empty-state__hint">
+                Lege hier welche an oder trage im neuen Spiel einen Namen ein.
+              </p>
             </app-empty-state>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
-    @if (editingId() !== null) {
-      <app-field-error id="edit-name-error" [control]="editForm.controls.name" />
-    }
-    @if (editError(); as message) {
-      <p-message severity="error" [text]="message" />
-    }
-
-    @if (!filtered() && entries.total() <= 1) {
-      <app-empty-state icon="pi-users">
-        <p>Noch keine weiteren Spieler.</p>
-        <p class="empty-state__hint">Lege hier welche an oder trage im neuen Spiel einen Namen ein.</p>
-      </app-empty-state>
-    }
-  }
-
-  <app-player-links />
+          }
+        }
+      </p-tabpanel>
+      <p-tabpanel value="links" class="tab">
+        <app-player-links />
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
 </section>
 
 <ng-template #editRow let-player>

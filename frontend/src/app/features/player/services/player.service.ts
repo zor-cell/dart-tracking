@@ -98,9 +98,12 @@ export class PlayerService {
     return firstValueFrom(this.http.delete<PlayerIdentityDto>(`${this.baseUrl}/${id}/link`));
   }
 
-  /** Where this account is linked in someone else's address book. */
+  /** Where this account is linked in someone else's address book; failures are left
+   * to the caller. */
   links(): Promise<PlayerLinkDto[]> {
-    return firstValueFrom(this.http.get<PlayerLinkDto[]>(`${this.baseUrl}/links`));
+    return firstValueFrom(
+      this.http.get<PlayerLinkDto[]>(`${this.baseUrl}/links`, { context: SILENT_ERROR_CONTEXT }),
+    );
   }
 
   /** Undo a link to this account; `keepHistory` keeps the games played so far. */
