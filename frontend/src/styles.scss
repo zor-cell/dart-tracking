@@ -136,23 +136,28 @@ body {
   white-space: nowrap;
 }
 
-/* Every p-table: shared cell spacing, rows that open a record, number and action columns. */
+/* Every p-table: centred cells, rows that open a record, number and action columns. */
 .data-table {
   --p-datatable-body-cell-sm-padding: 0.75rem 0.5rem;
   --p-datatable-header-cell-sm-padding: 0.6rem 0.5rem;
   font-size: 0.9rem;
+
+  .p-datatable-thead > tr > th,
+  .p-datatable-tbody > tr > td {
+    text-align: center;
+  }
 
   .data-table__link {
     cursor: pointer;
   }
 
   .data-table__number {
-    text-align: end;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
 
-  .data-table__actions {
+  .p-datatable-thead > tr > .data-table__actions,
+  .p-datatable-tbody > tr > .data-table__actions {
     width: 1%;
     padding-block: 0;
     text-align: end;
