@@ -7,7 +7,7 @@ import { Button } from 'primeng/button';
 import { DatePicker } from 'primeng/datepicker';
 import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
-import { TableLazyLoadEvent, TableModule } from 'primeng/table';
+import { TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
 import { PlayerIdentityDto } from '../../../player/dto/player-identity.dto';
 import { PlayerService } from '../../../player/services/player.service';
@@ -22,7 +22,7 @@ import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { GAME_VARIANTS, GameVariant } from '../../models/game-variant';
 import { GameHistoryService } from '../../services/game-history.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
-import { PAGE_SIZE } from '../../../../core/view/models/page-size';
+import { PagedTable } from '../../../../core/view/models/paged-table';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
@@ -53,7 +53,6 @@ export class GameListComponent {
   private readonly history = inject(GameHistoryService);
   private readonly players = inject(PlayerService);
 
-  protected readonly pageSize = PAGE_SIZE;
   protected readonly variantOptions = [...GAME_VARIANTS];
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
   protected readonly statusOptions = Object.entries(GAME_STATUS_LABELS).map(([value, label]) => ({
@@ -70,13 +69,9 @@ export class GameListComponent {
     period: this.fb.control<(Date | null)[] | null>(null),
   });
 
-  protected readonly games = signal<GameSummaryDto[]>([]);
-  protected readonly total = signal(0);
-  protected readonly first = signal(0);
-  protected readonly loading = signal(true);
-  protected readonly failed = signal(false);
-  /** Whether the first page has arrived; until then the whole view shows the spinner. */
-  protected readonly loaded = signal(false);
+  protected readonly games = new PagedTable<GameSummaryDto>((limit, offset) =>
+    this.history.list(limit, offset, this.criteria()),
+  );
 
   private readonly filterValue = toSignal(this.filters.valueChanges, {
     initialValue: this.filters.value,
@@ -85,21 +80,10 @@ export class GameListComponent {
     () => Object.values(this.filterValue()).filter((value) => value !== null).length,
   );
 
-  /** Bumped per load, so a slow answer to an older page or filter is dropped. */
-  private generation = 0;
-
   constructor() {
-    void this.load();
+    void this.games.load();
     void this.players.list().then((all) => this.opponents.set(all.filter((p) => !p.isSelf)));
-    this.filters.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
-      this.first.set(0);
-      void this.load();
-    });
-  }
-
-  protected onLazyLoad(event: TableLazyLoadEvent): void {
-    this.first.set(event.first ?? 0);
-    void this.load();
+    this.filters.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.games.restart());
   }
 
   protected open(game: GameSummaryDto): void {
@@ -116,28 +100,6 @@ export class GameListComponent {
 
   protected resetFilters(): void {
     this.filters.reset();
-  }
-
-  protected async load(): Promise<void> {
-    const generation = ++this.generation;
-    this.loading.set(true);
-    this.failed.set(false);
-    try {
-      const page = await this.history.list(PAGE_SIZE, this.first(), this.criteria());
-      if (generation === this.generation) {
-        this.games.set([...page.items]);
-        this.total.set(page.total);
-        this.loaded.set(true);
-      }
-    } catch {
-      if (generation === this.generation) {
-        this.failed.set(true);
-      }
-    } finally {
-      if (generation === this.generation) {
-        this.loading.set(false);
-      }
-    }
   }
 
   /** The form as a filter; a range with one day picked covers that day. */

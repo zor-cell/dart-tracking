@@ -28,20 +28,32 @@
     <p-message severity="error" [text]="message" />
   }
 
-  @if (loading()) {
+  @if (entries.failed()) {
+    <app-load-error
+      message="Die Spielerliste konnte nicht geladen werden."
+      (retry)="entries.load()"
+    />
+  } @else if (!entries.loaded()) {
     <app-loading-state label="Spieler werden geladen" />
-  } @else if (failed()) {
-    <app-load-error message="Die Spielerliste konnte nicht geladen werden." (retry)="load()" />
   } @else {
     <p-table
-      [value]="entries()"
-      [paginator]="entries().length > pageSize"
-      [rows]="pageSize"
+      [value]="entries.items()"
+      [lazy]="true"
+      [lazyLoadOnInit]="false"
+      [paginator]="entries.total() > entries.pageSize"
+      [rows]="entries.pageSize"
+      [first]="entries.first()"
+      [totalRecords]="entries.total()"
+      [loading]="entries.loading()"
       [pageLinks]="3"
+      (onLazyLoad)="entries.onLazyLoad($event)"
       dataKey="id"
       class="data-table"
       size="small"
     >
+      <ng-template #loadingicon>
+        <app-loading-state label="Spieler werden geladen" />
+      </ng-template>
       <ng-template #header>
         <tr>
           <th scope="col">Name</th>
@@ -117,7 +129,7 @@
       <p-message severity="error" [text]="message" />
     }
 
-    @if (others().length === 0) {
+    @if (entries.total() <= 1) {
       <app-empty-state icon="pi-users">
         <p>Noch keine weiteren Spieler.</p>
         <p class="empty-state__hint">Lege hier welche an oder trage im neuen Spiel einen Namen ein.</p>

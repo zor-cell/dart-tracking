@@ -18,6 +18,7 @@ from app.api.features.player.dto.invite_link import InviteLinkDto
 from app.api.features.player.dto.player_identity import PlayerIdentityDto
 from app.api.features.player.dto.player_link import PlayerLinkDto
 from app.api.features.player.dto.player_name import PlayerNameDto
+from app.api.features.player.dto.player_page import PlayerPageDto
 from app.api.features.player.persistence.player_repository import repository
 from app.api.features.player.services import invitations
 from app.infrastructure import database
@@ -71,6 +72,23 @@ async def search_players(
         identities = await repository.search(session, user.id, q.strip(), limit)
 
     return [PlayerIdentityDto.from_entity(identity, user.id) for identity in identities]
+
+
+@router.get("/page", response_model=PlayerPageDto)
+async def list_players(
+    user: AuthenticatedUser,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+) -> PlayerPageDto:
+    """The address book one page at a time."""
+    async with database.session_scope() as session:
+        identities = await repository.page(session, user.id, limit=limit, offset=offset)
+        total = await repository.count(session, user.id)
+
+    return PlayerPageDto(
+        items=[PlayerIdentityDto.from_entity(identity, user.id) for identity in identities],
+        total=total,
+    )
 
 
 @router.get("/links", response_model=list[PlayerLinkDto])

@@ -6,7 +6,9 @@
   </header>
 
   <div class="toolbar">
-    <span class="toolbar__count">{{ total() }} {{ total() === 1 ? 'Spiel' : 'Spiele' }}</span>
+    <span class="toolbar__count">
+      {{ games.total() }} {{ games.total() === 1 ? 'Spiel' : 'Spiele' }}
+    </span>
     <p-button
       label="Filter"
       icon="pi pi-filter"
@@ -89,23 +91,23 @@
     </p-popover>
   </div>
 
-  @if (failed()) {
-    <app-load-error message="Die Spiele konnten nicht geladen werden." (retry)="load()" />
-  } @else if (!loaded()) {
+  @if (games.failed()) {
+    <app-load-error message="Die Spiele konnten nicht geladen werden." (retry)="games.load()" />
+  } @else if (!games.loaded()) {
     <app-loading-state label="Spiele werden geladen" />
   } @else {
     <p-table
-      [value]="games()"
+      [value]="games.items()"
       [lazy]="true"
       [lazyLoadOnInit]="false"
-      [paginator]="total() > pageSize"
-      [rows]="pageSize"
-      [first]="first()"
-      [totalRecords]="total()"
-      [loading]="loading()"
+      [paginator]="games.total() > games.pageSize"
+      [rows]="games.pageSize"
+      [first]="games.first()"
+      [totalRecords]="games.total()"
+      [loading]="games.loading()"
       [pageLinks]="3"
       [rowHover]="true"
-      (onLazyLoad)="onLazyLoad($event)"
+      (onLazyLoad)="games.onLazyLoad($event)"
       class="data-table"
       size="small"
     >

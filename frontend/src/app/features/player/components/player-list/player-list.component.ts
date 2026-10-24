@@ -22,7 +22,7 @@ import { EmptyStateComponent } from '../../../../core/view/components/empty-stat
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
 import { ShareDialogComponent } from '../../../../core/view/components/share-dialog/share-dialog.component';
-import { PAGE_SIZE } from '../../../../core/view/models/page-size';
+import { PagedTable } from '../../../../core/view/models/paged-table';
 
 const nameValidators = [Validators.required, Validators.maxLength(DISPLAY_NAME_MAX_LENGTH)];
 
@@ -66,13 +66,10 @@ export class PlayerListComponent {
   private readonly fb = inject(FormBuilder);
   private readonly document = inject(DOCUMENT);
 
-  protected readonly loading = signal(true);
-  protected readonly failed = signal(false);
-  protected readonly pageSize = PAGE_SIZE;
-  protected readonly entries = signal<PlayerIdentityDto[]>([]);
-
-  protected readonly self = computed(() => this.entries().find((entry) => entry.isSelf));
-  protected readonly others = computed(() => this.entries().filter((entry) => !entry.isSelf));
+  protected readonly entries = new PagedTable<PlayerIdentityDto>((limit, offset) =>
+    this.players.page(limit, offset),
+  );
+  private readonly self = computed(() => this.entries.items().find((entry) => entry.isSelf));
 
   protected readonly creating = signal(false);
   protected readonly createError = signal<string | null>(null);
@@ -94,23 +91,11 @@ export class PlayerListComponent {
   );
 
   constructor() {
-    void this.load();
+    void this.entries.load();
     this.createForm.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.createError.set(null));
     this.editForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.editError.set(null));
-  }
-
-  protected async load(): Promise<void> {
-    this.loading.set(true);
-    this.failed.set(false);
-    try {
-      this.entries.set(await this.players.list(true));
-    } catch {
-      this.failed.set(true);
-    } finally {
-      this.loading.set(false);
-    }
   }
 
   protected async create(): Promise<void> {
@@ -121,9 +106,9 @@ export class PlayerListComponent {
     this.creating.set(true);
     this.createError.set(null);
     try {
-      const created = await this.players.create(name);
-      this.entries.update((list) => ordered([...list, created]));
+      await this.players.create(name);
       this.createForm.reset();
+      await this.entries.load();
     } catch (failure) {
       this.createError.set(describe(failure));
     } finally {
@@ -153,8 +138,8 @@ export class PlayerListComponent {
     try {
       const renamed =
         id === this.self()?.id ? await this.renameSelf(name) : await this.players.rename(id, name);
-      this.entries.update((list) =>
-        ordered(list.map((entry) => (entry.id === id ? renamed : entry))),
+      this.entries.items.update((list) =>
+        list.map((entry) => (entry.id === id ? renamed : entry)),
       );
       this.editingId.set(null);
     } catch (failure) {
@@ -209,7 +194,7 @@ export class PlayerListComponent {
     this.busyId.set(player.id);
     try {
       const unlinked = await this.players.unlink(player.id);
-      this.entries.update((list) =>
+      this.entries.items.update((list) =>
         list.map((entry) => (entry.id === player.id ? unlinked : entry)),
       );
     } catch {
@@ -223,7 +208,7 @@ export class PlayerListComponent {
     this.busyId.set(player.id);
     try {
       await this.players.remove(player.id);
-      this.entries.update((list) => list.filter((entry) => entry.id !== player.id));
+      await this.entries.load();
     } catch {
       // The error banner already says what went wrong.
     } finally {
@@ -241,11 +226,6 @@ export class PlayerListComponent {
     await this.auth.updateProfile({ username: account.username, displayName: name });
     return { ...self, name };
   }
-}
-
-/** Own entry first, then alphabetical, as the server lists them. */
-function ordered(list: PlayerIdentityDto[]): PlayerIdentityDto[] {
-  return list.sort((a, b) => Number(b.isSelf) - Number(a.isSelf) || a.name.localeCompare(b.name));
 }
 
 function describe(failure: unknown): string {

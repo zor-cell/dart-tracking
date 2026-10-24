@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import ColumnElement, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
@@ -22,6 +22,10 @@ def _is_uuid(value: str) -> bool:
     except ValueError:
         return False
     return True
+
+
+def _address_book_clauses(owner_user_id: str) -> list[ColumnElement[bool]]:
+    return [PlayerTable.owner_user_id == owner_user_id]
 
 
 def _to_domain(row: PlayerTable) -> PlayerIdentity:
@@ -67,6 +71,33 @@ class PlayerRepository:
             )
         ).scalars().all()
         return [_to_domain(row) for row in rows]
+
+    async def page(
+        self, session: AsyncSession, owner_user_id: str, *, limit: int, offset: int
+    ) -> list[PlayerIdentity]:
+        """One page of the address book, own entry first, then alphabetical."""
+        rows = (
+            await session.execute(
+                select(PlayerTable)
+                .where(*_address_book_clauses(owner_user_id))
+                .order_by(
+                    PlayerTable.user_id.is_distinct_from(owner_user_id),
+                    PlayerTable.display_name,
+                    PlayerTable.id,
+                )
+                .limit(limit)
+                .offset(offset)
+            )
+        ).scalars().all()
+        return [_to_domain(row) for row in rows]
+
+    async def count(self, session: AsyncSession, owner_user_id: str) -> int:
+        """How many entries `page` pages through."""
+        return await session.scalar(
+            select(func.count())
+            .select_from(PlayerTable)
+            .where(*_address_book_clauses(owner_user_id))
+        ) or 0
 
     async def find_by_name(
         self,

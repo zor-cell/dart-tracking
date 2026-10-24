@@ -9,6 +9,7 @@ import { InviteLinkDto } from '../dto/invite-link.dto';
 import { PlayerIdentityDto } from '../dto/player-identity.dto';
 import { PlayerLinkDto } from '../dto/player-link.dto';
 import { PlayerNameDto } from '../dto/player-name.dto';
+import { PlayerPageDto } from '../dto/player-page.dto';
 
 /** Upper bound for the full address book, matching the server's maximum. */
 const ADDRESS_BOOK_LIMIT = 500;
@@ -37,13 +38,21 @@ export class PlayerService {
     }
   }
 
-  /** The whole address book, own entry first. `silent` skips the error toast, for
-   * callers that show the failure themselves. */
-  list(silent = false): Promise<PlayerIdentityDto[]> {
+  /** The whole address book, own entry first. */
+  list(): Promise<PlayerIdentityDto[]> {
     return firstValueFrom(
       this.http.get<PlayerIdentityDto[]>(this.baseUrl, {
         params: new HttpParams().set('limit', ADDRESS_BOOK_LIMIT),
-        context: silent ? SILENT_ERROR_CONTEXT : undefined,
+      }),
+    );
+  }
+
+  /** One page of the address book, own entry first; failures are left to the caller. */
+  page(limit: number, offset: number): Promise<PlayerPageDto> {
+    return firstValueFrom(
+      this.http.get<PlayerPageDto>(`${this.baseUrl}/page`, {
+        params: new HttpParams().set('limit', limit).set('offset', offset),
+        context: SILENT_ERROR_CONTEXT,
       }),
     );
   }
