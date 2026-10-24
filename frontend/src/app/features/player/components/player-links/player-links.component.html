@@ -17,22 +17,30 @@
         Spiele dieser Spieler zählen in deinem Verlauf und deiner Statistik.
       </p>
 
-      <ul class="links">
-        @for (link of active(); track link.playerId) {
-          <li class="links__row">
-            <span class="links__name">{{ link.ownerName }}</span>
-            <p-button
-              type="button"
-              icon="pi pi-times"
-              [ariaLabel]="'Verknüpfung bei ' + link.ownerName + ' lösen'"
-              severity="secondary"
-              [rounded]="true"
-              [text]="true"
-              (onClick)="ask(link)"
-            />
-          </li>
-        }
-      </ul>
+      <p-table [value]="active()" dataKey="playerId" class="data-table" size="small">
+        <ng-template #header>
+          <tr>
+            <th scope="col">Spielerliste von</th>
+            <th scope="col" class="data-table__actions"><span class="sr-only">Aktionen</span></th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-link>
+          <tr>
+            <td>{{ link.ownerName }}</td>
+            <td class="data-table__actions">
+              <p-button
+                type="button"
+                icon="pi pi-times"
+                [ariaLabel]="'Verknüpfung bei ' + link.ownerName + ' lösen'"
+                severity="secondary"
+                [rounded]="true"
+                [text]="true"
+                (onClick)="ask(link)"
+              />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
     </section>
   }
 
@@ -43,22 +51,30 @@
         Nicht mehr verknüpft, die bisherigen Spiele zählen aber weiter in deiner Statistik.
       </p>
 
-      <ul class="links">
-        @for (link of retired(); track link.playerId) {
-          <li class="links__row">
-            <span class="links__name">{{ link.ownerName }}</span>
-            <p-button
-              type="button"
-              icon="pi pi-trash"
-              [ariaLabel]="'Bisherige Spiele mit ' + link.ownerName + ' entfernen'"
-              severity="danger"
-              [rounded]="true"
-              [text]="true"
-              (onClick)="ask(link)"
-            />
-          </li>
-        }
-      </ul>
+      <p-table [value]="retired()" dataKey="playerId" class="data-table" size="small">
+        <ng-template #header>
+          <tr>
+            <th scope="col">Spielerliste von</th>
+            <th scope="col" class="data-table__actions"><span class="sr-only">Aktionen</span></th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-link>
+          <tr>
+            <td>{{ link.ownerName }}</td>
+            <td class="data-table__actions">
+              <p-button
+                type="button"
+                icon="pi pi-trash"
+                [ariaLabel]="'Bisherige Spiele mit ' + link.ownerName + ' entfernen'"
+                severity="danger"
+                [rounded]="true"
+                [text]="true"
+                (onClick)="ask(link)"
+              />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
     </section>
   }
 }

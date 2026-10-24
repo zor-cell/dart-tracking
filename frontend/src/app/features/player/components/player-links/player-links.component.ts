@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
+import { TableModule } from 'primeng/table';
 import { PlayerLinkDto } from '../../dto/player-link.dto';
 import { PlayerService } from '../../services/player.service';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
@@ -11,7 +12,14 @@ import { LoadingStateComponent } from '../../../../core/view/components/loading-
  * retired ones that only hold past games, each with a way to undo the link. */
 @Component({
   selector: 'app-player-links',
-  imports: [Button, Dialog, EmptyStateComponent, LoadErrorComponent, LoadingStateComponent],
+  imports: [
+    Button,
+    Dialog,
+    EmptyStateComponent,
+    LoadErrorComponent,
+    LoadingStateComponent,
+    TableModule,
+  ],
   templateUrl: './player-links.component.html',
   styleUrl: './player-links.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
