@@ -17,6 +17,7 @@ import { GAME_VARIANTS, GameVariant } from '../../models/game-variant';
 import { GameHistoryService } from '../../services/game-history.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { PAGE_SIZE } from '../../../../core/view/models/page-size';
+import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 
@@ -27,6 +28,7 @@ import { LoadingStateComponent } from '../../../../core/view/components/loading-
     Button,
     DatePicker,
     DatePipe,
+    EmptyStateComponent,
     LoadErrorComponent,
     LoadingStateComponent,
     Popover,

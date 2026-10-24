@@ -149,8 +149,10 @@
       </ng-template>
       <ng-template #emptymessage>
         <tr>
-          <td colspan="4" class="games__empty">
-            {{ activeFilters() > 0 ? 'Keine Spiele für diese Filter.' : 'Noch keine Spiele.' }}
+          <td colspan="4">
+            <app-empty-state [icon]="activeFilters() > 0 ? 'pi-filter-slash' : 'pi-history'">
+              <p>{{ activeFilters() > 0 ? 'Keine Spiele für diese Filter.' : 'Noch keine Spiele.' }}</p>
+            </app-empty-state>
           </td>
         </tr>
       </ng-template>

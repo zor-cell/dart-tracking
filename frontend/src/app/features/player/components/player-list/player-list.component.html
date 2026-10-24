@@ -118,9 +118,10 @@
     }
 
     @if (others().length === 0) {
-      <p class="players__hint">
-        Noch keine weiteren Spieler. Lege hier welche an oder trage im neuen Spiel einen Namen ein.
-      </p>
+      <app-empty-state icon="pi-users">
+        <p>Noch keine weiteren Spieler.</p>
+        <p class="empty-state__hint">Lege hier welche an oder trage im neuen Spiel einen Namen ein.</p>
+      </app-empty-state>
     }
   }
 
