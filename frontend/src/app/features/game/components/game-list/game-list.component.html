@@ -6,8 +6,6 @@
   </header>
 
   <app-list-toolbar
-    [count]="games.total()"
-    [noun]="['Spiel', 'Spiele']"
     [filterable]="true"
     [chips]="chips()"
     (chipRemove)="clearFilter($event)"
@@ -93,7 +91,9 @@
       [value]="games.items()"
       [lazy]="true"
       [lazyLoadOnInit]="false"
-      [paginator]="games.total() > games.pageSize"
+      [paginator]="games.total() > 0"
+      [showCurrentPageReport]="true"
+      [currentPageReportTemplate]="games.pageReport"
       [rows]="games.pageSize"
       [first]="games.first()"
       [totalRecords]="games.total()"

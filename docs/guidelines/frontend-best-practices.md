@@ -64,21 +64,37 @@ time, extract it into `core/` (or the feature's `components/`/`models/`) instead
 copying it, the way the board face is shared by the live board, the replay and the
 heatmaps.
 
-- **Loading a view:** `app-loading-state`. Skeletons only in the running game and the
-  new-game view, where the layout must not jump.
+- **Loading a view:** `app-loading-state` (skeletons only as listed under deviations).
 - **Failed load:** `app-load-error` with a retry. The service call passes
   `SILENT_ERROR_CONTEXT` so no toast repeats the message.
 - **Nothing to show:** `app-empty-state`, inside tables too (`#emptymessage`).
 - **Tables:** every list of records is a `p-table` with `class="data-table"` and
-  `size="small"`. Cells are centred; use `data-table__number`, `data-table__actions`,
-  `data-table__hint` and `data-table__link` (rows that open a record), statuses as
-  `p-tag`, and `app-loading-state` in `#loadingicon`.
+  `size="small"`. Rows are compact and cells are centred; use `data-table__number`,
+  `data-table__actions`, `data-table__hint` and `data-table__link` (rows that open a
+  record), statuses as `p-tag`, and `app-loading-state` in `#loadingicon`. Spacing,
+  tag and button sizes come from the `.data-table` tokens in `styles.scss`, not from
+  the component.
 - **Paging:** lists that come from the server are paged on the server through
   `PagedTable` (`core/view/models/paged-table.ts`) and `PAGE_SIZE`. The endpoint takes
-  `limit`, `offset` and its filters and returns `{ items, total }`.
+  `limit`, `offset` and its filters and returns `{ items, total }`. The paginator is
+  shown whenever there are results and reports the range and the total
+  (`PagedTable.pageReport`); there is no separate count above the table.
 - **Search and filters:** `app-list-toolbar`. Filter fields are projected into its
   popover with the `list-filters` classes; active filters show as `FilterChip`s.
 - **Dialogs:** destructive actions ask through `ConfirmService.ask()`; the one
   `p-confirmdialog` lives in the app shell. Other dialogs use `DIALOG_STYLE`.
 - **Colours:** theme tokens (`var(--p-…)`) without hex fallbacks. Hardcoded colours
   only where the theme has none, such as the board or overlays on the camera picture.
+- **Bundle budget:** the limits in `angular.json` are a rough guard. Raise them when a
+  sensible change needs it rather than deferring code just to stay under them.
+
+### Deliberate deviations
+These differ from the rules above on purpose; a refactor must keep them.
+
+- **Player names start left:** the name column of the player list and of the links
+  tab uses `data-table__start`, because names of different length read badly centred.
+- **Figure labels start left:** the row labels of the per-player figures in the game
+  detail (`figures__label`) stay left of the centred values.
+- **Actions end right:** `data-table__actions` keeps the buttons at the row's end.
+- **Skeletons while playing:** the running game and the new-game view load behind
+  `p-skeleton` instead of `app-loading-state`, so the layout does not jump.

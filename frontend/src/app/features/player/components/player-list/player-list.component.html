@@ -36,8 +36,6 @@
         }
 
         <app-list-toolbar
-          [count]="entries.total()"
-          [noun]="['Spieler', 'Spieler']"
           searchLabel="Spieler suchen"
           [filterable]="true"
           [chips]="chips()"
@@ -72,7 +70,9 @@
             [value]="entries.items()"
             [lazy]="true"
             [lazyLoadOnInit]="false"
-            [paginator]="entries.total() > entries.pageSize"
+            [paginator]="entries.total() > 0"
+            [showCurrentPageReport]="true"
+            [currentPageReportTemplate]="entries.pageReport"
             [rows]="entries.pageSize"
             [first]="entries.first()"
             [totalRecords]="entries.total()"
@@ -88,7 +88,7 @@
             </ng-template>
             <ng-template #header>
               <tr>
-                <th scope="col">Name</th>
+                <th scope="col" class="data-table__start">Name</th>
                 <th scope="col" class="data-table__actions"><span class="sr-only">Aktionen</span></th>
               </tr>
             </ng-template>
@@ -99,7 +99,7 @@
                     <ng-container *ngTemplateOutlet="editRow; context: { $implicit: player }" />
                   </td>
                 } @else {
-                  <td>
+                  <td class="data-table__start">
                     <span class="players__name">
                       <span>{{ player.name }}</span>
                       @if (player.isSelf) {

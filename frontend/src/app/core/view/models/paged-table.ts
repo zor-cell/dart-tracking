@@ -18,6 +18,8 @@ export class PagedTable<T> {
   /** Whether a page has arrived; until then the view shows its loading state. */
   readonly loaded = signal(false);
   readonly pageSize = PAGE_SIZE;
+  /** The paginator's note on which entries are shown, out of how many. */
+  readonly pageReport = '{first}–{last} von {totalRecords}';
 
   /** Bumped per load, so a slow answer to an older page or filter is dropped. */
   private generation = 0;

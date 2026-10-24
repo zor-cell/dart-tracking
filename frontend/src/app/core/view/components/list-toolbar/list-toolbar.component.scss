@@ -28,15 +28,8 @@
   margin-top: 0.5rem;
 }
 
-.list-toolbar__summary {
+.list-toolbar__chips {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
   gap: 0.5rem;
-}
-
-.list-toolbar__count {
-  margin-right: 0.25rem;
-  color: var(--p-text-muted-color);
-  font-size: 0.9rem;
 }

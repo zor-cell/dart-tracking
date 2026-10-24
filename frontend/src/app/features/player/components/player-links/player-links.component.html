@@ -20,13 +20,13 @@
       <p-table [value]="active()" dataKey="playerId" class="data-table" size="small">
         <ng-template #header>
           <tr>
-            <th scope="col">Spielerliste von</th>
+            <th scope="col" class="data-table__start">Spielerliste von</th>
             <th scope="col" class="data-table__actions"><span class="sr-only">Aktionen</span></th>
           </tr>
         </ng-template>
         <ng-template #body let-link>
           <tr>
-            <td>{{ link.ownerName }}</td>
+            <td class="data-table__start">{{ link.ownerName }}</td>
             <td class="data-table__actions">
               <p-button
                 type="button"
@@ -54,13 +54,13 @@
       <p-table [value]="retired()" dataKey="playerId" class="data-table" size="small">
         <ng-template #header>
           <tr>
-            <th scope="col">Spielerliste von</th>
+            <th scope="col" class="data-table__start">Spielerliste von</th>
             <th scope="col" class="data-table__actions"><span class="sr-only">Aktionen</span></th>
           </tr>
         </ng-template>
         <ng-template #body let-link>
           <tr>
-            <td>{{ link.ownerName }}</td>
+            <td class="data-table__start">{{ link.ownerName }}</td>
             <td class="data-table__actions">
               <p-button
                 type="button"

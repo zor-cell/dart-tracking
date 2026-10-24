@@ -43,9 +43,10 @@
   </div>
 }
 
-<div class="list-toolbar__summary" aria-live="polite">
-  <span class="list-toolbar__count">{{ countLabel() }}</span>
-  @for (chip of chips(); track chip.key) {
-    <p-chip [label]="chip.label" [removable]="true" (onRemove)="chipRemove.emit(chip.key)" />
-  }
-</div>
+@if (chips().length > 0) {
+  <div class="list-toolbar__chips">
+    @for (chip of chips(); track chip.key) {
+      <p-chip [label]="chip.label" [removable]="true" (onRemove)="chipRemove.emit(chip.key)" />
+    }
+  </div>
+}
