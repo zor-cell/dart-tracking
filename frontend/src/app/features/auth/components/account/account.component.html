@@ -69,6 +69,16 @@
               (onClick)="edit('displayName')"
             />
           }
+          @if (editingField() === 'displayName') {
+            <app-field-error
+              class="account__error"
+              id="displayName-error"
+              [control]="form.controls.displayName"
+            />
+            @if (error(); as message) {
+              <p-message class="account__error" severity="error" [text]="message" />
+            }
+          }
         </div>
 
         <div
@@ -122,6 +132,17 @@
               [disabled]="saving()"
               (onClick)="edit('username')"
             />
+          }
+          @if (editingField() === 'username') {
+            <app-field-error
+              class="account__error"
+              id="username-error"
+              [control]="form.controls.username"
+              [messages]="usernameMessages"
+            />
+            @if (error(); as message) {
+              <p-message class="account__error" severity="error" [text]="message" />
+            }
           }
         </div>
 
@@ -180,22 +201,6 @@
             (onClick)="passwordDialogOpen.set(true)"
           />
         </div>
-
-        @switch (editingField()) {
-          @case ('displayName') {
-            <app-field-error id="displayName-error" [control]="form.controls.displayName" />
-          }
-          @case ('username') {
-            <app-field-error
-              id="username-error"
-              [control]="form.controls.username"
-              [messages]="usernameMessages"
-            />
-          }
-        }
-        @if (error(); as message) {
-          <p-message severity="error" [text]="message" />
-        }
       </form>
       <app-change-email-dialog [(visible)]="emailDialogOpen" />
       <app-change-password-dialog [(visible)]="passwordDialogOpen" />

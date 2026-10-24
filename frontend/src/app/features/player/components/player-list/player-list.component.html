@@ -95,8 +95,12 @@
             <ng-template #body let-player>
               <tr>
                 @if (editingId() === player.id) {
-                  <td colspan="2">
+                  <td colspan="2" class="data-table__start">
                     <ng-container *ngTemplateOutlet="editRow; context: { $implicit: player }" />
+                    <app-field-error id="edit-name-error" [control]="editForm.controls.name" />
+                    @if (editError(); as message) {
+                      <p-message severity="error" size="small" [text]="message" />
+                    }
                   </td>
                 } @else {
                   <td class="data-table__start">
@@ -163,12 +167,6 @@
               </tr>
             </ng-template>
           </p-table>
-          @if (editingId() !== null) {
-            <app-field-error id="edit-name-error" [control]="editForm.controls.name" />
-          }
-          @if (editError(); as message) {
-            <p-message severity="error" [text]="message" />
-          }
 
           @if (!filtered() && entries.total() <= 1) {
             <app-empty-state icon="pi-users">

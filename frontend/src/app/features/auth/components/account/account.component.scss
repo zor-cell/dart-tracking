@@ -6,6 +6,7 @@
 
   &__row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
@@ -17,6 +18,10 @@
   &__label {
     color: var(--p-text-muted-color);
     flex: none;
+  }
+
+  &__error {
+    flex-basis: 100%;
   }
 
   &__value {

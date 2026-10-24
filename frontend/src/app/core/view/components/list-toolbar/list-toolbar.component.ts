@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  input,
+  output,
+  viewChild,
+} from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
@@ -37,4 +44,20 @@ export class ListToolbarComponent {
       distinctUntilChanged(),
     ),
   );
+
+  private readonly filterButton = viewChild('filterButton', { read: ElementRef });
+
+  /** Puts the popover's arrow under the middle of the filter button. */
+  protected centreArrow(panel: Popover): void {
+    const container = panel.container;
+    const button = this.filterButton()?.nativeElement as HTMLElement | undefined;
+    if (!container || !button) {
+      return;
+    }
+    // offsetLeft ignores the opening animation's scale, which skews bounding rects.
+    const target = button.getBoundingClientRect();
+    const left = target.left + window.scrollX + target.width / 2 - container.offsetLeft;
+    container.style.setProperty('--p-popover-arrow-left', `${left}px`);
+    container.style.setProperty('--p-popover-arrow-offset', '0px');
+  }
 }

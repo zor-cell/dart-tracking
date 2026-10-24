@@ -65,8 +65,15 @@ copying it, the way the board face is shared by the live board, the replay and t
 heatmaps.
 
 - **Loading a view:** `app-loading-state` (skeletons only as listed under deviations).
-- **Failed load:** `app-load-error` with a retry. The service call passes
-  `SILENT_ERROR_CONTEXT` so no toast repeats the message.
+- **Errors:** each error shows once, next to what caused it.
+  - Invalid input: `app-field-error` directly under its input, inside the same table
+    row or list row for inline edits, never below the whole list.
+  - A request a form or inline edit sent: `p-message severity="error"` right under that
+    form or row, worded with `httpErrorMessage()`.
+  - A view that failed to load: `app-load-error` with a retry.
+  - Anything else: the toast from the error interceptor.
+  - Wherever the view shows the error itself, the service call passes
+    `SILENT_ERROR_CONTEXT`, so no toast repeats it.
 - **Nothing to show:** `app-empty-state`, inside tables too (`#emptymessage`).
 - **Tables:** every list of records is a `p-table` with `class="data-table"` and
   `size="small"`. Rows are compact and cells are centred; use `data-table__number`,
@@ -78,7 +85,8 @@ heatmaps.
   `PagedTable` (`core/view/models/paged-table.ts`) and `PAGE_SIZE`. The endpoint takes
   `limit`, `offset` and its filters and returns `{ items, total }`. The paginator is
   shown whenever there are results and reports the range and the total
-  (`PagedTable.pageReport`); there is no separate count above the table.
+  (`PagedTable.pageReport`) centred below the page links; there is no separate count
+  above the table.
 - **Search and filters:** `app-list-toolbar`. Filter fields are projected into its
   popover with the `list-filters` classes; active filters show as `FilterChip`s.
 - **Dialogs:** destructive actions ask through `ConfirmService.ask()`; the one

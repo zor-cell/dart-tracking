@@ -162,8 +162,11 @@ body {
   }
 
   .p-paginator-current {
+    order: 1;
+    flex-basis: 100%;
     color: var(--p-text-muted-color);
     font-size: 0.8rem;
+    text-align: center;
   }
 
   .data-table__link {
