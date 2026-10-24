@@ -25,10 +25,7 @@
       <p-button label="Zu deinen Spielen" icon="pi pi-history" routerLink="/account/games" />
     </app-empty-state>
   } @else if (failed()) {
-    <app-empty-state icon="pi-exclamation-circle">
-      <p>Das Spiel konnte nicht geladen werden.</p>
-      <p-button label="Erneut versuchen" icon="pi pi-refresh" (onClick)="load()" />
-    </app-empty-state>
+    <app-load-error message="Das Spiel konnte nicht geladen werden." (retry)="load()" />
   } @else if (detail(); as detail) {
     <section class="panel">
       <h2 class="panel__title">Spieler</h2>

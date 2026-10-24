@@ -9,6 +9,8 @@
 
   @if (loading()) {
     <app-loading-state label="Auswertung wird geladen" />
+  } @else if (failed()) {
+    <app-load-error message="Die Auswertung konnte nicht geladen werden." (retry)="reload()" />
   } @else if (games().length === 0) {
     <app-empty-state icon="pi-video">
       <p>Noch kein gefilmtes Spiel aufgezeichnet.</p>

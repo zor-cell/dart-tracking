@@ -7,6 +7,7 @@ import { EvaluationService } from '../../services/evaluation.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
+import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 
 /** What the outcome counts are called on the page, in reading order. */
 const OUTCOMES: readonly { key: keyof AccuracySummaryDto; label: string; hint: string }[] = [
@@ -34,6 +35,7 @@ interface ScopeOption {
     BackLinkComponent,
     DecimalPipe,
     FormsModule,
+    LoadErrorComponent,
     LoadingStateComponent,
     NgTemplateOutlet,
     EmptyStateComponent,
@@ -52,6 +54,7 @@ export class EvaluationComponent {
   protected readonly games = signal<readonly GameAccuracyDto[]>([]);
   protected readonly selectedGameId = signal<string | null>(null);
   protected readonly loading = signal(true);
+  protected readonly failed = signal(false);
 
   protected readonly outcomes = OUTCOMES;
   protected readonly fieldLabels = FIELD_LABELS;
@@ -115,12 +118,15 @@ export class EvaluationComponent {
     return `${date} · ${game.mode}${marker}`;
   }
 
-  private async reload(): Promise<void> {
+  protected async reload(): Promise<void> {
     this.loading.set(true);
+    this.failed.set(false);
     try {
       const report = await this.evaluation.loadAccuracy();
       this.total.set(report.total);
       this.games.set(report.games);
+    } catch {
+      this.failed.set(true);
     } finally {
       this.loading.set(false);
     }

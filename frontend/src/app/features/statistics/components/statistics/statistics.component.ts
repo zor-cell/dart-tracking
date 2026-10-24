@@ -15,6 +15,7 @@ import {
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
+import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 
 @Component({
   selector: 'app-statistics',
@@ -24,6 +25,7 @@ import { EmptyStateComponent } from '../../../../core/view/components/empty-stat
     LoadingStateComponent,
     EmptyStateComponent,
     FieldHeatmapComponent,
+    LoadErrorComponent,
     FormsModule,
     SelectButton,
     TipHeatmapComponent,
@@ -37,6 +39,7 @@ export class StatisticsComponent {
 
   protected readonly totals = signal<PlayerStatisticsDto | null>(null);
   protected readonly loading = signal(true);
+  protected readonly failed = signal(false);
 
   protected readonly layerOptions = [...HEATMAP_LAYERS];
   protected readonly layer = signal(storedHeatmapLayer());
@@ -68,9 +71,13 @@ export class StatisticsComponent {
     storeHeatmapLayer(layer);
   }
 
-  private async load(): Promise<void> {
+  protected async load(): Promise<void> {
+    this.loading.set(true);
+    this.failed.set(false);
     try {
       this.totals.set(await this.statistics.load());
+    } catch {
+      this.failed.set(true);
     } finally {
       this.loading.set(false);
     }

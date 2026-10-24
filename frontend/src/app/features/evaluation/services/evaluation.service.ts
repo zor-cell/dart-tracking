@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
 import { environment } from '../../../../environments/environment';
 import { AccuracyReportDto } from '../dto/accuracy.dto';
 
@@ -11,7 +12,9 @@ export class EvaluationService {
 
   loadAccuracy(): Promise<AccuracyReportDto> {
     return firstValueFrom(
-      this.http.get<AccuracyReportDto>(`${environment.httpApiUrl}/evaluation/accuracy`),
+      this.http.get<AccuracyReportDto>(`${environment.httpApiUrl}/evaluation/accuracy`, {
+        context: SILENT_ERROR_CONTEXT,
+      }),
     );
   }
 }

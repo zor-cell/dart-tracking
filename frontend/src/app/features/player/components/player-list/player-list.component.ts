@@ -17,7 +17,7 @@ import { PlayerLinksComponent } from '../player-links/player-links.component';
 import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
-import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
+import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
 import { ShareDialogComponent } from '../../../../core/view/components/share-dialog/share-dialog.component';
 
@@ -42,7 +42,7 @@ interface Invitation {
     LoadingStateComponent,
     Message,
     NgTemplateOutlet,
-    EmptyStateComponent,
+    LoadErrorComponent,
     FieldErrorComponent,
     PlayerLinksComponent,
     ReactiveFormsModule,

@@ -35,7 +35,9 @@ export class GameHistoryService {
         params = params.set('until', until.toISOString());
       }
     }
-    return firstValueFrom(this.http.get<GamePageDto>(this.baseUrl, { params }));
+    return firstValueFrom(
+      this.http.get<GamePageDto>(this.baseUrl, { params, context: SILENT_ERROR_CONTEXT }),
+    );
   }
 
   /** Rejects with a 404 unless the account plays in the game or set it up. */

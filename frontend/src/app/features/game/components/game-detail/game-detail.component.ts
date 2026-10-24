@@ -12,6 +12,7 @@ import { GameReplayComponent } from '../game-replay/game-replay.component';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
+import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 
 @Component({
   selector: 'app-game-detail',
@@ -23,6 +24,7 @@ import { EmptyStateComponent } from '../../../../core/view/components/empty-stat
     GameReplayComponent,
     LoadingStateComponent,
     EmptyStateComponent,
+    LoadErrorComponent,
     RouterLink,
   ],
   templateUrl: './game-detail.component.html',

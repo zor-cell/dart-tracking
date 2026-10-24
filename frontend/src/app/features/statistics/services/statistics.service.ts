@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
 import { environment } from '../../../../environments/environment';
 import { PlayerStatisticsDto } from '../dto/player-statistics.dto';
 
@@ -11,7 +12,9 @@ export class StatisticsService {
 
   load(): Promise<PlayerStatisticsDto> {
     return firstValueFrom(
-      this.http.get<PlayerStatisticsDto>(`${environment.httpApiUrl}/statistics`),
+      this.http.get<PlayerStatisticsDto>(`${environment.httpApiUrl}/statistics`, {
+        context: SILENT_ERROR_CONTEXT,
+      }),
     );
   }
 }

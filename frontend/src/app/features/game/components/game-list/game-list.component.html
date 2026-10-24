@@ -89,7 +89,9 @@
     </p-popover>
   </div>
 
-  @if (!loaded()) {
+  @if (failed()) {
+    <app-load-error message="Die Spiele konnten nicht geladen werden." (retry)="load()" />
+  } @else if (!loaded()) {
     <app-loading-state label="Spiele werden geladen" />
   } @else {
     <p-table
