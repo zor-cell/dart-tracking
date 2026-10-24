@@ -3,13 +3,11 @@
   white-space: nowrap;
 }
 
-.games__time {
-  margin-left: 0.1rem;
-  color: var(--p-text-muted-color, #6b7280);
+.games__players {
+  overflow-wrap: break-word;
 }
 
 .games__variant {
   color: var(--p-text-muted-color, #6b7280);
   font-size: 0.8rem;
 }
-

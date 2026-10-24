@@ -130,6 +130,15 @@ export class GameListComponent {
     void this.router.navigate(['/account/games', game.id]);
   }
 
+  /** Who played, "Du" for the account itself; past three only the first two and a count. */
+  protected playerNames(game: GameSummaryDto): string {
+    const names = game.players.map((player) => (player.isMe ? 'Du' : player.name));
+    if (names.length <= 3) {
+      return names.join(', ');
+    }
+    return `${names.slice(0, 2).join(', ')} +${names.length - 2}`;
+  }
+
   protected statusLabel(game: GameSummaryDto): string {
     return GAME_STATUS_LABELS[game.status];
   }

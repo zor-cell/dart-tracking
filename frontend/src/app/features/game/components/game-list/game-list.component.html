@@ -111,7 +111,7 @@
         <tr>
           <th scope="col">Datum</th>
           <th scope="col">Spiel</th>
-          <th scope="col" class="data-table__number">Spieler</th>
+          <th scope="col">Spieler</th>
           <th scope="col">Status</th>
         </tr>
       </ng-template>
@@ -126,7 +126,7 @@
         >
           <td class="games__when">
             {{ game.createdAt | date: 'dd.MM.yy' }}
-            <span class="games__time">{{ game.createdAt | date: 'HH:mm' }}</span>
+            <span class="data-table__hint">{{ game.createdAt | date: 'HH:mm' }}</span>
           </td>
           <td>
             @if (game.variant === 'elimination') {
@@ -134,7 +134,7 @@
             }
             {{ game.mode }}
           </td>
-          <td class="data-table__number">{{ game.players.length }}</td>
+          <td class="games__players">{{ playerNames(game) }}</td>
           <td>
             <p-tag [value]="statusLabel(game)" [severity]="statusSeverity(game)" />
           </td>
