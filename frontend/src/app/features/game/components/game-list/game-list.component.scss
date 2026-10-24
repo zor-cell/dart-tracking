@@ -1,32 +1,3 @@
-.toolbar {
-  display: flex;
-  align-items: center;
-}
-
-.toolbar__count {
-  margin-right: auto;
-  color: var(--p-text-muted-color, #6b7280);
-  font-size: 0.9rem;
-}
-
-.filters {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  width: min(18rem, calc(100vw - 4rem));
-}
-
-.filters__label {
-  margin-top: 0.4rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.filters__reset {
-  align-self: flex-start;
-  margin-top: 0.5rem;
-}
-
 .games__when {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;

@@ -5,91 +5,73 @@
     <p class="view__subtitle">Alle Spiele, in denen du mitspielst oder die du angelegt hast</p>
   </header>
 
-  <div class="toolbar">
-    <span class="toolbar__count">
-      {{ games.total() }} {{ games.total() === 1 ? 'Spiel' : 'Spiele' }}
-    </span>
-    <p-button
-      label="Filter"
-      icon="pi pi-filter"
-      severity="secondary"
-      [outlined]="true"
-      size="small"
-      [badge]="activeFilters() > 0 ? '' + activeFilters() : undefined"
-      (onClick)="filterPanel.toggle($event)"
-    />
-
-    <p-popover #filterPanel>
-      <form class="filters" [formGroup]="filters">
-        <label class="filters__label" for="filter-variant">Variante</label>
-        <p-select
-          inputId="filter-variant"
-          formControlName="variant"
-          [options]="variantOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Alle"
-          [showClear]="true"
-          fluid
-        />
-        <label class="filters__label" for="filter-mode">Modus</label>
-        <p-select
-          inputId="filter-mode"
-          formControlName="mode"
-          [options]="modeOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Alle"
-          [showClear]="true"
-          fluid
-        />
-        <label class="filters__label" for="filter-status">Status</label>
-        <p-select
-          inputId="filter-status"
-          formControlName="status"
-          [options]="statusOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Alle"
-          [showClear]="true"
-          fluid
-        />
-        <label class="filters__label" for="filter-opponent">Mitspieler</label>
-        <p-select
-          inputId="filter-opponent"
-          formControlName="opponentId"
-          [options]="opponents()"
-          optionLabel="name"
-          optionValue="id"
-          placeholder="Alle"
-          [filter]="true"
-          [showClear]="true"
-          fluid
-        />
-        <label class="filters__label" for="filter-period">Zeitraum</label>
-        <p-datepicker
-          inputId="filter-period"
-          formControlName="period"
-          selectionMode="range"
-          dateFormat="dd.mm.y"
-          placeholder="Beliebig"
-          [readonlyInput]="true"
-          [showButtonBar]="true"
-          fluid
-        />
-        <p-button
-          class="filters__reset"
-          label="Zurücksetzen"
-          icon="pi pi-filter-slash"
-          severity="secondary"
-          size="small"
-          [text]="true"
-          [disabled]="activeFilters() === 0"
-          (onClick)="resetFilters()"
-        />
-      </form>
-    </p-popover>
-  </div>
+  <app-list-toolbar
+    [count]="games.total()"
+    [noun]="['Spiel', 'Spiele']"
+    [filterable]="true"
+    [chips]="chips()"
+    (chipRemove)="clearFilter($event)"
+    (reset)="resetFilters()"
+  >
+    <form class="list-filters" [formGroup]="filters">
+      <label class="list-filters__label" for="filter-variant">Variante</label>
+      <p-select
+        inputId="filter-variant"
+        formControlName="variant"
+        [options]="variantOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Alle"
+        [showClear]="true"
+        fluid
+      />
+      <label class="list-filters__label" for="filter-mode">Modus</label>
+      <p-select
+        inputId="filter-mode"
+        formControlName="mode"
+        [options]="modeOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Alle"
+        [showClear]="true"
+        fluid
+      />
+      <label class="list-filters__label" for="filter-status">Status</label>
+      <p-select
+        inputId="filter-status"
+        formControlName="status"
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Alle"
+        [showClear]="true"
+        fluid
+      />
+      <label class="list-filters__label" for="filter-opponent">Mitspieler</label>
+      <p-select
+        inputId="filter-opponent"
+        formControlName="opponentId"
+        [options]="opponents()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Alle"
+        [filter]="true"
+        [showClear]="true"
+        fluid
+      />
+      <label class="list-filters__label" for="filter-period">Zeitraum</label>
+      <p-datepicker
+        inputId="filter-period"
+        formControlName="period"
+        selectionMode="range"
+        dateFormat="dd.mm.y"
+        placeholder="Beliebig"
+        [readonlyInput]="true"
+        [showButtonBar]="true"
+        fluid
+      />
+    </form>
+  </app-list-toolbar>
 
   @if (games.failed()) {
     <app-load-error message="Die Spiele konnten nicht geladen werden." (retry)="games.load()" />
@@ -150,8 +132,8 @@
       <ng-template #emptymessage>
         <tr>
           <td colspan="4">
-            <app-empty-state [icon]="activeFilters() > 0 ? 'pi-filter-slash' : 'pi-history'">
-              <p>{{ activeFilters() > 0 ? 'Keine Spiele für diese Filter.' : 'Noch keine Spiele.' }}</p>
+            <app-empty-state [icon]="chips().length > 0 ? 'pi-filter-slash' : 'pi-history'">
+              <p>{{ chips().length > 0 ? 'Keine Spiele für diese Filter.' : 'Noch keine Spiele.' }}</p>
             </app-empty-state>
           </td>
         </tr>

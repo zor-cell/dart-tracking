@@ -171,6 +171,19 @@ body {
   }
 }
 
+/* The filter fields a list projects into its toolbar's popover. */
+.list-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.list-filters__label {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
 /* A titled section inside a view. */
 .panel {
   display: flex;

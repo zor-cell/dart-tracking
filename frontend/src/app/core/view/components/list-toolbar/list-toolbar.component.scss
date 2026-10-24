@@ -1,0 +1,42 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.list-toolbar__search {
+  flex: 1;
+  min-width: 0;
+}
+
+.list-toolbar__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: min(18rem, calc(100vw - 4rem));
+}
+
+.list-toolbar__reset {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+}
+
+.list-toolbar__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.list-toolbar__count {
+  margin-right: 0.25rem;
+  color: var(--p-text-muted-color);
+  font-size: 0.9rem;
+}

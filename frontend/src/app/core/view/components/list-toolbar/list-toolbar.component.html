@@ -1,0 +1,51 @@
+@if (searchLabel() || filterable()) {
+  <div class="list-toolbar">
+    @if (searchLabel(); as label) {
+      <p-iconfield class="list-toolbar__search">
+        <p-inputicon class="pi pi-search" />
+        <input
+          pInputText
+          type="search"
+          [formControl]="query"
+          [placeholder]="label"
+          [attr.aria-label]="label"
+          autocomplete="off"
+          fluid
+        />
+      </p-iconfield>
+    }
+    @if (filterable()) {
+      <p-button
+        class="list-toolbar__filter"
+        label="Filter"
+        icon="pi pi-filter"
+        severity="secondary"
+        [outlined]="true"
+        [badge]="chips().length > 0 ? '' + chips().length : undefined"
+        (onClick)="panel.toggle($event)"
+      />
+      <p-popover #panel>
+        <div class="list-toolbar__fields">
+          <ng-content />
+          <p-button
+            class="list-toolbar__reset"
+            label="Zurücksetzen"
+            icon="pi pi-filter-slash"
+            severity="secondary"
+            size="small"
+            [text]="true"
+            [disabled]="chips().length === 0"
+            (onClick)="reset.emit()"
+          />
+        </div>
+      </p-popover>
+    }
+  </div>
+}
+
+<div class="list-toolbar__summary" aria-live="polite">
+  <span class="list-toolbar__count">{{ countLabel() }}</span>
+  @for (chip of chips(); track chip.key) {
+    <p-chip [label]="chip.label" [removable]="true" (onRemove)="chipRemove.emit(chip.key)" />
+  }
+</div>
