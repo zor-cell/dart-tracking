@@ -57,3 +57,28 @@ You are an expert in TypeScript, Angular, and scalable web application developme
   - guards/: route guards belonging to this feature, if it has any
   - models/: contains other .ts files that are used for this feature but not simply network data wrappers
   - services/: the services used for this feature
+## Consistency and reuse
+The same problem gets the same building block everywhere. Before writing a spinner, a
+table, a filter or a dialog, use the shared one; when something is needed a second
+time, extract it into `core/` (or the feature's `components/`/`models/`) instead of
+copying it, the way the board face is shared by the live board, the replay and the
+heatmaps.
+
+- **Loading a view:** `app-loading-state`. Skeletons only in the running game and the
+  new-game view, where the layout must not jump.
+- **Failed load:** `app-load-error` with a retry. The service call passes
+  `SILENT_ERROR_CONTEXT` so no toast repeats the message.
+- **Nothing to show:** `app-empty-state`, inside tables too (`#emptymessage`).
+- **Tables:** every list of records is a `p-table` with `class="data-table"` and
+  `size="small"`. Cells are centred; use `data-table__number`, `data-table__actions`,
+  `data-table__hint` and `data-table__link` (rows that open a record), statuses as
+  `p-tag`, and `app-loading-state` in `#loadingicon`.
+- **Paging:** lists that come from the server are paged on the server through
+  `PagedTable` (`core/view/models/paged-table.ts`) and `PAGE_SIZE`. The endpoint takes
+  `limit`, `offset` and its filters and returns `{ items, total }`.
+- **Search and filters:** `app-list-toolbar`. Filter fields are projected into its
+  popover with the `list-filters` classes; active filters show as `FilterChip`s.
+- **Dialogs:** destructive actions ask through `ConfirmService.ask()`; the one
+  `p-confirmdialog` lives in the app shell. Other dialogs use `DIALOG_STYLE`.
+- **Colours:** theme tokens (`var(--p-…)`) without hex fallbacks. Hardcoded colours
+  only where the theme has none, such as the board or overlays on the camera picture.
