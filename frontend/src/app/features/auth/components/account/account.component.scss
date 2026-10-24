@@ -90,20 +90,9 @@
     color: var(--p-primary-color);
   }
 
-  &__text {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    flex: 1;
-  }
-
   &__label {
+    flex: 1;
     font-weight: 600;
-  }
-
-  &__hint {
-    color: var(--p-text-muted-color);
-    font-size: 0.85rem;
   }
 
   &__chevron {
