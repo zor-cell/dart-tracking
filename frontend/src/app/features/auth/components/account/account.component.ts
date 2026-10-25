@@ -1,10 +1,8 @@
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
-import { InputText } from 'primeng/inputtext';
-import { Message } from 'primeng/message';
 import { Popover } from 'primeng/popover';
 import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
 import { APP_VERSION } from '../../../../../environments/version';
@@ -18,11 +16,18 @@ import {
 import { AuthService } from '../../services/auth.service';
 import { ChangeEmailDialogComponent } from '../change-email-dialog/change-email-dialog.component';
 import { ChangePasswordDialogComponent } from '../change-password-dialog/change-password-dialog.component';
-import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
+import { InlineEditorComponent } from '../../../../core/view/components/inline-editor/inline-editor.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 
 /** The rows that can be edited in place. */
 type EditableField = 'displayName' | 'username';
+
+interface EditableRow {
+  readonly field: EditableField;
+  readonly label: string;
+  readonly autocomplete: string;
+  readonly messages: Readonly<Record<string, string>>;
+}
 
 @Component({
   selector: 'app-account',
@@ -30,21 +35,13 @@ type EditableField = 'displayName' | 'username';
     Button,
     ChangeEmailDialogComponent,
     ChangePasswordDialogComponent,
-    FieldErrorComponent,
-    InputText,
+    InlineEditorComponent,
     LoadingStateComponent,
-    Message,
     Popover,
-    ReactiveFormsModule,
     RouterLink,
   ],
   templateUrl: './account.component.html',
   styleUrl: './account.component.scss',
-  // Presses outside the open row close it. Bound to `pointerdown` rather than
-  // `click` because it runs before focus moves and before the button's own
-  // handler, so pressing another row's pencil closes this row and then opens
-  // that one, in that order.
-  host: { '(document:pointerdown)': 'onPointerDown($event)' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccountComponent {
@@ -86,7 +83,10 @@ export class AccountComponent {
     );
   });
 
-  protected readonly usernameMessages = USERNAME_MESSAGES;
+  protected readonly editableRows: readonly EditableRow[] = [
+    { field: 'displayName', label: 'Anzeigename', autocomplete: 'nickname', messages: {} },
+    { field: 'username', label: 'Benutzername', autocomplete: 'username', messages: USERNAME_MESSAGES },
+  ];
 
   /** Both names, because the write sends both; only the open one is shown as an
    * input, the other rides along unchanged. */
@@ -119,17 +119,6 @@ export class AccountComponent {
     this.form.setValue({ displayName: account.displayName, username: account.username });
     this.error.set(null);
     this.editingField.set(field);
-  }
-
-  protected onPointerDown(event: Event): void {
-    if (this.editingField() === null) {
-      return;
-    }
-    const target = event.target as Element | null;
-    if (target?.closest('.account__row--editing')) {
-      return;
-    }
-    this.cancel();
   }
 
   protected cancel(): void {

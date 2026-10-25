@@ -81,11 +81,15 @@
               <tr>
                 @if (editingId() === player.id) {
                   <td colspan="2" class="data-table__start">
-                    <ng-container *ngTemplateOutlet="editRow; context: { $implicit: player }" />
-                    <app-field-error id="edit-name-error" [control]="editForm.controls.name" />
-                    @if (editError(); as message) {
-                      <p-message severity="error" size="small" [text]="message" />
-                    }
+                    <app-inline-editor
+                      [control]="editForm.controls.name"
+                      [label]="'Neuer Name für ' + player.name"
+                      saveLabel="Namen speichern"
+                      [saving]="busyId() === player.id"
+                      [error]="editError()"
+                      (save)="save()"
+                      (cancel)="cancel()"
+                    />
                   </td>
                 } @else {
                   <td class="data-table__start">
@@ -169,39 +173,6 @@
     </p-tabpanels>
   </p-tabs>
 </section>
-
-<ng-template #editRow let-player>
-  <form class="players__edit" [formGroup]="editForm" (ngSubmit)="save()">
-    <input
-      pInputText
-      [pAutoFocus]="true"
-      formControlName="name"
-      [attr.aria-label]="'Neuer Name für ' + player.name"
-      aria-describedby="edit-name-error"
-      (keydown.escape)="cancel()"
-      fluid
-    />
-    <p-button
-      type="submit"
-      icon="pi pi-check"
-      ariaLabel="Namen speichern"
-      [rounded]="true"
-      [text]="true"
-      [loading]="busyId() === player.id"
-      [disabled]="editForm.invalid"
-    />
-    <p-button
-      type="button"
-      icon="pi pi-times"
-      ariaLabel="Bearbeiten abbrechen"
-      severity="secondary"
-      [rounded]="true"
-      [text]="true"
-      [disabled]="busyId() === player.id"
-      (onClick)="cancel()"
-    />
-  </form>
-</ng-template>
 
 @defer (when createOpen(); prefetch on idle) {
   <app-player-create-dialog [(visible)]="createOpen" (created)="entries.load()" />

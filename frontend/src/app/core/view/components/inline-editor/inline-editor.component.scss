@@ -1,0 +1,17 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.inline-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.inline-editor__row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}

@@ -1,0 +1,37 @@
+<form class="inline-editor" (submit)="onSubmit($event)">
+  <div class="inline-editor__row">
+    <input
+      pInputText
+      [pAutoFocus]="true"
+      [formControl]="control()"
+      [attr.aria-label]="label()"
+      [attr.aria-describedby]="errorId"
+      [autocomplete]="autocomplete()"
+      (keydown.escape)="onEscape()"
+      fluid
+    />
+    <p-button
+      type="submit"
+      icon="pi pi-check"
+      [ariaLabel]="saveLabel()"
+      [rounded]="true"
+      [text]="true"
+      [loading]="saving()"
+      [disabled]="control().invalid"
+    />
+    <p-button
+      type="button"
+      icon="pi pi-times"
+      ariaLabel="Bearbeiten abbrechen"
+      severity="secondary"
+      [rounded]="true"
+      [text]="true"
+      [disabled]="saving()"
+      (onClick)="cancel.emit()"
+    />
+  </div>
+  <app-field-error [attr.id]="errorId" [control]="control()" [messages]="messages()" />
+  @if (error(); as message) {
+    <p-message severity="error" size="small" [text]="message" />
+  }
+</form>

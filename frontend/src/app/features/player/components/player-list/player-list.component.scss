@@ -16,13 +16,6 @@
   overflow-wrap: anywhere;
 }
 
-.players__edit {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  min-width: 0;
-}
-
 .invitation__expiry {
   margin: 0;
   color: var(--p-text-muted-color);

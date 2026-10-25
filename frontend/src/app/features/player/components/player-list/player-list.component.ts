@@ -1,11 +1,8 @@
-import { DOCUMENT, DatePipe, NgTemplateOutlet } from '@angular/common';
+import { DOCUMENT, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { AutoFocus } from 'primeng/autofocus';
 import { Button } from 'primeng/button';
-import { InputText } from 'primeng/inputtext';
-import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
@@ -23,7 +20,7 @@ import { BackLinkComponent } from '../../../../core/view/components/back-link/ba
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
-import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
+import { InlineEditorComponent } from '../../../../core/view/components/inline-editor/inline-editor.component';
 import { ShareDialogComponent } from '../../../../core/view/components/share-dialog/share-dialog.component';
 import { ListToolbarComponent } from '../../../../core/view/components/list-toolbar/list-toolbar.component';
 import { FilterChip } from '../../../../core/view/models/filter-chip';
@@ -42,18 +39,14 @@ interface Invitation {
 @Component({
   selector: 'app-player-list',
   imports: [
-    AutoFocus,
     BackLinkComponent,
     Button,
     DatePipe,
     EmptyStateComponent,
-    InputText,
+    InlineEditorComponent,
     LoadingStateComponent,
-    Message,
-    NgTemplateOutlet,
     ListToolbarComponent,
     LoadErrorComponent,
-    FieldErrorComponent,
     PlayerCreateDialogComponent,
     PlayerLinksComponent,
     ReactiveFormsModule,

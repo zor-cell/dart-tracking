@@ -16,135 +16,38 @@
     <app-loading-state label="Sitzung wird geprüft" />
   } @else {
     @if (user(); as account) {
-      <form class="account" [formGroup]="form" (ngSubmit)="confirm()">
-        <div
-          class="account__row"
-          [class.account__row--editing]="editingField() === 'displayName'"
-        >
-          <span class="account__label" id="label-displayName">Anzeigename</span>
-          <span class="account__value">
-            @if (editingField() === 'displayName') {
-              <input
-                pInputText
-                formControlName="displayName"
-                autocomplete="nickname"
-                aria-labelledby="label-displayName"
-                aria-describedby="displayName-error"
-                (keydown.escape)="cancel()"
-                fluid
+      <div class="account">
+        @for (row of editableRows; track row.field) {
+          <div class="account__row">
+            <span class="account__label">{{ row.label }}</span>
+            @if (editingField() === row.field) {
+              <app-inline-editor
+                class="account__editor"
+                [control]="form.controls[row.field]"
+                [label]="row.label"
+                [saveLabel]="row.label + ' speichern'"
+                [autocomplete]="row.autocomplete"
+                [messages]="row.messages"
+                [saving]="saving()"
+                [error]="error()"
+                (save)="confirm()"
+                (cancel)="cancel()"
               />
             } @else {
-              {{ account.displayName }}
-            }
-          </span>
-          @if (editingField() === 'displayName') {
-            <p-button
-              type="submit"
-              icon="pi pi-check"
-              ariaLabel="Anzeigename speichern"
-              [rounded]="true"
-              [text]="true"
-              [loading]="saving()"
-              [disabled]="form.controls.displayName.invalid"
-            />
-            <p-button
-              type="button"
-              icon="pi pi-times"
-              ariaLabel="Bearbeiten abbrechen"
-              severity="secondary"
-              [rounded]="true"
-              [text]="true"
-              [disabled]="saving()"
-              (onClick)="cancel()"
-            />
-          } @else {
-            <p-button
-              type="button"
-              icon="pi pi-pencil"
-              ariaLabel="Anzeigename bearbeiten"
-              severity="secondary"
-              [rounded]="true"
-              [text]="true"
-              [disabled]="saving()"
-              (onClick)="edit('displayName')"
-            />
-          }
-          @if (editingField() === 'displayName') {
-            <app-field-error
-              class="account__error"
-              id="displayName-error"
-              [control]="form.controls.displayName"
-            />
-            @if (error(); as message) {
-              <p-message class="account__error" severity="error" [text]="message" />
-            }
-          }
-        </div>
-
-        <div
-          class="account__row"
-          [class.account__row--editing]="editingField() === 'username'"
-        >
-          <span class="account__label" id="label-username">Benutzername</span>
-          <span class="account__value">
-            @if (editingField() === 'username') {
-              <input
-                pInputText
-                formControlName="username"
-                autocomplete="username"
-                aria-labelledby="label-username"
-                aria-describedby="username-error"
-                (keydown.escape)="cancel()"
-                fluid
+              <span class="account__value">{{ account[row.field] }}</span>
+              <p-button
+                type="button"
+                icon="pi pi-pencil"
+                [ariaLabel]="row.label + ' bearbeiten'"
+                severity="secondary"
+                [rounded]="true"
+                [text]="true"
+                [disabled]="saving()"
+                (onClick)="edit(row.field)"
               />
-            } @else {
-              {{ account.username }}
             }
-          </span>
-          @if (editingField() === 'username') {
-            <p-button
-              type="submit"
-              icon="pi pi-check"
-              ariaLabel="Benutzername speichern"
-              [rounded]="true"
-              [text]="true"
-              [loading]="saving()"
-              [disabled]="form.controls.username.invalid"
-            />
-            <p-button
-              type="button"
-              icon="pi pi-times"
-              ariaLabel="Bearbeiten abbrechen"
-              severity="secondary"
-              [rounded]="true"
-              [text]="true"
-              [disabled]="saving()"
-              (onClick)="cancel()"
-            />
-          } @else {
-            <p-button
-              type="button"
-              icon="pi pi-pencil"
-              ariaLabel="Benutzername bearbeiten"
-              severity="secondary"
-              [rounded]="true"
-              [text]="true"
-              [disabled]="saving()"
-              (onClick)="edit('username')"
-            />
-          }
-          @if (editingField() === 'username') {
-            <app-field-error
-              class="account__error"
-              id="username-error"
-              [control]="form.controls.username"
-              [messages]="usernameMessages"
-            />
-            @if (error(); as message) {
-              <p-message class="account__error" severity="error" [text]="message" />
-            }
-          }
-        </div>
+          </div>
+        }
 
         <div class="account__row">
           <span class="account__label">E-Mail</span>
@@ -201,7 +104,7 @@
             (onClick)="passwordDialogOpen.set(true)"
           />
         </div>
-      </form>
+      </div>
       <app-change-email-dialog [(visible)]="emailDialogOpen" />
       <app-change-password-dialog [(visible)]="passwordDialogOpen" />
     } @else {
