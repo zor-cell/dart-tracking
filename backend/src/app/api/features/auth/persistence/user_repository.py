@@ -1,5 +1,7 @@
 """Reads and writes accounts."""
 
+from uuid import UUID
+
 from sqlalchemy import ColumnElement, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,9 +48,10 @@ class UserRepository:
         """A token from an older signing key can carry a subject that is not a
         uuid at all; that is a miss, not a crash."""
         try:
-            row = await session.get(UserTable, user_id)
+            UUID(user_id)
         except ValueError:
             return None
+        row = await session.get(UserTable, user_id)
         return None if row is None else _to_domain(row)
 
     async def find_by_email(

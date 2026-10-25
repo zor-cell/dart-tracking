@@ -3,6 +3,7 @@ from datetime import timedelta
 import pytest
 import time_machine
 
+from app.api.features.auth.services import access_tokens
 from tests.api.support import PASSWORD, token_in
 
 NEW_PASSWORD = "a much better password"
@@ -278,3 +279,35 @@ def test_an_expired_token_is_refused(register):
 
     with time_machine.travel(timedelta(minutes=16)):
         assert alice.get("/auth/me").status_code == 401
+
+
+def delete_account(session, api):
+    session.sql("DELETE FROM players WHERE user_id = :id OR owner_user_id = :id", id=api.id)
+    session.sql("DELETE FROM users WHERE id = :id", id=api.id)
+
+
+def test_a_deleted_account_signs_nobody_in(register, anon, session):
+    alice = register("alice")
+    delete_account(session, alice)
+
+    assert alice.get("/auth/me").status_code == 401
+    assert anon.post("/auth/refresh", refresh=alice.refresh_token).status_code == 401
+
+
+def test_links_of_a_deleted_account_are_invalid(register, anon, session, mails):
+    alice = register("alice")
+    verify = token_in(mails[-1])
+    anon.post("/auth/password-reset", json={"email": "alice@darts.example.org"})
+    reset = token_in(mails[-1])
+    change_email(alice, "new@darts.example.org")
+    email_change = token_in(mails[-1])
+    delete_account(session, alice)
+
+    assert anon.post("/auth/verify-email", json={"token": verify}).status_code == 400
+    assert anon.post("/auth/password-reset/confirm", json={"token": reset, "password": NEW_PASSWORD}).status_code == 400
+    assert anon.post("/auth/email-change/confirm", json={"token": email_change}).status_code == 400
+
+
+def test_a_signed_token_whose_subject_is_no_account_id(anon):
+    token, _ = access_tokens.issue("not-a-uuid")
+    assert anon.get("/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 401
