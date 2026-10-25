@@ -6,7 +6,5 @@
 export interface AppSettingsDto {
   readonly confirmThrowEnabled: boolean;
   readonly evaluationEnabled: boolean;
-  readonly debugCalibration: boolean;
-  readonly debugDetection: boolean;
   readonly preferredDoubles: readonly number[]; // by sector, 25 for bull, in order
 }

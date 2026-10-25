@@ -31,8 +31,6 @@ export class SettingsService {
 
   readonly confirmThrowEnabled = computed(() => this._settings().confirmThrowEnabled);
   readonly evaluationEnabled = computed(() => this._settings().evaluationEnabled);
-  readonly debugCalibration = computed(() => this._settings().debugCalibration);
-  readonly debugDetection = computed(() => this._settings().debugDetection);
   readonly preferredDoubles = computed(() => this._settings().preferredDoubles);
 
   constructor() {
@@ -60,14 +58,6 @@ export class SettingsService {
 
   setEvaluationEnabled(enabled: boolean): void {
     this.patch({ evaluationEnabled: enabled });
-  }
-
-  setDebugCalibration(enabled: boolean): void {
-    this.patch({ debugCalibration: enabled });
-  }
-
-  setDebugDetection(enabled: boolean): void {
-    this.patch({ debugDetection: enabled });
   }
 
   setPreferredDoubles(doubles: readonly number[]): void {

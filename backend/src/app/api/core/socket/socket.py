@@ -12,8 +12,6 @@ import asyncio
 import base64
 import logging
 from collections.abc import Callable
-from datetime import datetime, timezone
-from pathlib import Path
 from urllib.parse import urlsplit
 
 import cv2
@@ -54,9 +52,6 @@ from app.api.features.calibration.domain.calibration_failure import CalibrationF
 from app.api.features.calibration.domain.calibration_state import calibration_state
 from app.api.features.calibration.domain.camera_angle import camera_angle
 from app.api.features.calibration.services import board_detector
-from app.api.features.calibration.debug.render import (
-    write_debug_images as write_calibration_debug_images,
-)
 from app.api.features.calibration.services.calibration_failure_store import (
     store as calibration_failure_store,
 )
@@ -69,9 +64,6 @@ from app.api.features.detection.dto.detection_frame import DetectionFrameDto
 from app.api.features.detection.domain.detection import Dart
 from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.detection.services import dart_detector
-from app.api.features.detection.debug.render import (
-    write_debug_images as write_detection_debug_images,
-)
 from app.api.features.detection.services.detection_store import store as detection_store
 from app.api.features.detection.services.scoring_camera import store as scoring_camera_store
 from app.api.features.evaluation.dto.command.set_evaluation import SetEvaluationDto
@@ -94,10 +86,6 @@ from app.infrastructure.token_bucket import TokenBucket
 router = APIRouter(prefix="/ws", tags=["Tracking"])
 
 logger = logging.getLogger(__name__)
-
-_TESTDATA_ROOT = Path(__file__).resolve().parents[5] / "testdata"
-_CALIBRATION_DEBUG_ROOT = _TESTDATA_ROOT / "calibration" / "_socket_debug"
-_DETECTION_DEBUG_ROOT = _TESTDATA_ROOT / "detection" / "_socket_debug"
 
 # Both detectors keep their trace in a module global, so two runs at once would
 # read each other's. Holds until the trace has been read out.
@@ -474,8 +462,7 @@ async def _handle_calibration_frame(
     reference with this frame — it is the empty board every later throw is first
     differenced against, and it already sits in the pixel grid the homography
     belongs to — and reply with the recognised board. On failure: reply naming
-    the stage that gave up. A frame flagged `debug` also dumps its per-stage
-    images.
+    the stage that gave up; in a test run its shot is kept for replaying.
 
     Both are kept per camera, not per game: a second camera films the same board
     through a different homography, so it needs its own of each.
@@ -500,11 +487,11 @@ async def _handle_calibration_frame(
         image, raw = decoded
         async with _detector_lock:
             outcome = await asyncio.to_thread(board_detector.detect_board, image)
-            if frame.debug and connection.admin:
-                _write_calibration_debug(game_id, client_id, outcome)
 
     if isinstance(outcome, CalibrationFailure):
         response = CalibrationResultDto.failed(outcome)
+        if decoded is not None:
+            await recorder.keep_failed_calibration(game_id, decoded[1], outcome)
         if decides:
             await calibration_failure_store.set(game_id)
     else:
@@ -575,8 +562,6 @@ async def _handle_throw_frame(
             outcome = await asyncio.to_thread(
                 dart_detector.detect_dart, reference, image, calibration, empty_board
             )
-            if frame.debug and connection.admin:
-                _write_detection_debug(game_id, client_id, outcome)
             # Both read under the lock: the trace is a module global that the
             # next run replaces.
             aligned = dart_detector.trace.aligned
@@ -636,39 +621,6 @@ async def _handle_throw_frame(
 
     if booked:
         await _announce(game, dart)
-
-
-
-def _write_calibration_debug(
-    game_id: str, client_id: str, outcome: Calibration | CalibrationFailure
-) -> None:
-    """Dump the just-finished board attempt's per-stage images (see scripts/calibration/run_debug.py).
-
-    Split by camera as well as by game, so two cameras filming one board do not
-    interleave their stages into a single folder.
-    """
-    out_dir = _CALIBRATION_DEBUG_ROOT / game_id / client_id / _timestamp()
-    written = write_calibration_debug_images(board_detector.trace, outcome, out_dir)
-    logger.info("[calibration debug] %d image(s) in %s", len(written), out_dir)
-
-
-def _write_detection_debug(
-    game_id: str, client_id: str, outcome: Dart | DetectionFailure
-) -> None:
-    """Dump the just-finished throw's per-stage images (see scripts/detection/run_debug.py).
-
-    Split by camera as well as by game — with two of them running, one throw
-    leaves two traces, and telling them apart is the point.
-    """
-    dart = outcome if isinstance(outcome, Dart) else None
-    out_dir = _DETECTION_DEBUG_ROOT / game_id / client_id / _timestamp()
-    written = write_detection_debug_images(dart_detector.trace, dart, out_dir)
-    logger.info("[detection debug] %d image(s) in %s", len(written), out_dir)
-
-
-def _timestamp() -> str:
-    """A filesystem-safe UTC stamp, unique per attempt, for a debug subfolder."""
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S_%f")
 
 
 def _decode_jpeg(encoded: str) -> tuple[np.ndarray, bytes] | None:

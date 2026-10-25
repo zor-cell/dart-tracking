@@ -1,7 +1,6 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SocketService } from '../../../core/socket/services/socket.service';
-import { SettingsService } from '../../settings/services/settings.service';
 import { GameService } from '../../game/services/game.service';
 import { DetectionFailureDto } from '../dto/detection-failure.dto';
 import { DetectionResultDto } from '../dto/detection-result.dto';
@@ -47,7 +46,6 @@ export interface RoundDartOverlay {
 @Injectable({ providedIn: 'root' })
 export class DetectionService {
   private readonly socket = inject(SocketService);
-  private readonly settings = inject(SettingsService);
   private readonly game = inject(GameService);
 
   /**
@@ -144,7 +142,6 @@ export class DetectionService {
     await this.socket.sendFrame(
       'detection_frame',
       frame,
-      this.settings.debugDetection(),
       trigger && !testRun ? { ...trigger, snapshots: [] } : (trigger ?? undefined),
     );
   }

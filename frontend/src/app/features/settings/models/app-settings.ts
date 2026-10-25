@@ -5,7 +5,5 @@ import { AppSettingsDto } from '../dto/app-settings.dto';
 export const DEFAULT_SETTINGS: AppSettingsDto = {
   confirmThrowEnabled: true,
   evaluationEnabled: false,
-  debugCalibration: false,
-  debugDetection: false,
   preferredDoubles: [],
 };

@@ -168,7 +168,6 @@ export class SocketService {
   async sendFrame(
     type: ClientFrame['type'],
     frame: Blob,
-    debug?: boolean,
     trigger?: ThrowTriggerDto,
   ): Promise<void> {
     if (this.socket?.readyState !== WebSocket.OPEN) {
@@ -177,7 +176,7 @@ export class SocketService {
     }
     const image = await blobToBase64(frame);
     const message: ClientFrame =
-      type === 'detection_frame' ? { type, image, debug, trigger } : { type, image, debug };
+      type === 'detection_frame' ? { type, image, trigger } : { type, image };
     this.socket.send(JSON.stringify(message));
   }
 

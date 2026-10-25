@@ -2,5 +2,4 @@
 export interface CalibrationFrameDto {
   readonly type: 'calibration_frame';
   readonly image: string; // base64-encoded JPEG
-  readonly debug?: boolean;
 }

@@ -95,7 +95,7 @@
               <label class="setting__label" for="evaluation">Testlauf aufzeichnen</label>
               <p class="setting__hint" id="evaluation-hint">
                 Speichert bei neuen Spielen und dem laufenden die Kamerabilder jeder korrigierten
-                Runde als Wurfserie.
+                Runde als Wurfserie, dazu jedes Bild einer fehlgeschlagenen Kalibrierung.
               </p>
             </div>
             <p-toggleswitch
@@ -103,36 +103,6 @@
               ariaLabelledBy="evaluation-hint"
               [ngModel]="evaluationEnabled()"
               (ngModelChange)="setEvaluationEnabled($event)"
-            />
-          </div>
-
-          <div class="list-group__item setting">
-            <div class="setting__text">
-              <label class="setting__label" for="debug-calibration">Kalibrierung Debug</label>
-              <p class="setting__hint" id="debug-calibration-hint">
-                Legt bei jeder Kalibrierung die Zwischenschritte als Bilder ab.
-              </p>
-            </div>
-            <p-toggleswitch
-              inputId="debug-calibration"
-              ariaLabelledBy="debug-calibration-hint"
-              [ngModel]="settings.debugCalibration()"
-              (ngModelChange)="settings.setDebugCalibration($event)"
-            />
-          </div>
-
-          <div class="list-group__item setting">
-            <div class="setting__text">
-              <label class="setting__label" for="debug-detection">Erkennung Debug</label>
-              <p class="setting__hint" id="debug-detection-hint">
-                Legt bei jedem Wurf die Zwischenschritte der Pfeil-Erkennung als Bilder ab.
-              </p>
-            </div>
-            <p-toggleswitch
-              inputId="debug-detection"
-              ariaLabelledBy="debug-detection-hint"
-              [ngModel]="settings.debugDetection()"
-              (ngModelChange)="settings.setDebugDetection($event)"
             />
           </div>
         </div>

@@ -12,6 +12,7 @@ from dataclasses import replace
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.core.socket.services.game_hub import hub
+from app.api.features.calibration.domain.calibration_failure import CalibrationFailure
 from app.api.features.calibration.domain.camera_angle import CameraAngle
 from app.api.features.detection.debug.trace import DetectionTrace
 from app.api.features.detection.domain.detection_failure import DetectionFailure
@@ -27,7 +28,7 @@ from app.api.features.evaluation.domain.game_event import (
 from app.api.features.evaluation.persistence.evaluation_repository import (
     repository as events,
 )
-from app.api.features.evaluation.services.frame_buffer import FrameKind
+from app.api.features.evaluation.services.frame_buffer import FrameKind, write_failed_calibration
 from app.api.features.evaluation.services.frame_buffer import store as frames
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game import Game
@@ -257,6 +258,19 @@ async def note_calibration(game_id: str, client_id: str, angle: CameraAngle) -> 
             )
     except Exception:  # noqa: BLE001 - diagnostics must not break the game
         logger.exception("[evaluation] could not record a calibration")
+
+
+async def keep_failed_calibration(game_id: str, jpeg: bytes, failure: CalibrationFailure) -> None:
+    """Write the shot of a failed calibration if the game is a test run, so it
+    can be replayed offline with `scripts/calibration/run_debug.py`."""
+    try:
+        async with database.session_scope() as session:
+            game = await game_repository.get(session, game_id)
+    except Exception:  # noqa: BLE001 - diagnostics must not break the game
+        logger.exception("[evaluation] could not look up %s", game_id)
+        return
+    if game is not None and game.evaluation_enabled:
+        write_failed_calibration(game_id, jpeg, failure.value)
 
 
 def remember_frame(game_id: str, jpeg: bytes) -> None:

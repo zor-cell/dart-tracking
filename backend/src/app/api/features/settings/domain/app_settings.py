@@ -15,20 +15,13 @@ class AppSettings:
 
     confirm_throw_enabled: bool = True
     evaluation_enabled: bool = False
-    debug_calibration: bool = False
-    debug_detection: bool = False
     # Finishing doubles by sector (25 for bull) the checkout suggests first, in order.
     preferred_doubles: tuple[int, ...] = ()
 
     def without_diagnostics(self) -> Self:
-        """This set with every debug and recording switch off: what an account
-        that is not an admin runs on, whatever happens to be stored for it."""
-        return replace(
-            self,
-            evaluation_enabled=False,
-            debug_calibration=False,
-            debug_detection=False,
-        )
+        """This set with the recording switch off: what an account that is not
+        an admin runs on, whatever happens to be stored for it."""
+        return replace(self, evaluation_enabled=False)
 
 
 DEFAULTS = AppSettings()

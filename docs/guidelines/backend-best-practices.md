@@ -59,10 +59,11 @@ src/app/
   is the object that provably cannot carry a `password_hash`.
 - `debug/` — what a pipeline run saw, and how to look at it: a trace dataclass
   the service fills as it goes, plus the renderer that turns it into one image
-  per stage. Only the CV features have one. This is **not** dev-only tooling: the
-  socket endpoint renders live when a frame arrives with `debug: true`, which is
-  what the frontend's debug switches drive. The CLI runners that replay photos
-  off disk stay in `backend/scripts/` — they are entry points, not app code.
+  per stage. Only the CV features have one. The trace is read live — the
+  evaluation takes its metrics from it — but the renderer runs only from the CLI
+  runners in `backend/scripts/`, which replay photos off disk (a test run's
+  throw series and failed calibrations among them). Those runners are entry
+  points, not app code.
   - The detector owns a module-level `trace` that it replaces on each run, so
     `services/` imports `debug/trace.py`. That direction is deliberate;
     `trace.py` imports nothing from `services/`, so there is no cycle.

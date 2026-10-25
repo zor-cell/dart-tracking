@@ -8,5 +8,3 @@ class CalibrationFrameDto(CamelModel):
 
     type: Literal["calibration_frame"]
     image: str  # base64-encoded JPEG
-    # Off unless the client asks: on, the server dumps per-stage debug images.
-    debug: bool = False

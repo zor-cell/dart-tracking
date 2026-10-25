@@ -4,7 +4,6 @@ import { CalibrationFailureDto } from '../dto/calibration-failure.dto';
 import { CalibrationState } from '../dto/calibration-state.dto';
 import { captureFrameAsJpeg } from '../../camera/models/frame-capture';
 import { SocketService } from '../../../core/socket/services/socket.service';
-import { SettingsService } from '../../settings/services/settings.service';
 
 export type CalibrationStatus = 'idle' | 'pending' | 'success' | 'error';
 
@@ -37,7 +36,6 @@ const REMOTE_FAILURE_MESSAGE = 'Die Kamera konnte das Board nicht erkennen.';
 @Injectable({ providedIn: 'root' })
 export class CalibrationService {
   private readonly socket = inject(SocketService);
-  private readonly settings = inject(SettingsService);
 
   readonly status = signal<CalibrationStatus>('idle');
 
@@ -98,7 +96,7 @@ export class CalibrationService {
     this.status.set('pending');
     this.overlay.set(null);
     const frame = await captureFrameAsJpeg(video, canvas);
-    await this.socket.sendFrame('calibration_frame', frame, this.settings.debugCalibration());
+    await this.socket.sendFrame('calibration_frame', frame);
   }
 
   reset(): void {

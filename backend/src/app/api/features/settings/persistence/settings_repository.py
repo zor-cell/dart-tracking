@@ -25,8 +25,6 @@ class SettingsRepository:
         return AppSettings(
             confirm_throw_enabled=row.confirm_throw_enabled,
             evaluation_enabled=row.evaluation_enabled,
-            debug_calibration=row.debug_calibration,
-            debug_detection=row.debug_detection,
             preferred_doubles=tuple(row.preferred_doubles),
         )
 

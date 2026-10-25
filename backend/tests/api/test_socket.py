@@ -8,7 +8,6 @@ import numpy as np
 import pytest
 from starlette.websockets import WebSocketDisconnect
 
-from app.api.core.socket import socket
 from app.api.features.evaluation.domain.alignment import DartOutcome
 from app.api.features.evaluation.services import accuracy, frame_buffer
 from app.infrastructure import database
@@ -308,25 +307,24 @@ def test_camera_frames_are_throttled(camera):
     assert answered in (6, 7)
 
 
-@pytest.mark.parametrize("admin", [False, True])
-def test_debug_frames_dump_their_stages_for_admins_only(camera, register, session, tmp_path, monkeypatch, admin):
-    monkeypatch.setattr(socket, "_CALIBRATION_DEBUG_ROOT", tmp_path)
+@pytest.mark.parametrize("test_run", [False, True])
+def test_a_test_run_keeps_the_shot_of_a_failed_calibration(room, register, session, tmp_path, monkeypatch, test_run):
+    monkeypatch.setattr(frame_buffer, "_EVALUATION_ROOT", tmp_path)
     alice = register("alice")
-    if admin:
-        session.make_admin(alice)
+    session.make_admin(alice)
+    game_id = alice.new_game(alice.own_entry()["id"], evaluationEnabled=test_run)["id"]
 
-    with camera() as device:
-        device.send("authenticate", accessToken=alice.token)
-        device.send("calibration_frame", image=jpeg(640, 480), debug=True)
-        device.next("calibration_result")
+    with room(game_id) as device:
+        device.send("set_role", role="camera")
+        device.send("calibration_frame", image=jpeg(640, 480))
+        assert device.next("calibration_result")["success"] is False
 
-    assert any(tmp_path.rglob("*.jpg")) is admin
+    assert any(tmp_path.rglob("calibration_*.jpg")) is test_run
 
 
 @pytest.mark.skipif(dataset_root() is None, reason="TESTDATA_DIR is not set")
 def test_an_evaluation_run_records_frames_and_events(room, register, session, tmp_path, monkeypatch):
     monkeypatch.setattr(frame_buffer, "_EVALUATION_ROOT", tmp_path / "evaluation")
-    monkeypatch.setattr(socket, "_DETECTION_DEBUG_ROOT", tmp_path / "debug")
     alice = register("alice")
     session.make_admin(alice)
     game_id = alice.new_game(alice.own_entry()["id"], evaluationEnabled=True)["id"]
@@ -345,7 +343,7 @@ def test_an_evaluation_run_records_frames_and_events(room, register, session, tm
         assert device.next("calibration_result")["success"] is True
         booked = 0
         for _, path in frames[1:]:
-            device.send("detection_frame", image=base64.b64encode(path.read_bytes()).decode(), debug=True)
+            device.send("detection_frame", image=base64.b64encode(path.read_bytes()).decode())
             booked += device.next("detection_result")["success"]
         device.send("next_player")
         while device.next("game_state")["currentPlayerIndex"] != 0 or len(device.state["turns"]) < 2:
@@ -355,7 +353,6 @@ def test_an_evaluation_run_records_frames_and_events(room, register, session, tm
     kept = (folder / "throw0_frames.txt").read_text().splitlines()
     assert (folder / "throw0_base.jpg").is_file()
     assert sorted(path.name for path in folder.glob("throw0_dart*.jpg")) == [f"throw0_dart{i}.jpg" for i in range(1, len(kept) + 1)]
-    assert any((tmp_path / "debug").rglob("*.jpg"))
 
     async def judged():
         async with database.session_scope() as db:

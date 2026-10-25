@@ -19,8 +19,6 @@ class UserSettingsTable(Base):
     )
     confirm_throw_enabled: Mapped[bool] = mapped_column(Boolean)
     evaluation_enabled: Mapped[bool] = mapped_column(Boolean)
-    debug_calibration: Mapped[bool] = mapped_column(Boolean)
-    debug_detection: Mapped[bool] = mapped_column(Boolean)
     preferred_doubles: Mapped[list[int]] = mapped_column(ARRAY(Integer), server_default="{}")
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

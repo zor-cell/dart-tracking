@@ -9,5 +9,4 @@ class DetectionFrameDto(CamelModel):
 
     type: Literal["detection_frame"]
     image: str  # base64-encoded JPEG
-    debug: bool = False
     trigger: ThrowTriggerDto | None = None

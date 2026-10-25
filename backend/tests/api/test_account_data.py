@@ -6,8 +6,6 @@ WINNING_LEG = ([T20, T20, T20], [T20, T17, D5])
 DEFAULTS = {
     "confirmThrowEnabled": True,
     "evaluationEnabled": False,
-    "debugCalibration": False,
-    "debugDetection": False,
     "preferredDoubles": [],
 }
 EVERYTHING_ON = {key: True for key in DEFAULTS if key != "preferredDoubles"} | {"preferredDoubles": []}
@@ -30,8 +28,7 @@ def test_diagnostics_are_an_admin_switch(alice, session, admin):
 
     stored = alice.put("/settings", json=EVERYTHING_ON).json()
 
-    diagnostics = ("evaluationEnabled", "debugCalibration", "debugDetection")
-    assert all(stored[key] is admin for key in diagnostics)
+    assert stored["evaluationEnabled"] is admin
     assert alice.get("/settings").json() == stored
 
 
@@ -40,7 +37,7 @@ def test_diagnostics_stored_as_admin_are_masked_once_demoted(alice, session):
     alice.put("/settings", json=EVERYTHING_ON)
     session.sql("UPDATE users SET role = 'user' WHERE id = :id", id=alice.id)
 
-    assert alice.get("/settings").json()["debugDetection"] is False
+    assert alice.get("/settings").json()["evaluationEnabled"] is False
 
 
 def test_preferred_doubles(alice):

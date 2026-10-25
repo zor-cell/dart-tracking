@@ -13,8 +13,6 @@ class AppSettingsDto(CamelModel):
 
     confirm_throw_enabled: bool
     evaluation_enabled: bool
-    debug_calibration: bool
-    debug_detection: bool
     preferred_doubles: list[Annotated[int, Field(ge=1, le=20)] | Literal[25]] = []
 
     @field_validator("preferred_doubles")
@@ -28,8 +26,6 @@ class AppSettingsDto(CamelModel):
         return cls(
             confirm_throw_enabled=settings.confirm_throw_enabled,
             evaluation_enabled=settings.evaluation_enabled,
-            debug_calibration=settings.debug_calibration,
-            debug_detection=settings.debug_detection,
             preferred_doubles=list(settings.preferred_doubles),
         )
 
@@ -37,7 +33,5 @@ class AppSettingsDto(CamelModel):
         return AppSettings(
             confirm_throw_enabled=self.confirm_throw_enabled,
             evaluation_enabled=self.evaluation_enabled,
-            debug_calibration=self.debug_calibration,
-            debug_detection=self.debug_detection,
             preferred_doubles=tuple(self.preferred_doubles),
         )

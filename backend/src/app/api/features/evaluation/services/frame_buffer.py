@@ -6,6 +6,7 @@ away. Process-local, about a megabyte per game.
 
 import logging
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from enum import StrEnum
 from pathlib import Path
 
@@ -127,6 +128,21 @@ class FrameBuffer:
             folder,
         )
         return folder
+
+
+def write_failed_calibration(game_id: str, jpeg: bytes, failure: str) -> Path | None:
+    """Write a calibration shot the board was not found in, beside the game's
+    throw series. Returns the file, or None when it could not be written."""
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S_%f")
+    path = folder_of(game_id) / f"calibration_{stamp}_{failure}.jpg"
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(jpeg)
+    except OSError:
+        logger.exception("[evaluation] could not write a failed calibration for %s", game_id)
+        return None
+    logger.info("[evaluation] wrote failed calibration to %s", path)
+    return path
 
 
 store = FrameBuffer()
