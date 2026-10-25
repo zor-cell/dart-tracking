@@ -1,17 +1,8 @@
-.setting-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
 .setting {
-  display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem;
-  border: 1px solid var(--p-content-border-color);
-  border-radius: 0.5rem;
+  padding: 0.9rem 1rem;
 
   // Without this the toggle shrinks along with the flex row and its hit target
   // becomes a sliver (observed ~19px instead of ~48px wide).

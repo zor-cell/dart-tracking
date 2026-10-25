@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Accordion, AccordionContent, AccordionHeader, AccordionPanel } from 'primeng/accordion';
 import { Button } from 'primeng/button';
-import { MultiSelect } from 'primeng/multiselect';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 import {
   AnnouncerService,
@@ -11,36 +9,27 @@ import {
 import { AuthService } from '../../../auth/services/auth.service';
 import { GameService } from '../../../game/services/game.service';
 import { SettingsService } from '../../services/settings.service';
+import { FavouriteDoublesComponent } from '../favourite-doubles/favourite-doubles.component';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 
 /** What the self-test's outcome is called on the page. */
 const TEST_RESULTS: Record<AnnouncerTestResult, string> = {
-  spoken: 'gesprochen - war nichts zu hören, liegt es an Lautstärke oder Klingelton-Schalter',
+  spoken: 'gesprochen',
   failed: 'vom Browser abgebrochen',
   no_answer: 'keine Rückmeldung - der Browser hat die Ansage verschluckt',
   muted: 'dieses Gerät ist stumm geschaltet',
   unsupported: 'dieser Browser kann keine Sprachausgabe',
 };
 
-/** The finishing doubles a player can prefer, as the checkout labels them. */
-const DOUBLE_OPTIONS = [
-  ...Array.from({ length: 20 }, (_, i) => ({ label: `D${20 - i}`, value: 20 - i })),
-  { label: 'Double Bull', value: 25 },
-];
-
 @Component({
   selector: 'app-settings',
   imports: [
-    Accordion,
-    AccordionContent,
-    AccordionHeader,
-    AccordionPanel,
     BackLinkComponent,
     Button,
+    FavouriteDoublesComponent,
     FormsModule,
     LoadingStateComponent,
-    MultiSelect,
     ToggleSwitch,
   ],
   templateUrl: './settings.component.html',
@@ -58,11 +47,6 @@ export class SettingsComponent {
   /** The debug and recording switches make the server write camera images, so
    * they are an admin's; the server masks them off for everyone else as well. */
   protected readonly isAdmin = this.auth.isAdmin;
-
-  protected readonly doubleOptions = DOUBLE_OPTIONS;
-
-  /** Values of the accordion panels that start expanded. */
-  protected readonly openSections = signal<string[]>(['game']);
 
   /** What is actually being recorded: the running game's flag, or the setting
    * the next one will adopt. */

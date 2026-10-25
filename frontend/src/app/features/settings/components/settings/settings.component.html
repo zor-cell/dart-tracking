@@ -7,107 +7,47 @@
   @if (settings.loading()) {
     <app-loading-state label="Einstellungen werden geladen" />
   } @else {
-    <p-accordion [multiple]="true" [(value)]="openSections">
-      <p-accordion-panel value="game">
-        <p-accordion-header>Spiel-Einstellungen</p-accordion-header>
-        <p-accordion-content>
-          <div class="setting-group">
-            <div class="setting">
-              <div class="setting__text">
-                <label class="setting__label" for="manual-entry">Manuelle Eingabe</label>
-                <p class="setting__hint" id="manual-entry-hint">
-                  Zeigt im Spiel ein Eingabefeld, um Punkte von Hand zu buchen. Als Rückfallebene
-                  gedacht, falls die Kameraerkennung fehlschlägt.
-                </p>
-              </div>
-              <p-toggleswitch
-                inputId="manual-entry"
-                ariaLabelledBy="manual-entry-hint"
-                [ngModel]="settings.manualEntryEnabled()"
-                (ngModelChange)="settings.setManualEntryEnabled($event)"
-              />
-            </div>
-
-            <div class="setting">
-              <div class="setting__text">
-                <label class="setting__label" for="confirm-throw">Manuell Würfe akzeptieren</label>
-                <p class="setting__hint" id="confirm-throw-hint">
-                  Zeigt im Spiel neben den Würfen die Option diese zu bestätigen. Wenn nicht aktiv,
-                  wird automatisch nach 3 Würfen weitergezählt.
-                </p>
-              </div>
-              <p-toggleswitch
-                inputId="confirm-throw"
-                ariaLabelledBy="confirm-throw-hint"
-                [ngModel]="settings.confirmThrowEnabled()"
-                (ngModelChange)="settings.setConfirmThrowEnabled($event)"
-              />
-            </div>
-
-            <div class="setting setting--stacked">
-              <div class="setting__text">
-                <label class="setting__label" for="preferred-doubles">Lieblingsdoppel</label>
-                <p class="setting__hint" id="preferred-doubles-hint">
-                  Der Checkout-Vorschlag endet bevorzugt auf diesen Doppeln, in der Reihenfolge, in
-                  der du sie auswählst. Gilt in jedem Spiel, in dem du mit deinem Konto mitspielst.
-                </p>
-              </div>
-              <p-multiselect
-                inputId="preferred-doubles"
-                ariaLabelledBy="preferred-doubles-hint"
-                display="chip"
-                placeholder="Standard"
-                [options]="doubleOptions"
-                [showToggleAll]="false"
-                [filter]="false"
-                [fluid]="true"
-                [ngModel]="settings.preferredDoubles()"
-                (ngModelChange)="settings.setPreferredDoubles($event)"
-              />
-            </div>
+    <section class="list-group">
+      <h2 class="list-group__title">Spiel</h2>
+      <div class="list-group__items">
+        <div class="list-group__item setting setting--stacked">
+          <div class="setting__text">
+            <span class="setting__label">Lieblingsdoppel</span>
+            <p class="setting__hint">
+              Der Checkout-Vorschlag endet bevorzugt auf dem obersten Doppel, dann auf den
+              nächsten. Ohne Auswahl gilt die Standard-Reihenfolge.
+            </p>
           </div>
-        </p-accordion-content>
-      </p-accordion-panel>
+          <app-favourite-doubles
+            [doubles]="settings.preferredDoubles()"
+            (doublesChange)="settings.setPreferredDoubles($event)"
+          />
+        </div>
 
-      @if (isAdmin()) {
-        <p-accordion-panel value="evaluation">
-          <p-accordion-header>Auswertung</p-accordion-header>
-          <p-accordion-content>
-            <div class="setting-group">
-              <div class="setting">
-                <div class="setting__text">
-                  <label class="setting__label" for="evaluation">Testlauf aufzeichnen</label>
-                  <p class="setting__hint" id="evaluation-hint">
-                    Markiert neue Spiele - und das gerade laufende - als Testlauf: von jeder Runde,
-                    die ihr korrigiert, werden die Kamerabilder als Wurfserie gespeichert. Die
-                    Trefferquote selbst wird immer mitgeschrieben, dafür braucht es den Schalter
-                    nicht.
-                  </p>
-                </div>
-                <p-toggleswitch
-                  inputId="evaluation"
-                  ariaLabelledBy="evaluation-hint"
-                  [ngModel]="evaluationEnabled()"
-                  (ngModelChange)="setEvaluationEnabled($event)"
-                />
-              </div>
-            </div>
-          </p-accordion-content>
-        </p-accordion-panel>
-      }
+        <div class="list-group__item setting">
+          <div class="setting__text">
+            <label class="setting__label" for="confirm-throw">Manuell Würfe akzeptieren</label>
+            <p class="setting__hint" id="confirm-throw-hint">
+              Die Runde geht erst weiter, wenn du sie bestätigst. Sonst automatisch nach 3 Darts.
+            </p>
+          </div>
+          <p-toggleswitch
+            inputId="confirm-throw"
+            ariaLabelledBy="confirm-throw-hint"
+            [ngModel]="settings.confirmThrowEnabled()"
+            (ngModelChange)="settings.setConfirmThrowEnabled($event)"
+          />
+        </div>
 
-      <p-accordion-panel value="announcement">
-        <p-accordion-header>Ansage</p-accordion-header>
-        <p-accordion-content>
-          <div class="setting-group">
-            <div class="setting">
-              <div class="setting__text">
-                <span class="setting__label">Ansage testen</span>
-                <p class="setting__hint" id="announcement-test-hint">
-                  Sagt einen Satz auf diesem Gerät an. Bleibt es dabei still, liegt es am Gerät und
-                  nicht am Spiel - auf dem iPhone meist am Klingelton-Schalter.
-                </p>
-                <dl class="diagnostics">
+        <div class="list-group__item setting">
+          <div class="setting__text">
+            <span class="setting__label">Ansage testen</span>
+            <p class="setting__hint" id="announcement-test-hint">
+              Sagt einen Satz auf diesem Gerät an.
+            </p>
+            @if (testResult() || isAdmin()) {
+              <dl class="diagnostics">
+                @if (isAdmin()) {
                   <div class="diagnostics__row">
                     <dt>Sprachausgabe</dt>
                     <dd>{{ announcer.supported ? 'verfügbar' : 'fehlt in diesem Browser' }}</dd>
@@ -128,89 +68,79 @@
                     <dt>Stumm geschaltet</dt>
                     <dd>{{ announcer.muted() ? 'ja' : 'nein' }}</dd>
                   </div>
-                  @if (testResult(); as result) {
-                    <div class="diagnostics__row">
-                      <dt>Letzter Test</dt>
-                      <dd>{{ result }}</dd>
-                    </div>
-                  }
-                </dl>
-              </div>
-              <p-button
-                icon="pi pi-volume-up"
-                ariaLabel="Ansage testen"
-                ariaLabelledBy="announcement-test-hint"
-                [rounded]="true"
-                [loading]="testing()"
-                (onClick)="testAnnouncement()"
-              />
-            </div>
+                }
+                @if (testResult(); as result) {
+                  <div class="diagnostics__row">
+                    <dt>Letzter Test</dt>
+                    <dd>{{ result }}</dd>
+                  </div>
+                }
+              </dl>
+            }
           </div>
-        </p-accordion-content>
-      </p-accordion-panel>
+          <p-button
+            icon="pi pi-volume-up"
+            ariaLabel="Ansage testen"
+            ariaLabelledBy="announcement-test-hint"
+            [rounded]="true"
+            [loading]="testing()"
+            (onClick)="testAnnouncement()"
+          />
+        </div>
+      </div>
+    </section>
 
-      @if (isAdmin()) {
-        <p-accordion-panel value="debug">
-          <p-accordion-header>Debug-Einstellungen</p-accordion-header>
-          <p-accordion-content>
-            <div class="setting-group">
-              <div class="setting">
-                <div class="setting__text">
-                  <label class="setting__label" for="debug-calibration"
-                    >Debug: Kalibrierung (Server)</label
-                  >
-                  <p class="setting__hint" id="debug-calibration-hint">
-                    Lässt den Server bei jeder Kalibrierung die Zwischenschritte als Bilder ablegen.
-                    Nur zum Testen - im Normalbetrieb aus.
-                  </p>
-                </div>
-                <p-toggleswitch
-                  inputId="debug-calibration"
-                  ariaLabelledBy="debug-calibration-hint"
-                  [ngModel]="settings.debugCalibration()"
-                  (ngModelChange)="settings.setDebugCalibration($event)"
-                />
-              </div>
-
-              <div class="setting">
-                <div class="setting__text">
-                  <label class="setting__label" for="debug-detection"
-                    >Debug: Erkennung (Server)</label
-                  >
-                  <p class="setting__hint" id="debug-detection-hint">
-                    Lässt den Server bei jedem Wurf die Zwischenschritte der Pfeil-Erkennung als
-                    Bilder ablegen. Nur zum Testen - im Normalbetrieb aus.
-                  </p>
-                </div>
-                <p-toggleswitch
-                  inputId="debug-detection"
-                  ariaLabelledBy="debug-detection-hint"
-                  [ngModel]="settings.debugDetection()"
-                  (ngModelChange)="settings.setDebugDetection($event)"
-                />
-              </div>
-
-              <div class="setting">
-                <div class="setting__text">
-                  <label class="setting__label" for="debug-client-detection"
-                    >Debug: Client-Anzeige</label
-                  >
-                  <p class="setting__hint" id="debug-client-detection-hint">
-                    Zeigt in der Kamera-Ansicht live, was die client-seitige Wurf-Erkennung gerade
-                    tut. Betrifft nur die Anzeige auf diesem Gerät, nichts am Server.
-                  </p>
-                </div>
-                <p-toggleswitch
-                  inputId="debug-client-detection"
-                  ariaLabelledBy="debug-client-detection-hint"
-                  [ngModel]="settings.debugClientDetection()"
-                  (ngModelChange)="settings.setDebugClientDetection($event)"
-                />
-              </div>
+    @if (isAdmin()) {
+      <section class="list-group">
+        <h2 class="list-group__title">Admin</h2>
+        <div class="list-group__items">
+          <div class="list-group__item setting">
+            <div class="setting__text">
+              <label class="setting__label" for="evaluation">Testlauf aufzeichnen</label>
+              <p class="setting__hint" id="evaluation-hint">
+                Speichert bei neuen Spielen und dem laufenden die Kamerabilder jeder korrigierten
+                Runde als Wurfserie.
+              </p>
             </div>
-          </p-accordion-content>
-        </p-accordion-panel>
-      }
-    </p-accordion>
+            <p-toggleswitch
+              inputId="evaluation"
+              ariaLabelledBy="evaluation-hint"
+              [ngModel]="evaluationEnabled()"
+              (ngModelChange)="setEvaluationEnabled($event)"
+            />
+          </div>
+
+          <div class="list-group__item setting">
+            <div class="setting__text">
+              <label class="setting__label" for="debug-calibration">Kalibrierung Debug</label>
+              <p class="setting__hint" id="debug-calibration-hint">
+                Legt bei jeder Kalibrierung die Zwischenschritte als Bilder ab.
+              </p>
+            </div>
+            <p-toggleswitch
+              inputId="debug-calibration"
+              ariaLabelledBy="debug-calibration-hint"
+              [ngModel]="settings.debugCalibration()"
+              (ngModelChange)="settings.setDebugCalibration($event)"
+            />
+          </div>
+
+          <div class="list-group__item setting">
+            <div class="setting__text">
+              <label class="setting__label" for="debug-detection">Erkennung Debug</label>
+              <p class="setting__hint" id="debug-detection-hint">
+                Legt bei jedem Wurf die Zwischenschritte der Pfeil-Erkennung als Bilder ab.
+              </p>
+            </div>
+            <p-toggleswitch
+              inputId="debug-detection"
+              ariaLabelledBy="debug-detection-hint"
+              [ngModel]="settings.debugDetection()"
+              (ngModelChange)="settings.setDebugDetection($event)"
+            />
+          </div>
+        </div>
+      </section>
+    }
   }
 </section>
