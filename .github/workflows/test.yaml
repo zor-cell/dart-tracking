@@ -16,7 +16,7 @@ defaults:
 
 jobs:
   unit:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
@@ -27,7 +27,7 @@ jobs:
       - run: uv run pytest tests/unit
 
   api:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
       postgres:
