@@ -4,9 +4,11 @@ endpoints, and direct database access where a test needs a state the API cannot 
 import re
 from collections.abc import Callable
 from email.message import EmailMessage
+from pathlib import Path
 from typing import Any
 
 import httpx2
+from alembic.config import Config
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
@@ -16,6 +18,7 @@ from app.api.features.game.persistence.game_repository import repository as game
 from app.infrastructure import database, redis_client
 
 PASSWORD = "correct horse battery"
+ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
 _TOKEN = re.compile(r"token=([\w-]+)")
 
 
@@ -141,17 +144,19 @@ class Session:
 
         return self.run(call)
 
-    def play(self, game_id: str, *visits: list[tuple[int, int]]) -> Game:
-        """Throw each visit as (value, multiplier) darts and hand over after it."""
+    def play(self, game_id: str, *visits: list[tuple[int, int]], hand_over: bool = True) -> Game:
+        """Throw each visit as (value, multiplier) darts, handing over after it
+        unless `hand_over` is off for the last one."""
 
         async def apply() -> Game:
             async with database.session_scope() as session:
                 game = await games.lock(session, game_id)
                 assert game is not None
-                for visit in visits:
+                for number, visit in enumerate(visits, start=1):
                     for value, multiplier in visit:
                         game.add_dart(Dart(value=value, multiplier=multiplier))
-                    game.next_player()
+                    if hand_over or number < len(visits):
+                        game.next_player()
                 await games.save(session, game)
                 return game
 
@@ -165,6 +170,10 @@ class Session:
             hours=hours,
             id=game_id,
         )
+
+
+def alembic_config() -> Config:
+    return Config(str(ALEMBIC_INI))
 
 
 def token_in(mail: EmailMessage) -> str:

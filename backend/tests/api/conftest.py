@@ -5,12 +5,10 @@ import asyncio
 import os
 from collections.abc import Callable, Iterator
 from email.message import EmailMessage
-from pathlib import Path
 
 import asyncpg
 import pytest
 from alembic import command
-from alembic.config import Config
 
 from app.infrastructure.config import Settings, get_settings
 
@@ -30,9 +28,7 @@ from app.api import tables  # noqa: E402, F401
 from app.infrastructure import database, mailer, redis_client  # noqa: E402
 from app.infrastructure.database import Base  # noqa: E402
 from app.main import app  # noqa: E402
-from tests.api.support import Api, Session  # noqa: E402
-
-ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
+from tests.api.support import Api, Session, alembic_config  # noqa: E402
 
 
 async def _recreate_schema(settings: Settings) -> None:
@@ -56,10 +52,6 @@ async def _recreate_schema(settings: Settings) -> None:
         await test_db.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public")
     finally:
         await test_db.close()
-
-
-def alembic_config() -> Config:
-    return Config(str(ALEMBIC_INI))
 
 
 @pytest.fixture(scope="session")
