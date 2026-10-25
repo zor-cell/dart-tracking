@@ -120,6 +120,11 @@ body {
   font-size: 1rem;
 }
 
+/* The mask hides at once when the page is there, instead of fading over the new rows. */
+html .p-datatable-mask.p-overlay-mask-leave-active {
+  visibility: hidden;
+}
+
 .empty-state__hint {
   margin: 0;
   font-size: 0.85rem;

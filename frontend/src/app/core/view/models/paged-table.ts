@@ -2,6 +2,9 @@ import { signal } from '@angular/core';
 import { TableLazyLoadEvent } from 'primeng/table';
 import { PAGE_SIZE } from './page-size';
 
+/** How long a reload runs before the table shows its spinner, in ms. */
+const SPINNER_DELAY = 250;
+
 /** One page of a server-side list, and how many entries match across all pages. */
 export interface Page<T> {
   readonly items: readonly T[];
@@ -13,7 +16,8 @@ export class PagedTable<T> {
   readonly items = signal<T[]>([]);
   readonly total = signal(0);
   readonly first = signal(0);
-  readonly loading = signal(true);
+  /** A reload that has run longer than `SPINNER_DELAY`. */
+  readonly loading = signal(false);
   readonly failed = signal(false);
   /** Whether a page has arrived; until then the view shows its loading state. */
   readonly loaded = signal(false);
@@ -23,6 +27,7 @@ export class PagedTable<T> {
 
   /** Bumped per load, so a slow answer to an older page or filter is dropped. */
   private generation = 0;
+  private spinner?: ReturnType<typeof setTimeout>;
 
   constructor(private readonly fetch: (limit: number, offset: number) => Promise<Page<T>>) {}
 
@@ -40,7 +45,8 @@ export class PagedTable<T> {
   /** Fetches the current page again, one page back if it has run empty. */
   async load(): Promise<void> {
     const generation = ++this.generation;
-    this.loading.set(true);
+    clearTimeout(this.spinner);
+    this.spinner = setTimeout(() => this.loading.set(true), SPINNER_DELAY);
     this.failed.set(false);
     try {
       const page = await this.fetch(this.pageSize, this.first());
@@ -61,6 +67,7 @@ export class PagedTable<T> {
       }
     } finally {
       if (generation === this.generation) {
+        clearTimeout(this.spinner);
         this.loading.set(false);
       }
     }
