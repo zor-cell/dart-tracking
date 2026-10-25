@@ -156,7 +156,6 @@ def test_opening_invitations_is_limited(alice, bob):
     assert statuses[-2:] == [200, 429]
 
 
-@pytest.mark.xfail(strict=True, reason="link() overwrites an entry another request linked meanwhile")
 def test_one_invitation_links_exactly_one_account(alice, bob, register, session, monkeypatch):
     carol = register("carol")
     player_id = alice.add_player("Bob")

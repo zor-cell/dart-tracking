@@ -272,14 +272,21 @@ class PlayerRepository:
     async def link(
         self, session: AsyncSession, owner_user_id: str, player_id: str, user_id: str
     ) -> bool:
-        """Link an unlinked entry of this address book to an account. Returns
-        whether one matched; a second entry for the same account fails on flush."""
-        row = await self._editable(session, owner_user_id, player_id)
-        if row is None or row.user_id is not None:
+        """Link an unlinked entry of this address book to an account, in one
+        conditional write so only one of two concurrent links matches. Returns
+        whether it did; a second entry for the same account fails here too."""
+        if not _is_uuid(player_id):
             return False
-        row.user_id = user_id
-        await session.flush()
-        return True
+        result = await session.execute(
+            update(PlayerTable)
+            .where(
+                PlayerTable.id == player_id,
+                PlayerTable.owner_user_id == owner_user_id,
+                PlayerTable.user_id.is_(None),
+            )
+            .values(user_id=user_id)
+        )
+        return result.rowcount > 0
 
     async def unlink(
         self, session: AsyncSession, owner_user_id: str, player_id: str
