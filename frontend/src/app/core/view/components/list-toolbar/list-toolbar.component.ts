@@ -17,8 +17,8 @@ import { Popover } from 'primeng/popover';
 import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 import { FilterChip } from '../../models/filter-chip';
 
-/** Above a list: search, a filter popover around the projected fields and the active
- * filters as chips. The number of matches sits in the table's paginator. */
+/** Above a list: search, a filter popover around the projected fields, an optional
+ * `listToolbarAction` button and the active filters as chips. */
 @Component({
   selector: 'app-list-toolbar',
   imports: [Button, Chip, IconField, InputIcon, InputText, Popover, ReactiveFormsModule],

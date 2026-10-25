@@ -1,0 +1,47 @@
+<p-dialog
+  header="Spieler hinzufügen"
+  [modal]="true"
+  [draggable]="false"
+  [(visible)]="visible"
+  [style]="dialogStyle"
+  appendTo="body"
+  (onHide)="reset()"
+>
+  <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="auth-form__field">
+      <label class="auth-form__label" for="create-player-name">Name</label>
+      <input
+        pInputText
+        id="create-player-name"
+        [pAutoFocus]="true"
+        formControlName="name"
+        aria-describedby="create-player-name-error"
+        autocomplete="off"
+        fluid
+      />
+      <app-field-error id="create-player-name-error" [control]="form.controls.name" />
+    </div>
+
+    @if (error(); as message) {
+      <p-message severity="error" [text]="message" />
+    }
+
+    <div class="auth-form__actions">
+      <p-button
+        type="button"
+        label="Abbrechen"
+        severity="secondary"
+        [text]="true"
+        [disabled]="busy()"
+        (onClick)="visible.set(false)"
+      />
+      <p-button
+        type="submit"
+        label="Hinzufügen"
+        icon="pi pi-plus"
+        [loading]="busy()"
+        [disabled]="form.invalid"
+      />
+    </div>
+  </form>
+</p-dialog>

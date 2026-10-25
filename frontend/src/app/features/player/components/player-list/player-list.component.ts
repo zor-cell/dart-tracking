@@ -10,13 +10,15 @@ import { Select } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { Tag } from 'primeng/tag';
+import { Tooltip } from 'primeng/tooltip';
 import { DISPLAY_NAME_MAX_LENGTH } from '../../../auth/models/profile-rules';
 import { AuthService } from '../../../auth/services/auth.service';
 import { PlayerIdentityDto } from '../../dto/player-identity.dto';
 import { LINK_STATE_LABELS, LinkState } from '../../models/player-filter';
+import { playerNameError } from '../../models/player-name-error';
 import { PlayerService } from '../../services/player.service';
+import { PlayerCreateDialogComponent } from '../player-create-dialog/player-create-dialog.component';
 import { PlayerLinksComponent } from '../player-links/player-links.component';
-import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
@@ -52,6 +54,7 @@ interface Invitation {
     ListToolbarComponent,
     LoadErrorComponent,
     FieldErrorComponent,
+    PlayerCreateDialogComponent,
     PlayerLinksComponent,
     ReactiveFormsModule,
     Select,
@@ -63,6 +66,7 @@ interface Invitation {
     TableModule,
     Tabs,
     Tag,
+    Tooltip,
   ],
   templateUrl: './player-list.component.html',
   styleUrl: './player-list.component.scss',
@@ -100,9 +104,7 @@ export class PlayerListComponent {
   );
   private readonly self = computed(() => this.entries.items().find((entry) => entry.isSelf));
 
-  protected readonly creating = signal(false);
-  protected readonly createError = signal<string | null>(null);
-  protected readonly createForm = this.fb.nonNullable.group({ name: ['', nameValidators] });
+  protected readonly createOpen = signal(false);
 
   protected readonly editingId = signal<string | null>(null);
   protected readonly busyId = signal<string | null>(null);
@@ -121,9 +123,6 @@ export class PlayerListComponent {
 
   constructor() {
     void this.entries.load();
-    this.createForm.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => this.createError.set(null));
     this.editForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.editError.set(null));
     this.filters.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.entries.restart());
   }
@@ -135,24 +134,6 @@ export class PlayerListComponent {
 
   protected clearFilter(key: string): void {
     this.filters.get(key)?.reset();
-  }
-
-  protected async create(): Promise<void> {
-    const name = this.createForm.controls.name.value.trim();
-    if (!name || this.createForm.invalid || this.creating()) {
-      return;
-    }
-    this.creating.set(true);
-    this.createError.set(null);
-    try {
-      await this.players.create(name);
-      this.createForm.reset();
-      await this.entries.load();
-    } catch (failure) {
-      this.createError.set(describe(failure));
-    } finally {
-      this.creating.set(false);
-    }
   }
 
   protected edit(player: PlayerIdentityDto): void {
@@ -182,7 +163,7 @@ export class PlayerListComponent {
       );
       this.editingId.set(null);
     } catch (failure) {
-      this.editError.set(describe(failure));
+      this.editError.set(playerNameError(failure));
     } finally {
       this.busyId.set(null);
     }
@@ -261,12 +242,4 @@ export class PlayerListComponent {
     await this.auth.updateProfile({ username: account.username, displayName: name });
     return { ...self, name };
   }
-}
-
-function describe(failure: unknown): string {
-  return httpErrorMessage(
-    failure,
-    { 409: 'Diesen Namen gibt es schon in deiner Spielerliste.' },
-    'Speichern fehlgeschlagen. Bitte später erneut versuchen.',
-  );
 }

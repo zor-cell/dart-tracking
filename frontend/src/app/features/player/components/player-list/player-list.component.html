@@ -12,29 +12,6 @@
     </p-tablist>
     <p-tabpanels>
       <p-tabpanel value="own" class="tab">
-        <form class="create" [formGroup]="createForm" (ngSubmit)="create()">
-          <input
-            pInputText
-            formControlName="name"
-            placeholder="Name des Spielers"
-            aria-label="Name des neuen Spielers"
-            aria-describedby="create-name-error"
-            autocomplete="off"
-            fluid
-          />
-          <p-button
-            type="submit"
-            label="Hinzufügen"
-            icon="pi pi-plus"
-            [loading]="creating()"
-            [disabled]="createForm.invalid"
-          />
-        </form>
-        <app-field-error id="create-name-error" [control]="createForm.controls.name" />
-        @if (createError(); as message) {
-          <p-message severity="error" [text]="message" />
-        }
-
         <app-list-toolbar
           searchLabel="Spieler suchen"
           [filterable]="true"
@@ -56,6 +33,14 @@
               fluid
             />
           </form>
+          <p-button
+            listToolbarAction
+            icon="pi pi-user-plus"
+            ariaLabel="Neuer Spieler"
+            pTooltip="Neuer Spieler"
+            tooltipPosition="bottom"
+            (onClick)="createOpen.set(true)"
+          />
         </app-list-toolbar>
 
         @if (entries.failed()) {
@@ -217,6 +202,10 @@
     />
   </form>
 </ng-template>
+
+@defer (when createOpen(); prefetch on idle) {
+  <app-player-create-dialog [(visible)]="createOpen" (created)="entries.load()" />
+}
 
 @defer (when invitation(); prefetch on idle) {
   @if (invitation(); as current) {
