@@ -8,6 +8,10 @@ import numpy as np
 import pytest
 from starlette.websockets import WebSocketDisconnect
 
+from app.api.core.socket import socket
+from app.api.features.evaluation.domain.alignment import DartOutcome
+from app.api.features.evaluation.services import accuracy, frame_buffer
+from app.infrastructure import database
 from tests.cv.replay import dataset_root, manifest, replay_series, series_of
 
 SOME_ID = "00000000-0000-0000-0000-000000000000"
@@ -205,11 +209,9 @@ def test_frames_from_a_scoreboard_are_ignored(room, game_id):
     with room(game_id) as device:
         device.send("calibration_frame", image=jpeg(64, 48))
         device.send("detection_frame", image=jpeg(64, 48))
-        device.send("claim_announcer")
+        device.send("set_role", role="scoreboard")
 
-        state = device.next("announcer_state", never=("calibration_result", "detection_result"))
-        while state["clientId"] != device.id:
-            state = device.next("announcer_state", never=("calibration_result", "detection_result"))
+        device.next("client_state", never=("calibration_result", "detection_result"))
 
 
 @pytest.fixture
@@ -291,3 +293,74 @@ def test_socket_scores_a_throw_series_like_the_pipeline_does(camera):
                 assert len(darts(device.next("game_state"))) == min(booked, 3)
 
     assert reported == expected
+
+
+def test_camera_frames_are_throttled(camera):
+    with camera() as device:
+        for _ in range(8):
+            device.send("detection_frame", image=jpeg(64, 48))
+        device.send("set_role", role="camera")
+
+        answered = 0
+        while (message := device.websocket.receive_json())["type"] != "client_state":
+            answered += message["type"] == "detection_result"
+
+    assert answered in (6, 7)
+
+
+@pytest.mark.parametrize("admin", [False, True])
+def test_debug_frames_dump_their_stages_for_admins_only(camera, register, session, tmp_path, monkeypatch, admin):
+    monkeypatch.setattr(socket, "_CALIBRATION_DEBUG_ROOT", tmp_path)
+    alice = register("alice")
+    if admin:
+        session.make_admin(alice)
+
+    with camera() as device:
+        device.send("authenticate", accessToken=alice.token)
+        device.send("calibration_frame", image=jpeg(640, 480), debug=True)
+        device.next("calibration_result")
+
+    assert any(tmp_path.rglob("*.jpg")) is admin
+
+
+@pytest.mark.skipif(dataset_root() is None, reason="TESTDATA_DIR is not set")
+def test_an_evaluation_run_records_frames_and_events(room, register, session, tmp_path, monkeypatch):
+    monkeypatch.setattr(frame_buffer, "_EVALUATION_ROOT", tmp_path / "evaluation")
+    monkeypatch.setattr(socket, "_DETECTION_DEBUG_ROOT", tmp_path / "debug")
+    alice = register("alice")
+    session.make_admin(alice)
+    game_id = alice.new_game(alice.own_entry()["id"], evaluationEnabled=True)["id"]
+    frames = next(
+        frames
+        for entry in manifest("gate")
+        if entry[0].startswith("games/")
+        for frames in series_of(dataset_root(), entry).values()
+        if replay_series(frames)[0]["failure"] is None
+    )
+
+    with room(game_id) as device:
+        device.send("set_role", role="camera")
+        device.send("authenticate", accessToken=alice.token)
+        device.send("calibration_frame", image=base64.b64encode(frames[0][1].read_bytes()).decode())
+        assert device.next("calibration_result")["success"] is True
+        booked = 0
+        for _, path in frames[1:]:
+            device.send("detection_frame", image=base64.b64encode(path.read_bytes()).decode(), debug=True)
+            booked += device.next("detection_result")["success"]
+        device.send("next_player")
+        while device.next("game_state")["currentPlayerIndex"] != 0 or len(device.state["turns"]) < 2:
+            pass
+
+    folder = tmp_path / "evaluation" / f"game_{game_id}"
+    kept = (folder / "throw0_frames.txt").read_text().splitlines()
+    assert (folder / "throw0_base.jpg").is_file()
+    assert sorted(path.name for path in folder.glob("throw0_dart*.jpg")) == [f"throw0_dart{i}.jpg" for i in range(1, len(kept) + 1)]
+    assert any((tmp_path / "debug").rglob("*.jpg"))
+
+    async def judged():
+        async with database.session_scope() as db:
+            return await accuracy.judged_games(db, game_ids=[game_id], include_unfinished=True)
+
+    (game,) = session.run(judged)
+    assert len(game.judgements) == min(booked, 3)
+    assert all(judgement.outcome is DartOutcome.CORRECT for judgement in game.judgements)

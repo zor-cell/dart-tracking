@@ -44,3 +44,8 @@ pythonpath = ["src", "."]
 addopts = "-ra --import-mode=importlib"
 timeout = 120
 markers = ["cv_full: runs over the full photo set in TESTDATA_DIR"]
+
+[tool.coverage.run]
+# SQLAlchemy's async engine runs through greenlets; without this, lines after an await go unseen.
+concurrency = ["thread", "greenlet"]
+source = ["app"]

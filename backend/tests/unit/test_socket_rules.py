@@ -20,13 +20,35 @@ def encode(extension: str, width: int = 64, height: int = 48) -> bytes:
     return buffer.tobytes()
 
 
-def test_jpeg_size_reads_the_header():
-    assert jpeg_size(encode(".jpg", 640, 480)) == (640, 480)
+# A baseline start-of-frame segment declaring 64 x 48 pixels.
+SOF = b"\xff\xc0\x00\x11\x08\x00\x30\x00\x40"
+
+
+@pytest.mark.parametrize(
+    ("data", "size"),
+    [
+        (encode(".jpg", 640, 480), (640, 480)),
+        (b"\xff\xd8\xff\xff" + SOF, (64, 48)),
+        (b"\xff\xd8\xff\xd0" + SOF, (64, 48)),
+        (b"\xff\xd8\xff\xe0\x00\x04\x00\x00" + SOF, (64, 48)),
+    ],
+    ids=["encoded", "fill byte", "restart marker", "app segment"],
+)
+def test_jpeg_size_reads_the_header(data, size):
+    assert jpeg_size(data) == size
 
 
 @pytest.mark.parametrize(
     "data",
-    [b"", b"\xff\xd8", encode(".png"), encode(".jpg")[:20], b"\xff\xd8\xff\xe0\x00\x01" + b"\x00" * 20],
+    [
+        b"",
+        b"\xff\xd8",
+        encode(".png"),
+        encode(".jpg")[:20],
+        b"\xff\xd8\xff\xe0\x00\x01" + b"\x00" * 20,
+        b"\xff\xd8\x00" + SOF,
+        b"\xff\xd8" + SOF[:6],
+    ],
 )
 def test_jpeg_size_rejects_what_is_not_a_complete_jpeg_header(data):
     assert jpeg_size(data) is None

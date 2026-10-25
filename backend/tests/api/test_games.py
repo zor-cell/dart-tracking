@@ -250,3 +250,14 @@ def test_elimination_summary_replays_the_resets(alice, session):
 def test_anonymous_games_are_limited_per_address(anon):
     statuses = [anon.post("/games", json={"mode": 301, "players": [guest("Ann")]}).status_code for _ in range(31)]
     assert statuses[-2:] == [201, 429]
+
+
+def test_malformed_game_ids_are_not_found(alice):
+    assert alice.patch("/games/not-a-uuid", json={"status": "discarded"}).status_code == 404
+    assert alice.get("/games/not-a-uuid/detail").status_code == 404
+
+
+@pytest.mark.parametrize("rematch_of", ["not-a-uuid", "00000000-0000-0000-0000-000000000000"])
+def test_rematch_of_an_unknown_game_is_a_new_game(anon, rematch_of):
+    response = anon.post("/games", json={"mode": 301, "players": [guest("Ann")], "rematchOf": rematch_of})
+    assert response.status_code == 201
