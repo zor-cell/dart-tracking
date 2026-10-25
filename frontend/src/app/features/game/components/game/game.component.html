@@ -57,21 +57,12 @@
         <video
           #video
           class="game__video"
-          [class.game__video--dimmed]="debugActive()"
           [hidden]="cameraPhase() === 'idle'"
           muted
           playsinline
         ></video>
         <canvas #diffCanvas width="160" height="90" class="game__hidden-canvas"></canvas>
-        <canvas
-          #captureCanvas
-          [class.game__hidden-canvas]="!debugActive()"
-          [class.game__sent-preview]="debugActive()"
-          aria-hidden="true"
-        ></canvas>
-        @if (debugActive()) {
-          <span class="game__sent-preview-label" aria-hidden="true">zuletzt gesendet</span>
-        }
+        <canvas #captureCanvas class="game__hidden-canvas" aria-hidden="true"></canvas>
 
         @if (cameraPhase() !== 'idle') {
           <app-overlay [polylines]="calibrationOverlay()" [video]="video" />
@@ -154,46 +145,7 @@
             (onClick)="toggleCameraExpanded()"
           />
         }
-
-        <!-- Frame-diff change mask over the dimmed video ("Debug: Client-Anzeige"). -->
-        @if (debugActive()) {
-          <canvas #detectionDebugCanvas class="game__debug-mask" aria-hidden="true"></canvas>
-        }
       </div>
-    }
-
-    <!-- Live detector numbers, kept out of the picture below it. -->
-    @if (debugActive() && detectionDebug(); as d) {
-      <dl class="detection-debug">
-        <div><dt>Status</dt><dd>{{ d.displayState }}</dd></div>
-        <div><dt>Δ Pixel</dt><dd>{{ (d.diagnostics.changedFraction * 100).toFixed(3) }} %</dd></div>
-        <div><dt>Blöcke</dt><dd>{{ d.diagnostics.activeBlocks }}</dd></div>
-        <div><dt>Ø Blöcke</dt><dd>{{ d.diagnostics.ambientBlocks.toFixed(1) }}</dd></div>
-        <div><dt>Peak Blöcke</dt><dd>{{ d.peakBlocks.toFixed(0) }}</dd></div>
-        <div><dt>Treffer</dt><dd>{{ d.captureCount }}</dd></div>
-      </dl>
-    }
-
-    <!-- The persistent trace the badge is too quick to show: each send and the
-         server's answer, newest first, with a wall-clock stamp. -->
-    @if (debugActive()) {
-      <ol class="detection-log" aria-label="Erkennungs-Ereignisse">
-        @for (event of detectionEvents(); track event.seq) {
-          <li class="detection-log__row detection-log__row--{{ event.kind }}">
-            <span class="detection-log__time">{{ event.time }}</span>
-            <span class="detection-log__kind">
-              @switch (event.kind) {
-                @case ('sent') { ▲ gesendet }
-                @case ('hit') { ✓ Treffer }
-                @case ('rejected') { ✕ verworfen }
-              }
-            </span>
-            <span class="detection-log__detail">{{ event.label }}</span>
-          </li>
-        } @empty {
-          <li class="detection-log__empty">Noch keine Ereignisse — wirf einen Pfeil.</li>
-        }
-      </ol>
     }
 
     <!-- The win is shown on the player card; this only voices it. -->
@@ -291,7 +243,7 @@
         </div>
       }
 
-      @if (settings.manualEntryEnabled() && !game.settledWinner()) {
+      @if (!game.settledWinner()) {
         <div class="scorepad" role="group" aria-label="Punkte-Eingabe">
           @for (row of padRows; track $index) {
             @for (n of row; track n) {
@@ -345,7 +297,7 @@
 
       @if (game.settledWinner()) {
         <!-- Takes the keypad's slot, so the picture above keeps its height. -->
-        <div class="finish" [class.finish--reserved]="settings.manualEntryEnabled()">
+        <div class="finish">
           <p-button
             fluid
             size="small"
@@ -408,22 +360,20 @@
         }
       </div>
 
-      @if (settings.manualEntryEnabled()) {
-        <div class="scorepad">
-          @for (row of padRows; track $index) {
-            @for (n of row; track n) {
-              <p-skeleton class="scorepad__slot" height="100%" borderRadius="0.5rem" />
-            }
+      <div class="scorepad">
+        @for (row of padRows; track $index) {
+          @for (n of row; track n) {
+            <p-skeleton class="scorepad__slot" height="100%" borderRadius="0.5rem" />
           }
-          <div class="scorepad__side">
-            @for (side of sideKeys; track side.label) {
-              <p-skeleton height="100%" borderRadius="0.5rem" />
-            }
-          </div>
-          <p-skeleton class="scorepad__slot scorepad__slot--mod" height="100%" borderRadius="0.5rem" />
-          <p-skeleton class="scorepad__slot scorepad__slot--mod" height="100%" borderRadius="0.5rem" />
+        }
+        <div class="scorepad__side">
+          @for (side of sideKeys; track side.label) {
+            <p-skeleton height="100%" borderRadius="0.5rem" />
+          }
         </div>
-      }
+        <p-skeleton class="scorepad__slot scorepad__slot--mod" height="100%" borderRadius="0.5rem" />
+        <p-skeleton class="scorepad__slot scorepad__slot--mod" height="100%" borderRadius="0.5rem" />
+      </div>
     </div>
   </section>
 } @else {

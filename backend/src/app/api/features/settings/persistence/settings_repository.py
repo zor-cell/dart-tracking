@@ -23,12 +23,10 @@ class SettingsRepository:
         if row is None:
             return DEFAULTS
         return AppSettings(
-            manual_entry_enabled=row.manual_entry_enabled,
             confirm_throw_enabled=row.confirm_throw_enabled,
             evaluation_enabled=row.evaluation_enabled,
             debug_calibration=row.debug_calibration,
             debug_detection=row.debug_detection,
-            debug_client_detection=row.debug_client_detection,
             preferred_doubles=tuple(row.preferred_doubles),
         )
 

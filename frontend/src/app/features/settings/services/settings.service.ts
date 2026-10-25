@@ -29,12 +29,10 @@ export class SettingsService {
    * signals below hold defaults, not this account's choices. */
   readonly loading = this._loading.asReadonly();
 
-  readonly manualEntryEnabled = computed(() => this._settings().manualEntryEnabled);
   readonly confirmThrowEnabled = computed(() => this._settings().confirmThrowEnabled);
   readonly evaluationEnabled = computed(() => this._settings().evaluationEnabled);
   readonly debugCalibration = computed(() => this._settings().debugCalibration);
   readonly debugDetection = computed(() => this._settings().debugDetection);
-  readonly debugClientDetection = computed(() => this._settings().debugClientDetection);
   readonly preferredDoubles = computed(() => this._settings().preferredDoubles);
 
   constructor() {
@@ -56,10 +54,6 @@ export class SettingsService {
     });
   }
 
-  setManualEntryEnabled(enabled: boolean): void {
-    this.patch({ manualEntryEnabled: enabled });
-  }
-
   setConfirmThrowEnabled(enabled: boolean): void {
     this.patch({ confirmThrowEnabled: enabled });
   }
@@ -74,10 +68,6 @@ export class SettingsService {
 
   setDebugDetection(enabled: boolean): void {
     this.patch({ debugDetection: enabled });
-  }
-
-  setDebugClientDetection(enabled: boolean): void {
-    this.patch({ debugClientDetection: enabled });
   }
 
   setPreferredDoubles(doubles: readonly number[]): void {

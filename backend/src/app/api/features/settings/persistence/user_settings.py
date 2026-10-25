@@ -17,12 +17,10 @@ class UserSettingsTable(Base):
     user_id: Mapped[str] = mapped_column(
         UuidText, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
-    manual_entry_enabled: Mapped[bool] = mapped_column(Boolean)
     confirm_throw_enabled: Mapped[bool] = mapped_column(Boolean)
     evaluation_enabled: Mapped[bool] = mapped_column(Boolean)
     debug_calibration: Mapped[bool] = mapped_column(Boolean)
     debug_detection: Mapped[bool] = mapped_column(Boolean)
-    debug_client_detection: Mapped[bool] = mapped_column(Boolean)
     preferred_doubles: Mapped[list[int]] = mapped_column(ARRAY(Integer), server_default="{}")
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

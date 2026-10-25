@@ -34,25 +34,6 @@ export interface RoundDartOverlay {
 }
 
 /**
- * A traceable step in the detect→send→answer cycle, for the client debug log.
- * `sent` is a frame leaving for the server (a client trigger fired); `hit` and
- * `rejected` are what came back. Made visible because the badge flashes past too
- * fast to tell *when* a frame actually went out and what the server made of it.
- */
-export type DetectionEventKind = 'sent' | 'hit' | 'rejected';
-
-export interface DetectionEvent {
-  readonly seq: number; // running index, so a repeated label is still distinct
-  readonly time: string; // wall-clock HH:MM:SS.d, tenth-second resolution
-  readonly kind: DetectionEventKind;
-  readonly label: string;
-}
-
-// How many recent events the debug log keeps. Enough to see a full visit's
-// worth of triggers and answers without the list running off the screen.
-const MAX_EVENTS = 12;
-
-/**
  * The client half of dart detection: sends the triggered throw frame and tracks
  * the `detection_result` that comes back over the shared socket. Board detection
  * is server-side; this only forwards the frame and surfaces the outcome.
@@ -87,13 +68,6 @@ export class DetectionService {
   /** Whether a tracked throw is still taken, as a booked or as a shadow dart. */
   readonly acceptsThrows = this.game.tracksThrows;
 
-  /**
-   * Recent detect→send→answer events, newest first — the persistent trace behind
-   * the fleeting badge, shown only in the client debug view.
-   */
-  readonly events = signal<readonly DetectionEvent[]>([]);
-  private eventSeq = 0;
-
   private feedbackTimeoutId: ReturnType<typeof setTimeout> | null = null;
   // The turn count from the last reconciled state.
   private lastTurnCount: number | null = null;
@@ -124,13 +98,9 @@ export class DetectionService {
       if (message.overlay) {
         this.appendDart(message.overlay);
       }
-      const label = formatHit(message.segment, message.points);
-      this.showFeedback(label);
-      this.logEvent('hit', label);
+      this.showFeedback(formatHit(message.segment, message.points));
     } else {
-      const label = hintFor(message.failure);
-      this.showFeedback(label);
-      this.logEvent('rejected', label);
+      this.showFeedback(hintFor(message.failure));
     }
   }
 
@@ -170,10 +140,6 @@ export class DetectionService {
   /** Send a triggered throw frame; the result arrives asynchronously. */
   async submitFrame(frame: Blob, trigger: ThrowTriggerDto | null): Promise<void> {
     this.clearFeedback();
-    // Log the send *before* awaiting: this is the exact moment a client trigger
-    // turned into a frame leaving the device, which is what the log is meant to
-    // pin down. The matching `hit`/`rejected` follows when the server answers.
-    this.logEvent('sent', `${(frame.size / 1024).toFixed(0)} kB`);
     const testRun = this.game.state()?.evaluationEnabled ?? false;
     await this.socket.sendFrame(
       'detection_frame',
@@ -181,11 +147,6 @@ export class DetectionService {
       this.settings.debugDetection(),
       trigger && !testRun ? { ...trigger, snapshots: [] } : (trigger ?? undefined),
     );
-  }
-
-  private logEvent(kind: DetectionEventKind, label: string): void {
-    const event: DetectionEvent = { seq: this.eventSeq++, time: nowStamp(), kind, label };
-    this.events.update((events) => [event, ...events].slice(0, MAX_EVENTS));
   }
 
   private showFeedback(label: string): void {
@@ -204,13 +165,6 @@ export class DetectionService {
 }
 
 /** Wall-clock stamp at tenth-second resolution, e.g. "14:03:21.7". */
-function nowStamp(): string {
-  const now = new Date();
-  const pad = (value: number) => value.toString().padStart(2, '0');
-  const tenth = Math.floor(now.getMilliseconds() / 100);
-  return `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${tenth}`;
-}
-
 function formatHit(segment: string | null, points: number | null): string {
   if (!segment) {
     return 'Treffer';

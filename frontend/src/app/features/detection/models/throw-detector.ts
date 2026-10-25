@@ -4,14 +4,6 @@ import { TriggerMoment, TriggerSnapshotDto } from '../dto/trigger-snapshot.dto';
 
 export type ThrowDetectorState = 'idle' | 'motion' | 'settling';
 
-/** Live numbers for the debug view, so a real throw can be watched and tuned. */
-export interface ThrowDetectorDiagnostics {
-  readonly state: ThrowDetectorState;
-  readonly changedFraction: number; // 0..1 — pixels that changed this frame (informational)
-  readonly activeBlocks: number; // localized change clusters this frame
-  readonly ambientBlocks: number; // steady baseline (wobble/light), subtracted before arming
-}
-
 // Per-pixel difference counting as changed, in grey levels. Sensor noise sits
 // around 2-4, so this is far above it while still catching a dark dart against a
 // dark segment. After this threshold a quiet scene has ~0 changed pixels.
@@ -95,7 +87,6 @@ export class ThrowDetector {
   private stableFrameCount = 0;
   private motionFrames = 0;
   private cooldownFrames = 0;
-  private changedFraction = 0;
   private activeBlocks = 0;
   private activeCells: number[] = [];
   private history: Sample[] = [];
@@ -141,31 +132,18 @@ export class ThrowDetector {
     return this.trigger;
   }
 
-  getDiagnostics(): ThrowDetectorDiagnostics {
-    return {
-      state: this.state,
-      changedFraction: this.changedFraction,
-      activeBlocks: this.activeBlocks,
-      ambientBlocks: this.ambientBlocks,
-    };
-  }
-
   /**
    * Verarbeitet einen neuen Graustufen-Frame.
-   * @param mask Optionaler Puffer (Länge = Pixelzahl): wird mit 255 an geänderten
-   *   Pixeln gefüllt, sonst 0 — für die Debug-Visualisierung.
    * @returns true genau in dem Frame, in dem sich der Wurf als abgeschlossen erwiesen hat.
    */
-  processFrame(frame: Uint8ClampedArray, mask?: Uint8ClampedArray): boolean {
+  processFrame(frame: Uint8ClampedArray): boolean {
     if (!this.previousFrame) {
       this.previousFrame = frame;
-      this.changedFraction = 0;
       this.activeBlocks = 0;
-      mask?.fill(0);
       return false;
     }
 
-    this.analyseFrame(this.previousFrame, frame, mask);
+    this.analyseFrame(this.previousFrame, frame);
     this.previousFrame = frame;
 
     // Erste echte Messung als Baseline setzen, damit ein anfängliches Wackeln
@@ -206,7 +184,6 @@ export class ThrowDetector {
   reset(): void {
     this.previousFrame = null;
     this.cooldownFrames = 0;
-    this.changedFraction = 0;
     this.activeBlocks = 0;
     this.ambientBlocks = 0;
     this.ambientPrimed = false;
@@ -369,18 +346,12 @@ export class ThrowDetector {
   }
 
   /**
-   * Vergleicht zwei Frames: füllt `changedFraction` (Anteil der Pixel, deren
-   * Graustufe sich um mehr als PIXEL_DELTA geändert hat) und `activeBlocks`
-   * (Rasterzellen mit mindestens BLOCK_MIN_CHANGED geänderten Pixeln), und
-   * schreibt optional die Debug-Maske.
+   * Vergleicht zwei Frames: füllt `activeBlocks` (Rasterzellen mit mindestens
+   * BLOCK_MIN_CHANGED Pixeln, deren Graustufe sich um mehr als PIXEL_DELTA
+   * geändert hat).
    */
-  private analyseFrame(
-    a: Uint8ClampedArray,
-    b: Uint8ClampedArray,
-    mask?: Uint8ClampedArray,
-  ): void {
+  private analyseFrame(a: Uint8ClampedArray, b: Uint8ClampedArray): void {
     this.blockCounts.fill(0);
-    let changed = 0;
     let index = 0;
     for (let y = 0; y < this.height; y++) {
       const blockRow = Math.floor(y / BLOCK_SIZE) * this.columns;
@@ -388,11 +359,7 @@ export class ThrowDetector {
         const isChanged = Math.abs(a[index] - b[index]) > PIXEL_DELTA;
         this.changed[index] = isChanged ? 1 : 0;
         if (isChanged) {
-          changed++;
           this.blockCounts[blockRow + Math.floor(x / BLOCK_SIZE)]++;
-        }
-        if (mask) {
-          mask[index] = isChanged ? 255 : 0;
         }
       }
     }
@@ -416,7 +383,6 @@ export class ThrowDetector {
       }
     }
 
-    this.changedFraction = changed / a.length;
     this.activeBlocks = active;
     this.activeCells = cells;
     this.spanCols = Math.max(0, maxCol - minCol + 1);

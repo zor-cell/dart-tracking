@@ -4,11 +4,9 @@
  * undefined state on the wire.
  */
 export interface AppSettingsDto {
-  readonly manualEntryEnabled: boolean;
   readonly confirmThrowEnabled: boolean;
   readonly evaluationEnabled: boolean;
   readonly debugCalibration: boolean;
   readonly debugDetection: boolean;
-  readonly debugClientDetection: boolean;
   readonly preferredDoubles: readonly number[]; // by sector, 25 for bull, in order
 }

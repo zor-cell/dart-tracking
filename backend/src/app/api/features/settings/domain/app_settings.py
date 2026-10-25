@@ -13,12 +13,10 @@ class AppSettings:
     """Defaults are the safe reading of each switch: the fallbacks that keep a
     game playable are on, the diagnostics are off."""
 
-    manual_entry_enabled: bool = True
     confirm_throw_enabled: bool = True
     evaluation_enabled: bool = False
     debug_calibration: bool = False
     debug_detection: bool = False
-    debug_client_detection: bool = False
     # Finishing doubles by sector (25 for bull) the checkout suggests first, in order.
     preferred_doubles: tuple[int, ...] = ()
 
@@ -30,7 +28,6 @@ class AppSettings:
             evaluation_enabled=False,
             debug_calibration=False,
             debug_detection=False,
-            debug_client_detection=False,
         )
 
 

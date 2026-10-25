@@ -111,11 +111,6 @@
   z-index: 2;
 }
 
-// Dimmed while the debug mask is shown, so the highlighted changes stand out.
-.game__video--dimmed {
-  filter: brightness(0.4);
-}
-
 .game__hidden-canvas {
   display: none;
 }
@@ -212,123 +207,6 @@
   z-index: 2;
 }
 
-// The change mask sits over the video like the board overlay; dimming the video
-// underneath lets the highlighted changes stand out.
-.game__debug-mask {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-// The exact frame last sent to the server, as a corner thumbnail over the
-// dimmed video. It redraws only on a send, so it doubles as a visible pulse.
-.game__sent-preview {
-  position: absolute;
-  top: 1.75rem;
-  left: 0.5rem;
-  width: 34%;
-  max-width: 180px;
-  height: auto;
-  border: 2px solid var(--p-primary-color);
-  border-radius: 0.375rem;
-  pointer-events: none;
-  z-index: 3;
-}
-
-.game__sent-preview-label {
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  padding: 0.05rem 0.4rem;
-  border-radius: 999px;
-  background: rgb(0 0 0 / 60%);
-  color: #fff;
-  font-size: 0.7rem;
-  z-index: 3;
-}
-
-// A compact readout below the picture rather than a box on top of it.
-.detection-debug {
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.15rem 1rem;
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--p-text-muted-color);
-
-  div {
-    display: flex;
-    gap: 0.3rem;
-  }
-
-  dt {
-    opacity: 0.7;
-  }
-
-  dd {
-    margin: 0;
-    font-weight: 600;
-  }
-}
-
-// Newest-first event log: each send and the server's answer, colour-coded by
-// kind so the send→answer rhythm is readable at a glance.
-.detection-log {
-  list-style: none;
-  margin: 0;
-  padding: 0.5rem 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  flex: 0 1 auto;
-  max-height: 9rem;
-  overflow-y: auto;
-  border: 1px solid var(--p-content-border-color);
-  border-radius: 0.5rem;
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.detection-log__row {
-  display: grid;
-  grid-template-columns: auto 6.5rem 1fr;
-  gap: 0.5rem;
-  align-items: baseline;
-}
-
-.detection-log__time {
-  color: var(--p-text-muted-color);
-}
-
-.detection-log__kind {
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.detection-log__detail {
-  font-weight: 600;
-}
-
-// A send leaving the device — neutral; the answer is what carries the verdict.
-.detection-log__row--sent .detection-log__kind {
-  color: var(--p-sky-500);
-}
-
-.detection-log__row--hit .detection-log__kind {
-  color: var(--p-green-500);
-}
-
-.detection-log__row--rejected .detection-log__kind {
-  color: var(--p-red-500);
-}
-
-.detection-log__empty {
-  color: var(--p-text-muted-color);
-}
-
 // Gives way once the picture is down to its minimum, down to the keypad's
 // minimum — that is what compresses the key rows from 2.75rem to 2rem rather
 // than dropping the last one.
@@ -342,17 +220,14 @@
 
 // Rematch and done side by side, at the top of the keypad's slot, indented to
 // the width of the dart boxes above.
+// Claims the keypad's height, so the picture above does not grow into the freed space.
 .finish {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: start;
   gap: 0.75rem;
-  padding: 0.5rem 3rem 0;
-}
-
-// Claims the keypad's height, so the picture above does not grow into the freed space.
-.finish--reserved {
   height: var(--pad-height);
+  padding: 0.5rem 3rem 0;
 }
 
 // The back button, the dart boxes and, in camera mode, the confirm button sit on one row.

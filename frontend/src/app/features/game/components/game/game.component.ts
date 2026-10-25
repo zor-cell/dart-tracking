@@ -104,7 +104,6 @@ export class GameComponent implements OnInit, OnDestroy {
   private readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('video');
   private readonly diffCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('diffCanvas');
   private readonly captureCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('captureCanvas');
-  private readonly detectionDebugCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('detectionDebugCanvas');
 
   protected readonly signedIn = inject(AuthService).isAuthenticated;
   protected readonly deviceRole = this.session.role;
@@ -118,15 +117,6 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly roundDarts = this.detection.roundDarts;
   protected readonly detectionStatusLabel = this.throwCapture.statusLabel;
   protected readonly detectionFeedback = this.detection.feedbackLabel;
-  protected readonly detectionDebug = this.throwCapture.debug;
-  protected readonly detectionEvents = this.detection.events;
-
-  // The client debug view (change mask, numbers, event log, sent-frame preview)
-  // is on only while tracking and switched on — separate from the server-side
-  // detection-image dump (settings.debugDetection).
-  protected readonly debugActive = computed(
-    () => this.settings.debugClientDetection() && this.cameraPhase() === 'tracking',
-  );
 
   protected readonly padRows = PAD_ROWS;
   protected readonly sideKeys = SIDE_KEYS;
@@ -233,14 +223,6 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   constructor() {
-    // Attach the change-mask canvas whenever the debug panel is on screen, and
-    // detach it the moment it leaves — keeping the loop's debug work off unless
-    // someone is watching.
-    effect(() => {
-      const canvas = this.detectionDebugCanvasRef()?.nativeElement ?? null;
-      this.throwCapture.setDebugCanvas(this.settings.debugClientDetection() ? canvas : null);
-    });
-
 
     effect(() => {
       if (this.cameraPhase() === 'idle') {
