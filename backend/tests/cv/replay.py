@@ -1,6 +1,7 @@
-"""Runs calibration and detection over a test tree the way the live socket does,
-and reduces each result to what a regression baseline compares."""
+"""Replays recorded throw series through calibration and detection the way the
+live socket does, reduced to what a regression baseline compares."""
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -11,12 +12,34 @@ from app.api.features.calibration.domain.calibration_failure import CalibrationF
 from app.api.features.calibration.services import board_detector
 from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.detection.services import dart_detector
-from scripts.common import collect_images, load_image
-from scripts.detection.run_all import Result, collect_series, load_ground_truth
+from scripts.common import load_image
+from scripts.detection.run_all import NO_CHANGE_LABEL, collect_series, load_ground_truth
 
+GAMES = [
+    line.strip()
+    for line in (Path(__file__).with_name("games.txt")).read_text().splitlines()
+    if line.strip() and not line.startswith("#")
+]
 # Board points (mm) whose image position pins down a calibration: the bull and the
 # outer edge of the double ring at 20, 6, 3 and 11.
 _BOARD_POINTS = np.array([[0, 0], [0, 170], [170, 0], [0, -170], [-170, 0]], dtype=float)
+_EMPTY_READINGS = {DetectionFailure.NO_CHANGE.value, DetectionFailure.DARTS_REMOVED.value}
+_FAILURES = {failure.value for failure in DetectionFailure}
+
+
+def recordings() -> Path | None:
+    """Where the app keeps recorded games, if this machine has them."""
+    root = os.environ.get("TESTDATA_DIR")
+    return Path(root) / "evaluation" if root else None
+
+
+def is_correct(result: str, expected: str | None) -> bool:
+    """Whether a detection awarded what the throw was worth."""
+    if expected is None:
+        return False
+    if result in _FAILURES:
+        return result in _EMPTY_READINGS and expected == NO_CHANGE_LABEL
+    return result == expected
 
 
 def _image_points(calibration: Calibration) -> list[list[float]]:
@@ -24,46 +47,38 @@ def _image_points(calibration: Calibration) -> list[list[float]]:
     return np.round(projected[:, :2] / projected[:, 2:], 1).tolist()
 
 
-def calibrations(root: Path) -> dict[str, dict[str, Any]]:
+def replay_series(frames: list[tuple[str, Path]]) -> tuple[dict[str, Any], dict[str, str]]:
+    """The calibration of the series' base frame and the result per dart frame, by frame label."""
+    empty_board = reference = load_image(frames[0][1], raw=False)
+    calibration = board_detector.detect_board(reference)
+    if isinstance(calibration, CalibrationFailure):
+        failed = {"failure": calibration.value, "points": None}
+        return failed, {label: f"calibration {calibration.value}" for label, _ in frames[1:]}
+
     results = {}
-    for path in collect_images(root, root / "_results"):
-        outcome = board_detector.detect_board(load_image(path, raw=False))
-        failed = isinstance(outcome, CalibrationFailure)
-        results[path.relative_to(root).as_posix()] = {
-            "failure": outcome.value if failed else None,
-            "points": None if failed else _image_points(outcome),
-        }
-    return results
+    for label, path in frames[1:]:
+        outcome = dart_detector.detect_dart(reference, load_image(path, raw=False), calibration, empty_board)
+        failed = isinstance(outcome, DetectionFailure)
+        results[label] = outcome.value if failed else outcome.segment.label
+        # The socket keeps a failed frame as the next reference only when the change was absorbed.
+        absorbed = dart_detector.trace.rejected_miss or outcome is DetectionFailure.DARTS_REMOVED
+        if dart_detector.trace.aligned is not None and (not failed or absorbed):
+            reference = dart_detector.trace.aligned
+    return {"failure": None, "points": _image_points(calibration)}, results
 
 
-def detections(root: Path) -> dict[str, dict[str, Any]]:
-    results = {}
-    for name, frames in collect_series(root, root / "_results").items():
-        truth = load_ground_truth(frames[0][1].parent)
-        empty_board = reference = load_image(frames[0][1], raw=False)
-        calibration = board_detector.detect_board(reference)
-
-        for label, path in frames[1:]:
-            expected = truth.get(path.stem, (None, False))[0]
-            key = f"{name}_{label}"
-            if isinstance(calibration, CalibrationFailure):
-                results[key] = {"result": f"calibration {calibration.value}", "expected": expected, "correct": False}
-                continue
-
-            outcome = dart_detector.detect_dart(reference, load_image(path, raw=False), calibration, empty_board)
-            aligned = dart_detector.trace.aligned
-            failed = isinstance(outcome, DetectionFailure)
-            result = Result(
-                name, label, path, not failed, None if failed else outcome.segment.label, expected,
-                failure=outcome if failed else None,
-            )
-            results[key] = {
-                "result": outcome.value if failed else outcome.segment.label,
-                "expected": expected,
-                "correct": result.correct,
-            }
-            # The socket keeps a failed frame as the next reference only when the change was absorbed.
-            absorbed = dart_detector.trace.rejected_miss or outcome is DetectionFailure.DARTS_REMOVED
-            if aligned is not None and (not failed or absorbed):
-                reference = aligned
-    return results
+def replay_games(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Calibrations by series and detections by dart over every game in `games.txt`,
+    each detection with the label the players accepted, where known."""
+    calibrations, detections = {}, {}
+    for game in GAMES:
+        folder = root / game
+        assert folder.is_dir(), f"{game} from games.txt is missing in {root}"
+        truth = load_ground_truth(folder)
+        for name, frames in collect_series(folder, folder / "_results").items():
+            calibration, results = replay_series(frames)
+            calibrations[f"{game}/{name}"] = calibration
+            for label, result in results.items():
+                expected = truth.get(f"{name}_{label}", (None, False))[0]
+                detections[f"{game}/{name}_{label}"] = {"result": result, "expected": expected}
+    return calibrations, detections

@@ -1,0 +1,5 @@
+# Recorded games the CV regression replays, from $TESTDATA_DIR/evaluation.
+# Fixed on purpose: a new game is only added together with a new baseline.
+game_01a13135-f75a-7f6f-929b-3f21c311e94d
+game_01a13481-1426-766f-b71d-524e8038c6ba
+game_01a143e3-9c03-7e11-9286-7c0a7efee491

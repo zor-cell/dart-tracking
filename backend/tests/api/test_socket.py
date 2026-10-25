@@ -8,7 +8,8 @@ import numpy as np
 import pytest
 from starlette.websockets import WebSocketDisconnect
 
-from tests.cv.replay import detections
+from scripts.detection.run_all import collect_series
+from tests.cv.replay import GAMES, recordings, replay_series
 
 SOME_ID = "00000000-0000-0000-0000-000000000000"
 
@@ -266,24 +267,30 @@ def test_rematch_calls_the_old_room_over(room, game_id, anon):
         assert device.next("rematch_started")["gameId"] == rematch["id"]
 
 
+@pytest.mark.skipif(recordings() is None, reason="TESTDATA_DIR is not set")
 def test_socket_scores_a_throw_series_like_the_pipeline_does(camera):
-    series = Path(__file__).parents[1] / "data" / "detection" / "pz_setup1"
-    expected = [entry["result"] for entry in detections(series).values()]
+    folder = recordings() / GAMES[0]
+    frames = next(
+        frames
+        for frames in collect_series(folder, folder / "_results").values()
+        if replay_series(frames)[0]["failure"] is None
+    )
+    expected = list(replay_series(frames)[1].values())
 
-    def frame(name: str) -> str:
-        return base64.b64encode((series / f"throw1_{name}.jpg").read_bytes()).decode()
+    def encoded(path: Path) -> str:
+        return base64.b64encode(path.read_bytes()).decode()
 
     with camera() as device:
-        device.send("calibration_frame", image=frame("base"))
+        device.send("calibration_frame", image=encoded(frames[0][1]))
         assert device.next("calibration_result")["success"] is True
 
         reported, booked = [], 0
-        for name in ("dart1", "dart2", "dart3"):
-            device.send("detection_frame", image=frame(name))
+        for _, path in frames[1:]:
+            device.send("detection_frame", image=encoded(path))
             result = device.next("detection_result")
             reported.append(result["segment"] or result["failure"])
             if result["success"]:
                 booked += 1
-                assert len(darts(device.next("game_state"))) == booked
+                assert len(darts(device.next("game_state"))) == min(booked, 3)
 
     assert reported == expected
