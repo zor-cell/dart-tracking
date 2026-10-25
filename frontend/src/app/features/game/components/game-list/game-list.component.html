@@ -6,8 +6,10 @@
   </header>
 
   <app-list-toolbar
+    searchLabel="Spieler suchen"
     [filterable]="true"
     [chips]="chips()"
+    (search)="onSearch($event)"
     (chipRemove)="clearFilter($event)"
     (reset)="resetFilters()"
   >
@@ -143,8 +145,8 @@
       <ng-template #emptymessage>
         <tr>
           <td colspan="4">
-            <app-empty-state [icon]="chips().length > 0 ? 'pi-filter-slash' : 'pi-history'">
-              <p>{{ chips().length > 0 ? 'Keine Spiele für diese Filter.' : 'Noch keine Spiele.' }}</p>
+            <app-empty-state [icon]="filtered() ? 'pi-filter-slash' : 'pi-history'">
+              <p>{{ filtered() ? 'Keine Spiele für diese Suche.' : 'Noch keine Spiele.' }}</p>
             </app-empty-state>
           </td>
         </tr>

@@ -4,6 +4,8 @@ import { GameVariant } from './game-variant';
 
 /** Narrows the game history; a null field leaves it open. `until` is exclusive. */
 export interface GameFilter {
+  /** Part of a player's name. */
+  readonly query: string | null;
   readonly variant: GameVariant | null;
   readonly mode: GameMode | null;
   readonly status: GameStatus | null;

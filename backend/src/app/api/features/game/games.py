@@ -135,6 +135,7 @@ async def list_games(
     user: AuthenticatedUser,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    q: str = Query("", max_length=64),
     variant: GameVariant | None = None,
     mode: GameMode | None = None,
     status: GameStatus | None = None,
@@ -146,6 +147,7 @@ async def list_games(
 ) -> GamePageDto:
     """My games — played in or written down — one page at a time."""
     criteria = GameFilter(
+        query=q.strip() or None,
         variant=variant,
         mode=mode,
         status=status,

@@ -10,6 +10,8 @@ from app.api.features.game.domain.game_variant import GameVariant
 
 @dataclass(frozen=True)
 class GameFilter:
+    # Part of a seated player's name, ignoring case.
+    query: str | None = None
     variant: GameVariant | None = None
     mode: GameMode | None = None
     status: GameStatus | None = None

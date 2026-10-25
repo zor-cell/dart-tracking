@@ -226,6 +226,24 @@ def test_history_filters_and_paging(alice, session):
     assert len({g["id"] for g in first["items"] + rest["items"]}) == 4
 
 
+def test_history_search_by_player_name(alice):
+    me = alice.own_entry()["id"]
+    with_bob = alice.new_game(me, alice.add_player("Bob"))["id"]
+    with_bobby = alice.new_game(guest("Bobby"))["id"]
+    alice.new_game(me, alice.add_player("Carol"))
+
+    def ids(q):
+        page = alice.get("/games", params={"q": q}).json()
+        assert page["total"] == len(page["items"])
+        return {game["id"] for game in page["items"]}
+
+    assert ids("bob") == {with_bob, with_bobby}
+    assert ids("  BOBBY ") == {with_bobby}
+    assert ids("%") == set()
+    assert len(ids("")) == 3
+    assert alice.get("/games", params={"q": "x" * 65}).status_code == 422
+
+
 def test_summary_scores_and_winner(alice, session):
     game_id = alice.new_game(alice.own_entry()["id"], alice.add_player("Bob"))["id"]
     session.play(game_id, WINNING_LEG[0], [T20, T20, T20], [T20, T20, T20], [MISS])

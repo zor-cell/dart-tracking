@@ -562,6 +562,14 @@ def _history_clauses(user_id: str, criteria: GameFilter) -> list[ColumnElement[b
     clauses: list[ColumnElement[bool]] = [
         or_(GameTable.owner_user_id == user_id, GameTable.id.in_(seated))
     ]
+    if criteria.query:
+        clauses.append(
+            GameTable.id.in_(
+                select(GamePlayerTable.game_id)
+                .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
+                .where(PlayerTable.display_name.icontains(criteria.query, autoescape=True))
+            )
+        )
     if criteria.variant is not None:
         clauses.append(GameTable.variant == criteria.variant.value)
     if criteria.mode is not None:

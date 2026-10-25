@@ -73,6 +73,7 @@ export class GameListComponent {
     value: value as PlayerCount,
   }));
   protected readonly opponents = signal<PlayerIdentityDto[]>([]);
+  protected readonly query = signal('');
 
   protected readonly filters = this.fb.group({
     variant: this.fb.control<GameVariant | null>(null),
@@ -119,11 +120,18 @@ export class GameListComponent {
     }
     return chips;
   });
+  /** Whether the search or a filter narrows the list. */
+  protected readonly filtered = computed(() => this.query() !== '' || this.chips().length > 0);
 
   constructor() {
     void this.games.load();
     void this.players.list().then((all) => this.opponents.set(all.filter((p) => !p.isSelf)));
     this.filters.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.games.restart());
+  }
+
+  protected onSearch(query: string): void {
+    this.query.set(query);
+    this.games.restart();
   }
 
   protected open(game: GameSummaryDto): void {
@@ -161,6 +169,7 @@ export class GameListComponent {
     const [start, end] = period ?? [];
     const count = players ? PLAYER_COUNTS[players] : null;
     return {
+      query: this.query() || null,
       variant,
       mode,
       status,

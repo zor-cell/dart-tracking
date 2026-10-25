@@ -19,11 +19,14 @@ export class GameHistoryService {
   list(limit: number, offset: number, filter?: GameFilter): Promise<GamePageDto> {
     let params = new HttpParams().set('limit', limit).set('offset', offset);
     if (filter) {
-      const { since, until, opponentId, ...rest } = filter;
+      const { query, since, until, opponentId, ...rest } = filter;
       for (const [key, value] of Object.entries(rest)) {
         if (value !== null) {
           params = params.set(key, value);
         }
+      }
+      if (query) {
+        params = params.set('q', query);
       }
       if (opponentId) {
         params = params.set('opponent', opponentId);
