@@ -30,6 +30,8 @@
   />
 </svg:g>
 
+<ng-content />
+
 @for (number of sectorNumbers; track number.value) {
   <svg:text class="face__number" [attr.x]="number.x" [attr.y]="number.y">
     {{ number.value }}

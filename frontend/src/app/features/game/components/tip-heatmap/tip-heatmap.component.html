@@ -1,16 +1,18 @@
 <svg class="heatmap" [attr.viewBox]="viewBox" role="img" [attr.aria-label]="ariaLabel()">
-  <g app-board-face></g>
+  <g app-board-face [faded]="true">
+    @if (cloud(); as cloud) {
+      <image
+        [attr.href]="cloud"
+        [attr.x]="-extent"
+        [attr.y]="-extent"
+        [attr.width]="extent * 2"
+        [attr.height]="extent * 2"
+        preserveAspectRatio="none"
+      />
+    }
+  </g>
 
-  @if (cloud(); as cloud) {
-    <image
-      [attr.href]="cloud"
-      [attr.x]="-extent"
-      [attr.y]="-extent"
-      [attr.width]="extent * 2"
-      [attr.height]="extent * 2"
-      preserveAspectRatio="none"
-    />
-  } @else {
+  @if (!cloud()) {
     @for (dot of dots(); track $index) {
       <circle class="heatmap__mark" [attr.cx]="dot.x" [attr.cy]="dot.y" [attr.r]="markRadius" />
     }

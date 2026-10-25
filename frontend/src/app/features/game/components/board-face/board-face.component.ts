@@ -12,7 +12,8 @@ export interface FieldEnter {
   readonly label: string;
 }
 
-/** The empty board every board view draws on: beds, bull, number ring. Used on an SVG `<g>`. */
+/** The empty board every board view draws on: beds, bull, number ring. Used on an SVG `<g>`;
+ * projected content lies between the beds and the numbers. */
 @Component({
   selector: '[app-board-face]',
   templateUrl: './board-face.component.html',

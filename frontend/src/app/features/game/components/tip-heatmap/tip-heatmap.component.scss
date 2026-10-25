@@ -10,11 +10,11 @@
   height: 100%;
 }
 
-/* White with a dark rim, so a tip reads on every board colour; overlaps brighten. */
+/* Text colour with a rim in the page colour, so a tip reads on the grey board in either theme. */
 .heatmap__mark {
-  fill: #ffffff;
+  fill: var(--p-text-color);
   fill-opacity: 0.85;
-  stroke: #1b1b1b;
+  stroke: var(--p-content-background);
   stroke-width: 1.5;
 }
 
