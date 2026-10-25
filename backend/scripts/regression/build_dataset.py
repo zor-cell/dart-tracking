@@ -4,7 +4,7 @@ the tests in `tests/cv` replay. Copy the output folder to the Pi's TESTDATA_DIR.
 
 Usage:
     uv run python scripts/regression/build_dataset.py GAME_DIR [GAME_DIR ...]
-    uv run python scripts/regression/build_dataset.py testdata/prod/export_*/testdata/evaluation/game_*
+    uv run python scripts/regression/build_dataset.py testdata/_exports/export_*/testdata/evaluation/game_*
 
 Reads `testdata/calibration` and `testdata/detection`, writes `testdata/regression`
 (wiped first) and `tests/cv/dataset.txt` / `tests/cv/gate.txt`. A setup folder
