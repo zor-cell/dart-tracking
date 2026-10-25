@@ -245,13 +245,6 @@ export class AnnouncerService {
     return utterance;
   }
 
-  /** How many voices the device offers, and how many of them speak German. Both
-   * load asynchronously, so they are read fresh rather than cached. */
-  voiceCounts(): { total: number; german: number } {
-    const voices = this.synth()?.getVoices() ?? [];
-    return { total: voices.length, german: voices.filter(isGerman).length };
-  }
-
   private germanVoice(): SpeechSynthesisVoice | null {
     return (this.synth()?.getVoices() ?? []).find(isGerman) ?? null;
   }

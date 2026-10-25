@@ -50,18 +50,14 @@
                 @if (isAdmin()) {
                   <div class="diagnostics__row">
                     <dt>Sprachausgabe</dt>
-                    <dd>{{ announcer.supported ? 'verfügbar' : 'fehlt in diesem Browser' }}</dd>
+                    <dd>{{ announcer.supported ? 'verfügbar' : 'fehlt' }}</dd>
                   </div>
                   <div class="diagnostics__row">
                     <dt>Freigeschaltet</dt>
                     <dd>{{ announcer.unlocked() ? 'ja' : 'noch nicht' }}</dd>
                   </div>
                   <div class="diagnostics__row">
-                    <dt>Stimmen</dt>
-                    <dd>{{ voices().total }}, davon {{ voices().german }} deutsche</dd>
-                  </div>
-                  <div class="diagnostics__row">
-                    <dt>Dieses Gerät sagt an</dt>
+                    <dt>Ansage-Gerät</dt>
                     <dd>{{ announcer.isAnnouncer() ? 'ja' : 'nein' }}</dd>
                   </div>
                   <div class="diagnostics__row">

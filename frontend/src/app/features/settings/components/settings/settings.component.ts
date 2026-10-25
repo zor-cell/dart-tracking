@@ -16,10 +16,10 @@ import { LoadingStateComponent } from '../../../../core/view/components/loading-
 /** What the self-test's outcome is called on the page. */
 const TEST_RESULTS: Record<AnnouncerTestResult, string> = {
   spoken: 'gesprochen',
-  failed: 'vom Browser abgebrochen',
-  no_answer: 'keine Rückmeldung - der Browser hat die Ansage verschluckt',
-  muted: 'dieses Gerät ist stumm geschaltet',
-  unsupported: 'dieser Browser kann keine Sprachausgabe',
+  failed: 'abgebrochen',
+  no_answer: 'keine Rückmeldung',
+  muted: 'stumm geschaltet',
+  unsupported: 'nicht unterstützt',
 };
 
 @Component({
@@ -54,9 +54,6 @@ export class SettingsComponent {
     () => this.game.state()?.evaluationEnabled ?? this.settings.evaluationEnabled(),
   );
 
-  /** How many voices the device offers. Re-read after a test, because the list
-   * loads asynchronously and is often still empty when the page opens. */
-  protected readonly voices = signal(this.announcer.voiceCounts());
   protected readonly testing = signal(false);
   protected readonly testResult = signal<string | null>(null);
 
@@ -68,7 +65,6 @@ export class SettingsComponent {
     const spoken = this.announcer.test();
     this.testing.set(true);
     this.testResult.set(TEST_RESULTS[await spoken]);
-    this.voices.set(this.announcer.voiceCounts());
     this.testing.set(false);
   }
 
