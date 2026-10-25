@@ -1,4 +1,4 @@
-"""Replays the regression corpus through calibration and detection the way the
+"""Replays the regression dataset through calibration and detection the way the
 live socket does, reduced to what a regression baseline compares."""
 
 import os
@@ -21,12 +21,12 @@ _BOARD_POINTS = np.array([[0, 0], [0, 170], [170, 0], [0, -170], [-170, 0]], dty
 _EMPTY_READINGS = {DetectionFailure.NO_CHANGE.value, DetectionFailure.DARTS_REMOVED.value}
 _FAILURES = {failure.value for failure in DetectionFailure}
 
-# One manifest entry: a corpus folder, and the series it contributes (None for all).
+# One manifest entry: a dataset folder, and the series it contributes (None for all).
 Entry = tuple[str, set[str] | None]
 
 
-def corpus_root() -> Path | None:
-    """Where the regression corpus lives on this machine, if it has one."""
+def dataset_root() -> Path | None:
+    """Where the regression dataset lives on this machine, if it has one."""
     root = os.environ.get("TESTDATA_DIR")
     return Path(root) / "regression" if root else None
 
@@ -83,7 +83,7 @@ def replay_series(frames: list[tuple[str, Path]]) -> tuple[dict[str, Any], dict[
 
 
 def series_of(root: Path, entry: Entry) -> dict[str, list[tuple[str, Path]]]:
-    """The throw series an entry contributes, keyed by their path in the corpus."""
+    """The throw series an entry contributes, keyed by their path in the dataset."""
     folder, wanted = root / entry[0], entry[1]
     assert folder.is_dir(), f"{entry[0]} is missing in {root}"
     return {

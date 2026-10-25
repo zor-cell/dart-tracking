@@ -1,4 +1,4 @@
-# Written by scripts/regression/build_corpus.py.
+# Written by scripts/regression/build_dataset.py.
 # A folder under $TESTDATA_DIR/regression, then the series it contributes (all if none).
 calibration/board_a
 calibration/board_b

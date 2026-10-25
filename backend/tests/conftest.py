@@ -6,7 +6,7 @@ def pytest_addoption(parser):
     )
     parser.addoption(
         "--cv-set",
-        choices=("gate", "corpus"),
+        choices=("gate", "dataset"),
         default="gate",
-        help="replay the small gate set from tests/cv/gate.txt or the whole corpus",
+        help="replay the small gate set from tests/cv/gate.txt or the whole dataset",
     )

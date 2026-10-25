@@ -1,13 +1,13 @@
-"""Build the CV regression corpus: the photo sets and recorded games under neutral
-board names, frames as the client sends them, plus the corpus and gate manifests
+"""Build the CV regression dataset: the photo sets and recorded games under neutral
+board names, frames as the client sends them, plus the dataset and gate manifests
 the tests in `tests/cv` replay. Copy the output folder to the Pi's TESTDATA_DIR.
 
 Usage:
-    uv run python scripts/regression/build_corpus.py GAME_DIR [GAME_DIR ...]
-    uv run python scripts/regression/build_corpus.py testdata/prod/export_*/testdata/evaluation/game_*
+    uv run python scripts/regression/build_dataset.py GAME_DIR [GAME_DIR ...]
+    uv run python scripts/regression/build_dataset.py testdata/prod/export_*/testdata/evaluation/game_*
 
 Reads `testdata/calibration` and `testdata/detection`, writes `testdata/regression`
-(wiped first) and `tests/cv/corpus.txt` / `tests/cv/gate.txt`. A setup folder
+(wiped first) and `tests/cv/dataset.txt` / `tests/cv/gate.txt`. A setup folder
 `<board>[-<variant>]_setup<n>` becomes `boards/board_<letter>/[<variant>_]setup<n>`.
 """
 
@@ -84,7 +84,7 @@ def main() -> int:
 
     shutil.rmtree(args.out, ignore_errors=True)
     names = board_names(TESTDATA / "calibration", TESTDATA / "detection")
-    corpus: list[str] = []
+    dataset: list[str] = []
     gate: list[str] = []
 
     for setup in sorted((TESTDATA / "calibration").glob("*_setup*")):
@@ -94,30 +94,30 @@ def main() -> int:
         for path in sorted(setup.glob("*.jpg")):
             (target / f"{variant}{path.name}").write_bytes(client_bytes(path))
     for folder in sorted((args.out / "calibration").iterdir()):
-        corpus.append(folder.relative_to(args.out).as_posix())
-        gate.append(corpus[-1])
+        dataset.append(folder.relative_to(args.out).as_posix())
+        gate.append(dataset[-1])
 
     for setup in sorted((TESTDATA / "detection").glob("*_setup*")):
         board, variant, number = split_setup(setup.name)
         target = args.out / "boards" / names[board] / f"{variant}{number}"
         copy_frames(setup, target, "throw*_*.jpg")
-        corpus.append(target.relative_to(args.out).as_posix())
-        gate.append(f"{corpus[-1]} throw1")
+        dataset.append(target.relative_to(args.out).as_posix())
+        gate.append(f"{dataset[-1]} throw1")
 
     for game in sorted(args.games, key=lambda path: path.name):
         target = args.out / "games" / game.name
         copy_frames(game, target, "throw*_*.jpg")
-        corpus.append(target.relative_to(args.out).as_posix())
+        dataset.append(target.relative_to(args.out).as_posix())
         if hard := hard_series(target):
-            gate.append(" ".join([corpus[-1], *hard]))
+            gate.append(" ".join([dataset[-1], *hard]))
 
     header = (
-        "# Written by scripts/regression/build_corpus.py.\n"
+        "# Written by scripts/regression/build_dataset.py.\n"
         "# A folder under $TESTDATA_DIR/regression, then the series it contributes (all if none).\n"
     )
-    (MANIFESTS / "corpus.txt").write_text(header + "\n".join(corpus) + "\n")
+    (MANIFESTS / "dataset.txt").write_text(header + "\n".join(dataset) + "\n")
     (MANIFESTS / "gate.txt").write_text(header + "\n".join(gate) + "\n")
-    print(f"{len(corpus)} corpus folders, {len(gate)} gate entries in {args.out}")
+    print(f"{len(dataset)} dataset folders, {len(gate)} gate entries in {args.out}")
     return 0
 
 

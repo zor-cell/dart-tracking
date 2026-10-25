@@ -1,4 +1,4 @@
-name: CV corpus
+name: CV dataset
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       update-baseline:
-        description: Write a new baseline from the whole corpus and upload it as an artifact
+        description: Write a new baseline from the whole dataset and upload it as an artifact
         type: boolean
         default: false
 
@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 jobs:
-  corpus:
+  dataset:
     runs-on: [self-hosted, rpi5]
     timeout-minutes: 180
     env:
@@ -28,7 +28,7 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --frozen
-      - run: uv run pytest tests/cv --cv-set corpus ${{ inputs.update-baseline && '--update-baseline' || '' }}
+      - run: uv run pytest tests/cv --cv-set dataset ${{ inputs.update-baseline && '--update-baseline' || '' }}
       - if: inputs.update-baseline
         uses: actions/upload-artifact@v4
         with:

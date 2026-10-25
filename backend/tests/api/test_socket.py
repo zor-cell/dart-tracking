@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 from starlette.websockets import WebSocketDisconnect
 
-from tests.cv.replay import corpus_root, manifest, replay_series, series_of
+from tests.cv.replay import dataset_root, manifest, replay_series, series_of
 
 SOME_ID = "00000000-0000-0000-0000-000000000000"
 
@@ -266,11 +266,11 @@ def test_rematch_calls_the_old_room_over(room, game_id, anon):
         assert device.next("rematch_started")["gameId"] == rematch["id"]
 
 
-@pytest.mark.skipif(corpus_root() is None, reason="TESTDATA_DIR is not set")
+@pytest.mark.skipif(dataset_root() is None, reason="TESTDATA_DIR is not set")
 def test_socket_scores_a_throw_series_like_the_pipeline_does(camera):
     entry = next(entry for entry in manifest("gate") if entry[0].startswith("games/"))
     frames = next(
-        frames for frames in series_of(corpus_root(), entry).values() if replay_series(frames)[0]["failure"] is None
+        frames for frames in series_of(dataset_root(), entry).values() if replay_series(frames)[0]["failure"] is None
     )
     expected = list(replay_series(frames)[1].values())
 

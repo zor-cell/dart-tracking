@@ -1,4 +1,4 @@
-"""Calibration and detection over the regression corpus, or its gate subset, against
+"""Calibration and detection over the regression dataset, or its gate subset, against
 one committed baseline. Accept intended changes with `--update-baseline`."""
 
 import json
@@ -9,10 +9,10 @@ from typing import Any
 
 import pytest
 
-from tests.cv.replay import corpus_root, is_correct, manifest, replay
+from tests.cv.replay import dataset_root, is_correct, manifest, replay
 
 pytestmark = [
-    pytest.mark.skipif(corpus_root() is None, reason="TESTDATA_DIR is not set"),
+    pytest.mark.skipif(dataset_root() is None, reason="TESTDATA_DIR is not set"),
     pytest.mark.timeout(3 * 60 * 60),
 ]
 
@@ -33,7 +33,7 @@ def cv_set(request) -> str:
 
 @pytest.fixture(scope="module")
 def replayed(cv_set) -> tuple[dict[str, Any], dict[str, Any]]:
-    return replay(corpus_root(), manifest(cv_set))
+    return replay(dataset_root(), manifest(cv_set))
 
 
 def read(path: Path) -> dict[str, Any]:
@@ -41,17 +41,17 @@ def read(path: Path) -> dict[str, Any]:
 
 
 def update(path: Path, results: dict[str, Any], cv_set: str) -> None:
-    """The gate only refreshes its own entries; the corpus replaces the whole baseline."""
-    merged = results if cv_set == "corpus" else read(path) | results
+    """The gate only refreshes its own entries; the dataset replaces the whole baseline."""
+    merged = results if cv_set == "dataset" else read(path) | results
     path.write_text(json.dumps(merged, indent=1, sort_keys=True) + "\n")
 
 
 def unknown(path: Path, baseline: dict[str, Any], results: dict[str, Any], cv_set: str) -> list[str]:
     """Keys the baseline should hold but does not, or holds but the replay did not produce."""
     missing = [f"{key}: new" for key in sorted(results.keys() - baseline.keys())]
-    if cv_set == "corpus":
+    if cv_set == "dataset":
         missing += [f"{key}: gone" for key in sorted(baseline.keys() - results.keys())]
-    assert baseline, f"no baseline yet: run the corpus with --update-baseline to create {path.name}"
+    assert baseline, f"no baseline yet: run the dataset with --update-baseline to create {path.name}"
     return missing
 
 
