@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
-import { Select } from 'primeng/select';
+import { Select, SelectChangeEvent } from 'primeng/select';
 import {
   SortableListComponent,
   SortableMove,
@@ -37,13 +36,12 @@ export class FavouriteDoublesComponent {
   protected readonly name = (double: number): string =>
     DOUBLE_OPTIONS.find((option) => option.value === double)?.label ?? `D${double}`;
 
-  constructor() {
-    this.adding.valueChanges.pipe(takeUntilDestroyed()).subscribe((double) => {
-      if (double !== null) {
-        this.doublesChange.emit([...this.doubles(), double]);
-        this.adding.setValue(null, { emitEvent: false });
-      }
-    });
+  /** Appends the picked double and empties the picker again. */
+  protected add({ value }: SelectChangeEvent): void {
+    if (value !== null) {
+      this.doublesChange.emit([...this.doubles(), value]);
+      this.adding.setValue(null);
+    }
   }
 
   protected move({ from, to }: SortableMove): void {

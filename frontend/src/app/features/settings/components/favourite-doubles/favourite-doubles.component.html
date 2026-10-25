@@ -22,6 +22,7 @@
 
 <p-select
   [formControl]="adding"
+  (onChange)="add($event)"
   [options]="options()"
   optionLabel="label"
   optionValue="value"
