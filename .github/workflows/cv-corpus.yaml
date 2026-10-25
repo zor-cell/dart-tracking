@@ -1,0 +1,36 @@
+name: CV corpus
+
+on:
+  schedule:
+    - cron: "0 3 * * 1" # Mondays 03:00 UTC
+  workflow_dispatch:
+    inputs:
+      update-baseline:
+        description: Write a new baseline from the whole corpus and upload it as an artifact
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  corpus:
+    runs-on: [self-hosted, rpi5]
+    timeout-minutes: 180
+    env:
+      TESTDATA_DIR: /srv/dart-tracking/testdata
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run pytest tests/cv --cv-set corpus ${{ inputs.update-baseline && '--update-baseline' || '' }}
+      - if: inputs.update-baseline
+        uses: actions/upload-artifact@v4
+        with:
+          name: cv-baseline
+          path: backend/tests/cv/baseline_*.json

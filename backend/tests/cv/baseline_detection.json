@@ -1,694 +1,3770 @@
 {
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw0_dart1": {
+ "boards/board_a/setup1/throw1_dart1": {
+  "expected": "D20",
+  "result": "S20"
+ },
+ "boards/board_a/setup1/throw1_dart2": {
   "expected": "S20",
   "result": "S20"
  },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw0_dart2": {
-  "expected": "T20",
-  "result": "T20"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw0_dart3": {
+ "boards/board_a/setup1/throw1_dart3": {
   "expected": "S20",
   "result": "S20"
  },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw10_dart1": {
-  "expected": "S19",
-  "result": "S19"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw10_dart2": {
-  "expected": "T3",
-  "result": "T3"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw10_dart3": {
-  "expected": "S1",
-  "result": "S1"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw11_dart1": {
-  "expected": "S12",
-  "result": "S12"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw11_dart2": {
-  "expected": "S1",
-  "result": "S1"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw11_dart3": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw12_dart1": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw12_dart2": {
-  "expected": "S8",
-  "result": "S8"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw12_dart3": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw13_dart1": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw13_dart2": {
-  "expected": "S14",
-  "result": "S14"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw13_dart3": {
-  "expected": "D5",
-  "result": "D5"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw1_dart1": {
-  "expected": "NO_CHANGE",
-  "result": "no_change"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw1_dart2": {
-  "expected": "S20",
-  "result": "S20"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw1_dart3": {
-  "expected": "S5",
-  "result": "S5"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw1_dart4": {
-  "expected": "25",
-  "result": "25"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw2_dart1": {
-  "expected": "S12",
-  "result": "S12"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw2_dart2": {
-  "expected": "S5",
-  "result": "T20"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw2_dart3": {
-  "expected": "S1",
-  "result": "S1"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw3_dart1": {
-  "expected": "S12",
-  "result": "S12"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw3_dart2": {
-  "expected": "S1",
-  "result": "S1"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw3_dart3": {
-  "expected": "S20",
-  "result": "S20"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw4_dart1": {
-  "expected": "S19",
-  "result": "S19"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw4_dart2": {
-  "expected": "S7",
-  "result": "S7"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw4_dart3": {
-  "expected": "S17",
-  "result": "S17"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw5_dart1": {
-  "expected": "S3",
-  "result": "S3"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw5_dart2": {
-  "expected": "D19",
-  "result": "D19"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw5_dart3": {
-  "expected": "S3",
-  "result": "S3"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw6_dart1": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw6_dart2": {
-  "expected": "S17",
-  "result": "S17"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw6_dart3": {
-  "expected": "NO_CHANGE",
-  "result": "darts_removed"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw7_dart1": {
-  "expected": "25",
-  "result": "25"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw7_dart2": {
-  "expected": "S12",
-  "result": "S12"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw7_dart3": {
-  "expected": "S20",
-  "result": "S20"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw8_dart1": {
-  "expected": "S20",
-  "result": "S20"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw8_dart2": {
-  "expected": "T1",
-  "result": "MISS"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw8_dart3": {
-  "expected": "S20",
-  "result": "S20"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw9_dart1": {
-  "expected": "S5",
-  "result": "S5"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw9_dart2": {
-  "expected": "S14",
-  "result": "S14"
- },
- "game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw9_dart3": {
-  "expected": "T1",
-  "result": "S1"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw0_dart1": {
-  "expected": "S18",
-  "result": "S18"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw0_dart2": {
-  "expected": "S1",
-  "result": "S1"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw0_dart3": {
-  "expected": "S1",
-  "result": "S1"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw10_dart1": {
-  "expected": "S19",
-  "result": "S19"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw10_dart2": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw10_dart3": {
-  "expected": "T5",
-  "result": "T5"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw11_dart1": {
-  "expected": "S9",
-  "result": "S14"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw11_dart2": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw11_dart3": {
-  "expected": "S8",
-  "result": "S8"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw12_dart1": {
-  "expected": null,
-  "result": "MISS"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw12_dart2": {
-  "expected": null,
-  "result": "no_change"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw12_dart3": {
-  "expected": null,
-  "result": "S4"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw13_dart1": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw13_dart2": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw13_dart3": {
-  "expected": "NO_CHANGE",
-  "result": "no_change"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw13_dart4": {
-  "expected": "NO_CHANGE",
-  "result": "darts_removed"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw14_dart1": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw14_dart2": {
-  "expected": "D17",
-  "result": "D17"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw14_dart3": {
-  "expected": null,
-  "result": "D2"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw15_dart1": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw15_dart2": {
-  "expected": "S10",
-  "result": "S10"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw15_dart3": {
-  "expected": null,
-  "result": "MISS"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw16_dart1": {
-  "expected": "S15",
-  "result": "S15"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw16_dart2": {
-  "expected": "NO_CHANGE",
-  "result": "darts_removed"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw17_dart1": {
-  "expected": "NO_CHANGE",
-  "result": "no_change"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw17_dart2": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw17_dart3": {
-  "expected": "NO_CHANGE",
-  "result": "no_change"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw17_dart4": {
-  "expected": "NO_CHANGE",
-  "result": "darts_removed"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw17_dart5": {
-  "expected": "NO_CHANGE",
-  "result": "no_change"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw18_dart1": {
-  "expected": "S2",
-  "result": "S2"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw18_dart2": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw18_dart3": {
-  "expected": "NO_CHANGE",
-  "result": "darts_removed"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw18_dart4": {
-  "expected": "NO_CHANGE",
-  "result": "darts_removed"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw19_dart1": {
-  "expected": "S1",
-  "result": "S1"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw19_dart2": {
-  "expected": "NO_CHANGE",
-  "result": "darts_removed"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw1_dart1": {
-  "expected": "S18",
-  "result": "S18"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw1_dart2": {
-  "expected": "S20",
-  "result": "S20"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw1_dart3": {
-  "expected": "T12",
-  "result": "T12"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw20_dart1": {
-  "expected": "NO_CHANGE",
-  "result": "no_change"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw20_dart2": {
-  "expected": "S2",
-  "result": "S2"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw21_dart1": {
-  "expected": "NO_CHANGE",
-  "result": "S2"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw21_dart2": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw21_dart3": {
-  "expected": "NO_CHANGE",
-  "result": "no_change"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw21_dart4": {
-  "expected": "S4",
-  "result": "S4"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw22_dart1": {
-  "expected": "S1",
-  "result": "S1"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw22_dart2": {
-  "expected": "NO_CHANGE",
-  "result": "no_change"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw22_dart3": {
-  "expected": "NO_CHANGE",
-  "result": "darts_removed"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw23_dart1": {
-  "expected": "S18",
-  "result": "S18"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw23_dart2": {
-  "expected": "NO_CHANGE",
-  "result": "darts_removed"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw24_dart1": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw24_dart2": {
-  "expected": "NO_CHANGE",
-  "result": "darts_removed"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw24_dart3": {
-  "expected": "NO_CHANGE",
-  "result": "no_change"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw25_dart1": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw25_dart2": {
-  "expected": "S1",
-  "result": "S1"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw25_dart3": {
-  "expected": "NO_CHANGE",
-  "result": "darts_removed"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw25_dart4": {
-  "expected": "NO_CHANGE",
-  "result": "darts_removed"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw25_dart5": {
-  "expected": "NO_CHANGE",
-  "result": "darts_removed"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw26_dart1": {
-  "expected": "S18",
-  "result": "S18"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw26_dart2": {
-  "expected": "NO_CHANGE",
-  "result": "darts_removed"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw27_dart1": {
-  "expected": "NO_CHANGE",
-  "result": "no_change"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw27_dart2": {
-  "expected": "S1",
-  "result": "D1"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw27_dart3": {
-  "expected": "NO_CHANGE",
-  "result": "darts_removed"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw27_dart4": {
-  "expected": "NO_CHANGE",
-  "result": "no_change"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw2_dart1": {
-  "expected": "S20",
-  "result": "S20"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw2_dart2": {
-  "expected": "S5",
-  "result": "S5"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw2_dart3": {
-  "expected": "S20",
-  "result": "S1"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw3_dart1": {
-  "expected": "S7",
-  "result": "S7"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw3_dart2": {
-  "expected": "S3",
-  "result": "S3"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw3_dart3": {
-  "expected": "S7",
-  "result": "S19"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw4_dart1": {
-  "expected": "S17",
-  "result": "S17"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw4_dart2": {
-  "expected": "S15",
-  "result": "S15"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw4_dart3": {
+ "boards/board_a/setup1/throw2_dart1": {
   "expected": "S13",
   "result": "S13"
  },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw5_dart1": {
-  "expected": "T7",
-  "result": "T7"
+ "boards/board_a/setup1/throw2_dart2": {
+  "expected": "MISS",
+  "result": "D11"
  },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw5_dart2": {
-  "expected": "S19",
-  "result": "S19"
+ "boards/board_a/setup1/throw2_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
  },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw5_dart3": {
-  "expected": "T19",
-  "result": "T19"
+ "boards/board_a/setup1/throw3_dart1": {
+  "expected": "S20",
+  "result": "S20"
  },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw6_dart1": {
+ "boards/board_a/setup1/throw3_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "boards/board_a/setup1/throw3_dart3": {
+  "expected": "D1",
+  "result": "S1"
+ },
+ "boards/board_a/setup1/throw4_dart1": {
+  "expected": "S16",
+  "result": "S16"
+ },
+ "boards/board_a/setup1/throw4_dart2": {
+  "expected": "MISS",
+  "result": "D11"
+ },
+ "boards/board_a/setup1/throw4_dart3": {
+  "expected": "D14",
+  "result": "D14"
+ },
+ "boards/board_a/setup1/throw5_dart1": {
+  "expected": "S15",
+  "result": "S15"
+ },
+ "boards/board_a/setup1/throw5_dart2": {
+  "expected": "S10",
+  "result": "S10"
+ },
+ "boards/board_a/setup1/throw5_dart3": {
+  "expected": "S15",
+  "result": "S15"
+ },
+ "boards/board_a/setup2/throw1_dart1": {
   "expected": "S1",
   "result": "S1"
  },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw6_dart2": {
-  "expected": "S5",
-  "result": "S5"
+ "boards/board_a/setup2/throw1_dart2": {
+  "expected": "S20",
+  "result": "S20"
  },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw6_dart3": {
-  "expected": "S1",
-  "result": "S1"
+ "boards/board_a/setup2/throw1_dart3": {
+  "expected": "D20",
+  "result": "MISS"
  },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw7_dart1": {
+ "boards/board_a/setup2/throw2_dart1": {
   "expected": "25",
   "result": "25"
  },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw7_dart2": {
+ "boards/board_a/setup2/throw2_dart2": {
+  "expected": "25",
+  "result": "25"
+ },
+ "boards/board_a/setup2/throw2_dart3": {
   "expected": "S20",
   "result": "S20"
  },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw7_dart3": {
-  "expected": "S20",
-  "result": "T20"
+ "boards/board_a/setup2/throw3_dart1": {
+  "expected": "S7",
+  "result": "S7"
  },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw8_dart1": {
+ "boards/board_a/setup2/throw3_dart2": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "boards/board_a/setup2/throw3_dart3": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "boards/board_a/setup2/throw4_dart1": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "boards/board_a/setup2/throw4_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "boards/board_a/setup2/throw4_dart3": {
+  "expected": "S6",
+  "result": "S6"
+ },
+ "boards/board_a/setup2/throw5_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_a/setup2/throw5_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_a/setup2/throw5_dart3": {
   "expected": "T3",
   "result": "T3"
  },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw8_dart2": {
-  "expected": "S7",
-  "result": "S7"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw8_dart3": {
-  "expected": "S17",
-  "result": "S6"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw9_dart1": {
-  "expected": "S14",
-  "result": "S14"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw9_dart2": {
-  "expected": "S5",
-  "result": "S5"
- },
- "game_01a13481-1426-766f-b71d-524e8038c6ba/throw9_dart3": {
-  "expected": "S20",
-  "result": "S20"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw0_dart1": {
-  "expected": "S7",
-  "result": "S7"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw0_dart2": {
-  "expected": "S7",
-  "result": "S7"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw0_dart3": {
-  "expected": "S19",
-  "result": "S19"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw10_dart1": {
-  "expected": "S5",
-  "result": "S5"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw10_dart2": {
-  "expected": "S20",
-  "result": "S20"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw10_dart3": {
-  "expected": "S1",
-  "result": "S1"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw11_dart1": {
-  "expected": "S2",
-  "result": "S2"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw11_dart2": {
-  "expected": "S20",
-  "result": "S20"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw11_dart3": {
-  "expected": "MISS",
-  "result": "MISS"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw12_dart1": {
-  "expected": "S12",
-  "result": "S12"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw12_dart2": {
-  "expected": "S1",
-  "result": "S1"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw12_dart3": {
-  "expected": "T19",
-  "result": "T19"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw13_dart1": {
-  "expected": "S9",
-  "result": "S9"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw13_dart2": {
+ "boards/board_b/setup1/throw1_dart1": {
   "expected": "S3",
   "result": "S3"
  },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw13_dart3": {
-  "expected": "MISS",
-  "result": "MISS"
+ "boards/board_b/setup1/throw1_dart2": {
+  "expected": "S3",
+  "result": "T3"
  },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw14_dart1": {
-  "expected": "D20",
-  "result": "D20"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw1_dart1": {
-  "expected": "S7",
-  "result": "S7"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw1_dart2": {
-  "expected": "S7",
-  "result": "S19"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw1_dart3": {
+ "boards/board_b/setup1/throw1_dart3": {
   "expected": "S19",
   "result": "S19"
  },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw2_dart1": {
-  "expected": "S1",
-  "result": "S1"
+ "boards/board_b/setup1/throw2_dart1": {
+  "expected": "S10",
+  "result": "S6"
  },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw2_dart2": {
-  "expected": "S9",
-  "result": "S9"
+ "boards/board_b/setup1/throw2_dart2": {
+  "expected": "S15",
+  "result": "S15"
  },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw2_dart3": {
-  "expected": "S20",
-  "result": "S1"
+ "boards/board_b/setup1/throw2_dart3": {
+  "expected": "D17",
+  "result": "D17"
  },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw3_dart1": {
+ "boards/board_b/setup1/throw3_dart1": {
+  "expected": "S10",
+  "result": "S6"
+ },
+ "boards/board_b/setup1/throw3_dart2": {
+  "expected": "S4",
+  "result": "S4"
+ },
+ "boards/board_b/setup1/throw3_dart3": {
+  "expected": "S15",
+  "result": "S15"
+ },
+ "boards/board_b/setup1/throw4_dart1": {
   "expected": "MISS",
   "result": "MISS"
  },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw3_dart2": {
-  "expected": "T20",
-  "result": "T20"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw3_dart3": {
-  "expected": "T20",
-  "result": "T20"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw4_dart1": {
-  "expected": "S1",
-  "result": "S1"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw4_dart2": {
-  "expected": "S9",
-  "result": "S9"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw4_dart3": {
+ "boards/board_b/setup1/throw4_dart2": {
   "expected": "MISS",
-  "result": "MISS"
+  "result": "no_change"
  },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw5_dart1": {
-  "expected": "T20",
-  "result": "T20"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw5_dart2": {
+ "boards/board_b/setup1/throw4_dart3": {
   "expected": "S1",
-  "result": "S1"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw5_dart3": {
-  "expected": "S12",
-  "result": "S12"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw6_dart1": {
-  "expected": "S20",
   "result": "S20"
  },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw6_dart2": {
+ "boards/board_b/setup1/throw5_dart1": {
   "expected": "S1",
   "result": "S1"
  },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw6_dart3": {
+ "boards/board_b/setup1/throw5_dart2": {
+  "expected": "S20",
+  "result": "no_change"
+ },
+ "boards/board_b/setup1/throw5_dart3": {
+  "expected": "D5",
+  "result": "no_change"
+ },
+ "boards/board_b/setup2/throw1_dart1": {
   "expected": "S1",
   "result": "S1"
  },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw7_dart1": {
-  "expected": "MISS",
-  "result": "MISS"
+ "boards/board_b/setup2/throw1_dart2": {
+  "expected": "S11",
+  "result": "S11"
  },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw7_dart2": {
-  "expected": "S5",
-  "result": "S5"
+ "boards/board_b/setup2/throw1_dart3": {
+  "expected": "S6",
+  "result": "S6"
  },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw7_dart3": {
-  "expected": "S5",
-  "result": "S5"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw8_dart1": {
-  "expected": "S1",
-  "result": "S1"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw8_dart2": {
-  "expected": "S9",
-  "result": "S9"
- },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw8_dart3": {
+ "boards/board_b/setup2/throw2_dart1": {
   "expected": "S17",
   "result": "S17"
  },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw9_dart1": {
+ "boards/board_b/setup2/throw2_dart2": {
+  "expected": "D9",
+  "result": "D9"
+ },
+ "boards/board_b/setup2/throw2_dart3": {
+  "expected": "S6",
+  "result": "S6"
+ },
+ "boards/board_b/setup2/throw3_dart1": {
+  "expected": "S13",
+  "result": "S4"
+ },
+ "boards/board_b/setup2/throw3_dart2": {
+  "expected": "S10",
+  "result": "S10"
+ },
+ "boards/board_b/setup2/throw3_dart3": {
+  "expected": "S6",
+  "result": "S6"
+ },
+ "boards/board_b/setup2/throw4_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_b/setup2/throw4_dart2": {
+  "expected": "D6",
+  "result": "D6"
+ },
+ "boards/board_b/setup2/throw4_dart3": {
   "expected": "S5",
   "result": "S5"
  },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw9_dart2": {
+ "boards/board_b/setup2/throw5_dart1": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "boards/board_b/setup2/throw5_dart2": {
+  "expected": "T19",
+  "result": "S19"
+ },
+ "boards/board_b/setup2/throw5_dart3": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "boards/board_c/light_setup1/throw10_dart1": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "boards/board_c/light_setup1/throw10_dart2": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "boards/board_c/light_setup1/throw10_dart3": {
+  "expected": "25",
+  "result": "25"
+ },
+ "boards/board_c/light_setup1/throw1_dart1": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "boards/board_c/light_setup1/throw1_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "boards/board_c/light_setup1/throw1_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "boards/board_c/light_setup1/throw2_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "boards/board_c/light_setup1/throw2_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "boards/board_c/light_setup1/throw2_dart3": {
+  "expected": "S1",
+  "result": "S20"
+ },
+ "boards/board_c/light_setup1/throw3_dart1": {
+  "expected": "S3",
+  "result": "T3"
+ },
+ "boards/board_c/light_setup1/throw3_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_c/light_setup1/throw3_dart3": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "boards/board_c/light_setup1/throw4_dart1": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "boards/board_c/light_setup1/throw4_dart2": {
+  "expected": "S16",
+  "result": "S16"
+ },
+ "boards/board_c/light_setup1/throw4_dart3": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "boards/board_c/light_setup1/throw5_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "boards/board_c/light_setup1/throw5_dart2": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "boards/board_c/light_setup1/throw5_dart3": {
+  "expected": "S16",
+  "result": "S16"
+ },
+ "boards/board_c/light_setup1/throw6_dart1": {
+  "expected": "S8",
+  "result": "S11"
+ },
+ "boards/board_c/light_setup1/throw6_dart2": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "boards/board_c/light_setup1/throw6_dart3": {
+  "expected": "MISS",
+  "result": "S11"
+ },
+ "boards/board_c/light_setup1/throw7_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_c/light_setup1/throw7_dart2": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "boards/board_c/light_setup1/throw7_dart3": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "boards/board_c/light_setup1/throw8_dart1": {
+  "expected": "T6",
+  "result": "T6"
+ },
+ "boards/board_c/light_setup1/throw8_dart2": {
+  "expected": "MISS",
+  "result": "no_change"
+ },
+ "boards/board_c/light_setup1/throw8_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_c/light_setup1/throw9_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_c/light_setup1/throw9_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_c/light_setup1/throw9_dart3": {
+  "expected": "S15",
+  "result": "S15"
+ },
+ "boards/board_c/light_setup2/throw10_dart1": {
+  "expected": "25",
+  "result": "25"
+ },
+ "boards/board_c/light_setup2/throw10_dart2": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "boards/board_c/light_setup2/throw10_dart3": {
+  "expected": "25",
+  "result": "25"
+ },
+ "boards/board_c/light_setup2/throw1_dart1": {
+  "expected": "25",
+  "result": "25"
+ },
+ "boards/board_c/light_setup2/throw1_dart2": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "boards/board_c/light_setup2/throw1_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "boards/board_c/light_setup2/throw2_dart1": {
+  "expected": "D17",
+  "result": "D17"
+ },
+ "boards/board_c/light_setup2/throw2_dart2": {
+  "expected": "D17",
+  "result": "D17"
+ },
+ "boards/board_c/light_setup2/throw2_dart3": {
+  "expected": "S2",
+  "result": "S2"
+ },
+ "boards/board_c/light_setup2/throw3_dart1": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "boards/board_c/light_setup2/throw3_dart2": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "boards/board_c/light_setup2/throw3_dart3": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "boards/board_c/light_setup2/throw4_dart1": {
+  "expected": "S4",
+  "result": "S4"
+ },
+ "boards/board_c/light_setup2/throw4_dart2": {
+  "expected": "S2",
+  "result": "S2"
+ },
+ "boards/board_c/light_setup2/throw4_dart3": {
+  "expected": "S15",
+  "result": "S15"
+ },
+ "boards/board_c/light_setup2/throw5_dart1": {
+  "expected": "D20",
+  "result": "MISS"
+ },
+ "boards/board_c/light_setup2/throw5_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "boards/board_c/light_setup2/throw5_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "boards/board_c/light_setup2/throw6_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "boards/board_c/light_setup2/throw6_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "boards/board_c/light_setup2/throw6_dart3": {
+  "expected": "T20",
+  "result": "T20"
+ },
+ "boards/board_c/light_setup2/throw7_dart1": {
+  "expected": "D7",
+  "result": "D7"
+ },
+ "boards/board_c/light_setup2/throw7_dart2": {
+  "expected": "S16",
+  "result": "S16"
+ },
+ "boards/board_c/light_setup2/throw7_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_c/light_setup2/throw8_dart1": {
+  "expected": "S11",
+  "result": "S11"
+ },
+ "boards/board_c/light_setup2/throw8_dart2": {
+  "expected": "S11",
+  "result": "S11"
+ },
+ "boards/board_c/light_setup2/throw8_dart3": {
+  "expected": "T7",
+  "result": "T7"
+ },
+ "boards/board_c/light_setup2/throw9_dart1": {
+  "expected": "D14",
+  "result": "D14"
+ },
+ "boards/board_c/light_setup2/throw9_dart2": {
+  "expected": "T11",
+  "result": "T11"
+ },
+ "boards/board_c/light_setup2/throw9_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "boards/board_c/light_setup3/throw10_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_c/light_setup3/throw10_dart2": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "boards/board_c/light_setup3/throw10_dart3": {
+  "expected": "S8",
+  "result": "S11"
+ },
+ "boards/board_c/light_setup3/throw1_dart1": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "boards/board_c/light_setup3/throw1_dart2": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "boards/board_c/light_setup3/throw1_dart3": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "boards/board_c/light_setup3/throw2_dart1": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "boards/board_c/light_setup3/throw2_dart2": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "boards/board_c/light_setup3/throw2_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "boards/board_c/light_setup3/throw3_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_c/light_setup3/throw3_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_c/light_setup3/throw3_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_c/light_setup3/throw4_dart1": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "boards/board_c/light_setup3/throw4_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "boards/board_c/light_setup3/throw4_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "boards/board_c/light_setup3/throw5_dart1": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "boards/board_c/light_setup3/throw5_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "boards/board_c/light_setup3/throw5_dart3": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "boards/board_c/light_setup3/throw6_dart1": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "boards/board_c/light_setup3/throw6_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "boards/board_c/light_setup3/throw6_dart3": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "boards/board_c/light_setup3/throw7_dart1": {
+  "expected": "S7",
+  "result": "MISS"
+ },
+ "boards/board_c/light_setup3/throw7_dart2": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "boards/board_c/light_setup3/throw7_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_c/light_setup3/throw8_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_c/light_setup3/throw8_dart2": {
+  "expected": "T8",
+  "result": "T8"
+ },
+ "boards/board_c/light_setup3/throw8_dart3": {
+  "expected": "S11",
+  "result": "S11"
+ },
+ "boards/board_c/light_setup3/throw9_dart1": {
+  "expected": "T18",
+  "result": "T18"
+ },
+ "boards/board_c/light_setup3/throw9_dart2": {
   "expected": "S18",
   "result": "S18"
  },
- "game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw9_dart3": {
+ "boards/board_c/light_setup3/throw9_dart3": {
   "expected": "S20",
   "result": "S20"
+ },
+ "boards/board_c/setup1/throw1_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "boards/board_c/setup1/throw1_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "boards/board_c/setup1/throw1_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "boards/board_c/setup1/throw2_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "boards/board_c/setup1/throw2_dart2": {
+  "expected": "25",
+  "result": "25"
+ },
+ "boards/board_c/setup1/throw2_dart3": {
+  "expected": "T12",
+  "result": "T12"
+ },
+ "boards/board_c/setup1/throw3_dart1": {
+  "expected": "D1",
+  "result": "D1"
+ },
+ "boards/board_c/setup1/throw3_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "boards/board_c/setup1/throw3_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "boards/board_c/setup1/throw4_dart1": {
+  "expected": "S14",
+  "result": "no_change"
+ },
+ "boards/board_c/setup1/throw4_dart2": {
+  "expected": "S12",
+  "result": "S5"
+ },
+ "boards/board_c/setup1/throw4_dart3": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "boards/board_c/setup1/throw5_dart1": {
+  "expected": "S7",
+  "result": "MISS"
+ },
+ "boards/board_c/setup1/throw5_dart2": {
+  "expected": "T10",
+  "result": "T10"
+ },
+ "boards/board_c/setup1/throw5_dart3": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "boards/board_c/setup2/throw1_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "boards/board_c/setup2/throw1_dart2": {
+  "expected": "S13",
+  "result": "S13"
+ },
+ "boards/board_c/setup2/throw1_dart3": {
+  "expected": "S9",
+  "result": "S9"
+ },
+ "boards/board_c/setup2/throw2_dart1": {
+  "expected": "S15",
+  "result": "S15"
+ },
+ "boards/board_c/setup2/throw2_dart2": {
+  "expected": "S13",
+  "result": "S13"
+ },
+ "boards/board_c/setup2/throw2_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "boards/board_c/setup2/throw3_dart1": {
+  "expected": "D8",
+  "result": "D8"
+ },
+ "boards/board_c/setup2/throw3_dart2": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "boards/board_c/setup2/throw3_dart3": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "boards/board_c/setup2/throw4_dart1": {
+  "expected": "MISS",
+  "result": "no_change"
+ },
+ "boards/board_c/setup2/throw4_dart2": {
+  "expected": "S20",
+  "result": "S1"
+ },
+ "boards/board_c/setup2/throw4_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "boards/board_c/setup2/throw5_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "boards/board_c/setup2/throw5_dart2": {
+  "expected": "S10",
+  "result": "S10"
+ },
+ "boards/board_c/setup2/throw5_dart3": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "boards/board_c/setup3/throw1_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "boards/board_c/setup3/throw1_dart2": {
+  "expected": "S20",
+  "result": "T20"
+ },
+ "boards/board_c/setup3/throw1_dart3": {
+  "expected": "S16",
+  "result": "S16"
+ },
+ "boards/board_c/setup3/throw2_dart1": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "boards/board_c/setup3/throw2_dart2": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "boards/board_c/setup3/throw2_dart3": {
+  "expected": "S9",
+  "result": "S9"
+ },
+ "boards/board_c/setup3/throw3_dart1": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "boards/board_c/setup3/throw3_dart2": {
+  "expected": "S16",
+  "result": "S16"
+ },
+ "boards/board_c/setup3/throw3_dart3": {
+  "expected": "S16",
+  "result": "S16"
+ },
+ "boards/board_c/setup3/throw4_dart1": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "boards/board_c/setup3/throw4_dart2": {
+  "expected": "S9",
+  "result": "S9"
+ },
+ "boards/board_c/setup3/throw4_dart3": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "boards/board_c/setup3/throw5_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "boards/board_c/setup3/throw5_dart2": {
+  "expected": "S9",
+  "result": "S9"
+ },
+ "boards/board_c/setup3/throw5_dart3": {
+  "expected": "T9",
+  "result": "T9"
+ },
+ "boards/board_c/setup4/throw1_dart1": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "boards/board_c/setup4/throw1_dart2": {
+  "expected": "S15",
+  "result": "S15"
+ },
+ "boards/board_c/setup4/throw1_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "boards/board_c/setup4/throw2_dart1": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "boards/board_c/setup4/throw2_dart2": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "boards/board_c/setup4/throw2_dart3": {
+  "expected": "S19",
+  "result": "S16"
+ },
+ "boards/board_c/setup4/throw3_dart1": {
+  "expected": "S4",
+  "result": "S4"
+ },
+ "boards/board_c/setup4/throw3_dart2": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "boards/board_c/setup4/throw3_dart3": {
+  "expected": "S18",
+  "result": "S1"
+ },
+ "boards/board_c/setup4/throw4_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "boards/board_c/setup4/throw4_dart2": {
+  "expected": "S9",
+  "result": "S9"
+ },
+ "boards/board_c/setup4/throw4_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "boards/board_c/setup4/throw5_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "boards/board_c/setup4/throw5_dart2": {
+  "expected": "D3",
+  "result": "D3"
+ },
+ "boards/board_c/setup4/throw5_dart3": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "boards/board_d/setup1/throw1_dart1": {
+  "expected": "S10",
+  "result": "S10"
+ },
+ "boards/board_d/setup1/throw1_dart2": {
+  "expected": "S13",
+  "result": "S13"
+ },
+ "boards/board_d/setup1/throw1_dart3": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "boards/board_d/setup1/throw2_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "boards/board_d/setup1/throw2_dart2": {
+  "expected": "S4",
+  "result": "S4"
+ },
+ "boards/board_d/setup1/throw2_dart3": {
+  "expected": "T20",
+  "result": "T20"
+ },
+ "boards/board_d/setup1/throw3_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "boards/board_d/setup1/throw3_dart2": {
+  "expected": "S15",
+  "result": "S15"
+ },
+ "boards/board_d/setup1/throw3_dart3": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "boards/board_d/setup1/throw4_dart1": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "boards/board_d/setup1/throw4_dart2": {
+  "expected": "S6",
+  "result": "S6"
+ },
+ "boards/board_d/setup1/throw4_dart3": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "boards/board_d/setup1/throw5_dart1": {
+  "expected": "S8",
+  "result": "S11"
+ },
+ "boards/board_d/setup1/throw5_dart2": {
+  "expected": "D16",
+  "result": "D16"
+ },
+ "boards/board_d/setup1/throw5_dart3": {
+  "expected": "S8",
+  "result": "S11"
+ },
+ "boards/board_d/setup2/throw1_dart1": {
+  "expected": "S10",
+  "result": "S20"
+ },
+ "boards/board_d/setup2/throw1_dart2": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "boards/board_d/setup2/throw1_dart3": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "boards/board_d/setup2/throw2_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "boards/board_d/setup2/throw2_dart2": {
+  "expected": "S2",
+  "result": "S17"
+ },
+ "boards/board_d/setup2/throw2_dart3": {
+  "expected": "S6",
+  "result": "S6"
+ },
+ "boards/board_d/setup2/throw3_dart1": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "boards/board_d/setup2/throw3_dart2": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "boards/board_d/setup2/throw3_dart3": {
+  "expected": "S12",
+  "result": "S5"
+ },
+ "boards/board_d/setup2/throw4_dart1": {
+  "expected": "S11",
+  "result": "S11"
+ },
+ "boards/board_d/setup2/throw4_dart2": {
+  "expected": "S16",
+  "result": "S16"
+ },
+ "boards/board_d/setup2/throw4_dart3": {
+  "expected": "T14",
+  "result": "S11"
+ },
+ "boards/board_d/setup2/throw5_dart1": {
+  "expected": "S16",
+  "result": "S7"
+ },
+ "boards/board_d/setup2/throw5_dart2": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "boards/board_d/setup2/throw5_dart3": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "boards/board_d/setup3/throw1_dart1": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "boards/board_d/setup3/throw1_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "boards/board_d/setup3/throw1_dart3": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "boards/board_d/setup3/throw2_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "boards/board_d/setup3/throw2_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "boards/board_d/setup3/throw2_dart3": {
+  "expected": "S13",
+  "result": "S13"
+ },
+ "boards/board_d/setup3/throw3_dart1": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "boards/board_d/setup3/throw3_dart2": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "boards/board_d/setup3/throw3_dart3": {
+  "expected": "S13",
+  "result": "S13"
+ },
+ "boards/board_d/setup3/throw4_dart1": {
+  "expected": "S16",
+  "result": "S16"
+ },
+ "boards/board_d/setup3/throw4_dart2": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "boards/board_d/setup3/throw4_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "boards/board_d/setup3/throw5_dart1": {
+  "expected": "T19",
+  "result": "T19"
+ },
+ "boards/board_d/setup3/throw5_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_d/setup3/throw5_dart3": {
+  "expected": "S14",
+  "result": "S14"
+ },
+ "boards/board_d/setup4/throw1_dart1": {
+  "expected": "25",
+  "result": "25"
+ },
+ "boards/board_d/setup4/throw1_dart2": {
+  "expected": "T19",
+  "result": "T19"
+ },
+ "boards/board_d/setup4/throw1_dart3": {
+  "expected": "S19",
+  "result": "S3"
+ },
+ "boards/board_d/setup4/throw2_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "boards/board_d/setup4/throw2_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "boards/board_d/setup4/throw2_dart3": {
+  "expected": "S11",
+  "result": "S11"
+ },
+ "boards/board_d/setup4/throw3_dart1": {
+  "expected": "25",
+  "result": "25"
+ },
+ "boards/board_d/setup4/throw3_dart2": {
+  "expected": "S20",
+  "result": "S13"
+ },
+ "boards/board_d/setup4/throw3_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "boards/board_d/setup4/throw4_dart1": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "boards/board_d/setup4/throw4_dart2": {
+  "expected": "S10",
+  "result": "S10"
+ },
+ "boards/board_d/setup4/throw4_dart3": {
+  "expected": "S2",
+  "result": "S2"
+ },
+ "boards/board_d/setup4/throw5_dart1": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "boards/board_d/setup4/throw5_dart2": {
+  "expected": "T20",
+  "result": "T20"
+ },
+ "boards/board_d/setup4/throw5_dart3": {
+  "expected": "25",
+  "result": "S7"
+ },
+ "boards/board_d/setup5/throw1_dart1": {
+  "expected": "S14",
+  "result": "D4"
+ },
+ "boards/board_d/setup5/throw1_dart2": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "boards/board_d/setup5/throw1_dart3": {
+  "expected": "S10",
+  "result": "S10"
+ },
+ "boards/board_d/setup5/throw2_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "boards/board_d/setup5/throw2_dart2": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "boards/board_d/setup5/throw2_dart3": {
+  "expected": "S14",
+  "result": "S14"
+ },
+ "boards/board_d/setup5/throw3_dart1": {
+  "expected": "S10",
+  "result": "S10"
+ },
+ "boards/board_d/setup5/throw3_dart2": {
+  "expected": "S10",
+  "result": "S10"
+ },
+ "boards/board_d/setup5/throw3_dart3": {
+  "expected": "S10",
+  "result": "S10"
+ },
+ "boards/board_d/setup5/throw4_dart1": {
+  "expected": "T13",
+  "result": "S13"
+ },
+ "boards/board_d/setup5/throw4_dart2": {
+  "expected": "S4",
+  "result": "S4"
+ },
+ "boards/board_d/setup5/throw4_dart3": {
+  "expected": "S13",
+  "result": "S13"
+ },
+ "boards/board_d/setup5/throw5_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "boards/board_d/setup5/throw5_dart2": {
+  "expected": "T17",
+  "result": "T17"
+ },
+ "boards/board_d/setup5/throw5_dart3": {
+  "expected": "S13",
+  "result": "S13"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw0_dart1": {
+  "expected": "T20",
+  "result": "T20"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw0_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw0_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw10_dart1": {
+  "expected": null,
+  "result": "MISS"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw10_dart2": {
+  "expected": null,
+  "result": "MISS"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw10_dart3": {
+  "expected": null,
+  "result": "S8"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw11_dart1": {
+  "expected": "D4",
+  "result": "D4"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw11_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw11_dart3": {
+  "expected": null,
+  "result": "no_change"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw1_dart1": {
+  "expected": "T18",
+  "result": "T18"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw1_dart2": {
+  "expected": "S9",
+  "result": "S9"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw1_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw2_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw2_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw2_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw3_dart1": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw3_dart2": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw3_dart3": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw4_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw4_dart2": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw4_dart3": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw5_dart1": {
+  "expected": "S9",
+  "result": "S9"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw5_dart2": {
+  "expected": "S12",
+  "result": "S5"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw5_dart3": {
+  "expected": "S6",
+  "result": "S6"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw6_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw6_dart2": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw6_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw7_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw7_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw7_dart3": {
+  "expected": "T5",
+  "result": "T5"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw8_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw8_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw8_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw8_dart4": {
+  "expected": "T18",
+  "result": "T18"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw9_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw9_dart2": {
+  "expected": "S2",
+  "result": "S2"
+ },
+ "games/game_01a13132-0e8e-7767-aab0-e124700e670b/throw9_dart3": {
+  "expected": "S16",
+  "result": "S16"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw0_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw0_dart2": {
+  "expected": "T20",
+  "result": "T20"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw0_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw10_dart1": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw10_dart2": {
+  "expected": "T3",
+  "result": "T3"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw10_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw11_dart1": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw11_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw11_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw12_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw12_dart2": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw12_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw13_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw13_dart2": {
+  "expected": "S14",
+  "result": "S14"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw13_dart3": {
+  "expected": "D5",
+  "result": "D5"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw1_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "MISS"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw1_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw1_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw1_dart4": {
+  "expected": "25",
+  "result": "25"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw2_dart1": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw2_dart2": {
+  "expected": "S5",
+  "result": "T20"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw2_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw3_dart1": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw3_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw3_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw4_dart1": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw4_dart2": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw4_dart3": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw5_dart1": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw5_dart2": {
+  "expected": "D19",
+  "result": "D19"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw5_dart3": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw6_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw6_dart2": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw6_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw7_dart1": {
+  "expected": "25",
+  "result": "25"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw7_dart2": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw7_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw8_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw8_dart2": {
+  "expected": "T1",
+  "result": "T1"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw8_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw9_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw9_dart2": {
+  "expected": "S14",
+  "result": "S14"
+ },
+ "games/game_01a13135-f75a-7f6f-929b-3f21c311e94d/throw9_dart3": {
+  "expected": "T1",
+  "result": "S1"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw0_dart1": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw0_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw0_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw10_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw10_dart2": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw10_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw11_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw11_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw11_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw12_dart1": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw12_dart2": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw12_dart3": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw13_dart1": {
+  "expected": "T5",
+  "result": "T5"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw13_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw14_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw14_dart2": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw14_dart3": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw15_dart1": {
+  "expected": "T9",
+  "result": "T9"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw15_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw15_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw16_dart1": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw16_dart2": {
+  "expected": "D7",
+  "result": "D7"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw16_dart3": {
+  "expected": "D9",
+  "result": "D9"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw1_dart1": {
+  "expected": "S20",
+  "result": "MISS"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw1_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw1_dart3": {
+  "expected": "S13",
+  "result": "S13"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw2_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw2_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw2_dart3": {
+  "expected": "T5",
+  "result": "T5"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw2_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw3_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw3_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw3_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw3_dart4": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw4_dart1": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw4_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw4_dart3": {
+  "expected": "S13",
+  "result": "S13"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw5_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw5_dart2": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw5_dart3": {
+  "expected": "T9",
+  "result": "T9"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw6_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw6_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw6_dart3": {
+  "expected": "T5",
+  "result": "T5"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw7_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw7_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw7_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw8_dart1": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw8_dart2": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw8_dart3": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw9_dart1": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw9_dart2": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a13139-a72a-7a99-9cc8-da39db976a6d/throw9_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw0_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw0_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw0_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw10_dart1": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw10_dart2": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw10_dart3": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw11_dart1": {
+  "expected": "S9",
+  "result": "S9"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw11_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw11_dart3": {
+  "expected": "T5",
+  "result": "T5"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw12_dart1": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw12_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw12_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw13_dart1": {
+  "expected": "T12",
+  "result": "T12"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw13_dart2": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw13_dart3": {
+  "expected": "S11",
+  "result": "S11"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw14_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw14_dart2": {
+  "expected": "S6",
+  "result": "S6"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw14_dart3": {
+  "expected": "S10",
+  "result": "S10"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw15_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "MISS"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw15_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw16_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw16_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw16_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw17_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw17_dart2": {
+  "expected": "S9",
+  "result": "S9"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw17_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw18_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw18_dart2": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw18_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw19_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw19_dart2": {
+  "expected": "S12",
+  "result": "MISS"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw19_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw1_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw1_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw1_dart3": {
+  "expected": "S4",
+  "result": "S4"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw20_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw20_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw20_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw20_dart4": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw21_dart1": {
+  "expected": "D2",
+  "result": "D2"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw21_dart2": {
+  "expected": null,
+  "result": "S20"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw21_dart3": {
+  "expected": null,
+  "result": "S20"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw2_dart1": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw2_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw2_dart3": {
+  "expected": "T18",
+  "result": "T18"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw3_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw3_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw3_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw4_dart1": {
+  "expected": "S5",
+  "result": "MISS"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw4_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw4_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw5_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw5_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw5_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw6_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw6_dart2": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw6_dart3": {
+  "expected": "T7",
+  "result": "T7"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw7_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw7_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw7_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw8_dart1": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw8_dart2": {
+  "expected": "S3",
+  "result": "S19"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw8_dart3": {
+  "expected": "MISS",
+  "result": "T3"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw9_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw9_dart2": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a/throw9_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw0_dart1": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw0_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw0_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw10_dart1": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw10_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw10_dart3": {
+  "expected": "T5",
+  "result": "T5"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw11_dart1": {
+  "expected": "S9",
+  "result": "S14"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw11_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw11_dart3": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw12_dart1": {
+  "expected": null,
+  "result": "MISS"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw12_dart2": {
+  "expected": null,
+  "result": "no_change"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw12_dart3": {
+  "expected": null,
+  "result": "S4"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw13_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw13_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw13_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw13_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw14_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw14_dart2": {
+  "expected": "D17",
+  "result": "D17"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw14_dart3": {
+  "expected": null,
+  "result": "D2"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw15_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw15_dart2": {
+  "expected": "S10",
+  "result": "S10"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw15_dart3": {
+  "expected": null,
+  "result": "MISS"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw16_dart1": {
+  "expected": "S15",
+  "result": "S15"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw16_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw17_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw17_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw17_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw17_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw17_dart5": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw18_dart1": {
+  "expected": "S2",
+  "result": "S2"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw18_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw18_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw18_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw19_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw19_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw1_dart1": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw1_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw1_dart3": {
+  "expected": "T12",
+  "result": "T12"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw20_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw20_dart2": {
+  "expected": "S2",
+  "result": "S2"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw21_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "S2"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw21_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw21_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw21_dart4": {
+  "expected": "S4",
+  "result": "S4"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw22_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw22_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw22_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "MISS"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw23_dart1": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw23_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw24_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw24_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw24_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw25_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw25_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw25_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw25_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw25_dart5": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw26_dart1": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw26_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw27_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "MISS"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw27_dart2": {
+  "expected": "S1",
+  "result": "D1"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw27_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw27_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw2_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw2_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw2_dart3": {
+  "expected": "S20",
+  "result": "S1"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw3_dart1": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw3_dart2": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw3_dart3": {
+  "expected": "S7",
+  "result": "S19"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw4_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw4_dart2": {
+  "expected": "S15",
+  "result": "S15"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw4_dart3": {
+  "expected": "S13",
+  "result": "S13"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw5_dart1": {
+  "expected": "T7",
+  "result": "T7"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw5_dart2": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw5_dart3": {
+  "expected": "T19",
+  "result": "T19"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw6_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw6_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw6_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw7_dart1": {
+  "expected": "25",
+  "result": "25"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw7_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw7_dart3": {
+  "expected": "S20",
+  "result": "T20"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw8_dart1": {
+  "expected": "T3",
+  "result": "T3"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw8_dart2": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw8_dart3": {
+  "expected": "S17",
+  "result": "S6"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw9_dart1": {
+  "expected": "S14",
+  "result": "S14"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw9_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13481-1426-766f-b71d-524e8038c6ba/throw9_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw0_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw0_dart2": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw0_dart3": {
+  "expected": "S2",
+  "result": "S2"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw10_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw10_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw10_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw11_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw11_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw11_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw12_dart1": {
+  "expected": "D7",
+  "result": "D7"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw12_dart2": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw12_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw12_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw13_dart1": {
+  "expected": "D5",
+  "result": "D5"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw13_dart2": {
+  "expected": "S2",
+  "result": "S2"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw13_dart3": {
+  "expected": "S14",
+  "result": "S14"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw14_dart1": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw14_dart2": {
+  "expected": "D3",
+  "result": "D3"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw14_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw15_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw15_dart2": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw15_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw16_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw16_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw16_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw16_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw17_dart1": {
+  "expected": "T7",
+  "result": "T7"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw17_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw18_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw18_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw18_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw18_dart4": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw19_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw19_dart2": {
+  "expected": "D16",
+  "result": "D16"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw19_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw1_dart1": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw1_dart2": {
+  "expected": "T20",
+  "result": "T20"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw1_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw20_dart1": {
+  "expected": "D3",
+  "result": "D3"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw20_dart2": {
+  "expected": "S6",
+  "result": "S6"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw20_dart3": {
+  "expected": "S18",
+  "result": "T18"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw21_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw21_dart2": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw21_dart3": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw22_dart1": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw22_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw22_dart3": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw23_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw23_dart2": {
+  "expected": "S7",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw23_dart3": {
+  "expected": "S14",
+  "result": "S14"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw24_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw24_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw24_dart3": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw25_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw25_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw25_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw26_dart1": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw26_dart2": {
+  "expected": null,
+  "result": "S6"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw26_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw27_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw27_dart2": {
+  "expected": "D17",
+  "result": "D17"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw27_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw28_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw28_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw29_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw29_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw2_dart1": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw2_dart2": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw2_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw30_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw30_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw31_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw31_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw31_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw32_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw32_dart2": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw32_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw33_dart1": {
+  "expected": "T17",
+  "result": "T17"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw33_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw34_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw34_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw34_dart3": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw34_dart4": {
+  "expected": null,
+  "result": "no_change"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw34_dart5": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw34_dart6": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw35_dart1": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw36_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "S19"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw36_dart2": {
+  "expected": "T1",
+  "result": "T1"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw36_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw36_dart4": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw37_dart1": {
+  "expected": "S2",
+  "result": "S2"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw37_dart2": {
+  "expected": "25",
+  "result": "S18"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw38_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw38_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw38_dart3": {
+  "expected": "S2",
+  "result": "S2"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw39_dart1": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw39_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw3_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw3_dart2": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw3_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw40_dart1": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw40_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw41_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw41_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw41_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw42_dart1": {
+  "expected": "S4",
+  "result": "S4"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw42_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw43_dart1": {
+  "expected": "D1",
+  "result": "D1"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw43_dart2": {
+  "expected": null,
+  "result": "S20"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw43_dart3": {
+  "expected": null,
+  "result": "S13"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw4_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw4_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw4_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw5_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw5_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw5_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw6_dart1": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw6_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw6_dart3": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw7_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw7_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw7_dart3": {
+  "expected": "T5",
+  "result": "T5"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw8_dart1": {
+  "expected": "S11",
+  "result": "S11"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw8_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw8_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw9_dart1": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw9_dart2": {
+  "expected": "S5",
+  "result": "T20"
+ },
+ "games/game_01a13488-81fd-7604-adee-6dd0599b8859/throw9_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw0_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw0_dart2": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw0_dart3": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw10_dart1": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw10_dart2": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw10_dart3": {
+  "expected": "S3",
+  "result": "S19"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw11_dart1": {
+  "expected": "S11",
+  "result": "S11"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw11_dart2": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw11_dart3": {
+  "expected": "S4",
+  "result": "S4"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw12_dart1": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw12_dart2": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw12_dart3": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw13_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw13_dart2": {
+  "expected": "S4",
+  "result": "S4"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw13_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw14_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw14_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw14_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw15_dart1": {
+  "expected": "D1",
+  "result": "D1"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw15_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw15_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw1_dart1": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw1_dart2": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw1_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw2_dart1": {
+  "expected": "S9",
+  "result": "S9"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw2_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw2_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw3_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw3_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw3_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw4_dart1": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw4_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw4_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw5_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw5_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw5_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw6_dart1": {
+  "expected": "25",
+  "result": "25"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw6_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw6_dart3": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw7_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw7_dart2": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw7_dart3": {
+  "expected": "S14",
+  "result": "S14"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw8_dart1": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw8_dart2": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw8_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw9_dart1": {
+  "expected": "T20",
+  "result": "T20"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw9_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b/throw9_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw0_dart1": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw0_dart2": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw0_dart3": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw10_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw10_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw10_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw11_dart1": {
+  "expected": "S2",
+  "result": "S2"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw11_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw11_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw12_dart1": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw12_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw12_dart3": {
+  "expected": "T19",
+  "result": "T19"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw13_dart1": {
+  "expected": "S9",
+  "result": "S9"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw13_dart2": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw13_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw14_dart1": {
+  "expected": "D20",
+  "result": "D20"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw1_dart1": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw1_dart2": {
+  "expected": "S7",
+  "result": "S19"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw1_dart3": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw2_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw2_dart2": {
+  "expected": "S9",
+  "result": "S9"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw2_dart3": {
+  "expected": "S20",
+  "result": "S1"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw3_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw3_dart2": {
+  "expected": "T20",
+  "result": "T20"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw3_dart3": {
+  "expected": "T20",
+  "result": "T20"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw4_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw4_dart2": {
+  "expected": "S9",
+  "result": "S9"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw4_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw5_dart1": {
+  "expected": "T20",
+  "result": "T20"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw5_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw5_dart3": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw6_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw6_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw6_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw7_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw7_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw7_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw8_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw8_dart2": {
+  "expected": "S9",
+  "result": "S9"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw8_dart3": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw9_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw9_dart2": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a143e3-9c03-7e11-9286-7c0a7efee491/throw9_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw0_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw0_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw0_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw10_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw10_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw10_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw11_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw11_dart2": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw11_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw12_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw12_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw12_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw13_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw13_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw13_dart3": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw14_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw14_dart2": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw14_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw15_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw15_dart2": {
+  "expected": "T7",
+  "result": "T7"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw15_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw15_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw15_dart5": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw16_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw16_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw16_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw16_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw17_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw18_dart1": {
+  "expected": "S13",
+  "result": "S13"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw18_dart2": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw18_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw19_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw19_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw19_dart3": {
+  "expected": "S6",
+  "result": "S6"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw19_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw1_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw1_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw1_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw20_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw20_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw20_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw21_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw21_dart2": {
+  "expected": "D10",
+  "result": "D10"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw2_dart1": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw2_dart2": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw2_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw3_dart1": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw3_dart2": {
+  "expected": "T19",
+  "result": "T19"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw3_dart3": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw4_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw4_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw4_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw5_dart1": {
+  "expected": "T20",
+  "result": "T20"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw5_dart2": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw5_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw6_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw6_dart2": {
+  "expected": "T1",
+  "result": "T1"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw6_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw7_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw7_dart2": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw7_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw8_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw8_dart2": {
+  "expected": "S11",
+  "result": "S11"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw8_dart3": {
+  "expected": "S20",
+  "result": "S1"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw9_dart1": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw9_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29/throw9_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw0_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw0_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw0_dart3": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw10_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw10_dart2": {
+  "expected": "S6",
+  "result": "S6"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw10_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw11_dart1": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw11_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw11_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw12_dart1": {
+  "expected": "S13",
+  "result": "S13"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw12_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw12_dart3": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw13_dart1": {
+  "expected": "25",
+  "result": "25"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw13_dart2": {
+  "expected": "S12",
+  "result": "S12"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw13_dart3": {
+  "expected": "T18",
+  "result": "S18"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw14_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw14_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw14_dart3": {
+  "expected": "S8",
+  "result": "S8"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw15_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw15_dart2": {
+  "expected": "D6",
+  "result": "D6"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw15_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw16_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw16_dart2": {
+  "expected": "MISS",
+  "result": "no_change"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw16_dart3": {
+  "expected": "S13",
+  "result": "S13"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw16_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw17_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw17_dart2": {
+  "expected": "S4",
+  "result": "S4"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw17_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw17_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw17_dart5": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw17_dart6": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw18_dart1": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw18_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw18_dart3": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw18_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw19_dart1": {
+  "expected": "S2",
+  "result": "S2"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw19_dart2": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw19_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw1_dart1": {
+  "expected": "T20",
+  "result": "T20"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw1_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw1_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw20_dart1": {
+  "expected": "S17",
+  "result": "S17"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw20_dart2": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw20_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw21_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw21_dart2": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw21_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw21_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw21_dart5": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw22_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw22_dart2": {
+  "expected": "S2",
+  "result": "S2"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw22_dart3": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw23_dart1": {
+  "expected": "25",
+  "result": "S15"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw23_dart2": {
+  "expected": null,
+  "result": "MISS"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw23_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw23_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw24_dart1": {
+  "expected": "MISS",
+  "result": "MISS"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw24_dart2": {
+  "expected": "D2",
+  "result": "D2"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw24_dart3": {
+  "expected": "NO_CHANGE",
+  "result": "no_change"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw24_dart4": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw24_dart5": {
+  "expected": "NO_CHANGE",
+  "result": "darts_removed"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw24_dart6": {
+  "expected": null,
+  "result": "S18"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw2_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw2_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw2_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw3_dart1": {
+  "expected": "T1",
+  "result": "T1"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw3_dart2": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw3_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw4_dart1": {
+  "expected": "S18",
+  "result": "S18"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw4_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw4_dart3": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw5_dart1": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw5_dart2": {
+  "expected": "S19",
+  "result": "S19"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw5_dart3": {
+  "expected": "S7",
+  "result": "S7"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw6_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw6_dart2": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw6_dart3": {
+  "expected": "S1",
+  "result": "S1"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw7_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw7_dart2": {
+  "expected": "S4",
+  "result": "S4"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw7_dart3": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw8_dart1": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw8_dart2": {
+  "expected": "S5",
+  "result": "S5"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw8_dart3": {
+  "expected": "S3",
+  "result": "S3"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw9_dart1": {
+  "expected": "S20",
+  "result": "S20"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw9_dart2": {
+  "expected": "S4",
+  "result": "S4"
+ },
+ "games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d/throw9_dart3": {
+  "expected": "S1",
+  "result": "S1"
  }
 }

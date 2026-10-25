@@ -1,5 +1,5 @@
-"""Calibration and detection over the recorded games in `games.txt`, against a
-committed baseline. Accept intended changes with `--update-baseline`."""
+"""Calibration and detection over the regression corpus, or its gate subset, against
+one committed baseline. Accept intended changes with `--update-baseline`."""
 
 import json
 import math
@@ -9,11 +9,11 @@ from typing import Any
 
 import pytest
 
-from tests.cv.replay import is_correct, recordings, replay_games
+from tests.cv.replay import corpus_root, is_correct, manifest, replay
 
 pytestmark = [
-    pytest.mark.skipif(recordings() is None, reason="TESTDATA_DIR is not set"),
-    pytest.mark.timeout(1800),
+    pytest.mark.skipif(corpus_root() is None, reason="TESTDATA_DIR is not set"),
+    pytest.mark.timeout(3 * 60 * 60),
 ]
 
 HERE = Path(__file__).parent
@@ -27,36 +27,49 @@ REGRESSION_BUDGET = 0.03
 
 
 @pytest.fixture(scope="module")
-def replayed() -> tuple[dict[str, Any], dict[str, Any]]:
-    return replay_games(recordings())
+def cv_set(request) -> str:
+    return request.config.getoption("--cv-set")
+
+
+@pytest.fixture(scope="module")
+def replayed(cv_set) -> tuple[dict[str, Any], dict[str, Any]]:
+    return replay(corpus_root(), manifest(cv_set))
 
 
 def read(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text()) if path.exists() else {}
 
 
-def write(path: Path, results: dict[str, Any]) -> None:
-    path.write_text(json.dumps(results, indent=1, sort_keys=True) + "\n")
+def update(path: Path, results: dict[str, Any], cv_set: str) -> None:
+    """The gate only refreshes its own entries; the corpus replaces the whole baseline."""
+    merged = results if cv_set == "corpus" else read(path) | results
+    path.write_text(json.dumps(merged, indent=1, sort_keys=True) + "\n")
+
+
+def unknown(path: Path, baseline: dict[str, Any], results: dict[str, Any], cv_set: str) -> list[str]:
+    """Keys the baseline should hold but does not, or holds but the replay did not produce."""
+    missing = [f"{key}: new" for key in sorted(results.keys() - baseline.keys())]
+    if cv_set == "corpus":
+        missing += [f"{key}: gone" for key in sorted(baseline.keys() - results.keys())]
+    assert baseline, f"no baseline yet: run the corpus with --update-baseline to create {path.name}"
+    return missing
 
 
 def report(path: Path, lines: list[str]) -> str:
     return f"{len(lines)} result(s) differ from {path.name}; accept with --update-baseline:\n  " + "\n  ".join(lines)
 
 
-def test_calibration(replayed, request):
+def test_calibration(replayed, cv_set, request):
     results = replayed[0]
     if request.config.getoption("--update-baseline"):
-        write(CALIBRATION_BASELINE, results)
+        update(CALIBRATION_BASELINE, results, cv_set)
         return
-    expected = read(CALIBRATION_BASELINE)
-    assert expected, f"no baseline yet: run with --update-baseline to create {CALIBRATION_BASELINE.name}"
+    baseline = read(CALIBRATION_BASELINE)
 
-    changed = []
-    for key in sorted(expected.keys() | results.keys()):
-        before, after = expected.get(key), results.get(key)
-        if before is None or after is None:
-            changed.append(f"{key}: {'new' if before is None else 'gone'}")
-        elif before["failure"] != after["failure"]:
+    changed = unknown(CALIBRATION_BASELINE, baseline, results, cv_set)
+    for key in sorted(results.keys() & baseline.keys()):
+        before, after = baseline[key], results[key]
+        if before["failure"] != after["failure"]:
             changed.append(f"{key}: {before['failure'] or 'calibrated'} -> {after['failure'] or 'calibrated'}")
         elif before["points"] is not None:
             moved = max(math.dist(a, b) for a, b in zip(before["points"], after["points"], strict=True))
@@ -66,21 +79,22 @@ def test_calibration(replayed, request):
     assert not changed, report(CALIBRATION_BASELINE, changed)
 
 
-def test_detection(replayed, request):
+def test_detection(replayed, cv_set, request):
     results = replayed[1]
-    expected = read(DETECTION_BASELINE)
+    baseline = read(DETECTION_BASELINE)
     if request.config.getoption("--update-baseline"):
         # Where no ground truth sits next to the frames, the labels already in the baseline stay.
         for key, entry in results.items():
-            entry["expected"] = entry["expected"] or expected.get(key, {}).get("expected")
-        write(DETECTION_BASELINE, results)
+            entry["expected"] = entry["expected"] or baseline.get(key, {}).get("expected")
+        update(DETECTION_BASELINE, results, cv_set)
         return
-    assert expected, f"no baseline yet: run with --update-baseline to create {DETECTION_BASELINE.name}"
-    assert expected.keys() == results.keys(), report(DETECTION_BASELINE, sorted(expected.keys() ^ results.keys()))
+
+    missing = unknown(DETECTION_BASELINE, baseline, results, cv_set)
+    assert not missing, report(DETECTION_BASELINE, missing)
 
     changed, regressed = [], 0
     for key in sorted(results):
-        before, after, truth = expected[key]["result"], results[key]["result"], expected[key]["expected"]
+        before, after, truth = baseline[key]["result"], results[key]["result"], baseline[key]["expected"]
         if before == after:
             continue
         verdict = {(False, True): "improved", (True, False): "regressed"}.get(

@@ -1,0 +1,32 @@
+# Written by scripts/regression/build_corpus.py.
+# A folder under $TESTDATA_DIR/regression, then the series it contributes (all if none).
+calibration/board_a
+calibration/board_b
+calibration/board_c
+calibration/board_d
+boards/board_a/setup1 throw1
+boards/board_a/setup2 throw1
+boards/board_b/setup1 throw1
+boards/board_b/setup2 throw1
+boards/board_c/light_setup1 throw1
+boards/board_c/light_setup2 throw1
+boards/board_c/light_setup3 throw1
+boards/board_c/setup1 throw1
+boards/board_c/setup2 throw1
+boards/board_c/setup3 throw1
+boards/board_c/setup4 throw1
+boards/board_d/setup1 throw1
+boards/board_d/setup2 throw1
+boards/board_d/setup3 throw1
+boards/board_d/setup4 throw1
+boards/board_d/setup5 throw1
+games/game_01a13132-0e8e-7767-aab0-e124700e670b throw1 throw11 throw8 throw9
+games/game_01a13135-f75a-7f6f-929b-3f21c311e94d throw1 throw11 throw12 throw13
+games/game_01a13139-a72a-7a99-9cc8-da39db976a6d throw10 throw11 throw14 throw15
+games/game_01a1313d-d443-7d3b-8e1d-e67183bf587a throw15 throw16 throw17 throw18
+games/game_01a13481-1426-766f-b71d-524e8038c6ba throw10 throw11 throw13 throw14
+games/game_01a13488-81fd-7604-adee-6dd0599b8859 throw1 throw12 throw14 throw15
+games/game_01a143df-5f68-7db6-8034-f7dc8b1cd15b throw13 throw14 throw15 throw3
+games/game_01a143e3-9c03-7e11-9286-7c0a7efee491 throw11 throw13 throw3 throw4
+games/game_01a143e7-3457-7eaa-984e-d4373d5f8f29 throw10 throw13 throw15 throw16
+games/game_01a143ec-d7b7-70b0-bc68-bb9c3f34562d throw0 throw13 throw14 throw15
