@@ -1,0 +1,32 @@
+@if (doubles().length > 0) {
+  <app-sortable-list
+    [items]="doubles()"
+    [label]="name"
+    [bordered]="true"
+    (moved)="move($event)"
+  >
+    <ng-template let-double let-index="index">
+      <span class="rank">{{ index + 1 }}</span>
+      <span class="name">{{ name(double) }}</span>
+      <p-button
+        type="button"
+        icon="pi pi-minus-circle"
+        severity="secondary"
+        [text]="true"
+        [ariaLabel]="name(double) + ' entfernen'"
+        (onClick)="remove(index)"
+      />
+    </ng-template>
+  </app-sortable-list>
+}
+
+<p-select
+  [formControl]="adding"
+  [options]="options()"
+  optionLabel="label"
+  optionValue="value"
+  placeholder="Doppel hinzufügen"
+  ariaLabel="Doppel hinzufügen"
+  appendTo="body"
+  [fluid]="true"
+/>

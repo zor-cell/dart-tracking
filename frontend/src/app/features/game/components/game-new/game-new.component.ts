@@ -1,21 +1,4 @@
-import {
-  CdkDrag,
-  CdkDragDrop,
-  CdkDragHandle,
-  CdkDragPlaceholder,
-  CdkDragPreview,
-  CdkDropList,
-} from '@angular/cdk/drag-drop';
-import { DOCUMENT } from '@angular/common';
-import {
-  afterNextRender,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  Injector,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -25,6 +8,7 @@ import { InputText } from 'primeng/inputtext';
 import { SelectButton } from 'primeng/selectbutton';
 import { Skeleton } from 'primeng/skeleton';
 import { Tag } from 'primeng/tag';
+import { map } from 'rxjs';
 import { SocketService } from '../../../../core/socket/services/socket.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { PlayerIdentityDto } from '../../../player/dto/player-identity.dto';
@@ -38,6 +22,10 @@ import { PlayerSlotDto } from '../../dto/player-slot.dto';
 import { GameService } from '../../services/game.service';
 import { GameSessionService } from '../../services/game-session.service';
 import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
+import {
+  SortableListComponent,
+  SortableMove,
+} from '../../../../core/view/components/sortable-list/sortable-list.component';
 
 /** What a seat holds: a known identity, or the name typed for a guest. */
 type Seat = PlayerIdentityDto | string;
@@ -52,12 +40,8 @@ type Seat = PlayerIdentityDto | string;
     SelectButton,
     Skeleton,
     Tag,
-    CdkDropList,
-    CdkDrag,
-    CdkDragHandle,
-    CdkDragPreview,
-    CdkDragPlaceholder,
     FieldErrorComponent,
+    SortableListComponent,
   ],
   templateUrl: './game-new.component.html',
   styleUrl: './game-new.component.scss',
@@ -67,8 +51,6 @@ export class GameNewComponent {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly injector = inject(Injector);
-  private readonly document = inject(DOCUMENT);
   private readonly game = inject(GameService);
   private readonly session = inject(GameSessionService);
   private readonly auth = inject(AuthService);
@@ -105,6 +87,11 @@ export class GameNewComponent {
   private readonly variant = toSignal(this.form.controls.variant.valueChanges, {
     initialValue: this.form.controls.variant.value,
   });
+  /** The seat controls as a new array on every change; the array itself is mutated in place. */
+  protected readonly seatControls = toSignal(
+    this.form.controls.players.valueChanges.pipe(map(() => [...this.seats.controls])),
+    { initialValue: [] },
+  );
   /** Elimination counts up, so the score field is a target rather than a mode. */
   protected readonly isElimination = computed(() => this.variant() === 'elimination');
 
@@ -136,28 +123,10 @@ export class GameNewComponent {
     }
   }
 
-  protected dropSeat(event: CdkDragDrop<unknown>): void {
-    this.moveSeat(event.previousIndex, event.currentIndex);
-  }
+  protected readonly seatLabel = (seat: FormControl<Seat>, index: number): string =>
+    this.label(seat.value) || `Spieler ${index + 1}`;
 
-  /** Closes the on-screen keyboard, so the viewport does not resize mid-drag. */
-  protected releaseFocus(): void {
-    (this.document.activeElement as HTMLElement | null)?.blur();
-  }
-
-  /** Keyboard counterpart to dragging: arrow keys on the grip move the seat by one. */
-  protected stepSeat(event: Event, index: number, step: -1 | 1): void {
-    event.preventDefault();
-    const target = index + step;
-    if (target < 0 || target >= this.seats.length) {
-      return;
-    }
-    const grip = event.target as HTMLElement;
-    this.moveSeat(index, target);
-    afterNextRender(() => grip.focus(), { injector: this.injector });
-  }
-
-  protected label(seat: Seat): string {
+  private label(seat: Seat): string {
     return typeof seat === 'string' ? seat : seat.name;
   }
 
@@ -201,10 +170,7 @@ export class GameNewComponent {
       });
   }
 
-  private moveSeat(from: number, to: number): void {
-    if (from === to) {
-      return;
-    }
+  protected moveSeat({ from, to }: SortableMove): void {
     const seat = this.seats.at(from);
     this.seats.removeAt(from);
     this.seats.insert(to, seat);

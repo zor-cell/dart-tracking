@@ -1,0 +1,107 @@
+:host {
+  display: block;
+}
+
+.sortable {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sortable__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  align-items: center;
+  background: var(--p-content-background);
+}
+
+.sortable__grip {
+  position: relative;
+  align-self: stretch;
+  /* A thumb's width, not an icon's: at 1.5rem the miss lands in the field next
+     to it, which opens the keyboard instead of starting the drag. */
+  width: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: var(--p-border-radius-md, 6px);
+  background: transparent;
+  color: var(--p-text-muted-color);
+  cursor: grab;
+  touch-action: none;
+
+  &:hover {
+    background: var(--p-content-hover-background);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 1px;
+  }
+
+  /* Rounds the grab area up to the 44px a finger needs, without making the row
+     taller than the field it sits beside. */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -0.25rem 0;
+  }
+}
+
+.sortable__row.cdk-drag-preview {
+  box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
+  border-radius: var(--p-border-radius-md, 6px);
+}
+
+/* Plain text instead of a cloned row, whose inputs iOS would focus. */
+.sortable__preview {
+  padding-right: 0.75rem;
+  border: 1px solid var(--p-form-field-border-color);
+  cursor: grabbing;
+}
+
+.sortable__preview-grip {
+  width: 2.75rem;
+  text-align: center;
+  color: var(--p-text-muted-color);
+}
+
+.sortable__preview-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sortable__placeholder {
+  border: 1px dashed var(--p-form-field-border-color);
+  border-radius: var(--p-border-radius-md, 6px);
+}
+
+.sortable.cdk-drop-list-dragging .sortable__row:not(.cdk-drag-placeholder) {
+  transition: transform 200ms ease;
+}
+
+/* One box with dividers, like the account page's list groups. */
+.sortable--bordered {
+  gap: 0;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 0.75rem;
+  overflow: hidden;
+
+  .sortable__row {
+    min-height: 3rem;
+    padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+  }
+
+  .sortable__row + .sortable__row {
+    border-top: 1px solid var(--p-content-border-color);
+  }
+
+  .sortable__placeholder {
+    min-height: 3rem;
+    border-radius: 0;
+  }
+}

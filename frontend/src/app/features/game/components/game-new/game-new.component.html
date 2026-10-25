@@ -43,83 +43,60 @@
     <div class="setup__field">
       <span class="setup__label">Spieler</span>
       @if (sessionResolved()) {
-        <div
-          class="setup__players"
-          cdkDropList
-          cdkDropListLockAxis="y"
-          (cdkDropListDropped)="dropSeat($event)"
+        <app-sortable-list
+          [items]="seatControls()"
+          [label]="seatLabel"
+          (moved)="moveSeat($event)"
         >
-          @for (seat of seats.controls; track seat) {
-            <div
-              class="setup__player"
-              cdkDrag
-              cdkDragPreviewContainer="parent"
-              (cdkDragStarted)="releaseFocus()"
-            >
-              <div *cdkDragPreview matchSize class="setup__player setup__preview">
-                <i class="pi pi-bars setup__preview-grip" aria-hidden="true"></i>
-                <span class="setup__preview-name">{{ label(seat.value) }}</span>
-              </div>
-              <div *cdkDragPlaceholder class="setup__placeholder"></div>
-              <button
-                type="button"
-                class="setup__grip"
-                cdkDragHandle
-                [attr.aria-label]="'Spieler ' + ($index + 1) + ' verschieben, Pfeiltasten hoch und runter'"
-                (keydown.arrowup)="stepSeat($event, $index, -1)"
-                (keydown.arrowdown)="stepSeat($event, $index, 1)"
+          <ng-template let-seat let-index="index">
+            @if (signedIn()) {
+              <p-autocomplete
+                class="setup__input"
+                [formControl]="seat"
+                [suggestions]="suggestions()"
+                (completeMethod)="completeSeat($event)"
+                optionLabel="name"
+                appendTo="body"
+                [dropdown]="true"
+                [showEmptyMessage]="false"
+                [ariaLabel]="'Spieler ' + (index + 1)"
+                placeholder="Name wählen oder eintippen"
+                fluid
               >
-                <i class="pi pi-bars" aria-hidden="true"></i>
-              </button>
-              @if (signedIn()) {
-                <p-autocomplete
-                  class="setup__input"
-                  [formControl]="seat"
-                  [suggestions]="suggestions()"
-                  (completeMethod)="completeSeat($event)"
-                  optionLabel="name"
-                  appendTo="body"
-                  [dropdown]="true"
-                  [showEmptyMessage]="false"
-                  [ariaLabel]="'Spieler ' + ($index + 1)"
-                  placeholder="Name wählen oder eintippen"
-                  fluid
-                >
-                  <ng-template #item let-identity>
-                    <span>{{ identity.name }}</span>
-                    @if (identity.isSelf) {
-                      <p-tag class="setup__self" value="Du" severity="secondary" />
-                    }
-                  </ng-template>
-                </p-autocomplete>
-              } @else {
-                <input
-                  pInputText
-                  class="setup__input"
-                  [formControl]="seat"
-                  [attr.aria-label]="'Spieler ' + ($index + 1)"
-                  [attr.aria-describedby]="'seat-' + $index + '-error'"
-                  placeholder="Name"
-                />
-              }
-              <p-button
-                type="button"
-                icon="pi pi-minus-circle"
-                severity="secondary"
-                [text]="true"
-                [disabled]="seats.length <= 1"
-                [ariaLabel]="'Spieler ' + ($index + 1) + ' entfernen'"
-                (onClick)="removePlayer($index)"
+                <ng-template #item let-identity>
+                  <span>{{ identity.name }}</span>
+                  @if (identity.isSelf) {
+                    <p-tag class="setup__self" value="Du" severity="secondary" />
+                  }
+                </ng-template>
+              </p-autocomplete>
+            } @else {
+              <input
+                pInputText
+                class="setup__input"
+                [formControl]="seat"
+                [attr.aria-label]="'Spieler ' + (index + 1)"
+                [attr.aria-describedby]="'seat-' + index + '-error'"
+                placeholder="Name"
               />
-              <app-field-error
-                class="setup__error"
-                [attr.id]="'seat-' + $index + '-error'"
-                [control]="seat"
-                [messages]="seatMessages"
-              />
-            </div>
-          }
-        </div>
+            }
+            <p-button
+              type="button"
+              icon="pi pi-minus-circle"
+              severity="secondary"
+              [text]="true"
+              [disabled]="seats.length <= 1"
+              [ariaLabel]="'Spieler ' + (index + 1) + ' entfernen'"
+              (onClick)="removePlayer(index)"
+            />
+            <app-field-error
+              class="setup__error"
+              [attr.id]="'seat-' + index + '-error'"
+              [control]="seat"
+              [messages]="seatMessages"
+            />
+          </ng-template>
+        </app-sortable-list>
         <p-button
           type="button"
           label="Spieler hinzufügen"
@@ -131,7 +108,7 @@
       } @else {
         <!-- Placeholder seats while the address book answers, so the form does not jump. -->
         @for (row of skeletonSeats; track $index) {
-          <div class="setup__player">
+          <div class="setup__skeleton">
             <p-skeleton width="1.5rem" [height]="seatRowHeight" />
             <p-skeleton class="setup__input" [height]="seatRowHeight" />
             <p-skeleton width="2.5rem" [height]="seatRowHeight" />
