@@ -1,202 +1,66 @@
-import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { Avatar } from 'primeng/avatar';
 import { Button } from 'primeng/button';
-import { Popover } from 'primeng/popover';
-import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
 import { APP_VERSION } from '../../../../../environments/version';
-import {
-  DISPLAY_NAME_MAX_LENGTH,
-  USERNAME_MAX_LENGTH,
-  USERNAME_MESSAGES,
-  USERNAME_MIN_LENGTH,
-  USERNAME_PATTERN,
-} from '../../models/profile-rules';
 import { AuthService } from '../../services/auth.service';
-import { ChangeEmailDialogComponent } from '../change-email-dialog/change-email-dialog.component';
-import { ChangePasswordDialogComponent } from '../change-password-dialog/change-password-dialog.component';
-import { InlineEditorComponent } from '../../../../core/view/components/inline-editor/inline-editor.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 
-/** The rows that can be edited in place. */
-type EditableField = 'displayName' | 'username';
-
-interface EditableRow {
-  readonly field: EditableField;
+/** A row that opens another page of the account area. */
+interface PageLink {
+  readonly link: string;
+  readonly icon: string;
   readonly label: string;
-  readonly autocomplete: string;
-  readonly messages: Readonly<Record<string, string>>;
+  readonly hint: string;
 }
+
+const OWN_PAGES: readonly PageLink[] = [
+  { link: '/account/stats', icon: 'pi-chart-bar', label: 'Statistik', hint: 'Average, Checkout, Trefferbild' },
+  { link: '/account/games', icon: 'pi-history', label: 'Spiele', hint: 'Verlauf und Replays' },
+  { link: '/account/players', icon: 'pi-users', label: 'Spieler', hint: 'Für neue Spiele auswählbar' },
+];
+
+const APP_PAGES: readonly PageLink[] = [
+  { link: '/account/settings', icon: 'pi-cog', label: 'Einstellungen', hint: 'Eingabe, Lieblingsdoppel, Ansage' },
+];
+
+const ADMIN_PAGES: readonly PageLink[] = [
+  { link: '/account/evaluation', icon: 'pi-bullseye', label: 'Auswertung', hint: 'Genauigkeit der Erkennung' },
+];
 
 @Component({
   selector: 'app-account',
-  imports: [
-    Button,
-    ChangeEmailDialogComponent,
-    ChangePasswordDialogComponent,
-    InlineEditorComponent,
-    LoadingStateComponent,
-    Popover,
-    RouterLink,
-  ],
+  imports: [Avatar, Button, LoadingStateComponent, RouterLink],
   templateUrl: './account.component.html',
   styleUrl: './account.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccountComponent {
   private readonly auth = inject(AuthService);
-  private readonly fb = inject(FormBuilder);
-  private readonly document = inject(DOCUMENT);
 
   protected readonly user = this.auth.user;
-  protected readonly isAdmin = this.auth.isAdmin;
-
+  protected readonly restoring = signal(true);
   protected readonly version = APP_VERSION;
 
-  protected readonly busy = signal(false);
-  protected readonly restoring = signal(true);
+  protected readonly groups = computed(() => [
+    { title: 'Meine Daten', pages: OWN_PAGES },
+    { title: 'App', pages: APP_PAGES },
+    ...(this.auth.isAdmin() ? [{ title: 'Admin', pages: ADMIN_PAGES }] : []),
+  ]);
 
-  /** Which row is open, if any — one at a time, so the confirm button is
-   * unambiguous. */
-  protected readonly editingField = signal<EditableField | null>(null);
-  protected readonly saving = signal(false);
-  protected readonly error = signal<string | null>(null);
-
-  protected readonly resending = signal(false);
-  protected readonly verificationSent = signal(false);
-  private readonly resendError = signal<string | null>(null);
-  protected readonly emailDialogOpen = signal(false);
-  protected readonly passwordDialogOpen = signal(false);
-  protected readonly emailStatus = computed(() =>
-    this.user()?.emailVerified ? 'E-Mail-Adresse bestätigt' : 'E-Mail-Adresse nicht bestätigt',
+  /** Up to two initials from the display name, for the avatar. */
+  protected readonly initials = computed(() =>
+    (this.user()?.displayName ?? '')
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word[0].toUpperCase())
+      .join(''),
   );
-  protected readonly verifyNotice = computed(() => {
-    if (this.user()?.emailVerified) {
-      return 'Deine E-Mail-Adresse ist bestätigt.';
-    }
-    return (
-      this.resendError() ??
-      (this.verificationSent()
-        ? 'Ein neuer Bestätigungslink ist unterwegs. Er ist 24 Stunden gültig.'
-        : 'Deine E-Mail-Adresse ist noch nicht bestätigt. Den Link dazu findest du in deinem Postfach.')
-    );
-  });
-
-  protected readonly editableRows: readonly EditableRow[] = [
-    { field: 'displayName', label: 'Anzeigename', autocomplete: 'nickname', messages: {} },
-    { field: 'username', label: 'Benutzername', autocomplete: 'username', messages: USERNAME_MESSAGES },
-  ];
-
-  /** Both names, because the write sends both; only the open one is shown as an
-   * input, the other rides along unchanged. */
-  protected readonly form = this.fb.nonNullable.group({
-    displayName: ['', [Validators.required, Validators.maxLength(DISPLAY_NAME_MAX_LENGTH)]],
-    username: [
-      '',
-      [
-        Validators.required,
-        Validators.minLength(USERNAME_MIN_LENGTH),
-        Validators.maxLength(USERNAME_MAX_LENGTH),
-        Validators.pattern(USERNAME_PATTERN),
-      ],
-    ],
-  });
 
   constructor() {
     // This page is what it shows: everything on it hangs off `user()`, and
     // nothing else on this route asks for the session to be restored first.
     void this.auth.ready.then(() => this.restoring.set(false));
-  }
-
-  /** Seeded from the session on every open, so a cancelled edit leaves nothing
-   * behind and a rename by another device is picked up. */
-  protected edit(field: EditableField): void {
-    const account = this.user();
-    if (!account) {
-      return;
-    }
-    this.form.setValue({ displayName: account.displayName, username: account.username });
-    this.error.set(null);
-    this.editingField.set(field);
-  }
-
-  protected cancel(): void {
-    this.editingField.set(null);
-    this.error.set(null);
-  }
-
-  protected async confirm(): Promise<void> {
-    const field = this.editingField();
-    if (field === null || this.form.controls[field].invalid || this.saving()) {
-      return;
-    }
-    this.saving.set(true);
-    this.error.set(null);
-    try {
-      await this.auth.updateProfile(this.form.getRawValue());
-      this.editingField.set(null);
-    } catch (failure) {
-      this.error.set(this.describe(failure));
-    } finally {
-      this.saving.set(false);
-    }
-  }
-
-  protected async resendVerification(): Promise<void> {
-    if (this.resending()) {
-      return;
-    }
-    this.resending.set(true);
-    this.resendError.set(null);
-    try {
-      await this.auth.resendVerification();
-      this.verificationSent.set(true);
-    } catch (failure) {
-      this.resendError.set(
-        httpErrorMessage(failure, {}, 'Senden fehlgeschlagen. Bitte später erneut versuchen.'),
-      );
-    } finally {
-      this.resending.set(false);
-    }
-  }
-
-  /** Points the arrow at the button's center, measured on the layout box since
-   * PrimeNG aligns it while the opening animation still scales the popover. */
-  protected centerArrow(popover: Popover): void {
-    const container = popover.container;
-    const target = popover.target as HTMLElement | null;
-    if (!container || !target) {
-      return;
-    }
-    const rect = target.getBoundingClientRect();
-    const scrollX = this.document.defaultView?.scrollX ?? 0;
-    const center = rect.left + scrollX + rect.width / 2 - container.offsetLeft;
-    container.style.setProperty(
-      '--p-popover-arrow-left',
-      `calc(${center}px - var(--p-popover-arrow-offset))`,
-    );
-  }
-
-  protected async logout(): Promise<void> {
-    this.busy.set(true);
-    try {
-      await this.auth.logout();
-    } finally {
-      this.busy.set(false);
-    }
-  }
-
-  private describe(failure: unknown): string {
-    return httpErrorMessage(
-      failure,
-      {
-        409: (error) =>
-          error.error?.detail === 'display name in address book'
-            ? 'Diesen Namen gibt es schon in deiner Spielerliste.'
-            : 'Dieser Benutzername ist bereits vergeben.',
-      },
-      'Speichern fehlgeschlagen. Bitte Eingaben prüfen.',
-    );
   }
 }

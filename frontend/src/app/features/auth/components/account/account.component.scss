@@ -1,102 +1,56 @@
-.account {
-  margin: 0;
+/* The signed-in account at a glance; opens the profile page. */
+.profile {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 0.75rem;
+  color: inherit;
+  text-decoration: none;
 
-  &__row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    min-height: 2.5rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--p-content-border-color);
+  &:hover {
+    background: var(--p-content-hover-background);
   }
 
-  &__label {
-    color: var(--p-text-muted-color);
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+  }
+
+  &__avatar {
+    --p-avatar-background: var(--p-primary-color);
+    --p-avatar-color: var(--p-primary-contrast-color);
     flex: none;
+    font-weight: 700;
   }
 
-  &__editor {
-    flex: 1;
-  }
-
-  &__value {
-    margin: 0;
+  &__body {
     flex: 1;
     min-width: 0;
-    text-align: right;
-    overflow-wrap: anywhere;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
 
-    &--scroll {
-      overflow-x: auto;
-      white-space: nowrap;
-      overflow-wrap: normal;
-      scrollbar-width: thin;
-    }
+  &__name {
+    overflow: hidden;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__hint {
+    color: var(--p-text-muted-color);
+    font-size: 0.85rem;
   }
 }
 
-.email-status {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  max-width: 18rem;
-
-  &__text {
-    margin: 0;
-  }
-}
-
-.account__version {
+.version {
   margin: 0;
   padding-top: 0.5rem;
   text-align: center;
   color: var(--p-text-muted-color);
   font-size: 0.8rem;
-}
-
-/* Rows that navigate to a sub-page of the account area. */
-.pages {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-
-  &__link {
-    display: flex;
-    align-items: center;
-    gap: 0.9rem;
-    padding: 0.9rem 1rem;
-    border: 1px solid var(--p-content-border-color);
-    border-radius: 0.75rem;
-    color: inherit;
-    text-decoration: none;
-
-    &:hover {
-      background: var(--p-content-hover-background);
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--p-primary-color);
-      outline-offset: 2px;
-    }
-  }
-
-  &__icon {
-    font-size: 1.15rem;
-    color: var(--p-primary-color);
-  }
-
-  &__label {
-    flex: 1;
-    font-weight: 600;
-  }
-
-  &__chevron {
-    color: var(--p-text-muted-color);
-    font-size: 0.85rem;
-  }
 }

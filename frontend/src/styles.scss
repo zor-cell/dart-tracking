@@ -230,6 +230,85 @@ html .p-datatable-mask.p-overlay-mask-leave-active {
   font-size: 0.85rem;
 }
 
+/* Rows grouped in one bordered box under a small caps title, as on the account pages. */
+.list-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.list-group__title {
+  margin: 0 0 0 0.25rem;
+  color: var(--p-text-muted-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.list-group__items {
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.list-group__item {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-height: 3.25rem;
+  padding: 0.6rem 1rem;
+  color: inherit;
+  text-decoration: none;
+
+  & + & {
+    border-top: 1px solid var(--p-content-border-color);
+  }
+}
+
+a.list-group__item {
+  &:hover {
+    background: var(--p-content-hover-background);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: -2px;
+  }
+}
+
+.list-group__icon {
+  width: 1.2rem;
+  color: var(--p-primary-color);
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.list-group__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.list-group__name {
+  font-weight: 600;
+}
+
+.list-group__hint {
+  overflow: hidden;
+  color: var(--p-text-muted-color);
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-group__chevron {
+  color: var(--p-text-muted-color);
+  font-size: 0.85rem;
+}
+
 /* Key figures as tiles, two per row; `--wide` gives the headline one the full row. */
 .stat-grid {
   margin: 0;

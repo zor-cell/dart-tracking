@@ -1,0 +1,120 @@
+<section class="view">
+  <header class="view__header">
+    <app-back-link label="Konto" link="/account" />
+    <h1 class="view__title">Profil</h1>
+  </header>
+
+  @if (user(); as account) {
+    <section class="list-group">
+      <h2 class="list-group__title">Profil</h2>
+      <div class="list-group__items">
+        @for (row of editableRows; track row.field) {
+          <div class="list-group__item field">
+            <span class="field__label">{{ row.label }}</span>
+            @if (editingField() === row.field) {
+              <app-inline-editor
+                class="field__editor"
+                [control]="form.controls[row.field]"
+                [label]="row.label"
+                [saveLabel]="row.label + ' speichern'"
+                [autocomplete]="row.autocomplete"
+                [messages]="row.messages"
+                [saving]="saving()"
+                [error]="error()"
+                (save)="confirm()"
+                (cancel)="cancel()"
+              />
+            } @else {
+              <span class="field__value">{{ account[row.field] }}</span>
+              <p-button
+                type="button"
+                icon="pi pi-pencil"
+                [ariaLabel]="row.label + ' bearbeiten'"
+                severity="secondary"
+                [rounded]="true"
+                [text]="true"
+                [disabled]="saving()"
+                (onClick)="edit(row.field)"
+              />
+            }
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="list-group">
+      <h2 class="list-group__title">Anmeldung</h2>
+      <div class="list-group__items">
+        <div class="list-group__item field">
+          <span class="field__label">E-Mail</span>
+          <span class="field__value field__value--scroll" tabindex="0">{{ account.email }}</span>
+          <p-button
+            type="button"
+            [icon]="account.emailVerified ? 'pi pi-verified' : 'pi pi-exclamation-triangle'"
+            [severity]="account.emailVerified ? 'success' : 'warn'"
+            [ariaLabel]="emailStatus()"
+            [rounded]="true"
+            [text]="true"
+            (onClick)="statusPopover.toggle($event, $any($event).currentTarget)"
+          />
+          <p-button
+            type="button"
+            icon="pi pi-pencil"
+            ariaLabel="E-Mail-Adresse ändern"
+            severity="secondary"
+            [rounded]="true"
+            [text]="true"
+            [disabled]="saving()"
+            (onClick)="emailDialogOpen.set(true)"
+          />
+        </div>
+
+        <div class="list-group__item field">
+          <span class="field__label">Passwort</span>
+          <span class="field__value" aria-hidden="true">••••••••</span>
+          <p-button
+            type="button"
+            icon="pi pi-pencil"
+            ariaLabel="Passwort ändern"
+            severity="secondary"
+            [rounded]="true"
+            [text]="true"
+            [disabled]="saving()"
+            (onClick)="passwordDialogOpen.set(true)"
+          />
+        </div>
+      </div>
+    </section>
+
+    <p-button
+      fluid
+      label="Abmelden"
+      icon="pi pi-sign-out"
+      severity="secondary"
+      [outlined]="true"
+      [loading]="busy()"
+      (onClick)="logout()"
+    />
+  }
+</section>
+
+<p-popover #statusPopover (onShow)="centerArrow(statusPopover)">
+  <div class="email-status">
+    <p class="email-status__text">{{ verifyNotice() }}</p>
+    @if (user()?.emailVerified === false && !verificationSent()) {
+      <p-button
+        fluid
+        size="small"
+        label="Bestätigungslink erneut senden"
+        icon="pi pi-envelope"
+        severity="secondary"
+        [outlined]="true"
+        [loading]="resending()"
+        (onClick)="resendVerification()"
+      />
+    }
+  </div>
+</p-popover>
+
+<app-change-email-dialog [(visible)]="emailDialogOpen" />
+<app-change-password-dialog [(visible)]="passwordDialogOpen" />
