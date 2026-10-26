@@ -122,7 +122,8 @@ def test_only_admins_start_an_evaluation_run(alice, session, admin, enabled):
 
 
 def status_of(api, game_id):
-    return next(game for game in api.get("/games").json()["items"] if game["id"] == game_id)
+    listed = [api.get("/games", params=params).json()["items"] for params in ({}, {"status": "discarded"})]
+    return next(game for items in listed for game in items if game["id"] == game_id)
 
 
 @pytest.mark.parametrize(("legs", "restored"), [((), "active"), (WINNING_LEG, "finished")])
@@ -198,6 +199,7 @@ def test_history_filters_and_paging(alice, session):
     session.play(finished, WINNING_LEG[0], [MISS], WINNING_LEG[1])
     elimination = alice.new_game(me, variant="elimination", mode=501)["id"]
     abandoned = alice.new_game(me, alice.add_player("Carol"), bob)["id"]
+    session.play(abandoned, [S1, S1, S1], [S1, S1, S1], [S1, S1, S1])
     session.age_game(abandoned, hours=48)
     discarded = alice.new_game(me)["id"]
     alice.patch(f"/games/{discarded}", json={"status": "discarded"})
@@ -215,15 +217,34 @@ def test_history_filters_and_paging(alice, session):
     assert ids(status="discarded") == {discarded}
     assert ids(opponent=bob) == {finished, abandoned}
     assert ids(minPlayers=2) == {finished, abandoned}
-    assert ids(maxPlayers=1) == {elimination, discarded}
+    assert ids(maxPlayers=1) == {elimination}
     assert ids(minPlayers=3, maxPlayers=3) == {abandoned}
     assert ids(until=(datetime.now(UTC) - timedelta(hours=1)).isoformat()) == {abandoned}
-    assert ids(since=(datetime.now(UTC) - timedelta(hours=1)).isoformat()) == {finished, elimination, discarded}
+    assert ids(since=(datetime.now(UTC) - timedelta(hours=1)).isoformat()) == {finished, elimination}
 
-    first = alice.get("/games", params={"limit": 3}).json()
-    rest = alice.get("/games", params={"limit": 3, "offset": 3}).json()
-    assert first["total"] == rest["total"] == 4
-    assert len({g["id"] for g in first["items"] + rest["items"]}) == 4
+    first = alice.get("/games", params={"limit": 2}).json()
+    rest = alice.get("/games", params={"limit": 2, "offset": 2}).json()
+    assert first["total"] == rest["total"] == 3
+    assert len({g["id"] for g in first["items"] + rest["items"]}) == 3
+
+
+def test_history_hides_discarded_and_short_abandoned_games_by_default(alice, session):
+    me = alice.own_entry()["id"]
+    played = alice.new_game(me)["id"]
+    session.play(played, [S1, S1, S1], [S1, S1, S1], [S1, S1, S1])
+    session.age_game(played, hours=48)
+    short = alice.new_game(me)["id"]
+    session.play(short, [S1, S1, S1], [S1, S1, S1], [S1, S1], hand_over=False)
+    session.age_game(short, hours=48)
+    discarded = alice.new_game(me)["id"]
+    alice.patch(f"/games/{discarded}", json={"status": "discarded"})
+
+    def ids(**params):
+        return {game["id"] for game in alice.get("/games", params=params).json()["items"]}
+
+    assert ids() == {played}
+    assert ids(status="abandoned") == {played, short}
+    assert ids(status="discarded") == {discarded}
 
 
 def test_history_search_by_player_name(alice):

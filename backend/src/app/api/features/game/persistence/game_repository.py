@@ -20,6 +20,7 @@ from app.api.features.game.domain.game_record import GameRecord
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_status import (
     ABANDON_AFTER,
+    MIN_ABANDONED_DARTS,
     GameStatus,
     effective_status,
     is_resumable,
@@ -574,16 +575,28 @@ def _history_clauses(user_id: str, criteria: GameFilter) -> list[ColumnElement[b
         clauses.append(GameTable.variant == criteria.variant.value)
     if criteria.mode is not None:
         clauses.append(GameTable.mode == int(criteria.mode))
-    if criteria.status is not None:
-        cutoff = datetime.now(UTC) - ABANDON_AFTER
-        active = GameTable.status == GameStatus.ACTIVE.value
-        match criteria.status:
-            case GameStatus.ACTIVE:
-                clauses.append(and_(active, GameTable.updated_at > cutoff))
-            case GameStatus.ABANDONED:
-                clauses.append(and_(active, GameTable.updated_at <= cutoff))
-            case _:
-                clauses.append(GameTable.status == criteria.status.value)
+    cutoff = datetime.now(UTC) - ABANDON_AFTER
+    active = GameTable.status == GameStatus.ACTIVE.value
+    match criteria.status:
+        case None:
+            darts = (
+                select(func.count())
+                .select_from(DartTable)
+                .where(DartTable.game_id == GameTable.id)
+                .correlate(GameTable)
+                .scalar_subquery()
+            )
+            short_abandoned = and_(
+                active, GameTable.updated_at <= cutoff, darts < MIN_ABANDONED_DARTS
+            )
+            clauses.append(GameTable.status != GameStatus.DISCARDED.value)
+            clauses.append(~short_abandoned)
+        case GameStatus.ACTIVE:
+            clauses.append(and_(active, GameTable.updated_at > cutoff))
+        case GameStatus.ABANDONED:
+            clauses.append(and_(active, GameTable.updated_at <= cutoff))
+        case _:
+            clauses.append(GameTable.status == criteria.status.value)
     if criteria.opponent_id is not None:
         clauses.append(
             GameTable.id.in_(

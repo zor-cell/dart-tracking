@@ -1,4 +1,5 @@
-"""Which games a history list holds. Every field narrows it; None leaves it open."""
+"""Which games a history list holds. Every field narrows it; None leaves it open,
+except `status`."""
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -14,6 +15,7 @@ class GameFilter:
     query: str | None = None
     variant: GameVariant | None = None
     mode: GameMode | None = None
+    # None hides discarded games and abandoned ones too short to count.
     status: GameStatus | None = None
     # A player identity that has to hold a seat in the game.
     opponent_id: str | None = None
