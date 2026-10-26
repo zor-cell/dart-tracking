@@ -9,6 +9,7 @@ import {ConfirmationService, MessageService} from "primeng/api";
 import {authInterceptor, errorInterceptor} from "./core/interceptors";
 import { AnnouncerService } from './features/announcement/services/announcer.service';
 import { CalibrationService } from './features/calibration/services/calibration.service';
+import { GERMAN_TRANSLATION } from './core/config/primeng-translation';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -18,7 +19,8 @@ export const appConfig: ApplicationConfig = {
     providePrimeNG({
       theme: {
         preset: Noir
-      }
+      },
+      translation: GERMAN_TRANSLATION,
     }),
     MessageService,
     ConfirmationService,
