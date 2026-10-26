@@ -43,7 +43,8 @@ export class AnnouncerService {
 
   private readonly pending: string[] = [];
   private audio: AudioContext | null = null;
-  private speaking = false;
+  private current: SpeechSynthesisUtterance | null = null;
+  private testing = false;
   private readonly _unlocked = signal(false);
   private watchdog: ReturnType<typeof setTimeout> | null = null;
   private readonly onGesture = () => this.unlock();
@@ -67,7 +68,7 @@ export class AnnouncerService {
     this.socket
       .on('dart_announcement')
       .pipe(takeUntilDestroyed())
-      .subscribe((announcement) => this.speak(announcementPhrases(announcement)));
+      .subscribe((announcement) => this.speak(announcementPhrases(announcement), true));
 
     this.socket
       .on('turn_announcement')
@@ -100,9 +101,14 @@ export class AnnouncerService {
     }
   }
 
-  private speak(phrases: string[]): void {
+  /** With `interrupt`, cuts off whatever earlier announcements still had to say,
+   * so quick manual entries do not queue up behind each other. */
+  private speak(phrases: string[], interrupt = false): void {
     if (this.synth() === null || this._muted()) {
       return;
+    }
+    if (interrupt && !this.testing) {
+      this.stop();
     }
     this.pending.push(...phrases);
     this.drain();
@@ -111,7 +117,7 @@ export class AnnouncerService {
   /** Speaks one phrase at a time; WebKit drops all but the head of its queue. */
   private drain(): void {
     const synth = this.synth();
-    if (synth === null || this.speaking) {
+    if (synth === null || this.current !== null) {
       return;
     }
     const phrase = this.pending.shift();
@@ -127,17 +133,17 @@ export class AnnouncerService {
     const utterance = this.utterance(phrase);
 
     const finish = () => {
-      if (!this.speaking) {
+      if (this.current !== utterance) {
         return;
       }
-      this.speaking = false;
+      this.current = null;
       this.clearWatchdog();
       this.drain();
     };
     utterance.onend = finish;
     utterance.onerror = finish;
 
-    this.speaking = true;
+    this.current = utterance;
     this.watchdog = setTimeout(
       finish,
       UTTERANCE_TIMEOUT_BASE + phrase.length * UTTERANCE_TIMEOUT_PER_CHAR,
@@ -147,7 +153,7 @@ export class AnnouncerService {
 
   private stop(): void {
     this.pending.length = 0;
-    this.speaking = false;
+    this.current = null;
     this.clearWatchdog();
     this.synth()?.cancel();
   }
@@ -165,7 +171,13 @@ export class AnnouncerService {
    */
   private unlock(): void {
     const synth = this.synth();
-    if (this._unlocked() || synth === null || this.speaking || synth.pending || synth.speaking) {
+    if (
+      this._unlocked() ||
+      synth === null ||
+      this.current !== null ||
+      synth.pending ||
+      synth.speaking
+    ) {
       return;
     }
     this.primeAudio();
@@ -195,8 +207,9 @@ export class AnnouncerService {
 
     return new Promise((resolve) => {
       const settle = (result: AnnouncerTestResult) => {
-        if (this.speaking) {
-          this.speaking = false;
+        if (this.current === utterance) {
+          this.current = null;
+          this.testing = false;
           this.clearWatchdog();
           resolve(result);
           this.drain();
@@ -207,7 +220,8 @@ export class AnnouncerService {
 
       // Held like a queued phrase, so an announcement arriving mid-test waits
       // rather than talking over it.
-      this.speaking = true;
+      this.current = utterance;
+      this.testing = true;
       this.watchdog = setTimeout(
         () => settle('no_answer'),
         UTTERANCE_TIMEOUT_BASE + TEST_PHRASE.length * UTTERANCE_TIMEOUT_PER_CHAR,
