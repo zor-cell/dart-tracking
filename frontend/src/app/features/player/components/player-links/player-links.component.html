@@ -14,7 +14,8 @@
     <section class="panel" aria-labelledby="player-links-title">
       <h2 class="panel__title" id="player-links-title">Aktuell verknüpft</h2>
       <p class="panel__hint">
-        Spiele dieser Spieler zählen in deinem Verlauf und deiner Statistik.
+        Diese Personen führen dich in ihrer Spielerliste. Wählen sie dich für ein Spiel aus, zählt
+        es in deinem Verlauf und deiner Statistik.
       </p>
 
       <p-table [value]="active()" dataKey="playerId" class="data-table" size="small">
@@ -104,8 +105,8 @@
         />
       } @else {
         <p class="leave__text">
-          Neue Spiele von {{ link.ownerName }} zählen danach nicht mehr für dich. Was soll mit den
-          bisherigen Spielen passieren?
+          Wählt {{ link.ownerName }} dich danach für ein Spiel aus, zählt es nicht mehr für dich.
+          Was soll mit den bisherigen Spielen passieren?
         </p>
         <p-button
           fluid
