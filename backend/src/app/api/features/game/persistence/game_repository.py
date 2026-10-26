@@ -563,18 +563,6 @@ def _history_clauses(user_id: str, criteria: GameFilter) -> list[ColumnElement[b
     clauses: list[ColumnElement[bool]] = [
         or_(GameTable.owner_user_id == user_id, GameTable.id.in_(seated))
     ]
-    if criteria.query:
-        clauses.append(
-            GameTable.id.in_(
-                select(GamePlayerTable.game_id)
-                .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
-                .where(PlayerTable.display_name.icontains(criteria.query, autoescape=True))
-            )
-        )
-    if criteria.variant is not None:
-        clauses.append(GameTable.variant == criteria.variant.value)
-    if criteria.mode is not None:
-        clauses.append(GameTable.mode == int(criteria.mode))
     cutoff = datetime.now(UTC) - ABANDON_AFTER
     active = GameTable.status == GameStatus.ACTIVE.value
     match criteria.status:
@@ -597,6 +585,27 @@ def _history_clauses(user_id: str, criteria: GameFilter) -> list[ColumnElement[b
             clauses.append(and_(active, GameTable.updated_at <= cutoff))
         case _:
             clauses.append(GameTable.status == criteria.status.value)
+    return clauses + game_filter_clauses(criteria)
+
+
+def game_filter_clauses(criteria: GameFilter) -> list[ColumnElement[bool]]:
+    """`criteria` as conditions on the games table, all but `status`, which each
+    reader of the history counts its own way."""
+    clauses: list[ColumnElement[bool]] = []
+    if criteria.query:
+        clauses.append(
+            GameTable.id.in_(
+                select(GamePlayerTable.game_id)
+                .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
+                .where(PlayerTable.display_name.icontains(criteria.query, autoescape=True))
+            )
+        )
+    if criteria.variant is not None:
+        clauses.append(GameTable.variant == criteria.variant.value)
+    if criteria.mode is not None:
+        clauses.append(GameTable.mode == int(criteria.mode))
+    if criteria.checkout_mode is not None:
+        clauses.append(GameTable.checkout_mode == criteria.checkout_mode.value)
     if criteria.opponent_id is not None:
         clauses.append(
             GameTable.id.in_(
@@ -622,5 +631,6 @@ def _history_clauses(user_id: str, criteria: GameFilter) -> list[ColumnElement[b
     if criteria.until is not None:
         clauses.append(GameTable.created_at < criteria.until)
     return clauses
+
 
 repository = GameRepository()

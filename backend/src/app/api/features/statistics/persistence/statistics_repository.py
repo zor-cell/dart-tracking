@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.dart import Dart
+from app.api.features.game.domain.game_filter import GameFilter
 from app.api.features.game.domain.game_status import (
     ABANDON_AFTER,
     GameStatus,
@@ -17,6 +18,7 @@ from app.api.features.game.domain.turn import Turn
 from app.api.features.game.persistence.dart import DartTable
 from app.api.features.game.persistence.game import GameTable
 from app.api.features.game.persistence.game_player import GamePlayerTable
+from app.api.features.game.persistence.game_repository import game_filter_clauses
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.persistence.turn import TurnTable
 from app.api.features.player.persistence.player import PlayerTable
@@ -24,9 +26,11 @@ from app.api.features.statistics.domain.player_statistics import PlayerStatistic
 
 
 class StatisticsRepository:
-    async def tally(self, session: AsyncSession, user_id: str) -> PlayerStatistics:
-        """Three queries for the whole history, not four per game: the seats,
-        their turns, their darts — then the rules run in Python."""
+    async def tally(
+        self, session: AsyncSession, user_id: str, criteria: GameFilter = GameFilter()
+    ) -> PlayerStatistics:
+        """Three queries for the games `criteria` selects, not four per game: the
+        seats, their turns, their darts — then the rules run in Python."""
         cutoff = datetime.now(UTC) - ABANDON_AFTER
         seats = (
             await session.execute(
@@ -48,6 +52,7 @@ class StatisticsRepository:
                         (GameTable.status == GameStatus.ACTIVE.value)
                         & (GameTable.updated_at < cutoff),
                     ),
+                    *game_filter_clauses(criteria),
                 )
             )
         ).all()

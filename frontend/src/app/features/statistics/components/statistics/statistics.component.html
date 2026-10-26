@@ -4,15 +4,113 @@
     <h1 class="view__title">Statistik</h1>
   </header>
 
+  <div class="filters">
+    <span id="statistics-period" class="sr-only">Zeitraum</span>
+    <p-selectbutton
+      [options]="periodOptions"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+      [ngModel]="period()"
+      (ngModelChange)="period.set($event)"
+      ariaLabelledBy="statistics-period"
+      size="small"
+      fluid
+    >
+      <ng-template #item let-option>
+        @if (option.value === 'custom') {
+          <i class="pi pi-calendar" aria-hidden="true"></i>
+          <span class="sr-only">{{ option.label }}</span>
+        } @else {
+          {{ option.label }}
+        }
+      </ng-template>
+    </p-selectbutton>
+    @if (period() === 'custom') {
+      <p-datepicker
+        [ngModel]="range()"
+        (ngModelChange)="range.set($event)"
+        selectionMode="range"
+        dateFormat="dd.mm.y"
+        placeholder="Zeitraum wählen"
+        ariaLabel="Eigener Zeitraum"
+        [readonlyInput]="true"
+        [showButtonBar]="true"
+        fluid
+      />
+    }
+
+    <app-list-toolbar
+      [filterable]="true"
+      [chips]="chips()"
+      (chipRemove)="clearFilter($event)"
+      (reset)="resetFilters()"
+    >
+      <form class="list-filters" [formGroup]="filters">
+        <label class="list-filters__label" for="filter-opponent">Gegner</label>
+        <p-select
+          inputId="filter-opponent"
+          formControlName="opponentId"
+          [options]="opponents()"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="Alle"
+          [filter]="true"
+          [showClear]="true"
+          fluid
+        />
+        <label class="list-filters__label" for="filter-players">Spieleranzahl</label>
+        <p-select
+          inputId="filter-players"
+          formControlName="players"
+          [options]="playerCountOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Alle"
+          [showClear]="true"
+          fluid
+        />
+        <label class="list-filters__label" for="filter-mode">Modus</label>
+        <p-select
+          inputId="filter-mode"
+          formControlName="mode"
+          [options]="modeOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Alle"
+          [showClear]="true"
+          fluid
+        />
+        <label class="list-filters__label" for="filter-checkout">Checkout</label>
+        <p-select
+          inputId="filter-checkout"
+          formControlName="checkoutMode"
+          [options]="checkoutOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Alle"
+          [showClear]="true"
+          fluid
+        />
+      </form>
+    </app-list-toolbar>
+  </div>
+
   @if (loading()) {
     <app-loading-state label="Statistik wird geladen" />
   } @else if (failed()) {
-    <app-load-error message="Die Statistik konnte nicht geladen werden." (retry)="load()" />
+    <app-load-error message="Die Statistik konnte nicht geladen werden." (retry)="reload()" />
   } @else {
     @if (totals(); as totals) {
       @if (totals.legs === 0) {
-        <app-empty-state icon="pi-chart-bar">
-          <p>Noch keine gewerteten Spiele.</p>
+        <app-empty-state [icon]="filtered() ? 'pi-filter-slash' : 'pi-chart-bar'">
+          <p>
+            {{
+              filtered()
+                ? 'Keine gewerteten Spiele für diese Auswahl.'
+                : 'Noch keine gewerteten Spiele.'
+            }}
+          </p>
         </app-empty-state>
       } @else {
         <dl class="stat-grid">

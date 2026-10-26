@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 import pytest
 
 T20, T17, D5, S1, MISS = (20, 3), (17, 3), (5, 2), (1, 1), (0, 0)
@@ -112,6 +114,27 @@ def test_statistics_follow_the_link(alice, register, session):
 
     bob.delete(f"/players/links/{bob_id}")
     assert statistics(bob)["legs"] == 0
+
+
+def test_statistics_filter_the_games(alice, session):
+    session.play(own_game(alice), *WINNING_LEG)
+    single_out = own_game(alice, checkoutMode="single_out")
+    session.play(single_out, *WINNING_LEG)
+    session.age_game(single_out, hours=48)
+    bob = alice.add_player("Bob")
+    session.play(alice.new_game(alice.own_entry()["id"], bob)["id"], WINNING_LEG[0], [MISS] * 3, WINNING_LEG[1])
+
+    def legs(**params):
+        return alice.get("/statistics", params=params).json()["legs"]
+
+    an_hour_ago = (datetime.now(UTC) - timedelta(hours=1)).isoformat()
+    assert legs() == 3
+    assert legs(since=an_hour_ago) == 2
+    assert legs(until=an_hour_ago) == 1
+    assert legs(checkoutMode="single_out") == 1
+    assert legs(maxPlayers=1) == 2
+    assert legs(minPlayers=2, opponent=bob) == 1
+    assert legs(mode=501) == 0
 
 
 def test_accuracy_report_is_for_admins(alice, anon, session):

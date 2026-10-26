@@ -1,4 +1,4 @@
-import { DatePipe, formatDate } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -30,6 +30,7 @@ import { GAME_VARIANTS, GameVariant } from '../../models/game-variant';
 import { GameHistoryService } from '../../services/game-history.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { ListToolbarComponent } from '../../../../core/view/components/list-toolbar/list-toolbar.component';
+import { dayRangeBounds, dayRangeLabel } from '../../../../core/view/models/day-range';
 import { FilterChip } from '../../../../core/view/models/filter-chip';
 import { PagedTable } from '../../../../core/view/models/paged-table';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
@@ -112,10 +113,8 @@ export class GameListComponent {
     if (players) {
       chips.push({ key: 'players', label: PLAYER_COUNTS[players].label });
     }
-    const [start, end] = period ?? [];
-    if (start) {
-      const day = (date: Date) => formatDate(date, 'dd.MM.yy', this.locale);
-      const label = end && end.getTime() !== start.getTime() ? `${day(start)} – ${day(end)}` : day(start);
+    const label = dayRangeLabel(period ?? null, this.locale);
+    if (label) {
       chips.push({ key: 'period', label });
     }
     return chips;
@@ -163,10 +162,9 @@ export class GameListComponent {
     this.filters.get(key)?.reset();
   }
 
-  /** The form as a filter; a range with one day picked covers that day. */
+  /** The form as a filter. */
   private criteria(): GameFilter {
     const { variant, mode, status, opponentId, players, period } = this.filters.getRawValue();
-    const [start, end] = period ?? [];
     const count = players ? PLAYER_COUNTS[players] : null;
     return {
       query: this.query() || null,
@@ -176,12 +174,7 @@ export class GameListComponent {
       opponentId,
       minPlayers: count?.min ?? null,
       maxPlayers: count?.max ?? null,
-      since: start ?? null,
-      until: start ? nextDay(end ?? start) : null,
+      ...dayRangeBounds(period),
     };
   }
-}
-
-function nextDay(day: Date): Date {
-  return new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
 }

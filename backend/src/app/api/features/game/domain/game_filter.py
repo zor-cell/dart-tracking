@@ -4,6 +4,7 @@ except `status`."""
 from dataclasses import dataclass
 from datetime import datetime
 
+from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_status import GameStatus
 from app.api.features.game.domain.game_variant import GameVariant
@@ -15,6 +16,7 @@ class GameFilter:
     query: str | None = None
     variant: GameVariant | None = None
     mode: GameMode | None = None
+    checkout_mode: CheckoutMode | None = None
     # None hides discarded games and abandoned ones too short to count.
     status: GameStatus | None = None
     # A player identity that has to hold a seat in the game.

@@ -1,3 +1,9 @@
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 /* Same compact toggle and layout as the replay's heatmap. */
 .heatmap {
   --p-togglebutton-sm-padding: 0.2rem;
