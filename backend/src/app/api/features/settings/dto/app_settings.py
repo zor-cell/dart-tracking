@@ -11,7 +11,7 @@ class AppSettingsDto(CamelModel):
     Sent complete rather than as a patch, so a switch never has an undefined
     state on the wire."""
 
-    confirm_throw_enabled: bool
+    advance_on_pull: bool
     evaluation_enabled: bool
     preferred_doubles: list[Annotated[int, Field(ge=1, le=20)] | Literal[25]] = []
 
@@ -24,14 +24,14 @@ class AppSettingsDto(CamelModel):
     @classmethod
     def from_entity(cls, settings: AppSettings) -> Self:
         return cls(
-            confirm_throw_enabled=settings.confirm_throw_enabled,
+            advance_on_pull=settings.advance_on_pull,
             evaluation_enabled=settings.evaluation_enabled,
             preferred_doubles=list(settings.preferred_doubles),
         )
 
     def to_entity(self) -> AppSettings:
         return AppSettings(
-            confirm_throw_enabled=self.confirm_throw_enabled,
+            advance_on_pull=self.advance_on_pull,
             evaluation_enabled=self.evaluation_enabled,
             preferred_doubles=tuple(self.preferred_doubles),
         )

@@ -5,7 +5,7 @@ import { ClientStateDto } from '../dto/client-state.dto';
 import { ServerMessage } from '../dto/server-message';
 import { ClientFrame, ClientMessage } from '../dto/client-message';
 import { DeviceRole } from '../models/device-role';
-import { ThrowTriggerDto } from '../../../features/detection/dto/throw-trigger.dto';
+import { DetectionFrameDto } from '../../../features/detection/dto/detection-frame.dto';
 import { AuthService } from '../../../features/auth/services/auth.service';
 import { readStored, writeStored } from '../../storage/models/browser-storage';
 
@@ -168,7 +168,7 @@ export class SocketService {
   async sendFrame(
     type: ClientFrame['type'],
     frame: Blob,
-    trigger?: ThrowTriggerDto,
+    details: Pick<DetectionFrameDto, 'trigger' | 'advanceOnPull'> = {},
   ): Promise<void> {
     if (this.socket?.readyState !== WebSocket.OPEN) {
       console.warn('SocketService: Frame verworfen, WebSocket nicht verbunden');
@@ -176,7 +176,7 @@ export class SocketService {
     }
     const image = await blobToBase64(frame);
     const message: ClientFrame =
-      type === 'detection_frame' ? { type, image, trigger } : { type, image };
+      type === 'detection_frame' ? { type, image, ...details } : { type, image };
     this.socket.send(JSON.stringify(message));
   }
 

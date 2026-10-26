@@ -69,6 +69,8 @@ def replay(events: Iterable[GameEvent]) -> list[Visit]:
                 if event.accepted:
                     accepted[open_index].append(event)
                     corrected[open_index] = True
+            case GameEventKind.MISS_FILLED if event.accepted:
+                accepted[open_index].append(event)
             case GameEventKind.UNDO if event.accepted:
                 open_index = _undo(accepted, corrected, open_index)
             case GameEventKind.VISIT_REOPENED if event.accepted:

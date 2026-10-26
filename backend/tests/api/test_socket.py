@@ -62,6 +62,10 @@ def darts(state: dict[str, Any]) -> list[str]:
     return [dart["label"] for dart in state["turns"][-1]["darts"]]
 
 
+def encoded(path: Path) -> str:
+    return base64.b64encode(path.read_bytes()).decode()
+
+
 def jpeg(width: int, height: int) -> str:
     _, buffer = cv2.imencode(".jpg", np.zeros((height, width, 3), np.uint8))
     return base64.b64encode(buffer.tobytes()).decode()
@@ -174,7 +178,7 @@ def test_two_devices_ending_the_same_visit_hand_over_once(room, game_id):
         while darts(state) != ["1"]:
             state = second.next("game_state")
 
-    assert (state["currentPlayerIndex"], state["revision"]) == (1, 3)
+    assert (state["currentPlayerIndex"], state["revision"]) == (1, 5)
 
 
 @pytest.mark.parametrize("raw", ["not json", '{"type": "no_such_thing"}', '{"type": "register_dart", "value": 26}'])
@@ -275,9 +279,6 @@ def test_socket_scores_a_throw_series_like_the_pipeline_does(camera):
     )
     expected = list(replay_series(frames)[1].values())
 
-    def encoded(path: Path) -> str:
-        return base64.b64encode(path.read_bytes()).decode()
-
     with camera() as device:
         device.send("calibration_frame", image=encoded(frames[0][1]))
         assert device.next("calibration_result")["success"] is True
@@ -292,6 +293,30 @@ def test_socket_scores_a_throw_series_like_the_pipeline_does(camera):
                 assert len(darts(device.next("game_state"))) == min(booked, 3)
 
     assert reported == expected
+
+
+@pytest.mark.skipif(dataset_root() is None, reason="TESTDATA_DIR is not set")
+@pytest.mark.parametrize("advance_on_pull", [True, False])
+def test_pulled_darts_hand_over_with_the_rest_as_misses(camera, advance_on_pull):
+    entry = ("games/game_01a13481-1426-766f-b71d-524e8038c6ba", {"throw16"})
+    base, located, pulled = (path for _, path in next(iter(series_of(dataset_root(), entry).values())))
+
+    with camera() as device:
+        device.send("calibration_frame", image=encoded(base))
+        assert device.next("calibration_result")["success"] is True
+        device.send("detection_frame", image=encoded(located), advanceOnPull=advance_on_pull)
+        assert darts(device.next("game_state")) == ["15"]
+
+        device.send("detection_frame", image=encoded(pulled), advanceOnPull=advance_on_pull)
+        assert device.next("detection_result")["failure"] == "darts_removed"
+        if advance_on_pull:
+            state = device.next("game_state")
+            assert [dart["label"] for dart in state["turns"][0]["darts"]] == ["15", "0", "0"]
+            assert len(state["turns"]) == 2
+            device.next("calibration_requested")
+        else:
+            device.send("set_role", role="camera")
+            device.next("client_state", never=("game_state",))
 
 
 def test_camera_frames_are_throttled(camera):

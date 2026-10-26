@@ -281,21 +281,21 @@ class Game:
             if self._busts(dart):
                 turn.busted = True
 
-    def next_player(self) -> None:
-        """Hand over to the next player, ending the current visit.
-
-        A visit nobody has thrown in cannot be ended, which is what makes this
-        safe to receive twice: every device in the room decides for itself
-        whether a finished visit should advance (see the client's confirm
-        setting), so two of them can ask at once — the second ask then finds the
-        fresh, empty turn and does nothing, rather than skipping a player.
-        """
+    def next_player(self) -> int:
+        """Hand over to the next player, booking the darts the visit still lacks as
+        misses; returns how many. A visit nobody has thrown in cannot be ended, so
+        a second ask for the same handover finds the fresh turn and does nothing."""
         if self.winner is not None or not self.current_turn.darts:
-            return
+            return 0
+        filled = 0
+        while self.darts_remaining > 0:
+            self.register_dart(Dart(value=0, multiplier=0))
+            filled += 1
         self.revision += 1
         self.current_player_index = (self.current_player_index + 1) % len(self.players)
         self.shadow_darts = []
         self._start_turn()
+        return filled
 
     def set_evaluation(self, enabled: bool) -> None:
         """Turn the test run on or off. Bumps the revision so the room is told,

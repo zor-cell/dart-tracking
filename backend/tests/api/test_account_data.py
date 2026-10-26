@@ -4,11 +4,11 @@ T20, T17, D5, S1, MISS = (20, 3), (17, 3), (5, 2), (1, 1), (0, 0)
 WINNING_LEG = ([T20, T20, T20], [T20, T17, D5])
 
 DEFAULTS = {
-    "confirmThrowEnabled": True,
+    "advanceOnPull": True,
     "evaluationEnabled": False,
     "preferredDoubles": [],
 }
-EVERYTHING_ON = {key: True for key in DEFAULTS if key != "preferredDoubles"} | {"preferredDoubles": []}
+EVERYTHING_ON = DEFAULTS | {"evaluationEnabled": True}
 
 
 @pytest.fixture
@@ -38,6 +38,12 @@ def test_diagnostics_stored_as_admin_are_masked_once_demoted(alice, session):
     session.sql("UPDATE users SET role = 'user' WHERE id = :id", id=alice.id)
 
     assert alice.get("/settings").json()["evaluationEnabled"] is False
+
+
+def test_advancing_on_pull_can_be_turned_off(alice):
+    alice.put("/settings", json=DEFAULTS | {"advanceOnPull": False})
+
+    assert alice.get("/settings").json()["advanceOnPull"] is False
 
 
 def test_preferred_doubles(alice):

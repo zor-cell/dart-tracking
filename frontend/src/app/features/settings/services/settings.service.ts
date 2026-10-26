@@ -29,7 +29,7 @@ export class SettingsService {
    * signals below hold defaults, not this account's choices. */
   readonly loading = this._loading.asReadonly();
 
-  readonly confirmThrowEnabled = computed(() => this._settings().confirmThrowEnabled);
+  readonly advanceOnPull = computed(() => this._settings().advanceOnPull);
   readonly evaluationEnabled = computed(() => this._settings().evaluationEnabled);
   readonly preferredDoubles = computed(() => this._settings().preferredDoubles);
 
@@ -52,8 +52,8 @@ export class SettingsService {
     });
   }
 
-  setConfirmThrowEnabled(enabled: boolean): void {
-    this.patch({ confirmThrowEnabled: enabled });
+  setAdvanceOnPull(enabled: boolean): void {
+    this.patch({ advanceOnPull: enabled });
   }
 
   setEvaluationEnabled(enabled: boolean): void {

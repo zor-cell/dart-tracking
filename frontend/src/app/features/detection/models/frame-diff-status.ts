@@ -1,1 +1,1 @@
-export type DisplayStatus = 'idle' | 'motion' | 'settling' | 'sent' | 'paused';
+export type DisplayStatus = 'idle' | 'motion' | 'settling' | 'sent' | 'pull' | 'paused';

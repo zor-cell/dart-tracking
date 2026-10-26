@@ -60,6 +60,7 @@ class DetectionTrace:
     # Distance from the anchoring fragment to the scored tip, in board mm.
     anchor_to_tip_mm: float = 0.0
 
+    blob: np.ndarray | None = None  # the fused dart's pixels, (x, y) in the reference grid
     # The fused blob's dimensions in board millimetres.
     dart_length_mm: float = 0.0
     dart_width_mm: float = 0.0

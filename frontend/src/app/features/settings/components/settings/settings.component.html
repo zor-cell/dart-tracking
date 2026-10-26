@@ -26,16 +26,17 @@
 
         <div class="list-group__item setting">
           <div class="setting__text">
-            <label class="setting__label" for="confirm-throw">Manuell Würfe akzeptieren</label>
-            <p class="setting__hint" id="confirm-throw-hint">
-              Die Runde geht erst weiter, wenn du sie bestätigst. Sonst automatisch nach 3 Darts.
+            <label class="setting__label" for="advance-on-pull">Nach dem Ziehen weiter</label>
+            <p class="setting__hint" id="advance-on-pull-hint">
+              Die Kamera erkennt, wenn die Pfeile gezogen sind, und gibt an den nächsten Spieler
+              weiter. Sonst geht es erst weiter, wenn du bestätigst.
             </p>
           </div>
           <p-toggleswitch
-            inputId="confirm-throw"
-            ariaLabelledBy="confirm-throw-hint"
-            [ngModel]="settings.confirmThrowEnabled()"
-            (ngModelChange)="settings.setConfirmThrowEnabled($event)"
+            inputId="advance-on-pull"
+            ariaLabelledBy="advance-on-pull-hint"
+            [ngModel]="settings.advanceOnPull()"
+            (ngModelChange)="settings.setAdvanceOnPull($event)"
           />
         </div>
 

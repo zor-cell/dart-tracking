@@ -61,6 +61,11 @@ export class GameService {
       (this.currentTurn()?.darts.length ?? 0) + this.shadowDarts().length < DARTS_PER_TURN,
   );
 
+  /** Whether the camera keeps looking after the visit is full, to see its darts pulled out. */
+  readonly watchesPull = computed(
+    () => this._state() !== null && this.settledWinner() === null && this.settings.advanceOnPull(),
+  );
+
   /** Whether the keypad may append: into any visit with room left, busted or
    * won but unconfirmed, as the server's `Game.add_dart` allows. */
   readonly acceptsManualDarts = computed(
@@ -69,10 +74,8 @@ export class GameService {
   );
 
   /** A win that still waits for the confirm tap, the same gate every other visit
-   * passes through. Never pending while confirming is off. */
-  readonly winPending = computed(
-    () => this.winner() !== null && this.settings.confirmThrowEnabled() && !this._winConfirmed(),
-  );
+   * passes through. */
+  readonly winPending = computed(() => this.winner() !== null && !this._winConfirmed());
 
   /** The winner once the win is settled — what the view shows the game as over
    * by. `winner` alone is only the score reading it rests on. */
@@ -86,12 +89,7 @@ export class GameService {
     this.socket
       .on('game_state')
       .pipe(takeUntilDestroyed())
-      .subscribe((state) => {
-        const previous = this._state();
-        if (this.setState(state)) {
-          this.maybeAutoAdvance(previous, state);
-        }
-      });
+      .subscribe((state) => this.setState(state));
 
     // Every device in the room follows a rematch; its role stays with the device.
     this.socket
@@ -257,19 +255,6 @@ export class GameService {
       return {};
     }
     return { turnIndex: state.turns.length - 1, dartIndex: state.turns.at(-1)?.darts.length ?? 0 };
-  }
-
-  /** Advance to the next player when this push completed the visit — but only
-   * when the confirm button is turned off. A visit reopened by undo stays open. */
-  private maybeAutoAdvance(previous: GameStateDto | null, state: GameStateDto): void {
-    const completed =
-      previous?.id === state.id &&
-      previous.turns.length === state.turns.length &&
-      previous.dartsRemaining > 0 &&
-      state.dartsRemaining === 0;
-    if (completed && state.winnerId === null && !this.settings.confirmThrowEnabled()) {
-      this.nextPlayer();
-    }
   }
 
   /**

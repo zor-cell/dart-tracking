@@ -34,7 +34,6 @@ from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.dto.command.game_command import GameCommand
 from app.api.features.game.dto.command.move_dart import MoveDartDto
-from app.api.features.game.dto.command.next_player import NextPlayerDto
 from app.api.features.game.dto.command.register_dart import RegisterDartDto
 from app.api.features.game.dto.command.remove_dart import RemoveDartDto
 from app.api.features.game.dto.command.replace_dart import ReplaceDartDto
@@ -52,7 +51,6 @@ _KINDS = {
     RemoveDartDto: GameEventKind.DART_REMOVED,
     ReplaceDartDto: GameEventKind.DART_REPLACED,
     MoveDartDto: GameEventKind.DART_MOVED,
-    NextPlayerDto: GameEventKind.NEXT_PLAYER,
 }
 
 # Failures worth keeping: the ones the fit itself reached. An undecodable frame
@@ -66,9 +64,9 @@ _FIT_FAILURES = frozenset(
     }
 )
 
-# What a caller hands to the game's write step: the event describing a change,
+# What a caller hands to the game's write step: the events describing a change,
 # given where the game stood before it and whether it was taken.
-type Recording = Callable[[VisitPosition, bool], GameEvent | None]
+type Recording = Callable[[VisitPosition, bool], GameEvent | list[GameEvent] | None]
 
 
 def position_of(game: Game) -> VisitPosition:
@@ -80,11 +78,13 @@ def position_of(game: Game) -> VisitPosition:
     )
 
 
-def append(session: AsyncSession, game_id: str, event: GameEvent | None) -> None:
-    """Queue an event in the transaction that carries the change it describes."""
-    if event is not None:
+def append(
+    session: AsyncSession, game_id: str, event: GameEvent | list[GameEvent] | None
+) -> None:
+    """Queue events in the transaction that carries the change they describe."""
+    for each in [event] if isinstance(event, GameEvent) else event or []:
         events.append(
-            session, game_id, replace(event, tracker_version=get_settings().tracker_version)
+            session, game_id, replace(each, tracker_version=get_settings().tracker_version)
         )
 
 
@@ -130,6 +130,30 @@ def for_detection(dart: Dart, client_id: str, metrics: dict[str, float]) -> Reco
             position=dart.position,
             metrics=metrics,
         )
+
+    return record
+
+
+def for_handover(
+    client_id: str | None, *, camera_armed: bool
+) -> Callable[[VisitPosition, bool, int], list[GameEvent]]:
+    """The events a handover leaves behind: each dart filled in as a miss, then
+    the handover itself."""
+
+    def record(at: VisitPosition, accepted: bool, filled: int) -> list[GameEvent]:
+        def event(kind: GameEventKind, **fields: object) -> GameEvent:
+            return GameEvent(
+                kind=kind,
+                turn_index=at.turn_index,
+                player_index=at.player_index,
+                accepted=accepted,
+                camera_armed=camera_armed,
+                client_id=client_id,
+                **fields,
+            )
+
+        misses = [event(GameEventKind.MISS_FILLED, value=0, multiplier=0) for _ in range(filled)]
+        return [*misses, event(GameEventKind.NEXT_PLAYER)]
 
     return record
 

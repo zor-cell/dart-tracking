@@ -93,6 +93,21 @@ def test_replay_follows_a_reopened_visit():
     assert not left.tracked
 
 
+def test_replay_books_the_misses_a_cleared_board_filled_in():
+    visits = replay(
+        [
+            event(K.DETECTED, (20, 3)),
+            event(K.MISS_FILLED, (0, 0)),
+            event(K.MISS_FILLED, (0, 0)),
+            event(K.NEXT_PLAYER, camera_armed=True),
+        ]
+    )
+
+    assert [e.label for e in visits[0].accepted] == ["T20", "MISS", "MISS"]
+    assert [e.label for e in visits[0].claimed] == ["T20"]
+    assert not visits[0].corrected
+
+
 def test_legacy_undo_on_an_empty_visit_takes_the_previous_dart():
     visits = replay(
         [

@@ -130,7 +130,7 @@ def test_undo_on_an_empty_visit_reopens_the_previous_one():
     game.undo()
 
     assert game.current_player_index == 0
-    assert game.current_turn.darts == darts("T20", "5")
+    assert game.current_turn.darts == darts("T20", "5", "0")
     assert len(game.turns) == 1
 
 
@@ -178,6 +178,34 @@ def test_next_player_twice_does_not_skip_anyone():
     game.next_player()
 
     assert game.current_player_index == 1
+    assert game.revision == revision
+
+
+def test_handover_books_the_missing_darts_as_misses():
+    game = new_game()
+    throw(game, "T20")
+
+    assert game.next_player() == 2
+    assert game.turns[0].darts == darts("T20", "0", "0")
+    assert game.current_player_index == 1
+
+
+def test_handover_after_a_bust_fills_nothing():
+    game = leg_at(40)
+    throw(game, "T20")
+
+    assert game.next_player() == 0
+    assert game.turns[2].darts == darts("T20")
+    assert game.current_player_index == 1
+
+
+@pytest.mark.parametrize("thrown", [[], ["D20"]], ids=["empty visit", "won"])
+def test_handover_without_a_visit_to_end_changes_nothing(thrown):
+    game = leg_at(40)
+    throw(game, *thrown)
+    revision = game.revision
+
+    assert game.next_player() == 0
     assert game.revision == revision
 
 

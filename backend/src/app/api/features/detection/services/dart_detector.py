@@ -208,6 +208,7 @@ def detect_dart(
     if blob is None:
         return _record_failure(DetectionFailure.NO_CHANGE)
 
+    trace.blob = blob
     _measure_blob(blob, pixels_per_mm)
     if trace.dart_length_mm > _MAX_BLOB_LENGTH_MM or trace.dart_area_mm2 > _MAX_BLOB_AREA_MM2:
         return _record_failure(DetectionFailure.IMPLAUSIBLE_SHAPE)
@@ -232,6 +233,16 @@ def detect_dart(
         axis_image=(tip, far_end),
         tip_board=board_point,
         segment=segment,
+    )
+
+
+def darts_pulled(
+    blobs: list[np.ndarray], aligned: np.ndarray, empty_board: np.ndarray
+) -> bool:
+    """Whether every located dart's pixels in `aligned` look like the empty board again."""
+    return bool(blobs) and all(
+        _changed_from_empty(blob, aligned, empty_board) < _MIN_CHANGED_FROM_EMPTY
+        for blob in blobs
     )
 
 

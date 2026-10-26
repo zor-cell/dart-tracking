@@ -17,7 +17,7 @@ class UserSettingsTable(Base):
     user_id: Mapped[str] = mapped_column(
         UuidText, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
-    confirm_throw_enabled: Mapped[bool] = mapped_column(Boolean)
+    advance_on_pull: Mapped[bool] = mapped_column(Boolean)
     evaluation_enabled: Mapped[bool] = mapped_column(Boolean)
     preferred_doubles: Mapped[list[int]] = mapped_column(ARRAY(Integer), server_default="{}")
     updated_at: Mapped[datetime] = mapped_column(

@@ -169,7 +169,7 @@ def test_detail_for_owner_and_seated_accounts_only(alice, bob, register, session
 
     assert detail.status_code == 200
     assert len(detail.json()["visits"]) == 2
-    assert [entry["darts"] for entry in detail.json()["statistics"]] == [3, 1]
+    assert [entry["darts"] for entry in detail.json()["statistics"]] == [3, 3]
     assert alice.get(f"/games/{game_id}/detail").status_code == 200
     assert carol.get(f"/games/{game_id}/detail").status_code == 404
 
@@ -254,7 +254,7 @@ def test_summary_scores_and_winner(alice, session):
         ("Alice", 121, True),
         ("Bob", 121, False),
     ]
-    assert summary["dartCount"] == 10
+    assert summary["dartCount"] == 12
     assert summary["winnerIndex"] is None
 
 

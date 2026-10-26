@@ -4,7 +4,7 @@
  * undefined state on the wire.
  */
 export interface AppSettingsDto {
-  readonly confirmThrowEnabled: boolean;
+  readonly advanceOnPull: boolean;
   readonly evaluationEnabled: boolean;
   readonly preferredDoubles: readonly number[]; // by sector, 25 for bull, in order
 }

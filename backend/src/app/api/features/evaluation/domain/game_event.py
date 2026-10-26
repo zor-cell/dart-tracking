@@ -16,6 +16,7 @@ class GameEventKind(StrEnum):
     SHADOW_BOOKED = "shadow_booked"  # a correction reopened the visit and booked a shadow dart
     DETECTION_FAILED = "detection_failed"  # the camera looked and found nothing
     MANUAL = "manual"  # a device booked a dart by hand
+    MISS_FILLED = "miss_filled"  # a handover booked a dart the visit lacked as a miss
     UNDO = "undo"
     VISIT_REOPENED = "visit_reopened"  # an undo on an empty visit went back to the previous one
     DART_REMOVED = "dart_removed"  # a device took one dart out of the open visit

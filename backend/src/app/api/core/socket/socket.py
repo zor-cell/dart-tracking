@@ -341,8 +341,10 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
     shown a state that is not yet durable.
     """
     armed = await recorder.camera_armed(game_id)
+    filled = 0
 
     def mutate(game: Game) -> None:
+        nonlocal filled
         if not command.is_current(game):
             logger.info("[socket] refused %s made against an outdated visit", command.type)
             return
@@ -358,9 +360,14 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
             case RemoveDartDto():
                 game.remove_dart(command.index)
             case NextPlayerDto():
-                game.next_player()
+                filled = game.next_player()
 
-    applied = await _apply(game_id, mutate, recorder.for_command(command, camera_armed=armed))
+    if isinstance(command, NextPlayerDto):
+        handover = recorder.for_handover(None, camera_armed=armed)
+        record: recorder.Recording = lambda at, changed: handover(at, changed, filled)
+    else:
+        record = recorder.for_command(command, camera_armed=armed)
+    applied = await _apply(game_id, mutate, record)
     if applied is None:
         return
 
@@ -369,12 +376,11 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
         return
 
     if isinstance(command, NextPlayerDto):
-        recorder.settle_visit(game)
+        await _end_visit(game)
+        return
     recorder.settle_win(game)
 
     await _publish_state(game)
-    if isinstance(command, NextPlayerDto):
-        await _request_calibration(game.id)
     if isinstance(command, RegisterDartDto | ReplaceDartDto):
         await _announce(game, command.to_entity())
 
@@ -548,6 +554,7 @@ async def _handle_throw_frame(
     empty_board = detection_store.empty_board(game_id, client_id)
 
     aligned: np.ndarray | None = None
+    blob: np.ndarray | None = None
     rejected_miss = False
     metrics: dict[str, float] = {}
     raw = b""
@@ -565,6 +572,7 @@ async def _handle_throw_frame(
             # Both read under the lock: the trace is a module global that the
             # next run replaces.
             aligned = dart_detector.trace.aligned
+            blob = dart_detector.trace.blob
             rejected_miss = dart_detector.trace.rejected_miss
             metrics = recorder.metrics_of(dart_detector.trace)
     metrics |= recorder.trigger_metrics_of(frame.trigger)
@@ -582,10 +590,14 @@ async def _handle_throw_frame(
         await hub.send(connection, DetectionResultDto.failed(outcome))
         if scoring:
             await recorder.note_failure(game_id, client_id, outcome, metrics)
+        if scoring and frame.advance_on_pull and _darts_pulled(game_id, client_id, aligned, empty_board):
+            await _clear_board(game_id, client_id)
         return
 
     if aligned is not None:
         detection_store.set(game_id, client_id, aligned)
+    if blob is not None:
+        detection_store.add_dart(game_id, client_id, blob)
 
     await hub.send(connection, DetectionResultDto.detected(outcome, calibration))
 
@@ -621,6 +633,41 @@ async def _handle_throw_frame(
 
     if booked:
         await _announce(game, dart)
+
+
+def _darts_pulled(
+    game_id: str, client_id: str, aligned: np.ndarray | None, empty_board: np.ndarray | None
+) -> bool:
+    """Whether every dart this camera located in the visit is out of the board again."""
+    if aligned is None or empty_board is None:
+        return False
+    return dart_detector.darts_pulled(
+        detection_store.darts(game_id, client_id), aligned, empty_board
+    )
+
+
+async def _clear_board(game_id: str, client_id: str) -> None:
+    """Hand over because the visit's darts were pulled, the ones never found booked as misses."""
+    filled = 0
+
+    def mutate(game: Game) -> None:
+        nonlocal filled
+        filled = game.next_player()
+
+    handover = recorder.for_handover(client_id, camera_armed=True)
+    applied = await _apply(
+        game_id, mutate, lambda at, changed: handover(at, changed, filled) if changed else None
+    )
+    if applied is not None and applied[1]:
+        await _end_visit(applied[0])
+
+
+async def _end_visit(game: Game) -> None:
+    """Push a handover to the room and start the next visit from a fresh empty board."""
+    recorder.settle_visit(game)
+    detection_store.end_visit(game.id)
+    await _publish_state(game)
+    await _request_calibration(game.id)
 
 
 def _decode_jpeg(encoded: str) -> tuple[np.ndarray, bytes] | None:

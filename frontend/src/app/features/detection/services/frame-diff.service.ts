@@ -22,6 +22,7 @@ const STATUS_LABELS: Record<DisplayStatus, string> = {
   motion: 'Bewegung erkannt',
   settling: 'Wird stabilisiert…',
   sent: 'Frame gesendet',
+  pull: 'Warte aufs Ziehen',
   paused: 'Tracking pausiert',
 };
 
@@ -107,7 +108,7 @@ export class FrameDiffService {
     const captured = this.detector.processFrame(grayscale);
     // The detector keeps running while the visit is closed, so it stays in step
     // with the picture; only the frame is held back.
-    const sending = captured && this.detection.acceptsThrows();
+    const sending = captured && this.detection.sendsFrames();
     this.setDisplayStatus(sending ? 'sent' : this.restingStatus());
 
     if (sending) {
@@ -132,7 +133,10 @@ export class FrameDiffService {
 
   /** What to show while no frame is going out. */
   private restingStatus(): DisplayStatus {
-    return this.detection.acceptsThrows() ? this.detector.getState() : 'paused';
+    if (this.detection.acceptsThrows()) {
+      return this.detector.getState();
+    }
+    return this.detection.sendsFrames() ? 'pull' : 'paused';
   }
 
   private setDisplayStatus(status: DisplayStatus): void {

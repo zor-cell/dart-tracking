@@ -23,7 +23,7 @@ class SettingsRepository:
         if row is None:
             return DEFAULTS
         return AppSettings(
-            confirm_throw_enabled=row.confirm_throw_enabled,
+            advance_on_pull=row.advance_on_pull,
             evaluation_enabled=row.evaluation_enabled,
             preferred_doubles=tuple(row.preferred_doubles),
         )

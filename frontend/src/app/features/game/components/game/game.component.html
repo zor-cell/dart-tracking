@@ -229,7 +229,7 @@
                 [routerLink]="['/account/games', state.id]"
               />
             }
-          } @else if (settings.confirmThrowEnabled() || state.dartsRemaining === 0) {
+          } @else {
             <p-button
               class="turn__confirm"
               icon="pi pi-check"
@@ -355,9 +355,7 @@
             </li>
           }
         </ul>
-        @if (settings.confirmThrowEnabled()) {
-          <p-skeleton width="2.5rem" height="2.5rem" shape="circle" />
-        }
+        <p-skeleton width="2.5rem" height="2.5rem" shape="circle" />
       </div>
 
       <div class="scorepad">

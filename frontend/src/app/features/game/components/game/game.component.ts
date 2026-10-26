@@ -22,7 +22,6 @@ import {OverlayComponent} from '../../../calibration/components/overlay/overlay.
 import {CalibrationService} from '../../../calibration/services/calibration.service';
 import {DetectionService} from '../../../detection/services/detection.service';
 import {FrameDiffService} from '../../../detection/services/frame-diff.service';
-import {SettingsService} from '../../../settings/services/settings.service';
 import {DartDto} from '../../dto/dart.dto';
 import {PlayerDto} from '../../dto/player.dto';
 import {ScoreboardEntry} from '../../models/scoreboard-entry';
@@ -90,7 +89,6 @@ const SIDE_KEYS: readonly FixedKey[] = [MISS, BULL, BULLSEYE];
 })
 export class GameComponent implements OnInit, OnDestroy {
   protected readonly game = inject(GameService);
-  protected readonly settings = inject(SettingsService);
 
   private readonly session = inject(GameSessionService);
   private readonly calibration = inject(CalibrationService);

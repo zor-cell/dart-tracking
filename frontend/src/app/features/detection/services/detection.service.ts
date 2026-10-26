@@ -2,6 +2,7 @@ import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SocketService } from '../../../core/socket/services/socket.service';
 import { GameService } from '../../game/services/game.service';
+import { SettingsService } from '../../settings/services/settings.service';
 import { DetectionFailureDto } from '../dto/detection-failure.dto';
 import { DetectionResultDto } from '../dto/detection-result.dto';
 import { ThrowTriggerDto } from '../dto/throw-trigger.dto';
@@ -47,6 +48,7 @@ export interface RoundDartOverlay {
 export class DetectionService {
   private readonly socket = inject(SocketService);
   private readonly game = inject(GameService);
+  private readonly settings = inject(SettingsService);
 
   /**
    * The darts located in the current round, in throw order, each tagged with the
@@ -65,6 +67,9 @@ export class DetectionService {
 
   /** Whether a tracked throw is still taken, as a booked or as a shadow dart. */
   readonly acceptsThrows = this.game.tracksThrows;
+
+  /** Whether a captured frame goes to the server: a throw, or the darts being pulled. */
+  readonly sendsFrames = computed(() => this.acceptsThrows() || this.game.watchesPull());
 
   private feedbackTimeoutId: ReturnType<typeof setTimeout> | null = null;
   // The turn count from the last reconciled state.
@@ -139,11 +144,10 @@ export class DetectionService {
   async submitFrame(frame: Blob, trigger: ThrowTriggerDto | null): Promise<void> {
     this.clearFeedback();
     const testRun = this.game.state()?.evaluationEnabled ?? false;
-    await this.socket.sendFrame(
-      'detection_frame',
-      frame,
-      trigger && !testRun ? { ...trigger, snapshots: [] } : (trigger ?? undefined),
-    );
+    await this.socket.sendFrame('detection_frame', frame, {
+      trigger: trigger && !testRun ? { ...trigger, snapshots: [] } : (trigger ?? undefined),
+      advanceOnPull: this.settings.advanceOnPull(),
+    });
   }
 
   private showFeedback(label: string): void {

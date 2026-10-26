@@ -13,7 +13,8 @@ class AppSettings:
     """Defaults are the safe reading of each switch: the fallbacks that keep a
     game playable are on, the diagnostics are off."""
 
-    confirm_throw_enabled: bool = True
+    # Hand a visit over once the camera sees its darts pulled out, not only on a tap.
+    advance_on_pull: bool = True
     evaluation_enabled: bool = False
     # Finishing doubles by sector (25 for bull) the checkout suggests first, in order.
     preferred_doubles: tuple[int, ...] = ()

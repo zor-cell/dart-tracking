@@ -10,3 +10,5 @@ class DetectionFrameDto(CamelModel):
     type: Literal["detection_frame"]
     image: str  # base64-encoded JPEG
     trigger: ThrowTriggerDto | None = None
+    # Whether this camera's account hands over once the visit's darts are pulled out.
+    advance_on_pull: bool = False
