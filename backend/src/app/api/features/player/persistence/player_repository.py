@@ -1,5 +1,6 @@
 """Reads and writes player identities — the address book behind a game."""
 
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import ColumnElement, func, or_, select, update
@@ -39,6 +40,15 @@ def _address_book_clauses(
     return clauses
 
 
+def _address_book_order(owner_user_id: str) -> tuple[ColumnElement[Any], ...]:
+    """Own entry first, then linked players, then the rest, each alphabetical."""
+    return (
+        PlayerTable.user_id.is_distinct_from(owner_user_id),
+        PlayerTable.user_id.is_(None),
+        PlayerTable.display_name,
+    )
+
+
 def _to_domain(row: PlayerTable) -> PlayerIdentity:
     return PlayerIdentity(id=row.id, display_name=row.display_name, user_id=row.user_id)
 
@@ -67,18 +77,15 @@ class PlayerRepository:
         prefix: str,
         limit: int = _SEARCH_LIMIT,
     ) -> list[PlayerIdentity]:
-        """Names starting with `prefix`, own entry first, then alphabetical. An
-        empty prefix lists the whole address book."""
+        """Names starting with `prefix`, in address book order. An empty prefix
+        lists the whole address book."""
         statement = select(PlayerTable).where(PlayerTable.owner_user_id == owner_user_id)
         if prefix:
             statement = statement.where(PlayerTable.display_name.istartswith(prefix))
 
         rows = (
             await session.execute(
-                statement.order_by(
-                    PlayerTable.user_id.is_distinct_from(owner_user_id),
-                    PlayerTable.display_name,
-                ).limit(limit)
+                statement.order_by(*_address_book_order(owner_user_id)).limit(limit)
             )
         ).scalars().all()
         return [_to_domain(row) for row in rows]
@@ -92,16 +99,12 @@ class PlayerRepository:
         offset: int,
         criteria: PlayerFilter,
     ) -> list[PlayerIdentity]:
-        """One page of the address book, own entry first, then alphabetical."""
+        """One page of the address book, in address book order."""
         rows = (
             await session.execute(
                 select(PlayerTable)
                 .where(*_address_book_clauses(owner_user_id, criteria))
-                .order_by(
-                    PlayerTable.user_id.is_distinct_from(owner_user_id),
-                    PlayerTable.display_name,
-                    PlayerTable.id,
-                )
+                .order_by(*_address_book_order(owner_user_id), PlayerTable.id)
                 .limit(limit)
                 .offset(offset)
             )

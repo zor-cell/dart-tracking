@@ -337,6 +337,14 @@ def test_address_book_page_and_filters(alice, bob):
     assert alice.get("/players/page", params={"q": "%"}).json()["total"] == 0
 
 
+def test_linked_players_come_before_the_rest(alice, bob):
+    alice.add_player("Carol")
+    link(alice, bob, "Zed")
+
+    assert list(entries(alice)) == ["Alice", "Zed", "Carol"]
+    assert [entry["name"] for entry in alice.get("/players").json()] == ["Alice", "Zed", "Carol"]
+
+
 def test_search_matches_the_start_of_names_own_entry_first(alice):
     for name in ("Albert", "Bob", "alex"):
         alice.add_player(name)
