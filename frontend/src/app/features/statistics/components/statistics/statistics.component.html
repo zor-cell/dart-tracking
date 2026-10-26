@@ -4,108 +4,109 @@
     <h1 class="view__title">Statistik</h1>
   </header>
 
-  <div class="filters">
-    <span id="statistics-period" class="sr-only">Zeitraum</span>
-    <span id="statistics-unit" class="sr-only">Zeitraum zählen in</span>
-    <p-selectbutton
-      class="filters__unit"
-      [options]="unitOptions"
-      optionLabel="label"
-      optionValue="value"
-      [allowEmpty]="false"
-      [ngModel]="unit()"
-      (ngModelChange)="selectUnit($event)"
-      ariaLabelledBy="statistics-unit"
-      size="small"
-    />
-    <p-selectbutton
-      [options]="periodOptions()"
-      optionLabel="label"
-      optionValue="value"
-      [allowEmpty]="false"
-      [ngModel]="period()"
-      (ngModelChange)="period.set($event)"
-      (click)="onPeriodClick($event, calendar)"
-      ariaLabelledBy="statistics-period"
-      size="small"
-      fluid
-    >
-      <ng-template #item let-option>
-        @if (option.value === 'custom') {
-          <i class="pi pi-calendar" aria-hidden="true"></i>
-          <span class="sr-only">{{ option.label }}</span>
-        } @else {
-          {{ option.label }}
-        }
-      </ng-template>
-    </p-selectbutton>
-    <p-popover #calendar (onShow)="pointArrow(calendar)">
-      <p-datepicker
-        [ngModel]="range()"
-        (ngModelChange)="pickRange($event, calendar)"
-        selectionMode="range"
-        [inline]="true"
-        ariaLabel="Eigener Zeitraum"
+  <app-list-toolbar
+    [filterable]="true"
+    [chips]="chips()"
+    [suggestions]="suggestions()"
+    (chipRemove)="clearFilter($event)"
+    (chipOpen)="openPicker($event, periodPicker)"
+    (suggestionPick)="pickSuggestion($event)"
+    (reset)="resetFilters()"
+  >
+    <form class="list-filters" [formGroup]="filters">
+      <label class="list-filters__label" for="filter-opponent">Gegner</label>
+      <p-select
+        inputId="filter-opponent"
+        formControlName="opponentId"
+        [options]="opponents()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Alle"
+        [filter]="true"
+        [showClear]="true"
+        fluid
       />
-    </p-popover>
-
-    <app-list-toolbar
-      [filterable]="true"
-      [chips]="chips()"
-      [suggestions]="suggestions()"
-      (chipRemove)="clearFilter($event)"
-      (suggestionPick)="pickSuggestion($event)"
-      (reset)="resetFilters()"
-    >
-      <form class="list-filters" [formGroup]="filters">
-        <label class="list-filters__label" for="filter-opponent">Gegner</label>
-        <p-select
-          inputId="filter-opponent"
-          formControlName="opponentId"
-          [options]="opponents()"
-          optionLabel="name"
-          optionValue="id"
-          placeholder="Alle"
-          [filter]="true"
-          [showClear]="true"
-          fluid
+      <label class="list-filters__label" for="filter-players">Spieleranzahl</label>
+      <p-select
+        inputId="filter-players"
+        formControlName="players"
+        [options]="playerCountOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Alle"
+        [showClear]="true"
+        fluid
+      />
+      <label class="list-filters__label" for="filter-mode">Modus</label>
+      <p-select
+        inputId="filter-mode"
+        formControlName="mode"
+        [options]="modeOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Alle"
+        [showClear]="true"
+        fluid
+      />
+      <label class="list-filters__label" for="filter-checkout">Checkout</label>
+      <p-select
+        inputId="filter-checkout"
+        formControlName="checkoutMode"
+        [options]="checkoutOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Alle"
+        [showClear]="true"
+        fluid
+      />
+    </form>
+  </app-list-toolbar>
+  <p-popover #periodPicker>
+    <div class="period">
+      <span id="statistics-unit" class="sr-only">Zeitraum zählen in</span>
+      <p-selectbutton
+        [options]="unitOptions"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false"
+        [ngModel]="unit()"
+        (ngModelChange)="selectUnit($event)"
+        ariaLabelledBy="statistics-unit"
+        size="small"
+        fluid
+      />
+      <span id="statistics-period" class="sr-only">Zeitraum</span>
+      <p-selectbutton
+        [options]="periodOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false"
+        [ngModel]="period()"
+        (ngModelChange)="selectPeriod($event, periodPicker)"
+        ariaLabelledBy="statistics-period"
+        size="small"
+        fluid
+      >
+        <ng-template #item let-option>
+          @if (option.value === 'custom') {
+            <i class="pi pi-calendar" aria-hidden="true"></i>
+            <span class="sr-only">{{ option.label }}</span>
+          } @else {
+            {{ option.label }}
+          }
+        </ng-template>
+      </p-selectbutton>
+      @if (period() === 'custom') {
+        <p-datepicker
+          [ngModel]="range()"
+          (ngModelChange)="pickRange($event, periodPicker)"
+          selectionMode="range"
+          [inline]="true"
+          ariaLabel="Eigener Zeitraum"
         />
-        <label class="list-filters__label" for="filter-players">Spieleranzahl</label>
-        <p-select
-          inputId="filter-players"
-          formControlName="players"
-          [options]="playerCountOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Alle"
-          [showClear]="true"
-          fluid
-        />
-        <label class="list-filters__label" for="filter-mode">Modus</label>
-        <p-select
-          inputId="filter-mode"
-          formControlName="mode"
-          [options]="modeOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Alle"
-          [showClear]="true"
-          fluid
-        />
-        <label class="list-filters__label" for="filter-checkout">Checkout</label>
-        <p-select
-          inputId="filter-checkout"
-          formControlName="checkoutMode"
-          [options]="checkoutOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Alle"
-          [showClear]="true"
-          fluid
-        />
-      </form>
-    </app-list-toolbar>
-  </div>
+      }
+    </div>
+  </p-popover>
 
   @if (loading()) {
     <app-loading-state label="Statistik wird geladen" />

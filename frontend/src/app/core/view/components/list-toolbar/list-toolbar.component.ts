@@ -18,7 +18,7 @@ import { InputIcon } from 'primeng/inputicon';
 import { InputText } from 'primeng/inputtext';
 import { Popover } from 'primeng/popover';
 import { debounceTime, distinctUntilChanged, map } from 'rxjs';
-import { FilterChip, FilterSuggestion } from '../../models/filter-chip';
+import { FilterChip, FilterChipOpen, FilterSuggestion } from '../../models/filter-chip';
 
 /** Above a list: the active filters and suggestions in one scrolling row, a search
  * that opens from its icon, a filter popover around the projected fields, and an
@@ -43,6 +43,7 @@ export class ListToolbarComponent {
   );
 
   readonly chipRemove = output<string>();
+  readonly chipOpen = output<FilterChipOpen>();
   readonly suggestionPick = output<FilterSuggestion>();
   readonly reset = output<void>();
 

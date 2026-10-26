@@ -48,7 +48,11 @@ import { LoadingStateComponent } from '../../../../core/view/components/loading-
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 import { DayRange, dayRangeBounds, dayRangeLabel } from '../../../../core/view/models/day-range';
-import { FilterChip, FilterSuggestion } from '../../../../core/view/models/filter-chip';
+import {
+  FilterChip,
+  FilterChipOpen,
+  FilterSuggestion,
+} from '../../../../core/view/models/filter-chip';
 import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
 
 /** The filters whose picks are remembered and offered back; the period is not among them. */
@@ -127,7 +131,12 @@ export class StatisticsComponent {
     const period = this.period();
     const range = period === 'custom' ? dayRangeLabel(this.range(), this.locale) : null;
     return [
-      { key: 'period', label: range ?? PERIOD_CHIP_LABELS[period], removable: false },
+      {
+        key: 'period',
+        label: range ?? PERIOD_CHIP_LABELS[period],
+        removable: false,
+        opens: true,
+      },
       ...REMEMBERED.flatMap((key) => {
         const picked = value[key];
         return picked ? [{ key, label: this.labelOf(key, picked) ?? 'Gegen Mitspieler' }] : [];
@@ -231,33 +240,19 @@ export class StatisticsComponent {
     }
   }
 
-  private calendarOption: HTMLElement | null = null;
-
-  /** The calendar pick opens and closes the calendar under the quick picks; any
-   * other pick closes it. */
-  protected onPeriodClick(event: MouseEvent, calendar: Popover): void {
-    const option = (event.target as HTMLElement).closest<HTMLElement>('.p-togglebutton');
-    if (!option) {
-      return;
-    }
-    if (option.querySelector('.pi-calendar')) {
-      this.calendarOption = option;
-      calendar.toggle(event, event.currentTarget);
-    } else {
-      calendar.hide();
+  /** The period chip opens the period picker under it. */
+  protected openPicker(open: FilterChipOpen, picker: Popover): void {
+    if (open.key === 'period') {
+      picker.toggle(open.event);
     }
   }
 
-  /** Puts the calendar's arrow under the calendar pick. */
-  protected pointArrow(calendar: Popover): void {
-    const container = calendar.container;
-    if (!container || !this.calendarOption) {
-      return;
+  /** A quick pick closes the picker; the calendar pick opens the calendar in it instead. */
+  protected selectPeriod(period: StatisticsPeriod, picker: Popover): void {
+    this.period.set(period);
+    if (period !== 'custom') {
+      picker.hide();
     }
-    const target = this.calendarOption.getBoundingClientRect();
-    const left = target.left + window.scrollX + target.width / 2 - container.offsetLeft;
-    container.style.setProperty('--p-popover-arrow-left', `${left}px`);
-    container.style.setProperty('--p-popover-arrow-offset', '0px');
   }
 
   protected pickRange(range: DayRange, calendar: Popover): void {

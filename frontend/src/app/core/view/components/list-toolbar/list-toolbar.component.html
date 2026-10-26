@@ -25,11 +25,24 @@
     } @else {
       <div class="list-toolbar__chips">
         @for (chip of chips(); track chip.key) {
-          <p-chip
-            [label]="chip.label"
-            [removable]="chip.removable !== false"
-            (onRemove)="chipRemove.emit(chip.key)"
-          />
+          @if (chip.opens) {
+            <p-button
+              class="list-toolbar__opener"
+              [label]="chip.label"
+              icon="pi pi-chevron-down"
+              iconPos="right"
+              size="small"
+              severity="secondary"
+              [rounded]="true"
+              (onClick)="chipOpen.emit({ key: chip.key, event: $event })"
+            />
+          } @else {
+            <p-chip
+              [label]="chip.label"
+              [removable]="chip.removable !== false"
+              (onRemove)="chipRemove.emit(chip.key)"
+            />
+          }
         }
         @for (suggestion of suggestions(); track suggestion.key + suggestion.label) {
           <p-button

@@ -36,12 +36,14 @@
   font-size: 0.8125rem;
 
   > p-chip,
+  > .list-toolbar__opener,
   > .list-toolbar__suggestion {
     flex: none;
     white-space: nowrap;
   }
 }
 
+.list-toolbar__opener,
 .list-toolbar__suggestion {
   --p-button-sm-padding-y: 0.25rem;
   --p-button-sm-padding-x: 0.625rem;

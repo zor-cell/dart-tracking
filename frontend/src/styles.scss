@@ -142,6 +142,11 @@ html .p-datatable-mask.p-overlay-mask-leave-active {
   white-space: nowrap;
 }
 
+/* A popover's host stays out of the layout; its panel renders into the body. */
+p-popover {
+  display: contents;
+}
+
 /* Every p-table: centred cells, rows that open a record, number and action columns. */
 .data-table {
   --p-datatable-body-cell-sm-padding: 0.45rem 0.5rem;
