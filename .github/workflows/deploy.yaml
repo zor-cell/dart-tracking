@@ -36,8 +36,15 @@ jobs:
     needs: [test, test-cv]
     if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, rpi5]
+    outputs:
+      tracker-changed: ${{ steps.changes.outputs.tracker }}
     env:
       TESTDATA_DIR: /srv/dart-tracking/testdata
+      TRACKER_PATHS: >-
+        backend/src/app/api/features/calibration/domain
+        backend/src/app/api/features/calibration/services
+        backend/src/app/api/features/detection/domain
+        backend/src/app/api/features/detection/services
       POSTGRES_USER: ${{ vars.POSTGRES_USER }}
       POSTGRES_DB: ${{ vars.POSTGRES_DB }}
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
@@ -54,14 +61,21 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # the tracker version counts commits over the whole history
+      - name: Check whether the push touches the tracker
+        id: changes
+        run: |
+          if git diff --quiet ${{ github.event.before }} HEAD -- $TRACKER_PATHS backend/tests/cv backend/uv.lock; then
+            echo "tracker=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "tracker=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Build and start the stack
         run: |
-          # Tracker version: commits that changed the calibration or detection pipeline.
-          TRACKER_VERSION=$(git rev-list --count HEAD -- \
-            backend/src/app/api/features/calibration/domain \
-            backend/src/app/api/features/calibration/services \
-            backend/src/app/api/features/detection/domain \
-            backend/src/app/api/features/detection/services)
-          export TRACKER_VERSION
+          export TRACKER_VERSION=$(git rev-list --count HEAD -- $TRACKER_PATHS)
           export BUILD_NUMBER=$((GITHUB_RUN_NUMBER + 1000))
           docker compose up -d --build --wait
+
+  cv-dataset:
+    needs: deploy
+    if: needs.deploy.outputs.tracker-changed == 'true'
+    uses: ./.github/workflows/cv-dataset.yaml

@@ -1,8 +1,7 @@
 name: CV dataset
 
 on:
-  schedule:
-    - cron: "0 3 * * 1" # Mondays 03:00 UTC
+  workflow_call: # from deploy.yaml when a push touches the tracker
   workflow_dispatch:
     inputs:
       update-baseline:
