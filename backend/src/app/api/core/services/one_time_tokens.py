@@ -21,15 +21,22 @@ class Redeemed:
 
 
 class OneTimeTokens:
-    def __init__(self, namespace: str, ttl: timedelta) -> None:
+    """With `replayable`, a spent token keeps answering until it would have expired,
+    for links whose effect cannot happen twice."""
+
+    def __init__(self, namespace: str, ttl: timedelta, *, replayable: bool = False) -> None:
         self._namespace = namespace
         self.ttl = ttl
+        self._replayable = replayable
 
     def _token_key(self, digest: str) -> str:
         return f"{self._namespace}:token:{digest}"
 
     def _subject_key(self, subject: str) -> str:
         return f"{self._namespace}:subject:{subject}"
+
+    def _spent_key(self, digest: str) -> str:
+        return f"{self._namespace}:spent:{digest}"
 
     async def issue(self, subject: str, payload: str | None = None) -> str:
         token = secrets.token_urlsafe(32)
@@ -54,9 +61,15 @@ class OneTimeTokens:
     async def consume(self, token: str) -> Redeemed | None:
         """What the token was issued for, or None if it is unknown, spent or expired."""
         redis = redis_client.client()
-        redeemed = _parse(await redis.getdel(self._token_key(_digest(token))))
+        digest = _digest(token)
+        value = await redis.getdel(self._token_key(digest))
+        redeemed = _parse(value)
         if redeemed is not None:
             await redis.delete(self._subject_key(redeemed.subject))
+            if self._replayable:
+                await redis.set(self._spent_key(digest), value, ex=int(self.ttl.total_seconds()))
+        elif self._replayable:
+            redeemed = _parse(await redis.get(self._spent_key(digest)))
         return redeemed
 
 

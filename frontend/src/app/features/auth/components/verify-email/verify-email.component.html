@@ -29,6 +29,9 @@
         <p-button label="Zum Konto" icon="pi pi-user" routerLink="/account" />
       </app-empty-state>
     }
+    @case ('error') {
+      <app-load-error [message]="errorMessage()" (retry)="verify()" />
+    }
     @case ('failed') {
       <app-empty-state icon="pi-link">
         <p>Der Link ist ungültig oder abgelaufen.</p>

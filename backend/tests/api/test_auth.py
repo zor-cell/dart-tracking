@@ -136,12 +136,12 @@ def test_wrong_current_password_is_forbidden_not_unauthorized(register):
     assert response.status_code == 403
 
 
-def test_verify_email_link_works_once(register, anon, mails):
+def test_verify_email_link_answers_again_once_used(register, anon, mails):
     alice = register("alice")
     token = token_in(mails[-1])
 
     assert anon.post("/auth/verify-email", json={"token": token}).json()["emailVerified"] is True
-    assert anon.post("/auth/verify-email", json={"token": token}).status_code == 400
+    assert anon.post("/auth/verify-email", json={"token": token}).json()["emailVerified"] is True
     assert alice.post("/auth/verify-email/resend").status_code == 409
 
 

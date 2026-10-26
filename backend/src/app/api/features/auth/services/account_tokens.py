@@ -5,6 +5,6 @@ from datetime import timedelta
 
 from app.api.core.services.one_time_tokens import OneTimeTokens
 
-email_verification = OneTimeTokens("auth:verify-email", timedelta(hours=24))
+email_verification = OneTimeTokens("auth:verify-email", timedelta(hours=24), replayable=True)
 password_reset = OneTimeTokens("auth:password-reset", timedelta(hours=1))
 email_change = OneTimeTokens("auth:email-change", timedelta(hours=24))
