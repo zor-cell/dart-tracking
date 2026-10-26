@@ -161,6 +161,7 @@ export class GameReplayComponent implements OnInit {
   ]);
 
   protected readonly visitCount = computed(() => this.replayedVisits().length);
+  protected readonly dartCount = computed(() => this.steps().length);
 
   /** Number of the visit on the board among the replayed ones, so it ends at `visitCount`. */
   protected readonly visitNumber = computed(() => {
