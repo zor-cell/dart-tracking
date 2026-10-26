@@ -257,6 +257,39 @@ def test_handover_asks_the_cameras_to_calibrate_again(room, camera, game_id):
         phone.next("calibration_requested")
 
 
+def test_handover_without_a_camera_calls_the_next_player_at_once(room, game_id):
+    with room(game_id) as announcer:
+        announcer.throw(20)
+        announcer.send("next_player")
+
+        call = announcer.next("turn_announcement")
+
+    assert (call["player"], call["remaining"]) == ("Ben", None)
+
+
+def test_the_call_names_the_score_when_the_visit_can_finish(room, game_id):
+    with room(game_id) as announcer:
+        for visit in ([(20, 3)] * 3, [(1, 1)], [(20, 3), (20, 3), (5, 1)]):
+            for value, multiplier in visit:
+                announcer.throw(value, multiplier)
+            announcer.send("next_player")
+
+        calls = [announcer.next("turn_announcement") for _ in range(3)]
+
+    assert [(call["player"], call["remaining"]) for call in calls] == [("Ben", None), ("Ann", 121), ("Ben", None)]
+
+
+def test_handover_with_a_camera_waits_for_the_recalibration(room, camera, game_id):
+    with camera(), room(game_id) as scoreboard:
+        scoreboard.throw(20)
+        scoreboard.send("next_player")
+        scoreboard.throw(5)
+
+        state = scoreboard.next("game_state", never=("turn_announcement",))
+        while darts(state) != ["5"]:
+            state = scoreboard.next("game_state", never=("turn_announcement",))
+
+
 def test_rematch_calls_the_old_room_over(room, game_id, anon):
     with room(game_id) as device:
         rematch = anon.post(
@@ -314,6 +347,8 @@ def test_pulled_darts_hand_over_with_the_rest_as_misses(camera, advance_on_pull)
             assert [dart["label"] for dart in state["turns"][0]["darts"]] == ["15", "0", "0"]
             assert len(state["turns"]) == 2
             device.next("calibration_requested")
+            device.send("calibration_frame", image=encoded(base))
+            assert device.next("turn_announcement")["player"] == "Ben"
         else:
             device.send("set_role", role="camera")
             device.next("client_state", never=("game_state",))

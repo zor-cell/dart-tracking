@@ -2,8 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SocketService } from '../../../core/socket/services/socket.service';
-import { DartAnnouncementDto } from '../dto/dart-announcement.dto';
-import { announcementPhrases } from '../models/announcement-text';
+import { announcementPhrases, turnPhrase } from '../models/announcement-text';
 import { readStored, writeStored } from '../../../core/storage/models/browser-storage';
 
 const MUTED_KEY = 'dart-tracking.announcerMuted';
@@ -31,8 +30,8 @@ type WebAudioWindow = Window & typeof globalThis & { webkitAudioContext?: typeof
 export type AnnouncerTestResult = 'spoken' | 'failed' | 'no_answer' | 'muted' | 'unsupported';
 
 /**
- * Speaks the darts the camera books, on the one device the server picked as
- * announcer. Muting is local to this device.
+ * Speaks the darts the camera books and calls the next player, on the one
+ * device the server picked as announcer. Muting is local to this device.
  */
 @Injectable({ providedIn: 'root' })
 export class AnnouncerService {
@@ -68,7 +67,12 @@ export class AnnouncerService {
     this.socket
       .on('dart_announcement')
       .pipe(takeUntilDestroyed())
-      .subscribe((announcement) => this.speak(announcement));
+      .subscribe((announcement) => this.speak(announcementPhrases(announcement)));
+
+    this.socket
+      .on('turn_announcement')
+      .pipe(takeUntilDestroyed())
+      .subscribe((announcement) => this.speak([turnPhrase(announcement)]));
 
     // The room re-sends the announcer on every join, so a stale one must not
     // outlive the connection it came from.
@@ -96,11 +100,11 @@ export class AnnouncerService {
     }
   }
 
-  private speak(announcement: DartAnnouncementDto): void {
+  private speak(phrases: string[]): void {
     if (this.synth() === null || this._muted()) {
       return;
     }
-    this.pending.push(...announcementPhrases(announcement));
+    this.pending.push(...phrases);
     this.drain();
   }
 

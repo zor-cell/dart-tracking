@@ -8,6 +8,7 @@ hub, so a schema outside the protocol cannot be pushed to a device.
 from app.api.core.socket.dto.client_state import ClientStateDto
 from app.api.features.announcement.dto.announcer_state import AnnouncerStateDto
 from app.api.features.announcement.dto.dart_announcement import DartAnnouncementDto
+from app.api.features.announcement.dto.turn_announcement import TurnAnnouncementDto
 from app.api.features.calibration.dto.calibration_requested import (
     CalibrationRequestedDto,
 )
@@ -26,5 +27,6 @@ ServerMessage = (
     | GameStateDto
     | AnnouncerStateDto
     | DartAnnouncementDto
+    | TurnAnnouncementDto
     | RematchStartedDto
 )

@@ -35,6 +35,7 @@ from app.api.features.announcement.domain.announcer import choose_announcer
 from app.api.features.announcement.dto.announcer_state import AnnouncerStateDto
 from app.api.features.announcement.dto.command.claim_announcer import ClaimAnnouncerDto
 from app.api.features.announcement.dto.dart_announcement import DartAnnouncementDto
+from app.api.features.announcement.dto.turn_announcement import TurnAnnouncementDto
 from app.api.features.auth.persistence.user_repository import repository as user_repository
 from app.api.features.auth.services import access_tokens
 from app.api.features.announcement.services.announcer_store import store as announcer_store
@@ -90,6 +91,9 @@ logger = logging.getLogger(__name__)
 # Both detectors keep their trace in a module global, so two runs at once would
 # read each other's. Holds until the trace has been read out.
 _detector_lock = asyncio.Lock()
+
+# Games whose next player is called once the scoring camera has recalibrated.
+_turn_calls: set[str] = set()
 
 # Per connection: messages of any kind, and camera frames (each one a detector run).
 _MESSAGES_PER_SECOND, _MESSAGE_BURST = 20, 40
@@ -414,6 +418,15 @@ async def _announce(game: Game, dart: ScoredDart) -> None:
         await hub.send_to_client(game.id, announcer, DartAnnouncementDto.from_entity(dart, game))
 
 
+async def _call_turn(game: Game) -> None:
+    """Have the room's announcer call the next player, while their visit is still empty."""
+    if game.winner is not None or game.current_turn.darts:
+        return
+    announcer = await _current_announcer(game.id)
+    if announcer is not None:
+        await hub.send_to_client(game.id, announcer, TurnAnnouncementDto.from_entity(game))
+
+
 async def _publish_announcer(game_id: str) -> None:
     """Tell the room who the announcer is, after anything that may have changed it."""
     await hub.broadcast(game_id, AnnouncerStateDto(client_id=await _current_announcer(game_id)))
@@ -439,8 +452,8 @@ async def _start_calibrating(game_id: str) -> None:
         await _publish_calibration_state(game_id)
 
 
-async def _request_calibration(game_id: str) -> None:
-    """Ask every camera in the room to calibrate again from a fresh frame.
+async def _request_calibration(game_id: str) -> bool:
+    """Ask every camera in the room to calibrate again from a fresh frame; whether there was one.
 
     Two things ask for this: a device without a camera of its own, and the end
     of a visit. The visit is the interesting one — it is when the darts come out
@@ -454,9 +467,10 @@ async def _request_calibration(game_id: str) -> None:
     its own.
     """
     if not any(c.client.role is DeviceRole.CAMERA for c in hub.connections(game_id)):
-        return
+        return False
     await _start_calibrating(game_id)
     await hub.broadcast(game_id, CalibrationRequestedDto(), role=DeviceRole.CAMERA)
+    return True
 
 
 async def _handle_calibration_frame(
@@ -517,6 +531,13 @@ async def _handle_calibration_frame(
     if decides:
         calibration_progress.finish(game_id)
         await _publish_calibration_state(game_id)
+
+    if decides and not isinstance(outcome, CalibrationFailure) and game_id in _turn_calls:
+        _turn_calls.discard(game_id)
+        async with database.session_scope() as session:
+            game = await game_repository.get(session, game_id)
+        if game is not None:
+            await _call_turn(game)
 
 
 async def _handle_throw_frame(
@@ -667,7 +688,10 @@ async def _end_visit(game: Game) -> None:
     recorder.settle_visit(game)
     detection_store.end_visit(game.id)
     await _publish_state(game)
-    await _request_calibration(game.id)
+    if await _request_calibration(game.id):
+        _turn_calls.add(game.id)
+    else:
+        await _call_turn(game)
 
 
 def _decode_jpeg(encoded: str) -> tuple[np.ndarray, bytes] | None:

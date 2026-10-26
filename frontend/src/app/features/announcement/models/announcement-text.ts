@@ -1,4 +1,5 @@
 import { DartAnnouncementDto } from '../dto/dart-announcement.dto';
+import { TurnAnnouncementDto } from '../dto/turn-announcement.dto';
 
 /** The phrases to speak for one booked dart, in order. */
 export function announcementPhrases(announcement: DartAnnouncementDto): string[] {
@@ -12,6 +13,12 @@ export function announcementPhrases(announcement: DartAnnouncementDto): string[]
     phrases.push(String(announcement.visitPoints));
   }
   return phrases;
+}
+
+/** The phrase that calls the next player to the oche. */
+export function turnPhrase(announcement: TurnAnnouncementDto): string {
+  const { player, remaining } = announcement;
+  return remaining === null ? player : `${player}, ${remaining}`;
 }
 
 function dartPhrase(value: number, multiplier: number): string {
