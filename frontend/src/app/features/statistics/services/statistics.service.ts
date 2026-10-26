@@ -12,7 +12,7 @@ export class StatisticsService {
   private readonly http = inject(HttpClient);
 
   load(filter: StatisticsFilter): Promise<PlayerStatisticsDto> {
-    const { opponentId, since, until, ...rest } = filter;
+    const { opponentId, since, until, lastGames, ...rest } = filter;
     let params = new HttpParams();
     for (const [key, value] of Object.entries(rest)) {
       if (value !== null) {
@@ -27,6 +27,9 @@ export class StatisticsService {
     }
     if (until) {
       params = params.set('until', until.toISOString());
+    }
+    if (lastGames !== null) {
+      params = params.set('last', lastGames);
     }
     return firstValueFrom(
       this.http.get<PlayerStatisticsDto>(`${environment.httpApiUrl}/statistics`, {

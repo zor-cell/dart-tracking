@@ -6,13 +6,26 @@
 
   <div class="filters">
     <span id="statistics-period" class="sr-only">Zeitraum</span>
+    <span id="statistics-unit" class="sr-only">Zeitraum zählen in</span>
     <p-selectbutton
-      [options]="periodOptions"
+      class="filters__unit"
+      [options]="unitOptions"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+      [ngModel]="unit()"
+      (ngModelChange)="selectUnit($event)"
+      ariaLabelledBy="statistics-unit"
+      size="small"
+    />
+    <p-selectbutton
+      [options]="periodOptions()"
       optionLabel="label"
       optionValue="value"
       [allowEmpty]="false"
       [ngModel]="period()"
       (ngModelChange)="period.set($event)"
+      (click)="onPeriodClick($event, calendar)"
       ariaLabelledBy="statistics-period"
       size="small"
       fluid
@@ -26,24 +39,22 @@
         }
       </ng-template>
     </p-selectbutton>
-    @if (period() === 'custom') {
+    <p-popover #calendar (onShow)="pointArrow(calendar)">
       <p-datepicker
         [ngModel]="range()"
-        (ngModelChange)="range.set($event)"
+        (ngModelChange)="pickRange($event, calendar)"
         selectionMode="range"
-        dateFormat="dd.mm.y"
-        placeholder="Zeitraum wählen"
+        [inline]="true"
         ariaLabel="Eigener Zeitraum"
-        [readonlyInput]="true"
-        [showButtonBar]="true"
-        fluid
       />
-    }
+    </p-popover>
 
     <app-list-toolbar
       [filterable]="true"
       [chips]="chips()"
+      [suggestions]="suggestions()"
       (chipRemove)="clearFilter($event)"
+      (suggestionPick)="pickSuggestion($event)"
       (reset)="resetFilters()"
     >
       <form class="list-filters" [formGroup]="filters">

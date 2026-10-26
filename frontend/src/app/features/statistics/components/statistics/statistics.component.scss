@@ -4,6 +4,15 @@
   gap: 0.75rem;
 }
 
+.filters__unit {
+  align-self: flex-end;
+}
+
+/* The calendar renders into the body, so its host takes no place in the column. */
+.filters > p-popover {
+  display: contents;
+}
+
 /* Same compact toggle and layout as the replay's heatmap. */
 .heatmap {
   --p-togglebutton-sm-padding: 0.2rem;

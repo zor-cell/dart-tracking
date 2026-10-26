@@ -11,4 +11,6 @@ export interface StatisticsFilter {
   readonly maxPlayers: number | null;
   readonly since: Date | null;
   readonly until: Date | null;
+  /** Keeps only this many of the most recent games that count. */
+  readonly lastGames: number | null;
 }

@@ -4,6 +4,7 @@ import {
   computed,
   effect,
   inject,
+  LOCALE_ID,
   signal,
   untracked,
 } from '@angular/core';
@@ -11,14 +12,19 @@ import { DecimalPipe } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DatePicker } from 'primeng/datepicker';
+import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
 import { StatisticsFilter } from '../../models/statistics-filter';
 import {
-  DEFAULT_STATISTICS_PERIOD,
+  DEFAULT_PERIODS,
+  PERIOD_CHIP_LABELS,
   STATISTICS_PERIODS,
+  STATISTICS_UNITS,
   StatisticsPeriod,
+  StatisticsUnit,
+  periodGames,
   periodStart,
 } from '../../models/statistics-period';
 import { StatisticsService } from '../../services/statistics.service';
@@ -40,8 +46,8 @@ import { ListToolbarComponent } from '../../../../core/view/components/list-tool
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
-import { DayRange, dayRangeBounds } from '../../../../core/view/models/day-range';
-import { FilterChip } from '../../../../core/view/models/filter-chip';
+import { DayRange, dayRangeBounds, dayRangeLabel } from '../../../../core/view/models/day-range';
+import { FilterChip, FilterSuggestion } from '../../../../core/view/models/filter-chip';
 
 @Component({
   selector: 'app-statistics',
@@ -55,6 +61,7 @@ import { FilterChip } from '../../../../core/view/models/filter-chip';
     ListToolbarComponent,
     LoadErrorComponent,
     FormsModule,
+    Popover,
     ReactiveFormsModule,
     Select,
     SelectButton,
@@ -68,6 +75,7 @@ export class StatisticsComponent {
   private readonly statistics = inject(StatisticsService);
   private readonly players = inject(PlayerService);
   private readonly fb = inject(FormBuilder);
+  private readonly locale = inject(LOCALE_ID);
 
   protected readonly totals = signal<PlayerStatisticsDto | null>(null);
   protected readonly loading = signal(true);
@@ -77,8 +85,10 @@ export class StatisticsComponent {
   protected readonly layerOptions = [...HEATMAP_LAYERS];
   protected readonly layer = signal(storedHeatmapLayer());
 
-  protected readonly periodOptions = [...STATISTICS_PERIODS];
-  protected readonly period = signal<StatisticsPeriod>(DEFAULT_STATISTICS_PERIOD);
+  protected readonly unitOptions = [...STATISTICS_UNITS];
+  protected readonly unit = signal<StatisticsUnit>('days');
+  protected readonly periodOptions = computed(() => [...STATISTICS_PERIODS[this.unit()]]);
+  protected readonly period = signal<StatisticsPeriod>(DEFAULT_PERIODS.days);
   protected readonly range = signal<DayRange>(null);
 
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
@@ -102,7 +112,11 @@ export class StatisticsComponent {
   /** The filters in use, as chips under the toolbar; the period shows in its own buttons. */
   protected readonly chips = computed<FilterChip[]>(() => {
     const { opponentId, players, mode, checkoutMode } = this.filterValue();
-    const chips: FilterChip[] = [];
+    const period = this.period();
+    const range = period === 'custom' ? dayRangeLabel(this.range(), this.locale) : null;
+    const chips: FilterChip[] = [
+      { key: 'period', label: range ?? PERIOD_CHIP_LABELS[period], removable: false },
+    ];
     if (opponentId) {
       const name = this.opponents().find((player) => player.id === opponentId)?.name;
       chips.push({ key: 'opponentId', label: `Gegen ${name ?? 'Mitspieler'}` });
@@ -120,8 +134,17 @@ export class StatisticsComponent {
     return chips;
   });
 
+  /** Common filters one tap away, for those still open. */
+  protected readonly suggestions = computed<FilterSuggestion[]>(() => {
+    return this.filterValue().players
+      ? []
+      : [{ key: 'players', label: PLAYER_COUNTS.solo.label, value: 'solo' }];
+  });
+
   /** Whether anything narrows the statistics below the whole history. */
-  protected readonly filtered = computed(() => this.period() !== 'all' || this.chips().length > 0);
+  protected readonly filtered = computed(
+    () => this.period() !== 'all' || this.chips().some((chip) => chip.removable !== false),
+  );
 
   private readonly criteria = computed<StatisticsFilter>(() => {
     const { opponentId, players, mode, checkoutMode } = this.filterValue();
@@ -138,6 +161,7 @@ export class StatisticsComponent {
       minPlayers: count?.min ?? null,
       maxPlayers: count?.max ?? null,
       ...bounds,
+      lastGames: periodGames(period),
     };
   });
 
@@ -170,6 +194,54 @@ export class StatisticsComponent {
   protected selectLayer(layer: HeatmapLayer): void {
     this.layer.set(layer);
     storeHeatmapLayer(layer);
+  }
+
+  /** Switch what the quick picks count; "all" stays, any other pick starts over. */
+  protected selectUnit(unit: StatisticsUnit): void {
+    this.unit.set(unit);
+    if (this.period() !== 'all') {
+      this.period.set(DEFAULT_PERIODS[unit]);
+    }
+  }
+
+  private calendarOption: HTMLElement | null = null;
+
+  /** The calendar pick opens and closes the calendar under the quick picks; any
+   * other pick closes it. */
+  protected onPeriodClick(event: MouseEvent, calendar: Popover): void {
+    const option = (event.target as HTMLElement).closest<HTMLElement>('.p-togglebutton');
+    if (!option) {
+      return;
+    }
+    if (option.querySelector('.pi-calendar')) {
+      this.calendarOption = option;
+      calendar.toggle(event, event.currentTarget);
+    } else {
+      calendar.hide();
+    }
+  }
+
+  /** Puts the calendar's arrow under the calendar pick. */
+  protected pointArrow(calendar: Popover): void {
+    const container = calendar.container;
+    if (!container || !this.calendarOption) {
+      return;
+    }
+    const target = this.calendarOption.getBoundingClientRect();
+    const left = target.left + window.scrollX + target.width / 2 - container.offsetLeft;
+    container.style.setProperty('--p-popover-arrow-left', `${left}px`);
+    container.style.setProperty('--p-popover-arrow-offset', '0px');
+  }
+
+  protected pickRange(range: DayRange, calendar: Popover): void {
+    this.range.set(range);
+    if (range?.[1]) {
+      calendar.hide();
+    }
+  }
+
+  protected pickSuggestion(suggestion: FilterSuggestion): void {
+    this.filters.get(suggestion.key)?.setValue(suggestion.value);
   }
 
   protected resetFilters(): void {

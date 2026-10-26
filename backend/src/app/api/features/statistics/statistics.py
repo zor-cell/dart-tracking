@@ -26,8 +26,10 @@ async def own_statistics(
     max_players: int | None = Query(None, ge=1, alias="maxPlayers"),
     since: datetime | None = None,
     until: datetime | None = None,
+    last: int | None = Query(None, ge=1, le=1000),
 ) -> PlayerStatisticsDto:
-    """The account's legs in the games the filters select; each left out leaves them open."""
+    """The account's legs in the games the filters select; each left out leaves them
+    open. `last` keeps only the most recent games that count."""
     criteria = GameFilter(
         mode=mode,
         checkout_mode=checkout_mode,
@@ -38,6 +40,6 @@ async def own_statistics(
         until=until,
     )
     async with database.session_scope() as session:
-        statistics = await repository.tally(session, user.id, criteria)
+        statistics = await repository.tally(session, user.id, criteria, last)
 
     return PlayerStatisticsDto.from_entity(statistics)

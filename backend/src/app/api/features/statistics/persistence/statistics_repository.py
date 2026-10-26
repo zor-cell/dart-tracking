@@ -27,10 +27,15 @@ from app.api.features.statistics.domain.player_statistics import PlayerStatistic
 
 class StatisticsRepository:
     async def tally(
-        self, session: AsyncSession, user_id: str, criteria: GameFilter = GameFilter()
+        self,
+        session: AsyncSession,
+        user_id: str,
+        criteria: GameFilter = GameFilter(),
+        last: int | None = None,
     ) -> PlayerStatistics:
         """Three queries for the games `criteria` selects, not four per game: the
-        seats, their turns, their darts — then the rules run in Python."""
+        seats, their turns, their darts — then the rules run in Python. `last`
+        keeps only the most recent games that count."""
         cutoff = datetime.now(UTC) - ABANDON_AFTER
         seats = (
             await session.execute(
@@ -54,6 +59,7 @@ class StatisticsRepository:
                     ),
                     *game_filter_clauses(criteria),
                 )
+                .order_by(GameTable.created_at.desc(), GameTable.id)
             )
         ).all()
 
@@ -84,6 +90,7 @@ class StatisticsRepository:
                 Dart(value=row.value, multiplier=row.multiplier, position=position)
             )
 
+        counted: set[str] = set()
         for seat in seats:
             turns = [
                 Turn(
@@ -103,6 +110,10 @@ class StatisticsRepository:
             # resets other players caused, so every rate it derives would be wrong.
             if GameVariant(seat.variant) is not GameVariant.X01:
                 continue
+
+            if last is not None and seat.id not in counted and len(counted) == last:
+                break
+            counted.add(seat.id)
 
             statistics.add_leg(seat.mode, CheckoutMode(seat.checkout_mode), turns)
 

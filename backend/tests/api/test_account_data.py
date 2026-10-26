@@ -137,6 +137,25 @@ def test_statistics_filter_the_games(alice, session):
     assert legs(mode=501) == 0
 
 
+def test_statistics_of_the_last_games_skip_what_does_not_count(alice, session):
+    oldest = own_game(alice)
+    session.play(oldest, [MISS] * 3, *WINNING_LEG)
+    session.age_game(oldest, hours=72)
+    middle = own_game(alice)
+    session.play(middle, *WINNING_LEG)
+    session.age_game(middle, hours=48)
+    discarded = own_game(alice)
+    session.play(discarded, *WINNING_LEG)
+    alice.patch(f"/games/{discarded}", json={"status": "discarded"})
+    session.play(own_game(alice), *WINNING_LEG)
+
+    def darts(last):
+        return alice.get("/statistics", params={"last": last}).json()["darts"]
+
+    assert (darts(1), darts(2), darts(3)) == (6, 12, 21)
+    assert alice.get("/statistics", params={"last": 0}).status_code == 422
+
+
 def test_accuracy_report_is_for_admins(alice, anon, session):
     assert anon.get("/evaluation/accuracy").status_code == 401
     assert alice.get("/evaluation/accuracy").status_code == 403
