@@ -34,10 +34,10 @@
           </form>
           <p-button
             listToolbarAction
-            icon="pi pi-user-plus"
+            label="Neu"
             ariaLabel="Neuer Spieler"
-            pTooltip="Neuer Spieler"
-            tooltipPosition="bottom"
+            icon="pi pi-user-plus"
+            size="small"
             (onClick)="createOpen.set(true)"
           />
         </app-list-toolbar>
@@ -73,7 +73,9 @@
             <ng-template #header>
               <tr>
                 <th scope="col" class="data-table__start">Name</th>
-                <th scope="col" class="data-table__actions"><span class="sr-only">Aktionen</span></th>
+                <th scope="col" class="data-table__actions">
+                  <span class="sr-only">Aktionen</span>
+                </th>
               </tr>
             </ng-template>
             <ng-template #body let-player>
@@ -121,7 +123,9 @@
                     <p-button
                       type="button"
                       icon="pi pi-pencil"
-                      [ariaLabel]="player.isSelf ? 'Deinen Namen ändern' : player.name + ' umbenennen'"
+                      [ariaLabel]="
+                        player.isSelf ? 'Deinen Namen ändern' : player.name + ' umbenennen'
+                      "
                       severity="secondary"
                       [rounded]="true"
                       [text]="true"

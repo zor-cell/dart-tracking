@@ -8,8 +8,10 @@
     searchLabel="Spieler suchen"
     [filterable]="true"
     [chips]="chips()"
+    [suggestions]="suggestions()"
     (search)="onSearch($event)"
     (chipRemove)="clearFilter($event)"
+    (suggestionPick)="pickSuggestion($event)"
     (reset)="resetFilters()"
   >
     <form class="list-filters" [formGroup]="filters">

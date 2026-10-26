@@ -88,7 +88,9 @@ heatmaps.
   (`PagedTable.pageReport`) centred below the page links; there is no separate count
   above the table.
 - **Search and filters:** `app-list-toolbar`. Filter fields are projected into its
-  popover with the `list-filters` classes; active filters show as `FilterChip`s.
+  popover with the `list-filters` classes; active filters show as `FilterChip`s,
+  common ones still open as `FilterSuggestion`s beside them, and the search opens
+  from the toolbar's icon.
 - **Dialogs:** destructive actions ask through `ConfirmService.ask()`; the one
   `p-confirmdialog` lives in the app shell. Other dialogs use `DIALOG_STYLE`.
 - **Colours:** theme tokens (`var(--p-…)`) without hex fallbacks. Hardcoded colours

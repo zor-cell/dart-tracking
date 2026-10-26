@@ -7,7 +7,6 @@ import { Select } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { Tag } from 'primeng/tag';
-import { Tooltip } from 'primeng/tooltip';
 import { DISPLAY_NAME_MAX_LENGTH } from '../../../auth/models/profile-rules';
 import { AuthService } from '../../../auth/services/auth.service';
 import { PlayerIdentityDto } from '../../dto/player-identity.dto';
@@ -59,7 +58,6 @@ interface Invitation {
     TableModule,
     Tabs,
     Tag,
-    Tooltip,
   ],
   templateUrl: './player-list.component.html',
   styleUrl: './player-list.component.scss',
@@ -111,7 +109,8 @@ export class PlayerListComponent {
     return `${name} scannt den QR-Code oder öffnet den Link und meldet sich an. Danach zählen eure Spiele auch in der Statistik von ${name}.`;
   });
   protected readonly invitationShareText = computed(
-    () => `Verknüpfe dein Dart-Konto mit „${this.invitation()?.name ?? ''}“ in meiner Spielerliste:`,
+    () =>
+      `Verknüpfe dein Dart-Konto mit „${this.invitation()?.name ?? ''}“ in meiner Spielerliste:`,
   );
 
   constructor() {
@@ -151,9 +150,7 @@ export class PlayerListComponent {
     try {
       const renamed =
         id === this.self()?.id ? await this.renameSelf(name) : await this.players.rename(id, name);
-      this.entries.items.update((list) =>
-        list.map((entry) => (entry.id === id ? renamed : entry)),
-      );
+      this.entries.items.update((list) => list.map((entry) => (entry.id === id ? renamed : entry)));
       this.editingId.set(null);
     } catch (failure) {
       this.editError.set(playerNameError(failure));

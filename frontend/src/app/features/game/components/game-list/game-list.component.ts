@@ -31,7 +31,7 @@ import { GameHistoryService } from '../../services/game-history.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { ListToolbarComponent } from '../../../../core/view/components/list-toolbar/list-toolbar.component';
 import { dayRangeBounds, dayRangeLabel } from '../../../../core/view/models/day-range';
-import { FilterChip } from '../../../../core/view/models/filter-chip';
+import { FilterChip, FilterSuggestion } from '../../../../core/view/models/filter-chip';
 import { PagedTable } from '../../../../core/view/models/paged-table';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
@@ -119,6 +119,18 @@ export class GameListComponent {
     }
     return chips;
   });
+  /** Common filters one tap away, for those still open. */
+  protected readonly suggestions = computed<FilterSuggestion[]>(() => {
+    const { status, players } = this.filterValue();
+    const suggestions: FilterSuggestion[] = [];
+    if (!status) {
+      suggestions.push({ key: 'status', label: GAME_STATUS_LABELS.finished, value: 'finished' });
+    }
+    if (!players) {
+      suggestions.push({ key: 'players', label: PLAYER_COUNTS.duel.label, value: 'duel' });
+    }
+    return suggestions;
+  });
   /** Whether the search or a filter narrows the list. */
   protected readonly filtered = computed(() => this.query() !== '' || this.chips().length > 0);
 
@@ -156,6 +168,10 @@ export class GameListComponent {
 
   protected resetFilters(): void {
     this.filters.reset();
+  }
+
+  protected pickSuggestion(suggestion: FilterSuggestion): void {
+    this.filters.get(suggestion.key)?.setValue(suggestion.value);
   }
 
   protected clearFilter(key: string): void {

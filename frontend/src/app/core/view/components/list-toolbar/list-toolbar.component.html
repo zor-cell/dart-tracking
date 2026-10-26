@@ -1,54 +1,92 @@
 @if (searchLabel() || filterable()) {
   <div class="list-toolbar">
-    @if (searchLabel(); as label) {
+    <div class="list-toolbar__action">
+      <ng-content select="[listToolbarAction]" />
+    </div>
+    @if (searching()) {
       <p-iconfield class="list-toolbar__search">
         <p-inputicon class="pi pi-search" />
         <input
           pInputText
           type="search"
           [formControl]="query"
-          [placeholder]="label"
-          [attr.aria-label]="label"
+          [placeholder]="searchLabel()"
+          [attr.aria-label]="searchLabel()"
+          [pAutoFocus]="true"
           autocomplete="off"
           fluid
         />
       </p-iconfield>
-    }
-    @if (filterable()) {
       <p-button
-        #filterButton
-        class="list-toolbar__filter"
-        label="Filter"
-        icon="pi pi-filter"
+        icon="pi pi-times"
+        ariaLabel="Suche schließen"
         severity="secondary"
-        [outlined]="true"
-        [badge]="chips().length > 0 ? '' + chips().length : undefined"
-        (onClick)="panel.toggle($event)"
+        [rounded]="true"
+        [text]="true"
+        (onClick)="closeSearch()"
       />
-      <p-popover #panel (onShow)="centreArrow(panel)">
-        <div class="list-toolbar__fields">
-          <ng-content />
-          <p-button
-            class="list-toolbar__reset"
-            label="Zurücksetzen"
-            icon="pi pi-filter-slash"
-            severity="secondary"
-            size="small"
-            [text]="true"
-            [disabled]="chips().length === 0"
-            (onClick)="reset.emit()"
+    } @else {
+      <div class="list-toolbar__chips">
+        @for (chip of chips(); track chip.key) {
+          <p-chip
+            [label]="chip.label"
+            [removable]="chip.removable !== false"
+            (onRemove)="chipRemove.emit(chip.key)"
           />
-        </div>
-      </p-popover>
+        }
+        @for (suggestion of suggestions(); track suggestion.key + suggestion.label) {
+          <p-button
+            class="list-toolbar__suggestion"
+            [label]="suggestion.label"
+            icon="pi pi-plus"
+            size="small"
+            severity="secondary"
+            [rounded]="true"
+            [outlined]="true"
+            (onClick)="suggestionPick.emit(suggestion)"
+          />
+        }
+      </div>
+      @if (searchLabel(); as label) {
+        <p-button
+          icon="pi pi-search"
+          [ariaLabel]="label"
+          severity="secondary"
+          [rounded]="true"
+          [text]="true"
+          (onClick)="searching.set(true)"
+        />
+      }
+      @if (filterable()) {
+        <p-button
+          #filterButton
+          icon="pi pi-filter"
+          ariaLabel="Filter"
+          severity="secondary"
+          [rounded]="true"
+          [text]="true"
+          [badge]="removableCount() > 0 ? '' + removableCount() : undefined"
+          (onClick)="togglePanel($event)"
+        />
+      }
     }
-    <ng-content select="[listToolbarAction]" />
   </div>
 }
 
-@if (chips().length > 0) {
-  <div class="list-toolbar__chips">
-    @for (chip of chips(); track chip.key) {
-      <p-chip [label]="chip.label" [removable]="true" (onRemove)="chipRemove.emit(chip.key)" />
-    }
-  </div>
+@if (filterable()) {
+  <p-popover (onShow)="centreArrow()">
+    <div class="list-toolbar__fields">
+      <ng-content />
+      <p-button
+        class="list-toolbar__reset"
+        label="Zurücksetzen"
+        icon="pi pi-filter-slash"
+        severity="secondary"
+        size="small"
+        [text]="true"
+        [disabled]="removableCount() === 0"
+        (onClick)="reset.emit()"
+      />
+    </div>
+  </p-popover>
 }
