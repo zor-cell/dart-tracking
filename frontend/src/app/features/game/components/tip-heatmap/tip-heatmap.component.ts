@@ -52,9 +52,15 @@ export class TipHeatmapComponent {
     this.points().reduce((sum, [, , count = 1]) => sum + count, 0),
   );
 
-  protected readonly ariaLabel = computed(
-    () => `Dartscheibe mit ${this.total()} erkannten Treffern`,
-  );
+  protected readonly ariaLabel = computed(() => `Dartscheibe mit ${this.total()} erkannten Darts`);
+
+  /** How many darts the camera placed, written in the corner. */
+  protected readonly caption = computed(() => {
+    const total = this.total();
+    return total === 0
+      ? 'Keine Darts erkannt'
+      : `${total} ${total === 1 ? 'Dart' : 'Darts'} erkannt`;
+  });
 
   protected readonly marks = computed(() =>
     this.mode() === 'dots'

@@ -24,8 +24,8 @@
   }
 </svg>
 
+<p class="caption">{{ caption() }}</p>
 @if (density(); as density) {
-  <p class="caption">{{ density.inside + density.outside }} Treffer</p>
   <app-heat-legend class="legend" [color]="legendColor">
     <span>{{ density.peak | number: '1.0-1' }} Darts/cm²</span>
   </app-heat-legend>

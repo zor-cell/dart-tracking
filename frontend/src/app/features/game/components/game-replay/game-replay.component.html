@@ -31,17 +31,6 @@
           <app-field-heatmap [counts]="fieldCounts()" [current]="boardDarts()" />
         } @else {
           <app-tip-heatmap [points]="trail().points" [current]="boardDarts()" />
-          @let tracked = trail().points.length;
-          @let thrown = trail().labels.length;
-          <p class="replay__tracked">
-            @if (tracked === thrown) {
-              {{ thrown }} Darts
-            } @else if (tracked === 0) {
-              Keine Darts getrackt
-            } @else {
-              {{ tracked }}&thinsp;/&thinsp;{{ thrown }} Darts getrackt
-            }
-          </p>
         }
       </div>
     }
