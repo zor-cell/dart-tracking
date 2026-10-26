@@ -15,8 +15,10 @@
           searchLabel="Spieler suchen"
           [filterable]="true"
           [chips]="chips()"
+          [suggestions]="suggestions()"
           (search)="onSearch($event)"
           (chipRemove)="clearFilter($event)"
+          (suggestionPick)="pickSuggestion($event)"
           (reset)="filters.reset()"
         >
           <form class="list-filters" [formGroup]="filters">
@@ -34,10 +36,11 @@
           </form>
           <p-button
             listToolbarAction
-            label="Neu"
             ariaLabel="Neuer Spieler"
             icon="pi pi-user-plus"
-            size="small"
+            [rounded]="true"
+            pTooltip="Neuer Spieler"
+            tooltipPosition="bottom"
             (onClick)="createOpen.set(true)"
           />
         </app-list-toolbar>

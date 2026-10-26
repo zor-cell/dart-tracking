@@ -1,5 +1,12 @@
 import { DOCUMENT, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
@@ -7,6 +14,7 @@ import { Select } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { Tag } from 'primeng/tag';
+import { Tooltip } from 'primeng/tooltip';
 import { DISPLAY_NAME_MAX_LENGTH } from '../../../auth/models/profile-rules';
 import { AuthService } from '../../../auth/services/auth.service';
 import { PlayerIdentityDto } from '../../dto/player-identity.dto';
@@ -22,9 +30,15 @@ import { LoadErrorComponent } from '../../../../core/view/components/load-error/
 import { InlineEditorComponent } from '../../../../core/view/components/inline-editor/inline-editor.component';
 import { ShareDialogComponent } from '../../../../core/view/components/share-dialog/share-dialog.component';
 import { ListToolbarComponent } from '../../../../core/view/components/list-toolbar/list-toolbar.component';
-import { FilterChip } from '../../../../core/view/models/filter-chip';
+import { FilterChip, FilterSuggestion } from '../../../../core/view/models/filter-chip';
 import { PagedTable } from '../../../../core/view/models/paged-table';
 import { ConfirmService } from '../../../../core/view/services/confirm.service';
+import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
+
+/** Offered while the account has no picks of its own. */
+const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
+  { key: 'linked', label: LINK_STATE_LABELS.linked, value: 'linked' },
+];
 
 const nameValidators = [Validators.required, Validators.maxLength(DISPLAY_NAME_MAX_LENGTH)];
 
@@ -58,6 +72,7 @@ interface Invitation {
     TableModule,
     Tabs,
     Tag,
+    Tooltip,
   ],
   templateUrl: './player-list.component.html',
   styleUrl: './player-list.component.scss',
@@ -69,6 +84,8 @@ export class PlayerListComponent {
   private readonly confirm = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
   private readonly document = inject(DOCUMENT);
+  private readonly memory = inject(FilterMemoryService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly tab = signal<'own' | 'links'>('own');
   protected readonly query = signal('');
@@ -83,6 +100,20 @@ export class PlayerListComponent {
   protected readonly chips = computed<FilterChip[]>(() => {
     const linked = this.filterValue().linked;
     return linked ? [{ key: 'linked', label: LINK_STATE_LABELS[linked] }] : [];
+  });
+  /** The one link state worth a tap while the filter is open. */
+  protected readonly suggestions = computed<FilterSuggestion[]>(() => {
+    const linked = this.filterValue().linked;
+    return this.memory.suggest(
+      'players',
+      DEFAULT_SUGGESTIONS,
+      (key, value) =>
+        key === 'linked' && typeof value === 'string' && Object.hasOwn(LINK_STATE_LABELS, value)
+          ? LINK_STATE_LABELS[value as LinkState]
+          : null,
+      () => !linked,
+      1,
+    );
   });
   /** Whether the search or a filter narrows the list. */
   protected readonly filtered = computed(() => this.query() !== '' || this.chips().length > 0);
@@ -106,7 +137,7 @@ export class PlayerListComponent {
   protected readonly invitationOpen = signal(false);
   protected readonly invitationHint = computed(() => {
     const name = this.invitation()?.name ?? '';
-    return `${name} scannt den QR-Code oder öffnet den Link und meldet sich an. Danach zählen eure Spiele auch in der Statistik von ${name}.`;
+    return `${name} scannt den QR-Code oder öffnet den Link und meldet sich an. Danach zählen eure gemeinsamen Spiele auch in der Statistik von ${name}.`;
   });
   protected readonly invitationShareText = computed(
     () =>
@@ -115,6 +146,8 @@ export class PlayerListComponent {
 
   constructor() {
     void this.entries.load();
+    void this.memory.load();
+    this.memory.watch('players', this.filters, ['linked'], this.destroyRef);
     this.editForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.editError.set(null));
     this.filters.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.entries.restart());
   }
@@ -122,6 +155,10 @@ export class PlayerListComponent {
   protected onSearch(query: string): void {
     this.query.set(query);
     this.entries.restart();
+  }
+
+  protected pickSuggestion(suggestion: FilterSuggestion): void {
+    this.filters.get(suggestion.key)?.setValue(suggestion.value);
   }
 
   protected clearFilter(key: string): void {

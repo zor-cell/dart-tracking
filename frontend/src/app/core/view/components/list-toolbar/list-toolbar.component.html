@@ -1,8 +1,5 @@
 @if (searchLabel() || filterable()) {
   <div class="list-toolbar">
-    <div class="list-toolbar__action">
-      <ng-content select="[listToolbarAction]" />
-    </div>
     @if (searching()) {
       <p-iconfield class="list-toolbar__search">
         <p-inputicon class="pi pi-search" />
@@ -70,6 +67,9 @@
         />
       }
     }
+    <div class="list-toolbar__action">
+      <ng-content select="[listToolbarAction]" />
+    </div>
   </div>
 }
 
