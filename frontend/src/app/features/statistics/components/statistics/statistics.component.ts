@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   effect,
   inject,
@@ -48,6 +49,15 @@ import { EmptyStateComponent } from '../../../../core/view/components/empty-stat
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 import { DayRange, dayRangeBounds, dayRangeLabel } from '../../../../core/view/models/day-range';
 import { FilterChip, FilterSuggestion } from '../../../../core/view/models/filter-chip';
+import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
+
+/** The filters whose picks are remembered and offered back; the period is not among them. */
+const REMEMBERED = ['opponentId', 'players', 'mode', 'checkoutMode'] as const;
+
+/** Offered while the account has no picks of its own. */
+const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
+  { key: 'players', label: PLAYER_COUNTS.solo.label, value: 'solo' },
+];
 
 @Component({
   selector: 'app-statistics',
@@ -76,6 +86,8 @@ export class StatisticsComponent {
   private readonly players = inject(PlayerService);
   private readonly fb = inject(FormBuilder);
   private readonly locale = inject(LOCALE_ID);
+  private readonly memory = inject(FilterMemoryService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly totals = signal<PlayerStatisticsDto | null>(null);
   protected readonly loading = signal(true);
@@ -111,34 +123,27 @@ export class StatisticsComponent {
 
   /** The filters in use, as chips under the toolbar; the period shows in its own buttons. */
   protected readonly chips = computed<FilterChip[]>(() => {
-    const { opponentId, players, mode, checkoutMode } = this.filterValue();
+    const value = this.filterValue();
     const period = this.period();
     const range = period === 'custom' ? dayRangeLabel(this.range(), this.locale) : null;
-    const chips: FilterChip[] = [
+    return [
       { key: 'period', label: range ?? PERIOD_CHIP_LABELS[period], removable: false },
+      ...REMEMBERED.flatMap((key) => {
+        const picked = value[key];
+        return picked ? [{ key, label: this.labelOf(key, picked) ?? 'Gegen Mitspieler' }] : [];
+      }),
     ];
-    if (opponentId) {
-      const name = this.opponents().find((player) => player.id === opponentId)?.name;
-      chips.push({ key: 'opponentId', label: `Gegen ${name ?? 'Mitspieler'}` });
-    }
-    if (players) {
-      chips.push({ key: 'players', label: PLAYER_COUNTS[players].label });
-    }
-    if (mode) {
-      chips.push({ key: 'mode', label: `${mode}` });
-    }
-    if (checkoutMode) {
-      const label = CHECKOUT_MODES.find((option) => option.value === checkoutMode)?.label;
-      chips.push({ key: 'checkoutMode', label: label ?? checkoutMode });
-    }
-    return chips;
   });
 
   /** Common filters one tap away, for those still open. */
   protected readonly suggestions = computed<FilterSuggestion[]>(() => {
-    return this.filterValue().players
-      ? []
-      : [{ key: 'players', label: PLAYER_COUNTS.solo.label, value: 'solo' }];
+    const value = this.filterValue() as Record<string, unknown>;
+    return this.memory.suggest(
+      'statistics',
+      DEFAULT_SUGGESTIONS,
+      (key, picked) => this.labelOf(key, picked),
+      (key) => !value[key],
+    );
   });
 
   /** Whether anything narrows the statistics below the whole history. */
@@ -185,10 +190,32 @@ export class StatisticsComponent {
 
   constructor() {
     void this.players.list().then((all) => this.opponents.set(all.filter((p) => !p.isSelf)));
+    void this.memory.load();
+    this.memory.watch('statistics', this.filters, REMEMBERED, this.destroyRef);
     effect(() => {
       const criteria = this.criteria();
       untracked(() => void this.load(criteria));
     });
+  }
+
+  /** How a filter's value reads on a chip; null for one this page does not know. */
+  private labelOf(key: string, value: unknown): string | null {
+    switch (key) {
+      case 'opponentId': {
+        const name = this.opponents().find((player) => player.id === value)?.name;
+        return name ? `Gegen ${name}` : null;
+      }
+      case 'players':
+        return typeof value === 'string' && Object.hasOwn(PLAYER_COUNTS, value)
+          ? PLAYER_COUNTS[value as PlayerCount].label
+          : null;
+      case 'mode':
+        return GAME_MODES.some((mode) => mode === value) ? `${value}` : null;
+      case 'checkoutMode':
+        return CHECKOUT_MODES.find((option) => option.value === value)?.label ?? null;
+      default:
+        return null;
+    }
   }
 
   protected selectLayer(layer: HeatmapLayer): void {

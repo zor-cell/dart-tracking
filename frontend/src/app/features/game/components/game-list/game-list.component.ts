@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   LOCALE_ID,
   computed,
   inject,
@@ -33,6 +34,16 @@ import { ListToolbarComponent } from '../../../../core/view/components/list-tool
 import { dayRangeBounds, dayRangeLabel } from '../../../../core/view/models/day-range';
 import { FilterChip, FilterSuggestion } from '../../../../core/view/models/filter-chip';
 import { PagedTable } from '../../../../core/view/models/paged-table';
+import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
+
+/** The filters whose picks are remembered and offered back; the period is not among them. */
+const REMEMBERED = ['variant', 'mode', 'status', 'opponentId', 'players'] as const;
+
+/** Offered while the account has no picks of its own. */
+const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
+  { key: 'status', label: GAME_STATUS_LABELS.finished, value: 'finished' },
+  { key: 'players', label: PLAYER_COUNTS.duel.label, value: 'duel' },
+];
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
@@ -62,6 +73,8 @@ export class GameListComponent {
   private readonly history = inject(GameHistoryService);
   private readonly players = inject(PlayerService);
   private readonly locale = inject(LOCALE_ID);
+  private readonly memory = inject(FilterMemoryService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly variantOptions = [...GAME_VARIANTS];
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
@@ -94,26 +107,12 @@ export class GameListComponent {
   });
   /** The filters in use, as chips above the table. */
   protected readonly chips = computed<FilterChip[]>(() => {
-    const { variant, mode, status, opponentId, players, period } = this.filterValue();
-    const chips: FilterChip[] = [];
-    if (variant) {
-      const label = GAME_VARIANTS.find((option) => option.value === variant)?.label ?? variant;
-      chips.push({ key: 'variant', label });
-    }
-    if (mode) {
-      chips.push({ key: 'mode', label: `${mode}` });
-    }
-    if (status) {
-      chips.push({ key: 'status', label: GAME_STATUS_LABELS[status] });
-    }
-    if (opponentId) {
-      const name = this.opponents().find((player) => player.id === opponentId)?.name;
-      chips.push({ key: 'opponentId', label: `Mit ${name ?? 'Mitspieler'}` });
-    }
-    if (players) {
-      chips.push({ key: 'players', label: PLAYER_COUNTS[players].label });
-    }
-    const label = dayRangeLabel(period ?? null, this.locale);
+    const value = this.filterValue();
+    const chips: FilterChip[] = REMEMBERED.flatMap((key) => {
+      const picked = value[key];
+      return picked ? [{ key, label: this.labelOf(key, picked) ?? 'Mit Mitspieler' }] : [];
+    });
+    const label = dayRangeLabel(value.period ?? null, this.locale);
     if (label) {
       chips.push({ key: 'period', label });
     }
@@ -121,15 +120,13 @@ export class GameListComponent {
   });
   /** Common filters one tap away, for those still open. */
   protected readonly suggestions = computed<FilterSuggestion[]>(() => {
-    const { status, players } = this.filterValue();
-    const suggestions: FilterSuggestion[] = [];
-    if (!status) {
-      suggestions.push({ key: 'status', label: GAME_STATUS_LABELS.finished, value: 'finished' });
-    }
-    if (!players) {
-      suggestions.push({ key: 'players', label: PLAYER_COUNTS.duel.label, value: 'duel' });
-    }
-    return suggestions;
+    const value = this.filterValue() as Record<string, unknown>;
+    return this.memory.suggest(
+      'games',
+      DEFAULT_SUGGESTIONS,
+      (key, picked) => this.labelOf(key, picked),
+      (key) => !value[key],
+    );
   });
   /** Whether the search or a filter narrows the list. */
   protected readonly filtered = computed(() => this.query() !== '' || this.chips().length > 0);
@@ -137,7 +134,33 @@ export class GameListComponent {
   constructor() {
     void this.games.load();
     void this.players.list().then((all) => this.opponents.set(all.filter((p) => !p.isSelf)));
+    void this.memory.load();
+    this.memory.watch('games', this.filters, REMEMBERED, this.destroyRef);
     this.filters.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.games.restart());
+  }
+
+  /** How a filter's value reads on a chip; null for one this list does not know. */
+  private labelOf(key: string, value: unknown): string | null {
+    switch (key) {
+      case 'variant':
+        return GAME_VARIANTS.find((option) => option.value === value)?.label ?? null;
+      case 'mode':
+        return GAME_MODES.some((mode) => mode === value) ? `${value}` : null;
+      case 'status':
+        return typeof value === 'string' && Object.hasOwn(GAME_STATUS_LABELS, value)
+          ? GAME_STATUS_LABELS[value as GameStatus]
+          : null;
+      case 'opponentId': {
+        const name = this.opponents().find((player) => player.id === value)?.name;
+        return name ? `Mit ${name}` : null;
+      }
+      case 'players':
+        return typeof value === 'string' && Object.hasOwn(PLAYER_COUNTS, value)
+          ? PLAYER_COUNTS[value as PlayerCount].label
+          : null;
+      default:
+        return null;
+    }
   }
 
   protected onSearch(query: string): void {

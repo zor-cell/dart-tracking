@@ -1,8 +1,10 @@
 """One row of switches per account."""
 
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import ARRAY, Boolean, DateTime, ForeignKey, Integer, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database import Base, UuidText
@@ -20,6 +22,8 @@ class UserSettingsTable(Base):
     advance_on_pull: Mapped[bool] = mapped_column(Boolean)
     evaluation_enabled: Mapped[bool] = mapped_column(Boolean)
     preferred_doubles: Mapped[list[int]] = mapped_column(ARRAY(Integer), server_default="{}")
+    # The client's remembered filter picks, stored as it sends them.
+    filter_usage: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, server_default="[]")
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

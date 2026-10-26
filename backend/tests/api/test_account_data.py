@@ -65,6 +65,36 @@ def test_preferred_doubles_steer_the_checkout(alice, session):
     assert alice.get(f"/games/{game_id}").json()["checkout"] == ["19", "D16"]
 
 
+def filter_use(value='"finished"', view="games", key="status"):
+    return {"view": view, "key": key, "value": value, "score": 2.5, "lastUsedAt": "2026-10-26T20:00:00Z"}
+
+
+def test_filter_usage_is_kept_per_account(alice, register):
+    bob = register("bob")
+    uses = [filter_use(), filter_use("501", key="mode")]
+
+    assert alice.put("/settings/filter-usage", json={"uses": uses}).status_code == 204
+
+    assert alice.get("/settings/filter-usage").json()["uses"] == uses
+    assert bob.get("/settings/filter-usage").json()["uses"] == []
+
+
+def test_filter_usage_and_settings_leave_each_other_alone(alice):
+    alice.put("/settings/filter-usage", json={"uses": [filter_use()]})
+    assert alice.get("/settings").json() == DEFAULTS
+
+    alice.put("/settings", json=DEFAULTS | {"advanceOnPull": False})
+    assert len(alice.get("/settings/filter-usage").json()["uses"]) == 1
+
+
+def test_filter_usage_is_bounded_and_needs_an_account(alice, anon):
+    too_many = [filter_use(f'"{n}"') for n in range(51)]
+
+    assert alice.put("/settings/filter-usage", json={"uses": too_many}).status_code == 422
+    assert alice.put("/settings/filter-usage", json={"uses": [filter_use("x" * 129)]}).status_code == 422
+    assert anon.get("/settings/filter-usage").status_code == 401
+
+
 def statistics(api):
     return api.get("/statistics").json()
 
