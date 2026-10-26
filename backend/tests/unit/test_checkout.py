@@ -56,8 +56,17 @@ def test_setup_darts_come_first_highest_value_first():
 
 
 def test_preferred_double_beats_the_conventional_one_at_equal_dart_count():
-    assert checkout_route(60, 3, True) == ("20", "D20")
-    assert checkout_route(60, 3, True, (16,)) == ("D14", "D16")
+    assert checkout_route(52, 3, True) == ("12", "D20")
+    assert checkout_route(52, 3, True, (16,)) == ("20", "D16")
+
+
+def test_single_setup_beats_a_preferred_double():
+    assert checkout_route(56, 3, True, (16, 20)) == ("16", "D20")
+    assert checkout_route(60, 3, True, (16,)) == ("20", "D20")
+
+
+def test_double_setup_beats_a_treble_setup():
+    assert checkout_route(74, 3, True, (16,)) == ("D17", "D20")
 
 
 def test_fewer_darts_beat_a_preferred_double():

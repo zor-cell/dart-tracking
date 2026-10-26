@@ -6,10 +6,11 @@ final dart must land in a double (the bullseye counts as the double bull); under
 single-out any field finishes. Returns None when no finish fits into the
 available darts — precisely the case `setup_route` then fills.
 
-Among the valid routes the search prefers, in order: fewer darts, a more
-conventional finishing double, then concentrating the setup into high-value darts
-(so 100 comes back as "T20 D20", not "20 20 D20"). It is a suggestion aid, not a
-claim to reproduce any specific professional checkout table.
+Among the valid routes the search prefers, in order: fewer darts, not finishing on
+the bullseye, darts on singles before doubles before trebles, a more conventional
+finishing double, then concentrating the setup into high-value darts (so 100 comes
+back as "T20 D20"). It is a suggestion aid, not a claim to reproduce any specific
+professional checkout table.
 """
 
 from collections.abc import Callable
@@ -19,6 +20,9 @@ from itertools import combinations_with_replacement
 
 # A single throwable field: its short label and the points it scores.
 Field = tuple[str, int]
+
+# How hard a set of darts is to hit, lower first.
+Difficulty = tuple[int, int]
 
 _SINGLES: list[Field] = [(str(n), n) for n in range(20, 0, -1)] + [("25", 25)]
 _DOUBLES: list[Field] = [(f"D{n}", 2 * n) for n in range(1, 21)] + [("50", 50)]
@@ -36,6 +40,25 @@ def _double_out_rank(preferred: tuple[int, ...]) -> dict[str, int]:
     order, then the conventional order."""
     order = [*preferred, *(n for n in _DOUBLE_PREFERENCE if n not in preferred)]
     return {("50" if n == 25 else f"D{n}"): rank for rank, n in enumerate(order)}
+
+
+def _difficulty(labels: tuple[str, ...]) -> Difficulty:
+    """Darts off the plain singles, then how many of them are trebles or the
+    bullseye; the outer bull counts as a single."""
+    return (
+        sum(1 for label in labels if not label.isdigit() or label == "50"),
+        sum(1 for label in labels if label.startswith("T") or label == "50"),
+    )
+
+
+def _route_difficulty(
+    route: tuple[str, ...], double_out: bool, preferred: tuple[int, ...]
+) -> tuple[bool, Difficulty]:
+    """An unpreferred bullseye finish, then the difficulty of the darts not bound to
+    a double: the setup under double-out, the whole route under single-out."""
+    if not double_out:
+        return False, _difficulty(route)
+    return route[-1] == "50" and 25 not in preferred, _difficulty(route[:-1])
 
 
 def _single_out_rank(label: str) -> int:
@@ -67,7 +90,7 @@ def checkout_route(
     finishes = _DOUBLES if double_out else _ALL_FIELDS
     rank = _finish_rank(double_out, preferred)
 
-    best_cost: tuple[int, int, int] | None = None
+    best_cost: tuple[int, tuple[bool, Difficulty], int, int] | None = None
     best_route: tuple[str, ...] | None = None
 
     # Every route uses 0..darts-1 setup darts plus one finishing dart. Setup order
@@ -80,8 +103,10 @@ def checkout_route(
             for finish_label, finish_value in finishes:
                 if setup_sum + finish_value != remaining:
                     continue
+                route = tuple(label for label, _ in setup) + (finish_label,)
                 cost = (
                     setup_size + 1,
+                    _route_difficulty(route, double_out, preferred),
                     rank(finish_label),
                     -sum(value * value for _, value in setup),
                 )
@@ -125,17 +150,24 @@ def setup_route(
     rank = _finish_rank(double_out, preferred)
     lowest_leave = 2 if double_out else 1
 
-    best_cost: tuple[int, int, int, int, int] | None = None
+    best_cost: tuple[int, tuple[bool, Difficulty], int, Difficulty, int, int] | None = None
     best: Setup | None = None
     for setup_size in range(1, darts + 1):
-        for total, ((risky, spread), labels) in _setups_by_total(setup_size).items():
+        for total, ((difficulty, spread), labels) in _setups_by_total(setup_size).items():
             leave = remaining - total
             if not lowest_leave <= leave <= _MAX_SETUP_LEAVE:
                 continue
             route = checkout_route(leave, 2, double_out, preferred)
             if route is None:
                 continue
-            cost = (len(route), rank(route[-1]), risky, setup_size, spread)
+            cost = (
+                len(route),
+                _route_difficulty(route, double_out, preferred),
+                rank(route[-1]),
+                difficulty,
+                setup_size,
+                spread,
+            )
             if best_cost is None or cost < best_cost:
                 best_cost = cost
                 best = Setup(darts=labels, leave=leave)
@@ -144,14 +176,14 @@ def setup_route(
 
 
 @lru_cache(maxsize=None)
-def _setups_by_total(size: int) -> dict[int, tuple[tuple[int, int], tuple[str, ...]]]:
+def _setups_by_total(size: int) -> dict[int, tuple[tuple[Difficulty, int], tuple[str, ...]]]:
     """The easiest `size`-dart setup for every total it makes, with its cost: the
-    fewest trebles, doubles and bulls, then the highest-value darts."""
-    best: dict[int, tuple[tuple[int, int], tuple[str, ...]]] = {}
+    lowest difficulty, then the highest-value darts."""
+    best: dict[int, tuple[tuple[Difficulty, int], tuple[str, ...]]] = {}
     for setup in combinations_with_replacement(_ALL_FIELDS, size):
         total = sum(value for _, value in setup)
         cost = (
-            sum(1 for label, _ in setup if not label.isdigit() or label == "50"),
+            _difficulty(tuple(label for label, _ in setup)),
             -sum(value * value for _, value in setup),
         )
         if total not in best or cost < best[total][0]:

@@ -58,9 +58,9 @@ def test_preferred_doubles_steer_the_checkout(alice, session):
     alice.put("/settings", json=DEFAULTS | {"preferredDoubles": [16]})
     game_id = alice.new_game(alice.own_entry()["id"])["id"]
 
-    session.play(game_id, [T20, T20, T20], [T20, S1])
+    session.play(game_id, [T20, T20, T20], [T20, D5])
 
-    assert alice.get(f"/games/{game_id}").json()["checkout"] == ["D14", "D16"]
+    assert alice.get(f"/games/{game_id}").json()["checkout"] == ["19", "D16"]
 
 
 def statistics(api):
