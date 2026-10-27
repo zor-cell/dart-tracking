@@ -52,10 +52,10 @@
 </section>
 
 <section class="panel">
-  <h2 class="panel__title">Gruppierung</h2>
+  <h2 class="panel__title">Streuung</h2>
   <dl class="stat-grid">
     <div class="stat stat--lead">
-      <dt class="stat__label">Ø Gruppierung</dt>
+      <dt class="stat__label">Ø Pfeilabstand</dt>
       <dd class="stat__value">
         @if (totals.grouping !== null) {
           {{ totals.grouping | number: '1.0-0' }} mm
@@ -63,10 +63,10 @@
           &ndash;
         }
       </dd>
-      <dd class="stat__hint">Abstand zwischen den Darts einer Aufnahme</dd>
+      <dd class="stat__hint">zwischen zwei Darts einer Aufnahme</dd>
     </div>
     <div class="stat stat--lead">
-      <dt class="stat__label">Streuung</dt>
+      <dt class="stat__label">Streuform</dt>
       @if (spread(); as spread) {
         <dd class="stat__value spread">
           {{ spread.ratio | number: '1.1-1' }}&times;
