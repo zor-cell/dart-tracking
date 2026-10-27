@@ -264,10 +264,10 @@ def test_handover_without_a_camera_calls_the_next_player_at_once(room, game_id):
 
         call = announcer.next("turn_announcement")
 
-    assert (call["player"], call["remaining"]) == ("Ben", None)
+    assert (call["player"], call["score"]) == ("Ben", 301)
 
 
-def test_the_call_names_the_score_when_the_visit_can_finish(room, game_id):
+def test_the_call_names_the_score_on_every_handover(room, game_id):
     with room(game_id) as announcer:
         for visit in ([(20, 3)] * 3, [(1, 1)], [(20, 3), (20, 3), (5, 1)]):
             for value, multiplier in visit:
@@ -276,7 +276,20 @@ def test_the_call_names_the_score_when_the_visit_can_finish(room, game_id):
 
         calls = [announcer.next("turn_announcement") for _ in range(3)]
 
-    assert [(call["player"], call["remaining"]) for call in calls] == [("Ben", None), ("Ann", 121), ("Ben", None)]
+    assert [(call["player"], call["score"]) for call in calls] == [("Ben", 301), ("Ann", 121), ("Ben", 300)]
+
+
+def test_the_elimination_call_names_the_score_counted_up(room, anon):
+    game_id = anon.new_game({"name": "Ann"}, {"name": "Ben"}, variant="elimination")["id"]
+    with room(game_id) as announcer:
+        for visit in ([(20, 3)], [(5, 1)]):
+            for value, multiplier in visit:
+                announcer.throw(value, multiplier)
+            announcer.send("next_player")
+
+        calls = [announcer.next("turn_announcement") for _ in range(2)]
+
+    assert [(call["player"], call["score"]) for call in calls] == [("Ben", 0), ("Ann", 60)]
 
 
 def test_handover_with_a_camera_waits_for_the_recalibration(room, camera, game_id):

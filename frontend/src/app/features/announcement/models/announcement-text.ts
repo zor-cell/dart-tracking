@@ -17,8 +17,7 @@ export function announcementPhrases(announcement: DartAnnouncementDto): string[]
 
 /** The phrase that calls the next player to the oche. */
 export function turnPhrase(announcement: TurnAnnouncementDto): string {
-  const { player, remaining } = announcement;
-  return remaining === null ? player : `${player}, ${remaining}`;
+  return `${announcement.player}, ${announcement.score}`;
 }
 
 function dartPhrase(value: number, multiplier: number): string {
