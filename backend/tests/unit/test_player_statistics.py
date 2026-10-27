@@ -125,11 +125,23 @@ def test_scoring_visits_measure_the_grouping():
         ],
     )
 
-    assert statistics.grouping == pytest.approx(20 / 3)
-    assert statistics.grouping_darts == 3
+    assert statistics.grouping == pytest.approx(40 / 3)
+    assert (statistics.grouping_darts, statistics.grouping_pairs) == (3, 3)
     scatter = statistics.scatter
-    assert (scatter.major, scatter.minor, scatter.angle) == pytest.approx((math.sqrt(200 / 3), 0, 0))
+    assert (scatter.major, scatter.minor, scatter.angle) == pytest.approx((10, 0, 0))
     assert statistics.dart_averages == pytest.approx([60, 140 / 3, 121 / 3])
+
+
+def test_two_located_darts_count_as_one_pair():
+    statistics = PlayerStatistics()
+    statistics.add_leg(
+        501,
+        CheckoutMode.DOUBLE_OUT,
+        [Turn(player_id=0, darts=[Dart(20, 3, (0, 100)), Dart(20, 1, (0, 130)), Dart(20, 1)])],
+    )
+
+    assert statistics.grouping == pytest.approx(30)
+    assert (statistics.grouping_darts, statistics.grouping_pairs) == (2, 1)
 
 
 def test_no_located_scoring_visit_has_no_grouping():

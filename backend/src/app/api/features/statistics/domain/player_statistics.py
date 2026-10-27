@@ -5,6 +5,7 @@ query would be a second truth."""
 import math
 from collections import Counter
 from dataclasses import dataclass, field
+from itertools import combinations
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.turn import Turn
@@ -37,7 +38,7 @@ _DARTS_PER_VISIT = 3
 
 @dataclass(frozen=True)
 class Scatter:
-    """How the darts of a visit spread around its middle, as an ellipse in board mm."""
+    """How the darts of a visit spread around each other, as an ellipse in board mm."""
 
     major: float  # standard deviation along the wider axis
     minor: float
@@ -64,10 +65,11 @@ class PlayerStatistics:
     fields: Counter[str] = field(default_factory=Counter)
     heatmap: Counter[tuple[int, int]] = field(default_factory=Counter)
     doubles: dict[int, DoubleStatistics] = field(default_factory=dict)
-    # Located darts of scoring visits, measured from their visit's middle.
+    # Located darts of scoring visits, and the pairs of two darts within one visit.
     grouping_darts: int = 0
-    grouping_distance: float = 0.0
-    spread: tuple[float, float, float] = (0.0, 0.0, 0.0)  # summed dx², dy², dx·dy
+    grouping_pairs: int = 0
+    grouping_distance: float = 0.0  # summed mm between the two darts of each pair
+    spread: tuple[float, float, float] = (0.0, 0.0, 0.0)  # pairs' summed dx², dy², dx·dy
     # Points and darts of scoring visits by the dart's place in the visit.
     dart_points: list[int] = field(default_factory=lambda: [0] * _DARTS_PER_VISIT)
     dart_counts: list[int] = field(default_factory=lambda: [0] * _DARTS_PER_VISIT)
@@ -86,14 +88,15 @@ class PlayerStatistics:
 
     @property
     def grouping(self) -> float | None:
-        """Mean distance (mm) of a dart from the middle of its scoring visit."""
-        return None if self.grouping_darts == 0 else self.grouping_distance / self.grouping_darts
+        """Mean distance (mm) between two darts of a scoring visit."""
+        return None if self.grouping_pairs == 0 else self.grouping_distance / self.grouping_pairs
 
     @property
     def scatter(self) -> Scatter | None:
-        if self.grouping_darts == 0:
+        if self.grouping_pairs == 0:
             return None
-        xx, yy, xy = (value / self.grouping_darts for value in self.spread)
+        # A difference of two darts spreads twice as wide as one dart does.
+        xx, yy, xy = (value / self.grouping_pairs / 2 for value in self.spread)
         mean, half = (xx + yy) / 2, math.hypot((xx - yy) / 2, xy)
         return Scatter(
             major=math.sqrt(mean + half),
@@ -187,12 +190,11 @@ class PlayerStatistics:
         located = [dart.position for dart in turn.darts if dart.position is not None]
         if len(located) < 2:
             return
-        mid_x = sum(x for x, _ in located) / len(located)
-        mid_y = sum(y for _, y in located) / len(located)
+        self.grouping_darts += len(located)
         xx, yy, xy = self.spread
-        for x, y in located:
-            dx, dy = x - mid_x, y - mid_y
-            self.grouping_darts += 1
+        for (x1, y1), (x2, y2) in combinations(located, 2):
+            dx, dy = x2 - x1, y2 - y1
+            self.grouping_pairs += 1
             self.grouping_distance += math.hypot(dx, dy)
             xx, yy, xy = xx + dx * dx, yy + dy * dy, xy + dx * dy
         self.spread = (xx, yy, xy)

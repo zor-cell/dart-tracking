@@ -24,7 +24,7 @@ export interface PlayerStatisticsDto {
   readonly doubleMissDistance: number | null;
   readonly doubleMissesLocated: number;
   readonly missDirections: Readonly<Record<MissDirection, number>>;
-  /** Mean distance (mm) of a located dart from the middle of its scoring visit. */
+  /** Mean distance (mm) between two located darts of a scoring visit. */
   readonly grouping: number | null;
   readonly groupingDarts: number;
   readonly scatter: ScatterDto | null;
