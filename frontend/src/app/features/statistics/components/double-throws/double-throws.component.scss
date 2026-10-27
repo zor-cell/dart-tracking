@@ -1,0 +1,64 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.summary,
+.hint {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.hint {
+  color: var(--p-text-muted-color);
+  font-size: 0.85rem;
+}
+
+.plot {
+  display: block;
+  width: 100%;
+  height: 12rem;
+}
+
+.plot__field {
+  fill: none;
+  stroke: var(--p-text-muted-color);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+
+  &--target {
+    fill: var(--p-green-500);
+    fill-opacity: 0.25;
+    stroke: var(--p-green-500);
+    stroke-width: 1.5px;
+  }
+}
+
+.plot__dart {
+  fill: var(--p-text-color);
+  fill-opacity: 0.45;
+
+  &--hit {
+    fill: var(--p-green-500);
+    fill-opacity: 0.9;
+  }
+}
+
+.legend::before {
+  content: '';
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-right: 0.3rem;
+  border-radius: 50%;
+  background: var(--p-text-color);
+}
+
+.legend--hit::before {
+  background: var(--p-green-500);
+}
+
+.legend + .legend {
+  margin-left: 0.5rem;
+}

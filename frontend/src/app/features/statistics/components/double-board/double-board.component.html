@@ -1,0 +1,27 @@
+<svg
+  class="board"
+  [attr.viewBox]="viewBox"
+  role="group"
+  aria-label="Doppel nach Trefferquote"
+  (click)="onBoardClick($event)"
+>
+  <g app-board-face [faded]="true"></g>
+
+  @for (field of fields(); track field.label) {
+    <path
+      class="board__field"
+      [attr.d]="field.d"
+      [attr.fill-opacity]="field.opacity"
+      tabindex="0"
+      role="button"
+      [attr.aria-label]="field.name"
+      [attr.aria-pressed]="selected() === field.label"
+      (focus)="selected.set(field.label)"
+    />
+  }
+
+  @if (outline(); as d) {
+    <path class="board__selected board__selected--halo" [attr.d]="d" />
+    <path class="board__selected" [attr.d]="d" />
+  }
+</svg>

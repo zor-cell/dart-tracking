@@ -6,24 +6,16 @@
   width: min(20rem, calc(100vw - 4rem));
 }
 
-/* Same compact toggle and layout as the replay's heatmap. */
-.heatmap {
-  --p-togglebutton-sm-padding: 0.2rem;
-  --p-togglebutton-content-sm-padding: 0.2rem 0.5rem;
-  --p-togglebutton-sm-font-size: 0.75rem;
-
-  position: relative;
-  height: 22rem;
+:host {
+  --p-tabs-tabpanel-padding: 1.25rem 0 0;
 }
 
-.heatmap > app-field-heatmap,
-.heatmap > app-tip-heatmap {
-  height: 100%;
+/* The three tabs share the bar evenly, as in the player list. */
+p-tab {
+  flex: 1 1 0;
+  text-align: center;
 }
 
-.heatmap__layer {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 1;
+.status {
+  margin-top: 1.25rem;
 }

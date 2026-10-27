@@ -1,0 +1,86 @@
+@let totals = statistics();
+<dl class="stat-grid">
+  <div class="stat stat--lead">
+    <dt class="stat__label">Ø Gruppierung</dt>
+    <dd class="stat__value">
+      @if (totals.grouping !== null) {
+        {{ totals.grouping | number: '1.0-0' }} mm
+      } @else {
+        &ndash;
+      }
+    </dd>
+    <dd class="stat__hint">Abstand zur Mitte der Aufnahme</dd>
+  </div>
+  <div class="stat stat--lead">
+    <dt class="stat__label">Streuung</dt>
+    @if (spread(); as spread) {
+      <dd class="stat__value spread">
+        {{ spread.ratio | number: '1.1-1' }}&times;
+        <svg class="spread__shape" viewBox="-1.2 -1.2 2.4 2.4" aria-hidden="true">
+          <line class="spread__axis" x1="-1.2" y1="0" x2="1.2" y2="0" />
+          <line class="spread__axis" x1="0" y1="-1.2" x2="0" y2="1.2" />
+          <ellipse
+            class="spread__ellipse"
+            rx="1"
+            [attr.ry]="spread.ry"
+            [attr.transform]="'rotate(' + spread.rotation + ')'"
+          />
+        </svg>
+      </dd>
+      <dd class="stat__hint">{{ spread.direction }}</dd>
+    } @else {
+      <dd class="stat__value">&ndash;</dd>
+    }
+  </div>
+</dl>
+<p class="panel__hint">
+  @if (totals.groupingDarts > 0) {
+    Aus {{ totals.groupingDarts }} erkannten Darts in Aufnahmen ohne Finish-Chance.
+  } @else {
+    Noch keine Aufnahme ohne Finish-Chance mit mindestens zwei erkannten Darts.
+  }
+</p>
+
+<section class="panel">
+  <h2 class="panel__title">Pfeil 1 &middot; 2 &middot; 3</h2>
+  <ol class="darts">
+    @for (dart of darts(); track dart.place) {
+      <li class="darts__row">
+        <span class="darts__place">{{ dart.place }}.</span>
+        <span class="darts__bar" aria-hidden="true">
+          <span class="darts__fill" [style.width.%]="dart.share"></span>
+        </span>
+        <span class="darts__value">
+          @if (dart.average !== null) {
+            {{ dart.average | number: '1.1-1' }}
+          } @else {
+            &ndash;
+          }
+        </span>
+      </li>
+    }
+  </ol>
+  <p class="panel__hint">Ø Punkte pro Dart, nach seinem Platz in der Aufnahme.</p>
+</section>
+
+<section class="panel">
+  <h2 class="panel__title">Trefferbild</h2>
+  <div class="heatmap">
+    <p-selectbutton
+      class="heatmap__layer"
+      [options]="layerOptions"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+      [ngModel]="layer()"
+      (ngModelChange)="selectLayer($event)"
+      ariaLabel="Darstellung der Heatmap"
+      size="small"
+    />
+    @if (layer() === 'fields') {
+      <app-field-heatmap [counts]="fieldCounts()" />
+    } @else {
+      <app-tip-heatmap [points]="totals.heatmap" mode="cloud" />
+    }
+  </div>
+</section>

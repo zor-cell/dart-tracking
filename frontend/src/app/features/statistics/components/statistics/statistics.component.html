@@ -108,14 +108,23 @@
     </div>
   </p-popover>
 
-  @if (loading()) {
-    <app-loading-state label="Statistik wird geladen" />
-  } @else if (failed()) {
-    <app-load-error message="Die Statistik konnte nicht geladen werden." (retry)="reload()" />
-  } @else {
-    @if (totals(); as totals) {
+  <p-tabs [(value)]="tab">
+    <p-tablist>
+      <p-tab value="overview">Übersicht</p-tab>
+      <p-tab value="checkout">Checkout</p-tab>
+      <p-tab value="precision">Präzision</p-tab>
+    </p-tablist>
+    @if (loading()) {
+      <app-loading-state class="status" label="Statistik wird geladen" />
+    } @else if (failed()) {
+      <app-load-error
+        class="status"
+        message="Die Statistik konnte nicht geladen werden."
+        (retry)="reload()"
+      />
+    } @else if (totals(); as totals) {
       @if (totals.legs === 0) {
-        <app-empty-state [icon]="filtered() ? 'pi-filter-slash' : 'pi-chart-bar'">
+        <app-empty-state class="status" [icon]="filtered() ? 'pi-filter-slash' : 'pi-chart-bar'">
           <p>
             {{
               filtered()
@@ -125,83 +134,43 @@
           </p>
         </app-empty-state>
       } @else {
-        <dl class="stat-grid">
-          <div class="stat stat--lead">
-            <dt class="stat__label">3-Dart-Average</dt>
-            <dd class="stat__value">{{ totals.average | number: '1.2-2' }}</dd>
-          </div>
-          <div class="stat stat--lead">
-            <dt class="stat__label">First-9-Average</dt>
-            <dd class="stat__value">{{ totals.firstNineAverage | number: '1.2-2' }}</dd>
-          </div>
-          <div class="stat">
-            <dt class="stat__label">Legs gewonnen</dt>
-            <dd class="stat__value">{{ totals.legsWon }} / {{ totals.legs }}</dd>
-          </div>
-          <div class="stat">
-            <dt class="stat__label">Darts geworfen</dt>
-            <dd class="stat__value">{{ totals.darts }}</dd>
-          </div>
-          <div class="stat">
-            <dt class="stat__label">Checkout-Quote</dt>
-            <dd class="stat__value">
-              @let checkout = checkoutRate();
-              @if (checkout !== null) {
-                {{ checkout * 100 | number: '1.0-0' }} %
-              } @else {
-                &ndash;
-              }
-            </dd>
-            <dd class="stat__hint">
-              {{ totals.checkoutHits }} von {{ totals.checkoutAttempts }} Darts
-            </dd>
-          </div>
-          <div class="stat">
-            <dt class="stat__label">Legs ausgecheckt</dt>
-            <dd class="stat__value">
-              @let legs = legRate();
-              @if (legs !== null) {
-                {{ legs * 100 | number: '1.0-0' }} %
-              } @else {
-                &ndash;
-              }
-            </dd>
-            <dd class="stat__hint">
-              {{ totals.legsWon }} von {{ totals.legsWithChance }} Legs mit Chance
-            </dd>
-          </div>
-          <div class="stat">
-            <dt class="stat__label">Bestes Visit</dt>
-            <dd class="stat__value">{{ totals.bestVisit }}</dd>
-          </div>
-          <div class="stat">
-            <dt class="stat__label">180er &middot; 100+</dt>
-            <dd class="stat__value">{{ totals.visits180 }} &middot; {{ totals.visits100Plus }}</dd>
-          </div>
-        </dl>
-
-        <section class="panel">
-          <h2 class="panel__title">Trefferbild</h2>
-          <div class="heatmap">
-            <p-selectbutton
-              class="heatmap__layer"
-              [options]="layerOptions"
-              optionLabel="label"
-              optionValue="value"
-              [allowEmpty]="false"
-              [ngModel]="layer()"
-              (ngModelChange)="selectLayer($event)"
-              ariaLabel="Darstellung der Heatmap"
-              size="small"
-            />
-            @if (layer() === 'fields') {
-              <app-field-heatmap [counts]="fieldCounts()" />
-            } @else {
-              <app-tip-heatmap [points]="totals.heatmap" mode="cloud" />
-            }
-          </div>
-        </section>
+        <p-tabpanels>
+          <p-tabpanel value="overview">
+            <dl class="stat-grid">
+              <div class="stat stat--lead">
+                <dt class="stat__label">3-Dart-Average</dt>
+                <dd class="stat__value">{{ totals.average | number: '1.2-2' }}</dd>
+              </div>
+              <div class="stat stat--lead">
+                <dt class="stat__label">First-9-Average</dt>
+                <dd class="stat__value">{{ totals.firstNineAverage | number: '1.2-2' }}</dd>
+              </div>
+              <div class="stat">
+                <dt class="stat__label">Legs gewonnen</dt>
+                <dd class="stat__value">{{ totals.legsWon }} / {{ totals.legs }}</dd>
+              </div>
+              <div class="stat">
+                <dt class="stat__label">Darts geworfen</dt>
+                <dd class="stat__value">{{ totals.darts }}</dd>
+              </div>
+              <div class="stat">
+                <dt class="stat__label">Bestes Visit</dt>
+                <dd class="stat__value">{{ totals.bestVisit }}</dd>
+              </div>
+              <div class="stat">
+                <dt class="stat__label">180er &middot; 100+</dt>
+                <dd class="stat__value">{{ totals.visits180 }} &middot; {{ totals.visits100Plus }}</dd>
+              </div>
+            </dl>
+          </p-tabpanel>
+          <p-tabpanel value="checkout">
+            <app-checkout-statistics [statistics]="totals" />
+          </p-tabpanel>
+          <p-tabpanel value="precision">
+            <app-precision-statistics [statistics]="totals" />
+          </p-tabpanel>
+        </p-tabpanels>
       }
     }
-  }
+  </p-tabs>
 </section>

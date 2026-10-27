@@ -1,0 +1,91 @@
+@let totals = statistics();
+<dl class="stat-grid">
+  <div class="stat">
+    <dt class="stat__label">Checkout-Quote</dt>
+    <dd class="stat__value">
+      @let checkout = checkoutRate();
+      @if (checkout !== null) {
+        {{ checkout * 100 | number: '1.0-0' }} %
+      } @else {
+        &ndash;
+      }
+    </dd>
+    <dd class="stat__hint">{{ totals.checkoutHits }} von {{ totals.checkoutAttempts }} Darts</dd>
+  </div>
+  <div class="stat">
+    <dt class="stat__label">Legs ausgecheckt</dt>
+    <dd class="stat__value">
+      @let legs = legRate();
+      @if (legs !== null) {
+        {{ legs * 100 | number: '1.0-0' }} %
+      } @else {
+        &ndash;
+      }
+    </dd>
+    <dd class="stat__hint">{{ totals.legsWon }} von {{ totals.legsWithChance }} Legs mit Chance</dd>
+  </div>
+  <div class="stat stat--wide">
+    <dt class="stat__label">Ø Abstand zum Doppel</dt>
+    <dd class="stat__value">
+      @if (totals.doubleMissDistance !== null) {
+        {{ totals.doubleMissDistance | number: '1.0-0' }} mm
+      } @else {
+        &ndash;
+      }
+    </dd>
+    <dd class="stat__hint">
+      @if (totals.doubleMissesLocated > 0) {
+        aus {{ totals.doubleMissesLocated }} erkannten Darts daneben
+      } @else {
+        noch keine erkannten Darts neben einem Doppel
+      }
+    </dd>
+  </div>
+</dl>
+
+<section class="panel">
+  <h2 class="panel__title">Doppel</h2>
+  @if (totals.doubles.length === 0) {
+    <app-empty-state icon="pi-bullseye">
+      <p>Noch keine Darts auf ein Doppel, das checken konnte.</p>
+    </app-empty-state>
+  } @else {
+    <p class="panel__hint">
+      Je grüner, desto öfter getroffen. Ein Doppel antippen für seine Darts.
+    </p>
+    <app-double-board class="doubles" [doubles]="totals.doubles" [(selected)]="selected" />
+    @if (selectedDouble(); as double) {
+      <app-double-throws [double]="double" />
+    }
+  }
+</section>
+
+<section class="panel">
+  <h2 class="panel__title">Daneben geworfen</h2>
+  @if (shares(); as shares) {
+    <div class="directions" role="list">
+      <div class="direction direction--long" role="listitem">
+        <span class="direction__share">{{ shares.long * 100 | number: '1.0-0' }} %</span>
+        <span class="direction__label">{{ labels.long }}</span>
+      </div>
+      <div class="direction direction--left" role="listitem">
+        <span class="direction__share">{{ shares.left * 100 | number: '1.0-0' }} %</span>
+        <span class="direction__label">{{ labels.left }}</span>
+      </div>
+      <span class="directions__target" aria-hidden="true"></span>
+      <div class="direction direction--right" role="listitem">
+        <span class="direction__share">{{ shares.right * 100 | number: '1.0-0' }} %</span>
+        <span class="direction__label">{{ labels.right }}</span>
+      </div>
+      <div class="direction direction--short" role="listitem">
+        <span class="direction__share">{{ shares.short * 100 | number: '1.0-0' }} %</span>
+        <span class="direction__label">{{ labels.short }}</span>
+      </div>
+    </div>
+    <p class="panel__hint">
+      Das Doppel jeweils nach oben gedreht, aus {{ directedMisses() }} erkannten Darts ohne Bull.
+    </p>
+  } @else {
+    <p class="panel__hint">Noch keine erkannten Darts neben einem Doppel.</p>
+  }
+</section>

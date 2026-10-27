@@ -1,0 +1,66 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.doubles {
+  height: 20rem;
+}
+
+/* The four sides around a double drawn in the middle. */
+.directions {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-areas:
+    '. long .'
+    'left target right'
+    '. short .';
+  align-items: center;
+  justify-items: center;
+  gap: 0.25rem 1rem;
+}
+
+.directions__target {
+  grid-area: target;
+  width: 4.5rem;
+  height: 1.6rem;
+  border: 2px solid var(--p-green-500);
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--p-green-500) 25%, transparent);
+}
+
+.direction {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &--long {
+    grid-area: long;
+  }
+
+  &--left {
+    grid-area: left;
+    justify-self: end;
+  }
+
+  &--right {
+    grid-area: right;
+    justify-self: start;
+  }
+
+  &--short {
+    grid-area: short;
+  }
+}
+
+.direction__share {
+  font-size: 1.2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.direction__label {
+  color: var(--p-text-muted-color);
+  font-size: 0.8rem;
+}

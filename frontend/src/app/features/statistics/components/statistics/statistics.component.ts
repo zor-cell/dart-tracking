@@ -16,6 +16,7 @@ import { DatePicker } from 'primeng/datepicker';
 import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
+import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
 import { StatisticsFilter } from '../../models/statistics-filter';
 import {
@@ -29,17 +30,9 @@ import {
   periodStart,
 } from '../../models/statistics-period';
 import { StatisticsService } from '../../services/statistics.service';
-import { FieldHeatmapComponent } from '../../../game/components/field-heatmap/field-heatmap.component';
-import { TipHeatmapComponent } from '../../../game/components/tip-heatmap/tip-heatmap.component';
 import { CHECKOUT_MODES, CheckoutMode } from '../../../game/models/checkout-mode';
 import { PLAYER_COUNTS, PlayerCount } from '../../../game/models/game-filter';
 import { GAME_MODES, GameMode } from '../../../game/models/game-mode';
-import {
-  HEATMAP_LAYERS,
-  HeatmapLayer,
-  storeHeatmapLayer,
-  storedHeatmapLayer,
-} from '../../../game/models/heatmap-layer';
 import { PlayerIdentityDto } from '../../../player/dto/player-identity.dto';
 import { PlayerService } from '../../../player/services/player.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
@@ -54,6 +47,8 @@ import {
   FilterSuggestion,
 } from '../../../../core/view/models/filter-chip';
 import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
+import { CheckoutStatisticsComponent } from '../checkout-statistics/checkout-statistics.component';
+import { PrecisionStatisticsComponent } from '../precision-statistics/precision-statistics.component';
 
 /** The filters whose picks are remembered and offered back; the period is not among them. */
 const REMEMBERED = ['opponentId', 'players', 'mode', 'checkoutMode'] as const;
@@ -67,19 +62,24 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
   selector: 'app-statistics',
   imports: [
     BackLinkComponent,
+    CheckoutStatisticsComponent,
     DatePicker,
     DecimalPipe,
     LoadingStateComponent,
     EmptyStateComponent,
-    FieldHeatmapComponent,
     ListToolbarComponent,
     LoadErrorComponent,
     FormsModule,
     Popover,
+    PrecisionStatisticsComponent,
     ReactiveFormsModule,
     Select,
     SelectButton,
-    TipHeatmapComponent,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
   ],
   templateUrl: './statistics.component.html',
   styleUrl: './statistics.component.scss',
@@ -98,8 +98,7 @@ export class StatisticsComponent {
   protected readonly failed = signal(false);
   private requests = 0;
 
-  protected readonly layerOptions = [...HEATMAP_LAYERS];
-  protected readonly layer = signal(storedHeatmapLayer());
+  protected readonly tab = signal<'overview' | 'checkout' | 'precision'>('overview');
 
   protected readonly unitOptions = [...STATISTICS_UNITS];
   protected readonly unit = signal<StatisticsUnit>('days');
@@ -179,24 +178,6 @@ export class StatisticsComponent {
     };
   });
 
-  protected readonly fieldCounts = computed(
-    () => new Map(Object.entries(this.totals()?.fields ?? {})),
-  );
-
-  /** Darts that finished a leg, out of darts thrown while one dart could finish. */
-  protected readonly checkoutRate = computed(() => {
-    const totals = this.totals();
-    return !totals || totals.checkoutAttempts === 0
-      ? null
-      : totals.checkoutHits / totals.checkoutAttempts;
-  });
-
-  /** Legs won out of legs that reached a finishable score at least once. */
-  protected readonly legRate = computed(() => {
-    const totals = this.totals();
-    return !totals || totals.legsWithChance === 0 ? null : totals.legsWon / totals.legsWithChance;
-  });
-
   constructor() {
     void this.players.list().then((all) => this.opponents.set(all.filter((p) => !p.isSelf)));
     void this.memory.load();
@@ -225,11 +206,6 @@ export class StatisticsComponent {
       default:
         return null;
     }
-  }
-
-  protected selectLayer(layer: HeatmapLayer): void {
-    this.layer.set(layer);
-    storeHeatmapLayer(layer);
   }
 
   /** Switch what the quick picks count; "all" stays, any other pick starts over. */

@@ -1,0 +1,93 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* The hint belongs to the tiles above it. */
+.stat-grid + .panel__hint {
+  margin-top: -0.75rem;
+}
+
+.spread {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.spread__shape {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.spread__axis {
+  stroke: var(--p-content-border-color);
+  stroke-width: 0.04;
+}
+
+.spread__ellipse {
+  fill: color-mix(in srgb, var(--p-primary-color) 25%, transparent);
+  stroke: var(--p-primary-color);
+  stroke-width: 0.08;
+}
+
+.darts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.darts__row {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr 3rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.darts__place {
+  color: var(--p-text-muted-color);
+}
+
+.darts__bar {
+  height: 0.5rem;
+  border-radius: 0.25rem;
+  background: var(--p-content-border-color);
+  overflow: hidden;
+}
+
+.darts__fill {
+  display: block;
+  height: 100%;
+  background: var(--p-primary-color);
+}
+
+.darts__value {
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Same compact toggle and layout as the replay's heatmap. */
+.heatmap {
+  --p-togglebutton-sm-padding: 0.2rem;
+  --p-togglebutton-content-sm-padding: 0.2rem 0.5rem;
+  --p-togglebutton-sm-font-size: 0.75rem;
+
+  position: relative;
+  height: 22rem;
+}
+
+.heatmap > app-field-heatmap,
+.heatmap > app-tip-heatmap {
+  height: 100%;
+}
+
+.heatmap__layer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+}
