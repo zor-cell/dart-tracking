@@ -1,10 +1,61 @@
+from collections import Counter
 from typing import Self
 
 from app.api.core.dto.base import CamelModel
+from app.api.features.statistics.domain.double_statistics import (
+    DoubleStatistics,
+    MissDirection,
+)
 from app.api.features.statistics.domain.player_statistics import (
     HEATMAP_CELL,
     PlayerStatistics,
+    Scatter,
 )
+
+
+def _rounded(value: float | None, digits: int = 1) -> float | None:
+    return None if value is None else round(value, digits)
+
+
+def _directions(counts: Counter[MissDirection]) -> dict[MissDirection, int]:
+    return {direction: counts[direction] for direction in MissDirection}
+
+
+class DoubleDto(CamelModel):
+    """Darts at one finishing double; throws are (across, out, hit) in mm, see DoubleThrow."""
+
+    label: str
+    attempts: int
+    hits: int
+    miss_distance: float | None
+    directions: dict[MissDirection, int]
+    throws: list[tuple[float, float, bool]]
+
+    @classmethod
+    def from_entity(cls, double: DoubleStatistics) -> Self:
+        located = double.located_misses
+        return cls(
+            label=double.label,
+            attempts=double.attempts,
+            hits=double.hits,
+            miss_distance=_rounded(double.miss_distance / located if located else None),
+            directions=_directions(double.directions),
+            throws=[(round(t.across, 1), round(t.out, 1), t.hit) for t in double.throws],
+        )
+
+
+class ScatterDto(CamelModel):
+    major: float
+    minor: float
+    angle: float
+
+    @classmethod
+    def from_entity(cls, scatter: Scatter) -> Self:
+        return cls(
+            major=round(scatter.major, 1),
+            minor=round(scatter.minor, 1),
+            angle=round(scatter.angle),
+        )
 
 
 class PlayerStatisticsDto(CamelModel):
@@ -22,9 +73,18 @@ class PlayerStatisticsDto(CamelModel):
     checkout_hits: int
     fields: dict[str, int]
     heatmap: list[tuple[int, int, int]]
+    doubles: list[DoubleDto]
+    double_miss_distance: float | None
+    double_misses_located: int
+    miss_directions: dict[MissDirection, int]
+    grouping: float | None
+    grouping_darts: int
+    scatter: ScatterDto | None
+    dart_averages: list[float | None]
 
     @classmethod
     def from_entity(cls, statistics: PlayerStatistics) -> Self:
+        scatter = statistics.scatter
         return cls(
             legs=statistics.legs,
             legs_won=statistics.legs_won,
@@ -43,4 +103,15 @@ class PlayerStatisticsDto(CamelModel):
                 (column * HEATMAP_CELL, row * HEATMAP_CELL, count)
                 for (column, row), count in statistics.heatmap.items()
             ],
+            doubles=[
+                DoubleDto.from_entity(double)
+                for double in sorted(statistics.doubles.values(), key=lambda d: -d.attempts)
+            ],
+            double_miss_distance=_rounded(statistics.double_miss_distance),
+            double_misses_located=statistics.double_misses_located,
+            miss_directions=_directions(statistics.miss_directions),
+            grouping=_rounded(statistics.grouping),
+            grouping_darts=statistics.grouping_darts,
+            scatter=None if scatter is None else ScatterDto.from_entity(scatter),
+            dart_averages=[_rounded(value, 2) for value in statistics.dart_averages],
         )

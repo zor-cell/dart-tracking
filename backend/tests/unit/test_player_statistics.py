@@ -1,14 +1,17 @@
+import math
 from datetime import UTC, datetime, timedelta
 
 import pytest
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
+from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game_status import (
     GameStatus,
     counts_in_statistics,
     effective_status,
 )
 from app.api.features.game.domain.turn import Turn
+from app.api.features.statistics.domain.double_statistics import MissDirection
 from app.api.features.statistics.domain.player_statistics import PlayerStatistics
 from tests.unit.darts import darts
 
@@ -71,6 +74,69 @@ def test_leg_out_of_reach_was_no_chance():
 
     assert statistics.legs_with_chance == 0
     assert statistics.checkout_attempts == 0
+
+
+def at(value: int, multiplier: int, radius: float, degrees: float) -> Dart:
+    """A located dart, `degrees` counter-clockwise from +x."""
+    angle = math.radians(degrees)
+    return Dart(value, multiplier, (radius * math.cos(angle), radius * math.sin(angle)))
+
+
+def test_darts_at_a_double_are_measured_from_it():
+    statistics = PlayerStatistics()
+    for dart in (at(0, 0, 175, 90), at(5, 2, 165, 102), at(20, 1, 150, 90)):
+        statistics.add_leg(40, CheckoutMode.DOUBLE_OUT, [Turn(player_id=0, darts=[dart])])
+    statistics.add_leg(
+        20,
+        CheckoutMode.DOUBLE_OUT,
+        [Turn(player_id=0, darts=[at(0, 0, 175, -18), at(10, 2, 165, -18)])],
+    )
+
+    d20, d10 = statistics.doubles[20], statistics.doubles[10]
+    assert (d20.attempts, d20.hits, d20.located_misses) == (3, 0, 3)
+    assert d20.directions == {MissDirection.LONG: 1, MissDirection.LEFT: 1, MissDirection.SHORT: 1}
+    assert (d10.attempts, d10.hits, d10.label) == (2, 1, "D10")
+    assert d10.miss_distance == pytest.approx(5)
+    assert (d10.throws[1].across, d10.throws[1].out) == pytest.approx((0, 0), abs=1e-9)
+    assert statistics.double_misses_located == 4
+    assert statistics.miss_directions[MissDirection.LONG] == 2
+
+
+def test_single_out_measures_no_double():
+    statistics = PlayerStatistics()
+    statistics.add_leg(40, CheckoutMode.SINGLE_OUT, [Turn(player_id=0, darts=[at(0, 0, 175, 90)])])
+
+    assert statistics.doubles == {}
+
+
+def test_scoring_visits_measure_the_grouping():
+    statistics = PlayerStatistics()
+    statistics.add_leg(
+        501,
+        CheckoutMode.DOUBLE_OUT,
+        [
+            Turn(
+                player_id=0,
+                darts=[Dart(20, 3, (0, 100)), Dart(20, 1, (10, 100)), Dart(1, 1, (-10, 100))],
+            ),
+            Turn(player_id=0, darts=[Dart(20, 3), Dart(20, 3), Dart(20, 3)]),
+            visit("T20", "T20", "T20"),
+            visit("0", "0", "0"),
+        ],
+    )
+
+    assert statistics.grouping == pytest.approx(20 / 3)
+    assert statistics.grouping_darts == 3
+    scatter = statistics.scatter
+    assert (scatter.major, scatter.minor, scatter.angle) == pytest.approx((math.sqrt(200 / 3), 0, 0))
+    assert statistics.dart_averages == pytest.approx([60, 140 / 3, 121 / 3])
+
+
+def test_no_located_scoring_visit_has_no_grouping():
+    statistics = PlayerStatistics()
+    statistics.add_leg(501, CheckoutMode.DOUBLE_OUT, [visit("T20", "T20", "T20")])
+
+    assert (statistics.grouping, statistics.scatter) == (None, None)
 
 
 NOW = datetime.now(UTC)
