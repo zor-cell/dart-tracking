@@ -192,13 +192,8 @@
             />
             @if (layer() === 'fields') {
               <app-field-heatmap [counts]="fieldCounts()" />
-            } @else if (totals.heatmap.length > 0) {
-              <app-tip-heatmap [points]="totals.heatmap" mode="cloud" />
             } @else {
-              <p class="panel__hint heatmap__empty">
-                Noch keine erkannten Treffer. Nur von der Kamera gefundene Darts haben eine Position
-                &mdash; von Hand gebuchte zählen mit, lassen sich aber nicht platzieren.
-              </p>
+              <app-tip-heatmap [points]="totals.heatmap" mode="cloud" />
             }
           </div>
         </section>

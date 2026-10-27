@@ -84,7 +84,7 @@ export class TipHeatmapComponent {
   protected readonly dots = computed(() => this.marks().filter((mark) => !mark.offBoard));
 
   protected readonly density = computed(() =>
-    this.mode() === 'cloud'
+    this.mode() === 'cloud' && this.points().length > 0
       ? tipDensity(this.points(), BOARD_VIEW_EXTENT, CLOUD_CELL, CLOUD_SIGMA)
       : null,
   );
