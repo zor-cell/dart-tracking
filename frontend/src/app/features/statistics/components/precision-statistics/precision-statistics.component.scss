@@ -4,9 +4,10 @@
   gap: 1.25rem;
 }
 
-/* The hint belongs to the tiles above it. */
-.stat-grid + .panel__hint {
-  margin-top: -0.75rem;
+.panel__subtitle {
+  margin: 0.5rem 0 0;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .spread {

@@ -15,7 +15,7 @@ import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
 /** Below this ratio of the axes the spread counts as even. */
 const ROUND_RATIO = 1.2;
 
-/** How the darts sit around each other: grouping, spread, each dart's place, the hit picture. */
+/** The general figures, the hit picture and how the darts group: spread, each dart's place. */
 @Component({
   selector: 'app-precision-statistics',
   imports: [DecimalPipe, FieldHeatmapComponent, FormsModule, SelectButton, TipHeatmapComponent],

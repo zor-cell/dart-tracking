@@ -110,9 +110,8 @@
 
   <p-tabs [(value)]="tab">
     <p-tablist>
-      <p-tab value="overview">Übersicht</p-tab>
-      <p-tab value="checkout">Checkout</p-tab>
       <p-tab value="precision">Präzision</p-tab>
+      <p-tab value="checkout">Checkout</p-tab>
     </p-tablist>
     @if (loading()) {
       <app-loading-state class="status" label="Statistik wird geladen" />
@@ -135,39 +134,11 @@
         </app-empty-state>
       } @else {
         <p-tabpanels>
-          <p-tabpanel value="overview">
-            <dl class="stat-grid">
-              <div class="stat stat--lead">
-                <dt class="stat__label">3-Dart-Average</dt>
-                <dd class="stat__value">{{ totals.average | number: '1.2-2' }}</dd>
-              </div>
-              <div class="stat stat--lead">
-                <dt class="stat__label">First-9-Average</dt>
-                <dd class="stat__value">{{ totals.firstNineAverage | number: '1.2-2' }}</dd>
-              </div>
-              <div class="stat">
-                <dt class="stat__label">Legs gewonnen</dt>
-                <dd class="stat__value">{{ totals.legsWon }} / {{ totals.legs }}</dd>
-              </div>
-              <div class="stat">
-                <dt class="stat__label">Darts geworfen</dt>
-                <dd class="stat__value">{{ totals.darts }}</dd>
-              </div>
-              <div class="stat">
-                <dt class="stat__label">Bestes Visit</dt>
-                <dd class="stat__value">{{ totals.bestVisit }}</dd>
-              </div>
-              <div class="stat">
-                <dt class="stat__label">180er &middot; 100+</dt>
-                <dd class="stat__value">{{ totals.visits180 }} &middot; {{ totals.visits100Plus }}</dd>
-              </div>
-            </dl>
+          <p-tabpanel value="precision">
+            <app-precision-statistics [statistics]="totals" />
           </p-tabpanel>
           <p-tabpanel value="checkout">
             <app-checkout-statistics [statistics]="totals" />
-          </p-tabpanel>
-          <p-tabpanel value="precision">
-            <app-precision-statistics [statistics]="totals" />
           </p-tabpanel>
         </p-tabpanels>
       }

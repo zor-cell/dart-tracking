@@ -9,7 +9,6 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DatePicker } from 'primeng/datepicker';
@@ -64,7 +63,6 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
     BackLinkComponent,
     CheckoutStatisticsComponent,
     DatePicker,
-    DecimalPipe,
     LoadingStateComponent,
     EmptyStateComponent,
     ListToolbarComponent,
@@ -98,7 +96,7 @@ export class StatisticsComponent {
   protected readonly failed = signal(false);
   private requests = 0;
 
-  protected readonly tab = signal<'overview' | 'checkout' | 'precision'>('overview');
+  protected readonly tab = signal<'precision' | 'checkout'>('precision');
 
   protected readonly unitOptions = [...STATISTICS_UNITS];
   protected readonly unit = signal<StatisticsUnit>('days');
