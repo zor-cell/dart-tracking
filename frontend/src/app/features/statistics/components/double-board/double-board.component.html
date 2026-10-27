@@ -1,6 +1,8 @@
 <ng-template #caption>
   @if (shown(); as double) {
-    <strong>{{ double.name }}</strong> &middot; {{ double.hits }}&nbsp;/&nbsp;{{ double.attempts }}
+    <strong>{{ double.name }}</strong> &middot; {{ double.hits }}&nbsp;/&nbsp;{{
+      double.attempts
+    }}
     &middot; {{ double.rate * 100 | number: '1.0-0' }}&nbsp;%
   } @else {
     <span class="caption__summary">
@@ -13,52 +15,88 @@
   }
 </ng-template>
 
-<p-selectbutton
-  class="layer"
-  [options]="layerOptions"
-  optionLabel="label"
-  optionValue="value"
-  [allowEmpty]="false"
-  [ngModel]="layer()"
-  (ngModelChange)="selectLayer($event)"
-  ariaLabel="Darstellung der Doppel"
-  size="small"
-/>
+<div class="board">
+  <p-selectbutton
+    class="layer"
+    [options]="layerOptions"
+    optionLabel="label"
+    optionValue="value"
+    [allowEmpty]="false"
+    [ngModel]="layer()"
+    (ngModelChange)="selectLayer($event)"
+    ariaLabel="Darstellung der Doppel"
+    size="small"
+  />
 
-@if (layer() === 'tips') {
-  <app-tip-heatmap [points]="tips()" mode="cloud" (click)="selected.set(null)">
-    <svg:g overlay>
-      @for (target of targets(); track target.label) {
-        <svg:path
-          class="targets__field"
-          [attr.d]="target.d"
-          tabindex="0"
-          role="button"
-          [attr.aria-label]="target.ariaLabel"
-          [attr.aria-pressed]="selected() === target.label"
-          (click)="toggle(target.label, $event)"
-          (keydown.enter)="toggle(target.label, $event)"
-          (keydown.space)="toggle(target.label, $event)"
-          (pointerenter)="onTargetEnter(target.label, $event)"
-          (pointerleave)="hovered.set(null)"
-        />
-      }
-      @if (outline(); as d) {
-        <svg:path class="targets__selected targets__selected--halo" [attr.d]="d" />
-        <svg:path class="targets__selected" [attr.d]="d" />
-      }
-    </svg:g>
-    <span caption><ng-container *ngTemplateOutlet="caption" /></span>
-  </app-tip-heatmap>
-} @else {
-  <app-heat-board
-    [fields]="fields()"
-    ariaLabel="Doppel nach Trefferquote"
-    [selectable]="selectable"
-    [legendMax]="legendMax()"
-    [(selected)]="selected"
-    [(hovered)]="hovered"
-  >
-    <span caption><ng-container *ngTemplateOutlet="caption" /></span>
-  </app-heat-board>
+  @if (layer() === 'tips') {
+    <app-tip-heatmap [points]="tips()" mode="cloud" [zoom]="zoom()" (click)="selected.set(null)">
+      <svg:g overlay>
+        @for (target of targets(); track target.label) {
+          <svg:path
+            class="targets__field"
+            [attr.d]="target.d"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="target.ariaLabel"
+            [attr.aria-pressed]="selected() === target.label"
+            (click)="toggle(target.label, $event)"
+            (keydown.enter)="toggle(target.label, $event)"
+            (keydown.space)="toggle(target.label, $event)"
+            (pointerenter)="onTargetEnter(target.label, $event)"
+            (pointerleave)="hovered.set(null)"
+          />
+        }
+        @if (outline(); as d) {
+          <svg:path class="targets__selected targets__selected--halo" [attr.d]="d" />
+          <svg:path class="targets__selected" [attr.d]="d" />
+        }
+        @for (chip of chips(); track chip.direction) {
+          <svg:g class="chip" [attr.transform]="'translate(' + chip.x + ' ' + chip.y + ')'">
+            <svg:rect class="chip__box" x="-17" y="-8" width="34" height="16" rx="3" />
+            <svg:text class="chip__share" y="-0.5">
+              {{ chip.share * 100 | number: '1.0-0' }} %
+            </svg:text>
+            <svg:text class="chip__label" y="5.2">{{ chip.label }}</svg:text>
+          </svg:g>
+        }
+      </svg:g>
+      <span caption><ng-container *ngTemplateOutlet="caption" /></span>
+    </app-tip-heatmap>
+
+    @if (zoomed() && pickedOutline(); as d) {
+      <button
+        type="button"
+        class="mini"
+        aria-label="Ganzes Board zeigen"
+        (click)="selected.set(null)"
+      >
+        <svg class="mini__board" [attr.viewBox]="miniViewBox" aria-hidden="true">
+          <g app-board-face [faded]="true" [numbers]="false"></g>
+          <path class="mini__double" [attr.d]="d" />
+        </svg>
+      </button>
+    }
+  } @else {
+    <app-heat-board
+      [fields]="fields()"
+      ariaLabel="Doppel nach Trefferquote"
+      [selectable]="selectable"
+      [legendMax]="legendMax()"
+      [(selected)]="selected"
+      [(hovered)]="hovered"
+    >
+      <span caption><ng-container *ngTemplateOutlet="caption" /></span>
+    </app-heat-board>
+  }
+</div>
+
+@if (line(); as shares) {
+  <dl class="directions" aria-label="Daneben geworfen">
+    @for (direction of directionOrder; track direction) {
+      <div class="directions__item">
+        <dt class="directions__label">{{ labels[direction] }}</dt>
+        <dd class="directions__share">{{ shares[direction] * 100 | number: '1.0-0' }} %</dd>
+      </div>
+    }
+  </dl>
 }

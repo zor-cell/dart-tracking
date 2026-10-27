@@ -4,8 +4,14 @@
   --p-togglebutton-content-sm-padding: 0.2rem 0.5rem;
   --p-togglebutton-sm-font-size: 0.75rem;
 
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.board {
   position: relative;
-  display: block;
+  height: 22rem;
 }
 
 app-tip-heatmap,
@@ -48,4 +54,85 @@ app-heat-board {
     stroke: var(--p-content-background);
     stroke-width: 5;
   }
+}
+
+.chip {
+  pointer-events: none;
+}
+
+.chip__box {
+  fill: var(--p-content-background);
+  stroke: var(--p-content-border-color);
+  stroke-width: 0.5;
+}
+
+.chip__share,
+.chip__label {
+  text-anchor: middle;
+}
+
+.chip__share {
+  fill: var(--p-text-color);
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.chip__label {
+  fill: var(--p-text-muted-color);
+  font-size: 4.5px;
+}
+
+/* The whole board in the free bottom-left corner while zoomed; a tap goes back to it. */
+.mini {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 4.5rem;
+  height: 4.5rem;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+    border-radius: 50%;
+  }
+}
+
+.mini__board {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.mini__double {
+  fill: var(--p-text-color);
+  stroke: var(--p-text-color);
+  stroke-width: 14;
+  stroke-linejoin: round;
+}
+
+.directions {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+}
+
+.directions__item {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+}
+
+.directions__share {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.directions__label {
+  color: var(--p-text-muted-color);
+  font-size: 0.8rem;
 }

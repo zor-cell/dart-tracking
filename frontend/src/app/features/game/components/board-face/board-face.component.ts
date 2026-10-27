@@ -26,6 +26,8 @@ export class BoardFaceComponent {
   readonly faded = input(false);
   /** Report the field under the pointer; every bed carries its label as `data-label` anyway. */
   readonly interactive = input(false);
+  /** Draw the sector numbers; a zoomed view leaves them out. */
+  readonly numbers = input(true);
 
   readonly fieldEnter = output<FieldEnter>();
   readonly fieldLeave = output<void>();

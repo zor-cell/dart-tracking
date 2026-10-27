@@ -1,12 +1,12 @@
-<svg class="heatmap" [attr.viewBox]="viewBox" role="img" [attr.aria-label]="ariaLabel()">
-  <g app-board-face [faded]="true">
+<svg class="heatmap" [attr.viewBox]="view()" role="img" [attr.aria-label]="ariaLabel()">
+  <g app-board-face [faded]="true" [numbers]="zoom() === null">
     @if (cloud(); as cloud) {
       <image
         [attr.href]="cloud"
-        [attr.x]="-extent"
-        [attr.y]="-extent"
-        [attr.width]="extent * 2"
-        [attr.height]="extent * 2"
+        [attr.x]="-extent()"
+        [attr.y]="-extent()"
+        [attr.width]="extent() * 2"
+        [attr.height]="extent() * 2"
         preserveAspectRatio="none"
       />
     }
