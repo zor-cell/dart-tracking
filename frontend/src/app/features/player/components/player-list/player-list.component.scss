@@ -2,6 +2,12 @@
   --p-tabs-tabpanel-padding: 1.25rem 0 0;
 }
 
+/* Both tabs take half the bar, so the labels sit symmetric to the centre. */
+p-tab {
+  flex: 1 1 0;
+  text-align: center;
+}
+
 .tab:not([hidden]) {
   display: flex;
   flex-direction: column;
