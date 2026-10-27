@@ -333,7 +333,10 @@ a.list-group__item {
 
 .stat--wide {
   grid-column: 1 / -1;
+}
 
+.stat--wide,
+.stat--lead {
   .stat__value {
     font-size: 2.25rem;
   }

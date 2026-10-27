@@ -126,9 +126,13 @@
         </app-empty-state>
       } @else {
         <dl class="stat-grid">
-          <div class="stat stat--wide">
+          <div class="stat stat--lead">
             <dt class="stat__label">3-Dart-Average</dt>
             <dd class="stat__value">{{ totals.average | number: '1.2-2' }}</dd>
+          </div>
+          <div class="stat stat--lead">
+            <dt class="stat__label">First-9-Average</dt>
+            <dd class="stat__value">{{ totals.firstNineAverage | number: '1.2-2' }}</dd>
           </div>
           <div class="stat">
             <dt class="stat__label">Legs gewonnen</dt>
