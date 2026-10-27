@@ -1,19 +1,64 @@
-<app-heat-board
-  [fields]="fields()"
-  ariaLabel="Doppel nach Trefferquote"
-  fill="var(--p-green-500)"
-  [scale]="scale"
-  [selectable]="selectable"
-  [legendMax]="legendMax()"
-  [(selected)]="selected"
-  [(hovered)]="hovered"
->
-  <p caption class="caption">
-    @if (shown(); as double) {
-      <strong>{{ double.name }}</strong> &middot; {{ double.hits }} von
-      {{ double.attempts }} getroffen &middot; {{ double.rate * 100 | number: '1.0-0' }}&nbsp;%
-    } @else {
-      <span class="caption__summary">{{ attempts() }} Darts auf Doppel</span>
-    }
-  </p>
-</app-heat-board>
+<ng-template #caption>
+  @if (shown(); as double) {
+    <strong>{{ double.name }}</strong> &middot; {{ double.hits }}&nbsp;/&nbsp;{{ double.attempts }}
+    &middot; {{ double.rate * 100 | number: '1.0-0' }}&nbsp;%
+  } @else {
+    <span class="caption__summary">
+      @if (layer() === 'tips') {
+        {{ tips().length }} Checkout-Darts erkannt
+      } @else {
+        {{ attempts() }} Checkout-Darts
+      }
+    </span>
+  }
+</ng-template>
+
+<p-selectbutton
+  class="layer"
+  [options]="layerOptions"
+  optionLabel="label"
+  optionValue="value"
+  [allowEmpty]="false"
+  [ngModel]="layer()"
+  (ngModelChange)="selectLayer($event)"
+  ariaLabel="Darstellung der Doppel"
+  size="small"
+/>
+
+@if (layer() === 'tips') {
+  <app-tip-heatmap [points]="tips()" mode="cloud" (click)="selected.set(null)">
+    <svg:g overlay>
+      @for (target of targets(); track target.label) {
+        <svg:path
+          class="targets__field"
+          [attr.d]="target.d"
+          tabindex="0"
+          role="button"
+          [attr.aria-label]="target.ariaLabel"
+          [attr.aria-pressed]="selected() === target.label"
+          (click)="toggle(target.label, $event)"
+          (keydown.enter)="toggle(target.label, $event)"
+          (keydown.space)="toggle(target.label, $event)"
+          (pointerenter)="onTargetEnter(target.label, $event)"
+          (pointerleave)="hovered.set(null)"
+        />
+      }
+      @if (outline(); as d) {
+        <svg:path class="targets__selected targets__selected--halo" [attr.d]="d" />
+        <svg:path class="targets__selected" [attr.d]="d" />
+      }
+    </svg:g>
+    <span caption><ng-container *ngTemplateOutlet="caption" /></span>
+  </app-tip-heatmap>
+} @else {
+  <app-heat-board
+    [fields]="fields()"
+    ariaLabel="Doppel nach Trefferquote"
+    [selectable]="selectable"
+    [legendMax]="legendMax()"
+    [(selected)]="selected"
+    [(hovered)]="hovered"
+  >
+    <span caption><ng-container *ngTemplateOutlet="caption" /></span>
+  </app-heat-board>
+}

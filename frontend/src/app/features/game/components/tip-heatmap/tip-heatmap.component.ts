@@ -25,7 +25,8 @@ const CLOUD_SIGMA = 6;
 /** Every tip as its own dot, or all of them smoothed into one cloud. */
 export type TipHeatmapMode = 'dots' | 'cloud';
 
-/** Every located tip on one board, with the visit under way marked on top as on the live board. */
+/** Every located tip on one board, with the visit under way marked on top as on the live board.
+ * Projects `svg:g[overlay]` over the board and `[caption]` in place of the count. */
 @Component({
   selector: 'app-tip-heatmap',
   imports: [BoardFaceComponent, DartMarkersComponent, DecimalPipe, HeatLegendComponent],

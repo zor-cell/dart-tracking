@@ -12,7 +12,7 @@
 
 /* Hits fall through to the board beneath, which knows every field, hit or not. */
 .board__field {
-  fill: var(--heat-fill);
+  fill: var(--p-text-color);
   fill-rule: evenodd;
   stroke: none;
   pointer-events: none;

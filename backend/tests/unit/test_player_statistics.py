@@ -97,7 +97,7 @@ def test_darts_at_a_double_are_measured_from_it():
     assert d20.directions == {MissDirection.LONG: 1, MissDirection.LEFT: 1, MissDirection.SHORT: 1}
     assert (d10.attempts, d10.hits, d10.label) == (2, 1, "D10")
     assert d10.miss_distance == pytest.approx(5)
-    assert (d10.throws[1].across, d10.throws[1].out) == pytest.approx((0, 0), abs=1e-9)
+    assert d10.throws[1].hit and not d10.throws[0].hit
     assert statistics.double_misses_located == 4
     assert statistics.miss_directions[MissDirection.LONG] == 2
 

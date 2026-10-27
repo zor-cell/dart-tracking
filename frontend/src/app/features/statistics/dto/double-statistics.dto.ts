@@ -1,9 +1,8 @@
 /** Which side of a double a dart missed on, seen with the double turned to the top. */
 export type MissDirection = 'short' | 'long' | 'left' | 'right';
 
-/** A located dart at a double in mm from its middle, the double turned to the top:
- * `across` to the right, `out` away from the centre. The bull keeps board x/y. */
-export type DoubleThrow = readonly [across: number, out: number, hit: boolean];
+/** A located dart at a double, in board mm. */
+export type DoubleThrow = readonly [x: number, y: number, hit: boolean];
 
 export interface DoubleStatisticsDto {
   /** Called-out label of the double: D16, or 50 for the bull. */

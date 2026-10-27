@@ -22,9 +22,15 @@
 
     <g app-dart-markers [darts]="current()" [radius]="markRadius"></g>
   }
+
+  <ng-content select="[overlay]" />
 </svg>
 
-<p class="caption">{{ caption() }}</p>
+<div class="caption">
+  <ng-content select="[caption]"
+    ><span class="caption__summary">{{ caption() }}</span></ng-content
+  >
+</div>
 @if (density(); as density) {
   <app-heat-legend class="legend" [color]="legendColor">
     <span>{{ density.peak | number: '1.0-1' }} Darts/cm²</span>

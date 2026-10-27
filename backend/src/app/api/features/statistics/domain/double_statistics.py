@@ -17,9 +17,6 @@ from app.api.features.calibration.domain.board_geometry import (
 
 BULL = 25
 
-# Middle of the double ring, in mm from the centre.
-_DOUBLE_MID_RADIUS = (DOUBLE_INNER_RADIUS + DOUBLE_OUTER_RADIUS) / 2
-
 
 class MissDirection(StrEnum):
     """Which side of a double a dart missed on, seen with the double turned to the top."""
@@ -32,11 +29,10 @@ class MissDirection(StrEnum):
 
 @dataclass(frozen=True)
 class DoubleThrow:
-    """A located dart at a double, in mm from the double's middle with the double turned
-    to the top: `across` to the right, `out` away from the centre. The bull keeps x/y."""
+    """A located dart at a double, in board mm."""
 
-    across: float
-    out: float
+    x: float
+    y: float
     hit: bool
 
 
@@ -61,10 +57,7 @@ class DoubleStatistics:
         if position is None:
             return
         x, y = position
-        if self.value == BULL:
-            self.throws.append(DoubleThrow(x, y, hit))
-        else:
-            self.throws.append(self._turned(x, y, hit))
+        self.throws.append(DoubleThrow(x, y, hit))
         if hit:
             return
         self.located_misses += 1
@@ -76,11 +69,6 @@ class DoubleStatistics:
         """Angle of the point from the double's centre line, counter-clockwise positive."""
         centre = sector_centre_angle(SECTOR_ORDER.index(self.value))
         return (math.atan2(y, x) - centre + math.pi) % (2 * math.pi) - math.pi
-
-    def _turned(self, x: float, y: float, hit: bool) -> DoubleThrow:
-        radius, offset = math.hypot(x, y), self._offset(x, y)
-        across = -radius * math.sin(offset)
-        return DoubleThrow(across, radius * math.cos(offset) - _DOUBLE_MID_RADIUS, hit)
 
     def _direction(self, x: float, y: float) -> MissDirection | None:
         """The side the dart left the double by, whichever it overshot further."""

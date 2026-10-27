@@ -25,9 +25,9 @@
   grid-area: target;
   width: 4.5rem;
   height: 1.6rem;
-  border: 2px solid var(--p-green-500);
+  border: 2px solid var(--p-text-color);
   border-radius: 0.25rem;
-  background: color-mix(in srgb, var(--p-green-500) 25%, transparent);
+  background: color-mix(in srgb, var(--p-text-color) 20%, transparent);
 }
 
 .direction {

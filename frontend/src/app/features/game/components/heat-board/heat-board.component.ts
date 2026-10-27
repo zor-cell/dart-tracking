@@ -14,6 +14,11 @@ export interface HeatField {
 const MIN_OPACITY = 0.2;
 const MAX_OPACITY = 0.9;
 
+/** Fill opacity for a share; the square root keeps one high value from washing out the rest. */
+function scale(share: number): number {
+  return MIN_OPACITY + (MAX_OPACITY - MIN_OPACITY) * Math.sqrt(share);
+}
+
 /**
  * A board with fields tinted by value, a picked field outlined, the caption top left and the
  * scale bottom right. Projects `[caption]`, `[corner]` (bottom left) and `svg:g[overlay]`.
@@ -24,17 +29,10 @@ const MAX_OPACITY = 0.9;
   templateUrl: './heat-board.component.html',
   styleUrl: './heat-board.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '[style.--heat-fill]': 'fill()' },
 })
 export class HeatBoardComponent {
   readonly fields = input.required<readonly HeatField[]>();
   readonly ariaLabel = input.required<string>();
-  /** CSS colour the fields are tinted in. */
-  readonly fill = input('var(--p-text-color)');
-  /** Opacity for a share; the square root by default keeps one high value from washing out the rest. */
-  readonly scale = input<(share: number) => number>(
-    (share) => MIN_OPACITY + (MAX_OPACITY - MIN_OPACITY) * Math.sqrt(share),
-  );
   /** Whether a tap or hover on `label` may pick it. */
   readonly selectable = input<(label: string) => boolean>(() => true);
   /** What the top of the scale reads; no scale without it. */
@@ -60,10 +58,10 @@ export class HeatBoardComponent {
   });
 
   protected readonly legendColor = (share: number): string =>
-    `color-mix(in srgb, ${this.fill()} ${(this.scale()(share) * 100).toFixed(0)}%, transparent)`;
+    `color-mix(in srgb, var(--p-text-color) ${(scale(share) * 100).toFixed(0)}%, transparent)`;
 
   private opacity(share: number): number {
-    return share <= 0 ? 0 : this.scale()(Math.min(1, share));
+    return share <= 0 ? 0 : scale(Math.min(1, share));
   }
 
   /** A tap on a pickable field picks it, a second tap or one beside the fields clears it. */

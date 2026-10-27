@@ -23,11 +23,13 @@
   position: absolute;
   top: 0;
   left: 0;
-  margin: 0;
-  color: var(--p-text-muted-color);
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.caption__summary {
+  color: var(--p-text-muted-color);
 }
 
 /* Bottom-right corner, as on the field view. */

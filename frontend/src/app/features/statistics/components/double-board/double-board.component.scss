@@ -1,11 +1,51 @@
+/* Same compact toggle and layout as the hit picture. */
 :host {
+  --p-togglebutton-sm-padding: 0.2rem;
+  --p-togglebutton-content-sm-padding: 0.2rem 0.5rem;
+  --p-togglebutton-sm-font-size: 0.75rem;
+
+  position: relative;
   display: block;
 }
 
-.caption {
-  margin: 0;
+app-tip-heatmap,
+app-heat-board {
+  height: 100%;
+}
+
+.layer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
 }
 
 .caption__summary {
   color: var(--p-text-muted-color);
+}
+
+/* Tap targets only: the cloud beneath carries what there is to see. */
+.targets__field {
+  fill: transparent;
+  stroke: none;
+  outline: none;
+  cursor: pointer;
+}
+
+.targets__field:focus-visible {
+  stroke: var(--p-text-color);
+  stroke-width: 2.5;
+}
+
+.targets__selected {
+  fill: none;
+  stroke: var(--p-text-color);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  pointer-events: none;
+
+  &--halo {
+    stroke: var(--p-content-background);
+    stroke-width: 5;
+  }
 }

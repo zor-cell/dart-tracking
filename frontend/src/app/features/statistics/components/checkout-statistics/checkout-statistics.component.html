@@ -52,9 +52,6 @@
   } @else {
     <p class="panel__hint">Ein Doppel antippen für seine Darts.</p>
     <app-double-board class="doubles" [doubles]="totals.doubles" [(selected)]="selected" />
-    @if (selectedDouble(); as double) {
-      <app-double-throws [double]="double" />
-    }
   }
 </section>
 
@@ -81,9 +78,15 @@
       </div>
     </div>
     <p class="panel__hint">
-      Das Doppel jeweils nach oben gedreht, aus {{ directedMisses() }} erkannten Darts ohne Bull.
+      @if (shownName(); as name) {
+        {{ name }} nach oben gedreht, aus {{ directedMisses() }} erkannten Darts.
+      } @else {
+        Das Doppel jeweils nach oben gedreht, aus {{ directedMisses() }} erkannten Darts ohne Bull.
+      }
     </p>
+  } @else if (selected() === '50') {
+    <p class="panel__hint">Am Bull zählt keine Seite, nur der Abstand.</p>
   } @else {
-    <p class="panel__hint">Noch keine erkannten Darts neben einem Doppel.</p>
+    <p class="panel__hint">Noch keine erkannten Darts neben {{ shownName() ?? 'einem Doppel' }}.</p>
   }
 </section>

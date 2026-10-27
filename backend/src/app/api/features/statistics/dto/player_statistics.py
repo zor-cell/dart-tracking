@@ -22,7 +22,7 @@ def _directions(counts: Counter[MissDirection]) -> dict[MissDirection, int]:
 
 
 class DoubleDto(CamelModel):
-    """Darts at one finishing double; throws are (across, out, hit) in mm, see DoubleThrow."""
+    """Darts at one finishing double; throws are (x, y, hit) in board mm."""
 
     label: str
     attempts: int
@@ -40,7 +40,7 @@ class DoubleDto(CamelModel):
             hits=double.hits,
             miss_distance=_rounded(double.miss_distance / located if located else None),
             directions=_directions(double.directions),
-            throws=[(round(t.across, 1), round(t.out, 1), t.hit) for t in double.throws],
+            throws=[(round(t.x, 1), round(t.y, 1), t.hit) for t in double.throws],
         )
 
 
