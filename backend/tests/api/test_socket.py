@@ -317,6 +317,7 @@ def test_rematch_calls_the_old_room_over(room, game_id, anon):
         assert device.next("rematch_started")["gameId"] == rematch["id"]
 
 
+@pytest.mark.dataset
 @pytest.mark.skipif(dataset_root() is None, reason="TESTDATA_DIR is not set")
 def test_socket_scores_a_throw_series_like_the_pipeline_does(camera):
     entry = next(entry for entry in manifest("gate") if entry[0].startswith("games/"))
@@ -341,6 +342,7 @@ def test_socket_scores_a_throw_series_like_the_pipeline_does(camera):
     assert reported == expected
 
 
+@pytest.mark.dataset
 @pytest.mark.skipif(dataset_root() is None, reason="TESTDATA_DIR is not set")
 @pytest.mark.parametrize("advance_on_pull", [True, False])
 def test_pulled_darts_hand_over_with_the_rest_as_misses(camera, advance_on_pull):
@@ -395,6 +397,7 @@ def test_a_test_run_keeps_the_shot_of_a_failed_calibration(room, register, sessi
     assert any(tmp_path.rglob("calibration_*.jpg")) is test_run
 
 
+@pytest.mark.dataset
 @pytest.mark.skipif(dataset_root() is None, reason="TESTDATA_DIR is not set")
 def test_an_evaluation_run_records_frames_and_events(room, register, session, tmp_path, monkeypatch):
     monkeypatch.setattr(frame_buffer, "_EVALUATION_ROOT", tmp_path / "evaluation")

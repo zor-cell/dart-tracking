@@ -16,11 +16,75 @@ jobs:
   test:
     uses: ./.github/workflows/test.yaml
 
+  changes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      cv: ${{ steps.diff.outputs.cv }}
+    env:
+      # Everything the photo replays run through, and the tests that drive them.
+      CV_TEST_PATHS: >-
+        backend/src/app/api/features/calibration
+        backend/src/app/api/features/detection
+        backend/src/app/api/features/evaluation
+        backend/src/app/api/core/socket
+        backend/tests/conftest.py
+        backend/tests/cv
+        backend/tests/api/conftest.py
+        backend/tests/api/support.py
+        backend/tests/api/test_socket.py
+        backend/pyproject.toml
+        backend/uv.lock
+        .github/workflows/deploy.yaml
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Check whether the push touches the CV pipeline
+        id: diff
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          # A manual run, a new branch or a force push has no previous commit to compare with.
+          if [ "$GITHUB_EVENT_NAME" != push ] || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            echo "cv=true" >> "$GITHUB_OUTPUT"
+          elif git diff --quiet "$BEFORE" HEAD -- $CV_TEST_PATHS; then
+            echo "cv=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "cv=true" >> "$GITHUB_OUTPUT"
+          fi
+
   test-cv:
+    needs: changes
+    if: needs.changes.outputs.cv == 'true'
     runs-on: [self-hosted, rpi5]
     timeout-minutes: 30
+    services:
+      # Published off the usual ports so they never meet the running stack.
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: dart
+          POSTGRES_PASSWORD: dart
+          POSTGRES_DB: dart_test
+        ports: ["10032:5432"]
+        options: >-
+          --health-cmd "pg_isready -U dart -d dart_test"
+          --health-interval 2s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:8-alpine
+        ports: ["10033:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 2s --health-timeout 5s --health-retries 20
     env:
       TESTDATA_DIR: /srv/dart-tracking/testdata
+      POSTGRES_USER: dart
+      POSTGRES_PASSWORD: dart
+      POSTGRES_DB: dart_test
+      POSTGRES_PORT: 10032
+      REDIS_PORT: 10033
+      JWT_SECRET: test-only-secret-padded-to-32-bytes
     defaults:
       run:
         working-directory: backend
@@ -31,10 +95,15 @@ jobs:
           enable-cache: true
       - run: uv sync --frozen
       - run: uv run pytest tests/cv
+      - run: uv run pytest tests/api -m dataset
 
   deploy:
-    needs: [test, test-cv]
-    if: github.ref == 'refs/heads/main'
+    needs: [test, changes, test-cv]
+    # A skipped test-cv means the push left the CV pipeline alone, not that it failed.
+    if: >-
+      !cancelled() && github.ref == 'refs/heads/main'
+      && needs.test.result == 'success' && needs.changes.result == 'success'
+      && (needs.test-cv.result == 'success' || needs.test-cv.result == 'skipped')
     runs-on: [self-hosted, rpi5]
     outputs:
       tracker-changed: ${{ steps.changes.outputs.tracker }}
