@@ -1,63 +1,18 @@
 :host {
-  position: relative;
   display: block;
   height: 100%;
 }
 
-.board {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-/* Hits fall through to the board beneath, which knows every field, hit or not. */
-.board__field {
-  fill: var(--p-text-color);
-  fill-rule: evenodd;
-  stroke: none;
-  pointer-events: none;
-  outline: none;
-
-  &:focus-visible {
-    stroke: var(--p-text-color);
-    stroke-width: 2.5;
-  }
-}
-
-.board__selected {
-  fill: none;
-  stroke: var(--p-text-color);
-  stroke-width: 2;
-  stroke-linejoin: round;
-  pointer-events: none;
-
-  /* Keeps the outline visible on a field filled in the same colour. */
-  &--halo {
-    stroke: var(--p-content-background);
-    stroke-width: 5;
-  }
-}
-
-/* In the free top-left corner, opposite the layer toggle. */
 .caption {
-  position: absolute;
-  top: 0;
-  left: 0;
   margin: 0;
-  font-size: 0.85rem;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
 .caption__summary {
   color: var(--p-text-muted-color);
 }
 
-/* Misses as a field of their own in the bottom-left corner, off the board itself. */
+/* Misses as a field of their own, off the board itself. */
 .miss {
-  position: absolute;
-  bottom: 0;
-  left: 0;
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -99,11 +54,4 @@
 
 .miss__ordinal {
   font-weight: 700;
-}
-
-/* The fill scale in the bottom-right corner, opposite the miss field. */
-.legend {
-  position: absolute;
-  right: 0;
-  bottom: 0.15rem;
 }

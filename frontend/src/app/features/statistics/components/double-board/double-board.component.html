@@ -1,27 +1,19 @@
-<svg
-  class="board"
-  [attr.viewBox]="viewBox"
-  role="group"
-  aria-label="Doppel nach Trefferquote"
-  (click)="onBoardClick($event)"
+<app-heat-board
+  [fields]="fields()"
+  ariaLabel="Doppel nach Trefferquote"
+  fill="var(--p-green-500)"
+  [scale]="scale"
+  [selectable]="selectable"
+  [legendMax]="legendMax()"
+  [(selected)]="selected"
+  [(hovered)]="hovered"
 >
-  <g app-board-face [faded]="true"></g>
-
-  @for (field of fields(); track field.label) {
-    <path
-      class="board__field"
-      [attr.d]="field.d"
-      [attr.fill-opacity]="field.opacity"
-      tabindex="0"
-      role="button"
-      [attr.aria-label]="field.name"
-      [attr.aria-pressed]="selected() === field.label"
-      (focus)="selected.set(field.label)"
-    />
-  }
-
-  @if (outline(); as d) {
-    <path class="board__selected board__selected--halo" [attr.d]="d" />
-    <path class="board__selected" [attr.d]="d" />
-  }
-</svg>
+  <p caption class="caption">
+    @if (shown(); as double) {
+      <strong>{{ double.name }}</strong> &middot; {{ double.hits }} von
+      {{ double.attempts }} getroffen &middot; {{ double.rate * 100 | number: '1.0-0' }}&nbsp;%
+    } @else {
+      <span class="caption__summary">{{ attempts() }} Darts auf Doppel</span>
+    }
+  </p>
+</app-heat-board>

@@ -1,71 +1,43 @@
-<svg
-  class="board"
-  [attr.viewBox]="viewBox"
-  role="group"
-  [attr.aria-label]="ariaLabel()"
-  (click)="onBoardClick($event)"
+<app-heat-board
+  [fields]="fields()"
+  [ariaLabel]="ariaLabel()"
+  [legendMax]="total() > 0 ? '' + most() : null"
+  [(selected)]="pinned"
+  [(hovered)]="hovered"
 >
-  <g
-    app-board-face
-    [faded]="true"
-    [interactive]="true"
-    (fieldEnter)="onFieldEnter($event)"
-    (fieldLeave)="onFieldLeave()"
-  ></g>
+  <svg:g overlay app-field-frames [darts]="current()" [includeLocated]="true"></svg:g>
 
-  @for (field of fields(); track field.label) {
-    <path
-      class="board__field"
-      [attr.d]="field.d"
-      [attr.fill-opacity]="field.opacity"
-      tabindex="0"
-      role="button"
-      [attr.aria-label]="field.name + ': ' + field.count + (field.count === 1 ? ' Dart' : ' Darts')"
-      (focus)="onFieldFocus(field.label)"
-    />
-  }
-
-  <g app-field-frames [darts]="current()" [includeLocated]="true"></g>
-
-  @if (selected()?.d; as d) {
-    <path class="board__selected board__selected--halo" [attr.d]="d" />
-    <path class="board__selected" [attr.d]="d" />
-  }
-</svg>
-
-<button
-  type="button"
-  class="miss"
-  [class.miss--selected]="selected()?.label === miss"
-  [attr.aria-pressed]="selected()?.label === miss"
-  [attr.aria-label]="'Daneben: ' + misses() + (misses() === 1 ? ' Dart' : ' Darts')"
-  (click)="toggleMiss()"
-  (pointerenter)="onFieldEnter({ event: $event, label: miss })"
-  (pointerleave)="onFieldLeave()"
->
-  <span class="miss__swatch" [style.border-color]="missOrdinals()[0]?.color">
-    <span class="miss__fill" [style.opacity]="missOpacity()"></span>
-  </span>
-  Daneben
-  @for (ordinal of missOrdinals(); track ordinal.value) {
-    <span class="miss__ordinal" [style.color]="ordinal.color">{{ ordinal.value }}</span>
-  }
-</button>
-
-@if (total() > 0) {
-  <app-heat-legend class="legend" [color]="legendColor">{{ most() }}</app-heat-legend>
-}
-
-<p class="caption" aria-live="polite">
-  @if (selected(); as field) {
-    <strong>{{ field.name }}</strong> &middot;
-    @if (field.count === 0) {
-      {{ field.label === '0' ? 'keine Darts' : 'keine Treffer' }}
+  <p caption class="caption">
+    @if (selected(); as field) {
+      <strong>{{ field.name }}</strong> &middot;
+      @if (field.count === 0) {
+        {{ field.label === miss ? 'keine Darts' : 'keine Treffer' }}
+      } @else {
+        {{ field.count }} {{ field.count === 1 ? 'Dart' : 'Darts' }} &middot;
+        {{ field.share | number: '1.0-0' }}&nbsp;%
+      }
     } @else {
-      {{ field.count }} {{ field.count === 1 ? 'Dart' : 'Darts' }} &middot;
-      {{ field.share | number: '1.0-0' }}&nbsp;%
+      <span class="caption__summary">{{ total() }} Darts</span>
     }
-  } @else {
-    <span class="caption__summary">{{ total() }} Darts</span>
-  }
-</p>
+  </p>
+
+  <button
+    corner
+    type="button"
+    class="miss"
+    [class.miss--selected]="selected()?.label === miss"
+    [attr.aria-pressed]="selected()?.label === miss"
+    [attr.aria-label]="'Daneben: ' + misses() + (misses() === 1 ? ' Dart' : ' Darts')"
+    (click)="toggleMiss()"
+    (pointerenter)="onMissEnter($event)"
+    (pointerleave)="hovered.set(null)"
+  >
+    <span class="miss__swatch" [style.border-color]="missOrdinals()[0]?.color">
+      <span class="miss__fill" [style.opacity]="missOpacity()"></span>
+    </span>
+    Daneben
+    @for (ordinal of missOrdinals(); track ordinal.value) {
+      <span class="miss__ordinal" [style.color]="ordinal.color">{{ ordinal.value }}</span>
+    }
+  </button>
+</app-heat-board>

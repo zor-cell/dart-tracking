@@ -34,7 +34,6 @@ export class DoubleThrowsComponent {
   readonly double = input.required<DoubleStatisticsDto>();
 
   protected readonly name = computed(() => fieldName(this.double().label));
-  protected readonly rate = computed(() => this.double().hits / this.double().attempts);
   private readonly bull = computed(() => this.double().label === '50');
 
   protected readonly target = computed(() => fieldOutline(this.bull() ? '50' : TURNED_TARGET, 0));

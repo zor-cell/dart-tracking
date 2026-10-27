@@ -50,9 +50,7 @@
       <p>Noch keine Darts auf ein Doppel, das checken konnte.</p>
     </app-empty-state>
   } @else {
-    <p class="panel__hint">
-      Je grüner, desto öfter getroffen. Ein Doppel antippen für seine Darts.
-    </p>
+    <p class="panel__hint">Ein Doppel antippen für seine Darts.</p>
     <app-double-board class="doubles" [doubles]="totals.doubles" [(selected)]="selected" />
     @if (selectedDouble(); as double) {
       <app-double-throws [double]="double" />

@@ -1,0 +1,43 @@
+<svg
+  class="board"
+  [attr.viewBox]="viewBox"
+  role="group"
+  [attr.aria-label]="ariaLabel()"
+  (click)="onBoardClick($event)"
+>
+  <g
+    app-board-face
+    [faded]="true"
+    [interactive]="true"
+    (fieldEnter)="onFieldEnter($event)"
+    (fieldLeave)="onFieldLeave()"
+  ></g>
+
+  @for (field of paths(); track field.label) {
+    <path
+      class="board__field"
+      [attr.d]="field.d"
+      [attr.fill-opacity]="field.opacity"
+      tabindex="0"
+      role="button"
+      [attr.aria-label]="field.ariaLabel"
+      [attr.aria-pressed]="selected() === field.label"
+      (focus)="selected.set(field.label)"
+    />
+  }
+
+  <ng-content select="[overlay]" />
+
+  @if (outline(); as d) {
+    <path class="board__selected board__selected--halo" [attr.d]="d" />
+    <path class="board__selected" [attr.d]="d" />
+  }
+</svg>
+
+<div class="caption" aria-live="polite"><ng-content select="[caption]" /></div>
+
+<div class="corner"><ng-content select="[corner]" /></div>
+
+@if (legendMax(); as max) {
+  <app-heat-legend class="legend" [color]="legendColor">{{ max }}</app-heat-legend>
+}

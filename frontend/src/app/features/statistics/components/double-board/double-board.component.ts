@@ -1,6 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
-import { BoardFaceComponent } from '../../../game/components/board-face/board-face.component';
-import { BOARD_VIEW_BOX, fieldOutline } from '../../../game/models/board-face';
+import { DecimalPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, input, model, signal } from '@angular/core';
+import {
+  HeatBoardComponent,
+  HeatField,
+} from '../../../game/components/heat-board/heat-board.component';
 import { fieldName } from '../../../game/models/field-label';
 import { DoubleStatisticsDto } from '../../dto/double-statistics.dto';
 
@@ -11,7 +14,7 @@ const MAX_OPACITY = 0.9;
 /** The finishing doubles on the board, tinted by how often they were hit; a tap picks one. */
 @Component({
   selector: 'app-double-board',
-  imports: [BoardFaceComponent],
+  imports: [DecimalPipe, HeatBoardComponent],
   templateUrl: './double-board.component.html',
   styleUrl: './double-board.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,32 +24,38 @@ export class DoubleBoardComponent {
   /** Label of the picked double. */
   readonly selected = model<string | null>(null);
 
-  protected readonly viewBox = BOARD_VIEW_BOX;
+  protected readonly hovered = signal<string | null>(null);
 
-  protected readonly fields = computed(() => {
-    const doubles = this.doubles();
-    const best = Math.max(...doubles.map((double) => double.hits / double.attempts));
-    return doubles.map((double) => {
-      const rate = double.hits / double.attempts;
-      return {
-        label: double.label,
-        d: fieldOutline(double.label, 0) ?? '',
-        opacity: MIN_OPACITY + (MAX_OPACITY - MIN_OPACITY) * (best === 0 ? 0 : rate / best),
-        name: `${fieldName(double.label)}: ${double.hits} von ${double.attempts} getroffen`,
-      };
-    });
+  protected readonly scale = (share: number): number =>
+    MIN_OPACITY + (MAX_OPACITY - MIN_OPACITY) * share;
+
+  protected readonly selectable = (label: string): boolean =>
+    this.doubles().some((double) => double.label === label);
+
+  private readonly best = computed(() =>
+    Math.max(0, ...this.doubles().map((double) => double.hits / double.attempts)),
+  );
+
+  protected readonly attempts = computed(() =>
+    this.doubles().reduce((sum, double) => sum + double.attempts, 0),
+  );
+
+  protected readonly fields = computed<HeatField[]>(() =>
+    this.doubles().map((double) => ({
+      label: double.label,
+      share: this.best() === 0 ? 0 : double.hits / double.attempts / this.best(),
+      ariaLabel: `${fieldName(double.label)}: ${double.hits} von ${double.attempts} getroffen`,
+    })),
+  );
+
+  protected readonly legendMax = computed(() => `${Math.round(this.best() * 100)} %`);
+
+  /** The double under the pointer or picked, with its rate. */
+  protected readonly shown = computed(() => {
+    const label = this.hovered() ?? this.selected();
+    const double = this.doubles().find((entry) => entry.label === label);
+    return double
+      ? { ...double, name: fieldName(double.label), rate: double.hits / double.attempts }
+      : null;
   });
-
-  protected readonly outline = computed(() => {
-    const label = this.selected();
-    return label === null ? null : fieldOutline(label, 0);
-  });
-
-  /** A tap on a double thrown at picks it; anywhere else leaves the pick. */
-  protected onBoardClick(event: MouseEvent): void {
-    const label = (event.target as Element).getAttribute('data-label');
-    if (label !== null && this.doubles().some((double) => double.label === label)) {
-      this.selected.set(label);
-    }
-  }
 }
