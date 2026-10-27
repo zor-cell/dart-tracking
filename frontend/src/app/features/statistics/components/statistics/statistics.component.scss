@@ -10,6 +10,11 @@
   --p-tabs-tabpanel-padding: 1.25rem 0 0;
 }
 
+/* Right under the filters, the tab padding as the only gap, so both read as one block. */
+p-tabs {
+  margin-top: -1.25rem;
+}
+
 /* The tabs share the bar evenly, as in the player list. */
 p-tab {
   flex: 1 1 0;

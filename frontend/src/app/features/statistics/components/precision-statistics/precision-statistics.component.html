@@ -53,6 +53,13 @@
 
 <section class="panel">
   <h2 class="panel__title">Streuung</h2>
+  <p class="panel__hint">
+    @if (totals.groupingDarts > 0) {
+      Aus {{ totals.groupingDarts }} erkannten Darts in Aufnahmen ohne Finish-Chance.
+    } @else {
+      Noch keine Aufnahme ohne Finish-Chance mit mindestens zwei erkannten Darts.
+    }
+  </p>
   <dl class="stat-grid">
     <div class="stat stat--lead">
       <dt class="stat__label">Ø Pfeilabstand</dt>
@@ -87,13 +94,6 @@
       }
     </div>
   </dl>
-  <p class="panel__hint">
-    @if (totals.groupingDarts > 0) {
-      Aus {{ totals.groupingDarts }} erkannten Darts in Aufnahmen ohne Finish-Chance.
-    } @else {
-      Noch keine Aufnahme ohne Finish-Chance mit mindestens zwei erkannten Darts.
-    }
-  </p>
   <h3 class="panel__subtitle">Pfeil 1 &middot; 2 &middot; 3</h3>
   <ol class="darts">
     @for (dart of darts(); track dart.place) {
