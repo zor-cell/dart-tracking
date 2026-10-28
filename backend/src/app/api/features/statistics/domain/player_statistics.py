@@ -113,16 +113,16 @@ class PlayerStatistics:
         ]
 
     @property
-    def double_miss_distance(self) -> float | None:
-        """Mean distance (mm) of a located miss from the double it was thrown at."""
-        located = sum(double.located_misses for double in self.doubles.values())
+    def double_distance(self) -> float | None:
+        """Mean distance (mm) of a located dart from the double it was thrown at, 0 for a hit."""
+        located = self.double_darts_located
         if located == 0:
             return None
-        return sum(double.miss_distance for double in self.doubles.values()) / located
+        return sum(double.distance for double in self.doubles.values()) / located
 
     @property
-    def double_misses_located(self) -> int:
-        return sum(double.located_misses for double in self.doubles.values())
+    def double_darts_located(self) -> int:
+        return sum(double.located for double in self.doubles.values())
 
     @property
     def miss_directions(self) -> Counter[MissDirection]:

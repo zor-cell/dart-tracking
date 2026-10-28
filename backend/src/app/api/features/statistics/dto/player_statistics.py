@@ -27,18 +27,18 @@ class DoubleDto(CamelModel):
     label: str
     attempts: int
     hits: int
-    miss_distance: float | None
+    distance: float | None
     directions: dict[MissDirection, int]
     throws: list[tuple[float, float, bool]]
 
     @classmethod
     def from_entity(cls, double: DoubleStatistics) -> Self:
-        located = double.located_misses
+        located = double.located
         return cls(
             label=double.label,
             attempts=double.attempts,
             hits=double.hits,
-            miss_distance=_rounded(double.miss_distance / located if located else None),
+            distance=_rounded(double.distance / located if located else None),
             directions=_directions(double.directions),
             throws=[(round(t.x, 1), round(t.y, 1), t.hit) for t in double.throws],
         )
@@ -74,8 +74,8 @@ class PlayerStatisticsDto(CamelModel):
     fields: dict[str, int]
     heatmap: list[tuple[int, int, int]]
     doubles: list[DoubleDto]
-    double_miss_distance: float | None
-    double_misses_located: int
+    double_distance: float | None
+    double_darts_located: int
     miss_directions: dict[MissDirection, int]
     grouping: float | None
     grouping_darts: int
@@ -107,8 +107,8 @@ class PlayerStatisticsDto(CamelModel):
                 DoubleDto.from_entity(double)
                 for double in sorted(statistics.doubles.values(), key=lambda d: -d.attempts)
             ],
-            double_miss_distance=_rounded(statistics.double_miss_distance),
-            double_misses_located=statistics.double_misses_located,
+            double_distance=_rounded(statistics.double_distance),
+            double_darts_located=statistics.double_darts_located,
             miss_directions=_directions(statistics.miss_directions),
             grouping=_rounded(statistics.grouping),
             grouping_darts=statistics.grouping_darts,

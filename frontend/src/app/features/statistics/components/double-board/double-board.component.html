@@ -53,10 +53,14 @@
         @for (chip of chips(); track chip.direction) {
           <svg:g class="chip" [attr.transform]="'translate(' + chip.x + ' ' + chip.y + ')'">
             <svg:rect class="chip__box" x="-17" y="-8" width="34" height="16" rx="3" />
-            <svg:text class="chip__share" y="-0.5">
+            <svg:path
+              class="chip__arrow"
+              d="M-4.5 0 H4 M1 -3 L4.5 0 L1 3"
+              [attr.transform]="'translate(-9 0) rotate(' + chip.arrow + ')'"
+            />
+            <svg:text class="chip__share" x="4" y="2.5">
               {{ chip.share * 100 | number: '1.0-0' }} %
             </svg:text>
-            <svg:text class="chip__label" y="5.2">{{ chip.label }}</svg:text>
           </svg:g>
         }
       </svg:g>

@@ -41,14 +41,17 @@ class DoubleStatistics:
     value: int  # sector value, 25 for the bull
     attempts: int = 0
     hits: int = 0
-    miss_distance: float = 0.0  # summed mm over the located misses
-    located_misses: int = 0
+    distance: float = 0.0  # summed mm of the located darts from the double, 0 for a hit
     directions: Counter[MissDirection] = field(default_factory=Counter)
     throws: list[DoubleThrow] = field(default_factory=list)
 
     @property
     def label(self) -> str:
         return "50" if self.value == BULL else f"D{self.value}"
+
+    @property
+    def located(self) -> int:
+        return len(self.throws)
 
     def add(self, hit: bool, position: tuple[float, float] | None) -> None:
         self.attempts += 1
@@ -60,8 +63,7 @@ class DoubleStatistics:
         self.throws.append(DoubleThrow(x, y, hit))
         if hit:
             return
-        self.located_misses += 1
-        self.miss_distance += distance_to_segment(x, y, Segment(value=self.value, multiplier=2))
+        self.distance += distance_to_segment(x, y, Segment(value=self.value, multiplier=2))
         if self.value != BULL and (direction := self._direction(x, y)) is not None:
             self.directions[direction] += 1
 

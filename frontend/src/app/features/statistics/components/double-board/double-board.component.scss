@@ -66,20 +66,19 @@ app-heat-board {
   stroke-width: 0.5;
 }
 
-.chip__share,
-.chip__label {
-  text-anchor: middle;
-}
-
 .chip__share {
+  text-anchor: middle;
   fill: var(--p-text-color);
   font-size: 7px;
   font-weight: 700;
 }
 
-.chip__label {
-  fill: var(--p-text-muted-color);
-  font-size: 4.5px;
+.chip__arrow {
+  fill: none;
+  stroke: var(--p-text-muted-color);
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* The whole board in the free bottom-left corner while zoomed; a tap goes back to it. */

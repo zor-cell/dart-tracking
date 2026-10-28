@@ -43,9 +43,11 @@ const ZOOM_MARGIN = 8;
 /** Width to height of a zoom, as the board's box. */
 const ZOOM_ASPECT = 1.25;
 
+/** A side's share around a zoomed double, with an arrow the way the darts missed. */
 interface Chip {
   direction: MissDirection;
-  label: string;
+  /** Degrees the arrow points, clockwise from the right. */
+  arrow: number;
   x: number;
   y: number;
 }
@@ -201,27 +203,24 @@ export class DoubleBoardComponent {
   }
 }
 
-/** The four chips around a double: short and long along its radius, the sides named after
- * the neighbouring sector they lean towards. */
+/** The four chips around a double: short and long along its radius, the sides across it. */
 function chipPlaces(label: string): Chip[] {
   const index = SECTOR_ORDER.indexOf(Number(label.slice(1)));
   const angle = sectorCentreAngle(index);
   const [outX, outY] = [Math.cos(angle), -Math.sin(angle)];
   const [leftX, leftY] = [-Math.sin(angle), -Math.cos(angle)];
   const [midX, midY] = [outX * DOUBLE_MID_RADIUS, outY * DOUBLE_MID_RADIUS];
-  const neighbour = (step: number): number =>
-    SECTOR_ORDER[(index + step + SECTOR_ORDER.length) % SECTOR_ORDER.length];
-  const place = (direction: MissDirection, label: string, dx: number, dy: number): Chip => ({
+  const place = (direction: MissDirection, dx: number, dy: number): Chip => ({
     direction,
-    label,
+    arrow: (Math.atan2(dy, dx) * 180) / Math.PI,
     x: midX + dx,
     y: midY + dy,
   });
   return [
-    place('long', MISS_DIRECTION_LABELS.long, outX * CHIP_RADIAL, outY * CHIP_RADIAL),
-    place('short', MISS_DIRECTION_LABELS.short, -outX * CHIP_RADIAL, -outY * CHIP_RADIAL),
-    place('left', `Richtung ${neighbour(-1)}`, leftX * CHIP_SIDEWAYS, leftY * CHIP_SIDEWAYS),
-    place('right', `Richtung ${neighbour(1)}`, -leftX * CHIP_SIDEWAYS, -leftY * CHIP_SIDEWAYS),
+    place('long', outX * CHIP_RADIAL, outY * CHIP_RADIAL),
+    place('short', -outX * CHIP_RADIAL, -outY * CHIP_RADIAL),
+    place('left', leftX * CHIP_SIDEWAYS, leftY * CHIP_SIDEWAYS),
+    place('right', -leftX * CHIP_SIDEWAYS, -leftY * CHIP_SIDEWAYS),
   ];
 }
 

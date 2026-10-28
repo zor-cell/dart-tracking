@@ -9,8 +9,8 @@ export interface DoubleStatisticsDto {
   readonly label: string;
   readonly attempts: number;
   readonly hits: number;
-  /** Mean distance of a located miss from the double, in mm. */
-  readonly missDistance: number | null;
+  /** Mean distance of a located dart from the double, 0 for a hit, in mm. */
+  readonly distance: number | null;
   readonly directions: Readonly<Record<MissDirection, number>>;
   readonly throws: readonly DoubleThrow[];
 }

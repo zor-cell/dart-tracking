@@ -94,11 +94,11 @@
       }
     </div>
   </dl>
-  <h3 class="panel__subtitle">Pfeil 1 &middot; 2 &middot; 3</h3>
+  <p class="panel__hint">Ø Punkte pro Dart, nach seinem Platz in der Aufnahme.</p>
   <ol class="darts">
     @for (dart of darts(); track dart.place) {
       <li class="darts__row">
-        <span class="darts__place">{{ dart.place }}.</span>
+        <span class="darts__place">Dart {{ dart.place }}</span>
         <span class="darts__bar" aria-hidden="true">
           <span class="darts__fill" [style.width.%]="dart.share"></span>
         </span>
@@ -112,5 +112,4 @@
       </li>
     }
   </ol>
-  <p class="panel__hint">Ø Punkte pro Dart, nach seinem Platz in der Aufnahme.</p>
 </section>

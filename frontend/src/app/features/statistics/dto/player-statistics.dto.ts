@@ -21,8 +21,8 @@ export interface PlayerStatisticsDto {
   readonly heatmap: readonly HeatmapCell[];
   /** Doubles thrown at for a finish, most attempted first. */
   readonly doubles: readonly DoubleStatisticsDto[];
-  readonly doubleMissDistance: number | null;
-  readonly doubleMissesLocated: number;
+  readonly doubleDistance: number | null;
+  readonly doubleDartsLocated: number;
   readonly missDirections: Readonly<Record<MissDirection, number>>;
   /** Mean distance (mm) between two located darts of a scoring visit. */
   readonly grouping: number | null;

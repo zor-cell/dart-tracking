@@ -31,17 +31,17 @@
     <div class="stat stat--wide">
       <dt class="stat__label">Ø Abstand zum Checkout</dt>
       <dd class="stat__value">
-        @if (totals.doubleMissDistance !== null) {
-          {{ totals.doubleMissDistance | number: '1.0-0' }} mm
+        @if (totals.doubleDistance !== null) {
+          {{ totals.doubleDistance | number: '1.0-0' }} mm
         } @else {
           &ndash;
         }
       </dd>
       <dd class="stat__hint">
-        @if (totals.doubleMissesLocated > 0) {
-          aus {{ totals.doubleMissesLocated }} erkannten Darts daneben
+        @if (totals.doubleDartsLocated > 0) {
+          aus {{ totals.doubleDartsLocated }} erkannten Checkout-Darts, Treffer mit 0 mm
         } @else {
-          noch keine erkannten Darts neben einem Doppel
+          noch keine erkannten Checkout-Darts
         }
       </dd>
     </div>
