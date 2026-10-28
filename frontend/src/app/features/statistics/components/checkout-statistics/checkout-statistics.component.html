@@ -2,6 +2,23 @@
 <section class="panel">
   <h2 class="panel__title">Allgemein</h2>
   <dl class="stat-grid">
+    <div class="stat stat--wide">
+      <dt class="stat__label">Ø Abstand zum Checkout</dt>
+      <dd class="stat__value">
+        @if (totals.doubleDistance !== null) {
+          {{ totals.doubleDistance | number: '1.0-0' }} mm
+        } @else {
+          &ndash;
+        }
+      </dd>
+      <dd class="stat__hint">
+        @if (totals.doubleDartsLocated > 0) {
+          aus {{ totals.doubleDartsLocated }} erkannten Checkout-Darts, Treffer mit 0 mm
+        } @else {
+          noch keine erkannten Checkout-Darts
+        }
+      </dd>
+    </div>
     <div class="stat">
       <dt class="stat__label">Checkout-Quote</dt>
       <dd class="stat__value">
@@ -26,23 +43,6 @@
       </dd>
       <dd class="stat__hint">
         {{ totals.legsWon }} von {{ totals.legsWithChance }} Legs mit Chance
-      </dd>
-    </div>
-    <div class="stat stat--wide">
-      <dt class="stat__label">Ø Abstand zum Checkout</dt>
-      <dd class="stat__value">
-        @if (totals.doubleDistance !== null) {
-          {{ totals.doubleDistance | number: '1.0-0' }} mm
-        } @else {
-          &ndash;
-        }
-      </dd>
-      <dd class="stat__hint">
-        @if (totals.doubleDartsLocated > 0) {
-          aus {{ totals.doubleDartsLocated }} erkannten Checkout-Darts, Treffer mit 0 mm
-        } @else {
-          noch keine erkannten Checkout-Darts
-        }
       </dd>
     </div>
   </dl>

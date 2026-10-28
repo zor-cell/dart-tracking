@@ -52,6 +52,9 @@ interface Chip {
   y: number;
 }
 
+/** Label of a dart that hit no field. */
+const MISS = '0';
+
 const DIRECTIONS: readonly MissDirection[] = ['long', 'short', 'left', 'right'];
 
 /** The darts thrown at a finishing double, as a tip cloud or as each double's hit rate.
@@ -86,23 +89,40 @@ export class DoubleBoardComponent {
   protected readonly selectable = (label: string): boolean =>
     this.doubles().some((double) => double.label === label);
 
-  private readonly best = computed(() =>
-    Math.max(0, ...this.doubles().map((double) => double.hits / double.attempts)),
-  );
-
   protected readonly attempts = computed(() =>
     this.doubles().reduce((sum, double) => sum + double.attempts, 0),
   );
 
-  protected readonly fields = computed<HeatField[]>(() =>
-    this.doubles().map((double) => ({
-      label: double.label,
-      share: this.best() === 0 ? 0 : double.hits / double.attempts / this.best(),
-      ariaLabel: `${fieldName(double.label)}: ${double.hits} von ${double.attempts} getroffen`,
-    })),
+  /** What the darts at the picked double hit, or at every double without a pick, tracked or not. */
+  private readonly scored = computed(() => {
+    const picked = this.picked();
+    const counts = new Map<string, number>();
+    for (const double of picked ? [picked] : this.doubles()) {
+      for (const [label, count] of Object.entries(double.fields)) {
+        counts.set(label, (counts.get(label) ?? 0) + count);
+      }
+    }
+    return counts;
+  });
+
+  protected readonly misses = computed(() => this.scored().get(MISS) ?? 0);
+
+  /** The highest count on a board field, the dark end of the scale. */
+  private readonly most = computed(() =>
+    Math.max(1, ...[...this.scored()].filter(([label]) => label !== MISS).map(([, n]) => n)),
   );
 
-  protected readonly legendMax = computed(() => `${Math.round(this.best() * 100)} %`);
+  protected readonly fields = computed<HeatField[]>(() =>
+    [...this.scored()]
+      .filter(([label]) => label !== MISS)
+      .map(([label, count]) => ({
+        label,
+        share: count / this.most(),
+        ariaLabel: `${fieldName(label)}: ${count} ${count === 1 ? 'Dart' : 'Darts'}`,
+      })),
+  );
+
+  protected readonly legendMax = computed(() => `${this.most()}`);
 
   private readonly picked = computed(
     () => this.doubles().find((double) => double.label === this.selected()) ?? null,
@@ -176,12 +196,17 @@ export class DoubleBoardComponent {
     return picked === null ? null : fieldOutline(picked.label, 0);
   });
 
-  /** The double under the pointer or picked, with its rate. */
+  /** The double under the pointer or picked, with its rate and how many of its darts were found. */
   protected readonly shown = computed(() => {
     const label = this.hovered() ?? this.selected();
     const double = this.doubles().find((entry) => entry.label === label);
     return double
-      ? { ...double, name: fieldName(double.label), rate: double.hits / double.attempts }
+      ? {
+          ...double,
+          name: fieldName(double.label),
+          rate: double.hits / double.attempts,
+          located: double.throws.length,
+        }
       : null;
   });
 

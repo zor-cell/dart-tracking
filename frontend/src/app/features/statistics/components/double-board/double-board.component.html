@@ -1,13 +1,16 @@
 <ng-template #caption>
   @if (shown(); as double) {
-    <strong>{{ double.name }}</strong> &middot; {{ double.hits }}&nbsp;/&nbsp;{{
-      double.attempts
-    }}
-    &middot; {{ double.rate * 100 | number: '1.0-0' }}&nbsp;%
+    <strong>{{ double.name }}</strong> &middot;
+    @if (layer() === 'tips') {
+      {{ double.located }} von {{ double.attempts }} erkannt
+    } @else {
+      {{ double.hits }}&nbsp;/&nbsp;{{ double.attempts }} &middot;
+      {{ double.rate * 100 | number: '1.0-0' }}&nbsp;%
+    }
   } @else {
     <span class="caption__summary">
       @if (layer() === 'tips') {
-        {{ tips().length }} Checkout-Darts erkannt
+        {{ tips().length }} von {{ attempts() }} erkannt
       } @else {
         {{ attempts() }} Checkout-Darts
       }
@@ -83,13 +86,16 @@
   } @else {
     <app-heat-board
       [fields]="fields()"
-      ariaLabel="Doppel nach Trefferquote"
+      ariaLabel="Checkout-Darts nach getroffenem Feld"
       [selectable]="selectable"
       [legendMax]="legendMax()"
       [(selected)]="selected"
       [(hovered)]="hovered"
     >
       <span caption><ng-container *ngTemplateOutlet="caption" /></span>
+      @if (misses() > 0) {
+        <span corner class="misses">{{ misses() }} daneben</span>
+      }
     </app-heat-board>
   }
 </div>

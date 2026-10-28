@@ -29,6 +29,7 @@ class DoubleDto(CamelModel):
     hits: int
     distance: float | None
     directions: dict[MissDirection, int]
+    fields: dict[str, int]
     throws: list[tuple[float, float, bool]]
 
     @classmethod
@@ -40,6 +41,7 @@ class DoubleDto(CamelModel):
             hits=double.hits,
             distance=_rounded(double.distance / located if located else None),
             directions=_directions(double.directions),
+            fields=dict(double.fields),
             throws=[(round(t.x, 1), round(t.y, 1), t.hit) for t in double.throws],
         )
 

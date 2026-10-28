@@ -12,5 +12,7 @@ export interface DoubleStatisticsDto {
   /** Mean distance of a located dart from the double, 0 for a hit, in mm. */
   readonly distance: number | null;
   readonly directions: Readonly<Record<MissDirection, number>>;
+  /** Darts per field they hit, tracked or not, keyed by called-out label. */
+  readonly fields: Readonly<Record<string, number>>;
   readonly throws: readonly DoubleThrow[];
 }

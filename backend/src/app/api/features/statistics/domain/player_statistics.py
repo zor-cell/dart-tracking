@@ -157,7 +157,7 @@ class PlayerStatistics:
                     self.checkout_attempts += 1
                     if checkout_mode is CheckoutMode.DOUBLE_OUT:
                         hit = dart.multiplier == 2 and dart.points == live
-                        self._add_double_attempt(live, hit, dart.position)
+                        self._add_double_attempt(live, hit, dart.label, dart.position)
                 live -= dart.points
                 if live == 0 and not turn.busted:
                     self.checkout_hits += 1
@@ -200,7 +200,7 @@ class PlayerStatistics:
         self.spread = (xx, yy, xy)
 
     def _add_double_attempt(
-        self, live: int, hit: bool, position: tuple[float, float] | None
+        self, live: int, hit: bool, scored: str, position: tuple[float, float] | None
     ) -> None:
         value = BULL if live == 50 else live // 2
-        self.doubles.setdefault(value, DoubleStatistics(value)).add(hit, position)
+        self.doubles.setdefault(value, DoubleStatistics(value)).add(hit, scored, position)

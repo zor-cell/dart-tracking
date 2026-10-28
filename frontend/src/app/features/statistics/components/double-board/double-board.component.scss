@@ -26,8 +26,13 @@ app-heat-board {
   z-index: 1;
 }
 
-.caption__summary {
+.caption__summary,
+.misses {
   color: var(--p-text-muted-color);
+}
+
+.misses {
+  font-size: 0.875rem;
 }
 
 /* Tap targets only: the cloud beneath carries what there is to see. */

@@ -43,6 +43,7 @@ class DoubleStatistics:
     hits: int = 0
     distance: float = 0.0  # summed mm of the located darts from the double, 0 for a hit
     directions: Counter[MissDirection] = field(default_factory=Counter)
+    fields: Counter[str] = field(default_factory=Counter)  # called-out label of what was hit
     throws: list[DoubleThrow] = field(default_factory=list)
 
     @property
@@ -53,8 +54,9 @@ class DoubleStatistics:
     def located(self) -> int:
         return len(self.throws)
 
-    def add(self, hit: bool, position: tuple[float, float] | None) -> None:
+    def add(self, hit: bool, scored: str, position: tuple[float, float] | None) -> None:
         self.attempts += 1
+        self.fields[scored] += 1
         if hit:
             self.hits += 1
         if position is None:
