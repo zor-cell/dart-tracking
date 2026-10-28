@@ -1,5 +1,7 @@
+const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws';
+
 export const environment = {
   production: false,
-  httpApiUrl: 'http://localhost:8000/api',
-  wsApiUrl: 'ws://localhost:8000/api/ws'
+  httpApiUrl: '/api',
+  wsApiUrl: `${wsProtocol}://${location.host}/api/ws`
 };
