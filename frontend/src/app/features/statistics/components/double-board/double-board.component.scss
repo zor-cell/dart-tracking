@@ -60,26 +60,3 @@ app-heat-board {
     stroke-width: 5;
   }
 }
-
-.directions {
-  display: flex;
-  justify-content: space-between;
-  margin: 0;
-}
-
-.directions__item {
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: center;
-}
-
-.directions__share {
-  margin: 0;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.directions__label {
-  color: var(--p-text-muted-color);
-  font-size: 0.8rem;
-}

@@ -54,6 +54,24 @@ def test_located_fields_count_only_darts_with_a_tip():
     assert statistics.located_fields == {"T20": 1}
 
 
+def test_favourite_visit_is_the_scoring_visit_thrown_most_often():
+    statistics = PlayerStatistics()
+    statistics.add_leg(
+        501,
+        CheckoutMode.DOUBLE_OUT,
+        [
+            visit("0", "0", "0"),
+            visit("0", "0", "0"),
+            visit("0", "0", "0"),
+            visit("20", "1", "5"),
+            visit("T20", "20", "1"),
+            visit("20", "5", "1"),
+        ],
+    )
+
+    assert statistics.favourite_visit == 26
+
+
 def test_lost_leg_counts_every_dart_at_a_double():
     statistics = PlayerStatistics()
     statistics.add_leg(

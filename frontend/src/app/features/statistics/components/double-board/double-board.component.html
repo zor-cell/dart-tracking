@@ -67,12 +67,5 @@
 </div>
 
 @if (shares(); as shares) {
-  <dl class="directions" aria-label="Daneben geworfen">
-    @for (direction of directionOrder; track direction) {
-      <div class="directions__item">
-        <dt class="directions__label">{{ labels[direction] }}</dt>
-        <dd class="directions__share">{{ shares[direction] * 100 | number: '1.0-0' }} %</dd>
-      </div>
-    }
-  </dl>
+  <app-miss-directions [shares]="shares" />
 }

@@ -1,0 +1,38 @@
+:host {
+  display: block;
+}
+
+.misses {
+  display: block;
+  width: 100%;
+  max-width: 22rem;
+  height: auto;
+  margin: 0 auto;
+}
+
+.misses__double {
+  fill: var(--p-text-color);
+}
+
+.misses__arrow {
+  fill: none;
+  stroke: var(--p-text-color);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.misses__label {
+  fill: var(--p-text-muted-color);
+  font-size: 12px;
+
+  &--end {
+    text-anchor: end;
+  }
+}
+
+.misses__share {
+  fill: var(--p-text-color);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}

@@ -26,7 +26,7 @@
       <dt class="stat__label">Darts geworfen</dt>
       <dd class="stat__value">{{ totals.darts }}</dd>
     </div>
-    <div class="stat stat--tall">
+    <div class="stat">
       <dt class="stat__label">Bestes Visit</dt>
       <dd class="stat__value">{{ totals.bestVisit }}</dd>
     </div>
@@ -37,6 +37,10 @@
     <div class="stat stat--half">
       <dt class="stat__label">140+</dt>
       <dd class="stat__value">{{ totals.visits140Plus }}</dd>
+    </div>
+    <div class="stat">
+      <dt class="stat__label">Öftestes Visit</dt>
+      <dd class="stat__value">{{ totals.favouriteVisit ?? '–' }}</dd>
     </div>
     <div class="stat stat--half">
       <dt class="stat__label">100+</dt>

@@ -21,7 +21,8 @@ import {
 } from '../../../game/models/heatmap-layer';
 import { TipPoint } from '../../../game/models/tip-density';
 import { DoubleStatisticsDto, MissDirection } from '../../dto/double-statistics.dto';
-import { MISS_DIRECTION_LABELS, missShares } from '../../models/miss-direction';
+import { missShares } from '../../models/miss-direction';
+import { MissDirectionsComponent } from '../miss-directions/miss-directions.component';
 
 /** Label of a dart that hit no field. */
 const MISS = '0';
@@ -32,7 +33,14 @@ const DIRECTIONS: readonly MissDirection[] = ['long', 'short', 'left', 'right'];
  * A picked double narrows both. */
 @Component({
   selector: 'app-double-board',
-  imports: [DecimalPipe, FormsModule, HeatBoardComponent, SelectButton, TipHeatmapComponent],
+  imports: [
+    DecimalPipe,
+    FormsModule,
+    HeatBoardComponent,
+    MissDirectionsComponent,
+    SelectButton,
+    TipHeatmapComponent,
+  ],
   templateUrl: './double-board.component.html',
   styleUrl: './double-board.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -45,8 +53,6 @@ export class DoubleBoardComponent {
   protected readonly hovered = signal<string | null>(null);
   protected readonly layerOptions = [...HEATMAP_LAYERS];
   protected readonly layer = signal(storedHeatmapLayer());
-  protected readonly labels = MISS_DIRECTION_LABELS;
-  protected readonly directionOrder = DIRECTIONS;
 
   /** The double of the sector `label` lies in, the bull for both bull rings; null if never
    * thrown at. */

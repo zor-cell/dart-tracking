@@ -14,6 +14,8 @@ export interface PlayerStatisticsDto {
   readonly bestVisit: number;
   /** Points of the best visit that won a leg, 0 without one. */
   readonly highestFinish: number;
+  /** The scoring visit thrown most often; null without one. */
+  readonly favouriteVisit: number | null;
   /** Visits reaching each score; every band includes the higher ones. */
   readonly visits180: number;
   readonly visits140Plus: number;

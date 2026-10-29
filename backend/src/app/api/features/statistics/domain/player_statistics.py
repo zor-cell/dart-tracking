@@ -53,6 +53,7 @@ class PlayerStatistics:
     points: int = 0
     best_visit: int = 0
     highest_finish: int = 0  # points of the best visit that won a leg
+    visit_scores: Counter[int] = field(default_factory=Counter)  # scoring visits by points
     visits_180: int = 0
     visits_140_plus: int = 0
     visits_100_plus: int = 0
@@ -113,6 +114,13 @@ class PlayerStatistics:
         ]
 
     @property
+    def favourite_visit(self) -> int | None:
+        """The score thrown most often, the higher one on a tie."""
+        if not self.visit_scores:
+            return None
+        return max(self.visit_scores, key=lambda points: (self.visit_scores[points], points))
+
+    @property
     def double_distance(self) -> float | None:
         """Mean distance (mm) of a located dart from the double it was thrown at, 0 for a hit."""
         located = self.double_darts_located
@@ -166,6 +174,8 @@ class PlayerStatistics:
                 continue
 
             self.points += turn.points
+            if turn.points > 0:
+                self.visit_scores[turn.points] += 1
             remaining -= turn.points
             self.best_visit = max(self.best_visit, turn.points)
             if remaining == 0:

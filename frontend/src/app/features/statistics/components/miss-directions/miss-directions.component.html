@@ -1,0 +1,26 @@
+@let share = shares();
+<svg class="misses" viewBox="0 0 300 96" role="img" [attr.aria-label]="ariaLabel()">
+  <path class="misses__double" d="M118 46 Q150 37 182 46 L179 57 Q150 49 121 57 Z" />
+
+  <path class="misses__arrow" d="M150 33 V10 M144 16 L150 10 L156 16" />
+  <path class="misses__arrow" d="M150 62 V87 M144 81 L150 87 L156 81" />
+  <path class="misses__arrow" d="M110 52 H86 M92 46 L86 52 L92 58" />
+  <path class="misses__arrow" d="M190 52 H214 M208 46 L214 52 L208 58" />
+
+  <text class="misses__label" x="160" y="22">
+    {{ labels.long }}
+    <tspan class="misses__share">{{ share.long * 100 | number: '1.0-0' }} %</tspan>
+  </text>
+  <text class="misses__label" x="160" y="84">
+    {{ labels.short }}
+    <tspan class="misses__share">{{ share.short * 100 | number: '1.0-0' }} %</tspan>
+  </text>
+  <text class="misses__label misses__label--end" x="80" y="56">
+    {{ labels.left }}
+    <tspan class="misses__share">{{ share.left * 100 | number: '1.0-0' }} %</tspan>
+  </text>
+  <text class="misses__label" x="220" y="56">
+    {{ labels.right }}
+    <tspan class="misses__share">{{ share.right * 100 | number: '1.0-0' }} %</tspan>
+  </text>
+</svg>

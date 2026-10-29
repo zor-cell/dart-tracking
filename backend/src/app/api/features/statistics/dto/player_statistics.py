@@ -69,6 +69,7 @@ class PlayerStatisticsDto(CamelModel):
     first_nine_average: float
     best_visit: int
     highest_finish: int
+    favourite_visit: int | None
     visits180: int
     visits140_plus: int
     visits100_plus: int
@@ -98,6 +99,7 @@ class PlayerStatisticsDto(CamelModel):
             first_nine_average=round(statistics.first_nine_average, 2),
             best_visit=statistics.best_visit,
             highest_finish=statistics.highest_finish,
+            favourite_visit=statistics.favourite_visit,
             visits180=statistics.visits_180,
             visits140_plus=statistics.visits_140_plus,
             visits100_plus=statistics.visits_100_plus,
