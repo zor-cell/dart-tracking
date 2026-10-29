@@ -45,6 +45,16 @@ body {
   gap: 0.25rem;
 }
 
+/* Pinned to the top of the scrolling shell; scrolls 1rem of its padding away first. */
+.view__header--sticky {
+  position: sticky;
+  top: -1rem;
+  z-index: 2;
+  margin: -1.5rem -1.5rem -0.75rem;
+  padding: 1.5rem 1.5rem 0.75rem;
+  background: var(--p-content-background);
+}
+
 .view__title {
   margin: 0;
   font-size: 1.5rem;
