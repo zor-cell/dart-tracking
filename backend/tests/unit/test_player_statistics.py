@@ -34,11 +34,24 @@ def test_won_leg():
 
     assert (statistics.darts, statistics.points) == (8, 301)
     assert statistics.average == pytest.approx(3 * 301 / 8)
-    assert (statistics.best_visit, statistics.visits_180, statistics.visits_100_plus) == (180, 1, 2)
+    assert statistics.best_visit == 180
+    assert (statistics.visits_180, statistics.visits_140_plus) == (1, 1)
+    assert (statistics.visits_100_plus, statistics.visits_60_plus) == (2, 2)
     assert (statistics.checkout_attempts, statistics.checkout_hits) == (1, 1)
     assert (statistics.first_nine_darts, statistics.first_nine_points) == (8, 301)
-    assert (statistics.legs, statistics.legs_won, statistics.legs_with_chance) == (1, 1, 1)
+    assert (statistics.legs, statistics.legs_won) == (1, 1)
     assert statistics.fields["T20"] == 6
+    assert statistics.highest_finish == 121
+
+
+def test_located_fields_count_only_darts_with_a_tip():
+    statistics = PlayerStatistics()
+    located = Dart(value=20, multiplier=3, position=(0.0, 103.0))
+    turn = Turn(player_id=0, darts=[located, *darts("T20", "5")])
+    statistics.add_leg(501, CheckoutMode.DOUBLE_OUT, [turn])
+
+    assert statistics.fields == {"T20": 2, "5": 1}
+    assert statistics.located_fields == {"T20": 1}
 
 
 def test_lost_leg_counts_every_dart_at_a_double():
@@ -57,7 +70,8 @@ def test_lost_leg_counts_every_dart_at_a_double():
     assert (statistics.checkout_attempts, statistics.checkout_hits) == (6, 0)
     assert statistics.first_nine_darts == 9
     assert statistics.first_nine_points == 180 + 81
-    assert (statistics.legs_won, statistics.legs_with_chance) == (0, 1)
+    assert statistics.legs_won == 0
+    assert statistics.highest_finish == 0
 
 
 def test_single_out_finishes_on_any_field():
@@ -68,11 +82,10 @@ def test_single_out_finishes_on_any_field():
     assert statistics.legs_won == 1
 
 
-def test_leg_out_of_reach_was_no_chance():
+def test_leg_out_of_reach_has_no_checkout_attempt():
     statistics = PlayerStatistics()
     statistics.add_leg(501, CheckoutMode.DOUBLE_OUT, [visit("20", "20", "20")])
 
-    assert statistics.legs_with_chance == 0
     assert statistics.checkout_attempts == 0
 
 

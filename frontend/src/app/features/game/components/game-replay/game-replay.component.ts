@@ -21,7 +21,6 @@ import {
 } from '../../models/heatmap-layer';
 import { TipPoint } from '../../models/tip-density';
 import { PlayerDto } from '../../dto/player.dto';
-import { DartDto } from '../../dto/dart.dto';
 import { VisitDto } from '../../dto/visit.dto';
 import { GameMode } from '../../models/game-mode';
 import { GameVariant } from '../../models/game-variant';
@@ -87,6 +86,8 @@ export class GameReplayComponent implements OnInit {
 
   protected readonly layerOptions = [...HEATMAP_LAYERS];
   protected readonly layer = signal(storedHeatmapLayer());
+  /** The field picked on the heatmap, kept when the layer changes. */
+  protected readonly pinnedField = signal<string | null>(null);
 
   protected readonly speed = signal(1);
   protected readonly playerId = signal<number | null>(null);
@@ -141,10 +142,16 @@ export class GameReplayComponent implements OnInit {
     const darts = this.steps()
       .slice(0, this.cursor())
       .map((step) => visits[step.visit].darts[step.dart]);
-    return { labels: darts.map((dart) => dart.label), points: located(darts) };
+    const located = darts.filter((dart) => dart.position !== null);
+    return {
+      labels: darts.map((dart) => dart.label),
+      located: located.map((dart) => dart.label),
+      points: located.map((dart) => dart.position as TipPoint),
+    };
   });
 
   protected readonly fieldCounts = computed(() => countFields(this.trail().labels));
+  protected readonly tipCounts = computed(() => countFields(this.trail().located));
 
   protected readonly visitComplete = computed(() => {
     const step = this.step();
@@ -264,8 +271,4 @@ export class GameReplayComponent implements OnInit {
 function stored<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
   const value = readStored(key);
   return allowed.find((option) => option === value) ?? fallback;
-}
-
-function located(darts: readonly DartDto[]): TipPoint[] {
-  return darts.flatMap((dart) => (dart.position === null ? [] : [dart.position as TipPoint]));
 }

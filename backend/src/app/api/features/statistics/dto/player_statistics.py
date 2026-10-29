@@ -68,16 +68,18 @@ class PlayerStatisticsDto(CamelModel):
     average: float
     first_nine_average: float
     best_visit: int
+    highest_finish: int
     visits180: int
+    visits140_plus: int
     visits100_plus: int
-    legs_with_chance: int
+    visits60_plus: int
     checkout_attempts: int
     checkout_hits: int
     fields: dict[str, int]
+    located_fields: dict[str, int]
     heatmap: list[tuple[int, int, int]]
     doubles: list[DoubleDto]
     double_distance: float | None
-    double_darts_located: int
     miss_directions: dict[MissDirection, int]
     grouping: float | None
     grouping_darts: int
@@ -95,12 +97,15 @@ class PlayerStatisticsDto(CamelModel):
             average=round(statistics.average, 2),
             first_nine_average=round(statistics.first_nine_average, 2),
             best_visit=statistics.best_visit,
+            highest_finish=statistics.highest_finish,
             visits180=statistics.visits_180,
+            visits140_plus=statistics.visits_140_plus,
             visits100_plus=statistics.visits_100_plus,
-            legs_with_chance=statistics.legs_with_chance,
+            visits60_plus=statistics.visits_60_plus,
             checkout_attempts=statistics.checkout_attempts,
             checkout_hits=statistics.checkout_hits,
             fields=dict(statistics.fields),
+            located_fields=dict(statistics.located_fields),
             heatmap=[
                 (column * HEATMAP_CELL, row * HEATMAP_CELL, count)
                 for (column, row), count in statistics.heatmap.items()
@@ -110,7 +115,6 @@ class PlayerStatisticsDto(CamelModel):
                 for double in sorted(statistics.doubles.values(), key=lambda d: -d.attempts)
             ],
             double_distance=_rounded(statistics.double_distance),
-            double_darts_located=statistics.double_darts_located,
             miss_directions=_directions(statistics.miss_directions),
             grouping=_rounded(statistics.grouping),
             grouping_darts=statistics.grouping_darts,

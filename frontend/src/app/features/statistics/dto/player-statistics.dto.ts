@@ -12,17 +12,22 @@ export interface PlayerStatisticsDto {
   readonly average: number;
   readonly firstNineAverage: number;
   readonly bestVisit: number;
+  /** Points of the best visit that won a leg, 0 without one. */
+  readonly highestFinish: number;
+  /** Visits reaching each score; every band includes the higher ones. */
   readonly visits180: number;
+  readonly visits140Plus: number;
   readonly visits100Plus: number;
-  readonly legsWithChance: number;
+  readonly visits60Plus: number;
   readonly checkoutAttempts: number;
   readonly checkoutHits: number;
   readonly fields: Readonly<Record<string, number>>;
+  /** Located darts per field, the ones the heatmap draws. */
+  readonly locatedFields: Readonly<Record<string, number>>;
   readonly heatmap: readonly HeatmapCell[];
   /** Doubles thrown at for a finish, most attempted first. */
   readonly doubles: readonly DoubleStatisticsDto[];
   readonly doubleDistance: number | null;
-  readonly doubleDartsLocated: number;
   readonly missDirections: Readonly<Record<MissDirection, number>>;
   /** Mean distance (mm) between two located darts of a scoring visit. */
   readonly grouping: number | null;

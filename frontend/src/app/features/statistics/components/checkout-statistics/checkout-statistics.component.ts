@@ -31,12 +31,6 @@ export class CheckoutStatisticsComponent {
     return checkoutAttempts === 0 ? null : checkoutHits / checkoutAttempts;
   });
 
-  /** Legs won out of legs that reached a finishable score at least once. */
-  protected readonly legRate = computed(() => {
-    const { legsWon, legsWithChance } = this.statistics();
-    return legsWithChance === 0 ? null : legsWon / legsWithChance;
-  });
-
   constructor() {
     // New figures drop a pick that is no longer among their doubles.
     effect(() => {

@@ -16,6 +16,39 @@
   fill-opacity: 0.85;
   stroke: var(--p-content-background);
   stroke-width: 1.5;
+  pointer-events: none;
+}
+
+/* Taps fall through to the board beneath, which knows every field, hit or not. */
+.heatmap__cloud {
+  pointer-events: none;
+}
+
+.heatmap__field {
+  fill: none;
+  fill-rule: evenodd;
+  stroke: none;
+  pointer-events: none;
+  outline: none;
+
+  &:focus-visible {
+    stroke: var(--p-text-color);
+    stroke-width: 2.5;
+  }
+}
+
+.heatmap__selected {
+  fill: none;
+  stroke: var(--p-text-color);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  pointer-events: none;
+
+  /* Keeps the outline visible on the cloud's dark end. */
+  &--halo {
+    stroke: var(--p-content-background);
+    stroke-width: 5;
+  }
 }
 
 /* Top-left corner, as the field view writes its caption. */
@@ -23,6 +56,7 @@
   position: absolute;
   top: 0;
   left: 0;
+  margin: 0;
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;

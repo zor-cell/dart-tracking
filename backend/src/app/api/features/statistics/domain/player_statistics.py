@@ -15,9 +15,6 @@ from app.api.features.statistics.domain.double_statistics import (
     MissDirection,
 )
 
-# A visit worth calling out, the way a scoreboard does.
-_HIGH_VISIT = 100
-
 # The highest score one visit can finish; above it every dart aims to score.
 _HIGHEST_FINISH = 170
 
@@ -55,14 +52,17 @@ class PlayerStatistics:
     darts: int = 0
     points: int = 0
     best_visit: int = 0
+    highest_finish: int = 0  # points of the best visit that won a leg
     visits_180: int = 0
+    visits_140_plus: int = 0
     visits_100_plus: int = 0
-    legs_with_chance: int = 0
+    visits_60_plus: int = 0
     checkout_attempts: int = 0
     checkout_hits: int = 0
     first_nine_darts: int = 0
     first_nine_points: int = 0
     fields: Counter[str] = field(default_factory=Counter)
+    located_fields: Counter[str] = field(default_factory=Counter)  # fields of located darts only
     heatmap: Counter[tuple[int, int]] = field(default_factory=Counter)
     doubles: dict[int, DoubleStatistics] = field(default_factory=dict)
     # Located darts of scoring visits, and the pairs of two darts within one visit.
@@ -133,15 +133,11 @@ class PlayerStatistics:
             _DOUBLE_FINISHES if checkout_mode is CheckoutMode.DOUBLE_OUT else _SINGLE_FINISHES
         )
         remaining = mode
-        had_chance = False
         thrown = 0
 
         for turn in turns:
-            # What the player faced at the oche, which is what a chance is
-            # measured against — the visit's own outcome comes after.
-            if remaining <= _HIGHEST_FINISH:
-                had_chance = True
-            elif not turn.busted:
+            # What the player faced at the oche decides whether the visit aimed to score.
+            if remaining > _HIGHEST_FINISH and not turn.busted:
                 self._add_scoring_visit(turn)
 
             live = remaining
@@ -163,6 +159,7 @@ class PlayerStatistics:
                     self.checkout_hits += 1
                 if dart.position is not None:
                     x, y = dart.position
+                    self.located_fields[dart.label] += 1
                     self.heatmap[round(x / HEATMAP_CELL), round(y / HEATMAP_CELL)] += 1
 
             if turn.busted:
@@ -171,16 +168,20 @@ class PlayerStatistics:
             self.points += turn.points
             remaining -= turn.points
             self.best_visit = max(self.best_visit, turn.points)
-            if turn.points == 180:
-                self.visits_180 += 1
-            if turn.points >= _HIGH_VISIT:
-                self.visits_100_plus += 1
+            if remaining == 0:
+                self.highest_finish = max(self.highest_finish, turn.points)
+            self._add_visit_band(turn.points)
 
         self.legs += 1
-        if had_chance:
-            self.legs_with_chance += 1
         if remaining == 0:
             self.legs_won += 1
+
+    def _add_visit_band(self, points: int) -> None:
+        """Counts a visit into every band it reaches: 60+, 100+ and 140+ include the 180s."""
+        self.visits_180 += points == 180
+        self.visits_140_plus += points >= 140
+        self.visits_100_plus += points >= 100
+        self.visits_60_plus += points >= 60
 
     def _add_scoring_visit(self, turn: Turn) -> None:
         for place, dart in enumerate(turn.darts[:_DARTS_PER_VISIT]):

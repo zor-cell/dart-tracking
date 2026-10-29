@@ -318,7 +318,8 @@ a.list-group__item {
 .stat-grid {
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  /* Two cards per row; a half card takes one of the four tracks. */
+  grid-template-columns: repeat(4, 1fr);
   gap: 0.75rem;
 }
 
@@ -329,13 +330,21 @@ a.list-group__item {
   padding: 0.75rem 1rem;
   border: 1px solid var(--p-content-border-color);
   border-radius: 0.5rem;
+  grid-column: span 2;
+}
+
+.stat--half {
+  grid-column: span 1;
+}
+
+.stat--tall {
+  grid-row: span 2;
 }
 
 .stat--wide {
   grid-column: 1 / -1;
 }
 
-.stat--wide,
 .stat--lead {
   .stat__value {
     font-size: 2.25rem;

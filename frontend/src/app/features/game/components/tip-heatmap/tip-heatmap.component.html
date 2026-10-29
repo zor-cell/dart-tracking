@@ -1,16 +1,41 @@
-<svg class="heatmap" [attr.viewBox]="view()" role="img" [attr.aria-label]="ariaLabel()">
-  <g app-board-face [faded]="true" [numbers]="zoom() === null">
+<svg
+  class="heatmap"
+  [attr.viewBox]="viewBox"
+  [attr.role]="counts() === null ? 'img' : 'group'"
+  [attr.aria-label]="ariaLabel()"
+  (click)="onBoardClick($event)"
+>
+  <g
+    app-board-face
+    [faded]="true"
+    [interactive]="counts() !== null"
+    (fieldEnter)="onFieldEnter($event)"
+    (fieldLeave)="hovered.set(null)"
+  >
     @if (cloud(); as cloud) {
       <image
+        class="heatmap__cloud"
         [attr.href]="cloud"
-        [attr.x]="-extent()"
-        [attr.y]="-extent()"
-        [attr.width]="extent() * 2"
-        [attr.height]="extent() * 2"
+        [attr.x]="-extent"
+        [attr.y]="-extent"
+        [attr.width]="extent * 2"
+        [attr.height]="extent * 2"
         preserveAspectRatio="none"
       />
     }
   </g>
+
+  @for (field of fields(); track field.label) {
+    <path
+      class="heatmap__field"
+      [attr.d]="field.d"
+      tabindex="0"
+      role="button"
+      [attr.aria-label]="field.ariaLabel"
+      [attr.aria-pressed]="pinned() === field.label"
+      (focus)="pinned.set(field.label)"
+    />
+  }
 
   @if (!cloud()) {
     @for (dot of dots(); track $index) {
@@ -24,13 +49,20 @@
   }
 
   <ng-content select="[overlay]" />
+
+  @if (selected(); as field) {
+    <path class="heatmap__selected heatmap__selected--halo" [attr.d]="field.outline" />
+    <path class="heatmap__selected" [attr.d]="field.outline" />
+  }
 </svg>
 
-<div class="caption">
-  <ng-content select="[caption]"
-    ><span class="caption__summary">{{ caption() }}</span></ng-content
-  >
-</div>
+<p class="caption" aria-live="polite">
+  @if (pick(); as pick) {
+    <strong>{{ pick.name }}</strong> &middot; {{ pick.detail }}
+  } @else {
+    <span class="caption__summary">{{ caption() }}</span>
+  }
+</p>
 @if (density(); as density) {
   <app-heat-legend class="legend" [color]="legendColor">
     <span>{{ density.peak | number: '1.0-1' }} Darts/cm²</span>

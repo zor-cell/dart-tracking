@@ -33,8 +33,8 @@ function scale(share: number): number {
 export class HeatBoardComponent {
   readonly fields = input.required<readonly HeatField[]>();
   readonly ariaLabel = input.required<string>();
-  /** Whether a tap or hover on `label` may pick it. */
-  readonly selectable = input<(label: string) => boolean>(() => true);
+  /** The field a tap or hover on `label` picks; null leaves the pick as it is. */
+  readonly resolve = input<(label: string) => string | null>((label) => label);
   /** What the top of the scale reads; no scale without it. */
   readonly legendMax = input<string | null>(null);
 
@@ -64,18 +64,20 @@ export class HeatBoardComponent {
     return share <= 0 ? 0 : scale(Math.min(1, share));
   }
 
-  /** A tap on a pickable field picks it, a second tap or one beside the fields clears it. */
+  /** A tap on a field picks what it resolves to, a second tap or one beside the fields clears it. */
   protected onBoardClick(event: MouseEvent): void {
     const label = (event.target as Element).getAttribute('data-label');
-    if (label !== null && !this.selectable()(label)) {
+    const field = label === null ? null : this.resolve()(label);
+    if (label !== null && field === null) {
       return;
     }
-    this.selected.update((pinned) => (label === null || label === pinned ? null : label));
+    this.selected.update((pinned) => (field === null || field === pinned ? null : field));
   }
 
   protected onFieldEnter({ event, label }: FieldEnter): void {
-    if (event.pointerType === 'mouse' && this.selectable()(label)) {
-      this.hovered.set(label);
+    const field = this.resolve()(label);
+    if (event.pointerType === 'mouse' && field !== null) {
+      this.hovered.set(field);
     }
   }
 

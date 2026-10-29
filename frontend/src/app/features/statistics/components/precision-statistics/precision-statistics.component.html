@@ -12,19 +12,39 @@
     </div>
     <div class="stat">
       <dt class="stat__label">Legs gewonnen</dt>
-      <dd class="stat__value">{{ totals.legsWon }} / {{ totals.legs }}</dd>
+      <dd class="stat__value">
+        @let won = wonRate();
+        @if (won !== null) {
+          {{ won * 100 | number: '1.0-0' }} %
+        } @else {
+          &ndash;
+        }
+      </dd>
+      <dd class="stat__hint">{{ totals.legsWon }} von {{ totals.legs }} Legs</dd>
     </div>
     <div class="stat">
       <dt class="stat__label">Darts geworfen</dt>
       <dd class="stat__value">{{ totals.darts }}</dd>
     </div>
-    <div class="stat">
+    <div class="stat stat--tall">
       <dt class="stat__label">Bestes Visit</dt>
       <dd class="stat__value">{{ totals.bestVisit }}</dd>
     </div>
-    <div class="stat">
-      <dt class="stat__label">180er &middot; 100+</dt>
-      <dd class="stat__value">{{ totals.visits180 }} &middot; {{ totals.visits100Plus }}</dd>
+    <div class="stat stat--half">
+      <dt class="stat__label">180</dt>
+      <dd class="stat__value">{{ totals.visits180 }}</dd>
+    </div>
+    <div class="stat stat--half">
+      <dt class="stat__label">140+</dt>
+      <dd class="stat__value">{{ totals.visits140Plus }}</dd>
+    </div>
+    <div class="stat stat--half">
+      <dt class="stat__label">100+</dt>
+      <dd class="stat__value">{{ totals.visits100Plus }}</dd>
+    </div>
+    <div class="stat stat--half">
+      <dt class="stat__label">60+</dt>
+      <dd class="stat__value">{{ totals.visits60Plus }}</dd>
     </div>
   </dl>
 </section>
@@ -44,9 +64,14 @@
       size="small"
     />
     @if (layer() === 'fields') {
-      <app-field-heatmap [counts]="fieldCounts()" />
+      <app-field-heatmap [counts]="fieldCounts()" [(pinned)]="pinnedField" />
     } @else {
-      <app-tip-heatmap [points]="totals.heatmap" mode="cloud" />
+      <app-tip-heatmap
+        [points]="totals.heatmap"
+        mode="cloud"
+        [counts]="tipCounts()"
+        [(pinned)]="pinnedField"
+      />
     }
   </div>
 </section>
@@ -100,7 +125,11 @@
       <li class="darts__row">
         <span class="darts__place">Dart {{ dart.place }}</span>
         <span class="darts__bar" aria-hidden="true">
-          <span class="darts__fill" [style.width.%]="dart.share"></span>
+          <span
+            class="darts__fill"
+            [style.width.%]="dart.share"
+            [style.background]="dart.color"
+          ></span>
         </span>
         <span class="darts__value">
           @if (dart.average !== null) {

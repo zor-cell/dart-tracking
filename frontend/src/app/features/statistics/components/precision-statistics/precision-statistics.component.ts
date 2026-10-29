@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { SelectButton } from 'primeng/selectbutton';
 import { FieldHeatmapComponent } from '../../../game/components/field-heatmap/field-heatmap.component';
 import { TipHeatmapComponent } from '../../../game/components/tip-heatmap/tip-heatmap.component';
+import { dartColor } from '../../../game/models/dart-colors';
 import {
   HEATMAP_LAYERS,
   HeatmapLayer,
@@ -28,9 +29,20 @@ export class PrecisionStatisticsComponent {
 
   protected readonly layerOptions = [...HEATMAP_LAYERS];
   protected readonly layer = signal(storedHeatmapLayer());
+  /** The field picked on the heatmap, kept when the layer changes. */
+  protected readonly pinnedField = signal<string | null>(null);
+
+  /** Legs won out of every leg played. */
+  protected readonly wonRate = computed(() => {
+    const { legsWon, legs } = this.statistics();
+    return legs === 0 ? null : legsWon / legs;
+  });
 
   protected readonly fieldCounts = computed(
     () => new Map(Object.entries(this.statistics().fields)),
+  );
+  protected readonly tipCounts = computed(
+    () => new Map(Object.entries(this.statistics().locatedFields)),
   );
 
   /** The wider axis against the narrower one, and which way the wider one runs. */
@@ -64,6 +76,7 @@ export class PrecisionStatisticsComponent {
     return averages.map((average, place) => ({
       place: place + 1,
       average,
+      color: dartColor(place),
       share: ((average ?? 0) / best) * 100,
     }));
   });

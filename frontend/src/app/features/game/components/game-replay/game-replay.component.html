@@ -28,9 +28,18 @@
           size="small"
         />
         @if (layer() === 'fields') {
-          <app-field-heatmap [counts]="fieldCounts()" [current]="boardDarts()" />
+          <app-field-heatmap
+            [counts]="fieldCounts()"
+            [current]="boardDarts()"
+            [(pinned)]="pinnedField"
+          />
         } @else {
-          <app-tip-heatmap [points]="trail().points" [current]="boardDarts()" />
+          <app-tip-heatmap
+            [points]="trail().points"
+            [current]="boardDarts()"
+            [counts]="tipCounts()"
+            [(pinned)]="pinnedField"
+          />
         }
       </div>
     }

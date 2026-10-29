@@ -46,11 +46,19 @@ import {
   FilterSuggestion,
 } from '../../../../core/view/models/filter-chip';
 import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
+import { readStored, writeStored } from '../../../../core/storage/models/browser-storage';
 import { CheckoutStatisticsComponent } from '../checkout-statistics/checkout-statistics.component';
 import { PrecisionStatisticsComponent } from '../precision-statistics/precision-statistics.component';
 
 /** The filters whose picks are remembered and offered back; the period is not among them. */
 const REMEMBERED = ['opponentId', 'players', 'mode', 'checkoutMode'] as const;
+
+type StatisticsTab = 'precision' | 'checkout';
+
+const TABS: readonly StatisticsTab[] = ['precision', 'checkout'];
+
+/** Where the last opened tab is kept; the view opens on it. */
+const TAB_KEY = 'dart-tracking.statisticsTab';
 
 /** Offered while the account has no picks of its own. */
 const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
@@ -96,7 +104,9 @@ export class StatisticsComponent {
   protected readonly failed = signal(false);
   private requests = 0;
 
-  protected readonly tab = signal<'precision' | 'checkout'>('precision');
+  protected readonly tab = signal<StatisticsTab>(
+    TABS.find((tab) => tab === readStored(TAB_KEY)) ?? 'precision',
+  );
 
   protected readonly unitOptions = [...STATISTICS_UNITS];
   protected readonly unit = signal<StatisticsUnit>('days');
@@ -180,6 +190,7 @@ export class StatisticsComponent {
     void this.players.list().then((all) => this.opponents.set(all.filter((p) => !p.isSelf)));
     void this.memory.load();
     this.memory.watch('statistics', this.filters, REMEMBERED, this.destroyRef);
+    effect(() => writeStored(TAB_KEY, this.tab()));
     effect(() => {
       const criteria = this.criteria();
       untracked(() => void this.load(criteria));

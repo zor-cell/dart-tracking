@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, signal } from '@angular/core';
 import { DartDto } from '../../dto/dart.dto';
 import { fieldOutline } from '../../models/board-face';
 import { dartColor } from '../../models/dart-colors';
@@ -30,7 +30,8 @@ export class FieldHeatmapComponent {
 
   protected readonly miss = MISS;
 
-  protected readonly pinned = signal<string | null>(null);
+  /** The field last tapped; bound by a view that keeps it across layers. */
+  readonly pinned = model<string | null>(null);
   protected readonly hovered = signal<string | null>(null);
 
   protected readonly total = computed(() =>
