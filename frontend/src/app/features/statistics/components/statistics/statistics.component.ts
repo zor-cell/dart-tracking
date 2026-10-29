@@ -47,6 +47,12 @@ import {
 } from '../../../../core/view/models/filter-chip';
 import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
 import { readStored, writeStored } from '../../../../core/storage/models/browser-storage';
+import {
+  DAY_RANGE_PARAM,
+  QueryState,
+  TEXT_PARAM,
+  oneOfParam,
+} from '../../../../core/view/models/query-state';
 import { CheckoutStatisticsComponent } from '../checkout-statistics/checkout-statistics.component';
 import { PrecisionStatisticsComponent } from '../precision-statistics/precision-statistics.component';
 
@@ -59,6 +65,14 @@ const TABS: readonly StatisticsTab[] = ['precision', 'checkout'];
 
 /** Where the last opened tab is kept; the view opens on it. */
 const TAB_KEY = 'dart-tracking.statisticsTab';
+
+/** How each filter is kept in the query params. */
+const FILTER_PARAMS = {
+  opponentId: TEXT_PARAM,
+  players: oneOfParam(Object.keys(PLAYER_COUNTS) as PlayerCount[]),
+  mode: oneOfParam(GAME_MODES),
+  checkoutMode: oneOfParam(CHECKOUT_MODES.map((mode) => mode.value)),
+};
 
 /** Offered while the account has no picks of its own. */
 const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
@@ -131,6 +145,7 @@ export class StatisticsComponent {
   private readonly filterValue = toSignal(this.filters.valueChanges, {
     initialValue: this.filters.value,
   });
+  private readonly queryState = new QueryState();
 
   /** The filters in use, as chips under the toolbar; the period shows in its own buttons. */
   protected readonly chips = computed<FilterChip[]>(() => {
@@ -187,6 +202,20 @@ export class StatisticsComponent {
   });
 
   constructor() {
+    this.queryState.signal(
+      'unit',
+      this.unit,
+      oneOfParam(STATISTICS_UNITS.map((u) => u.value)),
+      'days',
+    );
+    this.queryState.signal(
+      'period',
+      this.period,
+      oneOfParam(Object.keys(PERIOD_CHIP_LABELS) as StatisticsPeriod[]),
+      DEFAULT_PERIODS.days,
+    );
+    this.queryState.signal('range', this.range, DAY_RANGE_PARAM, null);
+    this.queryState.form(this.filters, FILTER_PARAMS);
     void this.players.list().then((all) => this.opponents.set(all.filter((p) => !p.isSelf)));
     void this.memory.load();
     this.memory.watch('statistics', this.filters, REMEMBERED, this.destroyRef);

@@ -34,10 +34,26 @@ import { ListToolbarComponent } from '../../../../core/view/components/list-tool
 import { dayRangeBounds, dayRangeLabel } from '../../../../core/view/models/day-range';
 import { FilterChip, FilterSuggestion } from '../../../../core/view/models/filter-chip';
 import { PagedTable } from '../../../../core/view/models/paged-table';
+import {
+  DAY_RANGE_PARAM,
+  QueryState,
+  TEXT_PARAM,
+  oneOfParam,
+} from '../../../../core/view/models/query-state';
 import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
 
 /** The filters whose picks are remembered and offered back; the period is not among them. */
 const REMEMBERED = ['variant', 'mode', 'status', 'opponentId', 'players'] as const;
+
+/** How each filter is kept in the query params. */
+const FILTER_PARAMS = {
+  variant: oneOfParam(GAME_VARIANTS.map((variant) => variant.value)),
+  mode: oneOfParam(GAME_MODES),
+  status: oneOfParam(Object.keys(GAME_STATUS_LABELS) as GameStatus[]),
+  opponentId: TEXT_PARAM,
+  players: oneOfParam(Object.keys(PLAYER_COUNTS) as PlayerCount[]),
+  period: DAY_RANGE_PARAM,
+};
 
 /** Offered while the account has no picks of its own. */
 const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
@@ -97,6 +113,7 @@ export class GameListComponent {
     players: this.fb.control<PlayerCount | null>(null),
     period: this.fb.control<(Date | null)[] | null>(null),
   });
+  private readonly queryState = new QueryState();
 
   protected readonly games = new PagedTable<GameSummaryDto>((limit, offset) =>
     this.history.list(limit, offset, this.criteria()),
@@ -132,6 +149,7 @@ export class GameListComponent {
   protected readonly filtered = computed(() => this.query() !== '' || this.chips().length > 0);
 
   constructor() {
+    this.queryState.form(this.filters, FILTER_PARAMS);
     void this.games.load();
     void this.players.list().then((all) => this.opponents.set(all.filter((p) => !p.isSelf)));
     void this.memory.load();

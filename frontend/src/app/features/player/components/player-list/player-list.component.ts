@@ -32,6 +32,7 @@ import { ShareDialogComponent } from '../../../../core/view/components/share-dia
 import { ListToolbarComponent } from '../../../../core/view/components/list-toolbar/list-toolbar.component';
 import { FilterChip, FilterSuggestion } from '../../../../core/view/models/filter-chip';
 import { PagedTable } from '../../../../core/view/models/paged-table';
+import { QueryState, oneOfParam } from '../../../../core/view/models/query-state';
 import { ConfirmService } from '../../../../core/view/services/confirm.service';
 import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
 
@@ -90,6 +91,7 @@ export class PlayerListComponent {
   protected readonly tab = signal<'own' | 'links'>('own');
   protected readonly query = signal('');
   protected readonly filters = this.fb.group({ linked: this.fb.control<LinkState | null>(null) });
+  private readonly queryState = new QueryState();
   protected readonly linkOptions = Object.entries(LINK_STATE_LABELS).map(([value, label]) => ({
     label,
     value: value as LinkState,
@@ -145,6 +147,9 @@ export class PlayerListComponent {
   );
 
   constructor() {
+    this.queryState.form(this.filters, {
+      linked: oneOfParam(Object.keys(LINK_STATE_LABELS) as LinkState[]),
+    });
     void this.entries.load();
     void this.memory.load();
     this.memory.watch('players', this.filters, ['linked'], this.destroyRef);
