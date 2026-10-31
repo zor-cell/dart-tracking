@@ -1,5 +1,4 @@
-/** A located dart at a double, in board mm. */
-export type DoubleThrow = readonly [x: number, y: number, hit: boolean];
+import { HeatmapCell } from './player-statistics.dto';
 
 export interface DoubleStatisticsDto {
   /** Called-out label of the double: D16, or 50 for the bull. */
@@ -10,5 +9,8 @@ export interface DoubleStatisticsDto {
   readonly distance: number | null;
   /** Darts per field they hit, tracked or not, keyed by called-out label. */
   readonly fields: Readonly<Record<string, number>>;
-  readonly throws: readonly DoubleThrow[];
+  readonly located: number;
+  readonly locatedHits: number;
+  /** Where the located darts landed. */
+  readonly cells: readonly HeatmapCell[];
 }

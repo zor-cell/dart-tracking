@@ -1,27 +1,32 @@
+from collections import Counter
 from typing import Self
 
 from app.api.core.dto.base import CamelModel
 from app.api.features.statistics.domain.double_statistics import DoubleStatistics
-from app.api.features.statistics.domain.player_statistics import (
-    HEATMAP_CELL,
-    PlayerStatistics,
-    Scatter,
-)
+from app.api.features.statistics.domain.heatmap import HEATMAP_CELL
+from app.api.features.statistics.domain.player_statistics import PlayerStatistics, Scatter
 
 
 def _rounded(value: float | None, digits: int = 1) -> float | None:
     return None if value is None else round(value, digits)
 
 
+def _cells(cells: Counter[tuple[int, int]]) -> list[tuple[int, int, int]]:
+    """Each cell's centre in board mm and its tips."""
+    return [(column * HEATMAP_CELL, row * HEATMAP_CELL, n) for (column, row), n in cells.items()]
+
+
 class DoubleDto(CamelModel):
-    """Darts at one finishing double; throws are (x, y, hit) in board mm."""
+    """Darts at one finishing double; cells are where the located ones landed."""
 
     label: str
     attempts: int
     hits: int
     distance: float | None
     fields: dict[str, int]
-    throws: list[tuple[float, float, bool]]
+    located: int
+    located_hits: int
+    cells: list[tuple[int, int, int]]
 
     @classmethod
     def from_entity(cls, double: DoubleStatistics) -> Self:
@@ -32,7 +37,9 @@ class DoubleDto(CamelModel):
             hits=double.hits,
             distance=_rounded(double.distance / located if located else None),
             fields=dict(double.fields),
-            throws=[(round(t.x, 1), round(t.y, 1), t.hit) for t in double.throws],
+            located=located,
+            located_hits=double.located_hits,
+            cells=_cells(double.cells),
         )
 
 
@@ -98,10 +105,7 @@ class PlayerStatisticsDto(CamelModel):
             checkout_hits=statistics.checkout_hits,
             fields=dict(statistics.fields),
             located_fields=dict(statistics.located_fields),
-            heatmap=[
-                (column * HEATMAP_CELL, row * HEATMAP_CELL, count)
-                for (column, row), count in statistics.heatmap.items()
-            ],
+            heatmap=_cells(statistics.heatmap),
             doubles=[
                 DoubleDto.from_entity(double)
                 for double in sorted(statistics.doubles.values(), key=lambda d: -d.attempts)

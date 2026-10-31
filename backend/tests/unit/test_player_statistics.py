@@ -126,7 +126,8 @@ def test_darts_at_a_double_are_measured_from_it():
     assert (d20.attempts, d20.hits, d20.located) == (3, 0, 3)
     assert (d10.attempts, d10.hits, d10.label) == (2, 1, "D10")
     assert d10.distance == pytest.approx(5)
-    assert d10.throws[1].hit and not d10.throws[0].hit
+    assert (d10.located, d10.located_hits) == (2, 1)
+    assert sum(d20.cells.values()) == 3
     assert d10.fields == {"0": 1, "D10": 1}
     assert d20.fields == {"0": 1, "D5": 1, "20": 1}
     assert statistics.double_darts_located == 5

@@ -32,13 +32,7 @@ const VIEW_EXTENT = 260;
  * A picked double narrows both. */
 @Component({
   selector: 'app-double-board',
-  imports: [
-    DecimalPipe,
-    FormsModule,
-    HeatBoardComponent,
-    SelectButton,
-    TipHeatmapComponent,
-  ],
+  imports: [DecimalPipe, FormsModule, HeatBoardComponent, SelectButton, TipHeatmapComponent],
   templateUrl: './double-board.component.html',
   styleUrl: './double-board.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -106,9 +100,7 @@ export class DoubleBoardComponent {
   /** Where the darts at the picked double landed, or at every double without a pick. */
   protected readonly tips = computed<TipPoint[]>(() => {
     const picked = this.picked();
-    return (picked ? [picked] : this.doubles()).flatMap((double) =>
-      double.throws.map(([x, y]) => [x, y] as const),
-    );
+    return (picked ? [picked] : this.doubles()).flatMap((double) => double.cells);
   });
 
   /** Every double as a tap target over the tip cloud, with the hovered or picked one outlined. */
@@ -140,8 +132,7 @@ export class DoubleBoardComponent {
     if (double === null) {
       return null;
     }
-    const located = double.throws.length;
-    const hits = double.throws.filter(([, , hit]) => hit).length;
+    const { located, locatedHits: hits } = double;
     const rate = Math.round((hits / Math.max(1, located)) * 100);
     return {
       name: double.name,

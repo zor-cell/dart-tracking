@@ -10,15 +10,13 @@ from itertools import combinations
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.turn import Turn
 from app.api.features.statistics.domain.double_statistics import BULL, DoubleStatistics
+from app.api.features.statistics.domain.heatmap import heatmap_cell
 
 # The highest score one visit can finish; above it every dart aims to score.
 _HIGHEST_FINISH = 170
 
 # The opening darts of a leg, before the checkout changes how a player aims.
 _FIRST_NINE = 9
-
-# Edge of a heatmap cell, in board millimetres.
-HEATMAP_CELL = 2
 
 
 # Scores one dart can finish on: the doubles and the double bull in double out,
@@ -165,7 +163,7 @@ class PlayerStatistics:
                 if dart.position is not None:
                     x, y = dart.position
                     self.located_fields[dart.label] += 1
-                    self.heatmap[round(x / HEATMAP_CELL), round(y / HEATMAP_CELL)] += 1
+                    self.heatmap[heatmap_cell(x, y)] += 1
 
             if turn.busted:
                 continue

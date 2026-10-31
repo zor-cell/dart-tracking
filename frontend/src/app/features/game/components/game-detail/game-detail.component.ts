@@ -92,7 +92,7 @@ export class GameDetailComponent {
       won: player.id === game.winnerId,
       statistics: statistics[seat],
       busts: visits.filter((visit) => visit.playerId === player.id && visit.busted).length,
-      doublesLocated: sum(statistics[seat].doubles.map((double) => double.throws.length)),
+      doublesLocated: sum(statistics[seat].doubles.map((double) => double.located)),
       doublesThrown: sum(statistics[seat].doubles.map((double) => double.attempts)),
     }));
   });
