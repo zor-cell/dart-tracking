@@ -47,18 +47,17 @@ p-tab {
   font-size: 0.875rem;
 }
 
-/* One side: its colour, its name and how many games it is counted from. */
+/* One side: its chart colour, its name and how many games it is counted from. */
 .compare-note__key {
   display: inline-flex;
   align-items: baseline;
   gap: 0.4rem;
+  min-width: 0;
 
-  &--own strong {
-    color: var(--own-text-color);
-  }
-
-  &--other strong {
-    color: var(--compare-text-color);
+  strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 

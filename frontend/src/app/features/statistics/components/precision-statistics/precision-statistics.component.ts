@@ -19,13 +19,16 @@ import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
 import { ScatterDto } from '../../dto/scatter.dto';
 import { COMPARE_COLOR, Comparison, OWN_COLOR } from '../../models/comparison';
 import { visitTotal } from '../../models/visit-scores';
-import { StatDeltaComponent } from '../stat-delta/stat-delta.component';
+import { ComparedValueComponent } from '../compared-value/compared-value.component';
+import { DeltaMarkComponent } from '../delta-mark/delta-mark.component';
 import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
 
 /** The general figures, the hit picture and how the darts group: spread, each dart's place. */
 @Component({
   selector: 'app-precision-statistics',
   imports: [
+    ComparedValueComponent,
+    DeltaMarkComponent,
     DecimalPipe,
     DistanceScaleComponent,
     FieldHeatmapComponent,
@@ -34,7 +37,6 @@ import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
     NgTemplateOutlet,
     RouterLink,
     SelectButton,
-    StatDeltaComponent,
     StatSketchComponent,
     TipHeatmapComponent,
   ],

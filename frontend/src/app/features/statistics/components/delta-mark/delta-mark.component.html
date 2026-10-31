@@ -1,0 +1,13 @@
+@if (verdict(); as verdict) {
+  <button
+    type="button"
+    class="mark mark--{{ verdict }}"
+    [attr.aria-label]="detail()"
+    (click)="popover.toggle($event)"
+  >
+    {{ symbol() }}
+  </button>
+  <p-popover #popover (onShow)="place(popover)">
+    <p class="detail mark--{{ verdict }}">{{ symbol() }} {{ detail() }}</p>
+  </p-popover>
+}

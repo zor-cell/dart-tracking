@@ -1,0 +1,9 @@
+@let value = other();
+<span class="compared__name" [class.sr-only]="!named()">{{ name() }}</span>
+<span class="compared__value">
+  @if (value !== null) {
+    {{ value | number: format() }}{{ unit() }}
+  } @else {
+    &ndash;
+  }
+</span>

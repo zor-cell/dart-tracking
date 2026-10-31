@@ -12,12 +12,20 @@
         } @else {
           &ndash;
         }
+        @if (other) {
+          <app-delta-mark
+            [own]="checkoutRate()"
+            [other]="otherCheckoutRate()"
+            [name]="other.name"
+            [digits]="0"
+            unit=" %"
+          />
+        }
       </dd>
       @if (other) {
         <dd class="stat__hint">
-          <app-stat-delta
+          <app-compared-value
             [name]="other.name"
-            [own]="checkoutRate()"
             [other]="otherCheckoutRate()"
             [digits]="0"
             unit=" %"
@@ -30,12 +38,10 @@
       <dd class="stat__value">{{ totals.checkoutAttempts | number }}</dd>
       @if (other) {
         <dd class="stat__hint">
-          <app-stat-delta
+          <app-compared-value
             [name]="other.name"
-            [own]="totals.checkoutAttempts"
             [other]="other.statistics.checkoutAttempts"
             [digits]="0"
-            [neutral]="true"
           />
         </dd>
       }
@@ -43,7 +49,7 @@
     <div class="stat">
       <dt class="stat__label">Höchstes Finish</dt>
       <dd class="stat__value">
-        @if (totals.highestFinishAt; as at) {
+        @if (other ? null : totals.highestFinishAt; as at) {
           <a
             class="stat__link"
             [state]="returnState"
@@ -58,12 +64,19 @@
         } @else {
           &ndash;
         }
+        @if (other) {
+          <app-delta-mark
+            [own]="totals.highestFinish || null"
+            [other]="other.statistics.highestFinish || null"
+            [name]="other.name"
+            [digits]="0"
+          />
+        }
       </dd>
       @if (other) {
         <dd class="stat__hint">
-          <app-stat-delta
+          <app-compared-value
             [name]="other.name"
-            [own]="totals.highestFinish || null"
             [other]="other.statistics.highestFinish || null"
             [digits]="0"
           />
@@ -80,16 +93,26 @@
         </app-info-hint>
       </dt>
       @if (totals.doubleDistance !== null) {
-        <dd class="stat__value">{{ totals.doubleDistance | number: '1.0-0' }} mm</dd>
-        @if (other) {
-          <dd class="stat__hint">
-            <app-stat-delta
-              [name]="other.name"
+        <dd class="stat__value">
+          {{ totals.doubleDistance | number: '1.0-0' }} mm
+          @if (other) {
+            <app-delta-mark
               [own]="totals.doubleDistance"
               [other]="other.statistics.doubleDistance"
+              [name]="other.name"
               [digits]="0"
               unit=" mm"
               [lowerIsBetter]="true"
+            />
+          }
+        </dd>
+        @if (other) {
+          <dd class="stat__hint">
+            <app-compared-value
+              [name]="other.name"
+              [other]="other.statistics.doubleDistance"
+              [digits]="0"
+              unit=" mm"
             />
           </dd>
         }
@@ -110,12 +133,10 @@
       <dd class="stat__value">{{ totals.favouriteFinish ?? '–' }}</dd>
       @if (other) {
         <dd class="stat__hint">
-          <app-stat-delta
+          <app-compared-value
             [name]="other.name"
-            [own]="totals.favouriteFinish"
             [other]="other.statistics.favouriteFinish"
             [digits]="0"
-            [neutral]="true"
           />
         </dd>
       }
@@ -141,7 +162,7 @@
     </header>
     <div class="doubles-pair">
       <figure class="doubles-pair__side">
-        <figcaption class="doubles-pair__name doubles-pair__name--own">Du</figcaption>
+        <figcaption class="doubles-pair__name">Du</figcaption>
         <app-double-board
           [doubles]="totals.doubles"
           [layerSwitch]="false"
@@ -150,7 +171,7 @@
         />
       </figure>
       <figure class="doubles-pair__side">
-        <figcaption class="doubles-pair__name doubles-pair__name--other">
+        <figcaption class="doubles-pair__name">
           {{ other.name }}
         </figcaption>
         <app-double-board

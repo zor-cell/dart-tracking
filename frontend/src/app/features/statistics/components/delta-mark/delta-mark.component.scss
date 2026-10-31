@@ -1,0 +1,51 @@
+:host {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+/* Above a card's stretched link, so the tap reaches the mark and not the link. */
+.mark {
+  position: relative;
+  z-index: 1;
+  padding: 0.1em 0.3em;
+  border: none;
+  border-radius: 0.25rem;
+  background: none;
+  font: inherit;
+  font-size: 0.55em;
+  line-height: 1;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+  }
+}
+
+.mark--better {
+  color: var(--p-green-600);
+}
+
+.mark--worse {
+  color: var(--p-red-600);
+}
+
+.mark--even {
+  color: var(--p-text-muted-color);
+}
+
+@media (prefers-color-scheme: dark) {
+  .mark--better {
+    color: var(--p-green-400);
+  }
+
+  .mark--worse {
+    color: var(--p-red-400);
+  }
+}
+
+.detail {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

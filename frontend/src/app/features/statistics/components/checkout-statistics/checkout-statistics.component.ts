@@ -24,13 +24,16 @@ import { InfoHintComponent } from '../../../../core/view/components/info-hint/in
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
 import { COMPARE_COLOR, Comparison, OWN_COLOR } from '../../models/comparison';
 import { DoubleBoardComponent } from '../double-board/double-board.component';
-import { StatDeltaComponent } from '../stat-delta/stat-delta.component';
+import { ComparedValueComponent } from '../compared-value/compared-value.component';
+import { DeltaMarkComponent } from '../delta-mark/delta-mark.component';
 import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
 
 /** Checkout figures: the rates, how far off the doubles went and each double on the board. */
 @Component({
   selector: 'app-checkout-statistics',
   imports: [
+    ComparedValueComponent,
+    DeltaMarkComponent,
     DecimalPipe,
     DistanceScaleComponent,
     DoubleBoardComponent,
@@ -39,7 +42,6 @@ import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
     InfoHintComponent,
     RouterLink,
     SelectButton,
-    StatDeltaComponent,
     StatSketchComponent,
   ],
   templateUrl: './checkout-statistics.component.html',

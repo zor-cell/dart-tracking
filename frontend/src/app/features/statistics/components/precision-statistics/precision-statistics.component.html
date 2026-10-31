@@ -3,15 +3,20 @@
 <ng-template #visitBand let-band="band">
   @let figure = bands()[band];
   @if (other) {
-    <dd class="stat__value">{{ figure.share | number: '1.1-1' }} %</dd>
+    <dd class="stat__value">
+      {{ figure.share | number: '1.1-1' }} %
+      @if (other) {
+        <app-delta-mark
+          [own]="figure.share"
+          [other]="figure.otherShare"
+          [name]="other.name"
+          [digits]="1"
+          unit=" %"
+        />
+      }
+    </dd>
     <dd class="stat__hint">
-      <app-stat-delta
-        [name]="other.name"
-        [own]="figure.share"
-        [other]="figure.otherShare"
-        [digits]="1"
-        unit=" %"
-      />
+      <app-compared-value [name]="other.name" [other]="figure.otherShare" [digits]="1" unit=" %" />
     </dd>
   } @else {
     <dd class="stat__value">
@@ -42,15 +47,20 @@
           mit, ihre Punkte nicht.</app-info-hint
         >
       </dt>
-      <dd class="stat__value">{{ totals.average | number: '1.2-2' }}</dd>
-      @if (other) {
-        <dd class="stat__hint">
-          <app-stat-delta
-            [name]="other.name"
+      <dd class="stat__value">
+        {{ totals.average | number: '1.1-1' }}
+        @if (other) {
+          <app-delta-mark
             [own]="totals.average"
             [other]="other.statistics.average"
-            [digits]="2"
+            [name]="other.name"
+            [digits]="1"
           />
+        }
+      </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="other.statistics.average" [digits]="1" />
         </dd>
       }
     </div>
@@ -62,14 +72,23 @@
           Auschecken geht.</app-info-hint
         >
       </dt>
-      <dd class="stat__value">{{ totals.firstNineAverage | number: '1.2-2' }}</dd>
-      @if (other) {
-        <dd class="stat__hint">
-          <app-stat-delta
-            [name]="other.name"
+      <dd class="stat__value">
+        {{ totals.firstNineAverage | number: '1.1-1' }}
+        @if (other) {
+          <app-delta-mark
             [own]="totals.firstNineAverage"
             [other]="other.statistics.firstNineAverage"
-            [digits]="2"
+            [name]="other.name"
+            [digits]="1"
+          />
+        }
+      </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value
+            [name]="other.name"
+            [other]="other.statistics.firstNineAverage"
+            [digits]="1"
           />
         </dd>
       }
@@ -83,19 +102,22 @@
         } @else {
           &ndash;
         }
+        @if (other) {
+          <app-delta-mark
+            [own]="wonRate()"
+            [other]="otherWonRate()"
+            [name]="other.name"
+            [digits]="0"
+            unit=" %"
+          />
+        }
       </dd>
       @if (!other) {
         <dd class="stat__hint">{{ totals.legsWon }} von {{ totals.legs }} Legs</dd>
       }
       @if (other) {
         <dd class="stat__hint">
-          <app-stat-delta
-            [name]="other.name"
-            [own]="wonRate()"
-            [other]="otherWonRate()"
-            [digits]="0"
-            unit=" %"
-          />
+          <app-compared-value [name]="other.name" [other]="otherWonRate()" [digits]="0" unit=" %" />
         </dd>
       }
     </div>
@@ -104,20 +126,14 @@
       <dd class="stat__value">{{ totals.darts | number }}</dd>
       @if (other) {
         <dd class="stat__hint">
-          <app-stat-delta
-            [name]="other.name"
-            [own]="totals.darts"
-            [other]="other.statistics.darts"
-            [digits]="0"
-            [neutral]="true"
-          />
+          <app-compared-value [name]="other.name" [other]="other.statistics.darts" [digits]="0" />
         </dd>
       }
     </div>
     <div class="stat">
       <dt class="stat__label">Bestes Visit</dt>
       <dd class="stat__value">
-        @if (totals.bestVisitAt; as at) {
+        @if (other ? null : totals.bestVisitAt; as at) {
           <a
             class="stat__link"
             [state]="returnState"
@@ -130,12 +146,19 @@
         } @else {
           {{ totals.bestVisit }}
         }
+        @if (other) {
+          <app-delta-mark
+            [own]="totals.bestVisit"
+            [other]="other.statistics.bestVisit"
+            [name]="other.name"
+            [digits]="0"
+          />
+        }
       </dd>
       @if (other) {
         <dd class="stat__hint">
-          <app-stat-delta
+          <app-compared-value
             [name]="other.name"
-            [own]="totals.bestVisit"
             [other]="other.statistics.bestVisit"
             [digits]="0"
           />
@@ -155,12 +178,10 @@
       <dd class="stat__value">{{ totals.favouriteVisit ?? '–' }}</dd>
       @if (other) {
         <dd class="stat__hint">
-          <app-stat-delta
+          <app-compared-value
             [name]="other.name"
-            [own]="totals.favouriteVisit"
             [other]="other.statistics.favouriteVisit"
             [digits]="0"
-            [neutral]="true"
           />
         </dd>
       }
@@ -205,7 +226,7 @@
     </header>
     <div class="heatmap-pair">
       <figure class="heatmap-pair__side">
-        <figcaption class="heatmap-pair__name heatmap-pair__name--own">Du</figcaption>
+        <figcaption class="heatmap-pair__name">Du</figcaption>
         <div class="heatmap-pair__board">
           <ng-container
             *ngTemplateOutlet="
@@ -216,7 +237,7 @@
         </div>
       </figure>
       <figure class="heatmap-pair__side">
-        <figcaption class="heatmap-pair__name heatmap-pair__name--other">
+        <figcaption class="heatmap-pair__name">
           {{ other.name }}
         </figcaption>
         <div class="heatmap-pair__board">
@@ -267,16 +288,26 @@
         </app-info-hint>
       </dt>
       @if (totals.grouping !== null) {
-        <dd class="stat__value">{{ totals.grouping | number: '1.0-0' }} mm</dd>
-        @if (other) {
-          <dd class="stat__hint">
-            <app-stat-delta
-              [name]="other.name"
+        <dd class="stat__value">
+          {{ totals.grouping | number: '1.0-0' }} mm
+          @if (other) {
+            <app-delta-mark
               [own]="totals.grouping"
               [other]="other.statistics.grouping"
+              [name]="other.name"
               [digits]="0"
               unit=" mm"
               [lowerIsBetter]="true"
+            />
+          }
+        </dd>
+        @if (other) {
+          <dd class="stat__hint">
+            <app-compared-value
+              [name]="other.name"
+              [other]="other.statistics.grouping"
+              [digits]="0"
+              unit=" mm"
             />
           </dd>
         }
@@ -308,16 +339,24 @@
         } @else {
           &ndash;
         }
-      </dd>
-      @if (other) {
-        <dd class="stat__hint">
-          <app-stat-delta
-            [name]="other.name"
+        @if (other) {
+          <app-delta-mark
             [own]="spread()?.ratio ?? null"
             [other]="otherSpread()?.ratio ?? null"
+            [name]="other.name"
             [digits]="1"
             unit="×"
             [lowerIsBetter]="true"
+          />
+        }
+      </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value
+            [name]="other.name"
+            [other]="otherSpread()?.ratio ?? null"
+            [digits]="1"
+            unit="×"
           />
         </dd>
       }
@@ -371,21 +410,30 @@
             </span>
           }
         </span>
-        <span class="darts__value">
-          @if (dart.average !== null) {
-            {{ dart.average | number: '1.1-1' }}
-          } @else {
-            &ndash;
+        <span class="darts__figures">
+          <span class="darts__value">
+            @if (dart.average !== null) {
+              {{ dart.average | number: '1.1-1' }}
+            } @else {
+              &ndash;
+            }
+          </span>
+          @if (other) {
+            <app-delta-mark
+              [own]="dart.average"
+              [other]="dart.other"
+              [name]="other.name"
+              [digits]="1"
+            />
+            <app-compared-value
+              class="darts__other"
+              [name]="other.name"
+              [other]="dart.other"
+              [digits]="1"
+              [named]="false"
+            />
           }
         </span>
-        @if (other) {
-          <app-stat-delta
-            [name]="other.name"
-            [own]="dart.average"
-            [other]="dart.other"
-            [digits]="1"
-          />
-        }
       </li>
     }
   </ol>

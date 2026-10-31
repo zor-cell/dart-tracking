@@ -147,7 +147,7 @@
 
   @if (comparedPlayer(); as player) {
     <div class="compare-note">
-      <span class="compare-note__key compare-note__key--own">
+      <span class="compare-note__key">
         <span class="compare-note__dot" [style.background]="ownColor"></span>
         <strong>Du</strong>
         @if (totals(); as own) {
@@ -156,7 +156,7 @@
           </span>
         }
       </span>
-      <span class="compare-note__key compare-note__key--other">
+      <span class="compare-note__key">
         <span class="compare-note__dot" [style.background]="compareColor"></span>
         <strong>{{ player.name }}</strong>
         @if (others(); as loaded) {

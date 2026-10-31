@@ -1,0 +1,22 @@
+:host {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  min-width: 0;
+  color: var(--p-text-muted-color);
+  font-size: 0.9rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.compared__name {
+  min-width: 1.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compared__value {
+  flex: none;
+  white-space: nowrap;
+}

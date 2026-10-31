@@ -43,7 +43,25 @@
 }
 
 .darts--compared .darts__row {
-  grid-template-columns: auto 1fr 2.5rem 5.5rem;
+  grid-template-columns: auto 1fr 4rem;
+}
+
+.darts--compared .darts__bars {
+  gap: 0.75rem;
+}
+
+/* One's own value with its mark, the other's value below it, each beside its bar. */
+.darts--compared .darts__figures {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  justify-items: end;
+  gap: 0.1rem 0.15rem;
+}
+
+.darts__other {
+  grid-column: 1;
+  line-height: 1.2;
 }
 
 .darts__bars {
@@ -69,6 +87,7 @@
 }
 
 .darts__value {
+  display: block;
   text-align: right;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -120,13 +139,9 @@
   font-size: 0.9rem;
   font-weight: 600;
 
-  &--own {
-    color: var(--own-text-color);
-  }
-
-  &--other {
-    color: var(--compare-text-color);
-  }
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .heatmap-pair__board {

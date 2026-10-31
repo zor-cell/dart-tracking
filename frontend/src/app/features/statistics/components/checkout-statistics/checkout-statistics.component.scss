@@ -44,11 +44,7 @@
   font-size: 0.9rem;
   font-weight: 600;
 
-  &--own {
-    color: var(--own-text-color);
-  }
-
-  &--other {
-    color: var(--compare-text-color);
-  }
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
