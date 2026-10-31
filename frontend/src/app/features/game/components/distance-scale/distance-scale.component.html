@@ -1,10 +1,26 @@
-<svg class="scale" viewBox="-28 -174 56 178" aria-hidden="true">
-  @for (band of bands; track $index) {
-    <path class="scale__band scale__band--{{ band.tone }}" [attr.d]="band.d" />
-  }
-  @let line = gap();
-  <line class="scale__gap" x1="0" [attr.y1]="line.from" x2="0" [attr.y2]="line.to" />
-  @for (y of line.darts; track $index) {
-    <circle class="scale__dart" cx="0" [attr.cy]="y" r="8" [attr.fill]="dartColor($index)" />
-  }
+<svg class="scale" viewBox="-4 -28 178 56" aria-hidden="true">
+  <g transform="rotate(90)">
+    @for (band of bands; track $index) {
+      <path class="scale__band scale__band--{{ band.tone }}" [attr.d]="band.d" />
+    }
+    @for (line of lines(); track line.x) {
+      <line
+        class="scale__gap"
+        [style.stroke]="line.colors"
+        [attr.x1]="line.x"
+        [attr.y1]="line.from"
+        [attr.x2]="line.x"
+        [attr.y2]="line.to"
+      />
+      @for (y of line.darts; track $index) {
+        <circle
+          class="scale__dart"
+          [attr.cx]="line.x"
+          [attr.cy]="y"
+          [attr.r]="line.radius"
+          [attr.fill]="line.colors ?? dartColor($index)"
+        />
+      }
+    }
+  </g>
 </svg>

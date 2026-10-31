@@ -5,7 +5,7 @@ export type TrendMetric = 'average' | 'firstNine' | 'checkout' | 'grouping';
 
 export const TREND_METRICS: readonly { label: string; value: TrendMetric; unit: string }[] = [
   { label: '3-Dart-Ø', value: 'average', unit: '' },
-  { label: 'First 9', value: 'firstNine', unit: '' },
+  { label: 'First-9-Ø', value: 'firstNine', unit: '' },
   { label: 'Checkout', value: 'checkout', unit: ' %' },
   { label: 'Pfeilabstand', value: 'grouping', unit: ' mm' },
 ];

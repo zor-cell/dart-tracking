@@ -14,7 +14,9 @@ import { EmptyStateComponent } from '../../../../core/view/components/empty-stat
 import { backState } from '../../../../core/view/models/back-state';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
+import { COMPARE_COLOR, Comparison, OWN_COLOR } from '../../models/comparison';
 import { DoubleBoardComponent } from '../double-board/double-board.component';
+import { StatDeltaComponent } from '../stat-delta/stat-delta.component';
 import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
 
 /** Checkout figures: the rates, how far off the doubles went and each double on the board. */
@@ -27,6 +29,7 @@ import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
     EmptyStateComponent,
     InfoHintComponent,
     RouterLink,
+    StatDeltaComponent,
     StatSketchComponent,
   ],
   templateUrl: './checkout-statistics.component.html',
@@ -35,15 +38,18 @@ import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
 })
 export class CheckoutStatisticsComponent {
   readonly statistics = input.required<PlayerStatisticsDto>();
+  /** Another player's figures set beside one's own; the doubles board is left out meanwhile. */
+  readonly comparison = input<Comparison | null>(null);
+  protected readonly pairColors = [OWN_COLOR, COMPARE_COLOR] as const;
   /** Brings the views the cards open back here. */
   protected readonly returnState = backState('Statistik');
 
   protected readonly selected = signal<string | null>(null);
 
-  /** Darts that finished a leg, out of darts thrown while one dart could finish. */
-  protected readonly checkoutRate = computed(() => {
-    const { checkoutHits, checkoutAttempts } = this.statistics();
-    return checkoutAttempts === 0 ? null : checkoutHits / checkoutAttempts;
+  protected readonly checkoutRate = computed(() => checkoutRate(this.statistics()));
+  protected readonly otherCheckoutRate = computed(() => {
+    const other = this.comparison()?.statistics;
+    return other ? checkoutRate(other) : null;
   });
 
   constructor() {
@@ -57,4 +63,9 @@ export class CheckoutStatisticsComponent {
       });
     });
   }
+}
+
+/** Darts that finished a leg, out of darts thrown while one dart could finish, in percent. */
+function checkoutRate({ checkoutHits, checkoutAttempts }: PlayerStatisticsDto): number | null {
+  return checkoutAttempts === 0 ? null : (checkoutHits / checkoutAttempts) * 100;
 }

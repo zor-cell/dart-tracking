@@ -7,32 +7,33 @@ import { PlayerStatisticsDto } from '../dto/player-statistics.dto';
 import { TrendPointDto } from '../dto/trend-point.dto';
 import { StatisticsFilter } from '../models/statistics-filter';
 
-/** The signed-in account's own throwing record. */
+/** The signed-in account's own throwing record, or that of a player from its address book
+ * in the games the account can see. */
 @Injectable({ providedIn: 'root' })
 export class StatisticsService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.httpApiUrl}/statistics`;
 
-  load(filter: StatisticsFilter): Promise<PlayerStatisticsDto> {
+  load(filter: StatisticsFilter, player: string | null = null): Promise<PlayerStatisticsDto> {
     return firstValueFrom(
       this.http.get<PlayerStatisticsDto>(this.baseUrl, {
-        params: this.params(filter),
+        params: this.params(filter, player),
         context: SILENT_ERROR_CONTEXT,
       }),
     );
   }
 
   /** The same games one by one, oldest first. */
-  trend(filter: StatisticsFilter): Promise<TrendPointDto[]> {
+  trend(filter: StatisticsFilter, player: string | null = null): Promise<TrendPointDto[]> {
     return firstValueFrom(
       this.http.get<TrendPointDto[]>(`${this.baseUrl}/trend`, {
-        params: this.params(filter),
+        params: this.params(filter, player),
         context: SILENT_ERROR_CONTEXT,
       }),
     );
   }
 
-  private params(filter: StatisticsFilter): HttpParams {
+  private params(filter: StatisticsFilter, player: string | null): HttpParams {
     const { opponentId, since, until, lastGames, ...rest } = filter;
     let params = new HttpParams();
     for (const [key, value] of Object.entries(rest)) {
@@ -51,6 +52,9 @@ export class StatisticsService {
     }
     if (lastGames !== null) {
       params = params.set('last', lastGames);
+    }
+    if (player) {
+      params = params.set('player', player);
     }
     return params;
   }

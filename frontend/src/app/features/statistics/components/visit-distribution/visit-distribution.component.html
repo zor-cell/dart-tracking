@@ -3,7 +3,7 @@
   <p-chart
     class="visits__chart"
     type="bar"
-    height="13rem"
+    [height]="comparison() ? '17rem' : '13rem'"
     [data]="data()"
     [options]="options()"
     [plugins]="plugins"
@@ -17,11 +17,24 @@
       [rounded]="true"
       ariaLabel="Einen Punkt weniger"
       [disabled]="selected() === 0"
-      (onClick)="step(-1)"
+      (appRepeatPress)="step(-1)"
     />
     @let count = counts()[selected()];
     <p class="readout__value" aria-live="polite">
-      <strong>{{ selected() }}</strong> &middot; {{ count }} {{ count === 1 ? 'Visit' : 'Visits' }}
+      <strong class="readout__score">{{ selected() }}</strong>
+      {{ count }} {{ count === 1 ? 'Visit' : 'Visits' }}
+      @if (comparison(); as other) {
+        <span class="readout__shares">
+          <span class="readout__own">
+            <span class="sr-only">Du</span>
+            {{ shares()[selected()] | number: '1.1-1' }} %
+          </span>
+          <span class="readout__other">
+            <span class="sr-only">{{ other.name }}</span>
+            {{ otherShares()?.[selected()] ?? 0 | number: '1.1-1' }} %
+          </span>
+        </span>
+      }
     </p>
     <p-button
       icon="pi pi-angle-right"
@@ -30,23 +43,25 @@
       [rounded]="true"
       ariaLabel="Einen Punkt mehr"
       [disabled]="selected() === maxVisit"
-      (onClick)="step(1)"
+      (appRepeatPress)="step(1)"
     />
   </div>
-  <p class="panel__hint">Am häufigsten geworfen:</p>
-  <ul class="visits">
-    @for (entry of top(); track entry.score) {
-      <li>
-        <button
-          type="button"
-          class="visits__chip"
-          [class.visits__chip--picked]="entry.score === selected()"
-          [attr.aria-pressed]="entry.score === selected()"
-          (click)="selected.set(entry.score)"
-        >
-          <strong>{{ entry.score }}</strong> &times; {{ entry.count }}
-        </button>
-      </li>
-    }
-  </ul>
+  <div class="top">
+    <p class="panel__hint">Am häufigsten geworfen:</p>
+    <ul class="visits">
+      @for (entry of top(); track entry.score) {
+        <li>
+          <button
+            type="button"
+            class="visits__chip"
+            [class.visits__chip--picked]="entry.score === selected()"
+            [attr.aria-pressed]="entry.score === selected()"
+            (click)="selected.set(entry.score)"
+          >
+            <strong>{{ entry.score }}</strong> &times; {{ entry.count }}
+          </button>
+        </li>
+      }
+    </ul>
+  </div>
 </section>

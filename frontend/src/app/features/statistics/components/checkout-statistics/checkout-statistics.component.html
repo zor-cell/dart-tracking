@@ -1,4 +1,5 @@
 @let totals = statistics();
+@let other = comparison();
 <section class="panel">
   <h2 class="panel__title">Allgemein</h2>
   <dl class="stat-grid">
@@ -7,15 +8,37 @@
       <dd class="stat__value">
         @let checkout = checkoutRate();
         @if (checkout !== null) {
-          {{ checkout * 100 | number: '1.0-0' }} %
+          {{ checkout | number: '1.0-0' }} %
         } @else {
           &ndash;
         }
       </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-stat-delta
+            [name]="other.name"
+            [own]="checkoutRate()"
+            [other]="otherCheckoutRate()"
+            [digits]="0"
+            unit=" %"
+          />
+        </dd>
+      }
     </div>
     <div class="stat stat--lead">
       <dt class="stat__label">Mögliche Checkouts</dt>
-      <dd class="stat__value">{{ totals.checkoutAttempts }}</dd>
+      <dd class="stat__value">{{ totals.checkoutAttempts | number }}</dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-stat-delta
+            [name]="other.name"
+            [own]="totals.checkoutAttempts"
+            [other]="other.statistics.checkoutAttempts"
+            [digits]="0"
+            [neutral]="true"
+          />
+        </dd>
+      }
     </div>
     <div class="stat">
       <dt class="stat__label">Höchstes Finish</dt>
@@ -23,7 +46,7 @@
         @if (totals.highestFinishAt; as at) {
           <a
             class="stat__link"
-          [state]="returnState"
+            [state]="returnState"
             [routerLink]="['/account/games', at.gameId]"
             [queryParams]="{ visit: at.visit }"
           >
@@ -36,8 +59,18 @@
           &ndash;
         }
       </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-stat-delta
+            [name]="other.name"
+            [own]="totals.highestFinish || null"
+            [other]="other.statistics.highestFinish || null"
+            [digits]="0"
+          />
+        </dd>
+      }
     </div>
-    <div class="stat" [class.stat--scaled]="totals.doubleDistance !== null">
+    <div class="stat">
       <dt class="stat__label">
         Ø Abstand zum Checkout
         <app-info-hint class="stat__info">
@@ -48,8 +81,25 @@
       </dt>
       @if (totals.doubleDistance !== null) {
         <dd class="stat__value">{{ totals.doubleDistance | number: '1.0-0' }} mm</dd>
+        @if (other) {
+          <dd class="stat__hint">
+            <app-stat-delta
+              [name]="other.name"
+              [own]="totals.doubleDistance"
+              [other]="other.statistics.doubleDistance"
+              [digits]="0"
+              unit=" mm"
+              [lowerIsBetter]="true"
+            />
+          </dd>
+        }
         <dd class="stat__scale">
-          <app-distance-scale [distance]="totals.doubleDistance" kind="checkout" />
+          <app-distance-scale
+            [distance]="totals.doubleDistance"
+            [compared]="other?.statistics?.doubleDistance ?? null"
+            [colors]="pairColors"
+            kind="checkout"
+          />
         </dd>
       } @else {
         <dd class="stat__value">&ndash;</dd>
@@ -58,13 +108,15 @@
   </dl>
 </section>
 
-<section class="panel">
-  <h2 class="panel__title">Trefferbild</h2>
-  @if (totals.doubles.length === 0) {
-    <app-empty-state icon="pi-bullseye">
-      <p>Noch keine Darts auf ein Doppel, das checken konnte.</p>
-    </app-empty-state>
-  } @else {
-    <app-double-board [doubles]="totals.doubles" [(selected)]="selected" />
-  }
-</section>
+@if (!other) {
+  <section class="panel">
+    <h2 class="panel__title">Trefferbild</h2>
+    @if (totals.doubles.length === 0) {
+      <app-empty-state icon="pi-bullseye">
+        <p>Noch keine Darts auf ein Doppel, das checken konnte.</p>
+      </app-empty-state>
+    } @else {
+      <app-double-board [doubles]="totals.doubles" [(selected)]="selected" />
+    }
+  </section>
+}

@@ -7,7 +7,10 @@
   touch-action: pan-y;
 }
 
+/* A held arrow keeps stepping; no selection or callout may start beside it either. */
 .readout {
+  -webkit-touch-callout: none;
+  user-select: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -20,17 +23,40 @@
   margin: 0;
   text-align: center;
   font-variant-numeric: tabular-nums;
+}
 
-  strong {
-    font-size: 1.15rem;
-  }
+.readout__score {
+  margin-right: 0.4rem;
+  font-size: 1.15rem;
+}
+
+.readout__shares {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.readout__own {
+  color: var(--own-text-color);
+}
+
+.readout__other {
+  color: var(--compare-text-color);
+}
+
+.top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
 }
 
 .visits {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
-  margin: 0.5rem 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }

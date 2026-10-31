@@ -34,6 +34,7 @@ import { FieldHeatmapComponent } from '../field-heatmap/field-heatmap.component'
 import { ScoreRaceComponent } from '../score-race/score-race.component';
 import { TipHeatmapComponent } from '../tip-heatmap/tip-heatmap.component';
 import { readStored, writeStored } from '../../../../core/storage/models/browser-storage';
+import { RepeatPressDirective } from '../../../../core/view/directives/repeat-press.directive';
 
 /** Time per dart at normal speed, in milliseconds. */
 const DART_INTERVAL_MS = 500;
@@ -53,6 +54,7 @@ const VIEWS: readonly { label: string; value: ReplayView }[] = [
   selector: 'app-game-replay',
   imports: [
     Button,
+    RepeatPressDirective,
     FieldHeatmapComponent,
     FormsModule,
     ScoreDistributionComponent,
@@ -206,10 +208,9 @@ export class GameReplayComponent implements OnInit {
     if (this.visits()[visit].darts.every((dart) => dart.position === null)) {
       this.layer.set('fields');
     }
-    afterNextRender(
-      () => this.host.nativeElement.scrollIntoView({ block: 'start' }),
-      { injector: this.injector },
-    );
+    afterNextRender(() => this.host.nativeElement.scrollIntoView({ block: 'start' }), {
+      injector: this.injector,
+    });
   }
 
   protected selectView(view: ReplayView): void {

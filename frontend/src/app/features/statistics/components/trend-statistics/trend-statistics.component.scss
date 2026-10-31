@@ -13,7 +13,6 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  margin-bottom: 0.75rem;
 
   .panel__title {
     margin: 0;
@@ -22,5 +21,36 @@
   /* Stays at the right edge, also when it wraps below the title. */
   p-selectbutton {
     margin-left: auto;
+  }
+}
+
+/* What a dot and a line stand for; who they belong to is the page legend's colour. */
+.trend__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+
+.trend__dot,
+.trend__line {
+  display: inline-block;
+  margin-right: 0.4rem;
+  background: var(--p-text-muted-color);
+  vertical-align: middle;
+}
+
+.trend__dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+}
+
+.trend__line {
+  width: 1rem;
+  height: 0.15rem;
+  border-radius: 0.1rem;
+
+  &--own {
+    background: var(--own-text-color);
   }
 }

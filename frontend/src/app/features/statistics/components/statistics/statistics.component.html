@@ -71,7 +71,33 @@
         fluid
       />
     </form>
+    <p-button
+      listToolbarAction
+      icon="pi pi-arrow-right-arrow-left"
+      [rounded]="true"
+      ariaLabel="Mit anderem Spieler vergleichen"
+      (onClick)="comparePicker.toggle($event)"
+    />
   </app-list-toolbar>
+  <p-popover #comparePicker (onShow)="centreArrow(comparePicker)">
+    <div class="compare-picker list-filters">
+      <label class="list-filters__label" for="compare-player">Vergleichen mit</label>
+      <p-select
+        inputId="compare-player"
+        [options]="opponents()"
+        optionLabel="name"
+        optionValue="id"
+        [ngModel]="compareId() || null"
+        (ngModelChange)="pickCompared($event, comparePicker)"
+        placeholder="Niemand"
+        [filter]="true"
+        filterPlaceholder="Spieler suchen"
+        emptyMessage="Noch keine anderen Spieler in deiner Liste."
+        [showClear]="true"
+        fluid
+      />
+    </div>
+  </p-popover>
   <p-popover #periodPicker>
     <div class="period">
       <span id="statistics-unit" class="sr-only">Zeitraum zählen in</span>
@@ -119,6 +145,32 @@
     </div>
   </p-popover>
 
+  @if (comparedPlayer(); as player) {
+    <div class="compare-note">
+      <span class="compare-note__key compare-note__key--own">
+        <span class="compare-note__dot" [style.background]="ownColor"></span>
+        <strong>Du</strong>
+        @if (totals(); as own) {
+          <span class="compare-note__games">
+            {{ own.legs }} {{ own.legs === 1 ? 'Spiel' : 'Spiele' }}
+          </span>
+        }
+      </span>
+      <span class="compare-note__key compare-note__key--other">
+        <span class="compare-note__dot" [style.background]="compareColor"></span>
+        <strong>{{ player.name }}</strong>
+        @if (others(); as loaded) {
+          <span class="compare-note__games">
+            {{ loaded.legs }} {{ loaded.legs === 1 ? 'Spiel' : 'Spiele' }}
+          </span>
+        }
+      </span>
+      <app-info-hint class="compare-note__info">
+        Bei {{ player.name }} zählen nur Spiele, die du sehen kannst: die du angelegt oder
+        mitgespielt hast.
+      </app-info-hint>
+    </div>
+  }
   <p-tabs [(value)]="tab" [showNavigators]="false">
     <p-tablist>
       <p-tab value="precision">Präzision</p-tab>
@@ -147,15 +199,26 @@
       } @else {
         <p-tabpanels>
           <p-tabpanel value="precision">
-            <app-precision-statistics [statistics]="totals" [listParams]="gameListParams()" />
+            <app-precision-statistics
+              [statistics]="totals"
+              [comparison]="comparison()"
+              [listParams]="gameListParams()"
+            />
           </p-tabpanel>
           <p-tabpanel value="checkout">
-            <app-checkout-statistics [statistics]="totals" />
+            <app-checkout-statistics [statistics]="totals" [comparison]="comparison()" />
           </p-tabpanel>
           <p-tabpanel value="trend">
             <div class="trend">
-              <app-trend-statistics [filter]="criteria()" />
-              <app-visit-distribution [visitScores]="totals.visitScores" />
+              <app-trend-statistics
+                [filter]="criteria()"
+                [compareId]="comparison() ? compareId() : null"
+                [compareName]="comparison()?.name ?? null"
+              />
+              <app-visit-distribution
+                [visitScores]="totals.visitScores"
+                [comparison]="comparison()"
+              />
             </div>
           </p-tabpanel>
         </p-tabpanels>

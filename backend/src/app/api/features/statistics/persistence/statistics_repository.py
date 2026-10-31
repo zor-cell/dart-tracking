@@ -4,7 +4,7 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from sqlalchemy import or_, select
+from sqlalchemy import ColumnElement, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
@@ -26,6 +26,7 @@ from app.api.features.game.persistence.game_player import GamePlayerTable
 from app.api.features.game.persistence.game_repository import game_filter_clauses
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.persistence.turn import TurnTable
+from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.persistence.player import PlayerTable
 from app.api.features.statistics.domain.player_statistics import PlayerStatistics, VisitRef
 from app.api.features.statistics.domain.trend import TrendPoint
@@ -54,11 +55,12 @@ class StatisticsRepository:
         user_id: str,
         criteria: GameFilter = GameFilter(),
         last: int | None = None,
+        player: PlayerIdentity | None = None,
     ) -> PlayerStatistics:
         """Every counted leg of the games `criteria` selects in one tally; `last`
-        keeps only the most recent games that count."""
+        keeps only the most recent games that count. `player` tallies that one instead."""
         statistics = PlayerStatistics()
-        for leg in await self._legs(session, user_id, criteria, last):
+        for leg in await self._legs(session, _seats(user_id, player), criteria, last):
             leg.add_to(statistics)
         return statistics
 
@@ -68,10 +70,12 @@ class StatisticsRepository:
         user_id: str,
         criteria: GameFilter = GameFilter(),
         last: int | None = None,
+        player: PlayerIdentity | None = None,
     ) -> list[TrendPoint]:
         """The same games tallied one by one, oldest first."""
         games: dict[str, TrendPoint] = {}
-        for leg in reversed(await self._legs(session, user_id, criteria, last)):
+        legs = await self._legs(session, _seats(user_id, player), criteria, last)
+        for leg in reversed(legs):
             point = games.setdefault(
                 leg.game_id, TrendPoint(leg.game_id, leg.played_at, PlayerStatistics())
             )
@@ -79,7 +83,11 @@ class StatisticsRepository:
         return list(games.values())
 
     async def _legs(
-        self, session: AsyncSession, user_id: str, criteria: GameFilter, last: int | None
+        self,
+        session: AsyncSession,
+        seats_of: list[ColumnElement[bool]],
+        criteria: GameFilter,
+        last: int | None,
     ) -> list[_Leg]:
         """Three queries for the games `criteria` selects, not four per game: the
         seats, their turns, their darts — then the rules run in Python. Newest first."""
@@ -99,7 +107,7 @@ class StatisticsRepository:
                 .join(GamePlayerTable, GamePlayerTable.game_id == GameTable.id)
                 .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
                 .where(
-                    PlayerTable.user_id == user_id,
+                    *seats_of,
                     or_(
                         GameTable.status == GameStatus.FINISHED.value,
                         (GameTable.status == GameStatus.ACTIVE.value)
@@ -206,6 +214,24 @@ class StatisticsRepository:
             )
 
         return legs
+
+
+def _seats(user_id: str, player: PlayerIdentity | None) -> list[ColumnElement[bool]]:
+    """The account's own seats, or those of `player` in the games the account set up
+    or sat in; a linked entry counts every seat of its account."""
+    if player is None:
+        return [PlayerTable.user_id == user_id]
+    seated = (
+        select(GamePlayerTable.game_id)
+        .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
+        .where(PlayerTable.user_id == user_id)
+    )
+    whose = (
+        PlayerTable.id == player.id
+        if player.user_id is None
+        else PlayerTable.user_id == player.user_id
+    )
+    return [whose, or_(GameTable.owner_user_id == user_id, GameTable.id.in_(seated))]
 
 
 repository = StatisticsRepository()

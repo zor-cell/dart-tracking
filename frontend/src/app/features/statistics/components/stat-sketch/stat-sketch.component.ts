@@ -12,6 +12,8 @@ interface Gap {
   readonly from: Point;
   readonly to: Point;
   readonly label: Point;
+  /** Runs beside the board, on the page, so it takes the page's text colour. */
+  readonly off?: boolean;
 }
 
 /** A zoom onto the board, in SVG board millimetres (y down), with darts and their distances. */
@@ -51,7 +53,7 @@ const CHECKOUT: BoardScene = {
   ],
   gaps: [
     { from: [-12, -146], to: [-13.1, -159.5], label: [-9, -150] },
-    { from: [16, -176], to: [15.4, -169.3], label: [19, -175] },
+    { from: [16, -176], to: [15.4, -169.3], label: [19, -175], off: true },
   ],
   hits: [[7, -163.5]],
 };

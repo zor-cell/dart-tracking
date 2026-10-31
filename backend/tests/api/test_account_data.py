@@ -244,3 +244,28 @@ def test_accuracy_report_is_for_admins(alice, anon, session):
 
     session.make_admin(alice)
     assert alice.get("/evaluation/accuracy").status_code == 200
+
+
+def test_compared_player_counts_only_in_games_the_account_can_see(alice, register, session):
+    bob = register("bob")
+    bob_id = alice.add_player("Bob")
+    session.play(
+        alice.new_game(alice.own_entry()["id"], bob_id)["id"], WINNING_LEG[0], [S1] * 3, WINNING_LEG[1]
+    )
+
+    def bobs(**params):
+        return alice.get("/statistics", params={"player": bob_id, **params}).json()
+
+    assert (bobs()["legs"], bobs()["darts"], statistics(alice)["darts"]) == (1, 3, 6)
+
+    bob.accept(alice.invite(bob_id))
+    session.play(own_game(bob), *WINNING_LEG)
+    assert bobs()["legs"] == 1
+    assert len(alice.get("/statistics/trend", params={"player": bob_id}).json()) == 1
+
+
+def test_compared_player_comes_from_the_own_address_book(alice, register):
+    carols = register("carol").add_player("Dave")
+
+    assert alice.get("/statistics", params={"player": carols}).status_code == 404
+    assert alice.get("/statistics/trend", params={"player": carols}).status_code == 404

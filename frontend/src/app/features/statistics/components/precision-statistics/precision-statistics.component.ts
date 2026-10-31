@@ -16,6 +16,10 @@ import {
 import { backState } from '../../../../core/view/models/back-state';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
+import { ScatterDto } from '../../dto/scatter.dto';
+import { COMPARE_COLOR, Comparison, OWN_COLOR } from '../../models/comparison';
+import { visitTotal } from '../../models/visit-scores';
+import { StatDeltaComponent } from '../stat-delta/stat-delta.component';
 import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
 
 /** The general figures, the hit picture and how the darts group: spread, each dart's place. */
@@ -30,6 +34,7 @@ import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
     NgTemplateOutlet,
     RouterLink,
     SelectButton,
+    StatDeltaComponent,
     StatSketchComponent,
     TipHeatmapComponent,
   ],
@@ -39,6 +44,11 @@ import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
 })
 export class PrecisionStatisticsComponent {
   readonly statistics = input.required<PlayerStatisticsDto>();
+  /** Another player's figures set beside one's own; the hit picture is left out meanwhile. */
+  readonly comparison = input<Comparison | null>(null);
+  protected readonly ownColor = OWN_COLOR;
+  protected readonly compareColor = COMPARE_COLOR;
+  protected readonly pairColors = [OWN_COLOR, COMPARE_COLOR] as const;
   /** Brings the views the cards open back here. */
   protected readonly returnState = backState('Statistik');
   /** The page's filters as the game list reads them, carried into its links. */
@@ -49,10 +59,32 @@ export class PrecisionStatisticsComponent {
   /** The field picked on the heatmap, kept when the layer changes. */
   protected readonly pinnedField = signal<string | null>(null);
 
-  /** Legs won out of every leg played. */
-  protected readonly wonRate = computed(() => {
-    const { legsWon, legs } = this.statistics();
-    return legs === 0 ? null : legsWon / legs;
+  /** Legs won out of every leg played, in percent. */
+  protected readonly wonRate = computed(() => wonRate(this.statistics()));
+  protected readonly otherWonRate = computed(() => {
+    const other = this.comparison()?.statistics;
+    return other ? wonRate(other) : null;
+  });
+
+  /** Visits reaching each band, also as a share of all visits in percent beside another's. */
+  protected readonly bands = computed(() => {
+    const own = this.statistics();
+    const other = this.comparison()?.statistics ?? null;
+    const share = (statistics: PlayerStatisticsDto, count: number) => {
+      const total = visitTotal(statistics.visitScores);
+      return total === 0 ? null : (count / total) * 100;
+    };
+    const figure = (counts: (statistics: PlayerStatisticsDto) => number) => ({
+      count: counts(own),
+      share: share(own, counts(own)),
+      otherShare: other ? share(other, counts(other)) : null,
+    });
+    return {
+      180: figure((statistics) => statistics.visits180),
+      140: figure((statistics) => statistics.visits140Plus),
+      100: figure((statistics) => statistics.visits100Plus),
+      60: figure((statistics) => statistics.visits60Plus),
+    } as Record<number, { count: number; share: number | null; otherShare: number | null }>;
   });
 
   protected readonly fieldCounts = computed(
@@ -62,29 +94,29 @@ export class PrecisionStatisticsComponent {
     () => new Map(Object.entries(this.statistics().locatedFields)),
   );
 
-  /** The wider axis against the narrower one, and the ellipse drawn from them. */
-  protected readonly spread = computed(() => {
-    const scatter = this.statistics().scatter;
-    if (scatter === null) {
-      return null;
-    }
-    return {
-      ratio: scatter.major / Math.max(scatter.minor, 0.1),
-      ry: scatter.minor / Math.max(scatter.major, 0.1),
-      rotation: -scatter.angle,
-    };
-  });
+  protected readonly spread = computed(() => spreadOf(this.statistics().scatter));
+  protected readonly otherSpread = computed(() =>
+    spreadOf(this.comparison()?.statistics.scatter ?? null),
+  );
 
-  /** Each dart's points per throw, with its share of the best of the three for the bar. */
+  /** Each dart's points per throw, with its share of the best one shown for the bar; beside
+   * another player one's own bars take the comparison's blue instead of the dart colours. */
   protected readonly darts = computed(() => {
     const averages = this.statistics().dartAverages;
-    const best = Math.max(1, ...averages.map((average) => average ?? 0));
-    return averages.map((average, place) => ({
-      place: place + 1,
-      average,
-      color: dartColor(place),
-      share: ((average ?? 0) / best) * 100,
-    }));
+    const compared = this.comparison() !== null;
+    const others = this.comparison()?.statistics.dartAverages ?? [];
+    const best = Math.max(1, ...[...averages, ...others].map((average) => average ?? 0));
+    return averages.map((average, place) => {
+      const other = others[place] ?? null;
+      return {
+        place: place + 1,
+        average,
+        other,
+        color: compared ? OWN_COLOR : dartColor(place),
+        share: ((average ?? 0) / best) * 100,
+        otherShare: ((other ?? 0) / best) * 100,
+      };
+    });
   });
 
   protected selectLayer(layer: HeatmapLayer): void {
@@ -96,4 +128,20 @@ export class PrecisionStatisticsComponent {
   protected bandParams(band: number): Params {
     return { ...this.listParams(), visit: band };
   }
+}
+
+function wonRate({ legsWon, legs }: PlayerStatisticsDto): number | null {
+  return legs === 0 ? null : (legsWon / legs) * 100;
+}
+
+/** The wider axis against the narrower one, and the ellipse drawn from them. */
+function spreadOf(scatter: ScatterDto | null) {
+  if (scatter === null) {
+    return null;
+  }
+  return {
+    ratio: scatter.major / Math.max(scatter.minor, 0.1),
+    ry: scatter.minor / Math.max(scatter.major, 0.1),
+    rotation: -scatter.angle,
+  };
 }

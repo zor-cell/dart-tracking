@@ -5,6 +5,7 @@
       @for (gap of scene.gaps; track $index) {
         <line
           class="sketch__gap"
+          [class.sketch__gap--off]="gap.off"
           [attr.x1]="gap.from[0]"
           [attr.y1]="gap.from[1]"
           [attr.x2]="gap.to[0]"

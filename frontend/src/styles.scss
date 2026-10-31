@@ -30,6 +30,15 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* Quick taps on controls and boards, such as the keypad or the replay's buttons, never
+   zoom the page on iOS; panning and pinching still work. */
+button,
+a,
+[role='button'],
+svg {
+  touch-action: manipulation;
+}
+
 /* Shared layout for the feature views rendered inside the app shell. */
 .view {
   display: flex;
@@ -325,6 +334,12 @@ a.list-group__item {
   font-size: 0.85rem;
 }
 
+/* Both sides of a comparison as text, in their chart colours. */
+:root {
+  --own-text-color: #2a78d6;
+  --compare-text-color: #eb6834;
+}
+
 /* Key figures as tiles, two per row; `--wide` gives the headline one the full row. */
 .stat-grid {
   margin: 0;
@@ -424,23 +439,10 @@ a.list-group__item {
   padding-right: 0.8rem;
 }
 
-/* A tile with a small drawing to scale along its right edge, below the info button;
-   tall enough that the drawing keeps its size. */
-.stat--scaled {
-  min-height: 7rem;
-  padding-right: 2.5rem;
-
-  .stat__label {
-    padding-right: 0;
-  }
-}
-
+/* A small drawing to scale lying under a tile's figures. */
 .stat__scale {
-  position: absolute;
-  top: 2rem;
-  right: 0.75rem;
-  bottom: 0.6rem;
-  margin: 0;
+  height: 2.5rem;
+  margin: 0.5rem 0 0;
 }
 
 /* The sign-in, registration and account forms. */

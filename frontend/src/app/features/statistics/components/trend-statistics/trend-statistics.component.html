@@ -20,6 +20,13 @@
         <p>Für einen Verlauf braucht es mindestens zwei gewertete Spiele.</p>
       </app-empty-state>
     } @else {
+      <p class="panel__hint trend__legend">
+        <span><span class="trend__dot"></span>Einzelne Spiele</span>
+        <span>
+          <span class="trend__line" [class.trend__line--own]="!otherPoints()"></span>Ø der letzten
+          {{ window }} Spiele
+        </span>
+      </p>
       <p-chart
         type="line"
         height="16rem"
@@ -27,7 +34,6 @@
         [options]="options()"
         [ariaLabel]="ariaLabel()"
       />
-      <p class="panel__hint">Punkte: einzelne Spiele. Linie: Ø der letzten {{ window }} Spiele.</p>
     }
   } @else {
     <app-loading-state label="Verlauf wird geladen" />

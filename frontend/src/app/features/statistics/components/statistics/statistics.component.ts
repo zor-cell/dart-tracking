@@ -12,12 +12,14 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Params } from '@angular/router';
+import { Button } from 'primeng/button';
 import { DatePicker } from 'primeng/datepicker';
 import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
+import { COMPARE_COLOR, Comparison, OWN_COLOR } from '../../models/comparison';
 import { StatisticsFilter } from '../../models/statistics-filter';
 import {
   DEFAULT_PERIODS,
@@ -40,6 +42,7 @@ import { BackLinkComponent } from '../../../../core/view/components/back-link/ba
 import { ListToolbarComponent } from '../../../../core/view/components/list-toolbar/list-toolbar.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
+import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 import { DayRange, dayRangeBounds, dayRangeLabel } from '../../../../core/view/models/day-range';
 import {
@@ -47,6 +50,7 @@ import {
   FilterChipOpen,
   FilterSuggestion,
 } from '../../../../core/view/models/filter-chip';
+import { centrePopoverArrow } from '../../../../core/view/models/popover-arrow';
 import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
 import { readStored, writeStored } from '../../../../core/storage/models/browser-storage';
 import {
@@ -88,6 +92,7 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
   selector: 'app-statistics',
   imports: [
     BackLinkComponent,
+    Button,
     CheckoutStatisticsComponent,
     DatePicker,
     LoadingStateComponent,
@@ -95,6 +100,7 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
     ListToolbarComponent,
     LoadErrorComponent,
     FormsModule,
+    InfoHintComponent,
     Popover,
     PrecisionStatisticsComponent,
     ReactiveFormsModule,
@@ -121,6 +127,8 @@ export class StatisticsComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly totals = signal<PlayerStatisticsDto | null>(null);
+  /** The compared player's figures under the same filters, null while nobody is compared. */
+  protected readonly others = signal<PlayerStatisticsDto | null>(null);
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
   private requests = 0;
@@ -143,6 +151,20 @@ export class StatisticsComponent {
     value: value as PlayerCount,
   }));
   protected readonly opponents = signal<PlayerIdentityDto[]>([]);
+
+  /** The address book entry set beside one's own figures; empty for none. */
+  protected readonly compareId = signal('');
+  protected readonly ownColor = OWN_COLOR;
+  protected readonly compareColor = COMPARE_COLOR;
+  protected readonly comparedPlayer = computed(
+    () => this.opponents().find((player) => player.id === this.compareId()) ?? null,
+  );
+  /** Handed to the tabs only once the compared player has a counted game. */
+  protected readonly comparison = computed<Comparison | null>(() => {
+    const player = this.comparedPlayer();
+    const statistics = this.others();
+    return player && statistics && statistics.legs > 0 ? { name: player.name, statistics } : null;
+  });
 
   protected readonly filters = this.fb.group({
     variant: this.fb.control<GameVariant | null>(null),
@@ -244,13 +266,21 @@ export class StatisticsComponent {
     );
     this.queryState.signal('range', this.range, DAY_RANGE_PARAM, null);
     this.queryState.form(this.filters, FILTER_PARAMS);
-    void this.players.list().then((all) => this.opponents.set(all.filter((p) => !p.isSelf)));
+    this.queryState.signal('compare', this.compareId, TEXT_PARAM, '');
+    void this.players.list().then((all) => {
+      const others = all.filter((p) => !p.isSelf);
+      this.opponents.set(others);
+      if (!others.some((player) => player.id === this.compareId())) {
+        this.compareId.set('');
+      }
+    });
     void this.memory.load();
     this.memory.watch('statistics', this.filters, REMEMBERED, this.destroyRef);
     effect(() => writeStored(TAB_KEY, this.tab()));
     effect(() => {
       const criteria = this.criteria();
-      untracked(() => void this.load(criteria));
+      const compared = this.compareId();
+      untracked(() => void this.load(criteria, compared));
     });
   }
 
@@ -318,19 +348,33 @@ export class StatisticsComponent {
     this.filters.get(key)?.reset();
   }
 
+  protected centreArrow(picker: Popover): void {
+    centrePopoverArrow(picker);
+  }
+
+  /** Picks whom to compare with, or nobody, and closes the picker. */
+  protected pickCompared(id: string | null, picker: Popover): void {
+    this.compareId.set(id ?? '');
+    picker.hide();
+  }
+
   protected reload(): void {
-    void this.load(this.criteria());
+    void this.load(this.criteria(), this.compareId());
   }
 
   /** Only the latest request may land, so a quick change of filters cannot be overtaken. */
-  private async load(criteria: StatisticsFilter): Promise<void> {
+  private async load(criteria: StatisticsFilter, compared: string): Promise<void> {
     const request = ++this.requests;
     this.loading.set(true);
     this.failed.set(false);
     try {
-      const totals = await this.statistics.load(criteria);
+      const [totals, others] = await Promise.all([
+        this.statistics.load(criteria),
+        compared ? this.statistics.load(criteria, compared) : null,
+      ]);
       if (request === this.requests) {
         this.totals.set(totals);
+        this.others.set(others);
       }
     } catch {
       if (request === this.requests) {

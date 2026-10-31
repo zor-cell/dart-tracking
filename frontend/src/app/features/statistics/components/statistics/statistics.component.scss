@@ -31,3 +31,48 @@ p-tab {
   flex-direction: column;
   gap: 1.25rem;
 }
+
+/* The picker the compare button opens, as wide as the filter popover. */
+.compare-picker {
+  width: min(18rem, calc(100vw - 4rem));
+}
+
+/* Who is who in the comparison, for every tab at once. */
+.compare-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1.25rem;
+  margin: -0.75rem 0 1rem;
+  font-size: 0.875rem;
+}
+
+/* One side: its colour, its name and how many games it is counted from. */
+.compare-note__key {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+
+  &--own strong {
+    color: var(--own-text-color);
+  }
+
+  &--other strong {
+    color: var(--compare-text-color);
+  }
+}
+
+.compare-note__games {
+  color: var(--p-text-muted-color);
+}
+
+.compare-note__info {
+  margin-left: -0.75rem;
+}
+
+.compare-note__dot {
+  flex: none;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+}

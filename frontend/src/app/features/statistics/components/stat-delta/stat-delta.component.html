@@ -1,0 +1,24 @@
+@let value = other();
+<span class="delta__other">
+  <span class="sr-only">{{ name() }}</span>
+  @if (value !== null) {
+    {{ value | number: format() }}{{ unit() }}
+  } @else {
+    &ndash;
+  }
+</span>
+@if (difference(); as difference) {
+  <span
+    class="delta__difference"
+    [class.delta__difference--better]="verdict() === 'better'"
+    [class.delta__difference--worse]="verdict() === 'worse'"
+  >
+    <span aria-hidden="true">{{ difference > 0 ? '▲' : '▼' }}</span>
+    {{ (difference > 0 ? difference : -difference) | number: format() }}
+    <span class="sr-only">{{ difference > 0 ? 'mehr' : 'weniger' }} bei dir</span>
+  </span>
+} @else if (verdict() === 'even') {
+  <span class="delta__difference">
+    <span aria-hidden="true">=</span><span class="sr-only">gleich</span>
+  </span>
+}

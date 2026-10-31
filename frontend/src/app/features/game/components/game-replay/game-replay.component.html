@@ -118,7 +118,7 @@
         [rounded]="true"
         ariaLabel="Einen Dart zurück"
         [disabled]="cursor() === 0"
-        (onClick)="stepBy(-1)"
+        (appRepeatPress)="stepBy(-1)"
       />
       <p-button
         [icon]="playing() ? 'pi pi-pause' : 'pi pi-play'"
@@ -134,7 +134,7 @@
         [rounded]="true"
         ariaLabel="Einen Dart weiter"
         [disabled]="cursor() >= end()"
-        (onClick)="stepBy(1)"
+        (appRepeatPress)="stepBy(1)"
       />
       <p-button
         icon="pi pi-angle-double-right"

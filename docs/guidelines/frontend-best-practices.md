@@ -92,6 +92,8 @@ heatmaps.
   at most two still open as `FilterSuggestion`s beside them, ranked by
   `FilterMemoryService` from the account's own picks, and the search opens from the
   toolbar's icon.
+- **Step buttons:** a button that moves one step, such as a dart in the replay, takes
+  `appRepeatPress` (`core/view/directives/`), so holding it keeps stepping.
 - **Dialogs:** destructive actions ask through `ConfirmService.ask()`; the one
   `p-confirmdialog` lives in the app shell. Other dialogs use `DIALOG_STYLE`.
 - **Colours:** theme tokens (`var(--p-…)`) without hex fallbacks. Hardcoded colours

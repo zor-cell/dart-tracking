@@ -1,0 +1,47 @@
+/* The other value at the start, the difference at the end, also when it wraps. */
+:host {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.375rem;
+  color: var(--p-text-muted-color);
+  font-size: 0.9rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.delta__other {
+  color: var(--compare-text-color);
+  font-weight: 600;
+}
+
+/* A tinted pill, so a red difference does not read as part of the orange value. */
+.delta__difference {
+  --tint: var(--p-text-muted-color);
+
+  margin-left: auto;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tint) 16%, transparent);
+  color: var(--tint);
+  font-weight: 600;
+  white-space: nowrap;
+
+  &--better {
+    --tint: var(--p-green-600);
+  }
+
+  &--worse {
+    --tint: var(--p-red-600);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .delta__difference--better {
+    --tint: var(--p-green-400);
+  }
+
+  .delta__difference--worse {
+    --tint: var(--p-red-400);
+  }
+}

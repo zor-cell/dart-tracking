@@ -15,6 +15,9 @@ export type DistanceKind = 'checkout' | 'grouping';
 
 const TRIPLE_CENTRE = (TRIPLE_INNER_RADIUS + TRIPLE_OUTER_RADIUS) / 2;
 
+/** How far (mm) each of two compared lines sits off the centre line. */
+const SIDE_OFFSET = 7;
+
 /** One ring band of a sector pointing up, the bullseye at the origin. */
 function band(inner: number, outer: number): string {
   const point = (radius: number, side: number): string => {
@@ -36,7 +39,9 @@ const BANDS = [
   { d: band(DOUBLE_INNER_RADIUS, DOUBLE_OUTER_RADIUS), tone: 'green' },
 ] as const;
 
-/** One board sector to scale with a distance (mm) drawn across it, so a reader can place it. */
+/** One board sector to scale, lying on its side with the bullseye at the left, with a
+ * distance (mm) drawn along it, so a reader can place it.
+ * A `compared` distance is drawn beside it, each in its colour from `colors`. */
 @Component({
   selector: 'app-distance-scale',
   templateUrl: './distance-scale.component.html',
@@ -46,18 +51,34 @@ const BANDS = [
 export class DistanceScaleComponent {
   readonly distance = input.required<number>();
   readonly kind = input.required<DistanceKind>();
+  readonly compared = input<number | null>(null);
+  readonly colors = input<readonly [own: string, compared: string] | null>(null);
 
   protected readonly bands = BANDS;
   protected readonly dartColor = dartColor;
 
-  /** The gap along the centre line as SVG y of its ends, cut to the board, and the darts on it:
-   * both ends for two darts of a visit, only the inner one for a dart short of the double. */
-  protected readonly gap = computed(() => {
+  /** Each distance's line at its x, line and darts in its colour; without a comparison the
+   * one dark line runs down the middle with the darts coloured by their place in the visit. */
+  protected readonly lines = computed(() => {
+    const compared = this.compared();
+    const colors = this.colors();
+    if (compared === null || colors === null) {
+      return [{ x: 0, radius: 5, colors: null, ...this.gap(this.distance()) }];
+    }
+    return [
+      { x: -SIDE_OFFSET, radius: 4.5, colors: colors[0], ...this.gap(this.distance()) },
+      { x: SIDE_OFFSET, radius: 4.5, colors: colors[1], ...this.gap(compared) },
+    ];
+  });
+
+  /** The gap along a line as SVG y of its ends, cut to the board, and the darts on it: both
+   * ends for two darts of a visit, only the inner one for a dart short of the double. */
+  private gap(distance: number) {
     const checkout = this.kind() === 'checkout';
     const room = checkout ? DOUBLE_INNER_RADIUS : DOUBLE_OUTER_RADIUS;
-    const length = Math.min(Math.max(0, this.distance()), room);
+    const length = Math.min(Math.max(0, distance), room);
     const outer = checkout ? room : Math.min(room, TRIPLE_CENTRE + length / 2);
     const inner = outer - length;
     return { from: -outer, to: -inner, darts: checkout ? [-inner] : [-outer, -inner] };
-  });
+  }
 }

@@ -36,6 +36,10 @@
   stroke: #ffffff;
   stroke-width: 0.6;
   stroke-dasharray: 2 1.5;
+
+  &--off {
+    stroke: var(--p-text-color);
+  }
 }
 
 .sketch__distance {
