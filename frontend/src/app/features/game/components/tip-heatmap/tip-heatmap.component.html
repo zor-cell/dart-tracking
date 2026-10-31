@@ -44,9 +44,9 @@
     @for (arrow of arrows(); track $index) {
       <path class="heatmap__mark" [attr.d]="arrowPath" [attr.transform]="arrow" />
     }
-
-    <g app-dart-markers [darts]="current()" [radius]="markRadius"></g>
   }
+
+  <g app-dart-markers [darts]="current()" [radius]="markRadius"></g>
 
   <ng-content select="[overlay]" />
 

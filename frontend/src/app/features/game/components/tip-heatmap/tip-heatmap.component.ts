@@ -19,7 +19,7 @@ import {
 } from '../../models/board-face';
 import { toSvg } from '../../models/board-geometry';
 import { fieldName } from '../../models/field-label';
-import { cssColor, heatColor } from '../../models/heat-colors';
+import { HEAT_CUTOFF, cssColor, heatColor } from '../../models/heat-colors';
 import { TipDensity, TipPoint, tipDensity } from '../../models/tip-density';
 import { BoardFaceComponent, FieldEnter } from '../board-face/board-face.component';
 import { DartMarkersComponent } from '../dart-markers/dart-markers.component';
@@ -31,6 +31,11 @@ const TIP_RADIUS = 4.5;
 /** Edge of a density cell and how far each tip spreads, in board millimetres. */
 const CLOUD_CELL = 2;
 const CLOUD_SIGMA = 6;
+
+/** A sparse cloud's spread for a single tip, and the least it narrows to, in board millimetres;
+ * it shrinks with the sixth root of the tip count. */
+const SPARSE_SIGMA = 20;
+const SPARSE_MIN_SIGMA = 10;
 
 /** Every tip as its own dot, or all of them smoothed into one cloud. */
 export type TipHeatmapMode = 'dots' | 'cloud';
@@ -54,9 +59,11 @@ export class TipHeatmapComponent {
   private readonly document = inject(DOCUMENT);
 
   readonly points = input.required<readonly TipPoint[]>();
-  /** The visit under way, numbered and coloured on top; dots only. */
+  /** The visit under way, numbered and coloured on top. */
   readonly current = input<readonly DartDto[]>([]);
   readonly mode = input<TipHeatmapMode>('dots');
+  /** Few tips, as in one game: the cloud has no cutoff and spreads wider the fewer there are. */
+  readonly sparse = input(false);
   /** Located darts per field, keyed by called-out label; fields stay unpickable without them. */
   readonly counts = input<ReadonlyMap<string, number> | null>(null);
   /** A field the view picked itself, captioned in place of the summary. */
@@ -71,7 +78,9 @@ export class TipHeatmapComponent {
   protected readonly extent = BOARD_VIEW_EXTENT;
   protected readonly markRadius = TIP_RADIUS;
   protected readonly arrowPath = offBoardArrowPath(TIP_RADIUS);
-  protected readonly legendColor = (share: number): string => cssColor(heatColor(share));
+  private readonly cutoff = computed(() => (this.sparse() ? 0 : HEAT_CUTOFF));
+  protected readonly legendColor = (share: number): string =>
+    cssColor(heatColor(share, this.cutoff()));
 
   private readonly total = computed(() =>
     this.points().reduce((sum, [, , count = 1]) => sum + count, 0),
@@ -143,9 +152,15 @@ export class TipHeatmapComponent {
 
   protected readonly dots = computed(() => this.marks().filter((mark) => !mark.offBoard));
 
+  private readonly sigma = computed(() =>
+    this.sparse()
+      ? Math.max(SPARSE_MIN_SIGMA, SPARSE_SIGMA * Math.pow(Math.max(1, this.total()), -1 / 6))
+      : CLOUD_SIGMA,
+  );
+
   protected readonly density = computed(() =>
     this.mode() === 'cloud' && this.points().length > 0
-      ? tipDensity(this.points(), this.extent, CLOUD_CELL, CLOUD_SIGMA)
+      ? tipDensity(this.points(), this.extent, CLOUD_CELL, this.sigma())
       : null,
   );
 
@@ -179,8 +194,9 @@ export class TipHeatmapComponent {
       return '';
     }
     const image = context.createImageData(size, size);
+    const cutoff = this.cutoff();
     shares.forEach((share, index) => {
-      image.data.set(heatColor(share), index * 4);
+      image.data.set(heatColor(share, cutoff), index * 4);
     });
     context.putImageData(image, 0, 0);
     return canvas.toDataURL();

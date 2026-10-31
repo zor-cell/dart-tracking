@@ -36,6 +36,8 @@
         } @else {
           <app-tip-heatmap
             [points]="trail().points"
+            mode="cloud"
+            [sparse]="true"
             [current]="boardDarts()"
             [counts]="tipCounts()"
             [(pinned)]="pinnedField"
