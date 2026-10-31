@@ -4,7 +4,9 @@ query would be a second truth."""
 
 import math
 from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass, field
+from datetime import datetime
 from itertools import combinations
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
@@ -36,6 +38,21 @@ class Scatter:
     angle: float  # degrees of the wider axis, counter-clockwise from +x
 
 
+@dataclass(frozen=True)
+class VisitRef:
+    """Where a visit was thrown: its game, its place among the game's visits with darts
+    (as the replay counts them), and when the game was played."""
+
+    game_id: str
+    visit: int
+    played_at: datetime
+
+
+def _first(ref: VisitRef | None, held: VisitRef | None) -> bool:
+    """Whether `ref` was played before the visit `held` names."""
+    return ref is not None and (held is None or ref.played_at < held.played_at)
+
+
 @dataclass
 class PlayerStatistics:
     """Totals over every counted leg. The rates are left as pairs rather than
@@ -47,6 +64,9 @@ class PlayerStatistics:
     points: int = 0
     best_visit: int = 0
     highest_finish: int = 0  # points of the best visit that won a leg
+    # Where each was first thrown, the oldest game on a tie; None without references.
+    best_visit_at: VisitRef | None = None
+    highest_finish_at: VisitRef | None = None
     visit_scores: Counter[int] = field(default_factory=Counter)  # scoring visits by points
     visits_180: int = 0
     visits_140_plus: int = 0
@@ -131,14 +151,21 @@ class PlayerStatistics:
     def double_darts_located(self) -> int:
         return sum(double.located for double in self.doubles.values())
 
-    def add_leg(self, mode: int, checkout_mode: CheckoutMode, turns: list[Turn]) -> None:
+    def add_leg(
+        self,
+        mode: int,
+        checkout_mode: CheckoutMode,
+        turns: list[Turn],
+        refs: Sequence[VisitRef | None] | None = None,
+    ) -> None:
+        """Counts one leg; `refs`, one per turn, say where each visit was thrown."""
         finishes = (
             _DOUBLE_FINISHES if checkout_mode is CheckoutMode.DOUBLE_OUT else _SINGLE_FINISHES
         )
         remaining = mode
         thrown = 0
 
-        for turn in turns:
+        for index, turn in enumerate(turns):
             # What the player faced at the oche decides whether the visit aimed to score.
             if remaining > _HIGHEST_FINISH and not turn.busted:
                 self._add_scoring_visit(turn)
@@ -172,9 +199,16 @@ class PlayerStatistics:
             if turn.points > 0:
                 self.visit_scores[turn.points] += 1
             remaining -= turn.points
-            self.best_visit = max(self.best_visit, turn.points)
-            if remaining == 0:
-                self.highest_finish = max(self.highest_finish, turn.points)
+            ref = None if refs is None else refs[index]
+            if turn.points > self.best_visit or (
+                turn.points == self.best_visit > 0 and _first(ref, self.best_visit_at)
+            ):
+                self.best_visit, self.best_visit_at = turn.points, ref
+            if remaining == 0 and (
+                turn.points > self.highest_finish
+                or (turn.points == self.highest_finish and _first(ref, self.highest_finish_at))
+            ):
+                self.highest_finish, self.highest_finish_at = turn.points, ref
             self._add_visit_band(turn.points)
 
         self.legs += 1

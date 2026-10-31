@@ -25,6 +25,9 @@ import {
   GameStatusSeverity,
   PLAYER_COUNTS,
   PlayerCount,
+  VISIT_BANDS,
+  VisitBand,
+  visitBandLabel,
 } from '../../models/game-filter';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { GAME_VARIANTS, GameVariant } from '../../models/game-variant';
@@ -53,6 +56,7 @@ const FILTER_PARAMS = {
   opponentId: TEXT_PARAM,
   players: oneOfParam(Object.keys(PLAYER_COUNTS) as PlayerCount[]),
   period: DAY_RANGE_PARAM,
+  visit: oneOfParam(VISIT_BANDS),
 };
 
 /** Offered while the account has no picks of its own. */
@@ -102,6 +106,10 @@ export class GameListComponent {
     label: count.label,
     value: value as PlayerCount,
   }));
+  protected readonly visitOptions = VISIT_BANDS.map((band) => ({
+    label: visitBandLabel(band),
+    value: band,
+  }));
   protected readonly opponents = signal<PlayerIdentityDto[]>([]);
   protected readonly query = signal('');
 
@@ -112,6 +120,7 @@ export class GameListComponent {
     opponentId: this.fb.control<string | null>(null),
     players: this.fb.control<PlayerCount | null>(null),
     period: this.fb.control<(Date | null)[] | null>(null),
+    visit: this.fb.control<VisitBand | null>(null),
   });
   private readonly queryState = new QueryState();
 
@@ -132,6 +141,9 @@ export class GameListComponent {
     const label = dayRangeLabel(value.period ?? null, this.locale);
     if (label) {
       chips.push({ key: 'period', label });
+    }
+    if (value.visit) {
+      chips.push({ key: 'visit', label: `Mit ${visitBandLabel(value.visit)}` });
     }
     return chips;
   });
@@ -221,7 +233,8 @@ export class GameListComponent {
 
   /** The form as a filter. */
   private criteria(): GameFilter {
-    const { variant, mode, status, opponentId, players, period } = this.filters.getRawValue();
+    const { variant, mode, status, opponentId, players, period, visit } =
+      this.filters.getRawValue();
     const count = players ? PLAYER_COUNTS[players] : null;
     return {
       query: this.query() || null,
@@ -232,6 +245,7 @@ export class GameListComponent {
       minPlayers: count?.min ?? null,
       maxPlayers: count?.max ?? null,
       ...dayRangeBounds(period),
+      minVisit: visit,
     };
   }
 }

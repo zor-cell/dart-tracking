@@ -585,6 +585,25 @@ def _history_clauses(user_id: str, criteria: GameFilter) -> list[ColumnElement[b
             clauses.append(and_(active, GameTable.updated_at <= cutoff))
         case _:
             clauses.append(GameTable.status == criteria.status.value)
+    if criteria.min_visit is not None:
+        own_visits = (
+            select(TurnTable.game_id)
+            .join(
+                GamePlayerTable,
+                (GamePlayerTable.game_id == TurnTable.game_id)
+                & (GamePlayerTable.player_index == TurnTable.player_index),
+            )
+            .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
+            .join(
+                DartTable,
+                (DartTable.game_id == TurnTable.game_id)
+                & (DartTable.turn_index == TurnTable.turn_index),
+            )
+            .where(PlayerTable.user_id == user_id, TurnTable.busted.is_(False))
+            .group_by(TurnTable.game_id, TurnTable.turn_index)
+            .having(func.sum(DartTable.value * DartTable.multiplier) >= criteria.min_visit)
+        )
+        clauses.append(GameTable.id.in_(own_visits))
     return clauses + game_filter_clauses(criteria)
 
 

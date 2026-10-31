@@ -186,6 +186,20 @@ def test_statistics_of_the_last_games_skip_what_does_not_count(alice, session):
     assert alice.get("/statistics", params={"last": 0}).status_code == 422
 
 
+def test_best_visit_and_finish_point_into_the_oldest_game_that_threw_them(alice, session):
+    oldest = alice.new_game(alice.own_entry()["id"], alice.add_player("Bob"))["id"]
+    session.play(oldest, [MISS] * 3, [S1], WINNING_LEG[0], [S1], WINNING_LEG[1])
+    session.age_game(oldest, hours=48)
+    session.play(own_game(alice), *WINNING_LEG)
+
+    tally = statistics(alice)
+    detail = alice.get(f"/games/{oldest}/detail").json()
+
+    assert tally["bestVisitAt"] == {"gameId": oldest, "visit": 2}
+    assert tally["highestFinishAt"] == {"gameId": oldest, "visit": 4}
+    assert [detail["visits"][i]["points"] for i in (2, 4)] == [180, 121]
+
+
 def test_accuracy_report_is_for_admins(alice, anon, session):
     assert anon.get("/evaluation/accuracy").status_code == 401
     assert alice.get("/evaluation/accuracy").status_code == 403

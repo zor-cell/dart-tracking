@@ -1,5 +1,6 @@
 """Loads the legs a player actually threw, for the tally in `domain/`."""
 
+from collections import Counter
 from datetime import UTC, datetime
 
 from sqlalchemy import or_, select
@@ -22,7 +23,7 @@ from app.api.features.game.persistence.game_repository import game_filter_clause
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.persistence.turn import TurnTable
 from app.api.features.player.persistence.player import PlayerTable
-from app.api.features.statistics.domain.player_statistics import PlayerStatistics
+from app.api.features.statistics.domain.player_statistics import PlayerStatistics, VisitRef
 
 
 class StatisticsRepository:
@@ -45,6 +46,7 @@ class StatisticsRepository:
                     GameTable.variant,
                     GameTable.checkout_mode,
                     GameTable.status,
+                    GameTable.created_at,
                     GameTable.updated_at,
                     GamePlayerTable.player_index,
                 )
@@ -90,16 +92,28 @@ class StatisticsRepository:
                 Dart(value=row.value, multiplier=row.multiplier, position=position)
             )
 
+        # Each turn with darts by its place among its game's visits, as the replay counts them.
+        visit_of: dict[tuple[str, int], int] = {}
+        visits_so_far: Counter[str] = Counter()
+        for row in turn_rows:
+            if (row.game_id, row.turn_index) in darts:
+                visit_of[row.game_id, row.turn_index] = visits_so_far[row.game_id]
+                visits_so_far[row.game_id] += 1
+
         counted: set[str] = set()
         for seat in seats:
+            own = [
+                row
+                for row in turn_rows
+                if row.game_id == seat.id and row.player_index == seat.player_index
+            ]
             turns = [
                 Turn(
                     player_id=row.player_index,
                     darts=darts.get((row.game_id, row.turn_index), []),
                     busted=row.busted,
                 )
-                for row in turn_rows
-                if row.game_id == seat.id and row.player_index == seat.player_index
+                for row in own
             ]
             own_darts = sum(len(turn.darts) for turn in turns)
             status = effective_status(GameStatus(seat.status), seat.updated_at)
@@ -115,7 +129,13 @@ class StatisticsRepository:
                 break
             counted.add(seat.id)
 
-            statistics.add_leg(seat.mode, CheckoutMode(seat.checkout_mode), turns)
+            refs = [
+                None
+                if (visit := visit_of.get((row.game_id, row.turn_index))) is None
+                else VisitRef(seat.id, visit, seat.created_at)
+                for row in own
+            ]
+            statistics.add_leg(seat.mode, CheckoutMode(seat.checkout_mode), turns, refs)
 
         return statistics
 

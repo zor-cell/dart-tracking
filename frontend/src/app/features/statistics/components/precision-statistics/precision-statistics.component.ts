@@ -1,6 +1,7 @@
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { SelectButton } from 'primeng/selectbutton';
 import { DistanceScaleComponent } from '../../../game/components/distance-scale/distance-scale.component';
 import { FieldHeatmapComponent } from '../../../game/components/field-heatmap/field-heatmap.component';
@@ -25,6 +26,8 @@ import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
     FieldHeatmapComponent,
     FormsModule,
     InfoHintComponent,
+    NgTemplateOutlet,
+    RouterLink,
     SelectButton,
     StatSketchComponent,
     TipHeatmapComponent,

@@ -228,6 +228,24 @@ def test_history_filters_and_paging(alice, session):
     assert len({g["id"] for g in first["items"] + rest["items"]}) == 3
 
 
+def test_history_filters_by_a_visit_of_the_accounts_own(alice, session):
+    me = alice.own_entry()["id"]
+    bob = alice.add_player("Bob")
+    ton_eighty = alice.new_game(me, bob)["id"]
+    session.play(ton_eighty, [T20, T20, T20], [S1])
+    only_bob = alice.new_game(me, bob)["id"]
+    session.play(only_bob, [S1], [T20, T20, T20])
+    busted = alice.new_game(me)["id"]
+    session.play(busted, [T20, T20, T19], [T20, T20, T20])
+
+    def ids(**params):
+        return {game["id"] for game in alice.get("/games", params=params).json()["items"]}
+
+    assert ids(minVisit=180) == {ton_eighty}
+    assert ids(minVisit=177) == {ton_eighty, busted}
+    assert alice.get("/games", params={"minVisit": 181}).status_code == 422
+
+
 def test_history_hides_discarded_and_short_abandoned_games_by_default(alice, session):
     me = alice.own_entry()["id"]
     played = alice.new_game(me)["id"]

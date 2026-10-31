@@ -1,4 +1,14 @@
 @let totals = statistics();
+<ng-template #visitBand let-band="band" let-count="count">
+  @if (count > 0) {
+    <a class="stat__link" routerLink="/account/games" [queryParams]="{ visit: band }">
+      {{ count }}<span class="sr-only">, Spiele zeigen</span>
+      <i class="pi pi-angle-right stat__go" aria-hidden="true"></i>
+    </a>
+  } @else {
+    {{ count }}
+  }
+</ng-template>
 <section class="panel">
   <h2 class="panel__title">Allgemein</h2>
   <dl class="stat-grid">
@@ -40,15 +50,36 @@
     </div>
     <div class="stat">
       <dt class="stat__label">Bestes Visit</dt>
-      <dd class="stat__value">{{ totals.bestVisit }}</dd>
+      <dd class="stat__value">
+        @if (totals.bestVisitAt; as at) {
+          <a
+            class="stat__link"
+            [routerLink]="['/account/games', at.gameId]"
+            [queryParams]="{ visit: at.visit }"
+          >
+            {{ totals.bestVisit }}<span class="sr-only">, im Replay öffnen</span>
+            <i class="pi pi-angle-right stat__go" aria-hidden="true"></i>
+          </a>
+        } @else {
+          {{ totals.bestVisit }}
+        }
+      </dd>
     </div>
     <div class="stat stat--half">
       <dt class="stat__label">180</dt>
-      <dd class="stat__value">{{ totals.visits180 }}</dd>
+      <dd class="stat__value">
+        <ng-container
+          *ngTemplateOutlet="visitBand; context: { band: 180, count: totals.visits180 }"
+        />
+      </dd>
     </div>
     <div class="stat stat--half">
       <dt class="stat__label">140+</dt>
-      <dd class="stat__value">{{ totals.visits140Plus }}</dd>
+      <dd class="stat__value">
+        <ng-container
+          *ngTemplateOutlet="visitBand; context: { band: 140, count: totals.visits140Plus }"
+        />
+      </dd>
     </div>
     <div class="stat">
       <dt class="stat__label">Öftestes Visit</dt>
@@ -56,11 +87,19 @@
     </div>
     <div class="stat stat--half">
       <dt class="stat__label">100+</dt>
-      <dd class="stat__value">{{ totals.visits100Plus }}</dd>
+      <dd class="stat__value">
+        <ng-container
+          *ngTemplateOutlet="visitBand; context: { band: 100, count: totals.visits100Plus }"
+        />
+      </dd>
     </div>
     <div class="stat stat--half">
       <dt class="stat__label">60+</dt>
-      <dd class="stat__value">{{ totals.visits60Plus }}</dd>
+      <dd class="stat__value">
+        <ng-container
+          *ngTemplateOutlet="visitBand; context: { band: 60, count: totals.visits60Plus }"
+        />
+      </dd>
     </div>
   </dl>
 </section>

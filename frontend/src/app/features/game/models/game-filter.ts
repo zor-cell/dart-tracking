@@ -15,6 +15,18 @@ export interface GameFilter {
   readonly maxPlayers: number | null;
   readonly since: Date | null;
   readonly until: Date | null;
+  /** Points one of the account's own visits reached, busts aside. */
+  readonly minVisit: number | null;
+}
+
+/** The visit scores the game list can be narrowed to, as the statistics count them. */
+export const VISIT_BANDS = [180, 140, 100, 60] as const;
+
+export type VisitBand = (typeof VISIT_BANDS)[number];
+
+/** How a band reads: 180 alone, the others as a floor. */
+export function visitBandLabel(band: VisitBand): string {
+  return band === 180 ? '180' : `${band}+`;
 }
 
 /** How many players the game list can be narrowed to. */

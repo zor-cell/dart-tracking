@@ -1,5 +1,6 @@
 import { DoubleStatisticsDto } from './double-statistics.dto';
 import { ScatterDto } from './scatter.dto';
+import { VisitRefDto } from './visit-ref.dto';
 
 /** A 2 mm cell's centre in board millimetres (x right, y up, origin at the bullseye) and its tips. */
 export type HeatmapCell = readonly [x: number, y: number, count: number];
@@ -14,6 +15,9 @@ export interface PlayerStatisticsDto {
   readonly bestVisit: number;
   /** Points of the best visit that won a leg, 0 without one. */
   readonly highestFinish: number;
+  /** Where each was first thrown, the oldest game on a tie. */
+  readonly bestVisitAt: VisitRefDto | null;
+  readonly highestFinishAt: VisitRefDto | null;
   /** The scoring visit thrown most often; null without one. */
   readonly favouriteVisit: number | null;
   /** Visits reaching each score; every band includes the higher ones. */

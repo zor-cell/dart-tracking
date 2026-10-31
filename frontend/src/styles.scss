@@ -347,6 +347,7 @@ a.list-group__item {
 
 .stat--half {
   grid-column: span 1;
+  padding-inline: 0.75rem;
 }
 
 .stat--wide {
@@ -376,6 +377,40 @@ a.list-group__item {
   color: var(--p-text-muted-color);
   font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
+}
+
+/* A value that opens what it counts; the whole tile takes the tap. */
+.stat__link {
+  color: inherit;
+  text-decoration: none;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 0.5rem;
+  }
+
+  &:focus-visible {
+    outline: none;
+
+    &::after {
+      outline: 2px solid var(--p-primary-color);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.stat:has(.stat__link):hover {
+  border-color: var(--p-text-muted-color);
+}
+
+.stat__go {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.25rem;
+  color: var(--p-text-muted-color);
+  font-size: 0.65rem;
 }
 
 /* The explanation button in a tile's top right corner. */

@@ -1,9 +1,13 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
+  Injector,
   OnInit,
+  afterNextRender,
   computed,
   effect,
+  inject,
   input,
   signal,
 } from '@angular/core';
@@ -64,10 +68,15 @@ const VIEWS: readonly { label: string; value: ReplayView }[] = [
 })
 /** The game played back in one of three views, all driven by the same timeline. */
 export class GameReplayComponent implements OnInit {
+  private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly injector = inject(Injector);
+
   readonly visits = input.required<readonly VisitDto[]>();
   readonly players = input.required<readonly PlayerDto[]>();
   readonly mode = input.required<GameMode>();
   readonly variant = input.required<GameVariant>();
+  /** A visit to open on, right after its last dart, counted as in `visits`. */
+  readonly startVisit = input<number | null>(null);
 
   protected readonly viewOptions = [...VIEWS];
   protected readonly view = signal<ReplayView>(
@@ -182,9 +191,20 @@ export class GameReplayComponent implements OnInit {
     return step === null ? 0 : this.roundOf(step);
   });
 
-  /** Opens on the end state; playing starts over from the first dart. */
+  /** Opens on `startVisit`, scrolled into view, or else on the end state; playing starts
+   * over from the first dart. */
   ngOnInit(): void {
-    this.cursor.set(this.end());
+    const visit = this.startVisit();
+    const steps = this.steps();
+    if (visit === null || !steps.some((step) => step.visit === visit)) {
+      this.cursor.set(this.end());
+      return;
+    }
+    this.cursor.set(steps.filter((step) => step.visit <= visit).length);
+    afterNextRender(
+      () => this.host.nativeElement.scrollIntoView({ block: 'start' }),
+      { injector: this.injector },
+    );
   }
 
   protected selectView(view: ReplayView): void {

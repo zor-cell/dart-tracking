@@ -27,3 +27,5 @@ class GameFilter:
     # Bounds on the start of the game; `until` is exclusive.
     since: datetime | None = None
     until: datetime | None = None
+    # Points one of the account's own visits reached, busts aside; only the history reads it.
+    min_visit: int | None = None

@@ -11,7 +11,7 @@ from app.api.features.game.domain.game_status import (
     effective_status,
 )
 from app.api.features.game.domain.turn import Turn
-from app.api.features.statistics.domain.player_statistics import PlayerStatistics
+from app.api.features.statistics.domain.player_statistics import PlayerStatistics, VisitRef
 from tests.unit.darts import darts
 
 
@@ -212,3 +212,24 @@ def test_untouched_open_games_turn_abandoned(status, updated_at, effective):
 )
 def test_which_games_count(status, own_darts, counts):
     assert counts_in_statistics(status, own_darts) is counts
+
+
+def test_best_visit_and_finish_point_at_the_oldest_game_on_a_tie():
+    statistics = PlayerStatistics()
+    newer, older = datetime(2026, 10, 2, tzinfo=UTC), datetime(2026, 10, 1, tzinfo=UTC)
+    for game, played in (("newer", newer), ("older", older)):
+        refs = [VisitRef(game, visit, played) for visit in (0, 2)]
+        statistics.add_leg(100, CheckoutMode.DOUBLE_OUT, [visit("T20"), visit("D20")], refs)
+
+    assert statistics.best_visit_at == VisitRef("older", 0, older)
+    assert statistics.highest_finish_at == VisitRef("older", 2, older)
+
+
+def test_a_higher_visit_wins_over_an_older_one():
+    statistics = PlayerStatistics()
+    old = VisitRef("old", 0, datetime(2026, 1, 1, tzinfo=UTC))
+    new = VisitRef("new", 1, datetime(2026, 2, 1, tzinfo=UTC))
+    statistics.add_leg(501, CheckoutMode.DOUBLE_OUT, [visit("T20")], [old])
+    statistics.add_leg(501, CheckoutMode.DOUBLE_OUT, [visit("T20", "T20")], [new])
+
+    assert (statistics.best_visit, statistics.best_visit_at.game_id) == (120, "new")

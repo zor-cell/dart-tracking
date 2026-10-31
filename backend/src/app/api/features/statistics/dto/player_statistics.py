@@ -4,7 +4,11 @@ from typing import Self
 from app.api.core.dto.base import CamelModel
 from app.api.features.statistics.domain.double_statistics import DoubleStatistics
 from app.api.features.statistics.domain.heatmap import HEATMAP_CELL
-from app.api.features.statistics.domain.player_statistics import PlayerStatistics, Scatter
+from app.api.features.statistics.domain.player_statistics import (
+    PlayerStatistics,
+    Scatter,
+    VisitRef,
+)
 
 
 def _rounded(value: float | None, digits: int = 1) -> float | None:
@@ -57,6 +61,17 @@ class ScatterDto(CamelModel):
         )
 
 
+class VisitRefDto(CamelModel):
+    """A visit to open in its game's replay; `visit` counts the game's visits with darts."""
+
+    game_id: str
+    visit: int
+
+    @classmethod
+    def from_entity(cls, ref: VisitRef | None) -> Self | None:
+        return None if ref is None else cls(game_id=ref.game_id, visit=ref.visit)
+
+
 class PlayerStatisticsDto(CamelModel):
     legs: int
     legs_won: int
@@ -66,6 +81,8 @@ class PlayerStatisticsDto(CamelModel):
     first_nine_average: float
     best_visit: int
     highest_finish: int
+    best_visit_at: VisitRefDto | None
+    highest_finish_at: VisitRefDto | None
     favourite_visit: int | None
     visits180: int
     visits140_plus: int
@@ -96,6 +113,8 @@ class PlayerStatisticsDto(CamelModel):
             first_nine_average=round(statistics.first_nine_average, 2),
             best_visit=statistics.best_visit,
             highest_finish=statistics.highest_finish,
+            best_visit_at=VisitRefDto.from_entity(statistics.best_visit_at),
+            highest_finish_at=VisitRefDto.from_entity(statistics.highest_finish_at),
             favourite_visit=statistics.favourite_visit,
             visits180=statistics.visits_180,
             visits140_plus=statistics.visits_140_plus,

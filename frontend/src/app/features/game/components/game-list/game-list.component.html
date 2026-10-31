@@ -82,6 +82,17 @@
         [showButtonBar]="true"
         fluid
       />
+      <label class="list-filters__label" for="filter-visit">Aufnahme</label>
+      <p-select
+        inputId="filter-visit"
+        formControlName="visit"
+        [options]="visitOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Beliebig"
+        [showClear]="true"
+        fluid
+      />
     </form>
   </app-list-toolbar>
 

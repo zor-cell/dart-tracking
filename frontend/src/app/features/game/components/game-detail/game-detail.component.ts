@@ -30,6 +30,12 @@ function sum(values: readonly number[]): number {
   return values.reduce((total, value) => total + value, 0);
 }
 
+/** A visit index from the query params; null for none or one that is no index. */
+function visitParam(raw: string | null): number | null {
+  const visit = raw === null ? NaN : Number(raw);
+  return Number.isInteger(visit) && visit >= 0 ? visit : null;
+}
+
 @Component({
   selector: 'app-game-detail',
   imports: [
@@ -57,6 +63,8 @@ export class GameDetailComponent {
   protected readonly missing = signal(false);
   protected readonly failed = signal(false);
   protected readonly statusLabels = GAME_STATUS_LABELS;
+  /** The visit a link asked to open the replay on. */
+  protected readonly startVisit = visitParam(this.route.snapshot.queryParamMap.get('visit'));
 
   protected readonly isElimination = computed(() => this.detail()?.game.variant === 'elimination');
 

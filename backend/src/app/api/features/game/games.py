@@ -144,6 +144,7 @@ async def list_games(
     max_players: int | None = Query(None, ge=1, alias="maxPlayers"),
     since: datetime | None = None,
     until: datetime | None = None,
+    min_visit: int | None = Query(None, ge=1, le=180, alias="minVisit"),
 ) -> GamePageDto:
     """My games — played in or written down — one page at a time."""
     criteria = GameFilter(
@@ -156,6 +157,7 @@ async def list_games(
         max_players=max_players,
         since=since,
         until=until,
+        min_visit=min_visit,
     )
     async with database.session_scope() as session:
         summaries = await repository.summaries(

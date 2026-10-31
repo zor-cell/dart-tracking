@@ -20,7 +20,16 @@
     <div class="stat">
       <dt class="stat__label">Höchstes Finish</dt>
       <dd class="stat__value">
-        @if (totals.highestFinish > 0) {
+        @if (totals.highestFinishAt; as at) {
+          <a
+            class="stat__link"
+            [routerLink]="['/account/games', at.gameId]"
+            [queryParams]="{ visit: at.visit }"
+          >
+            {{ totals.highestFinish }}<span class="sr-only">, im Replay öffnen</span>
+            <i class="pi pi-angle-right stat__go" aria-hidden="true"></i>
+          </a>
+        } @else if (totals.highestFinish > 0) {
           {{ totals.highestFinish }}
         } @else {
           &ndash;

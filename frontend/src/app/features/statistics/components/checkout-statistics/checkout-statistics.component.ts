@@ -8,6 +8,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { DistanceScaleComponent } from '../../../game/components/distance-scale/distance-scale.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
@@ -24,6 +25,7 @@ import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
     DoubleBoardComponent,
     EmptyStateComponent,
     InfoHintComponent,
+    RouterLink,
     StatSketchComponent,
   ],
   templateUrl: './checkout-statistics.component.html',
