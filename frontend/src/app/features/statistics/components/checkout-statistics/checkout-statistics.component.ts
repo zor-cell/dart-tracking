@@ -11,6 +11,7 @@ import {
 import { RouterLink } from '@angular/router';
 import { DistanceScaleComponent } from '../../../game/components/distance-scale/distance-scale.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
+import { backState } from '../../../../core/view/models/back-state';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
 import { DoubleBoardComponent } from '../double-board/double-board.component';
@@ -34,6 +35,8 @@ import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
 })
 export class CheckoutStatisticsComponent {
   readonly statistics = input.required<PlayerStatisticsDto>();
+  /** Brings the views the cards open back here. */
+  protected readonly returnState = backState('Statistik');
 
   protected readonly selected = signal<string | null>(null);
 

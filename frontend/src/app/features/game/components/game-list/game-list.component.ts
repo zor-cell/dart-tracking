@@ -36,6 +36,7 @@ import { GameHistoryService } from '../../services/game-history.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { ListToolbarComponent } from '../../../../core/view/components/list-toolbar/list-toolbar.component';
 import { dayRangeBounds, dayRangeLabel } from '../../../../core/view/models/day-range';
+import { backState } from '../../../../core/view/models/back-state';
 import { FilterChip, FilterSuggestion } from '../../../../core/view/models/filter-chip';
 import { PagedTable } from '../../../../core/view/models/paged-table';
 import {
@@ -205,7 +206,7 @@ export class GameListComponent {
   }
 
   protected open(game: GameSummaryDto): void {
-    void this.router.navigate(['/account/games', game.id]);
+    void this.router.navigate(['/account/games', game.id], { state: backState('Spiele') });
   }
 
   /** Who played, "Du" for the account itself; past three only the first two and a count. */

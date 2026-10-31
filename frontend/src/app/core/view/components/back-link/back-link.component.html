@@ -1,7 +1,17 @@
-<p-button
-  [label]="label()"
-  icon="pi pi-arrow-left"
-  severity="secondary"
-  [text]="true"
-  [routerLink]="link()"
-/>
+@if (opener) {
+  <p-button
+    [label]="shownLabel()"
+    icon="pi pi-arrow-left"
+    severity="secondary"
+    [text]="true"
+    (onClick)="back()"
+  />
+} @else {
+  <p-button
+    [label]="shownLabel()"
+    icon="pi pi-arrow-left"
+    severity="secondary"
+    [text]="true"
+    [routerLink]="link()"
+  />
+}

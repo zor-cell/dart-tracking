@@ -101,7 +101,8 @@ export class QueryState {
       }
     }
     tree.queryParams = query;
-    this.location.replaceState(this.router.serializeUrl(tree));
+    // Keeps the history state, which can tell the view where its back link leads.
+    this.location.replaceState(this.router.serializeUrl(tree), '', this.location.getState());
   }
 }
 

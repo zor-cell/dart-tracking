@@ -1,7 +1,8 @@
 @let totals = statistics();
 <ng-template #visitBand let-band="band" let-count="count">
   @if (count > 0) {
-    <a class="stat__link" routerLink="/account/games" [queryParams]="bandParams(band)">
+    <a class="stat__link"
+          [state]="returnState" routerLink="/account/games" [queryParams]="bandParams(band)">
       {{ count }}<span class="sr-only">, Spiele zeigen</span>
       <i class="pi pi-angle-right stat__go" aria-hidden="true"></i>
     </a>
@@ -16,7 +17,7 @@
       <dt class="stat__label">
         3-Dart-Average
         <app-info-hint class="stat__info"
-          >Punkte pro drei Darts über alle geworfenen Darts. Darts einer überworfenen Aufnahme
+          >Punkte pro drei Darts über alle geworfenen Darts. Darts eines überworfenen Visits
           zählen mit, ihre Punkte nicht.</app-info-hint
         >
       </dt>
@@ -54,6 +55,7 @@
         @if (totals.bestVisitAt; as at) {
           <a
             class="stat__link"
+          [state]="returnState"
             [routerLink]="['/account/games', at.gameId]"
             [queryParams]="{ visit: at.visit }"
           >
@@ -135,9 +137,9 @@
   <h2 class="panel__title">Streuung</h2>
   <p class="panel__hint">
     @if (totals.groupingDarts > 0) {
-      Aus {{ totals.groupingDarts }} erkannten Darts in Aufnahmen ohne Finish-Chance.
+      Aus {{ totals.groupingDarts }} erkannten Darts in Visits ohne Finish-Chance.
     } @else {
-      Noch keine Aufnahme ohne Finish-Chance mit mindestens zwei erkannten Darts.
+      Noch kein Visit ohne Finish-Chance mit mindestens zwei erkannten Darts.
     }
   </p>
   <dl class="stat-grid">
@@ -146,7 +148,7 @@
         Ø Pfeilabstand
         <app-info-hint class="stat__info">
           <app-stat-sketch kind="grouping" />
-          Mittel der Strecken zwischen je zwei erkannten Darts einer Aufnahme. Nur Aufnahmen bei
+          Mittel der Strecken zwischen je zwei erkannten Darts eines Visits. Nur Visits bei
           mehr als 170 Rest, wo jeder Dart aufs selbe Ziel geht.
         </app-info-hint>
       </dt>
@@ -164,8 +166,9 @@
         Streuform
         <app-info-hint class="stat__info">
           <app-stat-sketch kind="spread" />
-          Breite Achse geteilt durch schmale. Die Ellipse in der Kachel zeigt, in welche Richtung
-          die Darts stärker streuen.
+          Wie die Darts eines Visits zueinander liegen, über alle Visits bei mehr als 170
+          Rest gesammelt. Die Zahl ist die breite Achse geteilt durch die schmale, die Ellipse
+          zeigt die Richtung.
         </app-info-hint>
       </dt>
       @if (spread(); as spread) {
@@ -187,7 +190,7 @@
       }
     </div>
   </dl>
-  <p class="panel__hint">Ø Punkte pro Dart, nach seinem Platz in der Aufnahme.</p>
+  <p class="panel__hint">Ø Punkte pro Dart, nach seinem Platz im Visit.</p>
   <ol class="darts">
     @for (dart of darts(); track dart.place) {
       <li class="darts__row">

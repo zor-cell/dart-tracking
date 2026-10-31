@@ -191,8 +191,8 @@ export class GameReplayComponent implements OnInit {
     return step === null ? 0 : this.roundOf(step);
   });
 
-  /** Opens on `startVisit`, scrolled into view, or else on the end state; playing starts
-   * over from the first dart. */
+  /** Opens on `startVisit` in the heatmap, scrolled into view, or else on the end state;
+   * playing starts over from the first dart. */
   ngOnInit(): void {
     const visit = this.startVisit();
     const steps = this.steps();
@@ -201,6 +201,11 @@ export class GameReplayComponent implements OnInit {
       return;
     }
     this.cursor.set(steps.filter((step) => step.visit <= visit).length);
+    // Shown, not stored: the views picked by hand stay what the next game opens on.
+    this.view.set('heatmap');
+    if (this.visits()[visit].darts.every((dart) => dart.position === null)) {
+      this.layer.set('fields');
+    }
     afterNextRender(
       () => this.host.nativeElement.scrollIntoView({ block: 'start' }),
       { injector: this.injector },

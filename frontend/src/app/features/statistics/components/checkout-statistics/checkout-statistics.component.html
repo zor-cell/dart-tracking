@@ -23,6 +23,7 @@
         @if (totals.highestFinishAt; as at) {
           <a
             class="stat__link"
+          [state]="returnState"
             [routerLink]="['/account/games', at.gameId]"
             [queryParams]="{ visit: at.visit }"
           >

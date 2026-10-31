@@ -205,7 +205,7 @@ export class ScoreDistributionComponent {
       const shown = average === null ? '' : `, Durchschnitt ${this.decimal.transform(average, '1.1-1')}`;
       return `${player.name}: ${points}${shown}`;
     });
-    return `Punkte jeder Aufnahme pro Spieler. ${rows.join('. ')}`;
+    return `Punkte jedes Visits pro Spieler. ${rows.join('. ')}`;
   });
 }
 

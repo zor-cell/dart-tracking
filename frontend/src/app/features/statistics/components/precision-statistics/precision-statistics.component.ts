@@ -13,6 +13,7 @@ import {
   storeHeatmapLayer,
   storedHeatmapLayer,
 } from '../../../game/models/heatmap-layer';
+import { backState } from '../../../../core/view/models/back-state';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
 import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
@@ -38,6 +39,8 @@ import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
 })
 export class PrecisionStatisticsComponent {
   readonly statistics = input.required<PlayerStatisticsDto>();
+  /** Brings the views the cards open back here. */
+  protected readonly returnState = backState('Statistik');
   /** The page's filters as the game list reads them, carried into its links. */
   readonly listParams = input<Params>({});
 
