@@ -9,9 +9,10 @@
   gap: 0.75rem;
 }
 
+/* A board of a pair side by side is set lower through `--double-board-height`. */
 .board {
   position: relative;
-  height: 22rem;
+  height: var(--double-board-height, 22rem);
 }
 
 app-tip-heatmap,

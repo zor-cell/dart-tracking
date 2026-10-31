@@ -123,15 +123,52 @@
   </dl>
 </section>
 
-@if (!other) {
-  <section class="panel">
+<section class="panel">
+  @if (other) {
+    <!-- Side by side, one double picked on either shows on both. -->
+    <header class="doubles__header">
+      <h2 class="panel__title">Trefferbild</h2>
+      <p-selectbutton
+        [options]="layerOptions"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false"
+        [ngModel]="layer()"
+        (ngModelChange)="selectLayer($event)"
+        ariaLabel="Darstellung der Doppel"
+        size="small"
+      />
+    </header>
+    <div class="doubles-pair">
+      <figure class="doubles-pair__side">
+        <figcaption class="doubles-pair__name doubles-pair__name--own">Du</figcaption>
+        <app-double-board
+          [doubles]="totals.doubles"
+          [layerSwitch]="false"
+          [(layer)]="layer"
+          [(selected)]="selected"
+        />
+      </figure>
+      <figure class="doubles-pair__side">
+        <figcaption class="doubles-pair__name doubles-pair__name--other">
+          {{ other.name }}
+        </figcaption>
+        <app-double-board
+          [doubles]="other.statistics.doubles"
+          [layerSwitch]="false"
+          [(layer)]="layer"
+          [(selected)]="selected"
+        />
+      </figure>
+    </div>
+  } @else {
     <h2 class="panel__title">Trefferbild</h2>
     @if (totals.doubles.length === 0) {
       <app-empty-state icon="pi-bullseye">
         <p>Noch keine Darts auf ein Doppel, das checken konnte.</p>
       </app-empty-state>
     } @else {
-      <app-double-board [doubles]="totals.doubles" [(selected)]="selected" />
+      <app-double-board [doubles]="totals.doubles" [(layer)]="layer" [(selected)]="selected" />
     }
-  </section>
-}
+  }
+</section>

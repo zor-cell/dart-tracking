@@ -2,6 +2,7 @@
   position: relative;
   display: block;
   height: 100%;
+  container-type: inline-size;
 }
 
 .board {
@@ -59,4 +60,11 @@
   position: absolute;
   right: 0;
   bottom: 0.15rem;
+}
+
+/* A narrow board, such as one of two side by side, stacks the scale above the corner slot. */
+@container (max-width: 15rem) {
+  .legend {
+    bottom: 1.75rem;
+  }
 }

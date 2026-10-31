@@ -41,10 +41,12 @@ export class DoubleBoardComponent {
   readonly doubles = input.required<readonly DoubleStatisticsDto[]>();
   /** Label of the picked double. */
   readonly selected = model<string | null>(null);
+  readonly layer = model<HeatmapLayer>(storedHeatmapLayer());
+  /** Whether the board offers its own layer switch; two side by side share one above them. */
+  readonly layerSwitch = input(true);
 
   protected readonly hovered = signal<string | null>(null);
   protected readonly layerOptions = [...HEATMAP_LAYERS];
-  protected readonly layer = signal(storedHeatmapLayer());
   protected readonly extent = VIEW_EXTENT;
 
   /** The double of the sector `label` lies in, the bull for both bull rings; null if never

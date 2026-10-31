@@ -176,34 +176,76 @@
   </dl>
 </section>
 
-@if (!other) {
-  <section class="panel">
+<ng-template #layerSwitch>
+  <p-selectbutton
+    class="heatmap__layer"
+    [options]="layerOptions"
+    optionLabel="label"
+    optionValue="value"
+    [allowEmpty]="false"
+    [ngModel]="layer()"
+    (ngModelChange)="selectLayer($event)"
+    ariaLabel="Darstellung der Heatmap"
+    size="small"
+  />
+</ng-template>
+<ng-template #heatmap let-points="points" let-fields="fields" let-tips="tips">
+  @if (layer() === 'fields') {
+    <app-field-heatmap [counts]="fields" [(pinned)]="pinnedField" />
+  } @else {
+    <app-tip-heatmap [points]="points" mode="cloud" [counts]="tips" [(pinned)]="pinnedField" />
+  }
+</ng-template>
+<section class="panel">
+  @if (other) {
+    <!-- Side by side, one field picked on either shows on both. -->
+    <header class="heatmap__header">
+      <h2 class="panel__title">Trefferbild</h2>
+      <ng-container *ngTemplateOutlet="layerSwitch" />
+    </header>
+    <div class="heatmap-pair">
+      <figure class="heatmap-pair__side">
+        <figcaption class="heatmap-pair__name heatmap-pair__name--own">Du</figcaption>
+        <div class="heatmap-pair__board">
+          <ng-container
+            *ngTemplateOutlet="
+              heatmap;
+              context: { points: totals.heatmap, fields: fieldCounts(), tips: tipCounts() }
+            "
+          />
+        </div>
+      </figure>
+      <figure class="heatmap-pair__side">
+        <figcaption class="heatmap-pair__name heatmap-pair__name--other">
+          {{ other.name }}
+        </figcaption>
+        <div class="heatmap-pair__board">
+          <ng-container
+            *ngTemplateOutlet="
+              heatmap;
+              context: {
+                points: other.statistics.heatmap,
+                fields: otherFieldCounts(),
+                tips: otherTipCounts(),
+              }
+            "
+          />
+        </div>
+      </figure>
+    </div>
+  } @else {
     <h2 class="panel__title">Trefferbild</h2>
     <div class="heatmap">
-      <p-selectbutton
-        class="heatmap__layer"
-        [options]="layerOptions"
-        optionLabel="label"
-        optionValue="value"
-        [allowEmpty]="false"
-        [ngModel]="layer()"
-        (ngModelChange)="selectLayer($event)"
-        ariaLabel="Darstellung der Heatmap"
-        size="small"
+      <ng-container *ngTemplateOutlet="layerSwitch" />
+      <ng-container
+        *ngTemplateOutlet="
+          heatmap;
+          context: { points: totals.heatmap, fields: fieldCounts(), tips: tipCounts() }
+        "
       />
-      @if (layer() === 'fields') {
-        <app-field-heatmap [counts]="fieldCounts()" [(pinned)]="pinnedField" />
-      } @else {
-        <app-tip-heatmap
-          [points]="totals.heatmap"
-          mode="cloud"
-          [counts]="tipCounts()"
-          [(pinned)]="pinnedField"
-        />
-      }
     </div>
-  </section>
-}
+  }
+</section>
 
 <section class="panel">
   <h2 class="panel__title">Streuung</h2>

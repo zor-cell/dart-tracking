@@ -1,15 +1,17 @@
 <div class="board">
-  <p-selectbutton
-    class="layer"
-    [options]="layerOptions"
-    optionLabel="label"
-    optionValue="value"
-    [allowEmpty]="false"
-    [ngModel]="layer()"
-    (ngModelChange)="selectLayer($event)"
-    ariaLabel="Darstellung der Doppel"
-    size="small"
-  />
+  @if (layerSwitch()) {
+    <p-selectbutton
+      class="layer"
+      [options]="layerOptions"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+      [ngModel]="layer()"
+      (ngModelChange)="selectLayer($event)"
+      ariaLabel="Darstellung der Doppel"
+      size="small"
+    />
+  }
 
   @if (layer() === 'tips') {
     <app-tip-heatmap

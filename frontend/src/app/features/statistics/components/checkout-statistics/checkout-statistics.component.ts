@@ -8,8 +8,16 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { SelectButton } from 'primeng/selectbutton';
 import { DistanceScaleComponent } from '../../../game/components/distance-scale/distance-scale.component';
+import {
+  HEATMAP_LAYERS,
+  HeatmapLayer,
+  storeHeatmapLayer,
+  storedHeatmapLayer,
+} from '../../../game/models/heatmap-layer';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { backState } from '../../../../core/view/models/back-state';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
@@ -27,8 +35,10 @@ import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
     DistanceScaleComponent,
     DoubleBoardComponent,
     EmptyStateComponent,
+    FormsModule,
     InfoHintComponent,
     RouterLink,
+    SelectButton,
     StatDeltaComponent,
     StatSketchComponent,
   ],
@@ -45,6 +55,9 @@ export class CheckoutStatisticsComponent {
   protected readonly returnState = backState('Statistik');
 
   protected readonly selected = signal<string | null>(null);
+  protected readonly layerOptions = [...HEATMAP_LAYERS];
+  /** Tips or fields, the same on both boards of a comparison. */
+  protected readonly layer = signal<HeatmapLayer>(storedHeatmapLayer());
 
   protected readonly checkoutRate = computed(() => checkoutRate(this.statistics()));
   protected readonly otherCheckoutRate = computed(() => {
@@ -62,6 +75,11 @@ export class CheckoutStatisticsComponent {
         }
       });
     });
+  }
+
+  protected selectLayer(layer: HeatmapLayer): void {
+    this.layer.set(layer);
+    storeHeatmapLayer(layer);
   }
 }
 

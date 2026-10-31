@@ -87,12 +87,18 @@ export class PrecisionStatisticsComponent {
     } as Record<number, { count: number; share: number | null; otherShare: number | null }>;
   });
 
-  protected readonly fieldCounts = computed(
-    () => new Map(Object.entries(this.statistics().fields)),
-  );
-  protected readonly tipCounts = computed(
-    () => new Map(Object.entries(this.statistics().locatedFields)),
-  );
+  /** Darts per field, all of them or only the located ones the cloud draws, as the heatmaps
+   * take them; the compared player's too, null without one. */
+  protected readonly fieldCounts = computed(() => fieldCounts(this.statistics()));
+  protected readonly tipCounts = computed(() => tipCounts(this.statistics()));
+  protected readonly otherFieldCounts = computed(() => {
+    const other = this.comparison()?.statistics;
+    return other ? fieldCounts(other) : null;
+  });
+  protected readonly otherTipCounts = computed(() => {
+    const other = this.comparison()?.statistics;
+    return other ? tipCounts(other) : null;
+  });
 
   protected readonly spread = computed(() => spreadOf(this.statistics().scatter));
   protected readonly otherSpread = computed(() =>
@@ -128,6 +134,14 @@ export class PrecisionStatisticsComponent {
   protected bandParams(band: number): Params {
     return { ...this.listParams(), visit: band };
   }
+}
+
+function fieldCounts({ fields }: PlayerStatisticsDto): ReadonlyMap<string, number> {
+  return new Map(Object.entries(fields));
+}
+
+function tipCounts({ locatedFields }: PlayerStatisticsDto): ReadonlyMap<string, number> {
+  return new Map(Object.entries(locatedFields));
 }
 
 function wonRate({ legsWon, legs }: PlayerStatisticsDto): number | null {

@@ -75,18 +75,62 @@
 }
 
 /* Same compact toggle and layout as the replay's heatmap. */
-.heatmap {
+:host {
   --p-togglebutton-sm-padding: 0.2rem;
   --p-togglebutton-content-sm-padding: 0.2rem 0.5rem;
   --p-togglebutton-sm-font-size: 0.75rem;
+}
 
+.heatmap {
   position: relative;
   height: 22rem;
 }
 
-.heatmap > app-field-heatmap,
-.heatmap > app-tip-heatmap {
+.heatmap app-field-heatmap,
+.heatmap app-tip-heatmap,
+.heatmap-pair__board app-field-heatmap,
+.heatmap-pair__board app-tip-heatmap {
   height: 100%;
+}
+
+.heatmap__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+
+  .heatmap__layer {
+    position: static;
+  }
+}
+
+/* Two boards in a row, each with whose darts it shows above it. */
+.heatmap-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.heatmap-pair__side {
+  margin: 0;
+}
+
+.heatmap-pair__name {
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+
+  &--own {
+    color: var(--own-text-color);
+  }
+
+  &--other {
+    color: var(--compare-text-color);
+  }
+}
+
+.heatmap-pair__board {
+  height: 15.5rem;
 }
 
 .heatmap__layer {
