@@ -11,8 +11,8 @@ import {
 import { DartDto } from '../../dto/dart.dto';
 import {
   BOARD_BACKING_RADIUS,
-  BOARD_VIEW_BOX,
   BOARD_VIEW_EXTENT,
+  boardViewBox,
   fieldOutline,
   offBoardArrowPath,
   offBoardMark,
@@ -68,14 +68,14 @@ export class TipHeatmapComponent {
   readonly counts = input<ReadonlyMap<string, number> | null>(null);
   /** A field the view picked itself, captioned in place of the summary. */
   readonly picked = input<HeatmapPick | null>(null);
+  /** Half the drawn area, in board millimetres; the cloud covers all of it. */
+  readonly extent = input(BOARD_VIEW_EXTENT);
 
   /** The field last tapped; bound by a view that keeps it across layers. */
   readonly pinned = model<string | null>(null);
   protected readonly hovered = signal<string | null>(null);
 
-  protected readonly viewBox = BOARD_VIEW_BOX;
-  /** Half the area the cloud covers, in board millimetres. */
-  protected readonly extent = BOARD_VIEW_EXTENT;
+  protected readonly viewBox = computed(() => boardViewBox(this.extent()));
   protected readonly markRadius = TIP_RADIUS;
   protected readonly arrowPath = offBoardArrowPath(TIP_RADIUS);
   private readonly cutoff = computed(() => (this.sparse() ? 0 : HEAT_CUTOFF));
@@ -160,7 +160,7 @@ export class TipHeatmapComponent {
 
   protected readonly density = computed(() =>
     this.mode() === 'cloud' && this.points().length > 0
-      ? tipDensity(this.points(), this.extent, CLOUD_CELL, this.sigma())
+      ? tipDensity(this.points(), this.extent(), CLOUD_CELL, this.sigma())
       : null,
   );
 

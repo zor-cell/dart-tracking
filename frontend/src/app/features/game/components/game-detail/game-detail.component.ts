@@ -15,7 +15,20 @@ import { LoadingStateComponent } from '../../../../core/view/components/loading-
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 
-const FIGURES = ['average', 'firstNine', 'darts', 'bestVisit', 'checkout', 'busts'] as const;
+const GAME_FIGURES = ['average', 'firstNine', 'darts', 'bestVisit', 'grouping'] as const;
+const CHECKOUT_FIGURES = ['checkout', 'doubleDistance', 'busts'] as const;
+
+type Figure = (typeof GAME_FIGURES)[number] | (typeof CHECKOUT_FIGURES)[number];
+
+/** One row of the figures table and the subheading it sits under. */
+interface FigureRow {
+  readonly figure: Figure;
+  readonly group: string;
+}
+
+function sum(values: readonly number[]): number {
+  return values.reduce((total, value) => total + value, 0);
+}
 
 @Component({
   selector: 'app-game-detail',
@@ -67,31 +80,34 @@ export class GameDetailComponent {
     return Math.max(1, Math.round(millis / 60_000));
   });
 
-  /** Players with their figures, the winner first, then by points still needed. */
+  /** Players with their figures, in the order they threw. */
   protected readonly standings = computed(() => {
     const detail = this.detail();
     if (!detail) {
       return [];
     }
     const { game, statistics, visits } = detail;
-    return game.players
-      .map((player, seat) => ({
-        ...player,
-        won: player.id === game.winnerId,
-        statistics: statistics[seat],
-        busts: visits.filter((visit) => visit.playerId === player.id && visit.busted).length,
-      }))
-      .sort((a, b) => Number(b.won) - Number(a.won) || a.remaining - b.remaining);
+    return game.players.map((player, seat) => ({
+      ...player,
+      won: player.id === game.winnerId,
+      statistics: statistics[seat],
+      busts: visits.filter((visit) => visit.playerId === player.id && visit.busted).length,
+      doublesLocated: sum(statistics[seat].doubles.map((double) => double.throws.length)),
+      doublesThrown: sum(statistics[seat].doubles.map((double) => double.attempts)),
+    }));
   });
 
   constructor() {
     void this.load();
   }
 
-  /** The figures compared per player; elimination has no checkout. */
-  protected readonly figureRows = computed(() =>
-    FIGURES.filter((figure) => figure !== 'checkout' || !this.isElimination()),
-  );
+  /** The figures compared per player, grouped; elimination has no checkout, so busts join the game. */
+  protected readonly figureRows = computed<FigureRow[]>(() => {
+    const game = GAME_FIGURES.map((figure) => ({ figure, group: 'Spiel' }));
+    return this.isElimination()
+      ? [...game, { figure: 'busts', group: 'Spiel' }]
+      : [...game, ...CHECKOUT_FIGURES.map((figure) => ({ figure, group: 'Checkout' }))];
+  });
 
   protected rate(hits: number, attempts: number): number | null {
     return attempts === 0 ? null : hits / attempts;

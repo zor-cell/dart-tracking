@@ -33,6 +33,8 @@ export interface PlayerStatisticsDto {
   /** Mean distance (mm) between two located darts of a scoring visit. */
   readonly grouping: number | null;
   readonly groupingDarts: number;
+  /** Darts thrown in scoring visits, located or not. */
+  readonly scoringDarts: number;
   readonly scatter: ScatterDto | null;
   /** Points per dart by its place in a scoring visit. */
   readonly dartAverages: readonly (number | null)[];

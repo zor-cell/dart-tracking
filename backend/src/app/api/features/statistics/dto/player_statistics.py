@@ -73,6 +73,7 @@ class PlayerStatisticsDto(CamelModel):
     double_distance: float | None
     grouping: float | None
     grouping_darts: int
+    scoring_darts: int
     scatter: ScatterDto | None
     dart_averages: list[float | None]
 
@@ -108,6 +109,7 @@ class PlayerStatisticsDto(CamelModel):
             double_distance=_rounded(statistics.double_distance),
             grouping=_rounded(statistics.grouping),
             grouping_darts=statistics.grouping_darts,
+            scoring_darts=statistics.scoring_darts,
             scatter=None if scatter is None else ScatterDto.from_entity(scatter),
             dart_averages=[_rounded(value, 2) for value in statistics.dart_averages],
         )

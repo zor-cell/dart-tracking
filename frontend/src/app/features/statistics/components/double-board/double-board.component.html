@@ -15,6 +15,7 @@
     <app-tip-heatmap
       [points]="tips()"
       mode="cloud"
+      [extent]="extent"
       [picked]="tipPick()"
       (click)="pickSegment($event)"
     >
@@ -46,6 +47,7 @@
       ariaLabel="Checkout-Darts nach getroffenem Feld"
       [resolve]="doubleOf"
       [legendMax]="legendMax()"
+      [extent]="extent"
       [(selected)]="selected"
       [(hovered)]="hovered"
     >

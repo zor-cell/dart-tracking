@@ -64,7 +64,12 @@ export function offBoardMark(x: number, y: number): { x: number; y: number; angl
  * for the ordinal beside a marker out on it. */
 export const BOARD_VIEW_EXTENT = 218;
 
-export const BOARD_VIEW_BOX = `${-BOARD_VIEW_EXTENT} ${-BOARD_VIEW_EXTENT} ${BOARD_VIEW_EXTENT * 2} ${BOARD_VIEW_EXTENT * 2}`;
+/** The square view box `extent` mm around the bullseye. */
+export function boardViewBox(extent: number): string {
+  return `${-extent} ${-extent} ${extent * 2} ${extent * 2}`;
+}
+
+export const BOARD_VIEW_BOX = boardViewBox(BOARD_VIEW_EXTENT);
 
 /**
  * One ring band of one sector as an SVG path, shrunk by `inset` mm on every side.

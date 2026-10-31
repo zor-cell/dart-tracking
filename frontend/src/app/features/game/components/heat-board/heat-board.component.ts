@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
-import { BOARD_VIEW_BOX, fieldOutline } from '../../models/board-face';
+import { BOARD_VIEW_EXTENT, boardViewBox, fieldOutline } from '../../models/board-face';
 import { BoardFaceComponent, FieldEnter } from '../board-face/board-face.component';
 import { HeatLegendComponent } from '../heat-legend/heat-legend.component';
 
@@ -37,13 +37,15 @@ export class HeatBoardComponent {
   readonly resolve = input<(label: string) => string | null>((label) => label);
   /** What the top of the scale reads; no scale without it. */
   readonly legendMax = input<string | null>(null);
+  /** Half the drawn area, in board millimetres. */
+  readonly extent = input(BOARD_VIEW_EXTENT);
 
   /** The field last tapped or focused. */
   readonly selected = model<string | null>(null);
   /** The field under the mouse. */
   readonly hovered = model<string | null>(null);
 
-  protected readonly viewBox = BOARD_VIEW_BOX;
+  protected readonly viewBox = computed(() => boardViewBox(this.extent()));
 
   protected readonly paths = computed(() =>
     this.fields().flatMap((field) => {

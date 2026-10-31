@@ -70,3 +70,13 @@
 .figures__strong {
   font-weight: 700;
 }
+
+.figures__group {
+  padding: 1rem 0.5rem 0.35rem;
+  border-bottom: 1px solid var(--p-datatable-body-cell-border-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: start;
+  text-transform: uppercase;
+}

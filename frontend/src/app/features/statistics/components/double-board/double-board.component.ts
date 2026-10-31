@@ -25,6 +25,9 @@ import { DoubleStatisticsDto } from '../../dto/double-statistics.dto';
 /** Label of a dart that hit no field. */
 const MISS = '0';
 
+/** Half the drawn area, in board millimetres, with a wide margin for the misses. */
+const VIEW_EXTENT = 260;
+
 /** The darts thrown at a finishing double, as a tip cloud or as each double's hit rate.
  * A picked double narrows both. */
 @Component({
@@ -48,6 +51,7 @@ export class DoubleBoardComponent {
   protected readonly hovered = signal<string | null>(null);
   protected readonly layerOptions = [...HEATMAP_LAYERS];
   protected readonly layer = signal(storedHeatmapLayer());
+  protected readonly extent = VIEW_EXTENT;
 
   /** The double of the sector `label` lies in, the bull for both bull rings; null if never
    * thrown at. */

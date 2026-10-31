@@ -1,6 +1,6 @@
 <svg
   class="heatmap"
-  [attr.viewBox]="viewBox"
+  [attr.viewBox]="viewBox()"
   [attr.role]="counts() === null ? 'img' : 'group'"
   [attr.aria-label]="ariaLabel()"
   (click)="onBoardClick($event)"
@@ -16,10 +16,10 @@
       <image
         class="heatmap__cloud"
         [attr.href]="cloud"
-        [attr.x]="-extent"
-        [attr.y]="-extent"
-        [attr.width]="extent * 2"
-        [attr.height]="extent * 2"
+        [attr.x]="-extent()"
+        [attr.y]="-extent()"
+        [attr.width]="extent() * 2"
+        [attr.height]="extent() * 2"
         preserveAspectRatio="none"
       />
     }

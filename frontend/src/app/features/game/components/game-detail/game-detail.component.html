@@ -2,9 +2,7 @@
   <header class="view__header view__header--sticky">
     <app-back-link label="Spiele" link="/account/games" />
     @if (detail(); as detail) {
-      <h1 class="view__title">
-        {{ variantLabel() }} {{ detail.game.mode }}
-      </h1>
+      <h1 class="view__title">{{ variantLabel() }} {{ detail.game.mode }}</h1>
       <p class="view__subtitle">
         {{ detail.createdAt | date: 'dd.MM.yy, HH:mm' }}
         @if (durationMinutes(); as minutes) {
@@ -49,7 +47,14 @@
     <section class="panel">
       <h2 class="panel__title">Statistik</h2>
       <div class="table-scroll" tabindex="0" role="region" aria-label="Statistik pro Spieler">
-        <p-table [value]="figureRows()" class="data-table" size="small">
+        <p-table
+          [value]="figureRows()"
+          class="data-table"
+          size="small"
+          rowGroupMode="subheader"
+          groupRowsBy="group"
+          [customSort]="true"
+        >
           <ng-template #header>
             <tr>
               <th scope="col"><span class="sr-only">Kennzahl</span></th>
@@ -58,9 +63,16 @@
               }
             </tr>
           </ng-template>
+          <ng-template #groupheader let-row>
+            <tr>
+              <th scope="colgroup" class="figures__group" [attr.colspan]="standings().length + 1">
+                {{ row.group }}
+              </th>
+            </tr>
+          </ng-template>
           <ng-template #body let-row>
             <tr>
-              @switch (row) {
+              @switch (row.figure) {
                 @case ('average') {
                   <th scope="row" class="figures__label" aria-label="3-Dart-Average">3-Dart-Ø</th>
                   @for (player of standings(); track player.id) {
@@ -89,18 +101,51 @@
                     <td class="data-table__number">{{ player.statistics.bestVisit }}</td>
                   }
                 }
+                @case ('grouping') {
+                  <th scope="row" class="figures__label">Ø Pfeilabstand</th>
+                  @for (player of standings(); track player.id) {
+                    <td class="data-table__number">
+                      @if (player.statistics.grouping !== null) {
+                        {{ player.statistics.grouping | number: '1.0-0' }} mm
+                      } @else {
+                        &ndash;
+                      }
+                      <span class="data-table__hint">
+                        {{ player.statistics.groupingDarts }}/{{ player.statistics.scoringDarts }}
+                      </span>
+                    </td>
+                  }
+                }
                 @case ('checkout') {
                   <th scope="row" class="figures__label">Checkout</th>
                   @for (player of standings(); track player.id) {
                     <td class="data-table__number">
-                      @let checkout = rate(player.statistics.checkoutHits, player.statistics.checkoutAttempts);
+                      @let checkout =
+                        rate(player.statistics.checkoutHits, player.statistics.checkoutAttempts);
                       @if (checkout !== null) {
                         {{ checkout * 100 | number: '1.0-0' }} %
                       } @else {
                         &ndash;
                       }
                       <span class="data-table__hint">
-                        {{ player.statistics.checkoutHits }}/{{ player.statistics.checkoutAttempts }}
+                        {{ player.statistics.checkoutHits }}/{{
+                          player.statistics.checkoutAttempts
+                        }}
+                      </span>
+                    </td>
+                  }
+                }
+                @case ('doubleDistance') {
+                  <th scope="row" class="figures__label">Ø Abstand</th>
+                  @for (player of standings(); track player.id) {
+                    <td class="data-table__number">
+                      @if (player.statistics.doubleDistance !== null) {
+                        {{ player.statistics.doubleDistance | number: '1.0-0' }} mm
+                      } @else {
+                        &ndash;
+                      }
+                      <span class="data-table__hint">
+                        {{ player.doublesLocated }}/{{ player.doublesThrown }}
                       </span>
                     </td>
                   }

@@ -158,6 +158,7 @@ def test_scoring_visits_measure_the_grouping():
 
     assert statistics.grouping == pytest.approx(40 / 3)
     assert (statistics.grouping_darts, statistics.grouping_pairs) == (3, 3)
+    assert statistics.scoring_darts == 9
     scatter = statistics.scatter
     assert (scatter.major, scatter.minor, scatter.angle) == pytest.approx((10, 0, 0))
     assert statistics.dart_averages == pytest.approx([60, 140 / 3, 121 / 3])

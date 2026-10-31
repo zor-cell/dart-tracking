@@ -84,6 +84,11 @@ class PlayerStatistics:
         return 3 * self.first_nine_points / self.first_nine_darts
 
     @property
+    def scoring_darts(self) -> int:
+        """Darts thrown in scoring visits, located or not."""
+        return sum(self.dart_counts)
+
+    @property
     def grouping(self) -> float | None:
         """Mean distance (mm) between two darts of a scoring visit."""
         return None if self.grouping_pairs == 0 else self.grouping_distance / self.grouping_pairs
