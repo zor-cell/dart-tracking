@@ -8,6 +8,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { DistanceScaleComponent } from '../../../game/components/distance-scale/distance-scale.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
 import { DoubleBoardComponent } from '../double-board/double-board.component';
@@ -15,7 +16,7 @@ import { DoubleBoardComponent } from '../double-board/double-board.component';
 /** Checkout figures: the rates, how far off the doubles went and each double on the board. */
 @Component({
   selector: 'app-checkout-statistics',
-  imports: [DecimalPipe, DoubleBoardComponent, EmptyStateComponent],
+  imports: [DecimalPipe, DistanceScaleComponent, DoubleBoardComponent, EmptyStateComponent],
   templateUrl: './checkout-statistics.component.html',
   styleUrl: './checkout-statistics.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

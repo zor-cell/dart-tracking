@@ -1,0 +1,38 @@
+@use '../board-face/board-colors' as board;
+
+:host {
+  display: block;
+  height: 100%;
+}
+
+.scale {
+  display: block;
+  height: 100%;
+}
+
+.scale__band {
+  stroke: board.$wire;
+  stroke-width: 0.7;
+
+  &--red {
+    fill: board.$red;
+  }
+  &--green {
+    fill: board.$green;
+  }
+  &--light {
+    fill: board.$light;
+  }
+}
+
+.scale__span {
+  fill: none;
+  stroke: board.$dark;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+
+  &--edge {
+    stroke: #ffffff;
+    stroke-width: 7;
+  }
+}

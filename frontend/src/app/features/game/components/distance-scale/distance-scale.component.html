@@ -1,0 +1,7 @@
+<svg class="scale" viewBox="-28 -174 56 178" aria-hidden="true">
+  @for (band of bands; track $index) {
+    <path class="scale__band scale__band--{{ band.tone }}" [attr.d]="band.d" />
+  }
+  <path class="scale__span scale__span--edge" [attr.d]="bracket()" />
+  <path class="scale__span" [attr.d]="bracket()" />
+</svg>

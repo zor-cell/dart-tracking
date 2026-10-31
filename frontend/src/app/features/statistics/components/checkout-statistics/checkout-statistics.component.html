@@ -27,15 +27,16 @@
         }
       </dd>
     </div>
-    <div class="stat">
+    <div class="stat" [class.stat--scaled]="totals.doubleDistance !== null">
       <dt class="stat__label">Ø Abstand zum Checkout</dt>
-      <dd class="stat__value">
-        @if (totals.doubleDistance !== null) {
-          {{ totals.doubleDistance | number: '1.0-0' }} mm
-        } @else {
-          &ndash;
-        }
-      </dd>
+      @if (totals.doubleDistance !== null) {
+        <dd class="stat__value">{{ totals.doubleDistance | number: '1.0-0' }} mm</dd>
+        <dd class="stat__scale">
+          <app-distance-scale [distance]="totals.doubleDistance" kind="checkout" />
+        </dd>
+      } @else {
+        <dd class="stat__value">&ndash;</dd>
+      }
     </div>
   </dl>
 </section>

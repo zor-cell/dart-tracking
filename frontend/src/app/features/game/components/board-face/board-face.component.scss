@@ -1,10 +1,4 @@
-// The physical board's colours, not the theme's: a dartboard is red/green/black/cream
-// in every light, and recognising it at a glance is the point of drawing it.
-$board-dark: #14110f;
-$board-light: #e8d7a8;
-$board-red: #c0392b;
-$board-green: #1e8449;
-$board-wire: #9aa0a6;
+@use 'board-colors' as board;
 
 // No dark surround: the number ring is the page itself, alike in light and dark mode.
 .face__backing {
@@ -12,20 +6,20 @@ $board-wire: #9aa0a6;
 }
 
 .face__segment {
-  stroke: $board-wire;
+  stroke: board.$wire;
   stroke-width: 0.7;
 
   &--dark {
-    fill: $board-dark;
+    fill: board.$dark;
   }
   &--light {
-    fill: $board-light;
+    fill: board.$light;
   }
   &--red {
-    fill: $board-red;
+    fill: board.$red;
   }
   &--green {
-    fill: $board-green;
+    fill: board.$green;
   }
 }
 

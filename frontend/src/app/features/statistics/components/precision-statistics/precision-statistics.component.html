@@ -90,18 +90,18 @@
     }
   </p>
   <dl class="stat-grid">
-    <div class="stat stat--lead">
+    <div class="stat" [class.stat--scaled]="totals.grouping !== null">
       <dt class="stat__label">Ø Pfeilabstand</dt>
-      <dd class="stat__value">
-        @if (totals.grouping !== null) {
-          {{ totals.grouping | number: '1.0-0' }} mm
-        } @else {
-          &ndash;
-        }
-      </dd>
-      <dd class="stat__hint">zwischen zwei Darts einer Aufnahme</dd>
+      @if (totals.grouping !== null) {
+        <dd class="stat__value">{{ totals.grouping | number: '1.0-0' }} mm</dd>
+        <dd class="stat__scale">
+          <app-distance-scale [distance]="totals.grouping" kind="grouping" />
+        </dd>
+      } @else {
+        <dd class="stat__value">&ndash;</dd>
+      }
     </div>
-    <div class="stat stat--lead">
+    <div class="stat">
       <dt class="stat__label">Streuform</dt>
       @if (spread(); as spread) {
         <dd class="stat__value spread">
@@ -117,7 +117,6 @@
             />
           </svg>
         </dd>
-        <dd class="stat__hint">{{ spread.direction }}</dd>
       } @else {
         <dd class="stat__value">&ndash;</dd>
       }

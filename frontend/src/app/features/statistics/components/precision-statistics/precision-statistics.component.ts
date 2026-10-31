@@ -2,6 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SelectButton } from 'primeng/selectbutton';
+import { DistanceScaleComponent } from '../../../game/components/distance-scale/distance-scale.component';
 import { FieldHeatmapComponent } from '../../../game/components/field-heatmap/field-heatmap.component';
 import { TipHeatmapComponent } from '../../../game/components/tip-heatmap/tip-heatmap.component';
 import { dartColor } from '../../../game/models/dart-colors';
@@ -13,13 +14,17 @@ import {
 } from '../../../game/models/heatmap-layer';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
 
-/** Below this ratio of the axes the spread counts as even. */
-const ROUND_RATIO = 1.2;
-
 /** The general figures, the hit picture and how the darts group: spread, each dart's place. */
 @Component({
   selector: 'app-precision-statistics',
-  imports: [DecimalPipe, FieldHeatmapComponent, FormsModule, SelectButton, TipHeatmapComponent],
+  imports: [
+    DecimalPipe,
+    DistanceScaleComponent,
+    FieldHeatmapComponent,
+    FormsModule,
+    SelectButton,
+    TipHeatmapComponent,
+  ],
   templateUrl: './precision-statistics.component.html',
   styleUrl: './precision-statistics.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -45,25 +50,14 @@ export class PrecisionStatisticsComponent {
     () => new Map(Object.entries(this.statistics().locatedFields)),
   );
 
-  /** The wider axis against the narrower one, and which way the wider one runs. */
+  /** The wider axis against the narrower one, and the ellipse drawn from them. */
   protected readonly spread = computed(() => {
     const scatter = this.statistics().scatter;
     if (scatter === null) {
       return null;
     }
-    const ratio = scatter.major / Math.max(scatter.minor, 0.1);
-    const tilt = Math.abs(scatter.angle);
-    const direction =
-      ratio < ROUND_RATIO
-        ? 'gleichmäßig nach allen Seiten'
-        : tilt > 60
-          ? 'nach oben und unten stärker'
-          : tilt < 30
-            ? 'zur Seite stärker'
-            : 'schräg stärker';
     return {
-      ratio,
-      direction,
+      ratio: scatter.major / Math.max(scatter.minor, 0.1),
       ry: scatter.minor / Math.max(scatter.major, 0.1),
       rotation: -scatter.angle,
     };
