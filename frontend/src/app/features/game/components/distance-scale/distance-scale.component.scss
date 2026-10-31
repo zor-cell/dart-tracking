@@ -25,14 +25,14 @@
   }
 }
 
-.scale__span {
-  fill: none;
+.scale__gap {
   stroke: board.$dark;
-  stroke-width: 3.5;
-  stroke-linecap: round;
+  stroke-width: 4;
+  stroke-dasharray: 8 6;
+}
 
-  &--edge {
-    stroke: #ffffff;
-    stroke-width: 7;
-  }
+// Coloured by place in the visit with a dark outline, as on the live board.
+.scale__dart {
+  stroke: #1b1b1b;
+  stroke-width: 3;
 }

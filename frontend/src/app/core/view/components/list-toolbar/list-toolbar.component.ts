@@ -19,6 +19,7 @@ import { InputText } from 'primeng/inputtext';
 import { Popover } from 'primeng/popover';
 import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 import { FilterChip, FilterChipOpen, FilterSuggestion } from '../../models/filter-chip';
+import { centrePopoverArrow } from '../../models/popover-arrow';
 
 /** Above a list: the active filters and suggestions in one scrolling row, a search
  * that opens from its icon, a filter popover around the projected fields, and an
@@ -72,15 +73,10 @@ export class ListToolbarComponent {
 
   /** Puts the popover's arrow under the middle of the filter button. */
   protected centreArrow(): void {
-    const container = this.panel()?.container;
+    const panel = this.panel();
     const button = this.filterButton()?.nativeElement as HTMLElement | undefined;
-    if (!container || !button) {
-      return;
+    if (panel && button) {
+      centrePopoverArrow(panel, button);
     }
-    // offsetLeft ignores the opening animation's scale, which skews bounding rects.
-    const target = button.getBoundingClientRect();
-    const left = target.left + window.scrollX + target.width / 2 - container.offsetLeft;
-    container.style.setProperty('--p-popover-arrow-left', `${left}px`);
-    container.style.setProperty('--p-popover-arrow-offset', '0px');
   }
 }

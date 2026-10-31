@@ -1,0 +1,14 @@
+:host {
+  --p-button-sm-icon-only-width: 1.5rem;
+
+  display: inline-flex;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 17rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}

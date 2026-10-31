@@ -1,0 +1,15 @@
+<p-button
+  type="button"
+  icon="pi pi-info-circle"
+  severity="secondary"
+  size="small"
+  [text]="true"
+  [rounded]="true"
+  [ariaLabel]="label()"
+  (onClick)="popover.toggle($event, $any($event).currentTarget)"
+/>
+<p-popover #popover (onShow)="place(popover)">
+  <div class="info">
+    <ng-content />
+  </div>
+</p-popover>

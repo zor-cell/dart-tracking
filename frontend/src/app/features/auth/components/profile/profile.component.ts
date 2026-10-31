@@ -1,4 +1,3 @@
-import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -16,6 +15,7 @@ import { AuthService } from '../../services/auth.service';
 import { ChangeEmailDialogComponent } from '../change-email-dialog/change-email-dialog.component';
 import { ChangePasswordDialogComponent } from '../change-password-dialog/change-password-dialog.component';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
+import { centrePopoverArrow } from '../../../../core/view/models/popover-arrow';
 import { InlineEditorComponent } from '../../../../core/view/components/inline-editor/inline-editor.component';
 
 /** The rows that can be edited in place. */
@@ -47,7 +47,6 @@ export class ProfileComponent {
   private readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
-  private readonly document = inject(DOCUMENT);
 
   protected readonly user = this.auth.user;
 
@@ -151,22 +150,7 @@ export class ProfileComponent {
     }
   }
 
-  /** Points the arrow at the button's center, measured on the layout box since
-   * PrimeNG aligns it while the opening animation still scales the popover. */
-  protected centerArrow(popover: Popover): void {
-    const container = popover.container;
-    const target = popover.target as HTMLElement | null;
-    if (!container || !target) {
-      return;
-    }
-    const rect = target.getBoundingClientRect();
-    const scrollX = this.document.defaultView?.scrollX ?? 0;
-    const center = rect.left + scrollX + rect.width / 2 - container.offsetLeft;
-    container.style.setProperty(
-      '--p-popover-arrow-left',
-      `calc(${center}px - var(--p-popover-arrow-offset))`,
-    );
-  }
+  protected readonly centerArrow = centrePopoverArrow;
 
   protected async logout(): Promise<void> {
     this.busy.set(true);

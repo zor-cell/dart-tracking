@@ -3,11 +3,23 @@
   <h2 class="panel__title">Allgemein</h2>
   <dl class="stat-grid">
     <div class="stat stat--lead">
-      <dt class="stat__label">3-Dart-Average</dt>
+      <dt class="stat__label">
+        3-Dart-Average
+        <app-info-hint class="stat__info"
+          >Punkte pro drei Darts über alle geworfenen Darts. Darts einer überworfenen Aufnahme
+          zählen mit, ihre Punkte nicht.</app-info-hint
+        >
+      </dt>
       <dd class="stat__value">{{ totals.average | number: '1.2-2' }}</dd>
     </div>
     <div class="stat stat--lead">
-      <dt class="stat__label">First-9-Average</dt>
+      <dt class="stat__label">
+        First-9-Average
+        <app-info-hint class="stat__info"
+          >Wie der 3-Dart-Average, aber nur über die ersten neun Darts jedes Legs, bevor es ans
+          Auschecken geht.</app-info-hint
+        >
+      </dt>
       <dd class="stat__value">{{ totals.firstNineAverage | number: '1.2-2' }}</dd>
     </div>
     <div class="stat">
@@ -91,7 +103,14 @@
   </p>
   <dl class="stat-grid">
     <div class="stat" [class.stat--scaled]="totals.grouping !== null">
-      <dt class="stat__label">Ø Pfeilabstand</dt>
+      <dt class="stat__label">
+        Ø Pfeilabstand
+        <app-info-hint class="stat__info">
+          <app-stat-sketch kind="grouping" />
+          Mittel der Strecken zwischen je zwei erkannten Darts einer Aufnahme. Nur Aufnahmen bei
+          mehr als 170 Rest, wo jeder Dart aufs selbe Ziel geht.
+        </app-info-hint>
+      </dt>
       @if (totals.grouping !== null) {
         <dd class="stat__value">{{ totals.grouping | number: '1.0-0' }} mm</dd>
         <dd class="stat__scale">
@@ -102,7 +121,14 @@
       }
     </div>
     <div class="stat">
-      <dt class="stat__label">Streuform</dt>
+      <dt class="stat__label">
+        Streuform
+        <app-info-hint class="stat__info">
+          <app-stat-sketch kind="spread" />
+          Breite Achse geteilt durch schmale. Die Ellipse in der Kachel zeigt, in welche Richtung
+          die Darts stärker streuen.
+        </app-info-hint>
+      </dt>
       @if (spread(); as spread) {
         <dd class="stat__value spread">
           {{ spread.ratio | number: '1.1-1' }}&times;

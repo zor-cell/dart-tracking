@@ -2,6 +2,9 @@
   @for (band of bands; track $index) {
     <path class="scale__band scale__band--{{ band.tone }}" [attr.d]="band.d" />
   }
-  <path class="scale__span scale__span--edge" [attr.d]="bracket()" />
-  <path class="scale__span" [attr.d]="bracket()" />
+  @let line = gap();
+  <line class="scale__gap" x1="0" [attr.y1]="line.from" x2="0" [attr.y2]="line.to" />
+  @for (y of line.darts; track $index) {
+    <circle class="scale__dart" cx="0" [attr.cy]="y" r="8" [attr.fill]="dartColor($index)" />
+  }
 </svg>

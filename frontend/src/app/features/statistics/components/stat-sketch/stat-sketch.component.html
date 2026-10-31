@@ -1,0 +1,51 @@
+@if (scene(); as scene) {
+  <svg class="sketch sketch--board" [attr.viewBox]="scene.viewBox" aria-hidden="true">
+    <g app-board-face [numbers]="false"></g>
+    @for (gap of scene.gaps; track $index) {
+      <line
+        class="sketch__gap"
+        [attr.x1]="gap.from[0]"
+        [attr.y1]="gap.from[1]"
+        [attr.x2]="gap.to[0]"
+        [attr.y2]="gap.to[1]"
+      />
+    }
+    @for (dart of scene.darts; track $index) {
+      <g class="sketch__dart" [attr.fill]="dartColor($index)">
+        <circle [attr.cx]="dart[0]" [attr.cy]="dart[1]" r="1.6" />
+        <text [attr.x]="dart[0] - 2.4" [attr.y]="dart[1] - 1.6">{{ $index + 1 }}</text>
+      </g>
+    }
+    @for (gap of scene.gaps; track $index) {
+      <text class="sketch__distance" [attr.x]="gap.label[0]" [attr.y]="gap.label[1]">
+        {{ millimetres(gap) }}
+      </text>
+    }
+    @for (note of scene.notes; track $index) {
+      <text class="sketch__distance" [attr.x]="note.at[0]" [attr.y]="note.at[1]">
+        {{ note.text }}
+      </text>
+    }
+  </svg>
+} @else {
+  <div class="pair">
+    @for (panel of spread; track $index) {
+      <figure class="pair__panel">
+        <svg class="sketch sketch--board" [attr.viewBox]="spreadViewBox" aria-hidden="true">
+          <g app-board-face [numbers]="false"></g>
+          @for (tip of panel.tips; track $index) {
+            <circle class="sketch__tip" [attr.cx]="tip[0]" [attr.cy]="tip[1]" r="0.9" />
+          }
+          <ellipse
+            class="sketch__outline"
+            [attr.cx]="centre[0]"
+            [attr.cy]="centre[1]"
+            [attr.rx]="panel.rx"
+            [attr.ry]="panel.ry"
+          />
+        </svg>
+        <figcaption class="pair__caption">{{ panel.caption }}</figcaption>
+      </figure>
+    }
+  </div>
+}

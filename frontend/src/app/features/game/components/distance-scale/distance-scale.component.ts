@@ -8,12 +8,10 @@ import {
   TRIPLE_INNER_RADIUS,
   TRIPLE_OUTER_RADIUS,
 } from '../../models/board-geometry';
+import { dartColor } from '../../models/dart-colors';
 
 /** From the double's inner edge inward, or two darts of one visit around the treble. */
 export type DistanceKind = 'checkout' | 'grouping';
-
-/** Half the tick's width, in board millimetres. */
-const TICK = 8;
 
 const TRIPLE_CENTRE = (TRIPLE_INNER_RADIUS + TRIPLE_OUTER_RADIUS) / 2;
 
@@ -50,14 +48,16 @@ export class DistanceScaleComponent {
   readonly kind = input.required<DistanceKind>();
 
   protected readonly bands = BANDS;
+  protected readonly dartColor = dartColor;
 
-  /** The span along the centre line with a tick at each end, cut to the board. */
-  protected readonly bracket = computed(() => {
+  /** The gap along the centre line as SVG y of its ends, cut to the board, and the darts on it:
+   * both ends for two darts of a visit, only the inner one for a dart short of the double. */
+  protected readonly gap = computed(() => {
     const checkout = this.kind() === 'checkout';
     const room = checkout ? DOUBLE_INNER_RADIUS : DOUBLE_OUTER_RADIUS;
     const length = Math.min(Math.max(0, this.distance()), room);
     const outer = checkout ? room : Math.min(room, TRIPLE_CENTRE + length / 2);
     const inner = outer - length;
-    return `M ${-TICK} ${-outer} H ${TICK} M 0 ${-outer} V ${-inner} M ${-TICK} ${-inner} H ${TICK}`;
+    return { from: -outer, to: -inner, darts: checkout ? [-inner] : [-outer, -inner] };
   });
 }

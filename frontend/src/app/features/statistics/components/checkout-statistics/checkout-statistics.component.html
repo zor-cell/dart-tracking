@@ -28,7 +28,14 @@
       </dd>
     </div>
     <div class="stat" [class.stat--scaled]="totals.doubleDistance !== null">
-      <dt class="stat__label">Ø Abstand zum Checkout</dt>
+      <dt class="stat__label">
+        Ø Abstand zum Checkout
+        <app-info-hint class="stat__info">
+          <app-stat-sketch kind="checkout" />
+          Kürzester Weg vom erkannten Dart zum Doppel, auf das er ging. Ein Treffer zählt 0 mm. Nur
+          bei Double-Out.
+        </app-info-hint>
+      </dt>
       @if (totals.doubleDistance !== null) {
         <dd class="stat__value">{{ totals.doubleDistance | number: '1.0-0' }} mm</dd>
         <dd class="stat__scale">

@@ -330,11 +330,12 @@ a.list-group__item {
   margin: 0;
   display: grid;
   /* Two cards per row; a half card takes one of the four tracks. */
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.75rem;
 }
 
 .stat {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
@@ -377,19 +378,34 @@ a.list-group__item {
   font-variant-numeric: tabular-nums;
 }
 
-/* A tile with a small drawing to scale along its right edge. */
+/* The explanation button in a tile's top right corner. */
+.stat__info {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+}
+
+.stat__label:has(.stat__info) {
+  padding-right: 0.8rem;
+}
+
+/* A tile with a small drawing to scale along its right edge, below the info button;
+   tall enough that the drawing keeps its size. */
 .stat--scaled {
-  position: relative;
+  min-height: 7rem;
   padding-right: 2.5rem;
+
+  .stat__label {
+    padding-right: 0;
+  }
 }
 
 .stat__scale {
   position: absolute;
-  top: 50%;
+  top: 2rem;
   right: 0.75rem;
-  height: min(4.5rem, calc(100% - 1.2rem));
+  bottom: 0.6rem;
   margin: 0;
-  translate: 0 -50%;
 }
 
 /* The sign-in, registration and account forms. */

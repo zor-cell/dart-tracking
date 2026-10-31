@@ -12,7 +12,9 @@ import {
   storeHeatmapLayer,
   storedHeatmapLayer,
 } from '../../../game/models/heatmap-layer';
+import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
+import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
 
 /** The general figures, the hit picture and how the darts group: spread, each dart's place. */
 @Component({
@@ -22,7 +24,9 @@ import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
     DistanceScaleComponent,
     FieldHeatmapComponent,
     FormsModule,
+    InfoHintComponent,
     SelectButton,
+    StatSketchComponent,
     TipHeatmapComponent,
   ],
   templateUrl: './precision-statistics.component.html',
