@@ -1,45 +1,52 @@
 <section class="panel">
-  <header class="visits__header">
-    <h2 class="panel__title">Deine Visits</h2>
-    <p-selectbutton
-      [options]="widthOptions"
-      optionLabel="label"
-      optionValue="value"
-      [allowEmpty]="false"
-      [ngModel]="width()"
-      (ngModelChange)="selectWidth($event)"
-      ariaLabel="Balkenbreite"
-      size="small"
-    />
-  </header>
+  <h2 class="panel__title">Deine Visits</h2>
   <p-chart
+    class="visits__chart"
     type="bar"
     height="13rem"
     [data]="data()"
     [options]="options()"
+    [plugins]="plugins"
     [ariaLabel]="ariaLabel()"
   />
-  @if (picked(); as bin) {
-    @if (bin.from !== bin.to) {
-      <p class="panel__hint">{{ rangeOf(bin) }}: {{ bin.total }} Visits</p>
+  <div class="readout">
+    <p-button
+      icon="pi pi-angle-left"
+      severity="secondary"
+      [text]="true"
+      [rounded]="true"
+      ariaLabel="Einen Punkt weniger"
+      [disabled]="selected() === 0"
+      (onClick)="step(-1)"
+    />
+    @let count = counts()[selected()];
+    <p class="readout__value" aria-live="polite">
+      <strong>{{ selected() }}</strong> &middot; {{ count }} {{ count === 1 ? 'Visit' : 'Visits' }}
+    </p>
+    <p-button
+      icon="pi pi-angle-right"
+      severity="secondary"
+      [text]="true"
+      [rounded]="true"
+      ariaLabel="Einen Punkt mehr"
+      [disabled]="selected() === maxVisit"
+      (onClick)="step(1)"
+    />
+  </div>
+  <p class="panel__hint">Am häufigsten geworfen:</p>
+  <ul class="visits">
+    @for (entry of top(); track entry.score) {
+      <li>
+        <button
+          type="button"
+          class="visits__chip"
+          [class.visits__chip--picked]="entry.score === selected()"
+          [attr.aria-pressed]="entry.score === selected()"
+          (click)="selected.set(entry.score)"
+        >
+          <strong>{{ entry.score }}</strong> &times; {{ entry.count }}
+        </button>
+      </li>
     }
-    <ul class="visits" aria-live="polite">
-      @for (entry of bin.scores; track entry.score) {
-        <li class="visits__chip">
-          <strong>{{ entry.score }}</strong> &times; {{ entry.count }}
-        </li>
-      } @empty {
-        <li class="visits__none">Kein Visit in diesem Bereich.</li>
-      }
-    </ul>
-  } @else {
-    <p class="panel__hint">Am häufigsten geworfen. Tippe auf einen Balken für seine Werte.</p>
-    <ul class="visits" aria-live="polite">
-      @for (entry of top(); track entry.score) {
-        <li class="visits__chip">
-          <strong>{{ entry.score }}</strong> &times; {{ entry.count }}
-        </li>
-      }
-    </ul>
-  }
+  </ul>
 </section>

@@ -1,4 +1,4 @@
-import type { Chart, Plugin } from 'chart.js';
+import type { Chart, ChartType, Plugin } from 'chart.js';
 
 /** Colours and font every chart takes from the PrimeNG theme. */
 export interface ChartTheme {
@@ -105,10 +105,12 @@ export const countLabelsPlugin: Plugin<'scatter'> = {
 };
 
 /** A dashed vertical line at the x index `index()` names; nothing while it is null. */
-export function indexMarkerPlugin(index: () => number | null): Plugin<'line'> {
+export function indexMarkerPlugin<TType extends ChartType = 'line'>(
+  index: () => number | null,
+): Plugin<TType> {
   return {
     id: 'indexMarker',
-    afterDatasetsDraw(chart: Chart<'line'>) {
+    afterDatasetsDraw(chart: Chart<TType>) {
       const at = index();
       if (at === null) {
         return;
