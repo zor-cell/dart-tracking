@@ -1,11 +1,7 @@
-from collections import Counter
 from typing import Self
 
 from app.api.core.dto.base import CamelModel
-from app.api.features.statistics.domain.double_statistics import (
-    DoubleStatistics,
-    MissDirection,
-)
+from app.api.features.statistics.domain.double_statistics import DoubleStatistics
 from app.api.features.statistics.domain.player_statistics import (
     HEATMAP_CELL,
     PlayerStatistics,
@@ -17,10 +13,6 @@ def _rounded(value: float | None, digits: int = 1) -> float | None:
     return None if value is None else round(value, digits)
 
 
-def _directions(counts: Counter[MissDirection]) -> dict[MissDirection, int]:
-    return {direction: counts[direction] for direction in MissDirection}
-
-
 class DoubleDto(CamelModel):
     """Darts at one finishing double; throws are (x, y, hit) in board mm."""
 
@@ -28,7 +20,6 @@ class DoubleDto(CamelModel):
     attempts: int
     hits: int
     distance: float | None
-    directions: dict[MissDirection, int]
     fields: dict[str, int]
     throws: list[tuple[float, float, bool]]
 
@@ -40,7 +31,6 @@ class DoubleDto(CamelModel):
             attempts=double.attempts,
             hits=double.hits,
             distance=_rounded(double.distance / located if located else None),
-            directions=_directions(double.directions),
             fields=dict(double.fields),
             throws=[(round(t.x, 1), round(t.y, 1), t.hit) for t in double.throws],
         )
@@ -81,7 +71,6 @@ class PlayerStatisticsDto(CamelModel):
     heatmap: list[tuple[int, int, int]]
     doubles: list[DoubleDto]
     double_distance: float | None
-    miss_directions: dict[MissDirection, int]
     grouping: float | None
     grouping_darts: int
     scatter: ScatterDto | None
@@ -117,7 +106,6 @@ class PlayerStatisticsDto(CamelModel):
                 for double in sorted(statistics.doubles.values(), key=lambda d: -d.attempts)
             ],
             double_distance=_rounded(statistics.double_distance),
-            miss_directions=_directions(statistics.miss_directions),
             grouping=_rounded(statistics.grouping),
             grouping_darts=statistics.grouping_darts,
             scatter=None if scatter is None else ScatterDto.from_entity(scatter),

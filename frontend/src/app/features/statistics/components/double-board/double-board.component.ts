@@ -20,14 +20,10 @@ import {
   storedHeatmapLayer,
 } from '../../../game/models/heatmap-layer';
 import { TipPoint } from '../../../game/models/tip-density';
-import { DoubleStatisticsDto, MissDirection } from '../../dto/double-statistics.dto';
-import { missShares } from '../../models/miss-direction';
-import { MissDirectionsComponent } from '../miss-directions/miss-directions.component';
+import { DoubleStatisticsDto } from '../../dto/double-statistics.dto';
 
 /** Label of a dart that hit no field. */
 const MISS = '0';
-
-const DIRECTIONS: readonly MissDirection[] = ['long', 'short', 'left', 'right'];
 
 /** The darts thrown at a finishing double, as a tip cloud or as each double's hit rate.
  * A picked double narrows both. */
@@ -37,7 +33,6 @@ const DIRECTIONS: readonly MissDirection[] = ['long', 'short', 'left', 'right'];
     DecimalPipe,
     FormsModule,
     HeatBoardComponent,
-    MissDirectionsComponent,
     SelectButton,
     TipHeatmapComponent,
   ],
@@ -110,18 +105,6 @@ export class DoubleBoardComponent {
     return (picked ? [picked] : this.doubles()).flatMap((double) =>
       double.throws.map(([x, y]) => [x, y] as const),
     );
-  });
-
-  /** Each side's share of the misses: the picked double's, or all doubles' together. */
-  protected readonly shares = computed(() => {
-    const picked = this.picked();
-    const counts = { short: 0, long: 0, left: 0, right: 0 };
-    for (const double of picked ? [picked] : this.doubles()) {
-      for (const direction of DIRECTIONS) {
-        counts[direction] += double.directions[direction];
-      }
-    }
-    return missShares(counts);
   });
 
   /** Every double as a tap target over the tip cloud, with the hovered or picked one outlined. */

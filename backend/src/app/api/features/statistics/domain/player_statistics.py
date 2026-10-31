@@ -9,11 +9,7 @@ from itertools import combinations
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.turn import Turn
-from app.api.features.statistics.domain.double_statistics import (
-    BULL,
-    DoubleStatistics,
-    MissDirection,
-)
+from app.api.features.statistics.domain.double_statistics import BULL, DoubleStatistics
 
 # The highest score one visit can finish; above it every dart aims to score.
 _HIGHEST_FINISH = 170
@@ -131,10 +127,6 @@ class PlayerStatistics:
     @property
     def double_darts_located(self) -> int:
         return sum(double.located for double in self.doubles.values())
-
-    @property
-    def miss_directions(self) -> Counter[MissDirection]:
-        return sum((double.directions for double in self.doubles.values()), Counter())
 
     def add_leg(self, mode: int, checkout_mode: CheckoutMode, turns: list[Turn]) -> None:
         finishes = (
