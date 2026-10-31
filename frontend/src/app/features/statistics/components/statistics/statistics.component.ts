@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Params } from '@angular/router';
 import { DatePicker } from 'primeng/datepicker';
 import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
@@ -32,6 +33,7 @@ import { StatisticsService } from '../../services/statistics.service';
 import { CHECKOUT_MODES, CheckoutMode } from '../../../game/models/checkout-mode';
 import { PLAYER_COUNTS, PlayerCount } from '../../../game/models/game-filter';
 import { GAME_MODES, GameMode } from '../../../game/models/game-mode';
+import { GAME_VARIANTS, GameVariant } from '../../../game/models/game-variant';
 import { PlayerIdentityDto } from '../../../player/dto/player-identity.dto';
 import { PlayerService } from '../../../player/services/player.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
@@ -57,7 +59,7 @@ import { CheckoutStatisticsComponent } from '../checkout-statistics/checkout-sta
 import { PrecisionStatisticsComponent } from '../precision-statistics/precision-statistics.component';
 
 /** The filters whose picks are remembered and offered back; the period is not among them. */
-const REMEMBERED = ['opponentId', 'players', 'mode', 'checkoutMode'] as const;
+const REMEMBERED = ['variant', 'opponentId', 'players', 'mode', 'checkoutMode'] as const;
 
 type StatisticsTab = 'precision' | 'checkout';
 
@@ -68,6 +70,7 @@ const TAB_KEY = 'dart-tracking.statisticsTab';
 
 /** How each filter is kept in the query params. */
 const FILTER_PARAMS = {
+  variant: oneOfParam(GAME_VARIANTS.map((variant) => variant.value)),
   opponentId: TEXT_PARAM,
   players: oneOfParam(Object.keys(PLAYER_COUNTS) as PlayerCount[]),
   mode: oneOfParam(GAME_MODES),
@@ -128,6 +131,7 @@ export class StatisticsComponent {
   protected readonly period = signal<StatisticsPeriod>(DEFAULT_PERIODS.days);
   protected readonly range = signal<DayRange>(null);
 
+  protected readonly variantOptions = [...GAME_VARIANTS];
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
   protected readonly checkoutOptions = [...CHECKOUT_MODES];
   protected readonly playerCountOptions = Object.entries(PLAYER_COUNTS).map(([value, count]) => ({
@@ -137,6 +141,7 @@ export class StatisticsComponent {
   protected readonly opponents = signal<PlayerIdentityDto[]>([]);
 
   protected readonly filters = this.fb.group({
+    variant: this.fb.control<GameVariant | null>(null),
     opponentId: this.fb.control<string | null>(null),
     players: this.fb.control<PlayerCount | null>(null),
     mode: this.fb.control<GameMode | null>(null),
@@ -183,7 +188,7 @@ export class StatisticsComponent {
   );
 
   private readonly criteria = computed<StatisticsFilter>(() => {
-    const { opponentId, players, mode, checkoutMode } = this.filterValue();
+    const { variant, opponentId, players, mode, checkoutMode } = this.filterValue();
     const count = players ? PLAYER_COUNTS[players] : null;
     const period = this.period();
     const bounds =
@@ -191,6 +196,7 @@ export class StatisticsComponent {
         ? dayRangeBounds(this.range())
         : { since: periodStart(period, new Date()), until: null };
     return {
+      variant: variant ?? null,
       mode: mode ?? null,
       checkoutMode: checkoutMode ?? null,
       opponentId: opponentId ?? null,
@@ -199,6 +205,24 @@ export class StatisticsComponent {
       ...bounds,
       lastGames: periodGames(period),
     };
+  });
+
+  /** The filters as the game list reads them, for links into it. A count of recent games
+   * has no counterpart there, so that period is left out. */
+  protected readonly gameListParams = computed<Params>(() => {
+    const { variant, opponentId, players, mode, checkoutMode } = this.filterValue();
+    const period = this.period();
+    const start = periodStart(period, new Date());
+    const range: DayRange = period === 'custom' ? this.range() : start && [start, new Date()];
+    const params: Record<string, unknown> = {
+      variant,
+      mode,
+      checkoutMode,
+      opponentId,
+      players,
+      period: range ? DAY_RANGE_PARAM.format(range) || null : null,
+    };
+    return Object.fromEntries(Object.entries(params).filter(([, value]) => value != null));
   });
 
   constructor() {
@@ -229,6 +253,8 @@ export class StatisticsComponent {
   /** How a filter's value reads on a chip; null for one this page does not know. */
   private labelOf(key: string, value: unknown): string | null {
     switch (key) {
+      case 'variant':
+        return GAME_VARIANTS.find((option) => option.value === value)?.label ?? null;
       case 'opponentId': {
         const name = this.opponents().find((player) => player.id === value)?.name;
         return name ? `Gegen ${name}` : null;

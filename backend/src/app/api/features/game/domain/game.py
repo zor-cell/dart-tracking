@@ -136,6 +136,16 @@ class Game:
             for _, scores in self._replay()
         ]
 
+    def remaining_before_turns(self) -> list[int]:
+        """Points each turn's player still needed as the turn began, in turn order;
+        in elimination that holds the resets the others caused."""
+        before: list[int] = []
+        needed = {player.id: int(self.mode) for player in self.players}
+        for turn, scores in self._replay():
+            before.append(needed[turn.player_id])
+            needed = {player_id: self.mode - score for player_id, score in scores.items()}
+        return before
+
     def _scores(self) -> dict[int, int]:
         scores = {player.id: 0 for player in self.players}
         for _, scores in self._replay():

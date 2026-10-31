@@ -1,4 +1,5 @@
 import { GameStatus } from '../dto/game-summary.dto';
+import { CheckoutMode } from './checkout-mode';
 import { GameMode } from './game-mode';
 import { GameVariant } from './game-variant';
 
@@ -8,6 +9,7 @@ export interface GameFilter {
   readonly query: string | null;
   readonly variant: GameVariant | null;
   readonly mode: GameMode | null;
+  readonly checkoutMode: CheckoutMode | null;
   readonly status: GameStatus | null;
   readonly opponentId: string | null;
   /** Bounds on the number of players, both inclusive. */

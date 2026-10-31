@@ -1,7 +1,7 @@
 import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Params, RouterLink } from '@angular/router';
 import { SelectButton } from 'primeng/selectbutton';
 import { DistanceScaleComponent } from '../../../game/components/distance-scale/distance-scale.component';
 import { FieldHeatmapComponent } from '../../../game/components/field-heatmap/field-heatmap.component';
@@ -38,6 +38,8 @@ import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
 })
 export class PrecisionStatisticsComponent {
   readonly statistics = input.required<PlayerStatisticsDto>();
+  /** The page's filters as the game list reads them, carried into its links. */
+  readonly listParams = input<Params>({});
 
   protected readonly layerOptions = [...HEATMAP_LAYERS];
   protected readonly layer = signal(storedHeatmapLayer());
@@ -85,5 +87,10 @@ export class PrecisionStatisticsComponent {
   protected selectLayer(layer: HeatmapLayer): void {
     this.layer.set(layer);
     storeHeatmapLayer(layer);
+  }
+
+  /** The game list narrowed to games with a visit in `band`, under the page's filters. */
+  protected bandParams(band: number): Params {
+    return { ...this.listParams(), visit: band };
   }
 }

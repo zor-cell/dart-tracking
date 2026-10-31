@@ -1,7 +1,7 @@
 @let totals = statistics();
 <ng-template #visitBand let-band="band" let-count="count">
   @if (count > 0) {
-    <a class="stat__link" routerLink="/account/games" [queryParams]="{ visit: band }">
+    <a class="stat__link" routerLink="/account/games" [queryParams]="bandParams(band)">
       {{ count }}<span class="sr-only">, Spiele zeigen</span>
       <i class="pi pi-angle-right stat__go" aria-hidden="true"></i>
     </a>

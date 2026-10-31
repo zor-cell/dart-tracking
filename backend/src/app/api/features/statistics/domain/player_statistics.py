@@ -157,8 +157,10 @@ class PlayerStatistics:
         checkout_mode: CheckoutMode,
         turns: list[Turn],
         refs: Sequence[VisitRef | None] | None = None,
+        starts: Sequence[int] | None = None,
     ) -> None:
-        """Counts one leg; `refs`, one per turn, say where each visit was thrown."""
+        """Counts one leg; `refs`, one per turn, say where each visit was thrown, and
+        `starts` what the player still needed as it began, where others change that."""
         finishes = (
             _DOUBLE_FINISHES if checkout_mode is CheckoutMode.DOUBLE_OUT else _SINGLE_FINISHES
         )
@@ -166,6 +168,8 @@ class PlayerStatistics:
         thrown = 0
 
         for index, turn in enumerate(turns):
+            if starts is not None:
+                remaining = starts[index]
             # What the player faced at the oche decides whether the visit aimed to score.
             if remaining > _HIGHEST_FINISH and not turn.busted:
                 self._add_scoring_visit(turn)

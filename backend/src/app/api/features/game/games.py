@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.core.services import rate_limit
 from app.api.core.socket.services.game_hub import hub
 from app.api.features.auth.services.current_user import AuthenticatedUser, CurrentUser
+from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.game_filter import GameFilter
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_status import GameStatus
@@ -138,6 +139,7 @@ async def list_games(
     q: str = Query("", max_length=64),
     variant: GameVariant | None = None,
     mode: GameMode | None = None,
+    checkout_mode: CheckoutMode | None = Query(None, alias="checkoutMode"),
     status: GameStatus | None = None,
     opponent: UUID | None = None,
     min_players: int | None = Query(None, ge=1, alias="minPlayers"),
@@ -151,6 +153,7 @@ async def list_games(
         query=q.strip() or None,
         variant=variant,
         mode=mode,
+        checkout_mode=checkout_mode,
         status=status,
         opponent_id=str(opponent) if opponent else None,
         min_players=min_players,
@@ -217,10 +220,20 @@ async def get_game_detail(game_id: str, user: AuthenticatedUser) -> GameDetailDt
         raise HTTPException(status_code=404, detail="game not found")
 
     statistics = []
+    starts = game.remaining_before_turns()
     for player in game.players:
         entry = PlayerStatistics()
-        turns = [turn for turn in game.turns if turn.player_id == player.id and turn.darts]
-        entry.add_leg(game.mode, game.checkout_mode, turns)
+        own = [
+            (turn, start)
+            for turn, start in zip(game.turns, starts, strict=True)
+            if turn.player_id == player.id and turn.darts
+        ]
+        entry.add_leg(
+            game.mode,
+            game.checkout_mode,
+            [turn for turn, _ in own],
+            starts=[start for _, start in own],
+        )
         statistics.append(entry)
 
     return GameDetailDto.from_entity(game, record, statistics)

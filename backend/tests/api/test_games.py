@@ -211,6 +211,7 @@ def test_history_filters_and_paging(alice, session):
 
     assert ids(variant="elimination") == {elimination}
     assert ids(mode=501) == {elimination}
+    assert ids(checkoutMode="double_out") == {finished, elimination, abandoned}
     assert ids(status="finished") == {finished}
     assert ids(status="abandoned") == {abandoned}
     assert ids(status="active") == {elimination}

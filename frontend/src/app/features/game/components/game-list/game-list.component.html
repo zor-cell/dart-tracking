@@ -37,6 +37,17 @@
         [showClear]="true"
         fluid
       />
+      <label class="list-filters__label" for="filter-checkout">Checkout</label>
+      <p-select
+        inputId="filter-checkout"
+        formControlName="checkoutMode"
+        [options]="checkoutOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Alle"
+        [showClear]="true"
+        fluid
+      />
       <label class="list-filters__label" for="filter-status">Status</label>
       <p-select
         inputId="filter-status"

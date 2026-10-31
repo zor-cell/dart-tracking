@@ -14,6 +14,17 @@
     (reset)="resetFilters()"
   >
     <form class="list-filters" [formGroup]="filters">
+      <label class="list-filters__label" for="filter-variant">Variante</label>
+      <p-select
+        inputId="filter-variant"
+        formControlName="variant"
+        [options]="variantOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Alle"
+        [showClear]="true"
+        fluid
+      />
       <label class="list-filters__label" for="filter-opponent">Gegner</label>
       <p-select
         inputId="filter-opponent"
@@ -135,7 +146,7 @@
       } @else {
         <p-tabpanels>
           <p-tabpanel value="precision">
-            <app-precision-statistics [statistics]="totals" />
+            <app-precision-statistics [statistics]="totals" [listParams]="gameListParams()" />
           </p-tabpanel>
           <p-tabpanel value="checkout">
             <app-checkout-statistics [statistics]="totals" />

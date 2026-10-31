@@ -29,6 +29,7 @@ import {
   VisitBand,
   visitBandLabel,
 } from '../../models/game-filter';
+import { CHECKOUT_MODES, CheckoutMode } from '../../models/checkout-mode';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { GAME_VARIANTS, GameVariant } from '../../models/game-variant';
 import { GameHistoryService } from '../../services/game-history.service';
@@ -46,12 +47,13 @@ import {
 import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
 
 /** The filters whose picks are remembered and offered back; the period is not among them. */
-const REMEMBERED = ['variant', 'mode', 'status', 'opponentId', 'players'] as const;
+const REMEMBERED = ['variant', 'mode', 'checkoutMode', 'status', 'opponentId', 'players'] as const;
 
 /** How each filter is kept in the query params. */
 const FILTER_PARAMS = {
   variant: oneOfParam(GAME_VARIANTS.map((variant) => variant.value)),
   mode: oneOfParam(GAME_MODES),
+  checkoutMode: oneOfParam(CHECKOUT_MODES.map((mode) => mode.value)),
   status: oneOfParam(Object.keys(GAME_STATUS_LABELS) as GameStatus[]),
   opponentId: TEXT_PARAM,
   players: oneOfParam(Object.keys(PLAYER_COUNTS) as PlayerCount[]),
@@ -98,6 +100,7 @@ export class GameListComponent {
 
   protected readonly variantOptions = [...GAME_VARIANTS];
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
+  protected readonly checkoutOptions = [...CHECKOUT_MODES];
   protected readonly statusOptions = Object.entries(GAME_STATUS_LABELS).map(([value, label]) => ({
     label,
     value: value as GameStatus,
@@ -116,6 +119,7 @@ export class GameListComponent {
   protected readonly filters = this.fb.group({
     variant: this.fb.control<GameVariant | null>(null),
     mode: this.fb.control<GameMode | null>(null),
+    checkoutMode: this.fb.control<CheckoutMode | null>(null),
     status: this.fb.control<GameStatus | null>(null),
     opponentId: this.fb.control<string | null>(null),
     players: this.fb.control<PlayerCount | null>(null),
@@ -176,6 +180,8 @@ export class GameListComponent {
         return GAME_VARIANTS.find((option) => option.value === value)?.label ?? null;
       case 'mode':
         return GAME_MODES.some((mode) => mode === value) ? `${value}` : null;
+      case 'checkoutMode':
+        return CHECKOUT_MODES.find((option) => option.value === value)?.label ?? null;
       case 'status':
         return typeof value === 'string' && Object.hasOwn(GAME_STATUS_LABELS, value)
           ? GAME_STATUS_LABELS[value as GameStatus]
@@ -233,13 +239,14 @@ export class GameListComponent {
 
   /** The form as a filter. */
   private criteria(): GameFilter {
-    const { variant, mode, status, opponentId, players, period, visit } =
+    const { variant, mode, checkoutMode, status, opponentId, players, period, visit } =
       this.filters.getRawValue();
     const count = players ? PLAYER_COUNTS[players] : null;
     return {
       query: this.query() || null,
       variant,
       mode,
+      checkoutMode,
       status,
       opponentId,
       minPlayers: count?.min ?? null,

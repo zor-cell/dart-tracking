@@ -8,13 +8,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.dart import Dart
+from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.game_filter import GameFilter
+from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_status import (
     ABANDON_AFTER,
     GameStatus,
     counts_in_statistics,
     effective_status,
 )
+from app.api.features.game.domain.player import Player
 from app.api.features.game.domain.turn import Turn
 from app.api.features.game.persistence.dart import DartTable
 from app.api.features.game.persistence.game import GameTable
@@ -102,27 +105,39 @@ class StatisticsRepository:
 
         counted: set[str] = set()
         for seat in seats:
+            game_rows = [row for row in turn_rows if row.game_id == seat.id]
+            if not game_rows:
+                continue
+            game = Game(
+                id=seat.id,
+                mode=GameMode(seat.mode),
+                players=[
+                    Player(id=index, name="", identity_id="")
+                    for index in sorted({row.player_index for row in game_rows})
+                ],
+                variant=GameVariant(seat.variant),
+                checkout_mode=CheckoutMode(seat.checkout_mode),
+                turns=[
+                    Turn(
+                        player_id=row.player_index,
+                        darts=darts.get((row.game_id, row.turn_index), []),
+                        busted=row.busted,
+                    )
+                    for row in game_rows
+                ],
+            )
+            # The whole game is replayed, since in elimination the others reset your score.
             own = [
-                row
-                for row in turn_rows
-                if row.game_id == seat.id and row.player_index == seat.player_index
-            ]
-            turns = [
-                Turn(
-                    player_id=row.player_index,
-                    darts=darts.get((row.game_id, row.turn_index), []),
-                    busted=row.busted,
+                (row, turn, start)
+                for row, turn, start in zip(
+                    game_rows, game.turns, game.remaining_before_turns(), strict=True
                 )
-                for row in own
+                if row.player_index == seat.player_index
             ]
+            turns = [turn for _, turn, _ in own]
             own_darts = sum(len(turn.darts) for turn in turns)
             status = effective_status(GameStatus(seat.status), seat.updated_at)
             if not counts_in_statistics(status, own_darts):
-                continue
-
-            # Elimination legs are left out: the countdown below cannot see the
-            # resets other players caused, so every rate it derives would be wrong.
-            if GameVariant(seat.variant) is not GameVariant.X01:
                 continue
 
             if last is not None and seat.id not in counted and len(counted) == last:
@@ -133,9 +148,15 @@ class StatisticsRepository:
                 None
                 if (visit := visit_of.get((row.game_id, row.turn_index))) is None
                 else VisitRef(seat.id, visit, seat.created_at)
-                for row in own
+                for row, _, _ in own
             ]
-            statistics.add_leg(seat.mode, CheckoutMode(seat.checkout_mode), turns, refs)
+            statistics.add_leg(
+                seat.mode,
+                CheckoutMode(seat.checkout_mode),
+                turns,
+                refs,
+                starts=[start for _, _, start in own],
+            )
 
         return statistics
 

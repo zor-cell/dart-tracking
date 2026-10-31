@@ -112,7 +112,6 @@ def test_statistics_count_finished_legs(alice, session):
 
 
 def test_statistics_leave_out_what_does_not_count(alice, session, register):
-    session.play(own_game(alice, variant="elimination"), *WINNING_LEG)
     session.play(own_game(alice), [T20, T20])
     discarded = own_game(alice)
     session.play(discarded, *WINNING_LEG)
@@ -123,6 +122,21 @@ def test_statistics_leave_out_what_does_not_count(alice, session, register):
     session.play(alice.new_game(alice.add_player("Bob"))["id"], *WINNING_LEG)
 
     assert statistics(alice)["legs"] == 0
+
+
+def test_elimination_counts_against_what_the_others_reset(alice, session):
+    game_id = alice.new_game(
+        alice.own_entry()["id"], alice.add_player("Bob"), variant="elimination"
+    )["id"]
+    # Bob draws level at 180 and resets me, so my 121 after it finishes nothing.
+    session.play(game_id, [T20] * 3, [T20] * 3, WINNING_LEG[1], [S1] * 3, [S1] * 3)
+    session.age_game(game_id, hours=48)
+
+    tally = statistics(alice)
+
+    assert (tally["legs"], tally["legsWon"], tally["darts"]) == (1, 0, 9)
+    assert (tally["points"], tally["checkoutAttempts"]) == (304, 0)
+    assert alice.get("/statistics", params={"variant": "x01"}).json()["legs"] == 0
 
 
 def test_abandoned_game_counts_from_nine_own_darts(alice, session):

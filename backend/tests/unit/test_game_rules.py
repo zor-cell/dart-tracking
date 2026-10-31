@@ -242,6 +242,17 @@ def test_elimination_resets_whoever_was_drawn_level_with():
     assert game.remaining(1) == 241
 
 
+def test_each_turn_starts_from_what_the_others_left_standing():
+    game = new_game(variant=GameVariant.ELIMINATION)
+    throw(game, "T20")
+    game.next_player()
+    throw(game, "T20")
+    game.next_player()
+    throw(game, "20")
+
+    assert game.remaining_before_turns() == [301, 301, 301]
+
+
 def test_elimination_leaves_players_on_zero_alone():
     game = new_game(players=3, variant=GameVariant.ELIMINATION)
     throw(game, "0")
