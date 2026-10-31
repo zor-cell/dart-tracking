@@ -57,13 +57,15 @@ import {
 } from '../../../../core/view/models/query-state';
 import { CheckoutStatisticsComponent } from '../checkout-statistics/checkout-statistics.component';
 import { PrecisionStatisticsComponent } from '../precision-statistics/precision-statistics.component';
+import { TrendStatisticsComponent } from '../trend-statistics/trend-statistics.component';
+import { VisitDistributionComponent } from '../visit-distribution/visit-distribution.component';
 
 /** The filters whose picks are remembered and offered back; the period is not among them. */
 const REMEMBERED = ['variant', 'opponentId', 'players', 'mode', 'checkoutMode'] as const;
 
-type StatisticsTab = 'precision' | 'checkout';
+type StatisticsTab = 'precision' | 'checkout' | 'trend';
 
-const TABS: readonly StatisticsTab[] = ['precision', 'checkout'];
+const TABS: readonly StatisticsTab[] = ['precision', 'checkout', 'trend'];
 
 /** Where the last opened tab is kept; the view opens on it. */
 const TAB_KEY = 'dart-tracking.statisticsTab';
@@ -103,6 +105,8 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
     TabPanel,
     TabPanels,
     Tabs,
+    TrendStatisticsComponent,
+    VisitDistributionComponent,
   ],
   templateUrl: './statistics.component.html',
   styleUrl: './statistics.component.scss',
@@ -187,7 +191,7 @@ export class StatisticsComponent {
     () => this.period() !== 'all' || this.chips().some((chip) => chip.removable !== false),
   );
 
-  private readonly criteria = computed<StatisticsFilter>(() => {
+  protected readonly criteria = computed<StatisticsFilter>(() => {
     const { variant, opponentId, players, mode, checkoutMode } = this.filterValue();
     const count = players ? PLAYER_COUNTS[players] : null;
     const period = this.period();

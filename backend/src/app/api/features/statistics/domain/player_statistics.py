@@ -67,7 +67,7 @@ class PlayerStatistics:
     # Where each was first thrown, the oldest game on a tie; None without references.
     best_visit_at: VisitRef | None = None
     highest_finish_at: VisitRef | None = None
-    visit_scores: Counter[int] = field(default_factory=Counter)  # scoring visits by points
+    visit_scores: Counter[int] = field(default_factory=Counter)  # unbusted visits by points
     visits_180: int = 0
     visits_140_plus: int = 0
     visits_100_plus: int = 0
@@ -135,9 +135,10 @@ class PlayerStatistics:
     @property
     def favourite_visit(self) -> int | None:
         """The score thrown most often, the higher one on a tie."""
-        if not self.visit_scores:
+        scored = [points for points in self.visit_scores if points > 0]
+        if not scored:
             return None
-        return max(self.visit_scores, key=lambda points: (self.visit_scores[points], points))
+        return max(scored, key=lambda points: (self.visit_scores[points], points))
 
     @property
     def double_distance(self) -> float | None:
@@ -200,8 +201,7 @@ class PlayerStatistics:
                 continue
 
             self.points += turn.points
-            if turn.points > 0:
-                self.visit_scores[turn.points] += 1
+            self.visit_scores[turn.points] += 1
             remaining -= turn.points
             ref = None if refs is None else refs[index]
             if turn.points > self.best_visit or (

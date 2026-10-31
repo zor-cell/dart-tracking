@@ -214,6 +214,30 @@ def test_best_visit_and_finish_point_into_the_oldest_game_that_threw_them(alice,
     assert [detail["visits"][i]["points"] for i in (2, 4)] == [180, 121]
 
 
+def test_trend_tallies_each_counted_game_oldest_first(alice, session):
+    older = own_game(alice)
+    session.play(older, [MISS] * 3, *WINNING_LEG)
+    session.age_game(older, hours=48)
+    newer = own_game(alice)
+    session.play(newer, *WINNING_LEG)
+
+    trend = alice.get("/statistics/trend").json()
+
+    assert [point["gameId"] for point in trend] == [older, newer]
+    assert [point["darts"] for point in trend] == [9, 6]
+    assert trend[1]["average"] == pytest.approx(150.5)
+    assert alice.get("/statistics/trend", params={"last": 1}).json()[0]["gameId"] == newer
+
+
+def test_visit_scores_count_every_unbusted_visit(alice, session):
+    session.play(own_game(alice), [MISS] * 3, *WINNING_LEG)
+
+    tally = statistics(alice)
+
+    assert tally["visitScores"] == {"0": 1, "180": 1, "121": 1}
+    assert tally["favouriteVisit"] == 180
+
+
 def test_accuracy_report_is_for_admins(alice, anon, session):
     assert anon.get("/evaluation/accuracy").status_code == 401
     assert alice.get("/evaluation/accuracy").status_code == 403

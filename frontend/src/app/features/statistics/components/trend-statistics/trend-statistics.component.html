@@ -1,0 +1,35 @@
+<section class="panel">
+  <header class="trend__header">
+    <h2 class="panel__title">Verlauf</h2>
+    <p-selectbutton
+      [options]="metricOptions"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+      [ngModel]="metric()"
+      (ngModelChange)="metric.set($event)"
+      ariaLabel="Kennzahl im Verlauf"
+      size="small"
+    />
+  </header>
+  @if (failed()) {
+    <app-load-error message="Der Verlauf konnte nicht geladen werden." (retry)="reload()" />
+  } @else if (points(); as points) {
+    @if (points.length < 2) {
+      <app-empty-state icon="pi-chart-line">
+        <p>Für einen Verlauf braucht es mindestens zwei gewertete Spiele.</p>
+      </app-empty-state>
+    } @else {
+      <p-chart
+        type="line"
+        height="16rem"
+        [data]="data()"
+        [options]="options()"
+        [ariaLabel]="ariaLabel()"
+      />
+      <p class="panel__hint">Punkte: einzelne Spiele. Linie: Ø der letzten {{ window }} Spiele.</p>
+    }
+  } @else {
+    <app-loading-state label="Verlauf wird geladen" />
+  }
+</section>

@@ -233,3 +233,4 @@ def test_a_higher_visit_wins_over_an_older_one():
     statistics.add_leg(501, CheckoutMode.DOUBLE_OUT, [visit("T20", "T20")], [new])
 
     assert (statistics.best_visit, statistics.best_visit_at.game_id) == (120, "new")
+

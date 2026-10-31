@@ -1,0 +1,42 @@
+/* Same compact toggle as the trend's. */
+:host {
+  --p-togglebutton-sm-padding: 0.2rem;
+  --p-togglebutton-content-sm-padding: 0.2rem 0.5rem;
+  --p-togglebutton-sm-font-size: 0.75rem;
+
+  display: block;
+}
+
+.visits__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+
+  .panel__title {
+    margin: 0;
+  }
+}
+
+.visits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.visits__chip {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.visits__none {
+  color: var(--p-text-muted-color);
+  font-size: 0.85rem;
+}

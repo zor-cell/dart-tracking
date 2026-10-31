@@ -1,0 +1,26 @@
+/* Same compact toggle as the heatmap layers. */
+:host {
+  --p-togglebutton-sm-padding: 0.2rem;
+  --p-togglebutton-content-sm-padding: 0.2rem 0.5rem;
+  --p-togglebutton-sm-font-size: 0.75rem;
+
+  display: block;
+}
+
+.trend__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+
+  .panel__title {
+    margin: 0;
+  }
+
+  /* Stays at the right edge, also when it wraps below the title. */
+  p-selectbutton {
+    margin-left: auto;
+  }
+}

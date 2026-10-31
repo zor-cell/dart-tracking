@@ -1,6 +1,7 @@
 """Loads the legs a player actually threw, for the tally in `domain/`."""
 
 from collections import Counter
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from sqlalchemy import or_, select
@@ -27,6 +28,23 @@ from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.persistence.turn import TurnTable
 from app.api.features.player.persistence.player import PlayerTable
 from app.api.features.statistics.domain.player_statistics import PlayerStatistics, VisitRef
+from app.api.features.statistics.domain.trend import TrendPoint
+
+
+@dataclass(frozen=True)
+class _Leg:
+    """One counted seat: the player's own turns with where and from what each began."""
+
+    game_id: str
+    played_at: datetime
+    mode: int
+    checkout_mode: CheckoutMode
+    turns: list[Turn]
+    refs: list[VisitRef | None]
+    starts: list[int]
+
+    def add_to(self, statistics: PlayerStatistics) -> None:
+        statistics.add_leg(self.mode, self.checkout_mode, self.turns, self.refs, self.starts)
 
 
 class StatisticsRepository:
@@ -37,9 +55,34 @@ class StatisticsRepository:
         criteria: GameFilter = GameFilter(),
         last: int | None = None,
     ) -> PlayerStatistics:
-        """Three queries for the games `criteria` selects, not four per game: the
-        seats, their turns, their darts — then the rules run in Python. `last`
+        """Every counted leg of the games `criteria` selects in one tally; `last`
         keeps only the most recent games that count."""
+        statistics = PlayerStatistics()
+        for leg in await self._legs(session, user_id, criteria, last):
+            leg.add_to(statistics)
+        return statistics
+
+    async def trend(
+        self,
+        session: AsyncSession,
+        user_id: str,
+        criteria: GameFilter = GameFilter(),
+        last: int | None = None,
+    ) -> list[TrendPoint]:
+        """The same games tallied one by one, oldest first."""
+        games: dict[str, TrendPoint] = {}
+        for leg in reversed(await self._legs(session, user_id, criteria, last)):
+            point = games.setdefault(
+                leg.game_id, TrendPoint(leg.game_id, leg.played_at, PlayerStatistics())
+            )
+            leg.add_to(point.statistics)
+        return list(games.values())
+
+    async def _legs(
+        self, session: AsyncSession, user_id: str, criteria: GameFilter, last: int | None
+    ) -> list[_Leg]:
+        """Three queries for the games `criteria` selects, not four per game: the
+        seats, their turns, their darts — then the rules run in Python. Newest first."""
         cutoff = datetime.now(UTC) - ABANDON_AFTER
         seats = (
             await session.execute(
@@ -68,9 +111,8 @@ class StatisticsRepository:
             )
         ).all()
 
-        statistics = PlayerStatistics()
         if not seats:
-            return statistics
+            return []
 
         ids = [seat.id for seat in seats]
         turn_rows = (
@@ -103,6 +145,7 @@ class StatisticsRepository:
                 visit_of[row.game_id, row.turn_index] = visits_so_far[row.game_id]
                 visits_so_far[row.game_id] += 1
 
+        legs: list[_Leg] = []
         counted: set[str] = set()
         for seat in seats:
             game_rows = [row for row in turn_rows if row.game_id == seat.id]
@@ -150,15 +193,19 @@ class StatisticsRepository:
                 else VisitRef(seat.id, visit, seat.created_at)
                 for row, _, _ in own
             ]
-            statistics.add_leg(
-                seat.mode,
-                CheckoutMode(seat.checkout_mode),
-                turns,
-                refs,
-                starts=[start for _, _, start in own],
+            legs.append(
+                _Leg(
+                    game_id=seat.id,
+                    played_at=seat.created_at,
+                    mode=seat.mode,
+                    checkout_mode=CheckoutMode(seat.checkout_mode),
+                    turns=turns,
+                    refs=refs,
+                    starts=[start for _, _, start in own],
+                )
             )
 
-        return statistics
+        return legs
 
 
 repository = StatisticsRepository()

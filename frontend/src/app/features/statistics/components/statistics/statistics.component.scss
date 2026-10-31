@@ -24,3 +24,10 @@ p-tab {
 .status {
   margin-top: 1.25rem;
 }
+
+/* The trend tab's panels, spaced like the other tabs'. */
+.trend {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}

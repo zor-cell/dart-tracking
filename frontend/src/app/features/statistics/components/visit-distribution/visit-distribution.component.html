@@ -1,0 +1,45 @@
+<section class="panel">
+  <header class="visits__header">
+    <h2 class="panel__title">Deine Visits</h2>
+    <p-selectbutton
+      [options]="widthOptions"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+      [ngModel]="width()"
+      (ngModelChange)="selectWidth($event)"
+      ariaLabel="Balkenbreite"
+      size="small"
+    />
+  </header>
+  <p-chart
+    type="bar"
+    height="13rem"
+    [data]="data()"
+    [options]="options()"
+    [ariaLabel]="ariaLabel()"
+  />
+  @if (picked(); as bin) {
+    @if (bin.from !== bin.to) {
+      <p class="panel__hint">{{ rangeOf(bin) }}: {{ bin.total }} Visits</p>
+    }
+    <ul class="visits" aria-live="polite">
+      @for (entry of bin.scores; track entry.score) {
+        <li class="visits__chip">
+          <strong>{{ entry.score }}</strong> &times; {{ entry.count }}
+        </li>
+      } @empty {
+        <li class="visits__none">Kein Visit in diesem Bereich.</li>
+      }
+    </ul>
+  } @else {
+    <p class="panel__hint">Am häufigsten geworfen. Tippe auf einen Balken für seine Werte.</p>
+    <ul class="visits" aria-live="polite">
+      @for (entry of top(); track entry.score) {
+        <li class="visits__chip">
+          <strong>{{ entry.score }}</strong> &times; {{ entry.count }}
+        </li>
+      }
+    </ul>
+  }
+</section>

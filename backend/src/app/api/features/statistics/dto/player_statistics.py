@@ -84,6 +84,7 @@ class PlayerStatisticsDto(CamelModel):
     best_visit_at: VisitRefDto | None
     highest_finish_at: VisitRefDto | None
     favourite_visit: int | None
+    visit_scores: dict[int, int]
     visits180: int
     visits140_plus: int
     visits100_plus: int
@@ -116,6 +117,7 @@ class PlayerStatisticsDto(CamelModel):
             best_visit_at=VisitRefDto.from_entity(statistics.best_visit_at),
             highest_finish_at=VisitRefDto.from_entity(statistics.highest_finish_at),
             favourite_visit=statistics.favourite_visit,
+            visit_scores=dict(statistics.visit_scores),
             visits180=statistics.visits_180,
             visits140_plus=statistics.visits_140_plus,
             visits100_plus=statistics.visits_100_plus,

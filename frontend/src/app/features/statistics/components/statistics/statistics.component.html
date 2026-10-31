@@ -119,10 +119,11 @@
     </div>
   </p-popover>
 
-  <p-tabs [(value)]="tab">
+  <p-tabs [(value)]="tab" [showNavigators]="false">
     <p-tablist>
       <p-tab value="precision">Präzision</p-tab>
       <p-tab value="checkout">Checkout</p-tab>
+      <p-tab value="trend">Trend</p-tab>
     </p-tablist>
     @if (loading()) {
       <app-loading-state class="status" label="Statistik wird geladen" />
@@ -150,6 +151,12 @@
           </p-tabpanel>
           <p-tabpanel value="checkout">
             <app-checkout-statistics [statistics]="totals" />
+          </p-tabpanel>
+          <p-tabpanel value="trend">
+            <div class="trend">
+              <app-trend-statistics [filter]="criteria()" />
+              <app-visit-distribution [visitScores]="totals.visitScores" />
+            </div>
           </p-tabpanel>
         </p-tabpanels>
       }
