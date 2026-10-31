@@ -3,3 +3,13 @@
   flex-direction: column;
   gap: 1.25rem;
 }
+
+/* Beside the two cards on its left, its drawing taking the room at the bottom. */
+.stat--tall {
+  grid-row: span 2;
+
+  .stat__scale {
+    height: 4rem;
+    margin-top: auto;
+  }
+}

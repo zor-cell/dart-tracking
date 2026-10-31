@@ -7,6 +7,4 @@ export interface TrendPointDto {
   readonly firstNineAverage: number;
   readonly checkoutHits: number;
   readonly checkoutAttempts: number;
-  /** Mean distance (mm) between two located darts of a visit; null without such a pair. */
-  readonly grouping: number | null;
 }

@@ -1,17 +1,16 @@
 import { TrendPointDto } from '../dto/trend-point.dto';
 
 /** Which figure the trend follows across the games. */
-export type TrendMetric = 'average' | 'firstNine' | 'checkout' | 'grouping';
+export type TrendMetric = 'average' | 'firstNine' | 'checkout';
 
 export const TREND_METRICS: readonly { label: string; value: TrendMetric; unit: string }[] = [
   { label: '3-Dart-Ø', value: 'average', unit: '' },
   { label: 'First-9-Ø', value: 'firstNine', unit: '' },
   { label: 'Checkout', value: 'checkout', unit: ' %' },
-  { label: 'Pfeilabstand', value: 'grouping', unit: ' mm' },
 ];
 
-/** Games the running line takes together. */
-export const TREND_WINDOW = 10;
+/** The newest game's share of the trend line; whatever came before keeps the rest. */
+export const TREND_WEIGHT = 0.2;
 
 /** A game's value; null where it has none, such as no checkout chance. */
 export function trendValue(point: TrendPointDto, metric: TrendMetric): number | null {
@@ -24,27 +23,28 @@ export function trendValue(point: TrendPointDto, metric: TrendMetric): number | 
       return point.checkoutAttempts === 0
         ? null
         : (point.checkoutHits / point.checkoutAttempts) * 100;
-    case 'grouping':
-      return point.grouping;
   }
 }
 
-/** The value over the last `TREND_WINDOW` games up to each game. The checkout pools its
- * darts, since a game's rate rests on very few; the others take the games' mean. */
-export function runningTrend(
+/** A weighted average up to each game: the newest counts `TREND_WEIGHT`, each one before it
+ * that share less again. The checkout weighs its darts, since a game's rate rests on very few. */
+export function weightedTrend(
   points: readonly TrendPointDto[],
   metric: TrendMetric,
 ): (number | null)[] {
-  return points.map((_, index) => {
-    const window = points.slice(Math.max(0, index - TREND_WINDOW + 1), index + 1);
-    if (metric === 'checkout') {
-      const attempts = window.reduce((sum, point) => sum + point.checkoutAttempts, 0);
-      const hits = window.reduce((sum, point) => sum + point.checkoutHits, 0);
-      return attempts === 0 ? null : (hits / attempts) * 100;
+  let sum = 0;
+  let weight = 0;
+  return points.map((point) => {
+    const value = trendValue(point, metric);
+    const [amount, count] =
+      metric === 'checkout'
+        ? [point.checkoutHits * 100, point.checkoutAttempts]
+        : [value ?? 0, value === null ? 0 : 1];
+    // A game without a value leaves the line where it was.
+    if (count > 0) {
+      sum = TREND_WEIGHT * amount + (1 - TREND_WEIGHT) * sum;
+      weight = TREND_WEIGHT * count + (1 - TREND_WEIGHT) * weight;
     }
-    const values = window.flatMap((point) => trendValue(point, metric) ?? []);
-    return values.length === 0
-      ? null
-      : values.reduce((sum, value) => sum + value, 0) / values.length;
+    return weight === 0 ? null : sum / weight;
   });
 }

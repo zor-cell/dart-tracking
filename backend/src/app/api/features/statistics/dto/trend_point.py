@@ -15,12 +15,10 @@ class TrendPointDto(CamelModel):
     first_nine_average: float
     checkout_hits: int
     checkout_attempts: int
-    grouping: float | None
 
     @classmethod
     def from_entity(cls, point: TrendPoint) -> Self:
         statistics = point.statistics
-        grouping = statistics.grouping
         return cls(
             game_id=point.game_id,
             played_at=point.played_at,
@@ -29,5 +27,4 @@ class TrendPointDto(CamelModel):
             first_nine_average=round(statistics.first_nine_average, 2),
             checkout_hits=statistics.checkout_hits,
             checkout_attempts=statistics.checkout_attempts,
-            grouping=None if grouping is None else round(grouping, 1),
         )

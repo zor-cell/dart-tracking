@@ -20,6 +20,8 @@ export interface PlayerStatisticsDto {
   readonly highestFinishAt: VisitRefDto | null;
   /** The scoring visit thrown most often; null without one. */
   readonly favouriteVisit: number | null;
+  /** The finish thrown most often; null without a won leg. */
+  readonly favouriteFinish: number | null;
   /** Unbusted visits by their points, misses included, keyed by the points. */
   readonly visitScores: Readonly<Record<string, number>>;
   /** Visits reaching each score; every band includes the higher ones. */

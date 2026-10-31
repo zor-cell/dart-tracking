@@ -3,8 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
 import { environment } from '../../../../environments/environment';
-import { PlayerStatisticsDto } from '../dto/player-statistics.dto';
-import { TrendPointDto } from '../dto/trend-point.dto';
+import { StatisticsOverviewDto } from '../dto/statistics-overview.dto';
 import { StatisticsFilter } from '../models/statistics-filter';
 
 /** The signed-in account's own throwing record, or that of a player from its address book
@@ -14,19 +13,9 @@ export class StatisticsService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.httpApiUrl}/statistics`;
 
-  load(filter: StatisticsFilter, player: string | null = null): Promise<PlayerStatisticsDto> {
+  load(filter: StatisticsFilter, player: string | null = null): Promise<StatisticsOverviewDto> {
     return firstValueFrom(
-      this.http.get<PlayerStatisticsDto>(this.baseUrl, {
-        params: this.params(filter, player),
-        context: SILENT_ERROR_CONTEXT,
-      }),
-    );
-  }
-
-  /** The same games one by one, oldest first. */
-  trend(filter: StatisticsFilter, player: string | null = null): Promise<TrendPointDto[]> {
-    return firstValueFrom(
-      this.http.get<TrendPointDto[]>(`${this.baseUrl}/trend`, {
+      this.http.get<StatisticsOverviewDto>(this.baseUrl, {
         params: this.params(filter, player),
         context: SILENT_ERROR_CONTEXT,
       }),

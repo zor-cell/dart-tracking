@@ -260,9 +260,27 @@
           Richtung.
         </app-info-hint>
       </dt>
-      @if (spread(); as spread) {
-        <dd class="stat__value spread">
+      <dd class="stat__value">
+        @if (spread(); as spread) {
           {{ spread.ratio | number: '1.1-1' }}&times;
+        } @else {
+          &ndash;
+        }
+      </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-stat-delta
+            [name]="other.name"
+            [own]="spread()?.ratio ?? null"
+            [other]="otherSpread()?.ratio ?? null"
+            [digits]="1"
+            unit="×"
+            [lowerIsBetter]="true"
+          />
+        </dd>
+      }
+      @if (spread(); as spread) {
+        <dd class="stat__scale">
           <svg class="spread__shape" viewBox="-1.2 -1.2 2.4 2.4" aria-hidden="true">
             <line class="spread__axis" x1="-1.2" y1="0" x2="1.2" y2="0" />
             <line class="spread__axis" x1="0" y1="-1.2" x2="0" y2="1.2" />
@@ -284,20 +302,6 @@
               />
             }
           </svg>
-        </dd>
-      } @else {
-        <dd class="stat__value">&ndash;</dd>
-      }
-      @if (other) {
-        <dd class="stat__hint">
-          <app-stat-delta
-            [name]="other.name"
-            [own]="spread()?.ratio ?? null"
-            [other]="otherSpread()?.ratio ?? null"
-            [digits]="1"
-            unit="×"
-            [lowerIsBetter]="true"
-          />
         </dd>
       }
     </div>

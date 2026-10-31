@@ -14,8 +14,7 @@ from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.persistence.player_repository import repository as players
-from app.api.features.statistics.dto.player_statistics import PlayerStatisticsDto
-from app.api.features.statistics.dto.trend_point import TrendPointDto
+from app.api.features.statistics.dto.statistics_overview import StatisticsOverviewDto
 from app.api.features.statistics.persistence.statistics_repository import repository
 from app.infrastructure import database
 
@@ -65,27 +64,15 @@ async def _compared(
     return found
 
 
-@router.get("", response_model=PlayerStatisticsDto)
+@router.get("", response_model=StatisticsOverviewDto)
 async def own_statistics(
     user: AuthenticatedUser, selection: Selection, player: Compared = None
-) -> PlayerStatisticsDto:
-    """The account's legs in the selected games, or the compared player's, in one tally."""
+) -> StatisticsOverviewDto:
+    """The account's legs in the selected games, or the compared player's, in one tally
+    and game by game."""
     criteria, last = selection
     async with database.session_scope() as session:
         compared = await _compared(session, user.id, player)
-        statistics = await repository.tally(session, user.id, criteria, last, compared)
+        overview = await repository.overview(session, user.id, criteria, last, compared)
 
-    return PlayerStatisticsDto.from_entity(statistics)
-
-
-@router.get("/trend", response_model=list[TrendPointDto])
-async def own_trend(
-    user: AuthenticatedUser, selection: Selection, player: Compared = None
-) -> list[TrendPointDto]:
-    """The same games one by one, oldest first, for how the figures move."""
-    criteria, last = selection
-    async with database.session_scope() as session:
-        compared = await _compared(session, user.id, player)
-        points = await repository.trend(session, user.id, criteria, last, compared)
-
-    return [TrendPointDto.from_entity(point) for point in points]
+    return StatisticsOverviewDto.from_overview(overview)

@@ -68,6 +68,7 @@ class PlayerStatistics:
     best_visit_at: VisitRef | None = None
     highest_finish_at: VisitRef | None = None
     visit_scores: Counter[int] = field(default_factory=Counter)  # unbusted visits by points
+    finishes: Counter[int] = field(default_factory=Counter)  # visits that won a leg, by points
     visits_180: int = 0
     visits_140_plus: int = 0
     visits_100_plus: int = 0
@@ -131,6 +132,13 @@ class PlayerStatistics:
             None if count == 0 else points / count
             for points, count in zip(self.dart_points, self.dart_counts, strict=True)
         ]
+
+    @property
+    def favourite_finish(self) -> int | None:
+        """The finish thrown most often, the higher one on a tie."""
+        if not self.finishes:
+            return None
+        return max(self.finishes, key=lambda points: (self.finishes[points], points))
 
     @property
     def favourite_visit(self) -> int | None:
@@ -208,6 +216,8 @@ class PlayerStatistics:
                 turn.points == self.best_visit > 0 and _first(ref, self.best_visit_at)
             ):
                 self.best_visit, self.best_visit_at = turn.points, ref
+            if remaining == 0:
+                self.finishes[turn.points] += 1
             if remaining == 0 and (
                 turn.points > self.highest_finish
                 or (turn.points == self.highest_finish and _first(ref, self.highest_finish_at))

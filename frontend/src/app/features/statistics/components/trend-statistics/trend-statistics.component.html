@@ -12,30 +12,24 @@
       size="small"
     />
   </header>
-  @if (failed()) {
-    <app-load-error message="Der Verlauf konnte nicht geladen werden." (retry)="reload()" />
-  } @else if (points(); as points) {
-    @if (points.length < 2) {
-      <app-empty-state icon="pi-chart-line">
-        <p>Für einen Verlauf braucht es mindestens zwei gewertete Spiele.</p>
-      </app-empty-state>
-    } @else {
-      <p class="panel__hint trend__legend">
-        <span><span class="trend__dot"></span>Einzelne Spiele</span>
-        <span>
-          <span class="trend__line" [class.trend__line--own]="!otherPoints()"></span>Ø der letzten
-          {{ window }} Spiele
-        </span>
-      </p>
-      <p-chart
-        type="line"
-        height="16rem"
-        [data]="data()"
-        [options]="options()"
-        [ariaLabel]="ariaLabel()"
-      />
-    }
+  @if (points().length < 2) {
+    <app-empty-state icon="pi-chart-line">
+      <p>Für einen Verlauf braucht es mindestens zwei gewertete Spiele.</p>
+    </app-empty-state>
   } @else {
-    <app-loading-state label="Verlauf wird geladen" />
+    <p class="panel__hint trend__legend">
+      <span><span class="trend__dot"></span>Einzelne Spiele</span>
+      <span>
+        <span class="trend__line" [class.trend__line--own]="!otherPoints()"></span>Trend, neue
+        Spiele zählen mehr
+      </span>
+    </p>
+    <p-chart
+      type="line"
+      height="16rem"
+      [data]="data()"
+      [options]="options()"
+      [ariaLabel]="ariaLabel()"
+    />
   }
 </section>

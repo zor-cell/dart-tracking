@@ -76,3 +76,9 @@ p-tab {
   height: 0.6rem;
   border-radius: 50%;
 }
+
+/* New figures on their way: the old ones stay, faded, so nothing jumps. */
+.reloading {
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}

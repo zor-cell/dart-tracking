@@ -4,20 +4,16 @@
   gap: 1.25rem;
 }
 
-.spread {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
+/* Centred under the figure, the height of the distance drawings beside it. */
 .spread__shape {
-  width: 2.5rem;
-  height: 2.5rem;
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .spread__axis {
   stroke: var(--p-content-border-color);
-  stroke-width: 0.04;
+  stroke-width: 0.07;
 }
 
 .spread__ellipse {

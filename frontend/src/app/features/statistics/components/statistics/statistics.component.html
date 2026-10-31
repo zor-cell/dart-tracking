@@ -177,7 +177,7 @@
       <p-tab value="checkout">Checkout</p-tab>
       <p-tab value="trend">Trend</p-tab>
     </p-tablist>
-    @if (loading()) {
+    @if (loading() && !totals()) {
       <app-loading-state class="status" label="Statistik wird geladen" />
     } @else if (failed()) {
       <app-load-error
@@ -197,7 +197,7 @@
           </p>
         </app-empty-state>
       } @else {
-        <p-tabpanels>
+        <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
           <p-tabpanel value="precision">
             <app-precision-statistics
               [statistics]="totals"
@@ -211,8 +211,8 @@
           <p-tabpanel value="trend">
             <div class="trend">
               <app-trend-statistics
-                [filter]="criteria()"
-                [compareId]="comparison() ? compareId() : null"
+                [points]="totals.trend"
+                [otherPoints]="comparison() ? (others()?.trend ?? null) : null"
                 [compareName]="comparison()?.name ?? null"
               />
               <app-visit-distribution

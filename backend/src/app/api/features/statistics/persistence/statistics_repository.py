@@ -28,6 +28,7 @@ from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.persistence.turn import TurnTable
 from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.persistence.player import PlayerTable
+from app.api.features.statistics.domain.overview import StatisticsOverview
 from app.api.features.statistics.domain.player_statistics import PlayerStatistics, VisitRef
 from app.api.features.statistics.domain.trend import TrendPoint
 
@@ -49,38 +50,26 @@ class _Leg:
 
 
 class StatisticsRepository:
-    async def tally(
+    async def overview(
         self,
         session: AsyncSession,
         user_id: str,
         criteria: GameFilter = GameFilter(),
         last: int | None = None,
         player: PlayerIdentity | None = None,
-    ) -> PlayerStatistics:
-        """Every counted leg of the games `criteria` selects in one tally; `last`
-        keeps only the most recent games that count. `player` tallies that one instead."""
-        statistics = PlayerStatistics()
-        for leg in await self._legs(session, _seats(user_id, player), criteria, last):
-            leg.add_to(statistics)
-        return statistics
-
-    async def trend(
-        self,
-        session: AsyncSession,
-        user_id: str,
-        criteria: GameFilter = GameFilter(),
-        last: int | None = None,
-        player: PlayerIdentity | None = None,
-    ) -> list[TrendPoint]:
-        """The same games tallied one by one, oldest first."""
-        games: dict[str, TrendPoint] = {}
+    ) -> StatisticsOverview:
+        """Every counted leg of the games `criteria` selects, in one tally and game by game;
+        `last` keeps only the most recent games that count, `player` reads that one instead."""
         legs = await self._legs(session, _seats(user_id, player), criteria, last)
+        totals = PlayerStatistics()
+        games: dict[str, TrendPoint] = {}
         for leg in reversed(legs):
+            leg.add_to(totals)
             point = games.setdefault(
                 leg.game_id, TrendPoint(leg.game_id, leg.played_at, PlayerStatistics())
             )
             leg.add_to(point.statistics)
-        return list(games.values())
+        return StatisticsOverview(totals, list(games.values()))
 
     async def _legs(
         self,

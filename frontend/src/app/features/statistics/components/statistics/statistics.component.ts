@@ -18,7 +18,7 @@ import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
-import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
+import { StatisticsOverviewDto } from '../../dto/statistics-overview.dto';
 import { COMPARE_COLOR, Comparison, OWN_COLOR } from '../../models/comparison';
 import { StatisticsFilter } from '../../models/statistics-filter';
 import {
@@ -126,9 +126,9 @@ export class StatisticsComponent {
   private readonly memory = inject(FilterMemoryService);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly totals = signal<PlayerStatisticsDto | null>(null);
+  protected readonly totals = signal<StatisticsOverviewDto | null>(null);
   /** The compared player's figures under the same filters, null while nobody is compared. */
-  protected readonly others = signal<PlayerStatisticsDto | null>(null);
+  protected readonly others = signal<StatisticsOverviewDto | null>(null);
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
   private requests = 0;

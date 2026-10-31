@@ -71,6 +71,17 @@ def test_favourite_visit_is_the_scoring_visit_thrown_most_often():
     assert statistics.favourite_visit == 26
 
 
+def test_favourite_finish_is_the_finish_thrown_most_often():
+    statistics = PlayerStatistics()
+    assert statistics.favourite_finish is None
+
+    for mode, finish in ((32, visit("D16")), (32, visit("16", "D8")), (40, visit("D20"))):
+        statistics.add_leg(mode, CheckoutMode.DOUBLE_OUT, [finish])
+
+    assert statistics.finishes == {32: 2, 40: 1}
+    assert statistics.favourite_finish == 32
+
+
 def test_lost_leg_counts_every_dart_at_a_double():
     statistics = PlayerStatistics()
     statistics.add_leg(

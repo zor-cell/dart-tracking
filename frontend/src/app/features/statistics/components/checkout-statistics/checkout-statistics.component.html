@@ -70,7 +70,7 @@
         </dd>
       }
     </div>
-    <div class="stat">
+    <div class="stat stat--tall">
       <dt class="stat__label">
         Ø Abstand zum Checkout
         <app-info-hint class="stat__info">
@@ -103,6 +103,21 @@
         </dd>
       } @else {
         <dd class="stat__value">&ndash;</dd>
+      }
+    </div>
+    <div class="stat">
+      <dt class="stat__label">Öftestes Finish</dt>
+      <dd class="stat__value">{{ totals.favouriteFinish ?? '–' }}</dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-stat-delta
+            [name]="other.name"
+            [own]="totals.favouriteFinish"
+            [other]="other.statistics.favouriteFinish"
+            [digits]="0"
+            [neutral]="true"
+          />
+        </dd>
       }
     </div>
   </dl>

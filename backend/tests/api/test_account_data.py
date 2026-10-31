@@ -221,12 +221,14 @@ def test_trend_tallies_each_counted_game_oldest_first(alice, session):
     newer = own_game(alice)
     session.play(newer, *WINNING_LEG)
 
-    trend = alice.get("/statistics/trend").json()
+    tally = statistics(alice)
+    trend = tally["trend"]
 
     assert [point["gameId"] for point in trend] == [older, newer]
     assert [point["darts"] for point in trend] == [9, 6]
+    assert tally["darts"] == 15
     assert trend[1]["average"] == pytest.approx(150.5)
-    assert alice.get("/statistics/trend", params={"last": 1}).json()[0]["gameId"] == newer
+    assert alice.get("/statistics", params={"last": 1}).json()["trend"][0]["gameId"] == newer
 
 
 def test_visit_scores_count_every_unbusted_visit(alice, session):
@@ -261,11 +263,10 @@ def test_compared_player_counts_only_in_games_the_account_can_see(alice, registe
     bob.accept(alice.invite(bob_id))
     session.play(own_game(bob), *WINNING_LEG)
     assert bobs()["legs"] == 1
-    assert len(alice.get("/statistics/trend", params={"player": bob_id}).json()) == 1
+    assert len(bobs()["trend"]) == 1
 
 
 def test_compared_player_comes_from_the_own_address_book(alice, register):
     carols = register("carol").add_player("Dave")
 
     assert alice.get("/statistics", params={"player": carols}).status_code == 404
-    assert alice.get("/statistics/trend", params={"player": carols}).status_code == 404
