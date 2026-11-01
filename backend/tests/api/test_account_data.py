@@ -256,6 +256,12 @@ def test_accuracy_report_is_for_admins(alice, anon, session):
 
     session.make_admin(alice)
     assert alice.get("/evaluation/accuracy").status_code == 200
+    assert alice.get("/evaluation/versions").json() == []
+    filtered = alice.get(
+        "/evaluation/accuracy",
+        params={"version": [4, 5], "mode": 501, "testRun": "true", "since": "2026-10-01T00:00:00Z"},
+    )
+    assert filtered.json()["games"] == []
 
 
 def test_compared_player_counts_only_in_games_the_account_can_see(alice, register, session):

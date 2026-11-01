@@ -9,6 +9,7 @@ from app.api.features.evaluation.domain.accuracy import (
     judge,
     summarise,
 )
+from app.api.features.evaluation.domain.evaluation_filter import EvaluationFilter
 from app.api.features.evaluation.domain.visit_replay import replay
 from app.api.features.evaluation.persistence.evaluation_repository import repository
 
@@ -21,6 +22,7 @@ async def judged_games(
     include_unfinished: bool = False,
     min_version: int | None = None,
     version: int | None = None,
+    criteria: EvaluationFilter = EvaluationFilter(),
 ) -> list[JudgedGame]:
     """The games the page, the report and the export all read, oldest first.
 
@@ -43,6 +45,7 @@ async def judged_games(
         ]
     if version is not None:
         games = [game for game in games if game.tracker_versions == (version,)]
+    games = [game for game in games if criteria.selects(game)]
 
     judged: list[JudgedGame] = []
     for game in games:
@@ -54,9 +57,17 @@ async def judged_games(
     return judged
 
 
-async def overview(session: AsyncSession) -> AccuracyOverview:
-    """Every finished, judged game, newest first, and the totals over all of them."""
-    games = await judged_games(session)
+async def versions(session: AsyncSession) -> list[int]:
+    """The tracker versions the finished logged games were recorded with, newest first."""
+    games = await repository.logged_games(session, evaluation_only=False, finished_only=True)
+    return sorted({version for game in games for version in game.tracker_versions}, reverse=True)
+
+
+async def overview(
+    session: AsyncSession, criteria: EvaluationFilter = EvaluationFilter()
+) -> AccuracyOverview:
+    """Every finished, judged game `criteria` selects, newest first, and the totals over them."""
+    games = await judged_games(session, criteria=criteria)
     per_game = [
         GameAccuracy(
             game=g.game, accuracy=summarise(1, g.visits, g.judgements), camera=g.camera

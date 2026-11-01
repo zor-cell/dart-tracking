@@ -1,7 +1,13 @@
-from app.api.features.evaluation.domain.accuracy import FieldKind, judge, summarise
+from datetime import UTC, datetime
+
+import pytest
+
+from app.api.features.evaluation.domain.accuracy import FieldKind, LoggedGame, judge, summarise
 from app.api.features.evaluation.domain.alignment import DartOutcome, align, outcome_of
+from app.api.features.evaluation.domain.evaluation_filter import EvaluationFilter
 from app.api.features.evaluation.domain.game_event import GameEvent, GameEventKind
 from app.api.features.evaluation.domain.visit_replay import replay
+from app.api.features.game.domain.game_mode import GameMode
 
 K = GameEventKind
 
@@ -157,3 +163,32 @@ def test_summary_counts_thrown_and_booked_darts_apart():
     triple = next(field for field in accuracy.fields if field.kind is FieldKind.TRIPLE)
     assert (triple.wrong, triple.wrong_ring) == (1, 1)
     assert accuracy.distances == (150.0 - 107.4,)
+
+
+def logged(versions: tuple[int, ...], *, mode: int = 501, test_run: bool = False) -> LoggedGame:
+    return LoggedGame(
+        id="g",
+        mode=mode,
+        created_at=datetime(2026, 10, 15, tzinfo=UTC),
+        evaluation_enabled=test_run,
+        tracker_versions=versions,
+    )
+
+
+@pytest.mark.parametrize(
+    ("criteria", "game", "selected"),
+    [
+        (EvaluationFilter(), logged(()), True),
+        (EvaluationFilter(versions=(5,)), logged((5,)), True),
+        (EvaluationFilter(versions=(5,)), logged((4, 5)), False),
+        (EvaluationFilter(versions=(4, 5)), logged((4, 5)), True),
+        (EvaluationFilter(versions=(5,)), logged(()), False),
+        (EvaluationFilter(modes=(GameMode.X01_301,)), logged((5,)), False),
+        (EvaluationFilter(test_run=True), logged((5,), test_run=True), True),
+        (EvaluationFilter(test_run=False), logged((5,), test_run=True), False),
+        (EvaluationFilter(since=datetime(2026, 10, 16, tzinfo=UTC)), logged((5,)), False),
+        (EvaluationFilter(until=datetime(2026, 10, 16, tzinfo=UTC)), logged((5,)), True),
+    ],
+)
+def test_evaluation_filter_selects_games(criteria, game, selected):
+    assert criteria.selects(game) is selected

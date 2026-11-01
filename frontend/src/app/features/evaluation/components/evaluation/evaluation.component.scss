@@ -1,3 +1,15 @@
+/* The figures below the filters, spaced like the view; faded while new ones load. */
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.reloading {
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
 .scope {
   display: flex;
   flex-direction: column;

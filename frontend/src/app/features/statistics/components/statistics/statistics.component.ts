@@ -255,12 +255,7 @@ export class StatisticsComponent {
   });
 
   constructor() {
-    this.queryState.signal(
-      'unit',
-      this.unit,
-      oneOfParam(PERIOD_UNITS.map((u) => u.value)),
-      'days',
-    );
+    this.queryState.signal('unit', this.unit, oneOfParam(PERIOD_UNITS.map((u) => u.value)), 'days');
     this.queryState.signal(
       'period',
       this.period,

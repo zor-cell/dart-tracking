@@ -4,230 +4,293 @@
     <h1 class="view__title">Auswertung</h1>
   </header>
 
-  @if (loading()) {
+  <app-list-toolbar
+    [filterable]="true"
+    [chips]="chips()"
+    [suggestions]="suggestions()"
+    (chipRemove)="clearFilter($event)"
+    (chipOpen)="openPicker($event, periodPicker)"
+    (suggestionPick)="pickSuggestion($event)"
+    (reset)="resetFilters()"
+  >
+    <form class="list-filters" [formGroup]="filters">
+      <label class="list-filters__label" for="filter-version">Tracker-Version</label>
+      <p-multiselect
+        inputId="filter-version"
+        formControlName="version"
+        [options]="versionOptions()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Alle"
+        [showHeader]="false"
+        [showClear]="true"
+        fluid
+      />
+      <label class="list-filters__label" for="filter-mode">Modus</label>
+      <p-multiselect
+        inputId="filter-mode"
+        formControlName="mode"
+        [options]="modeOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Alle"
+        [showHeader]="false"
+        [showClear]="true"
+        fluid
+      />
+      <label class="list-filters__label" for="filter-run">Art</label>
+      <p-select
+        inputId="filter-run"
+        formControlName="run"
+        [options]="runOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Alle"
+        [showClear]="true"
+        fluid
+      />
+    </form>
+  </app-list-toolbar>
+  <app-period-picker
+    #periodPicker
+    [period]="period()"
+    (periodChange)="period.set($event)"
+    [range]="range()"
+    (rangeChange)="range.set($event)"
+  />
+
+  @if (loading() && !total()) {
     <app-loading-state label="Auswertung wird geladen" />
   } @else if (failed()) {
-    <app-load-error message="Die Auswertung konnte nicht geladen werden." (retry)="reload()" />
+    <app-load-error message="Die Auswertung konnte nicht geladen werden." (retry)="retry()" />
   } @else if (games().length === 0) {
-    <app-empty-state icon="pi-video">
-      <p>Noch kein gefilmtes Spiel aufgezeichnet.</p>
+    <app-empty-state [icon]="filtered() ? 'pi-filter-slash' : 'pi-video'">
+      <p>
+        {{
+          filtered()
+            ? 'Keine Spiele für diese Auswahl.'
+            : 'Noch kein gefilmtes Spiel aufgezeichnet.'
+        }}
+      </p>
     </app-empty-state>
   } @else {
-    <div class="scope">
-      <label class="scope__label" for="scope">Umfang</label>
-      <p-select
-        inputId="scope"
-        fluid
-        appendTo="body"
-        [options]="scopes()"
-        optionLabel="label"
-        optionValue="gameId"
-        [ngModel]="selectedGameId()"
-        (ngModelChange)="selectedGameId.set($event)"
-      />
-    </div>
+    <div class="results" [class.reloading]="loading()" [attr.aria-busy]="loading()">
+      <div class="scope">
+        <label class="scope__label" for="scope">Umfang</label>
+        <p-select
+          inputId="scope"
+          fluid
+          appendTo="body"
+          [options]="scopes()"
+          optionLabel="label"
+          optionValue="gameId"
+          [ngModel]="selectedGameId()"
+          (ngModelChange)="selectedGameId.set($event)"
+        />
+      </div>
 
-    @if (summary(); as summary) {
-      <dl class="stat-grid">
-        <div class="stat stat--wide stat--lead">
-          <dt class="stat__label">Korrekte Segmente</dt>
-          <dd class="stat__value">
-            @if (accuracy(); as rate) {
-              {{ rate * 100 | number: '1.1-1' }} %
-            } @else {
-              &ndash;
+      @if (summary(); as summary) {
+        <dl class="stat-grid">
+          <div class="stat stat--wide stat--lead">
+            <dt class="stat__label">Korrekte Segmente</dt>
+            <dd class="stat__value">
+              @if (accuracy(); as rate) {
+                {{ rate * 100 | number: '1.1-1' }} %
+              } @else {
+                &ndash;
+              }
+            </dd>
+            <dd class="stat__hint">
+              {{ summary.correct }} von {{ summary.dartsThrown }} geworfenen Pfeilen
+            </dd>
+          </div>
+          <div class="stat">
+            <dt class="stat__label">Visits gewertet</dt>
+            <dd class="stat__value">{{ summary.visits }}</dd>
+            @if (summary.games > 1) {
+              <dd class="stat__hint">aus {{ summary.games }} Spielen</dd>
             }
-          </dd>
-          <dd class="stat__hint">
-            {{ summary.correct }} von {{ summary.dartsThrown }} geworfenen Pfeilen
-          </dd>
-        </div>
-        <div class="stat">
-          <dt class="stat__label">Visits gewertet</dt>
-          <dd class="stat__value">{{ summary.visits }}</dd>
-          @if (summary.games > 1) {
-            <dd class="stat__hint">aus {{ summary.games }} Spielen</dd>
-          }
-        </div>
-        <div class="stat">
-          <dt class="stat__label">Ohne Korrektur</dt>
-          <dd class="stat__value">
-            @if (cleanVisitRate(); as rate) {
-              {{ rate * 100 | number: '1.0-0' }} %
-            } @else {
-              &ndash;
-            }
-          </dd>
-          <dd class="stat__hint">{{ summary.cleanVisits }} von {{ summary.visits }} Visits</dd>
-        </div>
-        <div class="stat">
-          <dt class="stat__label">Pfeile geworfen</dt>
-          <dd class="stat__value">{{ summary.dartsThrown }}</dd>
-        </div>
-        <div class="stat">
-          <dt class="stat__label">Von der Kamera gebucht</dt>
-          <dd class="stat__value">{{ summary.dartsBooked }}</dd>
-        </div>
-      </dl>
+          </div>
+          <div class="stat">
+            <dt class="stat__label">Ohne Korrektur</dt>
+            <dd class="stat__value">
+              @if (cleanVisitRate(); as rate) {
+                {{ rate * 100 | number: '1.0-0' }} %
+              } @else {
+                &ndash;
+              }
+            </dd>
+            <dd class="stat__hint">{{ summary.cleanVisits }} von {{ summary.visits }} Visits</dd>
+          </div>
+          <div class="stat">
+            <dt class="stat__label">Pfeile geworfen</dt>
+            <dd class="stat__value">{{ summary.dartsThrown }}</dd>
+          </div>
+          <div class="stat">
+            <dt class="stat__label">Von der Kamera gebucht</dt>
+            <dd class="stat__value">{{ summary.dartsBooked }}</dd>
+          </div>
+        </dl>
 
-      @if (selectedGame(); as game) {
-        <section class="panel">
-          <h2 class="panel__title">Aufnahme</h2>
-          <p class="panel__hint">
-            Kamerawinkel als Median über die Kalibrierungen der scorenden Kamera
-          </p>
-          <ul class="rows">
-            <li class="row">
-              <span class="row__label">Tracker-Version</span>
-              <span class="row__value">{{
-                game.trackerVersions.length ? game.trackerVersions.join(', ') : 'unbekannt'
-              }}</span>
-            </li>
-            @if (game.camera; as camera) {
+        @if (selectedGame(); as game) {
+          <section class="panel">
+            <h2 class="panel__title">Aufnahme</h2>
+            <p class="panel__hint">
+              Kamerawinkel als Median über die Kalibrierungen der scorenden Kamera
+            </p>
+            <ul class="rows">
               <li class="row">
-                <span class="row__label">Neigung zur Scheibe</span>
-                <span class="row__value">{{ camera.tilt | number: '1.0-0' }}°</span>
-              </li>
-              <li class="row">
-                <span class="row__label">Seitlich</span>
-                <span class="row__value">{{ sideOf(camera.horizontal, 'links', 'rechts') }}</span>
-              </li>
-              <li class="row">
-                <span class="row__label">Höhe</span>
+                <span class="row__label">Tracker-Version</span>
                 <span class="row__value">{{
-                  sideOf(camera.vertical, 'unterhalb', 'oberhalb')
+                  game.trackerVersions.length ? game.trackerVersions.join(', ') : 'unbekannt'
                 }}</span>
               </li>
-            } @else {
-              <li class="row">
-                <span class="row__label">Kamerawinkel</span>
-                <span class="row__value">&ndash;</span>
+              @if (game.camera; as camera) {
+                <li class="row">
+                  <span class="row__label">Neigung zur Scheibe</span>
+                  <span class="row__value">{{ camera.tilt | number: '1.0-0' }}°</span>
+                </li>
+                <li class="row">
+                  <span class="row__label">Seitlich</span>
+                  <span class="row__value">{{ sideOf(camera.horizontal, 'links', 'rechts') }}</span>
+                </li>
+                <li class="row">
+                  <span class="row__label">Höhe</span>
+                  <span class="row__value">{{
+                    sideOf(camera.vertical, 'unterhalb', 'oberhalb')
+                  }}</span>
+                </li>
+              } @else {
+                <li class="row">
+                  <span class="row__label">Kamerawinkel</span>
+                  <span class="row__value">&ndash;</span>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
+        <section class="panel">
+          <h2 class="panel__title">Fehleraufschlüsselung</h2>
+          <p class="panel__hint">
+            Jeder gewertete Pfeil zählt genau einmal &ndash; ein Phantom hatte keinen Pfeil hinter
+            sich, ein verpasster keinen Eintrag
+          </p>
+          <ul class="rows">
+            @for (outcome of outcomes; track outcome.key) {
+              @if (outcome.key === 'missed') {
+                <li class="row row--split">
+                  <span class="row__label">{{ outcome.label }}</span>
+                  <span class="row__line">
+                    <span class="row__hint">{{ outcome.hint }}</span>
+                    <ng-container
+                      [ngTemplateOutlet]="value"
+                      [ngTemplateOutletContext]="{
+                        $implicit: summary.missed,
+                        rate: share(summary.missed),
+                      }"
+                    />
+                  </span>
+                  <span class="row__line">
+                    <span class="row__hint">davon als 0 eingetragen</span>
+                    <ng-container
+                      [ngTemplateOutlet]="value"
+                      [ngTemplateOutletContext]="{
+                        $implicit: summary.missedZeros,
+                        rate: summary.missed === 0 ? null : summary.missedZeros / summary.missed,
+                      }"
+                    />
+                  </span>
+                </li>
+              } @else {
+                <li class="row">
+                  <span class="row__text">
+                    <span class="row__label">{{ outcome.label }}</span>
+                    <span class="row__hint">{{ outcome.hint }}</span>
+                  </span>
+                  <ng-container
+                    [ngTemplateOutlet]="value"
+                    [ngTemplateOutletContext]="{
+                      $implicit: count(outcome.key),
+                      rate: share(count(outcome.key)),
+                    }"
+                  />
+                </li>
+              }
+            }
+          </ul>
+        </section>
+
+        <section class="panel">
+          <h2 class="panel__title">Fehler nach Feld</h2>
+          <p class="panel__hint">
+            Geworfene Pfeile nach dem Feld, in dem sie laut Spielern steckten; die Aufteilung als
+            Anteil der Pfeile in diesem Feld
+          </p>
+          <ul class="rows">
+            @for (field of summary.fields; track field.kind) {
+              <li class="row row--split">
+                <span class="row__line">
+                  <span class="row__label">{{ fieldLabels[field.kind] }}</span>
+                  <ng-container
+                    [ngTemplateOutlet]="value"
+                    [ngTemplateOutletContext]="{
+                      $implicit: field.thrown,
+                      rate: summary.dartsThrown === 0 ? null : field.thrown / summary.dartsThrown,
+                    }"
+                  />
+                </span>
+                <span class="row__line">
+                  <span class="row__hint">falsch</span>
+                  <ng-container
+                    [ngTemplateOutlet]="value"
+                    [ngTemplateOutletContext]="{
+                      $implicit: field.wrong,
+                      rate: field.thrown === 0 ? null : field.wrong / field.thrown,
+                    }"
+                  />
+                </span>
+                <span class="row__line">
+                  <span class="row__hint">verpasst</span>
+                  <ng-container
+                    [ngTemplateOutlet]="value"
+                    [ngTemplateOutletContext]="{
+                      $implicit: field.missed,
+                      rate: field.thrown === 0 ? null : field.missed / field.thrown,
+                    }"
+                  />
+                </span>
               </li>
             }
           </ul>
         </section>
-      }
 
-      <section class="panel">
-        <h2 class="panel__title">Fehleraufschlüsselung</h2>
-        <p class="panel__hint">
-          Jeder gewertete Pfeil zählt genau einmal &ndash; ein Phantom hatte keinen Pfeil hinter
-          sich, ein verpasster keinen Eintrag
-        </p>
-        <ul class="rows">
-          @for (outcome of outcomes; track outcome.key) {
-            @if (outcome.key === 'missed') {
-              <li class="row row--split">
-                <span class="row__label">{{ outcome.label }}</span>
-                <span class="row__line">
-                  <span class="row__hint">{{ outcome.hint }}</span>
-                  <ng-container
-                    [ngTemplateOutlet]="value"
-                    [ngTemplateOutletContext]="{
-                      $implicit: summary.missed,
-                      rate: share(summary.missed),
-                    }"
-                  />
-                </span>
-                <span class="row__line">
-                  <span class="row__hint">davon als 0 eingetragen</span>
-                  <ng-container
-                    [ngTemplateOutlet]="value"
-                    [ngTemplateOutletContext]="{
-                      $implicit: summary.missedZeros,
-                      rate: summary.missed === 0 ? null : summary.missedZeros / summary.missed,
-                    }"
-                  />
-                </span>
-              </li>
-            } @else {
-              <li class="row">
-                <span class="row__text">
-                  <span class="row__label">{{ outcome.label }}</span>
-                  <span class="row__hint">{{ outcome.hint }}</span>
-                </span>
-                <ng-container
-                  [ngTemplateOutlet]="value"
-                  [ngTemplateOutletContext]="{
-                    $implicit: count(outcome.key),
-                    rate: share(count(outcome.key)),
-                  }"
-                />
-              </li>
-            }
-          }
-        </ul>
-      </section>
-
-      <section class="panel">
-        <h2 class="panel__title">Fehler nach Feld</h2>
-        <p class="panel__hint">
-          Geworfene Pfeile nach dem Feld, in dem sie laut Spielern steckten; die Aufteilung als
-          Anteil der Pfeile in diesem Feld
-        </p>
-        <ul class="rows">
-          @for (field of summary.fields; track field.kind) {
-            <li class="row row--split">
-              <span class="row__line">
-                <span class="row__label">{{ fieldLabels[field.kind] }}</span>
-                <ng-container
-                  [ngTemplateOutlet]="value"
-                  [ngTemplateOutletContext]="{
-                    $implicit: field.thrown,
-                    rate: summary.dartsThrown === 0 ? null : field.thrown / summary.dartsThrown,
-                  }"
-                />
-              </span>
-              <span class="row__line">
-                <span class="row__hint">falsch</span>
-                <ng-container
-                  [ngTemplateOutlet]="value"
-                  [ngTemplateOutletContext]="{
-                    $implicit: field.wrong,
-                    rate: field.thrown === 0 ? null : field.wrong / field.thrown,
-                  }"
-                />
-              </span>
-              <span class="row__line">
-                <span class="row__hint">verpasst</span>
-                <ng-container
-                  [ngTemplateOutlet]="value"
-                  [ngTemplateOutletContext]="{
-                    $implicit: field.missed,
-                    rate: field.thrown === 0 ? null : field.missed / field.thrown,
-                  }"
-                />
-              </span>
-            </li>
-          }
-        </ul>
-      </section>
-
-      <section class="panel">
-        <h2 class="panel__title">Abstand zum erwarteten Segment</h2>
-        <p class="panel__hint">
-          Über die falsch gewerteten Pfeile mit lokalisierter Spitze. Wenige Millimeter heißen
-          falsche Drahtseite, zig Millimeter ein Fit auf etwas anderem.
-        </p>
-        @if (summary.meanOffBy === null) {
-          <p class="panel__hint">Kein falsch gewerteter Pfeil trug eine lokalisierte Spitze.</p>
-        } @else {
-          <ul class="rows">
-            @for (band of summary.bands; track band.label) {
-              <li class="row">
-                <span class="row__label">{{ band.label }}</span>
-                <span class="row__value">{{ band.darts }}</span>
-              </li>
-            }
-          </ul>
+        <section class="panel">
+          <h2 class="panel__title">Abstand zum erwarteten Segment</h2>
           <p class="panel__hint">
-            Mittel {{ summary.meanOffBy | number: '1.1-1' }} mm &middot; Median
-            {{ summary.medianOffBy | number: '1.1-1' }} mm &middot; schlechtester
-            {{ summary.worstOffBy | number: '1.1-1' }} mm
+            Über die falsch gewerteten Pfeile mit lokalisierter Spitze. Wenige Millimeter heißen
+            falsche Drahtseite, zig Millimeter ein Fit auf etwas anderem.
           </p>
-        }
-      </section>
-    }
+          @if (summary.meanOffBy === null) {
+            <p class="panel__hint">Kein falsch gewerteter Pfeil trug eine lokalisierte Spitze.</p>
+          } @else {
+            <ul class="rows">
+              @for (band of summary.bands; track band.label) {
+                <li class="row">
+                  <span class="row__label">{{ band.label }}</span>
+                  <span class="row__value">{{ band.darts }}</span>
+                </li>
+              }
+            </ul>
+            <p class="panel__hint">
+              Mittel {{ summary.meanOffBy | number: '1.1-1' }} mm &middot; Median
+              {{ summary.medianOffBy | number: '1.1-1' }} mm &middot; schlechtester
+              {{ summary.worstOffBy | number: '1.1-1' }} mm
+            </p>
+          }
+        </section>
+      }
+    </div>
   }
 </section>
 

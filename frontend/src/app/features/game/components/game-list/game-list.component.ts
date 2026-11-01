@@ -45,7 +45,12 @@ import {
   withPick,
 } from '../../../../core/view/models/filter-chip';
 import { PagedTable } from '../../../../core/view/models/paged-table';
-import { PERIOD_CHIP_LABELS, PERIODS, Period, periodBounds } from '../../../../core/view/models/period';
+import {
+  PERIOD_CHIP_LABELS,
+  PERIODS,
+  Period,
+  periodBounds,
+} from '../../../../core/view/models/period';
 import {
   DAY_RANGE_PARAM,
   QueryState,
@@ -293,8 +298,7 @@ export class GameListComponent {
 
   /** The form as a filter. */
   private criteria(): GameFilter {
-    const { variant, mode, checkoutMode, status, opponentId, players } =
-      this.filters.getRawValue();
+    const { variant, mode, checkoutMode, status, opponentId, players } = this.filters.getRawValue();
     return {
       query: this.query() || null,
       variants: variant,
