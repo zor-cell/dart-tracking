@@ -181,6 +181,24 @@ def test_two_devices_ending_the_same_visit_hand_over_once(room, game_id):
     assert (state["currentPlayerIndex"], state["revision"]) == (1, 5)
 
 
+def test_darts_and_handovers_are_dated(room, game_id, session):
+    with room(game_id) as device:
+        device.throw(20)
+        device.next("game_state")
+        device.send("next_player")
+        device.next("game_state")
+
+    darts_dated = session.sql(
+        "SELECT count(thrown_at) FROM game_darts WHERE game_id = :id", id=game_id
+    )
+    visits_ended = session.sql(
+        "SELECT turn_index FROM game_turns WHERE game_id = :id AND ended_at IS NOT NULL",
+        id=game_id,
+    )
+    assert darts_dated[0][0] == 3
+    assert [row[0] for row in visits_ended] == [0]
+
+
 @pytest.mark.parametrize("raw", ["not json", '{"type": "no_such_thing"}', '{"type": "register_dart", "value": 26}'])
 def test_malformed_messages_are_dropped_and_the_connection_stays(room, game_id, raw):
     with room(game_id) as device:

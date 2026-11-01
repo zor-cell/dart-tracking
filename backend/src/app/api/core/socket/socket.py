@@ -12,6 +12,7 @@ import asyncio
 import base64
 import logging
 from collections.abc import Callable
+from datetime import UTC, datetime
 from urllib.parse import urlsplit
 
 import cv2
@@ -319,15 +320,17 @@ async def _apply(
         shadows = list(game.shadow_darts)
         mutate(game)
         changed = game.revision != revision
+        # Read before stamping, which swaps the booked darts for dated copies.
+        placed = [dart for dart in shadows if any(dart is own for own in game.current_turn.darts)]
         if changed:
+            game.stamp(datetime.now(UTC))
             await game_repository.save(session, game)
 
         if record is not None:
             recorder.append(session, game_id, record(at, changed))
         booked = recorder.position_of(game)
-        for dart in shadows:
-            if any(dart is placed for placed in game.current_turn.darts):
-                recorder.append(session, game_id, recorder.for_shadow_booking(dart, booked))
+        for dart in placed:
+            recorder.append(session, game_id, recorder.for_shadow_booking(dart, booked))
 
     return game, changed
 

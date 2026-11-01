@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 
 from app.api.features.game.domain.dart import Dart
 
@@ -13,6 +14,8 @@ class Turn:
     player_id: int
     darts: list[Dart] = field(default_factory=list)
     busted: bool = False
+    # When the visit was handed over or won; None while it is open.
+    ended_at: datetime | None = field(default=None, compare=False)
 
     @property
     def points(self) -> int:

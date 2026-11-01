@@ -8,6 +8,8 @@ export interface GameDetailDto {
   readonly status: GameStatus;
   readonly createdAt: string;
   readonly finishedAt: string | null;
+  /** Seconds of actual play, breaks left out; null for games from before times were kept. */
+  readonly playedSeconds: number | null;
   /** Whether the reader set the game up, and so may take it out of the statistics. */
   readonly owned: boolean;
   /** One per player, in seat order. */

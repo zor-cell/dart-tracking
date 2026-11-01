@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,8 @@ class Dart:
     # inside it is not. Carried on the game state so a device without a camera
     # can draw the throw on a board of its own.
     position: tuple[float, float] | None = None
+    # When the server booked it; None for darts from before times were kept.
+    thrown_at: datetime | None = field(default=None, compare=False)
 
     @property
     def points(self) -> int:

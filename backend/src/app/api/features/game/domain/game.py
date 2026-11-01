@@ -6,7 +6,7 @@ throw history stays available for the statistics planned in the roadmap.
 """
 
 from collections.abc import Iterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 
 from app.api.features.game.domain.checkout import Setup, checkout_route, setup_route
@@ -253,6 +253,7 @@ class Game:
         turn = self.current_turn
         if not 0 <= index < len(turn.darts):
             return
+        dart = replace(dart, thrown_at=turn.darts[index].thrown_at)
         self._rescore(turn.darts[:index] + [dart] + turn.darts[index + 1 :])
 
     def move_dart(self, index: int, to_index: int) -> None:
@@ -306,6 +307,26 @@ class Game:
         self.shadow_darts = []
         self._start_turn()
         return filled
+
+    def stamp(self, now: datetime) -> None:
+        """Date what the last change booked or closed: new darts, the visit just
+        handed over, and the open one once it won. A reopened visit is open again."""
+        if len(self.turns) > 1 and self.turns[-2].ended_at is None:
+            self._date(self.turns[-2], now)
+            self.turns[-2].ended_at = now
+        current = self.current_turn
+        self._date(current, now)
+        if self.winner is None:
+            current.ended_at = None
+        elif current.ended_at is None:
+            current.ended_at = now
+
+    @staticmethod
+    def _date(turn: Turn, now: datetime) -> None:
+        turn.darts = [
+            dart if dart.thrown_at is not None else replace(dart, thrown_at=now)
+            for dart in turn.darts
+        ]
 
     def set_evaluation(self, enabled: bool) -> None:
         """Turn the test run on or off. Bumps the revision so the room is told,

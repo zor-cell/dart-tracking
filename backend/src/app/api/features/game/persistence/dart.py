@@ -1,6 +1,8 @@
 """One thrown dart."""
 
-from sqlalchemy import Float, ForeignKeyConstraint, Integer
+from datetime import datetime
+
+from sqlalchemy import DateTime, Float, ForeignKeyConstraint, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database import Base, UuidText
@@ -26,3 +28,4 @@ class DartTable(Base):
     multiplier: Mapped[int] = mapped_column(Integer)
     pos_x: Mapped[float | None] = mapped_column(Float, default=None)
     pos_y: Mapped[float | None] = mapped_column(Float, default=None)
+    thrown_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)

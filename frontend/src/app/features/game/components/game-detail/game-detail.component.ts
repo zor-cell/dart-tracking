@@ -98,14 +98,10 @@ export class GameDetailComponent {
     return CHECKOUT_MODES.find((option) => option.value === mode)?.label ?? '';
   });
 
-  /** Minutes from the first to the last recorded moment, while that is known. */
+  /** Minutes of actual play, while that is known. */
   protected readonly durationMinutes = computed(() => {
-    const detail = this.detail();
-    if (!detail?.finishedAt) {
-      return null;
-    }
-    const millis = Date.parse(detail.finishedAt) - Date.parse(detail.createdAt);
-    return Math.max(1, Math.round(millis / 60_000));
+    const seconds = this.detail()?.playedSeconds;
+    return seconds === null || seconds === undefined ? null : Math.max(1, Math.round(seconds / 60));
   });
 
   /** Players with their figures, in the order they threw. */

@@ -1,6 +1,8 @@
 """One visit to the oche."""
 
-from sqlalchemy import Boolean, ForeignKey, Integer
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database import Base
@@ -19,3 +21,4 @@ class TurnTable(Base):
     turn_index: Mapped[int] = mapped_column(Integer, primary_key=True)
     player_index: Mapped[int] = mapped_column(Integer)
     busted: Mapped[bool] = mapped_column(Boolean)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)

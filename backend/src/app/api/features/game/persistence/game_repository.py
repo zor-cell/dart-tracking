@@ -199,6 +199,7 @@ class GameRepository:
                 turn_index=turn_index,
                 player_index=turn.player_id,
                 busted=turn.busted,
+                ended_at=turn.ended_at,
             )
             for turn_index, turn in enumerate(game.turns)
         )
@@ -214,6 +215,7 @@ class GameRepository:
                 multiplier=dart.multiplier,
                 pos_x=dart.position[0] if dart.position else None,
                 pos_y=dart.position[1] if dart.position else None,
+                thrown_at=dart.thrown_at,
             )
             for turn_index, turn in enumerate(game.turns)
             for dart_index, dart in enumerate(turn.darts)
@@ -503,7 +505,12 @@ class GameRepository:
         for dart in dart_rows:
             position = None if dart.pos_x is None else (dart.pos_x, dart.pos_y)
             darts.setdefault(dart.turn_index, []).append(
-                Dart(value=dart.value, multiplier=dart.multiplier, position=position)
+                Dart(
+                    value=dart.value,
+                    multiplier=dart.multiplier,
+                    position=position,
+                    thrown_at=dart.thrown_at,
+                )
             )
 
         preferred = await self._preferred_doubles(session, [entry[2] for entry in entries])
@@ -529,6 +536,7 @@ class GameRepository:
                     player_id=turn.player_index,
                     darts=darts.get(turn.turn_index, []),
                     busted=turn.busted,
+                    ended_at=turn.ended_at,
                 )
                 for turn in turn_rows
             ],
