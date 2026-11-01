@@ -1,4 +1,10 @@
+/* Only the popover shows, so the host takes no slot in the view's flex gap. */
+:host {
+  display: contents;
+}
+
 .period {
+  white-space: nowrap;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;

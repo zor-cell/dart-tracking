@@ -19,11 +19,15 @@ export interface FilterSuggestion extends FilterChip {
   readonly value: unknown;
 }
 
-/** Picks of one filter as a chip reads them: "301", "301 oder 501", "301, 501 oder 701". */
+/** Picks a chip names before it counts the rest. */
+const NAMED_PICKS = 2;
+
+/** Picks of one filter as a chip reads them: "301", "301 oder 501", "Anna, Ben +3". */
 export function orList(labels: readonly string[]): string {
-  return labels.length < 2
-    ? (labels[0] ?? '')
-    : `${labels.slice(0, -1).join(', ')} oder ${labels.at(-1)}`;
+  if (labels.length > NAMED_PICKS) {
+    return `${labels.slice(0, NAMED_PICKS).join(', ')} +${labels.length - NAMED_PICKS}`;
+  }
+  return labels.join(' oder ');
 }
 
 /** Adds `value` to the picks of a list filter, once. */
