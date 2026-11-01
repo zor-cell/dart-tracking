@@ -55,15 +55,15 @@ import {
 } from '../../../../core/view/models/query-state';
 import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
 
-/** "v5", "v4–v6", "ab v5", "bis v6"; null for every version. */
+/** "54", "52–54", "ab 52", "bis 54"; null for every version. */
 function versionLabel([from, to]: VersionRange): string | null {
   if (from === null && to === null) {
     return null;
   }
   if (from === to) {
-    return `v${from}`;
+    return `${from}`;
   }
-  return from === null ? `bis v${to}` : to === null ? `ab v${from}` : `v${from}–v${to}`;
+  return from === null ? `bis ${to}` : to === null ? `ab ${from}` : `${from}–${to}`;
 }
 
 /** What the outcome counts are called on the page, in reading order. */
@@ -174,7 +174,7 @@ export class EvaluationComponent {
     const picked = (this.filterValue().version ?? []).flatMap((v) => (v === null ? [] : [v]));
     return [...new Set<number>([...(this.versions() ?? []), ...picked])]
       .sort((a, b) => b - a)
-      .map((version) => ({ label: `v${version}`, value: version }));
+      .map((version) => ({ label: `${version}`, value: version }));
   });
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
   protected readonly runOptions = Object.entries(RUN_KIND_LABELS).map(([value, label]) => ({
