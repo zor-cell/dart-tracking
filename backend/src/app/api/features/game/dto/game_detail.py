@@ -19,8 +19,6 @@ class GameDetailDto(CamelModel):
     finished_at: datetime | None
     # Seconds of actual play, breaks left out; null for games from before times were kept.
     played_seconds: int | None
-    # Whether the reader set the game up, and so may take it out of the statistics.
-    owned: bool
     # One per player, in seat order.
     statistics: list[PlayerStatisticsDto]
     visits: list[VisitDto]
@@ -41,7 +39,6 @@ class GameDetailDto(CamelModel):
             created_at=record.created_at,
             finished_at=record.finished_at,
             played_seconds=None if played is None else round(played.total_seconds()),
-            owned=record.owned,
             statistics=[PlayerStatisticsDto.from_entity(entry) for entry in statistics],
             visits=visits,
         )

@@ -18,7 +18,7 @@ from app.api.features.game.domain.turn import Turn
 from app.api.features.game.persistence.dart import DartTable
 from app.api.features.game.persistence.game import GameTable
 from app.api.features.game.persistence.game_player import GamePlayerTable
-from app.api.features.game.persistence.game_repository import game_filter_clauses
+from app.api.features.game.persistence.game_repository import game_filter_clauses, hidden_by
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.persistence.turn import TurnTable
 from app.api.features.player.domain.player_identity import PlayerIdentity
@@ -55,7 +55,8 @@ class StatisticsRepository:
     ) -> StatisticsOverview:
         """Every counted leg of the games `criteria` selects, in one tally and game by game;
         `last` keeps only the most recent games that count, `player` reads that one instead."""
-        legs = await self._legs(session, _seats(user_id, player), criteria, last)
+        seats = [*_seats(user_id, player), GameTable.id.not_in(hidden_by(user_id))]
+        legs = await self._legs(session, seats, criteria, last)
         totals = PlayerStatistics()
         games: dict[str, TrendPoint] = {}
         for leg in reversed(legs):

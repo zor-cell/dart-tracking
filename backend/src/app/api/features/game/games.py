@@ -176,22 +176,12 @@ async def list_games(
 async def update_status(
     game_id: str, body: GameStatusUpdateDto, user: AuthenticatedUser
 ) -> None:
-    """Take a game out of the statistics, or put it back. The counterpart to the
-    opt-out in §4.5: writing every game down and sorting out the exceptions."""
+    """Take a game out of this account's list and statistics, or put it back. The
+    other players keep it, whoever set it up."""
     async with database.session_scope() as session:
-        # Putting a game back means restoring the status it would have had, not
-        # writing `active` over a leg that was won — that would hide it from the
-        # statistics just as thoroughly as the discard did.
-        target = GameStatus.DISCARDED
-        if body.status != GameStatus.DISCARDED:
-            game = await repository.get(session, game_id)
-            target = (
-                GameStatus.FINISHED
-                if game is not None and game.winner is not None
-                else GameStatus.ACTIVE
-            )
-
-        changed = await repository.set_status(session, game_id, user.id, target)
+        changed = await repository.set_hidden(
+            session, game_id, user.id, body.status == GameStatus.DISCARDED
+        )
 
     if not changed:
         raise HTTPException(status_code=404, detail="game not found")
@@ -199,7 +189,7 @@ async def update_status(
 
 @router.post("/{game_id}/resume", status_code=204)
 async def resume_game(game_id: str, user: AuthenticatedUser) -> None:
-    """Take up a game that is still running or was left, but neither won nor discarded."""
+    """Take up a game that is still running or was left, but not won."""
     async with database.session_scope() as session:
         resumed = await repository.resume(session, game_id, user.id)
 

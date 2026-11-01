@@ -6,17 +6,15 @@
         <h1 class="view__title">{{ variantLabel() }} {{ detail.game.mode }}</h1>
         <p-tag [value]="statusLabels[detail.status]" [severity]="statusSeverities[detail.status]" />
         <div class="heading__actions">
-          @if (detail.owned) {
-            <p-button
-              [icon]="hidden() ? 'pi pi-eye' : 'pi pi-eye-slash'"
-              [ariaLabel]="hidden() ? 'Wieder in der Statistik zählen' : 'Aus der Statistik nehmen'"
-              severity="secondary"
-              [rounded]="true"
-              [text]="true"
-              [loading]="hiding()"
-              (onClick)="confirmToggleHidden()"
-            />
-          }
+          <p-button
+            [icon]="hidden() ? 'pi pi-eye' : 'pi pi-eye-slash'"
+            [ariaLabel]="hidden() ? 'Wieder einblenden' : 'Für dich ausblenden'"
+            severity="secondary"
+            [rounded]="true"
+            [text]="true"
+            [loading]="hiding()"
+            (onClick)="confirmToggleHidden()"
+          />
           @if (resumable()) {
             <p-button
               icon="pi pi-play"

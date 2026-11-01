@@ -9,7 +9,8 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, Row, and_, case, delete, func, or_, select, update
+from sqlalchemy import ColumnElement, Row, Select, and_, case, delete, func, or_, select, update
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
@@ -31,6 +32,7 @@ from app.api.features.game.domain.player import Player
 from app.api.features.game.domain.turn import Turn
 from app.api.features.game.persistence.dart import DartTable
 from app.api.features.game.persistence.game import GameTable
+from app.api.features.game.persistence.game_hide import GameHideTable
 from app.api.features.game.persistence.game_player import GamePlayerTable
 from app.api.features.game.persistence.turn import TurnTable
 from app.api.features.player.domain.player_identity import PlayerIdentity
@@ -124,11 +126,15 @@ class GameRepository:
         ).scalar_one_or_none()
         if row is None:
             return None
+        hidden = await session.scalar(
+            select(GameHideTable.game_id).where(
+                GameHideTable.game_id == game_id, GameHideTable.user_id == user_id
+            )
+        )
         return GameRecord(
-            status=effective_status(GameStatus(row.status), row.updated_at),
+            status=_status(row, hidden is not None),
             created_at=row.created_at,
             finished_at=row.finished_at,
-            owned=row.owner_user_id == user_id,
         )
 
     async def resume(self, session: AsyncSession, game_id: str, user_id: str) -> bool:
@@ -178,12 +184,7 @@ class GameRepository:
                 revision=game.revision,
                 evaluation_enabled=game.evaluation_enabled,
                 shadow_darts=[_dart_json(dart) for dart in game.shadow_darts],
-                # `discarded` is a judgement about the game, not a consequence of
-                # the score, so deriving the status must not overwrite it.
-                status=case(
-                    (GameTable.status == GameStatus.DISCARDED.value, GameTable.status),
-                    else_=derived,
-                ),
+                status=derived,
                 finished_at=func.now() if finished else None,
                 updated_at=func.now(),
             )
@@ -296,6 +297,16 @@ class GameRepository:
             )
         ).all()
 
+        hidden = set(
+            (
+                await session.execute(
+                    select(GameHideTable.game_id).where(
+                        GameHideTable.user_id == user_id, GameHideTable.game_id.in_(ids)
+                    )
+                )
+            ).scalars()
+        )
+
         scored = {(t.game_id, t.player_index): t.scored for t in tallies}
         thrown = {(t.game_id, t.player_index): t.darts for t in tallies}
         replayed = await self._elimination_remaining(session, rows, seats)
@@ -320,7 +331,7 @@ class GameRepository:
                     mode=GameMode(row.mode),
                     variant=GameVariant(row.variant),
                     checkout_mode=CheckoutMode(row.checkout_mode),
-                    status=effective_status(GameStatus(row.status), row.updated_at),
+                    status=_status(row, row.id in hidden),
                     players=players,
                     winner_index=next(
                         (
@@ -439,22 +450,27 @@ class GameRepository:
             for row in rows
         }
 
-    async def set_status(
-        self, session: AsyncSession, game_id: str, user_id: str, status: GameStatus
+    async def set_hidden(
+        self, session: AsyncSession, game_id: str, user_id: str, hidden: bool
     ) -> bool:
-        """Mark a game discarded, or take that back. Scoped to the owner, so one
-        account cannot rewrite another's history. Returns whether a row matched."""
-        try:
-            UUID(game_id)
-        except ValueError:
+        """Hide a game from this account's own list and statistics, or show it again.
+        Only its owner and seated accounts may; returns whether the game was theirs."""
+        if await self.record_for(session, game_id, user_id) is None:
             return False
 
-        result = await session.execute(
-            update(GameTable)
-            .where(GameTable.id == game_id, GameTable.owner_user_id == user_id)
-            .values(status=status.value)
-        )
-        return result.rowcount > 0
+        if hidden:
+            await session.execute(
+                insert(GameHideTable)
+                .values(user_id=user_id, game_id=game_id)
+                .on_conflict_do_nothing()
+            )
+        else:
+            await session.execute(
+                delete(GameHideTable).where(
+                    GameHideTable.user_id == user_id, GameHideTable.game_id == game_id
+                )
+            )
+        return True
 
     async def _load(self, session: AsyncSession, game_id: str, *, lock: bool) -> Game | None:
         # Ids reach this from a url, a shared link and a socket path, so one
@@ -578,7 +594,7 @@ def _dart_from_json(data: dict[str, Any]) -> Dart:
 
 
 def _history_clauses(user_id: str, criteria: GameFilter) -> list[ColumnElement[bool]]:
-    """The account's games narrowed by `criteria`, with `abandoned` derived as `effective_status` does."""
+    """The account's games narrowed by `criteria`, with the status derived as `_status` does."""
     seated = (
         select(GamePlayerTable.game_id)
         .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
@@ -588,8 +604,11 @@ def _history_clauses(user_id: str, criteria: GameFilter) -> list[ColumnElement[b
         or_(GameTable.owner_user_id == user_id, GameTable.id.in_(seated))
     ]
     cutoff = datetime.now(UTC) - ABANDON_AFTER
+    hidden = GameTable.id.in_(hidden_by(user_id))
     if criteria.statuses:
-        clauses.append(or_(*(_status_clause(status, cutoff) for status in criteria.statuses)))
+        clauses.append(
+            or_(*(_status_clause(status, cutoff, hidden) for status in criteria.statuses))
+        )
     else:
         darts = (
             select(func.count())
@@ -599,9 +618,9 @@ def _history_clauses(user_id: str, criteria: GameFilter) -> list[ColumnElement[b
             .scalar_subquery()
         )
         short_abandoned = and_(
-            _status_clause(GameStatus.ABANDONED, cutoff), darts < MIN_ABANDONED_DARTS
+            _status_clause(GameStatus.ABANDONED, cutoff, hidden), darts < MIN_ABANDONED_DARTS
         )
-        clauses.append(GameTable.status != GameStatus.DISCARDED.value)
+        clauses.append(~hidden)
         clauses.append(~short_abandoned)
     if criteria.min_visit is not None:
         own_visits = (
@@ -625,16 +644,32 @@ def _history_clauses(user_id: str, criteria: GameFilter) -> list[ColumnElement[b
     return clauses + game_filter_clauses(criteria)
 
 
-def _status_clause(status: GameStatus, cutoff: datetime) -> ColumnElement[bool]:
-    """The games whose derived status is `status`, as `effective_status` reads it."""
+def _status_clause(
+    status: GameStatus, cutoff: datetime, hidden: ColumnElement[bool]
+) -> ColumnElement[bool]:
+    """The games whose derived status is `status`, as `_status` reads it."""
     active = GameTable.status == GameStatus.ACTIVE.value
     match status:
+        case GameStatus.DISCARDED:
+            return hidden
         case GameStatus.ACTIVE:
-            return and_(active, GameTable.updated_at > cutoff)
+            return and_(~hidden, active, GameTable.updated_at > cutoff)
         case GameStatus.ABANDONED:
-            return and_(active, GameTable.updated_at <= cutoff)
+            return and_(~hidden, active, GameTable.updated_at <= cutoff)
         case _:
-            return GameTable.status == status.value
+            return and_(~hidden, GameTable.status == status.value)
+
+
+def _status(row: GameTable, hidden: bool) -> GameStatus:
+    """The status the reading account sees: its own hide first, then `effective_status`."""
+    if hidden:
+        return GameStatus.DISCARDED
+    return effective_status(GameStatus(row.status), row.updated_at)
+
+
+def hidden_by(user_id: str) -> Select[tuple[str]]:
+    """The ids of the games this account hid."""
+    return select(GameHideTable.game_id).where(GameHideTable.user_id == user_id)
 
 
 def game_filter_clauses(criteria: GameFilter) -> list[ColumnElement[bool]]:

@@ -59,7 +59,7 @@ export class GameHistoryService {
     );
   }
 
-  /** Leaves the game out of the statistics, or lets it count again; owner only. */
+  /** Hides the game from this account's list and statistics, or shows it again. */
   setCounted(gameId: string, counted: boolean): Promise<void> {
     return firstValueFrom(
       this.http.patch<void>(

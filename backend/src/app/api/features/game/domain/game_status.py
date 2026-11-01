@@ -10,6 +10,7 @@ class GameStatus(StrEnum):
     ACTIVE = "active"
     FINISHED = "finished"
     ABANDONED = "abandoned"
+    # Not stored on the game: the reading account hid it from its own list.
     DISCARDED = "discarded"
 
 

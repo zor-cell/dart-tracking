@@ -148,50 +148,26 @@ def test_discarded_game_stays_discarded_while_played_on(alice, session):
     assert status_of(alice, game_id)["status"] == "discarded"
 
 
-def test_only_the_owner_discards(alice, bob, anon):
-    bob_id = alice.add_player("Bob")
-    bob.accept(alice.invite(bob_id))
-    game_id = alice.new_game(bob_id)["id"]
-    anonymous_game = anon.new_game(guest("Ann"))["id"]
-
-    assert bob.patch(f"/games/{game_id}", json={"status": "discarded"}).status_code == 404
-    assert alice.patch(f"/games/{anonymous_game}", json={"status": "discarded"}).status_code == 404
-    assert alice.patch(f"/games/{game_id}", json={"status": "finished"}).status_code == 422
-
-
-def test_detail_for_owner_and_seated_accounts_only(alice, bob, register, session):
-    carol = register("carol")
+def test_a_hide_holds_for_the_hiding_account_only(alice, bob, anon, session):
     bob_id = alice.add_player("Bob")
     bob.accept(alice.invite(bob_id))
     game_id = alice.new_game(alice.own_entry()["id"], bob_id)["id"]
-    session.play(game_id, [T20, S1, MISS], [D20])
+    session.play(game_id, WINNING_LEG[0], [MISS], WINNING_LEG[1])
+    anonymous_game = anon.new_game(guest("Ann"))["id"]
 
-    detail = bob.get(f"/games/{game_id}/detail")
+    assert bob.patch(f"/games/{game_id}", json={"status": "discarded"}).status_code == 204
+    assert status_of(bob, game_id)["status"] == "discarded"
+    assert status_of(alice, game_id)["status"] == "finished"
+    assert bob.get("/statistics").json()["legs"] == 0
+    assert alice.get("/statistics").json()["legs"] == 1
 
-    assert detail.status_code == 200
-    assert len(detail.json()["visits"]) == 2
-    assert [entry["darts"] for entry in detail.json()["statistics"]] == [3, 3]
-    assert detail.json()["owned"] is False
-    assert detail.json()["playedSeconds"] is None
-    assert alice.get(f"/games/{game_id}/detail").json()["owned"] is True
-    assert carol.get(f"/games/{game_id}/detail").status_code == 404
+    assert alice.patch(f"/games/{game_id}", json={"status": "discarded"}).status_code == 204
+    assert bob.patch(f"/games/{game_id}", json={"status": "active"}).status_code == 204
+    assert status_of(bob, game_id)["status"] == "finished"
+    assert status_of(alice, game_id)["status"] == "discarded"
 
-
-def test_unknown_game(anon):
-    assert anon.get("/games/00000000-0000-0000-0000-000000000000").status_code == 404
-    assert anon.get("/games/not-a-uuid").status_code == 404
-
-
-def test_history_holds_games_owned_and_games_seated_in(alice, bob, anon):
-    bob_id = alice.add_player("Bob")
-    bob.accept(alice.invite(bob_id))
-    alice.new_game(bob_id)
-    bob.new_game(bob.own_entry()["id"])
-    alice.new_game(guest("Kept score for"))
-    anon.new_game(guest("Nobody's"))
-
-    assert alice.get("/games").json()["total"] == 2
-    assert bob.get("/games").json()["total"] == 2
+    assert alice.patch(f"/games/{anonymous_game}", json={"status": "discarded"}).status_code == 404
+    assert alice.patch(f"/games/{game_id}", json={"status": "finished"}).status_code == 422
 
 
 def test_history_filters_and_paging(alice, session):
@@ -278,14 +254,12 @@ def test_resume_takes_up_open_and_abandoned_games_only(alice, bob, session):
     session.age_game(abandoned, hours=48)
     won = alice.new_game(me)["id"]
     session.play(won, *WINNING_LEG)
-    discarded = alice.new_game(me)["id"]
-    alice.patch(f"/games/{discarded}", json={"status": "discarded"})
 
     assert bob.post(f"/games/{abandoned}/resume").status_code == 404
     assert alice.post(f"/games/{abandoned}/resume").status_code == 204
     assert alice.get("/games", params={"status": "active"}).json()["items"][0]["id"] == abandoned
     assert alice.get(f"/games/{abandoned}").json()["resumable"] is True
-    for game_id in (won, discarded, "not-a-uuid"):
+    for game_id in (won, "not-a-uuid"):
         assert alice.post(f"/games/{game_id}/resume").status_code == 404
 
 

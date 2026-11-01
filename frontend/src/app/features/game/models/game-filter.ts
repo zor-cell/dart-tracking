@@ -56,7 +56,7 @@ export const GAME_STATUS_SEVERITIES: Record<GameStatus, GameStatusSeverity> = {
   discarded: 'danger',
 };
 
-/** Whether a game can be taken up again: it is neither won nor discarded. */
+/** Whether a game can be taken up again: it is neither won nor hidden. */
 export function isResumable(status: GameStatus): boolean {
   return status === 'active' || status === 'abandoned';
 }

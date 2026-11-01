@@ -170,19 +170,19 @@ export class GameDetailComponent {
   protected confirmToggleHidden(): void {
     if (this.hidden()) {
       this.confirm.ask(
-        'Wieder in die Statistik?',
-        'Das Spiel steht wieder in der Spieleliste und zählt für alle Spieler in die Statistik, ' +
-          'sobald es beendet ist.',
+        'Wieder einblenden?',
+        'Das Spiel steht wieder in deiner Spieleliste und zählt in deine Statistik, sobald es ' +
+          'beendet ist.',
         'Einblenden',
         () => void this.toggleHidden(),
         true,
       );
     } else {
       this.confirm.ask(
-        'Aus der Statistik nehmen?',
-        'Das Spiel zählt für keinen Spieler mehr in die Statistik und verschwindet aus der ' +
-          'Spieleliste, bis du nach „ausgeblendet“ filterst. Du kannst es hier jederzeit wieder ' +
-          'einblenden.',
+        'Für dich ausblenden?',
+        'Das Spiel zählt nicht mehr in deine Statistik und verschwindet aus deiner Spieleliste, ' +
+          'bis du nach „ausgeblendet“ filterst. Für die anderen Spieler ändert sich nichts. Du ' +
+          'kannst es hier jederzeit wieder einblenden.',
         'Ausblenden',
         () => void this.toggleHidden(),
         true,
@@ -190,7 +190,7 @@ export class GameDetailComponent {
     }
   }
 
-  /** Takes the game out of the statistics or puts it back, then reads its new status. */
+  /** Hides the game for this account or shows it again, then reads its new status. */
   private async toggleHidden(): Promise<void> {
     const gameId = this.detail()?.game.id;
     if (!gameId) {
