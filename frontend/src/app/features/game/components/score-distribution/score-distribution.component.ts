@@ -31,6 +31,9 @@ const AVERAGE_HALF_HEIGHT = 0.36;
 const AVERAGE_STEPS = 13;
 const AVERAGE_HIT_RADIUS = 4;
 
+/** Rows the y axis always makes room for, so a lone player's row is not stretched. */
+const MIN_ROWS = 2;
+
 /** Dot radius for a single visit, and for one that stands for several equal ones. */
 const DOT_RADIUS = 5;
 const MERGED_DOT_RADIUS = 8;
@@ -134,6 +137,8 @@ export class ScoreDistributionComponent {
     const { text, grid, font } = this.theme;
     const names = this.players().map((player) => player.name);
     const averages = this.averages();
+    const middle = (names.length - 1) / 2;
+    const half = Math.max(names.length, MIN_ROWS) / 2 + 0.1;
     return {
       responsive: true,
       maintainAspectRatio: false,
@@ -154,8 +159,8 @@ export class ScoreDistributionComponent {
         },
         y: {
           reverse: true,
-          min: -0.6,
-          max: names.length - 0.4,
+          min: middle - half,
+          max: middle + half,
           grid: { display: false },
           border: { display: false },
           afterBuildTicks: (scale) => {
