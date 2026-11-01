@@ -360,7 +360,7 @@
           />
         </dd>
       }
-      @if (spread(); as spread) {
+      @if (spreadShapes(); as shapes) {
         <dd class="stat__scale">
           <svg class="spread__shape" viewBox="-1.2 -1.2 2.4 2.4" aria-hidden="true">
             <line class="spread__axis" x1="-1.2" y1="0" x2="1.2" y2="0" />
@@ -369,14 +369,14 @@
               class="spread__ellipse"
               [style.stroke]="other ? ownColor : null"
               [style.fill]="other ? ownColor + '40' : null"
-              rx="1"
-              [attr.ry]="spread.ry"
-              [attr.transform]="'rotate(' + spread.rotation + ')'"
+              [attr.rx]="shapes.own.rx"
+              [attr.ry]="shapes.own.ry"
+              [attr.transform]="'rotate(' + shapes.own.rotation + ')'"
             />
-            @if (otherSpread(); as theirs) {
+            @if (shapes.other; as theirs) {
               <ellipse
                 class="spread__ellipse spread__ellipse--other"
-                rx="1"
+                [attr.rx]="theirs.rx"
                 [attr.ry]="theirs.ry"
                 [attr.transform]="'rotate(' + theirs.rotation + ')'"
                 [style.stroke]="compareColor"

@@ -106,6 +106,16 @@ export class PrecisionStatisticsComponent {
   protected readonly otherSpread = computed(() =>
     spreadOf(this.comparison()?.statistics.scatter ?? null),
   );
+  /** Both ellipses on one scale, so the higher ratio is drawn longer. */
+  protected readonly spreadShapes = computed(() => {
+    const own = this.spread();
+    if (own === null) {
+      return null;
+    }
+    const other = this.otherSpread();
+    const widest = Math.max(own.ratio, other?.ratio ?? 0);
+    return { own: shapeOf(own, widest), other: other ? shapeOf(other, widest) : null };
+  });
 
   /** Each dart's points per throw, with its share of the best one shown for the bar; beside
    * another player one's own bars take the comparison's blue instead of the dart colours. */
@@ -150,14 +160,23 @@ function wonRate({ legsWon, legs }: PlayerStatisticsDto): number | null {
   return legs === 0 ? null : (legsWon / legs) * 100;
 }
 
-/** The wider axis against the narrower one, and the ellipse drawn from them. */
+/** The wider axis against the narrower one, and the direction of the wider one. */
 function spreadOf(scatter: ScatterDto | null) {
   if (scatter === null) {
     return null;
   }
   return {
     ratio: scatter.major / Math.max(scatter.minor, 0.1),
-    ry: scatter.minor / Math.max(scatter.major, 0.1),
     rotation: -scatter.angle,
+  };
+}
+
+/** An ellipse of the same area for every ratio, scaled so the most stretched one spans 1. */
+function shapeOf(spread: { ratio: number; rotation: number }, widest: number) {
+  const scale = Math.sqrt(widest);
+  return {
+    rx: Math.sqrt(spread.ratio) / scale,
+    ry: 1 / (Math.sqrt(spread.ratio) * scale),
+    rotation: spread.rotation,
   };
 }
