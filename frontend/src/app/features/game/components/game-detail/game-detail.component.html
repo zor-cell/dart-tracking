@@ -5,16 +5,28 @@
       <div class="heading">
         <h1 class="view__title">{{ variantLabel() }} {{ detail.game.mode }}</h1>
         <p-tag [value]="statusLabels[detail.status]" [severity]="statusSeverities[detail.status]" />
-        @if (resumable()) {
-          <p-button
-            class="heading__resume"
-            icon="pi pi-play"
-            ariaLabel="Spiel fortsetzen"
-            [rounded]="true"
-            [loading]="resuming()"
-            (onClick)="confirmResume()"
-          />
-        }
+        <div class="heading__actions">
+          @if (detail.owned) {
+            <p-button
+              [icon]="hidden() ? 'pi pi-eye' : 'pi pi-eye-slash'"
+              [ariaLabel]="hidden() ? 'Wieder in der Statistik zählen' : 'Aus der Statistik nehmen'"
+              severity="secondary"
+              [rounded]="true"
+              [text]="true"
+              [loading]="hiding()"
+              (onClick)="confirmToggleHidden()"
+            />
+          }
+          @if (resumable()) {
+            <p-button
+              icon="pi pi-play"
+              ariaLabel="Spiel fortsetzen"
+              [rounded]="true"
+              [loading]="resuming()"
+              (onClick)="confirmResume()"
+            />
+          }
+        </div>
       </div>
       <ul class="facts">
         <li class="facts__item">
@@ -50,7 +62,7 @@
   } @else if (failed()) {
     <app-load-error message="Das Spiel konnte nicht geladen werden." (retry)="load()" />
   } @else if (detail(); as detail) {
-    @if (resumeError(); as message) {
+    @if (actionError(); as message) {
       <p-message severity="error" [text]="message" />
     }
     <section class="panel">

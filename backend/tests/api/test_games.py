@@ -171,7 +171,8 @@ def test_detail_for_owner_and_seated_accounts_only(alice, bob, register, session
     assert detail.status_code == 200
     assert len(detail.json()["visits"]) == 2
     assert [entry["darts"] for entry in detail.json()["statistics"]] == [3, 3]
-    assert alice.get(f"/games/{game_id}/detail").status_code == 200
+    assert detail.json()["owned"] is False
+    assert alice.get(f"/games/{game_id}/detail").json()["owned"] is True
     assert carol.get(f"/games/{game_id}/detail").status_code == 404
 
 

@@ -11,3 +11,4 @@ class GameRecord:
     status: GameStatus
     created_at: datetime
     finished_at: datetime | None
+    owned: bool  # whether the reading account set the game up

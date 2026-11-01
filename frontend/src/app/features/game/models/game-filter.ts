@@ -43,7 +43,7 @@ export const GAME_STATUS_LABELS: Record<GameStatus, string> = {
   active: 'läuft',
   finished: 'beendet',
   abandoned: 'abgebrochen',
-  discarded: 'verworfen',
+  discarded: 'ausgeblendet',
 };
 
 export type GameStatusSeverity = 'success' | 'secondary' | 'warn' | 'danger';

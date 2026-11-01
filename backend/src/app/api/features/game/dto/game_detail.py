@@ -16,6 +16,8 @@ class GameDetailDto(CamelModel):
     status: GameStatus
     created_at: datetime
     finished_at: datetime | None
+    # Whether the reader set the game up, and so may take it out of the statistics.
+    owned: bool
     # One per player, in seat order.
     statistics: list[PlayerStatisticsDto]
     visits: list[VisitDto]
@@ -34,6 +36,7 @@ class GameDetailDto(CamelModel):
             status=record.status,
             created_at=record.created_at,
             finished_at=record.finished_at,
+            owned=record.owned,
             statistics=[PlayerStatisticsDto.from_entity(entry) for entry in statistics],
             visits=visits,
         )

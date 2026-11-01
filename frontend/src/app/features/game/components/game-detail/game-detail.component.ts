@@ -81,7 +81,10 @@ export class GameDetailComponent {
     return detail !== null && isResumable(detail.status);
   });
   protected readonly resuming = signal(false);
-  protected readonly resumeError = signal<string | null>(null);
+  protected readonly hidden = computed(() => this.detail()?.status === 'discarded');
+  protected readonly hiding = signal(false);
+  /** What went wrong with the last resume or show/hide, under the heading. */
+  protected readonly actionError = signal<string | null>(null);
 
   protected readonly isElimination = computed(() => this.detail()?.game.variant === 'elimination');
 
@@ -151,12 +154,12 @@ export class GameDetailComponent {
       return;
     }
     this.resuming.set(true);
-    this.resumeError.set(null);
+    this.actionError.set(null);
     try {
       await this.history.resume(gameId);
       await this.router.navigate(activeGameId() === gameId ? ['/game'] : ['/game/join', gameId]);
     } catch (failure) {
-      this.resumeError.set(
+      this.actionError.set(
         httpErrorMessage(
           failure,
           { 404: 'Dieses Spiel ist schon vorbei und lässt sich nicht fortsetzen.' },
@@ -165,6 +168,49 @@ export class GameDetailComponent {
       );
     } finally {
       this.resuming.set(false);
+    }
+  }
+
+  protected confirmToggleHidden(): void {
+    if (this.hidden()) {
+      this.confirm.ask(
+        'Wieder in die Statistik?',
+        'Das Spiel steht wieder in der Spieleliste und zählt für alle Spieler in die Statistik, ' +
+          'sobald es beendet ist.',
+        'Einblenden',
+        () => void this.toggleHidden(),
+        true,
+      );
+    } else {
+      this.confirm.ask(
+        'Aus der Statistik nehmen?',
+        'Das Spiel zählt für keinen Spieler mehr in die Statistik und verschwindet aus der ' +
+          'Spieleliste, bis du nach „ausgeblendet“ filterst. Du kannst es hier jederzeit wieder ' +
+          'einblenden.',
+        'Ausblenden',
+        () => void this.toggleHidden(),
+        true,
+      );
+    }
+  }
+
+  /** Takes the game out of the statistics or puts it back, then reads its new status. */
+  private async toggleHidden(): Promise<void> {
+    const gameId = this.detail()?.game.id;
+    if (!gameId) {
+      return;
+    }
+    this.hiding.set(true);
+    this.actionError.set(null);
+    try {
+      await this.history.setCounted(gameId, this.hidden());
+      this.detail.set(await this.history.detail(gameId));
+    } catch (failure) {
+      this.actionError.set(
+        httpErrorMessage(failure, {}, 'Das Spiel konnte nicht geändert werden.'),
+      );
+    } finally {
+      this.hiding.set(false);
     }
   }
 

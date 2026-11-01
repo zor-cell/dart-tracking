@@ -128,6 +128,7 @@ class GameRepository:
             status=effective_status(GameStatus(row.status), row.updated_at),
             created_at=row.created_at,
             finished_at=row.finished_at,
+            owned=row.owner_user_id == user_id,
         )
 
     async def resume(self, session: AsyncSession, game_id: str, user_id: str) -> bool:

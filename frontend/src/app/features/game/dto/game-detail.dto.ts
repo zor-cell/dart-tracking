@@ -8,6 +8,8 @@ export interface GameDetailDto {
   readonly status: GameStatus;
   readonly createdAt: string;
   readonly finishedAt: string | null;
+  /** Whether the reader set the game up, and so may take it out of the statistics. */
+  readonly owned: boolean;
   /** One per player, in seat order. */
   readonly statistics: readonly PlayerStatisticsDto[];
   readonly visits: readonly VisitDto[];

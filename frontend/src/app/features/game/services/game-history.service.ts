@@ -59,6 +59,17 @@ export class GameHistoryService {
     );
   }
 
+  /** Leaves the game out of the statistics, or lets it count again; owner only. */
+  setCounted(gameId: string, counted: boolean): Promise<void> {
+    return firstValueFrom(
+      this.http.patch<void>(
+        `${this.baseUrl}/${gameId}`,
+        { status: counted ? 'active' : 'discarded' },
+        { context: SILENT_ERROR_CONTEXT },
+      ),
+    );
+  }
+
   /** Rejects with a 404 unless the account plays in the game or set it up. */
   detail(gameId: string): Promise<GameDetailDto> {
     return firstValueFrom(
