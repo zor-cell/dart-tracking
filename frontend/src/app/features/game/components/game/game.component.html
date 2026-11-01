@@ -19,7 +19,12 @@
           [shadowDarts]="game.shadowDarts()"
           [calibration]="roomCalibration()"
         />
-        @if (roomCalibrationFailure(); as failure) {
+        @if (game.trackingPaused() && roomCalibration() !== 'no_camera') {
+          <div class="game__calibration-notice game__calibration-notice--info" role="status">
+            <i class="pi pi-pause" aria-hidden="true"></i>
+            <strong>Tracking pausiert</strong>
+          </div>
+        } @else if (roomCalibrationFailure(); as failure) {
           <div class="game__calibration-notice" role="status">
             <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
             <strong>Kalibrierung fehlgeschlagen</strong>

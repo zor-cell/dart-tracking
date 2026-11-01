@@ -304,6 +304,15 @@ def test_no_reset_is_named_for_a_player_on_zero():
     assert game.just_reset() == set()
 
 
+def test_paused_tracking_books_only_the_keypad():
+    game = new_game()
+    game.set_tracking_paused(True)
+    throw(game, "T20")
+    game.add_dart(dart("5"))
+
+    assert [d.points for d in game.current_turn.darts] == [5]
+
+
 def test_elimination_suggests_the_cheapest_reset():
     game = new_game(players=3, variant=GameVariant.ELIMINATION)
     throw(game, "T20", "T20")

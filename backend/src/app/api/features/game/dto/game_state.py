@@ -37,6 +37,7 @@ class GameStateDto(CamelModel):
     setup: SetupDto | None
     elimination: list[str] | None
     evaluation_enabled: bool
+    tracking_paused: bool
     resumable: bool
 
     @classmethod
@@ -70,5 +71,6 @@ class GameStateDto(CamelModel):
             setup=SetupDto.from_entity(game.setup) if game.setup is not None else None,
             elimination=game.elimination,
             evaluation_enabled=game.evaluation_enabled,
+            tracking_paused=game.tracking_paused,
             resumable=is_resumable(game.winner is not None, game.updated_at),
         )

@@ -275,6 +275,16 @@ def test_handover_asks_the_cameras_to_calibrate_again(room, camera, game_id):
         phone.next("calibration_requested")
 
 
+def test_pausing_reaches_the_room_and_resuming_recalibrates(room, camera, game_id):
+    with camera() as phone, room(game_id) as scoreboard:
+        scoreboard.send("set_tracking_paused", paused=True)
+        assert phone.next("game_state")["trackingPaused"] is True
+
+        scoreboard.send("set_tracking_paused", paused=False)
+        assert phone.next("game_state")["trackingPaused"] is False
+        phone.next("calibration_requested")
+
+
 def test_handover_without_a_camera_calls_the_next_player_at_once(room, game_id):
     with room(game_id) as announcer:
         announcer.throw(20)

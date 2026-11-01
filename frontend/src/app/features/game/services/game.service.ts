@@ -52,18 +52,26 @@ export class GameService {
   /** Shadow darts of the open visit: located after a win or bust, booked once a correction reopens it. */
   readonly shadowDarts = computed(() => this._state()?.shadowDarts ?? []);
 
-  /** Whether the camera keeps sending throws: while the visit has physical room
-   * left and no win is settled — past a win or bust they arrive as shadow darts. */
+  /** Whether the camera books nothing for now, on every device in the game. */
+  readonly trackingPaused = computed(() => this._state()?.trackingPaused ?? false);
+
+  /** Whether the camera keeps sending throws: while not paused, the visit has
+   * physical room left and no win is settled — past a win or bust they arrive as shadow darts. */
   readonly tracksThrows = computed(
     () =>
       this._state() !== null &&
+      !this.trackingPaused() &&
       this.settledWinner() === null &&
       (this.currentTurn()?.darts.length ?? 0) + this.shadowDarts().length < DARTS_PER_TURN,
   );
 
   /** Whether the camera keeps looking after the visit is full, to see its darts pulled out. */
   readonly watchesPull = computed(
-    () => this._state() !== null && this.settledWinner() === null && this.settings.advanceOnPull(),
+    () =>
+      this._state() !== null &&
+      !this.trackingPaused() &&
+      this.settledWinner() === null &&
+      this.settings.advanceOnPull(),
   );
 
   /** Whether the keypad may append: into any visit with room left, busted or
@@ -159,6 +167,11 @@ export class GameService {
    * the game that is measured, not the device saying so. */
   setEvaluation(enabled: boolean): void {
     this.socket.send({ type: 'set_evaluation', enabled });
+  }
+
+  /** Pause the camera for the whole room, or resume it; resuming recalibrates. */
+  setTrackingPaused(paused: boolean): void {
+    this.socket.send({ type: 'set_tracking_paused', paused });
   }
 
   /** The active game's id, even before its state has been (re)fetched — read

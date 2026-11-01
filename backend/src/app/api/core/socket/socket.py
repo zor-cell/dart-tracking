@@ -69,6 +69,7 @@ from app.api.features.detection.services import dart_detector
 from app.api.features.detection.services.detection_store import store as detection_store
 from app.api.features.detection.services.scoring_camera import store as scoring_camera_store
 from app.api.features.evaluation.dto.command.set_evaluation import SetEvaluationDto
+from app.api.features.game.dto.command.set_tracking_paused import SetTrackingPausedDto
 from app.api.features.evaluation.services import recorder
 from app.api.features.game.dto.command.game_command import GameCommand
 from app.api.features.game.dto.game_state import GameStateDto
@@ -244,6 +245,8 @@ async def _dispatch(
             logger.warning("[socket] ignored set_evaluation from a non-admin connection")
         case SetEvaluationDto():
             await _handle_set_evaluation(game_id, message)
+        case SetTrackingPausedDto():
+            await _handle_set_tracking_paused(game_id, message)
         case (
             RegisterDartDto()
             | ReplaceDartDto()
@@ -398,6 +401,17 @@ async def _handle_set_evaluation(game_id: str, command: SetEvaluationDto) -> Non
     applied = await _apply(game_id, lambda game: game.set_evaluation(command.enabled))
     if applied is not None and applied[1]:
         await _publish_state(applied[0])
+
+
+async def _handle_set_tracking_paused(game_id: str, command: SetTrackingPausedDto) -> None:
+    """Pause or resume the camera for the whole room. Resuming recalibrates, so
+    darts pulled or the board knocked during the pause do not read as a throw."""
+    applied = await _apply(game_id, lambda game: game.set_tracking_paused(command.paused))
+    if applied is None or not applied[1]:
+        return
+    await _publish_state(applied[0])
+    if not command.paused:
+        await _request_calibration(game_id)
 
 
 async def _publish_state(game: Game) -> None:

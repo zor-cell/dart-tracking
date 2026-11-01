@@ -28,6 +28,8 @@ class Game:
     variant: GameVariant = GameVariant.X01
     checkout_mode: CheckoutMode = CheckoutMode.DOUBLE_OUT
     evaluation_enabled: bool = False
+    # While set, the camera books nothing; the keypad still does.
+    tracking_paused: bool = False
     current_player_index: int = 0
     turns: list[Turn] = field(default_factory=list)
     # Darts the camera located after a win or bust closed the open visit, in
@@ -220,8 +222,10 @@ class Game:
 
     def register_dart(self, dart: Dart) -> bool:
         """Book a tracked dart into the open visit; whether it was booked. After a
-        win or bust it is kept as a shadow dart instead, and past the third
-        physical dart it is dropped."""
+        win or bust it is kept as a shadow dart instead; past the third physical
+        dart, or while tracking is paused, it is dropped."""
+        if self.tracking_paused:
+            return False
         if self.winner is None and self.darts_remaining > 0:
             turn = self.current_turn
             turn.darts.append(dart)
@@ -377,6 +381,14 @@ class Game:
         if self.evaluation_enabled == enabled:
             return
         self.evaluation_enabled = enabled
+        self.revision += 1
+
+    def set_tracking_paused(self, paused: bool) -> None:
+        """Hold the camera's bookings, or resume them. Bumps the revision so every
+        device shows the switch the same way."""
+        if self.tracking_paused == paused:
+            return
+        self.tracking_paused = paused
         self.revision += 1
 
     def _start_turn(self) -> None:

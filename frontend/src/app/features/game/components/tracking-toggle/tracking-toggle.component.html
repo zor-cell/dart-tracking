@@ -1,0 +1,11 @@
+@if (shown()) {
+  <p-button
+    [icon]="paused() ? 'pi pi-play-circle' : 'pi pi-pause-circle'"
+    [severity]="paused() ? 'primary' : 'secondary'"
+    [outlined]="!paused()"
+    size="small"
+    [ariaLabel]="paused() ? 'Tracking fortsetzen' : 'Tracking pausieren'"
+    [attr.aria-pressed]="paused()"
+    (onClick)="onClick()"
+  />
+}
