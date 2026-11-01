@@ -33,6 +33,7 @@ export interface AccuracySummaryDto {
   readonly bands: readonly DistanceBandDto[];
   readonly meanOffBy: number | null;
   readonly medianOffBy: number | null;
+  readonly bestOffBy: number | null;
   readonly worstOffBy: number | null;
   readonly fields: readonly FieldErrorsDto[];
 }

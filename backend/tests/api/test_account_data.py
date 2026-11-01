@@ -259,7 +259,15 @@ def test_accuracy_report_is_for_admins(alice, anon, session):
     assert alice.get("/evaluation/versions").json() == []
     filtered = alice.get(
         "/evaluation/accuracy",
-        params={"version": [4, 5], "mode": 501, "testRun": "true", "since": "2026-10-01T00:00:00Z"},
+        params={
+            "versionFrom": 4,
+            "versionTo": 5,
+            "mode": 501,
+            "testRun": "true",
+            "since": "2026-10-01T00:00:00Z",
+            "tiltFrom": 10,
+            "tiltTo": 45,
+        },
     )
     assert filtered.json()["games"] == []
 

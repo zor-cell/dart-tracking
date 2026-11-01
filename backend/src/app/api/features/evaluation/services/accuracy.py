@@ -53,7 +53,9 @@ async def judged_games(
         visits = [visit for visit in replay(events) if visit.tracked]
         judgements = [j for visit in visits for j in judge(game.id, visit)]
         if judgements:
-            judged.append(JudgedGame(game, events, visits, judgements))
+            entry = JudgedGame(game, events, visits, judgements)
+            if criteria.selects_camera(entry.camera):
+                judged.append(entry)
     return judged
 
 

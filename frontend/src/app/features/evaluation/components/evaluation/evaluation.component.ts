@@ -10,12 +10,20 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MultiSelect } from 'primeng/multiselect';
 import { Select } from 'primeng/select';
+import { Slider } from 'primeng/slider';
 import { AccuracySummaryDto, FieldKind, GameAccuracyDto } from '../../dto/accuracy.dto';
-import { EvaluationFilter, RUN_KIND_LABELS, RunKind } from '../../models/evaluation-filter';
+import {
+  EvaluationFilter,
+  RUN_KIND_LABELS,
+  RunKind,
+  TILT_LIMITS,
+  TiltRange,
+  VersionRange,
+} from '../../models/evaluation-filter';
 import { EvaluationService } from '../../services/evaluation.service';
 import { GAME_MODES, GameMode } from '../../../game/models/game-mode';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
@@ -47,6 +55,17 @@ import {
 } from '../../../../core/view/models/query-state';
 import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
 
+/** "v5", "v4–v6", "ab v5", "bis v6"; null for every version. */
+function versionLabel([from, to]: VersionRange): string | null {
+  if (from === null && to === null) {
+    return null;
+  }
+  if (from === to) {
+    return `v${from}`;
+  }
+  return from === null ? `bis v${to}` : to === null ? `ab v${from}` : `v${from}–v${to}`;
+}
+
 /** What the outcome counts are called on the page, in reading order. */
 const OUTCOMES: readonly { key: keyof AccuracySummaryDto; label: string; hint: string }[] = [
   { key: 'correct', label: 'Korrekt', hint: 'Im richtigen Segment gebucht' },
@@ -65,21 +84,38 @@ const FIELD_LABELS: Record<FieldKind, string> = {
 /** The filters whose picks are remembered and offered back; version and period are not. */
 const REMEMBERED = ['mode', 'run'] as const;
 
-/** Tracker versions as `5,4`, or `all` for every one, so a cleared pick survives a reload. */
-const VERSIONS_PARAM: QueryParam<number[]> = {
-  parse: (raw) => {
-    const versions = raw.split(',').map(Number);
-    return raw === 'all' ? [] : versions.every(Number.isInteger) ? versions : undefined;
-  },
-  format: (versions) => (versions.length === 0 ? 'all' : versions.join(',')),
+/** A range as `4-6`, `5` for one value, `4-` or `-6` for an open end. */
+function rangeParam(parse: (raw: string) => number): QueryParam<[number | null, number | null]> {
+  const bound = (raw: string) => (raw === '' ? null : parse(raw));
+  return {
+    parse: (raw) => {
+      const [from, to = from] = raw.split('-').map(bound);
+      const valid = [from, to].every((end) => end === null || Number.isFinite(end));
+      return valid && (from !== null || to !== null) ? [from, to] : undefined;
+    },
+    format: ([from, to]) => (from === to ? `${from ?? ''}` : `${from ?? ''}-${to ?? ''}`),
+  };
+}
+
+const VERSION_RANGE_PARAM = rangeParam(Number);
+
+/** The version range, or `all` for every version, so a cleared pick survives a reload. */
+const VERSION_PARAM: QueryParam<[number | null, number | null]> = {
+  parse: (raw) => (raw === 'all' ? [null, null] : VERSION_RANGE_PARAM.parse(raw)),
+  format: (range) =>
+    range[0] === null && range[1] === null ? 'all' : VERSION_RANGE_PARAM.format(range),
 };
 
 /** How each filter is kept in the query params. */
 const FILTER_PARAMS = {
-  version: VERSIONS_PARAM,
+  version: VERSION_PARAM,
   mode: listParam(oneOfParam(GAME_MODES)),
   run: oneOfParam(Object.keys(RUN_KIND_LABELS) as RunKind[]),
+  tilt: rangeParam(Number) as QueryParam<unknown>,
 };
+
+/** Milliseconds the tilt slider rests before its range is applied. */
+const TILT_DEBOUNCE_MS = 300;
 
 /** Offered while the account has no picks of its own. */
 const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
@@ -106,6 +142,7 @@ interface ScopeOption {
     PeriodPickerComponent,
     ReactiveFormsModule,
     Select,
+    Slider,
   ],
   templateUrl: './evaluation.component.html',
   styleUrl: './evaluation.component.scss',
@@ -133,11 +170,12 @@ export class EvaluationComponent {
   /** Tracker versions there are games of, newest first; null until they are known. */
   protected readonly versions = signal<number[] | null>(null);
   /** The known versions plus any the URL picked, so a pick always has its label. */
-  protected readonly versionOptions = computed(() =>
-    [...new Set([...(this.versions() ?? []), ...(this.filterValue().version ?? [])])]
+  protected readonly versionOptions = computed(() => {
+    const picked = (this.filterValue().version ?? []).flatMap((v) => (v === null ? [] : [v]));
+    return [...new Set<number>([...(this.versions() ?? []), ...picked])]
       .sort((a, b) => b - a)
-      .map((version) => ({ label: `v${version}`, value: version })),
-  );
+      .map((version) => ({ label: `v${version}`, value: version }));
+  });
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
   protected readonly runOptions = Object.entries(RUN_KIND_LABELS).map(([value, label]) => ({
     label,
@@ -148,10 +186,15 @@ export class EvaluationComponent {
   protected readonly range = signal<DayRange>(null);
 
   protected readonly filters = this.fb.group({
-    version: this.fb.control<number[] | null>(null),
+    version: this.fb.control<[number | null, number | null] | null>(null),
     mode: this.fb.control<GameMode[]>([], { nonNullable: true }),
     run: this.fb.control<RunKind | null>(null),
+    tilt: this.fb.control<[number, number] | null>(null),
   });
+  protected readonly tiltLimits = TILT_LIMITS;
+  /** The slider's range while it moves; applied once it rests. */
+  protected readonly tiltDraft = signal<TiltRange>(TILT_LIMITS);
+  private tiltTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly filterValue = toSignal(this.filters.valueChanges, {
     initialValue: this.filters.value,
   });
@@ -159,14 +202,15 @@ export class EvaluationComponent {
 
   /** The filters in use, as chips above the figures; the period shows in its own picker. */
   protected readonly chips = computed<FilterChip[]>(() => {
-    const { version, mode, run } = this.filterValue();
+    const { version, mode, run, tilt } = this.filterValue();
     const period = this.period();
     const range = period === 'custom' ? dayRangeLabel(this.range(), this.locale) : null;
     const chips: FilterChip[] = [
       { key: 'period', label: range ?? PERIOD_CHIP_LABELS[period], removable: false, opens: true },
     ];
-    if (version?.length) {
-      chips.push({ key: 'version', label: `Tracker ${orList(version.map((v) => `v${v}`))}` });
+    const versions = version ? versionLabel(version) : null;
+    if (versions) {
+      chips.push({ key: 'version', label: `Tracker ${versions}` });
     }
     const modes = this.chipLabel('mode', mode ?? []);
     if (modes) {
@@ -174,6 +218,9 @@ export class EvaluationComponent {
     }
     if (run) {
       chips.push({ key: 'run', label: RUN_KIND_LABELS[run] });
+    }
+    if (tilt) {
+      chips.push({ key: 'tilt', label: `Neigung ${tilt[0]}–${tilt[1]}°` });
     }
     return chips;
   });
@@ -196,15 +243,18 @@ export class EvaluationComponent {
 
   /** Null until the default version is in, so the page never loads every version first. */
   private readonly criteria = computed<EvaluationFilter | null>(() => {
-    const { version, mode, run } = this.filterValue();
+    const { version, mode, run, tilt } = this.filterValue();
     if (version === null || version === undefined) {
       return null;
     }
     return {
-      versions: version,
+      versionFrom: version[0],
+      versionTo: version[1],
       modes: mode ?? [],
       testRun: run ? run === 'test' : null,
       ...periodBounds(this.period(), this.range(), new Date()),
+      tiltFrom: tilt?.[0] ?? null,
+      tiltTo: tilt?.[1] ?? null,
     };
   });
 
@@ -249,6 +299,11 @@ export class EvaluationComponent {
     );
     this.queryState.signal('range', this.range, DAY_RANGE_PARAM, null);
     this.queryState.form(this.filters, FILTER_PARAMS);
+    this.tiltDraft.set(this.filters.controls.tilt.value ?? TILT_LIMITS);
+    this.filters.controls.tilt.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((tilt) => this.tiltDraft.set(tilt ?? TILT_LIMITS));
+    this.destroyRef.onDestroy(() => clearTimeout(this.tiltTimer));
     void this.memory.load();
     this.memory.watch('evaluation', this.filters, REMEMBERED, this.destroyRef);
     void this.loadVersions();
@@ -323,10 +378,42 @@ export class EvaluationComponent {
   /** Removing the version chip shows every version, which the URL keeps as `all`. */
   protected clearFilter(key: string): void {
     if (key === 'version') {
-      this.filters.controls.version.setValue([]);
+      this.filters.controls.version.setValue([null, null]);
     } else {
       this.filters.get(key)?.reset();
     }
+  }
+
+  /** One end of the version range; the other keeps its pick. */
+  protected setVersion(end: 0 | 1, version: number | null): void {
+    const range: [number | null, number | null] = [
+      ...(this.filters.controls.version.value ?? [null, null]),
+    ];
+    range[end] = version;
+    this.filters.controls.version.setValue(range);
+  }
+
+  /** Follows the slider and applies its range once it rests; the full span narrows nothing. */
+  protected slideTilt(range: TiltRange): void {
+    this.tiltDraft.set(range);
+    clearTimeout(this.tiltTimer);
+    this.tiltTimer = setTimeout(() => {
+      const [from, to] = range;
+      const full = from <= TILT_LIMITS[0] && to >= TILT_LIMITS[1];
+      this.filters.controls.tilt.setValue(full ? null : [from, to]);
+    }, TILT_DEBOUNCE_MS);
+  }
+
+  /** The off-by spread as symbol, name and value, for the line under the bands. */
+  protected offByFigures(
+    summary: AccuracySummaryDto,
+  ): { symbol: string; label: string; value: number | null }[] {
+    return [
+      { symbol: 'Ø', label: 'Mittelwert', value: summary.meanOffBy },
+      { symbol: 'x̃', label: 'Median', value: summary.medianOffBy },
+      { symbol: 'min', label: 'Kleinster Abstand', value: summary.bestOffBy },
+      { symbol: 'max', label: 'Größter Abstand', value: summary.worstOffBy },
+    ];
   }
 
   protected retry(): void {
@@ -338,9 +425,9 @@ export class EvaluationComponent {
     }
   }
 
-  private newest(): number[] {
-    const newest = this.versions()?.[0];
-    return newest === undefined ? [] : [newest];
+  private newest(): [number | null, number | null] {
+    const newest = this.versions()?.[0] ?? null;
+    return [newest, newest];
   }
 
   /** The versions first, then the newest one as the default unless the URL picked others. */

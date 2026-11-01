@@ -2,7 +2,13 @@ from datetime import UTC, datetime
 
 import pytest
 
-from app.api.features.evaluation.domain.accuracy import FieldKind, LoggedGame, judge, summarise
+from app.api.features.evaluation.domain.accuracy import (
+    CameraAngle,
+    FieldKind,
+    LoggedGame,
+    judge,
+    summarise,
+)
 from app.api.features.evaluation.domain.alignment import DartOutcome, align, outcome_of
 from app.api.features.evaluation.domain.evaluation_filter import EvaluationFilter
 from app.api.features.evaluation.domain.game_event import GameEvent, GameEventKind
@@ -179,10 +185,11 @@ def logged(versions: tuple[int, ...], *, mode: int = 501, test_run: bool = False
     ("criteria", "game", "selected"),
     [
         (EvaluationFilter(), logged(()), True),
-        (EvaluationFilter(versions=(5,)), logged((5,)), True),
-        (EvaluationFilter(versions=(5,)), logged((4, 5)), False),
-        (EvaluationFilter(versions=(4, 5)), logged((4, 5)), True),
-        (EvaluationFilter(versions=(5,)), logged(()), False),
+        (EvaluationFilter(version_from=5, version_to=5), logged((5,)), True),
+        (EvaluationFilter(version_from=5, version_to=5), logged((4, 5)), False),
+        (EvaluationFilter(version_from=4, version_to=6), logged((4, 5)), True),
+        (EvaluationFilter(version_from=5), logged((6,)), True),
+        (EvaluationFilter(version_to=5), logged(()), False),
         (EvaluationFilter(modes=(GameMode.X01_301,)), logged((5,)), False),
         (EvaluationFilter(test_run=True), logged((5,), test_run=True), True),
         (EvaluationFilter(test_run=False), logged((5,), test_run=True), False),
@@ -192,3 +199,17 @@ def logged(versions: tuple[int, ...], *, mode: int = 501, test_run: bool = False
 )
 def test_evaluation_filter_selects_games(criteria, game, selected):
     assert criteria.selects(game) is selected
+
+
+@pytest.mark.parametrize(
+    ("criteria", "tilt", "selected"),
+    [
+        (EvaluationFilter(), None, True),
+        (EvaluationFilter(tilt_from=20), None, False),
+        (EvaluationFilter(tilt_from=20, tilt_to=40), 30.0, True),
+        (EvaluationFilter(tilt_from=20, tilt_to=40), 41.0, False),
+    ],
+)
+def test_evaluation_filter_reads_the_camera_tilt(criteria, tilt, selected):
+    camera = None if tilt is None else CameraAngle(tilt=tilt, horizontal=0, vertical=0, focal_px=1)
+    assert criteria.selects_camera(camera) is selected

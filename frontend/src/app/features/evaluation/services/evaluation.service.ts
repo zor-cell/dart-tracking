@@ -14,14 +14,20 @@ export class EvaluationService {
 
   loadAccuracy(filter: EvaluationFilter): Promise<AccuracyReportDto> {
     let params = new HttpParams();
-    for (const version of filter.versions) {
-      params = params.append('version', version);
-    }
     for (const mode of filter.modes) {
       params = params.append('mode', mode);
     }
-    if (filter.testRun !== null) {
-      params = params.set('testRun', filter.testRun);
+    const values: Record<string, number | boolean | null> = {
+      versionFrom: filter.versionFrom,
+      versionTo: filter.versionTo,
+      testRun: filter.testRun,
+      tiltFrom: filter.tiltFrom,
+      tiltTo: filter.tiltTo,
+    };
+    for (const [key, value] of Object.entries(values)) {
+      if (value !== null) {
+        params = params.set(key, value);
+      }
     }
     if (filter.since) {
       params = params.set('since', filter.since.toISOString());

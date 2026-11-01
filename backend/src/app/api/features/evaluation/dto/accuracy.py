@@ -54,6 +54,7 @@ class AccuracySummaryDto(CamelModel):
     bands: list[DistanceBandDto]
     mean_off_by: float | None
     median_off_by: float | None
+    best_off_by: float | None
     worst_off_by: float | None
     fields: list[FieldErrorsDto]
 
@@ -76,6 +77,7 @@ class AccuracySummaryDto(CamelModel):
             ],
             mean_off_by=_rounded(accuracy.mean_off_by),
             median_off_by=_rounded(accuracy.median_off_by),
+            best_off_by=_rounded(accuracy.best_off_by),
             worst_off_by=_rounded(accuracy.worst_off_by),
             fields=[FieldErrorsDto.from_entity(field) for field in accuracy.fields],
         )

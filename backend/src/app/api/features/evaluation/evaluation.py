@@ -20,18 +20,24 @@ router = APIRouter(prefix="/evaluation", tags=["Evaluation"])
 @router.get("/accuracy", response_model=AccuracyReportDto)
 async def accuracy_report(
     user: AdminUser,
-    version: list[int] = Query([]),
+    version_from: int | None = Query(None, alias="versionFrom"),
+    version_to: int | None = Query(None, alias="versionTo"),
     mode: list[GameMode] = Query([]),
     test_run: bool | None = Query(None, alias="testRun"),
     since: datetime | None = None,
     until: datetime | None = None,
+    tilt_from: float | None = Query(None, ge=0, le=90, alias="tiltFrom"),
+    tilt_to: float | None = Query(None, ge=0, le=90, alias="tiltTo"),
 ) -> AccuracyReportDto:
     criteria = EvaluationFilter(
-        versions=tuple(version),
+        version_from=version_from,
+        version_to=version_to,
         modes=tuple(mode),
         test_run=test_run,
         since=since,
         until=until,
+        tilt_from=tilt_from,
+        tilt_to=tilt_to,
     )
     async with database.session_scope() as session:
         overview = await accuracy.overview(session, criteria)

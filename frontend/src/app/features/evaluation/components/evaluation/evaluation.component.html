@@ -14,18 +14,34 @@
     (reset)="resetFilters()"
   >
     <form class="list-filters" [formGroup]="filters">
-      <label class="list-filters__label" for="filter-version">Tracker-Version</label>
-      <p-multiselect
-        inputId="filter-version"
-        formControlName="version"
-        [options]="versionOptions()"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Alle"
-        [showHeader]="false"
-        [showClear]="true"
-        fluid
-      />
+      <span class="list-filters__label" id="filter-version">Tracker-Version</span>
+      <div class="range" role="group" aria-labelledby="filter-version">
+        <p-select
+          [options]="versionOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="filters.controls.version.value?.[0] ?? null"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="setVersion(0, $event)"
+          placeholder="Von"
+          ariaLabel="Tracker-Version von"
+          [showClear]="true"
+          fluid
+        />
+        <span class="range__dash" aria-hidden="true">–</span>
+        <p-select
+          [options]="versionOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="filters.controls.version.value?.[1] ?? null"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="setVersion(1, $event)"
+          placeholder="Bis"
+          ariaLabel="Tracker-Version bis"
+          [showClear]="true"
+          fluid
+        />
+      </div>
       <label class="list-filters__label" for="filter-mode">Modus</label>
       <p-multiselect
         inputId="filter-mode"
@@ -48,6 +64,20 @@
         placeholder="Alle"
         [showClear]="true"
         fluid
+      />
+      <span class="list-filters__label" id="filter-tilt">
+        Kameraneigung
+        <span class="tilt__value">{{ tiltDraft()[0] }}–{{ tiltDraft()[1] }}°</span>
+      </span>
+      <p-slider
+        class="tilt__slider"
+        [range]="true"
+        [min]="tiltLimits[0]"
+        [max]="tiltLimits[1]"
+        [ngModel]="tiltDraft()"
+        [ngModelOptions]="{ standalone: true }"
+        (ngModelChange)="slideTilt($event)"
+        ariaLabelledBy="filter-tilt"
       />
     </form>
   </app-list-toolbar>
@@ -282,11 +312,17 @@
                 </li>
               }
             </ul>
-            <p class="panel__hint">
-              Mittel {{ summary.meanOffBy | number: '1.1-1' }} mm &middot; Median
-              {{ summary.medianOffBy | number: '1.1-1' }} mm &middot; schlechtester
-              {{ summary.worstOffBy | number: '1.1-1' }} mm
-            </p>
+            <dl class="spread">
+              @for (figure of offByFigures(summary); track figure.label) {
+                <div class="spread__figure">
+                  <dt class="spread__label">
+                    <span aria-hidden="true">{{ figure.symbol }}</span>
+                    <span class="sr-only">{{ figure.label }}</span>
+                  </dt>
+                  <dd class="spread__value">{{ figure.value | number: '1.1-1' }} mm</dd>
+                </div>
+              }
+            </dl>
           }
         </section>
       }
