@@ -23,24 +23,27 @@ export class StatisticsService {
   }
 
   private params(filter: StatisticsFilter, player: string | null): HttpParams {
-    const { opponentId, since, until, lastGames, ...rest } = filter;
+    const lists: Record<string, readonly (string | number)[]> = {
+      variant: filter.variants,
+      mode: filter.modes,
+      checkoutMode: filter.checkoutModes,
+      opponent: filter.opponentIds,
+      players: filter.playerCounts,
+    };
     let params = new HttpParams();
-    for (const [key, value] of Object.entries(rest)) {
-      if (value !== null) {
-        params = params.set(key, value);
+    for (const [key, values] of Object.entries(lists)) {
+      for (const value of values) {
+        params = params.append(key, value);
       }
     }
-    if (opponentId) {
-      params = params.set('opponent', opponentId);
+    if (filter.since) {
+      params = params.set('since', filter.since.toISOString());
     }
-    if (since) {
-      params = params.set('since', since.toISOString());
+    if (filter.until) {
+      params = params.set('until', filter.until.toISOString());
     }
-    if (until) {
-      params = params.set('until', until.toISOString());
-    }
-    if (lastGames !== null) {
-      params = params.set('last', lastGames);
+    if (filter.lastGames !== null) {
+      params = params.set('last', filter.lastGames);
     }
     if (player) {
       params = params.set('player', player);

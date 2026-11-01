@@ -15,58 +15,62 @@
   >
     <form class="list-filters" [formGroup]="filters">
       <label class="list-filters__label" for="filter-variant">Variante</label>
-      <p-select
+      <p-multiselect
         inputId="filter-variant"
         formControlName="variant"
         [options]="variantOptions"
         optionLabel="label"
         optionValue="value"
         placeholder="Alle"
+        [showHeader]="false"
         [showClear]="true"
         fluid
       />
       <label class="list-filters__label" for="filter-opponent">Gegner</label>
-      <p-select
+      <p-multiselect
         inputId="filter-opponent"
         formControlName="opponentId"
         [options]="opponents()"
         optionLabel="name"
         optionValue="id"
         placeholder="Alle"
-        [filter]="true"
+        filterPlaceHolder="Spieler suchen"
         [showClear]="true"
         fluid
       />
       <label class="list-filters__label" for="filter-players">Spieleranzahl</label>
-      <p-select
+      <p-multiselect
         inputId="filter-players"
         formControlName="players"
         [options]="playerCountOptions"
         optionLabel="label"
         optionValue="value"
         placeholder="Alle"
+        [showHeader]="false"
         [showClear]="true"
         fluid
       />
       <label class="list-filters__label" for="filter-mode">Modus</label>
-      <p-select
+      <p-multiselect
         inputId="filter-mode"
         formControlName="mode"
         [options]="modeOptions"
         optionLabel="label"
         optionValue="value"
         placeholder="Alle"
+        [showHeader]="false"
         [showClear]="true"
         fluid
       />
       <label class="list-filters__label" for="filter-checkout">Checkout</label>
-      <p-select
+      <p-multiselect
         inputId="filter-checkout"
         formControlName="checkoutMode"
         [options]="checkoutOptions"
         optionLabel="label"
         optionValue="value"
         placeholder="Alle"
+        [showHeader]="false"
         [showClear]="true"
         fluid
       />
@@ -98,52 +102,13 @@
       />
     </div>
   </p-popover>
-  <p-popover #periodPicker>
-    <div class="period">
-      <span id="statistics-unit" class="sr-only">Zeitraum zählen in</span>
-      <p-selectbutton
-        [options]="unitOptions"
-        optionLabel="label"
-        optionValue="value"
-        [allowEmpty]="false"
-        [ngModel]="unit()"
-        (ngModelChange)="selectUnit($event)"
-        ariaLabelledBy="statistics-unit"
-        size="small"
-        fluid
-      />
-      <span id="statistics-period" class="sr-only">Zeitraum</span>
-      <p-selectbutton
-        [options]="periodOptions()"
-        optionLabel="label"
-        optionValue="value"
-        [allowEmpty]="false"
-        [ngModel]="period()"
-        (ngModelChange)="selectPeriod($event, periodPicker)"
-        ariaLabelledBy="statistics-period"
-        size="small"
-        fluid
-      >
-        <ng-template #item let-option>
-          @if (option.value === 'custom') {
-            <i class="pi pi-calendar" aria-hidden="true"></i>
-            <span class="sr-only">{{ option.label }}</span>
-          } @else {
-            {{ option.label }}
-          }
-        </ng-template>
-      </p-selectbutton>
-      @if (period() === 'custom') {
-        <p-datepicker
-          [ngModel]="range()"
-          (ngModelChange)="pickRange($event, periodPicker)"
-          selectionMode="range"
-          [inline]="true"
-          ariaLabel="Eigener Zeitraum"
-        />
-      }
-    </div>
-  </p-popover>
+  <app-period-picker
+    #periodPicker
+    [units]="true"
+    [(unit)]="unit"
+    [(period)]="period"
+    [(range)]="range"
+  />
 
   @if (comparedPlayer(); as player) {
     <div class="compare-note">

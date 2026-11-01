@@ -13,27 +13,16 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Params } from '@angular/router';
 import { Button } from 'primeng/button';
-import { DatePicker } from 'primeng/datepicker';
+import { MultiSelect } from 'primeng/multiselect';
 import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
-import { SelectButton } from 'primeng/selectbutton';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { StatisticsOverviewDto } from '../../dto/statistics-overview.dto';
 import { COMPARE_COLOR, Comparison, OWN_COLOR } from '../../models/comparison';
 import { StatisticsFilter } from '../../models/statistics-filter';
-import {
-  DEFAULT_PERIODS,
-  PERIOD_CHIP_LABELS,
-  STATISTICS_PERIODS,
-  STATISTICS_UNITS,
-  StatisticsPeriod,
-  StatisticsUnit,
-  periodGames,
-  periodStart,
-} from '../../models/statistics-period';
 import { StatisticsService } from '../../services/statistics.service';
 import { CHECKOUT_MODES, CheckoutMode } from '../../../game/models/checkout-mode';
-import { PLAYER_COUNTS, PlayerCount } from '../../../game/models/game-filter';
+import { PLAYER_COUNT_LABELS, PlayerCount } from '../../../game/models/game-filter';
 import { GAME_MODES, GameMode } from '../../../game/models/game-mode';
 import { GAME_VARIANTS, GameVariant } from '../../../game/models/game-variant';
 import { PlayerIdentityDto } from '../../../player/dto/player-identity.dto';
@@ -44,12 +33,25 @@ import { LoadingStateComponent } from '../../../../core/view/components/loading-
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
-import { DayRange, dayRangeBounds, dayRangeLabel } from '../../../../core/view/models/day-range';
+import { PeriodPickerComponent } from '../../../../core/view/components/period-picker/period-picker.component';
+import { DayRange, dayRangeLabel } from '../../../../core/view/models/day-range';
 import {
   FilterChip,
   FilterChipOpen,
   FilterSuggestion,
+  orList,
+  withPick,
 } from '../../../../core/view/models/filter-chip';
+import {
+  DEFAULT_PERIODS,
+  PERIOD_CHIP_LABELS,
+  PERIOD_UNITS,
+  PERIODS,
+  Period,
+  PeriodUnit,
+  periodBounds,
+  periodGames,
+} from '../../../../core/view/models/period';
 import { centrePopoverArrow } from '../../../../core/view/models/popover-arrow';
 import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
 import { readStored, writeStored } from '../../../../core/storage/models/browser-storage';
@@ -57,6 +59,7 @@ import {
   DAY_RANGE_PARAM,
   QueryState,
   TEXT_PARAM,
+  listParam,
   oneOfParam,
 } from '../../../../core/view/models/query-state';
 import { CheckoutStatisticsComponent } from '../checkout-statistics/checkout-statistics.component';
@@ -67,6 +70,8 @@ import { VisitDistributionComponent } from '../visit-distribution/visit-distribu
 /** The filters whose picks are remembered and offered back; the period is not among them. */
 const REMEMBERED = ['variant', 'opponentId', 'players', 'mode', 'checkoutMode'] as const;
 
+type Remembered = (typeof REMEMBERED)[number];
+
 type StatisticsTab = 'precision' | 'checkout' | 'trend';
 
 const TABS: readonly StatisticsTab[] = ['precision', 'checkout', 'trend'];
@@ -76,16 +81,19 @@ const TAB_KEY = 'dart-tracking.statisticsTab';
 
 /** How each filter is kept in the query params. */
 const FILTER_PARAMS = {
-  variant: oneOfParam(GAME_VARIANTS.map((variant) => variant.value)),
-  opponentId: TEXT_PARAM,
-  players: oneOfParam(Object.keys(PLAYER_COUNTS) as PlayerCount[]),
-  mode: oneOfParam(GAME_MODES),
-  checkoutMode: oneOfParam(CHECKOUT_MODES.map((mode) => mode.value)),
+  variant: listParam(oneOfParam(GAME_VARIANTS.map((variant) => variant.value))),
+  opponentId: listParam(TEXT_PARAM),
+  players: listParam(oneOfParam(Object.keys(PLAYER_COUNT_LABELS) as PlayerCount[])),
+  mode: listParam(oneOfParam(GAME_MODES)),
+  checkoutMode: listParam(oneOfParam(CHECKOUT_MODES.map((mode) => mode.value))),
 };
+
+/** The quick picks the game list knows too; a count of games has no counterpart there. */
+const DAY_PERIODS: readonly Period[] = PERIODS.days.map((option) => option.value);
 
 /** Offered while the account has no picks of its own. */
 const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
-  { key: 'players', label: PLAYER_COUNTS.solo.label, value: 'solo' },
+  { key: 'players', label: PLAYER_COUNT_LABELS.solo, value: 'solo' },
 ];
 
 @Component({
@@ -94,18 +102,18 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
     BackLinkComponent,
     Button,
     CheckoutStatisticsComponent,
-    DatePicker,
     LoadingStateComponent,
     EmptyStateComponent,
     ListToolbarComponent,
     LoadErrorComponent,
     FormsModule,
     InfoHintComponent,
+    MultiSelect,
+    PeriodPickerComponent,
     Popover,
     PrecisionStatisticsComponent,
     ReactiveFormsModule,
     Select,
-    SelectButton,
     Tab,
     TabList,
     TabPanel,
@@ -137,19 +145,16 @@ export class StatisticsComponent {
     TABS.find((tab) => tab === readStored(TAB_KEY)) ?? 'precision',
   );
 
-  protected readonly unitOptions = [...STATISTICS_UNITS];
-  protected readonly unit = signal<StatisticsUnit>('days');
-  protected readonly periodOptions = computed(() => [...STATISTICS_PERIODS[this.unit()]]);
-  protected readonly period = signal<StatisticsPeriod>(DEFAULT_PERIODS.days);
+  protected readonly unit = signal<PeriodUnit>('days');
+  protected readonly period = signal<Period>(DEFAULT_PERIODS.days);
   protected readonly range = signal<DayRange>(null);
 
   protected readonly variantOptions = [...GAME_VARIANTS];
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
   protected readonly checkoutOptions = [...CHECKOUT_MODES];
-  protected readonly playerCountOptions = Object.entries(PLAYER_COUNTS).map(([value, count]) => ({
-    label: count.label,
-    value: value as PlayerCount,
-  }));
+  protected readonly playerCountOptions = Object.entries(PLAYER_COUNT_LABELS).map(
+    ([value, label]) => ({ label, value: value as PlayerCount }),
+  );
   protected readonly opponents = signal<PlayerIdentityDto[]>([]);
 
   /** The address book entry set beside one's own figures; empty for none. */
@@ -167,11 +172,11 @@ export class StatisticsComponent {
   });
 
   protected readonly filters = this.fb.group({
-    variant: this.fb.control<GameVariant | null>(null),
-    opponentId: this.fb.control<string | null>(null),
-    players: this.fb.control<PlayerCount | null>(null),
-    mode: this.fb.control<GameMode | null>(null),
-    checkoutMode: this.fb.control<CheckoutMode | null>(null),
+    variant: this.fb.control<GameVariant[]>([], { nonNullable: true }),
+    opponentId: this.fb.control<string[]>([], { nonNullable: true }),
+    players: this.fb.control<PlayerCount[]>([], { nonNullable: true }),
+    mode: this.fb.control<GameMode[]>([], { nonNullable: true }),
+    checkoutMode: this.fb.control<CheckoutMode[]>([], { nonNullable: true }),
   });
   private readonly filterValue = toSignal(this.filters.valueChanges, {
     initialValue: this.filters.value,
@@ -191,20 +196,20 @@ export class StatisticsComponent {
         opens: true,
       },
       ...REMEMBERED.flatMap((key) => {
-        const picked = value[key];
-        return picked ? [{ key, label: this.labelOf(key, picked) ?? 'Gegen Mitspieler' }] : [];
+        const label = this.chipLabel(key, value[key] ?? []);
+        return label ? [{ key, label }] : [];
       }),
     ];
   });
 
   /** Common filters one tap away, for those still open. */
   protected readonly suggestions = computed<FilterSuggestion[]>(() => {
-    const value = this.filterValue() as Record<string, unknown>;
+    const value = this.filterValue() as Record<string, unknown[] | undefined>;
     return this.memory.suggest(
       'statistics',
       DEFAULT_SUGGESTIONS,
-      (key, picked) => this.labelOf(key, picked),
-      (key) => !value[key],
+      (key, picked) => this.chipLabel(key, [picked]),
+      (key, picked) => !(value[key] ?? []).includes(picked),
     );
   });
 
@@ -215,20 +220,14 @@ export class StatisticsComponent {
 
   protected readonly criteria = computed<StatisticsFilter>(() => {
     const { variant, opponentId, players, mode, checkoutMode } = this.filterValue();
-    const count = players ? PLAYER_COUNTS[players] : null;
     const period = this.period();
-    const bounds =
-      period === 'custom'
-        ? dayRangeBounds(this.range())
-        : { since: periodStart(period, new Date()), until: null };
     return {
-      variant: variant ?? null,
-      mode: mode ?? null,
-      checkoutMode: checkoutMode ?? null,
-      opponentId: opponentId ?? null,
-      minPlayers: count?.min ?? null,
-      maxPlayers: count?.max ?? null,
-      ...bounds,
+      variants: variant ?? [],
+      modes: mode ?? [],
+      checkoutModes: checkoutMode ?? [],
+      opponentIds: opponentId ?? [],
+      playerCounts: players ?? [],
+      ...periodBounds(period, this.range(), new Date()),
       lastGames: periodGames(period),
     };
   });
@@ -236,32 +235,36 @@ export class StatisticsComponent {
   /** The filters as the game list reads them, for links into it. A count of recent games
    * has no counterpart there, so that period is left out. */
   protected readonly gameListParams = computed<Params>(() => {
-    const { variant, opponentId, players, mode, checkoutMode } = this.filterValue();
+    const value = this.filterValue();
+    const params: Record<string, string> = {};
+    for (const key of REMEMBERED) {
+      const picks = (value[key] ?? []) as never[];
+      if (picks.length > 0) {
+        params[key] = FILTER_PARAMS[key].format(picks);
+      }
+    }
     const period = this.period();
-    const start = periodStart(period, new Date());
-    const range: DayRange = period === 'custom' ? this.range() : start && [start, new Date()];
-    const params: Record<string, unknown> = {
-      variant,
-      mode,
-      checkoutMode,
-      opponentId,
-      players,
-      period: range ? DAY_RANGE_PARAM.format(range) || null : null,
-    };
-    return Object.fromEntries(Object.entries(params).filter(([, value]) => value != null));
+    if (period !== 'all' && DAY_PERIODS.includes(period)) {
+      params['period'] = period;
+    }
+    const range = period === 'custom' ? DAY_RANGE_PARAM.format(this.range()) : '';
+    if (range) {
+      params['range'] = range;
+    }
+    return params;
   });
 
   constructor() {
     this.queryState.signal(
       'unit',
       this.unit,
-      oneOfParam(STATISTICS_UNITS.map((u) => u.value)),
+      oneOfParam(PERIOD_UNITS.map((u) => u.value)),
       'days',
     );
     this.queryState.signal(
       'period',
       this.period,
-      oneOfParam(Object.keys(PERIOD_CHIP_LABELS) as StatisticsPeriod[]),
+      oneOfParam(Object.keys(PERIOD_CHIP_LABELS) as Period[]),
       DEFAULT_PERIODS.days,
     );
     this.queryState.signal('range', this.range, DAY_RANGE_PARAM, null);
@@ -284,60 +287,42 @@ export class StatisticsComponent {
     });
   }
 
-  /** How a filter's value reads on a chip; null for one this page does not know. */
-  private labelOf(key: string, value: unknown): string | null {
+  /** How a filter's picks read on a chip; null when none of them is known to this page. */
+  private chipLabel(key: string, picks: readonly unknown[]): string | null {
+    const names = picks.flatMap((pick) => this.nameOf(key as Remembered, pick) ?? []);
+    if (names.length === 0) {
+      return null;
+    }
+    return key === 'opponentId' ? `Gegen ${orList(names)}` : orList(names);
+  }
+
+  private nameOf(key: Remembered, value: unknown): string | null {
     switch (key) {
       case 'variant':
         return GAME_VARIANTS.find((option) => option.value === value)?.label ?? null;
-      case 'opponentId': {
-        const name = this.opponents().find((player) => player.id === value)?.name;
-        return name ? `Gegen ${name}` : null;
-      }
+      case 'opponentId':
+        return this.opponents().find((player) => player.id === value)?.name ?? null;
       case 'players':
-        return typeof value === 'string' && Object.hasOwn(PLAYER_COUNTS, value)
-          ? PLAYER_COUNTS[value as PlayerCount].label
+        return typeof value === 'string' && Object.hasOwn(PLAYER_COUNT_LABELS, value)
+          ? PLAYER_COUNT_LABELS[value as PlayerCount]
           : null;
       case 'mode':
         return GAME_MODES.some((mode) => mode === value) ? `${value}` : null;
       case 'checkoutMode':
         return CHECKOUT_MODES.find((option) => option.value === value)?.label ?? null;
-      default:
-        return null;
-    }
-  }
-
-  /** Switch what the quick picks count; "all" stays, any other pick starts over. */
-  protected selectUnit(unit: StatisticsUnit): void {
-    this.unit.set(unit);
-    if (this.period() !== 'all') {
-      this.period.set(DEFAULT_PERIODS[unit]);
     }
   }
 
   /** The period chip opens the period picker under it. */
-  protected openPicker(open: FilterChipOpen, picker: Popover): void {
+  protected openPicker(open: FilterChipOpen, picker: PeriodPickerComponent): void {
     if (open.key === 'period') {
       picker.toggle(open.event);
     }
   }
 
-  /** A quick pick closes the picker; the calendar pick opens the calendar in it instead. */
-  protected selectPeriod(period: StatisticsPeriod, picker: Popover): void {
-    this.period.set(period);
-    if (period !== 'custom') {
-      picker.hide();
-    }
-  }
-
-  protected pickRange(range: DayRange, calendar: Popover): void {
-    this.range.set(range);
-    if (range?.[1]) {
-      calendar.hide();
-    }
-  }
-
   protected pickSuggestion(suggestion: FilterSuggestion): void {
-    this.filters.get(suggestion.key)?.setValue(suggestion.value);
+    const control = this.filters.get(suggestion.key);
+    control?.setValue(withPick(control.value as unknown[], suggestion.value));
   }
 
   protected resetFilters(): void {

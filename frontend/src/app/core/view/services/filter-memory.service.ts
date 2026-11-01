@@ -36,7 +36,8 @@ export class FilterMemoryService {
     }
   }
 
-  /** Remember each of `keys` in `form` whenever it is set to a value; clearing is no pick. */
+  /** Remember each of `keys` in `form` whenever it is set to a value, or each value newly
+   * added to a list; clearing is no pick. */
   watch(view: string, form: FormGroup, keys: readonly string[], destroyRef: DestroyRef): void {
     form.valueChanges
       .pipe(
@@ -47,8 +48,7 @@ export class FilterMemoryService {
       )
       .subscribe(([before, after]) => {
         for (const key of keys) {
-          const value = after[key];
-          if (value !== null && value !== undefined && value !== before[key]) {
+          for (const value of added(before[key], after[key])) {
             this.remember(view, key, value);
           }
         }
@@ -63,7 +63,7 @@ export class FilterMemoryService {
     view: string,
     defaults: readonly FilterSuggestion[],
     label: (key: string, value: unknown) => string | null,
-    open: (key: string) => boolean,
+    open: (key: string, value: unknown) => boolean,
     count = 2,
   ): FilterSuggestion[] {
     const now = Date.now();
@@ -79,7 +79,7 @@ export class FilterMemoryService {
     const picked: FilterSuggestion[] = [];
     for (const suggestion of [...learned, ...defaults]) {
       const taken = picked.some((p) => p.key === suggestion.key && p.value === suggestion.value);
-      if (picked.length < count && open(suggestion.key) && !taken) {
+      if (picked.length < count && open(suggestion.key, suggestion.value) && !taken) {
         picked.push(suggestion);
       }
     }
@@ -108,6 +108,15 @@ export class FilterMemoryService {
       this.http.put<void>(this.url, { uses }, { context: SILENT_ERROR_CONTEXT }),
     ).catch(() => {});
   }
+}
+
+/** The picks `after` holds that `before` did not: a list's new entries, or a changed value. */
+function added(before: unknown, after: unknown): unknown[] {
+  if (Array.isArray(after)) {
+    const previous: unknown[] = Array.isArray(before) ? before : [];
+    return after.filter((value) => !previous.includes(value));
+  }
+  return after !== null && after !== undefined && after !== before ? [after] : [];
 }
 
 /** A pick's weight as of `now`, halving every `HALF_LIFE_DAYS`. */

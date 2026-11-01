@@ -1,8 +1,10 @@
-/** Whether the quick picks count back in days or in games. */
-export type StatisticsUnit = 'days' | 'games';
+import { DayRange, dayRangeBounds } from './day-range';
 
-/** A quick pick of what the statistics cover; `custom` opens a date range. */
-export type StatisticsPeriod =
+/** Whether the quick picks count back in days or in games. */
+export type PeriodUnit = 'days' | 'games';
+
+/** A quick pick of what a view covers; `custom` opens a date range. */
+export type Period =
   | 'days7'
   | 'days30'
   | 'days90'
@@ -14,19 +16,16 @@ export type StatisticsPeriod =
   | 'games100'
   | 'all';
 
-export const STATISTICS_UNITS: readonly { label: string; value: StatisticsUnit }[] = [
+export const PERIOD_UNITS: readonly { label: string; value: PeriodUnit }[] = [
   { label: 'Zeit', value: 'days' },
   { label: 'Spiele', value: 'games' },
 ];
 
-export const STATISTICS_PERIODS: Record<
-  StatisticsUnit,
-  readonly { label: string; value: StatisticsPeriod }[]
-> = {
+export const PERIODS: Record<PeriodUnit, readonly { label: string; value: Period }[]> = {
   days: [
-    { label: '7 T', value: 'days7' },
-    { label: '30 T', value: 'days30' },
-    { label: '90 T', value: 'days90' },
+    { label: '7 T', value: 'days7' },
+    { label: '30 T', value: 'days30' },
+    { label: '90 T', value: 'days90' },
     { label: 'Jahr', value: 'days365' },
     { label: 'Alle', value: 'all' },
     { label: 'Eigener Zeitraum', value: 'custom' },
@@ -41,7 +40,7 @@ export const STATISTICS_PERIODS: Record<
 };
 
 /** How the active pick reads as a chip; `custom` shows the picked days instead. */
-export const PERIOD_CHIP_LABELS: Record<StatisticsPeriod, string> = {
+export const PERIOD_CHIP_LABELS: Record<Period, string> = {
   days7: 'Letzte 7 Tage',
   days30: 'Letzte 30 Tage',
   days90: 'Letzte 90 Tage',
@@ -55,13 +54,13 @@ export const PERIOD_CHIP_LABELS: Record<StatisticsPeriod, string> = {
 };
 
 /** The pick a unit starts on. */
-export const DEFAULT_PERIODS: Record<StatisticsUnit, StatisticsPeriod> = {
+export const DEFAULT_PERIODS: Record<PeriodUnit, Period> = {
   days: 'days30',
   games: 'games10',
 };
 
 /** Days a quick pick reaches back, today included. */
-const PERIOD_DAYS: Partial<Record<StatisticsPeriod, number>> = {
+const PERIOD_DAYS: Partial<Record<Period, number>> = {
   days7: 7,
   days30: 30,
   days90: 90,
@@ -69,7 +68,7 @@ const PERIOD_DAYS: Partial<Record<StatisticsPeriod, number>> = {
 };
 
 /** Most recent games a quick pick keeps. */
-const PERIOD_GAMES: Partial<Record<StatisticsPeriod, number>> = {
+const PERIOD_GAMES: Partial<Record<Period, number>> = {
   games10: 10,
   games25: 25,
   games50: 50,
@@ -77,7 +76,7 @@ const PERIOD_GAMES: Partial<Record<StatisticsPeriod, number>> = {
 };
 
 /** Midnight of the first day a quick pick covers; null when it has no start. */
-export function periodStart(period: StatisticsPeriod, today: Date): Date | null {
+export function periodStart(period: Period, today: Date): Date | null {
   const days = PERIOD_DAYS[period];
   return days === undefined
     ? null
@@ -85,6 +84,17 @@ export function periodStart(period: StatisticsPeriod, today: Date): Date | null 
 }
 
 /** How many of the latest games a quick pick keeps; null when it counts days. */
-export function periodGames(period: StatisticsPeriod): number | null {
+export function periodGames(period: Period): number | null {
   return PERIOD_GAMES[period] ?? null;
+}
+
+/** The days a pick covers as query bounds, `until` exclusive; `range` is read for `custom`. */
+export function periodBounds(
+  period: Period,
+  range: DayRange,
+  today: Date,
+): { since: Date | null; until: Date | null } {
+  return period === 'custom'
+    ? dayRangeBounds(range)
+    : { since: periodStart(period, today), until: null };
 }

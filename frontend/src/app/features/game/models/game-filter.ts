@@ -3,18 +3,17 @@ import { CheckoutMode } from './checkout-mode';
 import { GameMode } from './game-mode';
 import { GameVariant } from './game-variant';
 
-/** Narrows the game history; a null field leaves it open. `until` is exclusive. */
+/** Narrows the game history to any of each list's values; an empty list or null leaves it
+ * open. `until` is exclusive. */
 export interface GameFilter {
   /** Part of a player's name. */
   readonly query: string | null;
-  readonly variant: GameVariant | null;
-  readonly mode: GameMode | null;
-  readonly checkoutMode: CheckoutMode | null;
-  readonly status: GameStatus | null;
-  readonly opponentId: string | null;
-  /** Bounds on the number of players, both inclusive. */
-  readonly minPlayers: number | null;
-  readonly maxPlayers: number | null;
+  readonly variants: readonly GameVariant[];
+  readonly modes: readonly GameMode[];
+  readonly checkoutModes: readonly CheckoutMode[];
+  readonly statuses: readonly GameStatus[];
+  readonly opponentIds: readonly string[];
+  readonly playerCounts: readonly PlayerCount[];
   readonly since: Date | null;
   readonly until: Date | null;
   /** Points one of the account's own visits reached, busts aside. */
@@ -34,16 +33,10 @@ export function visitBandLabel(band: VisitBand): string {
 /** How many players the game list can be narrowed to. */
 export type PlayerCount = 'solo' | 'duel' | 'group';
 
-interface PlayerCountRange {
-  readonly label: string;
-  readonly min: number;
-  readonly max: number | null;
-}
-
-export const PLAYER_COUNTS: Record<PlayerCount, PlayerCountRange> = {
-  solo: { label: 'Allein', min: 1, max: 1 },
-  duel: { label: 'Zu zweit', min: 2, max: 2 },
-  group: { label: 'Ab drei', min: 3, max: null },
+export const PLAYER_COUNT_LABELS: Record<PlayerCount, string> = {
+  solo: 'Allein',
+  duel: 'Zu zweit',
+  group: 'Ab drei',
 };
 
 export const GAME_STATUS_LABELS: Record<GameStatus, string> = {

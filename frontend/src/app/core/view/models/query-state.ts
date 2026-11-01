@@ -26,6 +26,17 @@ export function oneOfParam<T extends string | number>(values: readonly T[]): Que
   };
 }
 
+/** Several values of `param`, comma-separated; unknown if any one is. */
+export function listParam<T>(param: QueryParam<T>): QueryParam<T[]> {
+  return {
+    parse: (raw) => {
+      const values = raw.split(',').map((part) => param.parse(part));
+      return values.some((value) => value === undefined) ? undefined : (values as T[]);
+    },
+    format: (values) => values.map((value) => param.format(value)).join(','),
+  };
+}
+
 /** A range of days as `2026-10-01_2026-10-07`, or one day. */
 export const DAY_RANGE_PARAM: QueryParam<DayRange> = {
   parse: (raw) => {

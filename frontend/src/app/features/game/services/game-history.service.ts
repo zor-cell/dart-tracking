@@ -19,23 +19,30 @@ export class GameHistoryService {
   list(limit: number, offset: number, filter?: GameFilter): Promise<GamePageDto> {
     let params = new HttpParams().set('limit', limit).set('offset', offset);
     if (filter) {
-      const { query, since, until, opponentId, ...rest } = filter;
-      for (const [key, value] of Object.entries(rest)) {
-        if (value !== null) {
-          params = params.set(key, value);
+      const lists: Record<string, readonly (string | number)[]> = {
+        variant: filter.variants,
+        mode: filter.modes,
+        checkoutMode: filter.checkoutModes,
+        status: filter.statuses,
+        opponent: filter.opponentIds,
+        players: filter.playerCounts,
+      };
+      for (const [key, values] of Object.entries(lists)) {
+        for (const value of values) {
+          params = params.append(key, value);
         }
       }
-      if (query) {
-        params = params.set('q', query);
+      if (filter.query) {
+        params = params.set('q', filter.query);
       }
-      if (opponentId) {
-        params = params.set('opponent', opponentId);
+      if (filter.since) {
+        params = params.set('since', filter.since.toISOString());
       }
-      if (since) {
-        params = params.set('since', since.toISOString());
+      if (filter.until) {
+        params = params.set('until', filter.until.toISOString());
       }
-      if (until) {
-        params = params.set('until', until.toISOString());
+      if (filter.minVisit !== null) {
+        params = params.set('minVisit', filter.minVisit);
       }
     }
     return firstValueFrom(

@@ -23,6 +23,7 @@ from app.api.features.game.domain.game_filter import GameFilter
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_status import GameStatus
 from app.api.features.game.domain.game_variant import GameVariant
+from app.api.features.game.domain.player_count import PlayerCount
 from app.api.features.game.dto.game_config import GameConfigDto
 from app.api.features.game.dto.game_detail import GameDetailDto
 from app.api.features.game.dto.game_page import GamePageDto
@@ -137,13 +138,12 @@ async def list_games(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     q: str = Query("", max_length=64),
-    variant: GameVariant | None = None,
-    mode: GameMode | None = None,
-    checkout_mode: CheckoutMode | None = Query(None, alias="checkoutMode"),
-    status: GameStatus | None = None,
-    opponent: UUID | None = None,
-    min_players: int | None = Query(None, ge=1, alias="minPlayers"),
-    max_players: int | None = Query(None, ge=1, alias="maxPlayers"),
+    variant: list[GameVariant] = Query([]),
+    mode: list[GameMode] = Query([]),
+    checkout_mode: list[CheckoutMode] = Query([], alias="checkoutMode"),
+    status: list[GameStatus] = Query([]),
+    opponent: list[UUID] = Query([]),
+    players: list[PlayerCount] = Query([]),
     since: datetime | None = None,
     until: datetime | None = None,
     min_visit: int | None = Query(None, ge=1, le=180, alias="minVisit"),
@@ -151,13 +151,12 @@ async def list_games(
     """My games — played in or written down — one page at a time."""
     criteria = GameFilter(
         query=q.strip() or None,
-        variant=variant,
-        mode=mode,
-        checkout_mode=checkout_mode,
-        status=status,
-        opponent_id=str(opponent) if opponent else None,
-        min_players=min_players,
-        max_players=max_players,
+        variants=tuple(variant),
+        modes=tuple(mode),
+        checkout_modes=tuple(checkout_mode),
+        statuses=tuple(status),
+        opponent_ids=tuple(str(id) for id in opponent),
+        player_counts=tuple(players),
         since=since,
         until=until,
         min_visit=min_visit,

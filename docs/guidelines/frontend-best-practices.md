@@ -92,6 +92,9 @@ heatmaps.
   at most two still open as `FilterSuggestion`s beside them, ranked by
   `FilterMemoryService` from the account's own picks, and the search opens from the
   toolbar's icon.
+  - A filter with more than two values is a `p-multiselect` kept as a list
+    (`listParam`); its chip names the picks with `orList()` ("301 oder 501").
+  - A period is `app-period-picker` behind a fixed chip that opens it.
 - **Step buttons:** a button that moves one step, such as a dart in the replay, takes
   `appRepeatPress` (`core/view/directives/`), so holding it keeps stepping.
 - **Dialogs:** destructive actions ask through `ConfirmService.ask()`; the one

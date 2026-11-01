@@ -216,10 +216,13 @@ def test_history_filters_and_paging(alice, session):
     assert ids(status="abandoned") == {abandoned}
     assert ids(status="active") == {elimination}
     assert ids(status="discarded") == {discarded}
+    assert ids(status=["finished", "active"]) == {finished, elimination}
     assert ids(opponent=bob) == {finished, abandoned}
-    assert ids(minPlayers=2) == {finished, abandoned}
-    assert ids(maxPlayers=1) == {elimination}
-    assert ids(minPlayers=3, maxPlayers=3) == {abandoned}
+    assert ids(players="duel") == {finished}
+    assert ids(players="solo") == {elimination}
+    assert ids(players="group") == {abandoned}
+    assert ids(players=["solo", "group"]) == {elimination, abandoned}
+    assert ids(mode=[301, 501], variant=["x01", "elimination"]) == {finished, elimination, abandoned}
     assert ids(until=(datetime.now(UTC) - timedelta(hours=1)).isoformat()) == {abandoned}
     assert ids(since=(datetime.now(UTC) - timedelta(hours=1)).isoformat()) == {finished, elimination}
 

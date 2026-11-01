@@ -1,0 +1,6 @@
+.period {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(20rem, calc(100vw - 4rem));
+}

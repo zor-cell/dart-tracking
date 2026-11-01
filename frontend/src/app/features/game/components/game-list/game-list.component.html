@@ -11,101 +11,92 @@
     [suggestions]="suggestions()"
     (search)="onSearch($event)"
     (chipRemove)="clearFilter($event)"
+    (chipOpen)="openPicker($event, periodPicker)"
     (suggestionPick)="pickSuggestion($event)"
     (reset)="resetFilters()"
   >
     <form class="list-filters" [formGroup]="filters">
       <label class="list-filters__label" for="filter-variant">Variante</label>
-      <p-select
+      <p-multiselect
         inputId="filter-variant"
         formControlName="variant"
         [options]="variantOptions"
         optionLabel="label"
         optionValue="value"
         placeholder="Alle"
+        [showHeader]="false"
         [showClear]="true"
         fluid
       />
       <label class="list-filters__label" for="filter-mode">Modus</label>
-      <p-select
+      <p-multiselect
         inputId="filter-mode"
         formControlName="mode"
         [options]="modeOptions"
         optionLabel="label"
         optionValue="value"
         placeholder="Alle"
+        [showHeader]="false"
         [showClear]="true"
         fluid
       />
       <label class="list-filters__label" for="filter-checkout">Checkout</label>
-      <p-select
+      <p-multiselect
         inputId="filter-checkout"
         formControlName="checkoutMode"
         [options]="checkoutOptions"
         optionLabel="label"
         optionValue="value"
         placeholder="Alle"
+        [showHeader]="false"
         [showClear]="true"
         fluid
       />
       <label class="list-filters__label" for="filter-status">Status</label>
-      <p-select
+      <p-multiselect
         inputId="filter-status"
         formControlName="status"
         [options]="statusOptions"
         optionLabel="label"
         optionValue="value"
         placeholder="Ohne verworfene"
+        [showHeader]="false"
         [showClear]="true"
         fluid
       />
       <label class="list-filters__label" for="filter-opponent">Mitspieler</label>
-      <p-select
+      <p-multiselect
         inputId="filter-opponent"
         formControlName="opponentId"
         [options]="opponents()"
         optionLabel="name"
         optionValue="id"
         placeholder="Alle"
-        [filter]="true"
+        filterPlaceHolder="Spieler suchen"
         [showClear]="true"
         fluid
       />
       <label class="list-filters__label" for="filter-players">Spieleranzahl</label>
-      <p-select
+      <p-multiselect
         inputId="filter-players"
         formControlName="players"
         [options]="playerCountOptions"
         optionLabel="label"
         optionValue="value"
         placeholder="Alle"
-        [showClear]="true"
-        fluid
-      />
-      <label class="list-filters__label" for="filter-period">Zeitraum</label>
-      <p-datepicker
-        inputId="filter-period"
-        formControlName="period"
-        selectionMode="range"
-        dateFormat="dd.mm.y"
-        placeholder="Beliebig"
-        [readonlyInput]="true"
-        [showButtonBar]="true"
-        fluid
-      />
-      <label class="list-filters__label" for="filter-visit">Visit</label>
-      <p-select
-        inputId="filter-visit"
-        formControlName="visit"
-        [options]="visitOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Beliebig"
+        [showHeader]="false"
         [showClear]="true"
         fluid
       />
     </form>
   </app-list-toolbar>
+  <app-period-picker
+    #periodPicker
+    [period]="period()"
+    (periodChange)="setPeriod($event)"
+    [range]="range()"
+    (rangeChange)="setRange($event)"
+  />
 
   @if (games.failed()) {
     <app-load-error message="Die Spiele konnten nicht geladen werden." (retry)="games.load()" />

@@ -12,6 +12,7 @@ from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.game_filter import GameFilter
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_variant import GameVariant
+from app.api.features.game.domain.player_count import PlayerCount
 from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.persistence.player_repository import repository as players
 from app.api.features.statistics.dto.statistics_overview import StatisticsOverviewDto
@@ -22,25 +23,23 @@ router = APIRouter(prefix="/statistics", tags=["Statistics"])
 
 
 def _selection(
-    variant: GameVariant | None = None,
-    mode: GameMode | None = None,
-    checkout_mode: CheckoutMode | None = Query(None, alias="checkoutMode"),
-    opponent: UUID | None = None,
-    min_players: int | None = Query(None, ge=1, alias="minPlayers"),
-    max_players: int | None = Query(None, ge=1, alias="maxPlayers"),
+    variant: list[GameVariant] = Query([]),
+    mode: list[GameMode] = Query([]),
+    checkout_mode: list[CheckoutMode] = Query([], alias="checkoutMode"),
+    opponent: list[UUID] = Query([]),
+    players: list[PlayerCount] = Query([]),
     since: datetime | None = None,
     until: datetime | None = None,
     last: int | None = Query(None, ge=1, le=1000),
 ) -> tuple[GameFilter, int | None]:
-    """The games the filters select, each left out leaving them open, and how many of
-    the most recent ones that count to keep."""
+    """The games the filters select, any value of a repeated one, each left out leaving
+    them open, and how many of the most recent ones that count to keep."""
     criteria = GameFilter(
-        variant=variant,
-        mode=mode,
-        checkout_mode=checkout_mode,
-        opponent_id=str(opponent) if opponent else None,
-        min_players=min_players,
-        max_players=max_players,
+        variants=tuple(variant),
+        modes=tuple(mode),
+        checkout_modes=tuple(checkout_mode),
+        opponent_ids=tuple(str(id) for id in opponent),
+        player_counts=tuple(players),
         since=since,
         until=until,
     )

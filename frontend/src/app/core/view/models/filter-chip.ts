@@ -18,3 +18,16 @@ export interface FilterChipOpen {
 export interface FilterSuggestion extends FilterChip {
   readonly value: unknown;
 }
+
+/** Picks of one filter as a chip reads them: "301", "301 oder 501", "301, 501 oder 701". */
+export function orList(labels: readonly string[]): string {
+  return labels.length < 2
+    ? (labels[0] ?? '')
+    : `${labels.slice(0, -1).join(', ')} oder ${labels.at(-1)}`;
+}
+
+/** Adds `value` to the picks of a list filter, once. */
+export function withPick<T>(picks: readonly T[] | null | undefined, value: T): T[] {
+  const current = picks ?? [];
+  return current.includes(value) ? [...current] : [...current, value];
+}

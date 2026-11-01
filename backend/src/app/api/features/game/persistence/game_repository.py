@@ -579,27 +579,21 @@ def _history_clauses(user_id: str, criteria: GameFilter) -> list[ColumnElement[b
         or_(GameTable.owner_user_id == user_id, GameTable.id.in_(seated))
     ]
     cutoff = datetime.now(UTC) - ABANDON_AFTER
-    active = GameTable.status == GameStatus.ACTIVE.value
-    match criteria.status:
-        case None:
-            darts = (
-                select(func.count())
-                .select_from(DartTable)
-                .where(DartTable.game_id == GameTable.id)
-                .correlate(GameTable)
-                .scalar_subquery()
-            )
-            short_abandoned = and_(
-                active, GameTable.updated_at <= cutoff, darts < MIN_ABANDONED_DARTS
-            )
-            clauses.append(GameTable.status != GameStatus.DISCARDED.value)
-            clauses.append(~short_abandoned)
-        case GameStatus.ACTIVE:
-            clauses.append(and_(active, GameTable.updated_at > cutoff))
-        case GameStatus.ABANDONED:
-            clauses.append(and_(active, GameTable.updated_at <= cutoff))
-        case _:
-            clauses.append(GameTable.status == criteria.status.value)
+    if criteria.statuses:
+        clauses.append(or_(*(_status_clause(status, cutoff) for status in criteria.statuses)))
+    else:
+        darts = (
+            select(func.count())
+            .select_from(DartTable)
+            .where(DartTable.game_id == GameTable.id)
+            .correlate(GameTable)
+            .scalar_subquery()
+        )
+        short_abandoned = and_(
+            _status_clause(GameStatus.ABANDONED, cutoff), darts < MIN_ABANDONED_DARTS
+        )
+        clauses.append(GameTable.status != GameStatus.DISCARDED.value)
+        clauses.append(~short_abandoned)
     if criteria.min_visit is not None:
         own_visits = (
             select(TurnTable.game_id)
@@ -622,8 +616,20 @@ def _history_clauses(user_id: str, criteria: GameFilter) -> list[ColumnElement[b
     return clauses + game_filter_clauses(criteria)
 
 
+def _status_clause(status: GameStatus, cutoff: datetime) -> ColumnElement[bool]:
+    """The games whose derived status is `status`, as `effective_status` reads it."""
+    active = GameTable.status == GameStatus.ACTIVE.value
+    match status:
+        case GameStatus.ACTIVE:
+            return and_(active, GameTable.updated_at > cutoff)
+        case GameStatus.ABANDONED:
+            return and_(active, GameTable.updated_at <= cutoff)
+        case _:
+            return GameTable.status == status.value
+
+
 def game_filter_clauses(criteria: GameFilter) -> list[ColumnElement[bool]]:
-    """`criteria` as conditions on the games table, all but `status`, which each
+    """`criteria` as conditions on the games table, all but `statuses`, which each
     reader of the history counts its own way."""
     clauses: list[ColumnElement[bool]] = []
     if criteria.query:
@@ -634,21 +640,23 @@ def game_filter_clauses(criteria: GameFilter) -> list[ColumnElement[bool]]:
                 .where(PlayerTable.display_name.icontains(criteria.query, autoescape=True))
             )
         )
-    if criteria.variant is not None:
-        clauses.append(GameTable.variant == criteria.variant.value)
-    if criteria.mode is not None:
-        clauses.append(GameTable.mode == int(criteria.mode))
-    if criteria.checkout_mode is not None:
-        clauses.append(GameTable.checkout_mode == criteria.checkout_mode.value)
-    if criteria.opponent_id is not None:
+    if criteria.variants:
+        clauses.append(GameTable.variant.in_([variant.value for variant in criteria.variants]))
+    if criteria.modes:
+        clauses.append(GameTable.mode.in_([int(mode) for mode in criteria.modes]))
+    if criteria.checkout_modes:
+        clauses.append(
+            GameTable.checkout_mode.in_([mode.value for mode in criteria.checkout_modes])
+        )
+    if criteria.opponent_ids:
         clauses.append(
             GameTable.id.in_(
                 select(GamePlayerTable.game_id).where(
-                    GamePlayerTable.player_id == criteria.opponent_id
+                    GamePlayerTable.player_id.in_(criteria.opponent_ids)
                 )
             )
         )
-    if criteria.min_players is not None or criteria.max_players is not None:
+    if criteria.player_counts:
         seats = (
             select(func.count())
             .select_from(GamePlayerTable)
@@ -656,10 +664,11 @@ def game_filter_clauses(criteria: GameFilter) -> list[ColumnElement[bool]]:
             .correlate(GameTable)
             .scalar_subquery()
         )
-        if criteria.min_players is not None:
-            clauses.append(seats >= criteria.min_players)
-        if criteria.max_players is not None:
-            clauses.append(seats <= criteria.max_players)
+        ranges = []
+        for count in criteria.player_counts:
+            fewest, most = count.bounds
+            ranges.append(seats >= fewest if most is None else seats.between(fewest, most))
+        clauses.append(or_(*ranges))
     if criteria.since is not None:
         clauses.append(GameTable.created_at >= criteria.since)
     if criteria.until is not None:

@@ -185,8 +185,9 @@ def test_statistics_filter_the_games(alice, session):
     assert legs(since=an_hour_ago) == 2
     assert legs(until=an_hour_ago) == 1
     assert legs(checkoutMode="single_out") == 1
-    assert legs(maxPlayers=1) == 2
-    assert legs(minPlayers=2, opponent=bob) == 1
+    assert legs(players="solo") == 2
+    assert legs(players=["duel", "group"], opponent=bob) == 1
+    assert legs(checkoutMode=["single_out", "double_out"]) == 3
     assert legs(mode=501) == 0
 
 
