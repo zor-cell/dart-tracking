@@ -4,16 +4,6 @@
   gap: 1.25rem;
 }
 
-/* Beside the two cards on its left, its drawing taking the room at the bottom. */
-.stat--tall {
-  grid-row: span 2;
-
-  .stat__scale {
-    height: 4rem;
-    margin-top: auto;
-  }
-}
-
 /* Same compact toggle as the boards' own. */
 .doubles__header {
   --p-togglebutton-sm-padding: 0.2rem;

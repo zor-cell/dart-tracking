@@ -9,6 +9,8 @@ export interface PlayerStatisticsDto {
   readonly legs: number;
   readonly legsWon: number;
   readonly darts: number;
+  /** Darts per won leg; null without one. */
+  readonly dartsPerLeg: number | null;
   readonly points: number;
   readonly average: number;
   readonly firstNineAverage: number;

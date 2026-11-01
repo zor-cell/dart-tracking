@@ -15,6 +15,8 @@ class TrendPointDto(CamelModel):
     first_nine_average: float
     checkout_hits: int
     checkout_attempts: int
+    legs_won: int
+    won_leg_darts: int
 
     @classmethod
     def from_entity(cls, point: TrendPoint) -> Self:
@@ -27,4 +29,6 @@ class TrendPointDto(CamelModel):
             first_nine_average=round(statistics.first_nine_average, 2),
             checkout_hits=statistics.checkout_hits,
             checkout_attempts=statistics.checkout_attempts,
+            legs_won=statistics.legs_won,
+            won_leg_darts=statistics.won_leg_darts,
         )

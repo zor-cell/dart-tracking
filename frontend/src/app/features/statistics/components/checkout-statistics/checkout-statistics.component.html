@@ -83,7 +83,20 @@
         </dd>
       }
     </div>
-    <div class="stat stat--tall">
+    <div class="stat">
+      <dt class="stat__label">Öftestes Finish</dt>
+      <dd class="stat__value">{{ totals.favouriteFinish ?? '–' }}</dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value
+            [name]="other.name"
+            [other]="other.statistics.favouriteFinish"
+            [digits]="0"
+          />
+        </dd>
+      }
+    </div>
+    <div class="stat">
       <dt class="stat__label">
         Ø Abstand zum Checkout
         <app-info-hint class="stat__info">
@@ -129,16 +142,34 @@
       }
     </div>
     <div class="stat">
-      <dt class="stat__label">Öftestes Finish</dt>
-      <dd class="stat__value">{{ totals.favouriteFinish ?? '–' }}</dd>
+      <dt class="stat__label">
+        Ø Darts pro Leg
+        <app-info-hint class="stat__info">
+          Darts vom ersten Wurf bis zum Finish. Nur Legs, die du selbst beendet hast.
+        </app-info-hint>
+      </dt>
+      <dd class="stat__value">
+        {{ (totals.dartsPerLeg | number: '1.1-1') ?? '–' }}
+        @if (other) {
+          <app-delta-mark
+            [own]="totals.dartsPerLeg"
+            [other]="other.statistics.dartsPerLeg"
+            [name]="other.name"
+            [digits]="1"
+            [lowerIsBetter]="true"
+          />
+        }
+      </dd>
       @if (other) {
         <dd class="stat__hint">
           <app-compared-value
             [name]="other.name"
-            [other]="other.statistics.favouriteFinish"
-            [digits]="0"
+            [other]="other.statistics.dartsPerLeg"
+            [digits]="1"
           />
         </dd>
+      } @else {
+        <dd class="stat__hint">aus {{ totals.legsWon }} gewonnenen Legs</dd>
       }
     </div>
   </dl>

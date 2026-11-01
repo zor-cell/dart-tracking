@@ -60,6 +60,7 @@ class PlayerStatistics:
 
     legs: int = 0
     legs_won: int = 0
+    won_leg_darts: int = 0  # darts the player threw in the legs they won
     darts: int = 0
     points: int = 0
     best_visit: int = 0
@@ -94,6 +95,11 @@ class PlayerStatistics:
     def average(self) -> float:
         """Points per three darts — the number a scoreboard shows."""
         return 0.0 if self.darts == 0 else 3 * self.points / self.darts
+
+    @property
+    def darts_per_leg(self) -> float | None:
+        """Darts a won leg took; legs someone else finished do not count."""
+        return None if self.legs_won == 0 else self.won_leg_darts / self.legs_won
 
     @property
     def first_nine_average(self) -> float:
@@ -228,6 +234,7 @@ class PlayerStatistics:
         self.legs += 1
         if remaining == 0:
             self.legs_won += 1
+            self.won_leg_darts += thrown
 
     def _add_visit_band(self, points: int) -> None:
         """Counts a visit into every band it reaches: 60+, 100+ and 140+ include the 180s."""

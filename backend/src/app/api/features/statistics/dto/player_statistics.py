@@ -76,6 +76,7 @@ class PlayerStatisticsDto(CamelModel):
     legs: int
     legs_won: int
     darts: int
+    darts_per_leg: float | None
     points: int
     average: float
     first_nine_average: float
@@ -111,6 +112,7 @@ class PlayerStatisticsDto(CamelModel):
             legs=statistics.legs,
             legs_won=statistics.legs_won,
             darts=statistics.darts,
+            darts_per_leg=_rounded(statistics.darts_per_leg),
             points=statistics.points,
             average=round(statistics.average, 2),
             first_nine_average=round(statistics.first_nine_average, 2),

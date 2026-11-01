@@ -39,6 +39,7 @@ def test_won_leg():
     assert (statistics.checkout_attempts, statistics.checkout_hits) == (1, 1)
     assert (statistics.first_nine_darts, statistics.first_nine_points) == (8, 301)
     assert (statistics.legs, statistics.legs_won) == (1, 1)
+    assert statistics.darts_per_leg == 8
     assert statistics.fields["T20"] == 6
     assert statistics.highest_finish == 121
 
@@ -99,6 +100,7 @@ def test_lost_leg_counts_every_dart_at_a_double():
     assert statistics.first_nine_darts == 9
     assert statistics.first_nine_points == 180 + 81
     assert statistics.legs_won == 0
+    assert statistics.darts_per_leg is None
     assert statistics.highest_finish == 0
 
 
@@ -244,3 +246,16 @@ def test_a_higher_visit_wins_over_an_older_one():
 
     assert (statistics.best_visit, statistics.best_visit_at.game_id) == (120, "new")
 
+
+def test_darts_per_leg_counts_only_won_legs():
+    statistics = PlayerStatistics()
+    statistics.add_leg(301, CheckoutMode.SINGLE_OUT, [visit("T20", "T20", "T20"), visit("T20", "T20", "1")])
+    statistics.add_leg(301, CheckoutMode.SINGLE_OUT, [visit("20", "20", "20"), visit("20", "20", "20")])
+    statistics.add_leg(
+        301,
+        CheckoutMode.SINGLE_OUT,
+        [visit("T20", "T20", "T20"), visit("T20", "1", "0"), visit("20", "0", "0"), visit("20", "20")],
+    )
+
+    assert statistics.legs_won == 2
+    assert statistics.darts_per_leg == (6 + 11) / 2

@@ -7,4 +7,6 @@ export interface TrendPointDto {
   readonly firstNineAverage: number;
   readonly checkoutHits: number;
   readonly checkoutAttempts: number;
+  readonly legsWon: number;
+  readonly wonLegDarts: number;
 }
