@@ -6,7 +6,8 @@ import { announcementPhrases, calibrationPhrase, turnPhrase } from '../models/an
 import { readStored, writeStored } from '../../../core/storage/models/browser-storage';
 
 const MUTED_KEY = 'dart-tracking.announcerMuted';
-const ANNOUNCEMENT_LANG = 'de-DE';
+// The calls are darts English, so a British voice reads them as a caller would.
+const ANNOUNCEMENT_LANG = 'en-GB';
 
 /** Spoken nearly silent to prime the synthesiser; must not be empty on WebKit. */
 const UNLOCK_PHRASE = 'ok';
@@ -16,7 +17,7 @@ const UNLOCK_VOLUME = 0.01;
 const GESTURE_EVENTS = ['touchend', 'click'] as const;
 
 /** What the self-test says out loud. */
-const TEST_PHRASE = 'Ansage funktioniert';
+const TEST_PHRASE = 'Game on';
 
 /** Watchdog for an utterance that never reports back, in ms. */
 const UTTERANCE_TIMEOUT_BASE = 2000;
@@ -255,7 +256,7 @@ export class AnnouncerService {
   private utterance(phrase: string): SpeechSynthesisUtterance {
     const utterance = new SpeechSynthesisUtterance(phrase);
     utterance.lang = ANNOUNCEMENT_LANG;
-    const voice = this.germanVoice();
+    const voice = this.englishVoice();
     if (voice !== null) {
       utterance.voice = voice;
     }
@@ -268,8 +269,14 @@ export class AnnouncerService {
     return utterance;
   }
 
-  private germanVoice(): SpeechSynthesisVoice | null {
-    return (this.synth()?.getVoices() ?? []).find(isGerman) ?? null;
+  /** A British voice where the device has one, else any English one. */
+  private englishVoice(): SpeechSynthesisVoice | null {
+    const voices = this.synth()?.getVoices() ?? [];
+    return (
+      voices.find((voice) => languageOf(voice) === 'en-gb') ??
+      voices.find((voice) => languageOf(voice).startsWith('en')) ??
+      null
+    );
   }
 
   private synth(): SpeechSynthesis | null {
@@ -277,7 +284,7 @@ export class AnnouncerService {
   }
 }
 
-/** Whether a voice speaks German, whichever way the device writes the tag. */
-function isGerman(voice: SpeechSynthesisVoice): boolean {
-  return voice.lang.replace('_', '-').toLowerCase().startsWith('de');
+/** A voice's language tag, the same whichever way the device writes it. */
+function languageOf(voice: SpeechSynthesisVoice): string {
+  return voice.lang.replace('_', '-').toLowerCase();
 }
