@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, func, or_, select, update
+from sqlalchemy import ColumnElement, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.auth.domain.user import User
@@ -129,6 +129,10 @@ class UserRepository:
             update(UserTable).where(UserTable.id == user_id).values(**values)
         )
         return result.rowcount > 0
+
+    async def delete(self, session: AsyncSession, user_id: str) -> None:
+        """Settings and hidden games go with it; players and games must be let go first."""
+        await session.execute(delete(UserTable).where(UserTable.id == user_id))
 
     async def taken(self, session: AsyncSession, email: str, username: str) -> str | None:
         """Which of the two is already in use, for a message that names the

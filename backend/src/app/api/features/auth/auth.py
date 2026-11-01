@@ -8,6 +8,7 @@ from fastapi import APIRouter, BackgroundTasks, Cookie, HTTPException, Request, 
 from sqlalchemy.exc import IntegrityError
 
 from app.api.core.services import rate_limit
+from app.api.features.auth.dto.account_deletion import AccountDeletionDto
 from app.api.features.auth.dto.email_change import EmailChangeDto
 from app.api.features.auth.dto.login import LoginDto
 from app.api.features.auth.dto.password_change import PasswordChangeDto
@@ -28,6 +29,7 @@ from app.api.features.auth.services import (
 )
 from app.api.features.auth.services.current_user import AuthenticatedUser
 from app.api.features.auth.services.refresh_store import store as refresh_store
+from app.api.features.game.persistence.game_repository import repository as games
 from app.api.features.player.persistence.player_repository import repository as players
 from app.infrastructure import database, mailer
 from app.infrastructure.config import get_settings
@@ -270,6 +272,23 @@ async def update_profile(body: ProfileDto, user: AuthenticatedUser) -> UserDto:
         await players.rename_self(session, user.id, body.display_name)
 
     return UserDto.from_entity(updated)
+
+
+@router.delete("/me", status_code=204)
+async def delete_account(
+    body: AccountDeletionDto, user: AuthenticatedUser, response: Response
+) -> None:
+    """Delete the account and sign out every device. Games no other account is part
+    of go with it; the shared ones stay for the others."""
+    await _require_password(user, body.current_password)
+
+    async with database.session_scope() as session:
+        await games.forget_account(session, user.id)
+        await players.forget_account(session, user.id)
+        await repository.delete(session, user.id)
+
+    await refresh_store.revoke_all(user.id)
+    response.delete_cookie(_COOKIE_NAME, path=_COOKIE_PATH)
 
 
 @router.put("/me/password", response_model=SessionDto)

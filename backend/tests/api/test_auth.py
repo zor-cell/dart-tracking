@@ -281,31 +281,67 @@ def test_an_expired_token_is_refused(register):
         assert alice.get("/auth/me").status_code == 401
 
 
-def delete_account(session, api):
-    session.sql("DELETE FROM players WHERE user_id = :id OR owner_user_id = :id", id=api.id)
-    session.sql("DELETE FROM users WHERE id = :id", id=api.id)
+def delete_account(api, password=PASSWORD):
+    return api.delete("/auth/me", json={"currentPassword": password})
 
 
-def test_a_deleted_account_signs_nobody_in(register, anon, session):
+def names_in(api, game_id):
+    game = next(game for game in api.get("/games").json()["items"] if game["id"] == game_id)
+    return [player["name"] for player in game["players"]]
+
+
+def test_a_deleted_account_signs_nobody_in(register, anon):
     alice = register("alice")
-    delete_account(session, alice)
+    assert delete_account(alice).status_code == 204
 
     assert alice.get("/auth/me").status_code == 401
     assert anon.post("/auth/refresh", refresh=alice.refresh_token).status_code == 401
 
 
-def test_links_of_a_deleted_account_are_invalid(register, anon, session, mails):
+def test_links_of_a_deleted_account_are_invalid(register, anon, mails):
     alice = register("alice")
     verify = token_in(mails[-1])
     anon.post("/auth/password-reset", json={"email": "alice@darts.example.org"})
     reset = token_in(mails[-1])
     change_email(alice, "new@darts.example.org")
     email_change = token_in(mails[-1])
-    delete_account(session, alice)
+    delete_account(alice)
 
     assert anon.post("/auth/verify-email", json={"token": verify}).status_code == 400
     assert anon.post("/auth/password-reset/confirm", json={"token": reset, "password": NEW_PASSWORD}).status_code == 400
     assert anon.post("/auth/email-change/confirm", json={"token": email_change}).status_code == 400
+
+
+def test_deleting_the_account_needs_the_password(register):
+    alice = register("alice")
+
+    assert delete_account(alice, "wrong password").status_code == 403
+    assert alice.get("/auth/me").status_code == 200
+
+
+def test_a_deleted_account_leaves_shared_games_to_the_others(register, session):
+    alice, bob = register("alice"), register("bob")
+    me = alice.own_entry()["id"]
+    bob_entry = alice.add_player("Bob")
+    bob.accept(alice.invite(bob_entry))
+    shared = alice.new_game(me, bob_entry)["id"]
+    alone = alice.new_game(me, alice.add_player("Carol"))["id"]
+    alice_entry = bob.add_player("Ali")
+    alice.accept(bob.invite(alice_entry))
+    hosted = bob.new_game(bob.own_entry()["id"], alice_entry)["id"]
+
+    assert delete_account(alice).status_code == 204
+
+    assert names_in(bob, shared) == ["Gelöschter Spieler", "Bob"]
+    assert names_in(bob, hosted) == ["Bob", "Ali"]
+    assert session.sql("SELECT id FROM games WHERE id = :id", id=alone) == []
+    left = session.sql(
+        "SELECT count(*) FROM players"
+        " WHERE :id IN (user_id, owner_user_id, former_owner_user_id)",
+        id=alice.id,
+    )
+    assert left[0][0] == 0
+    assert [entry["name"] for entry in bob.get("/players").json()] == ["Bob", "Ali"]
 
 
 def test_a_signed_token_whose_subject_is_no_account_id(anon):

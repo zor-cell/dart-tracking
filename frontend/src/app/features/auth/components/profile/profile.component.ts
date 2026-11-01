@@ -14,6 +14,7 @@ import {
 import { AuthService } from '../../services/auth.service';
 import { ChangeEmailDialogComponent } from '../change-email-dialog/change-email-dialog.component';
 import { ChangePasswordDialogComponent } from '../change-password-dialog/change-password-dialog.component';
+import { DeleteAccountDialogComponent } from '../delete-account-dialog/delete-account-dialog.component';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { centrePopoverArrow } from '../../../../core/view/models/popover-arrow';
 import { InlineEditorComponent } from '../../../../core/view/components/inline-editor/inline-editor.component';
@@ -28,7 +29,7 @@ interface EditableRow {
   readonly messages: Readonly<Record<string, string>>;
 }
 
-/** The signed-in account's names, sign-in details and the way out of the session. */
+/** The signed-in account's names, sign-in details and the ways out of the session and the account. */
 @Component({
   selector: 'app-profile',
   imports: [
@@ -36,6 +37,7 @@ interface EditableRow {
     Button,
     ChangeEmailDialogComponent,
     ChangePasswordDialogComponent,
+    DeleteAccountDialogComponent,
     InlineEditorComponent,
     Popover,
   ],
@@ -63,6 +65,7 @@ export class ProfileComponent {
   private readonly resendError = signal<string | null>(null);
   protected readonly emailDialogOpen = signal(false);
   protected readonly passwordDialogOpen = signal(false);
+  protected readonly deleteDialogOpen = signal(false);
   protected readonly emailStatus = computed(() =>
     this.user()?.emailVerified ? 'E-Mail-Adresse bestätigt' : 'E-Mail-Adresse nicht bestätigt',
   );

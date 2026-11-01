@@ -326,7 +326,23 @@ p-popover {
   }
 }
 
-a.list-group__item {
+/* A row that runs an action rather than opening a page. */
+button.list-group__item {
+  width: 100%;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+}
+
+a.list-group__item,
+button.list-group__item:enabled {
   &:hover {
     background: var(--p-content-hover-background);
   }
@@ -342,6 +358,15 @@ a.list-group__item {
   color: var(--p-primary-color);
   font-size: 1.1rem;
   text-align: center;
+}
+
+.list-group__item--danger,
+.list-group__item--danger .list-group__icon {
+  color: var(--p-red-600);
+
+  @media (prefers-color-scheme: dark) {
+    color: var(--p-red-400);
+  }
 }
 
 .list-group__body {

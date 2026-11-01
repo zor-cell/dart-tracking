@@ -3,7 +3,7 @@
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, func, or_, select, update
+from sqlalchemy import ColumnElement, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
@@ -16,6 +16,8 @@ from app.api.features.player.domain.reciprocal_link import ReciprocalLink
 from app.api.features.player.persistence.player import PlayerTable
 
 _SEARCH_LIMIT = 20
+# What a deleted account's own entry is called in the games it leaves behind.
+_DELETED_NAME = "Gelöschter Spieler"
 
 
 def _is_uuid(value: str) -> bool:
@@ -378,6 +380,27 @@ class PlayerRepository:
             row.former_owner_user_id = None
             await session.flush()
         return True
+
+    async def forget_account(self, session: AsyncSession, user_id: str) -> None:
+        """For a deleted account, after its games: its address book goes but for the
+        entries still seated, and every entry linked to it becomes a guest."""
+        own = PlayerTable.owner_user_id == user_id
+        seated = select(GamePlayerTable.player_id)
+        await session.execute(delete(PlayerTable).where(own, PlayerTable.id.not_in(seated)))
+        await session.execute(
+            update(PlayerTable)
+            .where(own, PlayerTable.user_id == user_id)
+            .values(display_name=_DELETED_NAME)
+        )
+        await session.execute(update(PlayerTable).where(own).values(owner_user_id=None))
+        await session.execute(
+            update(PlayerTable).where(PlayerTable.user_id == user_id).values(user_id=None)
+        )
+        await session.execute(
+            update(PlayerTable)
+            .where(PlayerTable.former_owner_user_id == user_id)
+            .values(former_owner_user_id=None)
+        )
 
 
 repository = PlayerRepository()

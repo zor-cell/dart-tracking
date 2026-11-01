@@ -7,6 +7,7 @@ import {
   SILENT_ERROR_HANDLER,
   SKIP_AUTH_RETRY,
 } from '../../../core/interceptors';
+import { AccountDeletionDto } from '../dto/account-deletion.dto';
 import { EmailChangeDto } from '../dto/email-change.dto';
 import { LoginDto } from '../dto/login.dto';
 import { PasswordChangeDto } from '../dto/password-change.dto';
@@ -78,6 +79,18 @@ export class AuthService {
         }),
       ),
     );
+  }
+
+  /** The server ends every session of the account along with it. */
+  async deleteAccount(deletion: AccountDeletionDto): Promise<void> {
+    await firstValueFrom(
+      this.http.delete<void>(`${this.baseUrl}/me`, {
+        body: deletion,
+        withCredentials: true,
+        context: SILENT_ERROR_CONTEXT,
+      }),
+    );
+    this.clear();
   }
 
   /** Mails a link to the new address; the account keeps the old one until it is opened. */

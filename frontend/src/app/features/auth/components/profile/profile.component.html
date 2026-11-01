@@ -83,18 +83,37 @@
             (onClick)="passwordDialogOpen.set(true)"
           />
         </div>
+
+        <button type="button" class="list-group__item" [disabled]="busy()" (click)="logout()">
+          <i
+            class="list-group__icon pi"
+            [class.pi-sign-out]="!busy()"
+            [class.pi-spinner]="busy()"
+            [class.pi-spin]="busy()"
+            aria-hidden="true"
+          ></i>
+          <span class="list-group__body">
+            <span class="list-group__name">Abmelden</span>
+          </span>
+        </button>
       </div>
     </section>
 
-    <p-button
-      fluid
-      label="Abmelden"
-      icon="pi pi-sign-out"
-      severity="secondary"
-      [outlined]="true"
-      [loading]="busy()"
-      (onClick)="logout()"
-    />
+    <section class="list-group">
+      <h2 class="list-group__title">Konto</h2>
+      <div class="list-group__items">
+        <button
+          type="button"
+          class="list-group__item list-group__item--danger"
+          (click)="deleteDialogOpen.set(true)"
+        >
+          <i class="list-group__icon pi pi-trash" aria-hidden="true"></i>
+          <span class="list-group__body">
+            <span class="list-group__name">Konto löschen</span>
+          </span>
+        </button>
+      </div>
+    </section>
   }
 </section>
 
@@ -118,3 +137,4 @@
 
 <app-change-email-dialog [(visible)]="emailDialogOpen" />
 <app-change-password-dialog [(visible)]="passwordDialogOpen" />
+<app-delete-account-dialog [(visible)]="deleteDialogOpen" />

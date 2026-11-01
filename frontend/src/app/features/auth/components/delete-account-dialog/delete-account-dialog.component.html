@@ -1,0 +1,54 @@
+<p-dialog
+  header="Konto löschen"
+  [modal]="true"
+  [draggable]="false"
+  [(visible)]="visible"
+  [style]="dialogStyle"
+  appendTo="body"
+  (onHide)="reset()"
+>
+  <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
+    <p class="auth-form__hint" id="delete-account-hint">
+      Dein Konto, deine Spielerliste, deine Einstellungen und die Spiele, in denen kein anderes
+      Konto mitgespielt hat, werden endgültig gelöscht. Gemeinsame Spiele bleiben für die anderen
+      erhalten, du stehst darin nur noch als „Gelöschter Spieler“.
+    </p>
+
+    <div class="auth-form__field">
+      <label class="auth-form__label" for="delete-password">Passwort zur Bestätigung</label>
+      <input
+        pInputText
+        id="delete-password"
+        type="password"
+        formControlName="currentPassword"
+        aria-describedby="delete-account-hint delete-password-error"
+        autocomplete="current-password"
+        fluid
+      />
+      <app-field-error id="delete-password-error" [control]="form.controls.currentPassword" />
+    </div>
+
+    @if (error(); as message) {
+      <p-message severity="error" [text]="message" />
+    }
+
+    <div class="auth-form__actions">
+      <p-button
+        type="button"
+        label="Abbrechen"
+        severity="secondary"
+        [text]="true"
+        [disabled]="busy()"
+        (onClick)="visible.set(false)"
+      />
+      <p-button
+        type="submit"
+        label="Endgültig löschen"
+        icon="pi pi-trash"
+        severity="danger"
+        [loading]="busy()"
+        [disabled]="form.invalid"
+      />
+    </div>
+  </form>
+</p-dialog>
