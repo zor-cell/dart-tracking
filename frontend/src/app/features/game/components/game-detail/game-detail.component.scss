@@ -3,11 +3,37 @@
   gap: 2.25rem;
 }
 
-/* The resume button with its error right under it. */
-.resume {
+/* Title and status in one line, the resume button pushed to its end. */
+.heading {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.heading__resume {
+  margin-left: auto;
+}
+
+/* When, how long and how the game was played, each behind its icon. */
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--p-text-muted-color);
+  font-size: 0.9rem;
+}
+
+.facts__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+
+  .pi {
+    font-size: 0.85rem;
+  }
 }
 
 .standings {

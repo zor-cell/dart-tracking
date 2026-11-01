@@ -4,9 +4,10 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { Message } from 'primeng/message';
+import { Tag } from 'primeng/tag';
 import { TableModule } from 'primeng/table';
 import { GameDetailDto } from '../../dto/game-detail.dto';
-import { GAME_STATUS_LABELS, isResumable } from '../../models/game-filter';
+import { GAME_STATUS_LABELS, GAME_STATUS_SEVERITIES, isResumable } from '../../models/game-filter';
 import { CHECKOUT_MODES } from '../../models/checkout-mode';
 import { GAME_VARIANTS } from '../../models/game-variant';
 import { activeGameId } from '../../services/active-game';
@@ -17,6 +18,7 @@ import { LoadingStateComponent } from '../../../../core/view/components/loading-
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
+import { ConfirmService } from '../../../../core/view/services/confirm.service';
 
 const GAME_FIGURES = ['average', 'firstNine', 'darts', 'bestVisit', 'grouping'] as const;
 const CHECKOUT_FIGURES = ['checkout', 'doubleDistance', 'busts'] as const;
@@ -53,6 +55,7 @@ function visitParam(raw: string | null): number | null {
     Message,
     RouterLink,
     TableModule,
+    Tag,
   ],
   templateUrl: './game-detail.component.html',
   styleUrl: './game-detail.component.scss',
@@ -62,12 +65,14 @@ export class GameDetailComponent {
   private readonly history = inject(GameHistoryService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly confirm = inject(ConfirmService);
 
   protected readonly detail = signal<GameDetailDto | null>(null);
   protected readonly loading = signal(true);
   protected readonly missing = signal(false);
   protected readonly failed = signal(false);
   protected readonly statusLabels = GAME_STATUS_LABELS;
+  protected readonly statusSeverities = GAME_STATUS_SEVERITIES;
   /** The visit a link asked to open the replay on. */
   protected readonly startVisit = visitParam(this.route.snapshot.queryParamMap.get('visit'));
 
@@ -129,8 +134,18 @@ export class GameDetailComponent {
       : [...game, ...CHECKOUT_FIGURES.map((figure) => ({ figure, group: 'Checkout' }))];
   });
 
+  protected confirmResume(): void {
+    this.confirm.ask(
+      'Spiel fortsetzen?',
+      'Das Spiel läuft danach wieder und zählt erst in die Statistik, wenn es beendet ist.',
+      'Fortsetzen',
+      () => void this.resume(),
+      true,
+    );
+  }
+
   /** Takes the game up again and goes into it; a device that still has it open skips the role. */
-  protected async resume(): Promise<void> {
+  private async resume(): Promise<void> {
     const gameId = this.detail()?.game.id;
     if (!gameId) {
       return;

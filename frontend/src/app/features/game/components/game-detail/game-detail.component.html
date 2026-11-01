@@ -2,14 +2,39 @@
   <header class="view__header view__header--sticky">
     <app-back-link label="Spiele" link="/account/games" />
     @if (detail(); as detail) {
-      <h1 class="view__title">{{ variantLabel() }} {{ detail.game.mode }}</h1>
-      <p class="view__subtitle">
-        {{ detail.createdAt | date: 'dd.MM.yy, HH:mm' }}
-        @if (durationMinutes(); as minutes) {
-          &middot; {{ minutes }} min
+      <div class="heading">
+        <h1 class="view__title">{{ variantLabel() }} {{ detail.game.mode }}</h1>
+        <p-tag [value]="statusLabels[detail.status]" [severity]="statusSeverities[detail.status]" />
+        @if (resumable()) {
+          <p-button
+            class="heading__resume"
+            icon="pi pi-play"
+            ariaLabel="Spiel fortsetzen"
+            [rounded]="true"
+            [loading]="resuming()"
+            (onClick)="confirmResume()"
+          />
         }
-        &middot; {{ checkoutLabel() }} &middot; {{ statusLabels[detail.status] }}
-      </p>
+      </div>
+      <ul class="facts">
+        <li class="facts__item">
+          <i class="pi pi-calendar" aria-hidden="true"></i>
+          <span class="sr-only">Gestartet</span>
+          {{ detail.createdAt | date: 'dd.MM.yy, HH:mm' }}
+        </li>
+        @if (durationMinutes(); as minutes) {
+          <li class="facts__item">
+            <i class="pi pi-stopwatch" aria-hidden="true"></i>
+            <span class="sr-only">Dauer</span>
+            {{ minutes }} min
+          </li>
+        }
+        <li class="facts__item">
+          <i class="pi pi-flag" aria-hidden="true"></i>
+          <span class="sr-only">Checkout</span>
+          {{ checkoutLabel() }}
+        </li>
+      </ul>
     } @else {
       <h1 class="view__title">Spiel</h1>
     }
@@ -25,19 +50,8 @@
   } @else if (failed()) {
     <app-load-error message="Das Spiel konnte nicht geladen werden." (retry)="load()" />
   } @else if (detail(); as detail) {
-    @if (resumable()) {
-      <div class="resume">
-        <p-button
-          label="Spiel fortsetzen"
-          icon="pi pi-play"
-          [loading]="resuming()"
-          (onClick)="resume()"
-          fluid
-        />
-        @if (resumeError(); as message) {
-          <p-message severity="error" [text]="message" />
-        }
-      </div>
+    @if (resumeError(); as message) {
+      <p-message severity="error" [text]="message" />
     }
     <section class="panel">
       <h2 class="panel__title">Spieler</h2>
