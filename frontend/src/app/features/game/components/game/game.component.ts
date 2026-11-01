@@ -33,6 +33,7 @@ import {GameTopBarComponent} from '../game-top-bar/game-top-bar.component';
 import {ScoreboardComponent} from '../scoreboard/scoreboard.component';
 import {VirtualBoardComponent} from '../virtual-board/virtual-board.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
+import { backState } from '../../../../core/view/models/back-state';
 
 /** A side-column key: a fixed field, booked as it stands whatever D or T is set to. */
 type FixedKey = {
@@ -104,6 +105,8 @@ export class GameComponent implements OnInit, OnDestroy {
   private readonly captureCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('captureCanvas');
 
   protected readonly signedIn = inject(AuthService).isAuthenticated;
+  /** The game detail leads back here, so a rematch is one tap away. */
+  protected readonly returnState = backState('Spiel');
   protected readonly deviceRole = this.session.role;
   protected readonly cameraPhase = this.session.phase;
   protected readonly cameraError = this.session.cameraError;
