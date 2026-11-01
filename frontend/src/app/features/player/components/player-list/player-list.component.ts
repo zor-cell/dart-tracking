@@ -14,7 +14,6 @@ import { Select } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { Tag } from 'primeng/tag';
-import { Tooltip } from 'primeng/tooltip';
 import { DISPLAY_NAME_MAX_LENGTH } from '../../../auth/models/profile-rules';
 import { AuthService } from '../../../auth/services/auth.service';
 import { PlayerIdentityDto } from '../../dto/player-identity.dto';
@@ -73,7 +72,6 @@ interface Invitation {
     TableModule,
     Tabs,
     Tag,
-    Tooltip,
   ],
   templateUrl: './player-list.component.html',
   styleUrl: './player-list.component.scss',
