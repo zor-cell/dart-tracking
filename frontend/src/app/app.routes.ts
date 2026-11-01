@@ -141,5 +141,19 @@ export const routes: Routes = [
         (m) => m.EvaluationComponent,
       ),
   },
+  {
+    path: 'imprint',
+    loadComponent: () =>
+      import('./features/legal/components/imprint/imprint.component').then(
+        (m) => m.ImprintComponent,
+      ),
+  },
+  {
+    path: 'privacy',
+    loadComponent: () =>
+      import('./features/legal/components/privacy/privacy.component').then(
+        (m) => m.PrivacyComponent,
+      ),
+  },
   { path: '**', redirectTo: 'start' },
 ];

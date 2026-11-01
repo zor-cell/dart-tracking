@@ -1,0 +1,27 @@
+<section class="view">
+  <header class="view__header view__header--sticky">
+    <app-back-link label="Konto" link="/account" />
+    <h1 class="view__title">Impressum</h1>
+  </header>
+
+  <div class="legal">
+    <section>
+      <h2>Offenlegung gemäß § 25 MedienG</h2>
+      <p>
+        Medieninhaber: {{ operator.name }}<br />
+        {{ operator.place }}
+      </p>
+      <p>
+        E-Mail: <a [href]="'mailto:' + operator.email">{{ operator.email }}</a>
+      </p>
+    </section>
+
+    <section>
+      <h2>Inhalt</h2>
+      <p>
+        Eine private, nicht kommerzielle Web-App, die Dartspiele per Smartphone-Kamera zählt und
+        auswertet. Sie ist aus einer Bachelorarbeit entstanden.
+      </p>
+    </section>
+  </div>
+</section>

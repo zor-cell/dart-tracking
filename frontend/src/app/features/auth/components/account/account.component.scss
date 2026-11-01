@@ -47,9 +47,39 @@
   }
 }
 
+/* Legal links and version, kept together below the page. */
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-top: 0.5rem;
+}
+
+.legal-links {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  font-size: 0.875rem;
+
+  a {
+    color: var(--p-text-muted-color);
+    text-decoration: none;
+    border-radius: 0.25rem;
+
+    &:hover {
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--p-primary-color);
+      outline-offset: 2px;
+    }
+  }
+}
+
 .version {
   margin: 0;
-  padding-top: 0.5rem;
   text-align: center;
   color: var(--p-text-muted-color);
   font-size: 0.8rem;

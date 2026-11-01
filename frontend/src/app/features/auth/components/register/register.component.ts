@@ -14,6 +14,7 @@ import {
 } from '../../models/profile-rules';
 import { AuthService } from '../../services/auth.service';
 import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
+import { backState } from '../../../../core/view/models/back-state';
 
 @Component({
   selector: 'app-register',
@@ -43,6 +44,7 @@ export class RegisterComponent {
     password: ['', [Validators.required, Validators.minLength(8)]],
   });
 
+  protected readonly privacyBack = backState('Registrieren');
   protected readonly usernameMessages = USERNAME_MESSAGES;
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);

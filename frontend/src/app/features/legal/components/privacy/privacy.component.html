@@ -1,0 +1,132 @@
+<section class="view">
+  <header class="view__header view__header--sticky">
+    <app-back-link label="Konto" link="/account" />
+    <h1 class="view__title">Datenschutzerklärung</h1>
+    <p class="view__subtitle">Stand: 1. November 2026</p>
+  </header>
+
+  <div class="legal">
+    <section>
+      <h2>Verantwortlicher</h2>
+      <p>
+        {{ operator.name }}, {{ operator.place }}<br />
+        E-Mail: <a [href]="'mailto:' + operator.email">{{ operator.email }}</a>
+      </p>
+      <p>
+        Die App wird privat und ohne Gewinnabsicht betrieben. Es gibt keine Werbung, kein
+        Tracking und keine Analyse-Dienste.
+      </p>
+    </section>
+
+    <section>
+      <h2>Konto</h2>
+      <p>
+        Für ein Konto speichern wir E-Mail-Adresse, Benutzername, Anzeigename, dein Passwort nur
+        als Hash, die Rolle und wann du dich registriert und deine E-Mail bestätigt hast. Damit
+        meldest du dich an, deine Spiele werden dir zugeordnet und du bekommst Mails zur
+        Bestätigung und zum Zurücksetzen des Passworts.
+      </p>
+      <p>Rechtsgrundlage ist die Bereitstellung der App, die du nutzt (Art. 6 Abs. 1 lit. b DSGVO).</p>
+    </section>
+
+    <section>
+      <h2>Spiele und Statistik</h2>
+      <p>
+        Zu jedem Spiel speichern wir Modus, Spieler, jeden Pfeil mit Feld, Position auf der
+        Scheibe und Zeitpunkt sowie den Ablauf samt Korrekturen. Dazu kommen deine Spielerliste,
+        deine Einstellungen und welche Spiele du ausgeblendet hast. Daraus entstehen Spielstand,
+        Verlauf, Replays und Statistik.
+      </p>
+      <p>
+        Wer mit dir in einem Spiel sitzt, sieht darin deinen Namen und deine Würfe. Spiele ohne
+        Konto werden ohne Bezug zu einer Person gespeichert, nur mit den Namen, die für die
+        Spieler eingegeben wurden.
+      </p>
+      <p>Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO.</p>
+    </section>
+
+    <section>
+      <h2>Kamera</h2>
+      <p>
+        Das Kamerabild wird in deinem Browser ausgewertet. Nur wenn ein Wurf erkannt wird, geht
+        ein Standbild an den Server, der daraus die Punkte bestimmt. Die Bilder liegen dort nur
+        für die Dauer des Spiels im Arbeitsspeicher und werden nicht dauerhaft gespeichert.
+      </p>
+      <p>
+        Ausnahme sind Testläufe, die der Betreiber selbst startet, um die Genauigkeit der
+        Erkennung zu messen. Deren Bilder werden für diese Auswertung gespeichert.
+      </p>
+    </section>
+
+    <section>
+      <h2>Zugriffsdaten</h2>
+      <p>
+        Bei jedem Aufruf protokolliert der Server IP-Adresse, Zeitpunkt, die aufgerufene Adresse
+        und die Kennung deines Browsers. Das dient dem Betrieb, der Fehlersuche und dem Schutz
+        vor Missbrauch, etwa durch Begrenzung der Anmeldeversuche. Die Protokolle haben eine feste
+        Größe und werden laufend überschrieben.
+      </p>
+      <p>Rechtsgrundlage ist unser berechtigtes Interesse an einem sicheren Betrieb (Art. 6 Abs. 1 lit. f DSGVO).</p>
+    </section>
+
+    <section>
+      <h2>Cookies und Speicher im Browser</h2>
+      <p>
+        Ein einziges Cookie hält dich angemeldet. Es ist für Skripte nicht lesbar und gilt
+        höchstens 30 Tage. Außerdem merkt sich dein Browser im lokalen Speicher, welches Spiel
+        läuft, eine Kennung für die Verbindung und Ansichten wie die Stummschaltung der Ansage.
+        Diese Daten bleiben auf deinem Gerät.
+      </p>
+      <p>
+        Beides ist für die App technisch notwendig und braucht daher keine Einwilligung (§ 165
+        Abs. 3 TKG 2021).
+      </p>
+    </section>
+
+    <section>
+      <h2>Empfänger</h2>
+      <ul>
+        <li>
+          <strong>Hosting:</strong> Die App läuft auf einem eigenen Server des Betreibers in
+          Österreich.
+        </li>
+        <li>
+          <strong>Cloudflare, Inc. (USA):</strong> Alle Aufrufe laufen über Cloudflare, das die
+          Verbindung verschlüsselt und vor Angriffen schützt. Cloudflare sieht dabei IP-Adresse und
+          Anfragedaten. Die Übermittlung in die USA stützt sich auf das EU-US Data Privacy
+          Framework.
+        </li>
+        <li>
+          <strong>Brevo (Sendinblue SAS, Frankreich):</strong> verschickt die Mails zur
+          Bestätigung, zum Zurücksetzen des Passworts und zur Änderung der E-Mail-Adresse und
+          erhält dafür deine E-Mail-Adresse und den Inhalt der Mail.
+        </li>
+      </ul>
+      <p>Darüber hinaus werden keine Daten weitergegeben.</p>
+    </section>
+
+    <section>
+      <h2>Speicherdauer</h2>
+      <p>
+        Konto und Spiele bleiben gespeichert, bis du dein Konto löschst. Dann werden Konto,
+        Einstellungen und die Spiele gelöscht, in denen kein anderes Konto mitgespielt hat.
+        Gemeinsame Spiele bleiben für die anderen erhalten, du stehst darin nur noch als
+        „Gelöschter Spieler“.
+      </p>
+    </section>
+
+    <section>
+      <h2>Deine Rechte</h2>
+      <p>
+        Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung,
+        Datenübertragbarkeit und Widerspruch (Art. 15 bis 21 DSGVO). Schreib dafür an
+        <a [href]="'mailto:' + operator.email">{{ operator.email }}</a>. Dein Konto kannst du
+        auch selbst im Profil löschen.
+      </p>
+      <p>
+        Beschweren kannst du dich bei der Österreichischen Datenschutzbehörde, Barichgasse 40–42,
+        1030 Wien, <a href="https://www.dsb.gv.at" rel="noopener" target="_blank">dsb.gv.at</a>.
+      </p>
+    </section>
+  </div>
+</section>

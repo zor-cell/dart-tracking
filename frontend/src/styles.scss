@@ -83,6 +83,41 @@ svg {
   margin-left: -0.75rem;
 }
 
+/* Running text of the imprint and the privacy policy. */
+.legal {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  line-height: 1.55;
+
+  h2,
+  p,
+  ul {
+    margin: 0;
+  }
+
+  h2 {
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+
+  section > * + * {
+    margin-top: 0.5rem;
+  }
+
+  ul {
+    padding-left: 1.25rem;
+  }
+
+  li + li {
+    margin-top: 0.5rem;
+  }
+
+  a {
+    color: var(--p-primary-color);
+  }
+}
+
 /* Secondary links below the sign-in and registration forms. */
 .auth-switch {
   display: flex;
