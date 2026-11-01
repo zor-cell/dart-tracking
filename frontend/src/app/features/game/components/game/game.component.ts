@@ -174,13 +174,21 @@ export class GameComponent implements OnInit, OnDestroy {
     () => this.game.currentTurn()?.darts ?? [],
   );
 
-  protected readonly scoreboardEntries = computed<ScoreboardEntry[]>(() =>
-    (this.game.state()?.players ?? []).map((player) => ({
+  protected readonly scoreboardEntries = computed<ScoreboardEntry[]>(() => {
+    const state = this.game.state();
+    const players = state?.players ?? [];
+    const closest = Math.min(...players.map((player) => player.remaining));
+    const alone = players.filter((player) => player.remaining === closest).length === 1;
+    const open = state?.winnerId === null && players.length > 1;
+    return players.map((player) => ({
       id: player.id,
       name: player.name,
       score: this.score(player),
-    })),
-  );
+      average: player.average,
+      lastVisit: player.lastVisit,
+      leading: open && alone && player.remaining === closest,
+    }));
+  });
 
   /**
    * The slots after the darts already thrown, carrying the suggested route where

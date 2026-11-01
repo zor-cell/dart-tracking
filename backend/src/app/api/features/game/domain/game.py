@@ -129,6 +129,22 @@ class Game:
         than the score is what lets both share the bust, win and checkout rules."""
         return self.mode - self._scores()[player_id]
 
+    def average(self, player_id: int) -> float | None:
+        """Points per three darts so far; a bust counts its darts but no points."""
+        turns = [turn for turn in self.turns if turn.player_id == player_id]
+        darts = sum(len(turn.darts) for turn in turns)
+        if darts == 0:
+            return None
+        return 3 * sum(turn.points for turn in turns if not turn.busted) / darts
+
+    def last_visit(self, player_id: int) -> int | None:
+        """Points of the player's last closed visit, a bust scoring none; None before it."""
+        closed = self.turns if self.winner is not None else self.turns[:-1]
+        turn = next((turn for turn in reversed(closed) if turn.player_id == player_id), None)
+        if turn is None:
+            return None
+        return 0 if turn.busted else turn.points
+
     def standings_after_turns(self) -> list[dict[int, int]]:
         """Points every player still needed after each turn, in turn order."""
         return [

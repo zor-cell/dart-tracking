@@ -297,3 +297,26 @@ def test_setup_is_offered_only_for_the_last_dart():
     assert game.checkout is None
     assert game.setup is not None
     assert game.setup.leave + sum(dart(label).points for label in game.setup.darts) == 99
+
+
+def test_average_counts_busted_darts_but_not_their_points():
+    game = new_game(players=1)
+    assert game.average(0) is None
+
+    throw(game, "T20", "T20", "T20")
+    game.next_player()
+    throw(game, "T20", "T20")
+
+    assert game.current_turn.busted
+    assert game.average(0) == 3 * 180 / 5
+
+
+def test_last_visit_is_the_players_last_closed_one():
+    game = new_game()
+    throw(game, "T20", "20")
+    assert game.last_visit(0) is None
+
+    game.next_player()
+    throw(game, "5")
+
+    assert (game.last_visit(0), game.last_visit(1)) == (80, None)

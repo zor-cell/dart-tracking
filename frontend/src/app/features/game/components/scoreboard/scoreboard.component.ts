@@ -7,13 +7,14 @@ import {
   input,
   viewChild,
 } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { Skeleton } from 'primeng/skeleton';
 import { ScoreboardEntry } from '../../models/scoreboard-entry';
 
 /** A row of player cards that keeps the active one centred; null entries draw placeholders. */
 @Component({
   selector: 'app-scoreboard',
-  imports: [Skeleton],
+  imports: [DecimalPipe, Skeleton],
   templateUrl: './scoreboard.component.html',
   styleUrl: './scoreboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

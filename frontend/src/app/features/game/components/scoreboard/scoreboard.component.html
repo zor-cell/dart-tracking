@@ -13,8 +13,26 @@
         [class.scoreboard__row--winner]="entry.id === winnerId()"
         [attr.aria-current]="$index === activeIndex() ? 'true' : null"
       >
-        <span class="scoreboard__name">{{ entry.name }}</span>
-        <span class="scoreboard__remaining">{{ entry.score }}</span>
+        <span class="scoreboard__name">
+          @if (entry.leading) {
+            <i class="pi pi-crown scoreboard__lead" aria-hidden="true"></i>
+            <span class="sr-only">Führt:</span>
+          }
+          {{ entry.name }}
+        </span>
+        <span class="scoreboard__figures">
+          <span class="scoreboard__side">
+            <span class="sr-only">Average</span>
+            {{ entry.average === null ? '–' : (entry.average | number: '1.1-1') }}
+            <span class="scoreboard__label" aria-hidden="true">Ø</span>
+          </span>
+          <span class="scoreboard__remaining">{{ entry.score }}</span>
+          <span class="scoreboard__side">
+            <span class="sr-only">Letzter Visit</span>
+            {{ entry.lastVisit ?? '–' }}
+            <span class="scoreboard__label" aria-hidden="true">letzte</span>
+          </span>
+        </span>
       </li>
     }
   </ul>

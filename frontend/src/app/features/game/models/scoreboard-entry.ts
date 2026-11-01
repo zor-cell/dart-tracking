@@ -3,4 +3,10 @@ export interface ScoreboardEntry {
   readonly id: number;
   readonly name: string;
   readonly score: number;
+  /** Points per three darts in this game; null before the first dart. */
+  readonly average: number | null;
+  /** Points of the last closed visit; null before it. */
+  readonly lastVisit: number | null;
+  /** Whether the player alone is closest to the finish. */
+  readonly leading: boolean;
 }
