@@ -128,9 +128,17 @@ def test_elimination_counts_against_what_the_others_reset(alice, session):
     game_id = alice.new_game(
         alice.own_entry()["id"], alice.add_player("Bob"), variant="elimination"
     )["id"]
-    # Bob draws level at 180 and resets me, so my 121 after it finishes nothing.
-    session.play(game_id, [T20] * 3, [T20] * 3, WINNING_LEG[1], [S1] * 3, [S1] * 3)
-    session.age_game(game_id, hours=48)
+    # Bob draws level at 180 and resets me, so my 121 after it finishes nothing; Bob wins.
+    session.play(
+        game_id,
+        [T20] * 3,
+        [T20] * 3,
+        WINNING_LEG[1],
+        [S1] * 3,
+        [S1] * 3,
+        [T20, (18, 3), (2, 2)],
+        hand_over=False,
+    )
 
     tally = statistics(alice)
 
@@ -139,12 +147,13 @@ def test_elimination_counts_against_what_the_others_reset(alice, session):
     assert alice.get("/statistics", params={"variant": "x01"}).json()["legs"] == 0
 
 
-def test_abandoned_game_counts_from_nine_own_darts(alice, session):
-    game_id = own_game(alice)
-    session.play(game_id, [S1] * 3, [S1] * 3, [S1] * 3)
-    session.age_game(game_id, hours=48)
+def test_open_and_abandoned_games_do_not_count(alice, session):
+    session.play(own_game(alice), [S1] * 3, [S1] * 3, [S1] * 3)
+    abandoned = own_game(alice)
+    session.play(abandoned, [S1] * 3, [S1] * 3, [S1] * 3)
+    session.age_game(abandoned, hours=48)
 
-    assert statistics(alice)["legs"] == 1
+    assert statistics(alice)["legs"] == 0
 
 
 def test_statistics_follow_the_link(alice, register, session):

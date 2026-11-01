@@ -19,8 +19,8 @@ ABANDON_AFTER = timedelta(hours=24)
 # How long a won game is still reopened on a device that left it open.
 RESUME_FINISHED_FOR = timedelta(minutes=15)
 
-# Below this, an abandoned game is a calibration test rather than a session:
-# three visits is the shortest thing that still says something about scoring.
+# Below this, an abandoned game is a calibration test rather than a session, and
+# the history hides it unless asked for abandoned games.
 MIN_ABANDONED_DARTS = 9
 
 
@@ -41,9 +41,7 @@ def is_resumable(finished: bool, updated_at: datetime | None) -> bool:
     return datetime.now(UTC) - updated_at <= window
 
 
-def counts_in_statistics(status: GameStatus, own_darts: int) -> bool:
-    """Whether a game may move an average. A finished one always does; an
-    abandoned one only once it holds more than a test throw (§4.5)."""
-    if status is GameStatus.FINISHED:
-        return True
-    return status is GameStatus.ABANDONED and own_darts >= MIN_ABANDONED_DARTS
+def counts_in_statistics(status: GameStatus) -> bool:
+    """Whether a game may move an average: only once it is won, since an open or
+    abandoned one can still be taken up again."""
+    return status is GameStatus.FINISHED

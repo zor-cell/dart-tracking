@@ -30,9 +30,8 @@ class GameSummary:
     players: list[GameSummaryPlayer]
     winner_index: int | None
     dart_count: int
-    own_darts: int
     created_at: datetime
 
     @property
     def counted(self) -> bool:
-        return counts_in_statistics(self.status, self.own_darts)
+        return counts_in_statistics(self.status)

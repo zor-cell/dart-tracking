@@ -3,6 +3,13 @@
   gap: 2.25rem;
 }
 
+/* The resume button with its error right under it. */
+.resume {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .standings {
   list-style: none;
   margin: 0;

@@ -130,6 +130,30 @@ class GameRepository:
             finished_at=row.finished_at,
         )
 
+    async def resume(self, session: AsyncSession, game_id: str, user_id: str) -> bool:
+        """Mark an unfinished game as just touched, so an abandoned one runs again. Scoped
+        to its owner and seated accounts; returns whether a row matched."""
+        try:
+            UUID(game_id)
+        except ValueError:
+            return False
+
+        seated = (
+            select(GamePlayerTable.game_id)
+            .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
+            .where(GamePlayerTable.game_id == game_id, PlayerTable.user_id == user_id)
+        )
+        result = await session.execute(
+            update(GameTable)
+            .where(
+                GameTable.id == game_id,
+                GameTable.status == GameStatus.ACTIVE.value,
+                or_(GameTable.owner_user_id == user_id, GameTable.id.in_(seated)),
+            )
+            .values(updated_at=func.now())
+        )
+        return result.rowcount > 0
+
     async def lock(self, session: AsyncSession, game_id: str) -> Game | None:
         """Read for a command. `SELECT … FOR UPDATE` holds the row until the
         transaction ends, so two devices ending the same visit are serialised
@@ -287,14 +311,6 @@ class GameRepository:
                 )
                 for seat in entries
             ]
-            own = next(
-                (
-                    thrown.get((row.id, seat.player_index), 0)
-                    for seat in entries
-                    if seat.user_id == user_id
-                ),
-                0,
-            )
             summaries.append(
                 GameSummary(
                     id=row.id,
@@ -314,7 +330,6 @@ class GameRepository:
                     dart_count=sum(
                         thrown.get((row.id, seat.player_index), 0) for seat in entries
                     ),
-                    own_darts=own,
                     created_at=row.created_at,
                 )
             )

@@ -25,6 +25,20 @@
   } @else if (failed()) {
     <app-load-error message="Das Spiel konnte nicht geladen werden." (retry)="load()" />
   } @else if (detail(); as detail) {
+    @if (resumable()) {
+      <div class="resume">
+        <p-button
+          label="Spiel fortsetzen"
+          icon="pi pi-play"
+          [loading]="resuming()"
+          (onClick)="resume()"
+          fluid
+        />
+        @if (resumeError(); as message) {
+          <p-message severity="error" [text]="message" />
+        }
+      </div>
+    }
     <section class="panel">
       <h2 class="panel__title">Spieler</h2>
       <ol class="standings">

@@ -266,6 +266,24 @@ def test_history_hides_discarded_and_short_abandoned_games_by_default(alice, ses
     assert ids(status="discarded") == {discarded}
 
 
+def test_resume_takes_up_open_and_abandoned_games_only(alice, bob, session):
+    me = alice.own_entry()["id"]
+    abandoned = alice.new_game(me)["id"]
+    session.play(abandoned, [S1, S1, S1])
+    session.age_game(abandoned, hours=48)
+    won = alice.new_game(me)["id"]
+    session.play(won, *WINNING_LEG)
+    discarded = alice.new_game(me)["id"]
+    alice.patch(f"/games/{discarded}", json={"status": "discarded"})
+
+    assert bob.post(f"/games/{abandoned}/resume").status_code == 404
+    assert alice.post(f"/games/{abandoned}/resume").status_code == 204
+    assert alice.get("/games", params={"status": "active"}).json()["items"][0]["id"] == abandoned
+    assert alice.get(f"/games/{abandoned}").json()["resumable"] is True
+    for game_id in (won, discarded, "not-a-uuid"):
+        assert alice.post(f"/games/{game_id}/resume").status_code == 404
+
+
 def test_history_search_by_player_name(alice):
     me = alice.own_entry()["id"]
     with_bob = alice.new_game(me, alice.add_player("Bob"))["id"]

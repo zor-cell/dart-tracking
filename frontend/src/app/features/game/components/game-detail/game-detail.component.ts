@@ -1,19 +1,22 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
+import { Message } from 'primeng/message';
 import { TableModule } from 'primeng/table';
 import { GameDetailDto } from '../../dto/game-detail.dto';
-import { GAME_STATUS_LABELS } from '../../models/game-filter';
+import { GAME_STATUS_LABELS, isResumable } from '../../models/game-filter';
 import { CHECKOUT_MODES } from '../../models/checkout-mode';
 import { GAME_VARIANTS } from '../../models/game-variant';
+import { activeGameId } from '../../services/active-game';
 import { GameHistoryService } from '../../services/game-history.service';
 import { GameReplayComponent } from '../game-replay/game-replay.component';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
+import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
 
 const GAME_FIGURES = ['average', 'firstNine', 'darts', 'bestVisit', 'grouping'] as const;
 const CHECKOUT_FIGURES = ['checkout', 'doubleDistance', 'busts'] as const;
@@ -47,6 +50,7 @@ function visitParam(raw: string | null): number | null {
     LoadingStateComponent,
     EmptyStateComponent,
     LoadErrorComponent,
+    Message,
     RouterLink,
     TableModule,
   ],
@@ -57,6 +61,7 @@ function visitParam(raw: string | null): number | null {
 export class GameDetailComponent {
   private readonly history = inject(GameHistoryService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   protected readonly detail = signal<GameDetailDto | null>(null);
   protected readonly loading = signal(true);
@@ -65,6 +70,13 @@ export class GameDetailComponent {
   protected readonly statusLabels = GAME_STATUS_LABELS;
   /** The visit a link asked to open the replay on. */
   protected readonly startVisit = visitParam(this.route.snapshot.queryParamMap.get('visit'));
+
+  protected readonly resumable = computed(() => {
+    const detail = this.detail();
+    return detail !== null && isResumable(detail.status);
+  });
+  protected readonly resuming = signal(false);
+  protected readonly resumeError = signal<string | null>(null);
 
   protected readonly isElimination = computed(() => this.detail()?.game.variant === 'elimination');
 
@@ -116,6 +128,30 @@ export class GameDetailComponent {
       ? [...game, { figure: 'busts', group: 'Spiel' }]
       : [...game, ...CHECKOUT_FIGURES.map((figure) => ({ figure, group: 'Checkout' }))];
   });
+
+  /** Takes the game up again and goes into it; a device that still has it open skips the role. */
+  protected async resume(): Promise<void> {
+    const gameId = this.detail()?.game.id;
+    if (!gameId) {
+      return;
+    }
+    this.resuming.set(true);
+    this.resumeError.set(null);
+    try {
+      await this.history.resume(gameId);
+      await this.router.navigate(activeGameId() === gameId ? ['/game'] : ['/game/join', gameId]);
+    } catch (failure) {
+      this.resumeError.set(
+        httpErrorMessage(
+          failure,
+          { 404: 'Dieses Spiel ist schon vorbei und lässt sich nicht fortsetzen.' },
+          'Das Spiel konnte nicht fortgesetzt werden.',
+        ),
+      );
+    } finally {
+      this.resuming.set(false);
+    }
+  }
 
   protected rate(hits: number, attempts: number): number | null {
     return attempts === 0 ? null : hits / attempts;

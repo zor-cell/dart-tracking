@@ -43,6 +43,15 @@ export class GameHistoryService {
     );
   }
 
+  /** Takes up a game that is neither won nor discarded; a 404 for any other. */
+  resume(gameId: string): Promise<void> {
+    return firstValueFrom(
+      this.http.post<void>(`${this.baseUrl}/${gameId}/resume`, null, {
+        context: SILENT_ERROR_CONTEXT,
+      }),
+    );
+  }
+
   /** Rejects with a 404 unless the account plays in the game or set it up. */
   detail(gameId: string): Promise<GameDetailDto> {
     return firstValueFrom(

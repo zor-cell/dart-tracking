@@ -212,17 +212,16 @@ def test_untouched_open_games_turn_abandoned(status, updated_at, effective):
 
 
 @pytest.mark.parametrize(
-    ("status", "own_darts", "counts"),
+    ("status", "counts"),
     [
-        (GameStatus.FINISHED, 1, True),
-        (GameStatus.ABANDONED, 9, True),
-        (GameStatus.ABANDONED, 8, False),
-        (GameStatus.ACTIVE, 99, False),
-        (GameStatus.DISCARDED, 99, False),
+        (GameStatus.FINISHED, True),
+        (GameStatus.ABANDONED, False),
+        (GameStatus.ACTIVE, False),
+        (GameStatus.DISCARDED, False),
     ],
 )
-def test_which_games_count(status, own_darts, counts):
-    assert counts_in_statistics(status, own_darts) is counts
+def test_only_finished_games_count(status, counts):
+    assert counts_in_statistics(status) is counts
 
 
 def test_best_visit_and_finish_point_at_the_oldest_game_on_a_tie():

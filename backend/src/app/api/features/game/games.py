@@ -198,6 +198,16 @@ async def update_status(
         raise HTTPException(status_code=404, detail="game not found")
 
 
+@router.post("/{game_id}/resume", status_code=204)
+async def resume_game(game_id: str, user: AuthenticatedUser) -> None:
+    """Take up a game that is still running or was left, but neither won nor discarded."""
+    async with database.session_scope() as session:
+        resumed = await repository.resume(session, game_id, user.id)
+
+    if not resumed:
+        raise HTTPException(status_code=404, detail="game not found")
+
+
 @router.get("/{game_id}", response_model=GameStateDto)
 async def get_game(game_id: str) -> GameStateDto:
     async with database.session_scope() as session:

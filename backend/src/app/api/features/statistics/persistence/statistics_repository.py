@@ -2,7 +2,7 @@
 
 from collections import Counter
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 
 from sqlalchemy import ColumnElement, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,12 +12,7 @@ from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.game_filter import GameFilter
 from app.api.features.game.domain.game_mode import GameMode
-from app.api.features.game.domain.game_status import (
-    ABANDON_AFTER,
-    GameStatus,
-    counts_in_statistics,
-    effective_status,
-)
+from app.api.features.game.domain.game_status import GameStatus
 from app.api.features.game.domain.player import Player
 from app.api.features.game.domain.turn import Turn
 from app.api.features.game.persistence.dart import DartTable
@@ -80,7 +75,6 @@ class StatisticsRepository:
     ) -> list[_Leg]:
         """Three queries for the games `criteria` selects, not four per game: the
         seats, their turns, their darts — then the rules run in Python. Newest first."""
-        cutoff = datetime.now(UTC) - ABANDON_AFTER
         seats = (
             await session.execute(
                 select(
@@ -88,20 +82,14 @@ class StatisticsRepository:
                     GameTable.mode,
                     GameTable.variant,
                     GameTable.checkout_mode,
-                    GameTable.status,
                     GameTable.created_at,
-                    GameTable.updated_at,
                     GamePlayerTable.player_index,
                 )
                 .join(GamePlayerTable, GamePlayerTable.game_id == GameTable.id)
                 .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
                 .where(
                     *seats_of,
-                    or_(
-                        GameTable.status == GameStatus.FINISHED.value,
-                        (GameTable.status == GameStatus.ACTIVE.value)
-                        & (GameTable.updated_at < cutoff),
-                    ),
+                    GameTable.status == GameStatus.FINISHED.value,
                     *game_filter_clauses(criteria),
                 )
                 .order_by(GameTable.created_at.desc(), GameTable.id)
@@ -175,11 +163,6 @@ class StatisticsRepository:
                 if row.player_index == seat.player_index
             ]
             turns = [turn for _, turn, _ in own]
-            own_darts = sum(len(turn.darts) for turn in turns)
-            status = effective_status(GameStatus(seat.status), seat.updated_at)
-            if not counts_in_statistics(status, own_darts):
-                continue
-
             if last is not None and seat.id not in counted and len(counted) == last:
                 break
             counted.add(seat.id)
