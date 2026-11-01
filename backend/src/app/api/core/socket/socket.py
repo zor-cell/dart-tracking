@@ -34,6 +34,9 @@ from app.api.core.socket.services.game_hub import Connection, hub
 from app.api.core.socket.services.jpeg_header import jpeg_size
 from app.api.features.announcement.domain.announcer import choose_announcer
 from app.api.features.announcement.dto.announcer_state import AnnouncerStateDto
+from app.api.features.announcement.dto.calibration_announcement import (
+    CalibrationAnnouncementDto,
+)
 from app.api.features.announcement.dto.command.claim_announcer import ClaimAnnouncerDto
 from app.api.features.announcement.dto.dart_announcement import DartAnnouncementDto
 from app.api.features.announcement.dto.turn_announcement import TurnAnnouncementDto
@@ -94,7 +97,8 @@ logger = logging.getLogger(__name__)
 # read each other's. Holds until the trace has been read out.
 _detector_lock = asyncio.Lock()
 
-# Games whose next player is called once the scoring camera has recalibrated.
+# Games whose next player is called once the scoring camera has answered the
+# recalibration, whether it held or not.
 _turn_calls: set[str] = set()
 
 # Per connection: messages of any kind, and camera frames (each one a detector run).
@@ -352,9 +356,11 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
     """
     armed = await recorder.camera_armed(game_id)
     filled = 0
+    reset_before: set[int] = set()
 
     def mutate(game: Game) -> None:
-        nonlocal filled
+        nonlocal filled, reset_before
+        reset_before = game.just_reset()
         if not command.is_current(game):
             logger.info("[socket] refused %s made against an outdated visit", command.type)
             return
@@ -392,7 +398,7 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
 
     await _publish_state(game)
     if isinstance(command, RegisterDartDto | ReplaceDartDto):
-        await _announce(game, command.to_entity())
+        await _announce(game, command.to_entity(), game.just_reset() - reset_before)
 
 
 async def _handle_set_evaluation(game_id: str, command: SetEvaluationDto) -> None:
@@ -428,11 +434,22 @@ async def _current_announcer(game_id: str) -> str | None:
     )
 
 
-async def _announce(game: Game, dart: ScoredDart) -> None:
-    """Have the room's announcer speak a dart just booked."""
+async def _announce(game: Game, dart: ScoredDart, eliminated: set[int]) -> None:
+    """Have the room's announcer speak a dart just booked, with whoever it eliminated."""
     announcer = await _current_announcer(game.id)
     if announcer is not None:
-        await hub.send_to_client(game.id, announcer, DartAnnouncementDto.from_entity(dart, game))
+        await hub.send_to_client(
+            game.id, announcer, DartAnnouncementDto.from_entity(dart, game, eliminated)
+        )
+
+
+async def _announce_calibration(game_id: str, calibrated: bool) -> None:
+    """Have the room's announcer say that the calibration failed, or holds again."""
+    announcer = await _current_announcer(game_id)
+    if announcer is not None:
+        await hub.send_to_client(
+            game_id, announcer, CalibrationAnnouncementDto(calibrated=calibrated)
+        )
 
 
 async def _call_turn(game: Game) -> None:
@@ -514,6 +531,7 @@ async def _handle_calibration_frame(
     """
     client_id = connection.client.id
     decides = await scoring_camera_store.holder(game_id) in (None, client_id)
+    failed_before = decides and await calibration_failure_store.failed(game_id)
     if decides:
         await _start_calibrating(game_id)
     decoded = _decode_jpeg(frame.image)
@@ -548,8 +566,10 @@ async def _handle_calibration_frame(
     if decides:
         calibration_progress.finish(game_id)
         await _publish_calibration_state(game_id)
+        if failed_before != await calibration_failure_store.failed(game_id):
+            await _announce_calibration(game_id, calibrated=failed_before)
 
-    if decides and not isinstance(outcome, CalibrationFailure) and game_id in _turn_calls:
+    if decides and game_id in _turn_calls:
         _turn_calls.discard(game_id)
         async with database.session_scope() as session:
             game = await game_repository.get(session, game_id)
@@ -652,9 +672,11 @@ async def _handle_throw_frame(
     )
 
     booked = False
+    reset_before: set[int] = set()
 
     def mutate(game: Game) -> None:
-        nonlocal booked
+        nonlocal booked, reset_before
+        reset_before = game.just_reset()
         booked = game.register_dart(dart)
 
     record = recorder.for_detection(dart, client_id, metrics)
@@ -670,7 +692,7 @@ async def _handle_throw_frame(
     await _publish_state(game)
 
     if booked:
-        await _announce(game, dart)
+        await _announce(game, dart, game.just_reset() - reset_before)
 
 
 def _darts_pulled(

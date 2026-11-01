@@ -9,7 +9,8 @@ class DartAnnouncementDto(CamelModel):
     """Server -> announcer: a dart just booked, tracked or entered by hand, for
     the client to phrase.
 
-    `visit_points` is set once the visit is full, busted or won.
+    `visit_points` is set once the visit is full, busted or won; `eliminated`
+    names whoever the dart sent back to zero.
     """
 
     type: Literal["dart_announcement"] = "dart_announcement"
@@ -18,9 +19,10 @@ class DartAnnouncementDto(CamelModel):
     visit_points: int | None
     busted: bool
     won: bool
+    eliminated: list[str]
 
     @classmethod
-    def from_entity(cls, dart: Dart, game: Game) -> Self:
+    def from_entity(cls, dart: Dart, game: Game, eliminated: set[int]) -> Self:
         turn = game.current_turn
         won = game.winner is not None
         visit_over = won or game.darts_remaining == 0
@@ -30,4 +32,5 @@ class DartAnnouncementDto(CamelModel):
             visit_points=turn.points if visit_over else None,
             busted=turn.busted,
             won=won,
+            eliminated=[player.name for player in game.players if player.id in eliminated],
         )

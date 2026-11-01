@@ -1,9 +1,13 @@
+import { CalibrationAnnouncementDto } from '../dto/calibration-announcement.dto';
 import { DartAnnouncementDto } from '../dto/dart-announcement.dto';
 import { TurnAnnouncementDto } from '../dto/turn-announcement.dto';
 
 /** The phrases to speak for one booked dart, in order. */
 export function announcementPhrases(announcement: DartAnnouncementDto): string[] {
   const phrases = [dartPhrase(announcement.value, announcement.multiplier)];
+  if (announcement.eliminated.length > 0) {
+    phrases.push(`${announcement.eliminated.join(' and ')} eliminated`);
+  }
 
   if (announcement.won) {
     phrases.push('Game shot');
@@ -18,6 +22,11 @@ export function announcementPhrases(announcement: DartAnnouncementDto): string[]
 /** The phrase that calls the next player to the oche. */
 export function turnPhrase(announcement: TurnAnnouncementDto): string {
   return `${announcement.player}, ${announcement.score}`;
+}
+
+/** The phrase for a calibration that just failed or holds again. */
+export function calibrationPhrase(announcement: CalibrationAnnouncementDto): string {
+  return announcement.calibrated ? 'Board calibrated' : 'Calibration failed';
 }
 
 function dartPhrase(value: number, multiplier: number): string {

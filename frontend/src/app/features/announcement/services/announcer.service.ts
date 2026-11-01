@@ -2,7 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SocketService } from '../../../core/socket/services/socket.service';
-import { announcementPhrases, turnPhrase } from '../models/announcement-text';
+import { announcementPhrases, calibrationPhrase, turnPhrase } from '../models/announcement-text';
 import { readStored, writeStored } from '../../../core/storage/models/browser-storage';
 
 const MUTED_KEY = 'dart-tracking.announcerMuted';
@@ -74,6 +74,11 @@ export class AnnouncerService {
       .on('turn_announcement')
       .pipe(takeUntilDestroyed())
       .subscribe((announcement) => this.speak([turnPhrase(announcement)]));
+
+    this.socket
+      .on('calibration_announcement')
+      .pipe(takeUntilDestroyed())
+      .subscribe((announcement) => this.speak([calibrationPhrase(announcement)]));
 
     // The room re-sends the announcer on every join, so a stale one must not
     // outlive the connection it came from.

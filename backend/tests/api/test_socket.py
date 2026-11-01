@@ -331,6 +331,33 @@ def test_handover_with_a_camera_waits_for_the_recalibration(room, camera, game_i
             state = scoreboard.next("game_state", never=("turn_announcement",))
 
 
+def test_a_failed_recalibration_is_said_once_and_still_calls_the_turn(room, camera, game_id):
+    with camera() as phone, room(game_id) as scoreboard:
+        heard = []
+        for _ in range(2):
+            scoreboard.throw(20)
+            scoreboard.send("next_player")
+            phone.next("calibration_requested")
+            phone.send("calibration_frame", image=jpeg(640, 480))
+            while (message := scoreboard.websocket.receive_json())["type"] != "turn_announcement":
+                if message["type"] == "calibration_announcement":
+                    heard.append(message["calibrated"])
+
+    assert heard == [False]
+
+
+def test_an_elimination_is_named_in_the_dart_call(room, anon):
+    game_id = anon.new_game({"name": "Ann"}, {"name": "Ben"}, variant="elimination")["id"]
+    with room(game_id) as announcer:
+        announcer.throw(20)
+        announcer.send("next_player")
+        announcer.throw(20)
+
+        calls = [announcer.next("dart_announcement") for _ in range(2)]
+
+    assert [call["eliminated"] for call in calls] == [[], ["Ann"]]
+
+
 def test_rematch_calls_the_old_room_over(room, game_id, anon):
     with room(game_id) as device:
         rematch = anon.post(
