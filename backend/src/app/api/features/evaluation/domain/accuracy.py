@@ -167,10 +167,6 @@ class Accuracy:
         return statistics.median(self.distances) if self.distances else None
 
     @property
-    def best_off_by(self) -> float | None:
-        return min(self.distances) if self.distances else None
-
-    @property
     def worst_off_by(self) -> float | None:
         return max(self.distances) if self.distances else None
 

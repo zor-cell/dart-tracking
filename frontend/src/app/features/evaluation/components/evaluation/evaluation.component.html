@@ -74,7 +74,7 @@
         [range]="true"
         [min]="tiltLimits[0]"
         [max]="tiltLimits[1]"
-        [ngModel]="tiltDraft()"
+        [ngModel]="tiltModel()"
         [ngModelOptions]="{ standalone: true }"
         (ngModelChange)="slideTilt($event)"
         ariaLabelledBy="filter-tilt"

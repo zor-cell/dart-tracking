@@ -193,7 +193,9 @@ export class EvaluationComponent {
   });
   protected readonly tiltLimits = TILT_LIMITS;
   /** The slider's range while it moves; applied once it rests. */
-  protected readonly tiltDraft = signal<TiltRange>(TILT_LIMITS);
+  protected readonly tiltDraft = signal<TiltRange>([...TILT_LIMITS]);
+  /** A copy for the slider each time, since it moves its handles inside the array it gets. */
+  protected readonly tiltModel = computed(() => [...this.tiltDraft()]);
   private tiltTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly filterValue = toSignal(this.filters.valueChanges, {
     initialValue: this.filters.value,
@@ -299,10 +301,10 @@ export class EvaluationComponent {
     );
     this.queryState.signal('range', this.range, DAY_RANGE_PARAM, null);
     this.queryState.form(this.filters, FILTER_PARAMS);
-    this.tiltDraft.set(this.filters.controls.tilt.value ?? TILT_LIMITS);
+    this.tiltDraft.set([...(this.filters.controls.tilt.value ?? TILT_LIMITS)]);
     this.filters.controls.tilt.valueChanges
       .pipe(takeUntilDestroyed())
-      .subscribe((tilt) => this.tiltDraft.set(tilt ?? TILT_LIMITS));
+      .subscribe((tilt) => this.tiltDraft.set([...(tilt ?? TILT_LIMITS)]));
     this.destroyRef.onDestroy(() => clearTimeout(this.tiltTimer));
     void this.memory.load();
     this.memory.watch('evaluation', this.filters, REMEMBERED, this.destroyRef);
@@ -394,11 +396,11 @@ export class EvaluationComponent {
   }
 
   /** Follows the slider and applies its range once it rests; the full span narrows nothing. */
-  protected slideTilt(range: TiltRange): void {
-    this.tiltDraft.set(range);
+  protected slideTilt(range: readonly number[]): void {
+    const [from, to] = range;
+    this.tiltDraft.set([from, to]);
     clearTimeout(this.tiltTimer);
     this.tiltTimer = setTimeout(() => {
-      const [from, to] = range;
       const full = from <= TILT_LIMITS[0] && to >= TILT_LIMITS[1];
       this.filters.controls.tilt.setValue(full ? null : [from, to]);
     }, TILT_DEBOUNCE_MS);
@@ -411,7 +413,6 @@ export class EvaluationComponent {
     return [
       { symbol: 'Ø', label: 'Mittelwert', value: summary.meanOffBy },
       { symbol: 'x̃', label: 'Median', value: summary.medianOffBy },
-      { symbol: 'min', label: 'Kleinster Abstand', value: summary.bestOffBy },
       { symbol: 'max', label: 'Größter Abstand', value: summary.worstOffBy },
     ];
   }
