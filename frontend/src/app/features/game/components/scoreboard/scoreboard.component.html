@@ -10,6 +10,7 @@
       <li
         class="scoreboard__row"
         [class.scoreboard__row--active]="$index === activeIndex()"
+        [class.scoreboard__row--reset]="entry.reset"
         [class.scoreboard__row--winner]="entry.id === winnerId()"
         [attr.aria-current]="$index === activeIndex() ? 'true' : null"
       >
@@ -18,7 +19,16 @@
             <i class="pi pi-crown scoreboard__lead" aria-hidden="true"></i>
             <span class="sr-only">Führt:</span>
           }
-          {{ entry.name }}
+          @if (entry.reset) {
+            <span class="sr-only">Zurückgesetzt:</span>
+          }
+          <span class="scoreboard__name-text">{{ entry.name }}</span>
+          @if (entry.eliminations) {
+            <span class="scoreboard__eliminations">
+              <span aria-hidden="true">×{{ entry.eliminations }}</span>
+              <span class="sr-only">, {{ entry.eliminations }} eliminiert</span>
+            </span>
+          }
         </span>
         <span class="scoreboard__figures">
           <span class="scoreboard__side">
@@ -26,7 +36,7 @@
             {{ entry.average === null ? '–' : (entry.average | number: '1.1-1') }}
             <span class="scoreboard__label" aria-hidden="true">Ø</span>
           </span>
-          <span class="scoreboard__remaining">{{ entry.score }}</span>
+          <span class="scoreboard__remaining" [class.scoreboard__remaining--reset]="entry.reset">{{ entry.score }}</span>
           <span class="scoreboard__side">
             <span class="sr-only">Letzter Visit</span>
             {{ entry.lastVisit ?? '–' }}

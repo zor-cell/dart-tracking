@@ -123,6 +123,33 @@ class Game:
 
         return list(best[1]) if best is not None else None
 
+    def just_reset(self) -> set[int]:
+        """Players the latest visit with darts sent back to zero: the open one once
+        it has darts, the one before it until then. Elimination only."""
+        latest = len(self.turns) - (1 if self.current_turn.darts else 2)
+        return next(
+            (reset for index, (_, reset) in enumerate(self._resets()) if index == latest), set()
+        )
+
+    def eliminations(self) -> dict[int, int]:
+        """How often each player has sent another back to zero."""
+        counts = {player.id: 0 for player in self.players}
+        for turn, reset in self._resets():
+            counts[turn.player_id] += len(reset)
+        return counts
+
+    def _resets(self) -> Iterator[tuple[Turn, set[int]]]:
+        """The players each turn sent back to zero, in turn order; none outside
+        elimination. Only the thrower scores, so anyone else who drops to zero was reset."""
+        before = {player.id: 0 for player in self.players}
+        for turn, scores in self._replay():
+            yield turn, {
+                player_id
+                for player_id, score in scores.items()
+                if player_id != turn.player_id and before[player_id] > 0 and score == 0
+            }
+            before = dict(scores)
+
     def remaining(self, player_id: int) -> int:
         """Points a player still needs to finish: x01 counts this down to zero,
         elimination counts the score up to the mode. Holding the distance rather

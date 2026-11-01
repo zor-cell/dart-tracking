@@ -9,4 +9,8 @@ export interface ScoreboardEntry {
   readonly lastVisit: number | null;
   /** Whether the player alone is closest to the finish. */
   readonly leading: boolean;
+  /** Whether the latest visit sent the player back to zero. */
+  readonly reset: boolean;
+  /** How often the player has sent another back to zero; null outside elimination. */
+  readonly eliminations: number | null;
 }

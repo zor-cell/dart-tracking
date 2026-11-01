@@ -72,26 +72,57 @@
   box-shadow: inset 0 3px 0 0 var(--p-primary-color);
 }
 
-// Declared after the active tint so it outranks it: the game is over, so whose
-// turn it is no longer matters.
-.scoreboard__row--winner {
-  border-color: var(--p-green-500);
-  background: color-mix(in srgb, var(--p-green-500) 22%, var(--p-content-background));
-  box-shadow: inset 0 3px 0 0 var(--p-green-500);
+// How a player stands, in one colour each. It takes over the active card's fill
+// and top bar; the winner, declared last, outranks the reset and always has the bar.
+.scoreboard__row--reset {
+  --standing: var(--p-red-500);
 }
 
-// Long names shorten rather than widen the card, which would break the sharing.
+.scoreboard__row--winner {
+  --standing: var(--p-green-500);
+}
+
+.scoreboard__row--reset,
+.scoreboard__row--winner {
+  border-color: var(--standing);
+  background: color-mix(in srgb, var(--standing) 22%, var(--p-content-background));
+}
+
+.scoreboard__row--active.scoreboard__row--reset,
+.scoreboard__row--winner {
+  box-shadow: inset 0 3px 0 0 var(--standing);
+}
+
+// Long names shorten rather than widen the card, which would break the sharing;
+// the crown and the elimination count stay whole.
 .scoreboard__name {
   flex: none; // never shrink to nothing on a short screen
+  display: flex;
+  align-items: baseline;
   font-weight: 500;
   font-size: 0.8rem;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.scoreboard__name-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// How many others the player has sent back to zero.
+.scoreboard__eliminations {
+  flex: none;
+  margin-left: 0.2rem;
+  color: var(--p-red-500);
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 .scoreboard__lead {
+  flex: none;
   color: var(--p-amber-500);
   font-size: 0.75rem;
   margin-right: 0.15rem;
@@ -127,4 +158,9 @@
   font-size: 1.3rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+
+// Sent back to zero by the latest visit.
+.scoreboard__remaining--reset {
+  color: var(--p-red-500);
 }

@@ -43,10 +43,12 @@ type FixedKey = {
 };
 
 /** One suggestion box: its label, and whether it resets an opponent or only sets
- * up the next visit rather than winning the leg. `leave` marks a setup's last dart. */
+ * up the next visit rather than winning the leg. `leave` marks a setup's last dart,
+ * `reset` the reset route's dart under a finish. */
 type CheckoutSlot = {
   readonly label: string | null;
   readonly eliminating: boolean;
+  readonly reset: string | null;
   readonly setup: boolean;
   readonly leave: number | null;
   readonly shadow: boolean;
@@ -187,6 +189,8 @@ export class GameComponent implements OnInit, OnDestroy {
       average: player.average,
       lastVisit: player.lastVisit,
       leading: open && alone && player.remaining === closest,
+      reset: player.justReset,
+      eliminations: state?.variant === 'elimination' ? player.eliminations : null,
     }));
   });
 
@@ -194,8 +198,8 @@ export class GameComponent implements OnInit, OnDestroy {
    * The slots after the darts already thrown, carrying the suggested route where
    * there is one. Sized off the darts thrown rather than `dartsRemaining`: a
    * busted visit has none remaining, which would drop the boxes from the row.
-   * A winning finish outranks a reset or a setup, which only fill the slots when
-   * there is no checkout. Shadow darts take the first free slots.
+   * A winning finish outranks a reset or a setup; the reset route then runs
+   * beneath it. Shadow darts take the first free slots.
    */
   protected readonly checkoutSlots = computed<readonly CheckoutSlot[]>(() => {
     const thrown = this.game.currentTurn()?.darts.length ?? 0;
@@ -210,10 +214,11 @@ export class GameComponent implements OnInit, OnDestroy {
       const shadow = shadows[index];
       const last = setup !== null && index === setup.darts.length - 1;
       return shadow
-        ? { label: shadow.label, eliminating: false, setup: false, leave: null, shadow: true }
+        ? { label: shadow.label, eliminating: false, reset: null, setup: false, leave: null, shadow: true }
         : {
             label: route?.[index] ?? null,
             eliminating,
+            reset: checkout !== null ? (elimination?.[index] ?? null) : null,
             setup: setup !== null && index < setup.darts.length,
             leave: last ? setup.leave : null,
             shadow: false,

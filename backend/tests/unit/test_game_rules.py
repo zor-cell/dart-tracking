@@ -270,6 +270,40 @@ def test_elimination_reset_depends_on_the_score_when_the_dart_landed():
     assert game.remaining(1) == 276
 
 
+def test_the_reset_is_named_until_the_next_visit_has_darts():
+    game = new_game(players=3, variant=GameVariant.ELIMINATION)
+    throw(game, "T20")
+    game.next_player()
+    throw(game, "20")
+    game.next_player()
+    throw(game, "T20")
+
+    assert game.just_reset() == {0}
+    game.next_player()
+    assert game.just_reset() == {0}
+    throw(game, "5")
+    assert game.just_reset() == set()
+
+
+def test_eliminations_count_each_player_sent_back():
+    game = new_game(players=3, variant=GameVariant.ELIMINATION)
+    throw(game, "20")
+    game.next_player()
+    throw(game, "20")
+    game.next_player()
+    throw(game, "10", "10")
+
+    assert game.eliminations() == {0: 0, 1: 1, 2: 1}
+
+
+def test_no_reset_is_named_for_a_player_on_zero():
+    game = new_game(variant=GameVariant.ELIMINATION)
+    throw(game, "0")
+    game.next_player()
+
+    assert game.just_reset() == set()
+
+
 def test_elimination_suggests_the_cheapest_reset():
     game = new_game(players=3, variant=GameVariant.ELIMINATION)
     throw(game, "T20", "T20")

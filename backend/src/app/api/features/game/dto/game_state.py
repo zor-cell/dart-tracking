@@ -41,6 +41,8 @@ class GameStateDto(CamelModel):
 
     @classmethod
     def from_entity(cls, game: Game) -> Self:
+        just_reset = game.just_reset()
+        eliminations = game.eliminations()
         return cls(
             id=game.id,
             revision=game.revision,
@@ -53,6 +55,8 @@ class GameStateDto(CamelModel):
                     game.remaining(player.id),
                     game.average(player.id),
                     game.last_visit(player.id),
+                    player.id in just_reset,
+                    eliminations[player.id],
                 )
                 for player in game.players
             ],

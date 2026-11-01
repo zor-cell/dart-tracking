@@ -35,19 +35,43 @@ export class ScoreboardComponent {
    */
   protected readonly visibleCards = computed(() => Math.min(this.entries()?.length ?? 2, 3));
 
+  // Who was reset as of the last state; null until the first, so a reload does
+  // not jump to an old reset.
+  private resetIds: ReadonlySet<number> | null = null;
+
   constructor() {
     // Follow play along the row, so the thrower stays in the middle and the two
     // around them stay in view. A no-op while everyone fits.
     effect(() => {
       const index = this.activeIndex();
       const list = this.listRef()?.nativeElement;
-      if (list === undefined || index === null) {
-        return;
-      }
-      const card = list.children.item(index) as HTMLElement | null;
-      if (card !== null) {
-        list.scrollTo({ left: card.offsetLeft + card.offsetWidth / 2 - list.clientWidth / 2 });
+      if (list !== undefined && index !== null) {
+        centre(list, index);
       }
     });
+
+    // Turn to a player the moment they are sent back to zero; the next handover
+    // brings the row back to the thrower.
+    effect(() => {
+      const entries = this.entries();
+      const list = this.listRef()?.nativeElement;
+      if (entries === null || list === undefined) {
+        return;
+      }
+      const before = this.resetIds;
+      this.resetIds = new Set(entries.filter((entry) => entry.reset).map((entry) => entry.id));
+      const fresh = entries.findIndex((entry) => entry.reset && before !== null && !before.has(entry.id));
+      if (fresh !== -1) {
+        centre(list, fresh);
+      }
+    });
+  }
+}
+
+/** Scroll the row so the card at `index` sits in the middle. */
+function centre(list: HTMLElement, index: number): void {
+  const card = list.children.item(index) as HTMLElement | null;
+  if (card !== null) {
+    list.scrollTo({ left: card.offsetLeft + card.offsetWidth / 2 - list.clientWidth / 2 });
   }
 }

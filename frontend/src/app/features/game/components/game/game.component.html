@@ -207,12 +207,16 @@
                 [class.turn__dart--elimination]="slot.eliminating && slot.label !== null"
                 [class.turn__dart--setup]="slot.setup"
                 [class.turn__dart--shadow]="slot.shadow"
+                [class.turn__dart--two-routes]="slot.reset !== null"
                 [attr.aria-hidden]="slot.shadow ? null : 'true'"
                 [attr.aria-label]="slot.shadow ? slot.label + ', erkannt, nicht gewertet' : null"
               >
                 {{ slot.label ?? '–' }}
                 @if (slot.leave !== null) {
                   <span class="turn__leave">→{{ slot.leave }}</span>
+                }
+                @if (slot.reset !== null) {
+                  <span class="turn__reset">{{ slot.reset }}</span>
                 }
               </li>
             }

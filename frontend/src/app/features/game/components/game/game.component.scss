@@ -299,8 +299,22 @@
   border-style: dashed;
 }
 
-.turn__dart--elimination {
+.turn__dart--elimination,
+.turn__reset {
   color: var(--p-red-500);
+}
+
+// A finish with the reset route beneath it, in the height of a one-line box.
+.turn__dart--two-routes {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-block: 0.125rem;
+  line-height: 1.15;
+}
+
+.turn__reset {
+  font-size: 0.75em;
 }
 
 // No finish this visit: what to throw so the next one can finish.

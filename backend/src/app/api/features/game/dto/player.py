@@ -13,10 +13,20 @@ class PlayerDto(CamelModel):
     average: float | None
     # Points of the last closed visit; None before it.
     last_visit: int | None
+    # Whether the latest visit sent this player back to zero (elimination).
+    just_reset: bool
+    # How often the player has sent another back to zero (elimination).
+    eliminations: int
 
     @classmethod
     def from_entity(
-        cls, player: Player, remaining: int, average: float | None, last_visit: int | None
+        cls,
+        player: Player,
+        remaining: int,
+        average: float | None,
+        last_visit: int | None,
+        just_reset: bool,
+        eliminations: int,
     ) -> Self:
         """The figures are passed in because they are properties of the game, not
         of the player alone."""
@@ -27,4 +37,6 @@ class PlayerDto(CamelModel):
             remaining=remaining,
             average=None if average is None else round(average, 2),
             last_visit=last_visit,
+            just_reset=just_reset,
+            eliminations=eliminations,
         )
