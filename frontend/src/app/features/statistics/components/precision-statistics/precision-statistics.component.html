@@ -283,8 +283,8 @@
         Ø Pfeilabstand
         <app-info-hint class="stat__info">
           <app-stat-sketch kind="grouping" />
-          Mittel der Strecken zwischen je zwei erkannten Darts eines Visits. Nur Visits bei mehr als
-          170 Rest, wo jeder Dart aufs selbe Ziel geht.
+          Mittel der Strecken zwischen je zwei erkannten Darts eines Visits. Nur Visits ohne
+          Finish-Chance, wo jeder Dart aufs selbe Ziel geht.
         </app-info-hint>
       </dt>
       @if (totals.grouping !== null) {
@@ -329,7 +329,7 @@
         <app-info-hint class="stat__info">
           <app-stat-sketch kind="spread" />
           Wie die Darts eines Visits zueinander liegen: die breite Achse geteilt durch die schmale,
-          die Ellipse zeigt die Richtung. Nur Visits bei mehr als 170 Rest, wo jeder Dart aufs selbe
+          die Ellipse zeigt die Richtung. Nur Visits ohne Finish-Chance, wo jeder Dart aufs selbe
           Ziel geht.
         </app-info-hint>
       </dt>
@@ -387,7 +387,6 @@
       }
     </div>
   </dl>
-  <p class="panel__hint">Ø Punkte pro Dart, nach seinem Platz im Visit.</p>
   <ol class="darts" [class.darts--compared]="other">
     @for (dart of darts(); track dart.place) {
       <li class="darts__row">
@@ -437,4 +436,7 @@
       </li>
     }
   </ol>
+  <p class="panel__hint">
+    Ø Punkte pro Dart nach seinem Platz im Visit, auch nur ohne Finish&#8209;Chance.
+  </p>
 </section>
