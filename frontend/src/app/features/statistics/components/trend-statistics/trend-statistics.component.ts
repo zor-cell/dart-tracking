@@ -91,7 +91,7 @@ export class TrendStatisticsComponent {
           // Dashed across games the player did not play in.
           segment: {
             borderDash: (segment: ScriptableLineSegmentContext) =>
-              segment.p1DataIndex - segment.p0DataIndex > 1 ? GAP_DASH : undefined,
+              segment.p0.skip || segment.p1.skip ? GAP_DASH : undefined,
           },
         },
       ];
