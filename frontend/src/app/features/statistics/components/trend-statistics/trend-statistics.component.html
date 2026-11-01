@@ -22,6 +22,9 @@
       <span>
         <span class="trend__line" [class.trend__line--own]="!otherPoints()"></span>Trend
       </span>
+      @if (otherPoints()) {
+        <span><span class="trend__line trend__line--gap"></span>Ohne Spiel</span>
+      }
     </p>
     <p-chart
       type="line"

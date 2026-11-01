@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import type { ChartData, ChartOptions } from 'chart.js';
+import type { ChartData, ChartOptions, ScriptableLineSegmentContext } from 'chart.js';
 import { UIChart } from 'primeng/chart';
 import { SelectButton } from 'primeng/selectbutton';
 import { TrendPointDto } from '../../dto/trend-point.dto';
@@ -18,6 +18,9 @@ import { TREND_METRICS, TrendMetric, trendValue, weightedTrend } from '../../mod
 import { chartTheme } from '../../../../core/charts/models/chart-plugins';
 import { axisTicks, tooltipStyle } from '../../../../core/charts/models/chart-styles';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
+
+/** Dash and gap of a trend line where its player has no game, in pixels. */
+const GAP_DASH = [4, 4];
 
 /** One figure game by game under the page's filters, with a weighted trend line through it, and
  * a second line for a compared player. */
@@ -85,6 +88,11 @@ export class TrendStatisticsComponent {
           pointHoverRadius: 3,
           tension: 0.3,
           spanGaps: true,
+          // Dashed across games the player did not play in.
+          segment: {
+            borderDash: (segment: ScriptableLineSegmentContext) =>
+              segment.p1DataIndex - segment.p0DataIndex > 1 ? GAP_DASH : undefined,
+          },
         },
       ];
     };
