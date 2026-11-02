@@ -8,5 +8,5 @@ export const DISPLAY_NAME_MAX_LENGTH = 64;
 
 /** Field error for a username that breaks `USERNAME_PATTERN`. */
 export const USERNAME_MESSAGES = {
-  pattern: 'Nur Buchstaben, Ziffern, Punkt, Bindestrich oder Unterstrich.',
+  pattern: $localize`:@@auth.usernamePattern:Nur Buchstaben, Ziffern, Punkt, Bindestrich oder Unterstrich.`,
 };

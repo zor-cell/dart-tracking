@@ -43,7 +43,7 @@ export class ChangeEmailDialogComponent {
     try {
       await this.auth.requestEmailChange(change);
       this.notification.showInfo(
-        `Bestätigungslink an ${change.newEmail} gesendet. Bis du ihn öffnest, bleibt deine bisherige Adresse aktiv.`,
+        $localize`:@@auth.changeEmail.sent:Bestätigungslink an ${change.newEmail}:email: gesendet. Bis du ihn öffnest, bleibt deine bisherige Adresse aktiv.`,
       );
       this.visible.set(false);
     } catch (failure) {
@@ -62,13 +62,13 @@ export class ChangeEmailDialogComponent {
     return httpErrorMessage(
       failure,
       {
-        403: 'Das aktuelle Passwort stimmt nicht.',
+        403: $localize`:@@auth.currentPasswordWrong:Das aktuelle Passwort stimmt nicht.`,
         409: (error) =>
           error.error?.detail === 'email unchanged'
-            ? 'Das ist bereits deine aktuelle Adresse.'
-            : 'Diese Adresse wird bereits von einem anderen Konto verwendet.',
+            ? $localize`:@@auth.changeEmail.unchanged:Das ist bereits deine aktuelle Adresse.`
+            : $localize`:@@auth.changeEmail.taken:Diese Adresse wird bereits von einem anderen Konto verwendet.`,
       },
-      'Anfrage fehlgeschlagen. Bitte erneut versuchen.',
+      $localize`:@@auth.changeEmail.failed:Anfrage fehlgeschlagen. Bitte erneut versuchen.`,
     );
   }
 }

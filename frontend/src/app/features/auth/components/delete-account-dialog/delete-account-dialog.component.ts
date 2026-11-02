@@ -44,14 +44,14 @@ export class DeleteAccountDialogComponent {
     try {
       await this.auth.deleteAccount(this.form.getRawValue());
       this.visible.set(false);
-      this.notification.showSuccess('Dein Konto wurde gelöscht.');
+      this.notification.showSuccess($localize`:@@auth.deleteAccount.done:Dein Konto wurde gelöscht.`);
       await this.router.navigateByUrl('/account');
     } catch (failure) {
       this.error.set(
         httpErrorMessage(
           failure,
-          { 403: 'Das Passwort stimmt nicht.' },
-          'Löschen fehlgeschlagen. Bitte erneut versuchen.',
+          { 403: $localize`:@@auth.deleteAccount.wrongPassword:Das Passwort stimmt nicht.` },
+          $localize`:@@auth.deleteAccount.failed:Löschen fehlgeschlagen. Bitte erneut versuchen.`,
         ),
       );
     } finally {

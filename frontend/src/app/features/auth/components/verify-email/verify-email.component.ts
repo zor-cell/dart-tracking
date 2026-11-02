@@ -39,8 +39,8 @@ export class VerifyEmailComponent {
   protected readonly errorMessage = signal('');
   protected readonly isAuthenticated = this.auth.isAuthenticated;
   protected readonly verifiedText = this.emailChange
-    ? 'Deine neue E-Mail-Adresse ist bestätigt und ab sofort aktiv.'
-    : 'Deine E-Mail-Adresse ist bestätigt.';
+    ? $localize`:@@auth.verifyEmail.changed:Deine neue E-Mail-Adresse ist bestätigt und ab sofort aktiv.`
+    : $localize`:@@auth.emailVerified:Deine E-Mail-Adresse ist bestätigt.`;
   protected readonly resending = signal(false);
   protected readonly resendError = signal<string | null>(null);
 
@@ -73,7 +73,11 @@ export class VerifyEmailComponent {
         this.state.set('taken');
       } else {
         this.errorMessage.set(
-          httpErrorMessage(failure, {}, 'Die Adresse konnte gerade nicht bestätigt werden.'),
+          httpErrorMessage(
+            failure,
+            {},
+            $localize`:@@auth.verifyEmail.failed:Die Adresse konnte gerade nicht bestätigt werden.`,
+          ),
         );
         this.state.set('error');
       }
@@ -91,7 +95,7 @@ export class VerifyEmailComponent {
       this.state.set('resent');
     } catch (failure) {
       this.resendError.set(
-        httpErrorMessage(failure, {}, 'Senden fehlgeschlagen. Bitte später erneut versuchen.'),
+        httpErrorMessage(failure, {}, $localize`:@@auth.sendFailed:Senden fehlgeschlagen. Bitte später erneut versuchen.`),
       );
     } finally {
       this.resending.set(false);

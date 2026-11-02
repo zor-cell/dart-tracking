@@ -45,7 +45,11 @@ export class ForgotPasswordComponent {
       this.sent.set(true);
     } catch (failure) {
       this.error.set(
-        httpErrorMessage(failure, {}, 'Anfrage fehlgeschlagen. Bitte später erneut versuchen.'),
+        httpErrorMessage(
+          failure,
+          {},
+          $localize`:@@auth.forgotPassword.failed:Anfrage fehlgeschlagen. Bitte später erneut versuchen.`,
+        ),
       );
     } finally {
       this.busy.set(false);

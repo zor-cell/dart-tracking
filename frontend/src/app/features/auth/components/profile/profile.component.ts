@@ -25,6 +25,8 @@ type EditableField = 'displayName' | 'username';
 interface EditableRow {
   readonly field: EditableField;
   readonly label: string;
+  readonly saveLabel: string;
+  readonly editLabel: string;
   readonly autocomplete: string;
   readonly messages: Readonly<Record<string, string>>;
 }
@@ -67,23 +69,39 @@ export class ProfileComponent {
   protected readonly passwordDialogOpen = signal(false);
   protected readonly deleteDialogOpen = signal(false);
   protected readonly emailStatus = computed(() =>
-    this.user()?.emailVerified ? 'E-Mail-Adresse bestätigt' : 'E-Mail-Adresse nicht bestätigt',
+    this.user()?.emailVerified
+      ? $localize`:@@auth.profile.emailConfirmed:E-Mail-Adresse bestätigt`
+      : $localize`:@@auth.profile.emailUnconfirmed:E-Mail-Adresse nicht bestätigt`,
   );
   protected readonly verifyNotice = computed(() => {
     if (this.user()?.emailVerified) {
-      return 'Deine E-Mail-Adresse ist bestätigt.';
+      return $localize`:@@auth.emailVerified:Deine E-Mail-Adresse ist bestätigt.`;
     }
     return (
       this.resendError() ??
       (this.verificationSent()
-        ? 'Ein neuer Bestätigungslink ist unterwegs. Er ist 24 Stunden gültig.'
-        : 'Deine E-Mail-Adresse ist noch nicht bestätigt. Den Link dazu findest du in deinem Postfach.')
+        ? $localize`:@@auth.profile.verificationSent:Ein neuer Bestätigungslink ist unterwegs. Er ist 24 Stunden gültig.`
+        : $localize`:@@auth.profile.unverified:Deine E-Mail-Adresse ist noch nicht bestätigt. Den Link dazu findest du in deinem Postfach.`)
     );
   });
 
   protected readonly editableRows: readonly EditableRow[] = [
-    { field: 'displayName', label: 'Anzeigename', autocomplete: 'nickname', messages: {} },
-    { field: 'username', label: 'Benutzername', autocomplete: 'username', messages: USERNAME_MESSAGES },
+    {
+      field: 'displayName',
+      label: $localize`:@@auth.displayName:Anzeigename`,
+      saveLabel: $localize`:@@auth.profile.saveDisplayName:Anzeigename speichern`,
+      editLabel: $localize`:@@auth.profile.editDisplayName:Anzeigename bearbeiten`,
+      autocomplete: 'nickname',
+      messages: {},
+    },
+    {
+      field: 'username',
+      label: $localize`:@@auth.username:Benutzername`,
+      saveLabel: $localize`:@@auth.profile.saveUsername:Benutzername speichern`,
+      editLabel: $localize`:@@auth.profile.editUsername:Benutzername bearbeiten`,
+      autocomplete: 'username',
+      messages: USERNAME_MESSAGES,
+    },
   ];
 
   /** Both names, because the write sends both; only the open one is shown as an
@@ -146,7 +164,7 @@ export class ProfileComponent {
       this.verificationSent.set(true);
     } catch (failure) {
       this.resendError.set(
-        httpErrorMessage(failure, {}, 'Senden fehlgeschlagen. Bitte später erneut versuchen.'),
+        httpErrorMessage(failure, {}, $localize`:@@auth.sendFailed:Senden fehlgeschlagen. Bitte später erneut versuchen.`),
       );
     } finally {
       this.resending.set(false);
@@ -171,10 +189,10 @@ export class ProfileComponent {
       {
         409: (error) =>
           error.error?.detail === 'display name in address book'
-            ? 'Diesen Namen gibt es schon in deiner Spielerliste.'
-            : 'Dieser Benutzername ist bereits vergeben.',
+            ? $localize`:@@auth.profile.nameInAddressBook:Diesen Namen gibt es schon in deiner Spielerliste.`
+            : $localize`:@@auth.profile.usernameTaken:Dieser Benutzername ist bereits vergeben.`,
       },
-      'Speichern fehlgeschlagen. Bitte Eingaben prüfen.',
+      $localize`:@@auth.profile.saveFailed:Speichern fehlgeschlagen. Bitte Eingaben prüfen.`,
     );
   }
 }

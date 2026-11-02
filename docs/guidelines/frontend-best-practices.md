@@ -127,6 +127,9 @@ browser's first language, so shared links, QR codes and mail links stay neutral.
   out for the feature's main view): `i18n="@@settings.title"`, `i18n-label`,
   `` $localize`:@@settings.testResult.spoken:gesprochen` ``. Without one the id
   changes with every edit to the German text and the translation is lost.
+  A text shared within a feature takes a feature-wide id (`auth.password`), a
+  generic word shared across features a `common.` one (`common.cancel`). One id
+  always carries the same text.
 - `$localize` needs a literal: label maps write each entry as its own `$localize`.
 - `npm run i18n` extracts the texts to `src/locale/messages.json` and lists ids that
   `messages.en.json` misses or still carries. A missing translation also fails the

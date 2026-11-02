@@ -1,5 +1,6 @@
 <p-dialog
   header="E-Mail-Adresse ändern"
+  i18n-header="@@auth.changeEmail"
   [modal]="true"
   [draggable]="false"
   [(visible)]="visible"
@@ -9,7 +10,9 @@
 >
   <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
     <div class="auth-form__field">
-      <label class="auth-form__label" for="new-email">Neue E-Mail-Adresse</label>
+      <label class="auth-form__label" for="new-email" i18n="@@auth.changeEmail.newEmail">
+        Neue E-Mail-Adresse
+      </label>
       <input
         pInputText
         id="new-email"
@@ -19,14 +22,16 @@
         aria-describedby="new-email-hint new-email-error"
         fluid
       />
-      <small class="auth-form__hint" id="new-email-hint">
+      <small class="auth-form__hint" id="new-email-hint" i18n="@@auth.changeEmail.hint">
         Wir schicken dir einen Link an die neue Adresse. Erst wenn du ihn öffnest, wird sie aktiv.
       </small>
       <app-field-error id="new-email-error" [control]="form.controls.newEmail" />
     </div>
 
     <div class="auth-form__field">
-      <label class="auth-form__label" for="email-current-password">Aktuelles Passwort</label>
+      <label class="auth-form__label" for="email-current-password" i18n="@@auth.currentPassword">
+        Aktuelles Passwort
+      </label>
       <input
         pInputText
         id="email-current-password"
@@ -50,6 +55,7 @@
       <p-button
         type="button"
         label="Abbrechen"
+        i18n-label="@@common.cancel"
         severity="secondary"
         [text]="true"
         [disabled]="busy()"
@@ -58,6 +64,7 @@
       <p-button
         type="submit"
         label="Link senden"
+        i18n-label="@@auth.changeEmail.submit"
         icon="pi pi-envelope"
         [loading]="busy()"
         [disabled]="form.invalid"

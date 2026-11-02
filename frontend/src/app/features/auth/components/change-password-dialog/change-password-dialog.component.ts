@@ -41,7 +41,9 @@ export class ChangePasswordDialogComponent {
     this.error.set(null);
     try {
       await this.auth.changePassword(this.form.getRawValue());
-      this.notification.showSuccess('Passwort geändert. Andere Geräte wurden abgemeldet.');
+      this.notification.showSuccess(
+        $localize`:@@auth.changePassword.done:Passwort geändert. Andere Geräte wurden abgemeldet.`,
+      );
       this.visible.set(false);
     } catch (failure) {
       this.error.set(this.describe(failure));
@@ -58,8 +60,8 @@ export class ChangePasswordDialogComponent {
   private describe(failure: unknown): string {
     return httpErrorMessage(
       failure,
-      { 403: 'Das aktuelle Passwort stimmt nicht.' },
-      'Speichern fehlgeschlagen. Bitte erneut versuchen.',
+      { 403: $localize`:@@auth.currentPasswordWrong:Das aktuelle Passwort stimmt nicht.` },
+      $localize`:@@auth.saveFailed:Speichern fehlgeschlagen. Bitte erneut versuchen.`,
     );
   }
 }

@@ -40,7 +40,7 @@ export class LoginComponent {
       const redirect = this.route.snapshot.queryParamMap.get('redirect');
       await this.router.navigateByUrl(redirect ?? '/account');
     } catch (failure) {
-      this.error.set(httpErrorMessage(failure, {}, 'Anmeldedaten stimmen nicht.'));
+      this.error.set(httpErrorMessage(failure, {}, $localize`:@@auth.login.failed:Anmeldedaten stimmen nicht.`));
     } finally {
       this.busy.set(false);
     }

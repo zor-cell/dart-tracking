@@ -1,12 +1,12 @@
 <section class="view">
   <header class="view__header view__header--sticky">
-    <app-back-link label="Konto" link="/account" />
-    <h1 class="view__title">Profil</h1>
+    <app-back-link label="Konto" i18n-label="@@auth.account.title" link="/account" />
+    <h1 class="view__title" i18n="@@auth.profile.title">Profil</h1>
   </header>
 
   @if (user(); as account) {
     <section class="list-group">
-      <h2 class="list-group__title">Profil</h2>
+      <h2 class="list-group__title" i18n="@@auth.profile.title">Profil</h2>
       <div class="list-group__items">
         @for (row of editableRows; track row.field) {
           <div class="list-group__item field">
@@ -16,7 +16,7 @@
                 class="field__editor"
                 [control]="form.controls[row.field]"
                 [label]="row.label"
-                [saveLabel]="row.label + ' speichern'"
+                [saveLabel]="row.saveLabel"
                 [autocomplete]="row.autocomplete"
                 [messages]="row.messages"
                 [saving]="saving()"
@@ -29,7 +29,7 @@
               <p-button
                 type="button"
                 icon="pi pi-pencil"
-                [ariaLabel]="row.label + ' bearbeiten'"
+                [ariaLabel]="row.editLabel"
                 severity="secondary"
                 [rounded]="true"
                 [text]="true"
@@ -43,10 +43,10 @@
     </section>
 
     <section class="list-group">
-      <h2 class="list-group__title">Anmeldung</h2>
+      <h2 class="list-group__title" i18n="@@auth.profile.signIn">Anmeldung</h2>
       <div class="list-group__items">
         <div class="list-group__item field">
-          <span class="field__label">E-Mail</span>
+          <span class="field__label" i18n="@@auth.email">E-Mail</span>
           <span class="field__value field__value--scroll" tabindex="0">{{ account.email }}</span>
           <p-button
             type="button"
@@ -61,6 +61,7 @@
             type="button"
             icon="pi pi-pencil"
             ariaLabel="E-Mail-Adresse ändern"
+            i18n-ariaLabel="@@auth.changeEmail"
             severity="secondary"
             [rounded]="true"
             [text]="true"
@@ -70,12 +71,13 @@
         </div>
 
         <div class="list-group__item field">
-          <span class="field__label">Passwort</span>
+          <span class="field__label" i18n="@@auth.password">Passwort</span>
           <span class="field__value" aria-hidden="true">••••••••</span>
           <p-button
             type="button"
             icon="pi pi-pencil"
             ariaLabel="Passwort ändern"
+            i18n-ariaLabel="@@auth.changePassword"
             severity="secondary"
             [rounded]="true"
             [text]="true"
@@ -93,14 +95,14 @@
             aria-hidden="true"
           ></i>
           <span class="list-group__body">
-            <span class="list-group__name">Abmelden</span>
+            <span class="list-group__name" i18n="@@auth.profile.signOut">Abmelden</span>
           </span>
         </button>
       </div>
     </section>
 
     <section class="list-group">
-      <h2 class="list-group__title">Konto</h2>
+      <h2 class="list-group__title" i18n="@@auth.account.title">Konto</h2>
       <div class="list-group__items">
         <button
           type="button"
@@ -109,7 +111,7 @@
         >
           <i class="list-group__icon pi pi-trash" aria-hidden="true"></i>
           <span class="list-group__body">
-            <span class="list-group__name">Konto löschen</span>
+            <span class="list-group__name" i18n="@@auth.deleteAccount">Konto löschen</span>
           </span>
         </button>
       </div>
@@ -125,6 +127,7 @@
         fluid
         size="small"
         label="Bestätigungslink erneut senden"
+        i18n-label="@@auth.profile.resendVerification"
         icon="pi pi-envelope"
         severity="secondary"
         [outlined]="true"

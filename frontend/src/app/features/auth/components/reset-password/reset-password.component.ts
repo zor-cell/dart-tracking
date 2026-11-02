@@ -52,7 +52,7 @@ export class ResetPasswordComponent {
       if (failure instanceof HttpErrorResponse && failure.status === 400) {
         this.linkInvalid.set(true);
       } else {
-        this.error.set('Speichern fehlgeschlagen. Bitte erneut versuchen.');
+        this.error.set($localize`:@@auth.saveFailed:Speichern fehlgeschlagen. Bitte erneut versuchen.`);
       }
     } finally {
       this.busy.set(false);

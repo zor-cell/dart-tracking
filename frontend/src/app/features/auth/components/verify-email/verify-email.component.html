@@ -1,32 +1,61 @@
 <section class="view">
   <header class="view__header">
-    <h1 class="view__title">E-Mail bestätigen</h1>
+    <h1 class="view__title" i18n="@@auth.verifyEmail.title">E-Mail bestätigen</h1>
   </header>
 
   @switch (state()) {
     @case ('pending') {
-      <app-loading-state label="Adresse wird bestätigt" />
+      <app-loading-state label="Adresse wird bestätigt" i18n-label="@@auth.verifyEmail.pending" />
     }
     @case ('verified') {
       <p-message severity="success" [text]="verifiedText" />
       <div class="view__actions">
         @if (isAuthenticated()) {
-          <p-button fluid label="Zum Konto" icon="pi pi-user" routerLink="/account" />
+          <p-button
+            fluid
+            label="Zum Konto"
+            i18n-label="@@auth.toAccount"
+            icon="pi pi-user"
+            routerLink="/account"
+          />
         } @else {
-          <p-button fluid label="Anmelden" icon="pi pi-sign-in" routerLink="/login" />
+          <p-button
+            fluid
+            label="Anmelden"
+            i18n-label="@@auth.signIn"
+            icon="pi pi-sign-in"
+            routerLink="/login"
+          />
         }
       </div>
     }
     @case ('resent') {
-      <p-message severity="success" text="Ein neuer Bestätigungslink ist unterwegs." />
+      <p-message
+        severity="success"
+        text="Ein neuer Bestätigungslink ist unterwegs."
+        i18n-text="@@auth.verifyEmail.resent"
+      />
       <div class="view__actions">
-        <p-button fluid label="Zum Konto" icon="pi pi-user" routerLink="/account" />
+        <p-button
+            fluid
+            label="Zum Konto"
+            i18n-label="@@auth.toAccount"
+            icon="pi pi-user"
+            routerLink="/account"
+          />
       </div>
     }
     @case ('taken') {
       <app-empty-state icon="pi-envelope">
-        <p>Diese Adresse wird inzwischen von einem anderen Konto verwendet.</p>
-        <p-button label="Zum Konto" icon="pi pi-user" routerLink="/account" />
+        <p i18n="@@auth.verifyEmail.taken">
+          Diese Adresse wird inzwischen von einem anderen Konto verwendet.
+        </p>
+        <p-button
+          label="Zum Konto"
+          i18n-label="@@auth.toAccount"
+          icon="pi pi-user"
+          routerLink="/account"
+        />
       </app-empty-state>
     }
     @case ('error') {
@@ -34,10 +63,11 @@
     }
     @case ('failed') {
       <app-empty-state icon="pi-link">
-        <p>Der Link ist ungültig oder abgelaufen.</p>
+        <p i18n="@@auth.linkInvalid">Der Link ist ungültig oder abgelaufen.</p>
         @if (canResend()) {
           <p-button
             label="Neuen Link senden"
+            i18n-label="@@auth.verifyEmail.resend"
             icon="pi pi-envelope"
             [loading]="resending()"
             (onClick)="resend()"
@@ -46,9 +76,19 @@
             <p-message severity="error" [text]="message" />
           }
         } @else if (isAuthenticated()) {
-          <p-button label="Zum Konto" icon="pi pi-user" routerLink="/account" />
+          <p-button
+          label="Zum Konto"
+          i18n-label="@@auth.toAccount"
+          icon="pi pi-user"
+          routerLink="/account"
+        />
         } @else {
-          <p-button label="Anmelden" icon="pi pi-sign-in" routerLink="/login" />
+          <p-button
+            label="Anmelden"
+            i18n-label="@@auth.signIn"
+            icon="pi pi-sign-in"
+            routerLink="/login"
+          />
         }
       </app-empty-state>
     }

@@ -1,11 +1,11 @@
 <section class="view">
   <header class="view__header">
-    <h1 class="view__title">Konto erstellen</h1>
+    <h1 class="view__title" i18n="@@auth.register.title">Konto erstellen</h1>
   </header>
 
   <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
     <div class="auth-form__field">
-      <label class="auth-form__label" for="email">E-Mail</label>
+      <label class="auth-form__label" for="email" i18n="@@auth.email">E-Mail</label>
       <input
         pInputText
         id="email"
@@ -19,7 +19,7 @@
     </div>
 
     <div class="auth-form__field">
-      <label class="auth-form__label" for="username">Benutzername</label>
+      <label class="auth-form__label" for="username" i18n="@@auth.username">Benutzername</label>
       <input
         pInputText
         id="username"
@@ -28,7 +28,7 @@
         aria-describedby="username-hint username-error"
         fluid
       />
-      <small class="auth-form__hint" id="username-hint">
+      <small class="auth-form__hint" id="username-hint" i18n="@@auth.register.usernameHint">
         3–32 Zeichen, Buchstaben, Ziffern, Punkt, Bindestrich oder Unterstrich.
       </small>
       <app-field-error
@@ -39,7 +39,7 @@
     </div>
 
     <div class="auth-form__field">
-      <label class="auth-form__label" for="displayName">Anzeigename</label>
+      <label class="auth-form__label" for="displayName" i18n="@@auth.displayName">Anzeigename</label>
       <input
         pInputText
         id="displayName"
@@ -48,14 +48,14 @@
         aria-describedby="displayName-hint displayName-error"
         fluid
       />
-      <small class="auth-form__hint" id="displayName-hint">
+      <small class="auth-form__hint" id="displayName-hint" i18n="@@auth.register.displayNameHint">
         So erscheinst du in der Spielerliste. Muss nicht eindeutig sein.
       </small>
       <app-field-error id="displayName-error" [control]="form.controls.displayName" />
     </div>
 
     <div class="auth-form__field">
-      <label class="auth-form__label" for="password">Passwort</label>
+      <label class="auth-form__label" for="password" i18n="@@auth.password">Passwort</label>
       <input
         pInputText
         id="password"
@@ -65,7 +65,7 @@
         aria-describedby="password-hint password-error"
         fluid
       />
-      <small class="auth-form__hint" id="password-hint">Mindestens 8 Zeichen.</small>
+      <small class="auth-form__hint" id="password-hint" i18n="@@auth.passwordHint">Mindestens 8 Zeichen.</small>
       <app-field-error id="password-error" [control]="form.controls.password" />
     </div>
 
@@ -77,6 +77,7 @@
       type="submit"
       fluid
       label="Konto erstellen"
+      i18n-label="@@auth.register.title"
       icon="pi pi-user-plus"
       [loading]="busy()"
       [disabled]="form.invalid"
@@ -84,8 +85,10 @@
   </form>
 
   <div class="auth-switch">
-    <p>Schon ein Konto? <a routerLink="/login" queryParamsHandling="preserve">Anmelden</a></p>
-    <p>
+    <p i18n="@@auth.register.haveAccount">
+      Schon ein Konto? <a routerLink="/login" queryParamsHandling="preserve">Anmelden</a>
+    </p>
+    <p i18n="@@auth.register.privacy">
       Was mit deinen Daten passiert, steht in der
       <a routerLink="/privacy" [state]="privacyBack">Datenschutzerklärung</a>.
     </p>

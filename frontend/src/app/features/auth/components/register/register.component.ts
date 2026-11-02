@@ -44,7 +44,7 @@ export class RegisterComponent {
     password: ['', [Validators.required, Validators.minLength(8)]],
   });
 
-  protected readonly privacyBack = backState('Registrieren');
+  protected readonly privacyBack = backState($localize`:@@auth.register:Registrieren`);
   protected readonly usernameMessages = USERNAME_MESSAGES;
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -69,8 +69,8 @@ export class RegisterComponent {
   private describe(failure: unknown): string {
     return httpErrorMessage(
       failure,
-      { 409: 'E-Mail oder Benutzername ist bereits vergeben.' },
-      'Registrierung fehlgeschlagen. Bitte Eingaben prüfen.',
+      { 409: $localize`:@@auth.register.taken:E-Mail oder Benutzername ist bereits vergeben.` },
+      $localize`:@@auth.register.failed:Registrierung fehlgeschlagen. Bitte Eingaben prüfen.`,
     );
   }
 }

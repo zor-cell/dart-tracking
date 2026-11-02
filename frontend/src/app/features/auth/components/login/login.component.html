@@ -1,11 +1,13 @@
 <section class="view">
   <header class="view__header">
-    <h1 class="view__title">Anmelden</h1>
+    <h1 class="view__title" i18n="@@auth.signIn">Anmelden</h1>
   </header>
 
   <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
     <div class="auth-form__field">
-      <label class="auth-form__label" for="identifier">E-Mail oder Benutzername</label>
+      <label class="auth-form__label" for="identifier" i18n="@@auth.login.identifier">
+        E-Mail oder Benutzername
+      </label>
       <input
         pInputText
         id="identifier"
@@ -20,7 +22,7 @@
     </div>
 
     <div class="auth-form__field">
-      <label class="auth-form__label" for="password">Passwort</label>
+      <label class="auth-form__label" for="password" i18n="@@auth.password">Passwort</label>
       <input
         pInputText
         id="password"
@@ -41,6 +43,7 @@
       type="submit"
       fluid
       label="Anmelden"
+      i18n-label="@@auth.signIn"
       icon="pi pi-sign-in"
       [loading]="busy()"
       [disabled]="form.invalid"
@@ -48,7 +51,9 @@
   </form>
 
   <div class="auth-switch">
-    <p>Noch kein Konto? <a routerLink="/register" queryParamsHandling="preserve">Registrieren</a></p>
-    <a routerLink="/forgot-password">Passwort vergessen?</a>
+    <p i18n="@@auth.login.noAccount">
+      Noch kein Konto? <a routerLink="/register" queryParamsHandling="preserve">Registrieren</a>
+    </p>
+    <a routerLink="/forgot-password" i18n="@@auth.login.forgotPassword">Passwort vergessen?</a>
   </div>
 </section>

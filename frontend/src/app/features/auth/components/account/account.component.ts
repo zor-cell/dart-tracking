@@ -16,17 +16,42 @@ interface PageLink {
 }
 
 const OWN_PAGES: readonly PageLink[] = [
-  { link: '/account/stats', icon: 'pi-chart-bar', label: 'Statistik', hint: 'Average, Checkout, Trefferbild' },
-  { link: '/account/games', icon: 'pi-history', label: 'Spiele', hint: 'Verlauf und Replays' },
-  { link: '/account/players', icon: 'pi-users', label: 'Spieler', hint: 'Für neue Spiele auswählbar' },
+  {
+    link: '/account/stats',
+    icon: 'pi-chart-bar',
+    label: $localize`:@@auth.account.stats:Statistik`,
+    hint: $localize`:@@auth.account.statsHint:Average, Checkout, Trefferbild`,
+  },
+  {
+    link: '/account/games',
+    icon: 'pi-history',
+    label: $localize`:@@auth.account.games:Spiele`,
+    hint: $localize`:@@auth.account.gamesHint:Verlauf und Replays`,
+  },
+  {
+    link: '/account/players',
+    icon: 'pi-users',
+    label: $localize`:@@auth.account.players:Spieler`,
+    hint: $localize`:@@auth.account.playersHint:Für neue Spiele auswählbar`,
+  },
 ];
 
 const APP_PAGES: readonly PageLink[] = [
-  { link: '/account/settings', icon: 'pi-cog', label: 'Einstellungen', hint: 'Sprache, Lieblingsdoppel, Ansage' },
+  {
+    link: '/account/settings',
+    icon: 'pi-cog',
+    label: $localize`:@@auth.account.settings:Einstellungen`,
+    hint: $localize`:@@auth.account.settingsHint:Sprache, Lieblingsdoppel, Ansage`,
+  },
 ];
 
 const ADMIN_PAGES: readonly PageLink[] = [
-  { link: '/account/evaluation', icon: 'pi-bullseye', label: 'Auswertung', hint: 'Genauigkeit der Erkennung' },
+  {
+    link: '/account/evaluation',
+    icon: 'pi-bullseye',
+    label: $localize`:@@auth.account.evaluation:Auswertung`,
+    hint: $localize`:@@auth.account.evaluationHint:Genauigkeit der Erkennung`,
+  },
 ];
 
 @Component({
@@ -44,7 +69,7 @@ export class AccountComponent {
   protected readonly version = APP_VERSION;
 
   protected readonly groups = computed(() => [
-    { title: 'Meine Daten', pages: OWN_PAGES },
+    { title: $localize`:@@auth.account.ownData:Meine Daten`, pages: OWN_PAGES },
     { title: 'App', pages: APP_PAGES },
     ...(this.auth.isAdmin() ? [{ title: 'Admin', pages: ADMIN_PAGES }] : []),
   ]);

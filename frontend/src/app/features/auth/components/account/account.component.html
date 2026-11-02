@@ -1,14 +1,14 @@
 <section class="view">
   <header class="view__header header">
-    <h1 class="view__title">Konto</h1>
+    <h1 class="view__title" i18n="@@auth.account.title">Konto</h1>
     @if (!restoring() && !user()) {
-      <span class="sr-only" id="language-label">Sprache</span>
+      <span class="sr-only" id="language-label" i18n="@@auth.account.language">Sprache</span>
       <app-language-select labelledBy="language-label" size="small" />
     }
   </header>
 
   @if (restoring()) {
-    <app-loading-state label="Sitzung wird geprüft" />
+    <app-loading-state label="Sitzung wird geprüft" i18n-label="@@auth.account.restoring" />
   } @else {
     @if (user(); as account) {
       <a class="profile" routerLink="/account/profile">
@@ -39,10 +39,17 @@
       }
     } @else {
       <div class="view__actions">
-        <p-button fluid label="Anmelden" icon="pi pi-sign-in" routerLink="/login" />
+        <p-button
+          fluid
+          label="Anmelden"
+          i18n-label="@@auth.signIn"
+          icon="pi pi-sign-in"
+          routerLink="/login"
+        />
         <p-button
           fluid
           label="Registrieren"
+          i18n-label="@@auth.register"
           icon="pi pi-user-plus"
           severity="secondary"
           [outlined]="true"
@@ -52,9 +59,9 @@
     }
 
     <footer class="footer">
-      <nav class="legal-links" aria-label="Rechtliches">
-        <a routerLink="/imprint">Impressum</a>
-        <a routerLink="/privacy">Datenschutz</a>
+      <nav class="legal-links" aria-label="Rechtliches" i18n-aria-label="@@auth.account.legal">
+        <a routerLink="/imprint" i18n="@@auth.account.imprint">Impressum</a>
+        <a routerLink="/privacy" i18n="@@auth.account.privacy">Datenschutz</a>
       </nav>
       <p class="version">Dart-Tracking v{{ version }}</p>
     </footer>

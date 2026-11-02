@@ -1,5 +1,6 @@
 <p-dialog
   header="Konto löschen"
+  i18n-header="@@auth.deleteAccount"
   [modal]="true"
   [draggable]="false"
   [(visible)]="visible"
@@ -8,14 +9,16 @@
   (onHide)="reset()"
 >
   <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
-    <p class="auth-form__hint" id="delete-account-hint">
+    <p class="auth-form__hint" id="delete-account-hint" i18n="@@auth.deleteAccount.hint">
       Dein Konto, deine Spielerliste, deine Einstellungen und die Spiele, in denen kein anderes
       Konto mitgespielt hat, werden endgültig gelöscht. Gemeinsame Spiele bleiben für die anderen
       erhalten, du stehst darin nur noch als „Gelöschter Spieler“.
     </p>
 
     <div class="auth-form__field">
-      <label class="auth-form__label" for="delete-password">Passwort zur Bestätigung</label>
+      <label class="auth-form__label" for="delete-password" i18n="@@auth.deleteAccount.password">
+        Passwort zur Bestätigung
+      </label>
       <input
         pInputText
         id="delete-password"
@@ -36,6 +39,7 @@
       <p-button
         type="button"
         label="Abbrechen"
+        i18n-label="@@common.cancel"
         severity="secondary"
         [text]="true"
         [disabled]="busy()"
@@ -44,6 +48,7 @@
       <p-button
         type="submit"
         label="Endgültig löschen"
+        i18n-label="@@auth.deleteAccount.submit"
         icon="pi pi-trash"
         severity="danger"
         [loading]="busy()"
