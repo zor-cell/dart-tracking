@@ -15,7 +15,7 @@ export class LanguageService {
   switchTo(language: Language): void {
     this.document.cookie = `${LANGUAGE_COOKIE}=${language}; path=/; max-age=31536000; samesite=lax`;
     if (language !== this.current) {
-      // A path without language: nginx, or main.ts on the dev server, follows the new cookie.
+      // A path without language: nginx, or main.ts on the dev server with both, follows the cookie.
       this.document.location.assign(this.router.url);
     }
   }

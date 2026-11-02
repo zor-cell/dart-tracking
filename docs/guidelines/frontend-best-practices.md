@@ -139,7 +139,7 @@ browser's first language, so shared links, QR codes and mail links stay neutral.
 - `npm run i18n` extracts the texts to `src/locale/messages.json` and lists ids that
   `messages.en.json` misses or still carries. A missing translation also fails the
   build.
-- `ng serve` serves one language, so `npm run start` runs two: German on 4200 and
-  English on 4201 under `/en/`, which the German one proxies. Without nginx,
-  `main.ts` follows the cookie on a path without language.
+- `ng serve` serves one language: `npm run start` German, `npm run start:en`
+  English under `/en/`. To try the switch, `npm run start:languages` runs both,
+  English on 4201 proxied by German on 4200, where `main.ts` follows the cookie.
 - Names of languages, the announcer and darts terms (Double Bull, D16) stay as they are.

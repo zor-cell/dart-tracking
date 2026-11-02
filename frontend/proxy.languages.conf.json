@@ -2,5 +2,9 @@
   "/api": {
     "target": "http://127.0.0.1:8000",
     "ws": true
+  },
+  "/en/": {
+    "target": "http://localhost:4201",
+    "ws": true
   }
 }

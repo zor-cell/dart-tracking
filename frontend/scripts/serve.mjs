@@ -1,11 +1,11 @@
 /**
  * Starts a dev server per language: German on 4200, English on 4201 under /en/,
- * which the German one proxies, so both run on one origin as behind nginx.
+ * which the German one proxies, so the switch works on one origin as behind nginx.
  */
 import { spawn } from 'node:child_process';
 
 const servers = [
-  ['de', ['ng', 'serve']],
+  ['de', ['ng', 'serve', '--configuration', 'languages']],
   ['en', ['ng', 'serve', '--configuration', 'en']],
 ].map(([language, command]) => {
   const child = spawn('npx', command, { shell: true, stdio: ['inherit', 'pipe', 'pipe'] });

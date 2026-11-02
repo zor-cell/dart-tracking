@@ -54,7 +54,8 @@
             ],
             "styles": ["src/styles.scss"],
             "polyfills": ["@angular/localize/init"],
-            "i18nMissingTranslation": "error"
+            "i18nMissingTranslation": "error",
+            "define": { "DEV_LANGUAGE_SWITCH": "false" }
           },
           "configurations": {
             "production": {
@@ -85,6 +86,9 @@
               "localize": ["en-GB"],
               "baseHref": "/en/"
             },
+            "languages": {
+              "define": { "DEV_LANGUAGE_SWITCH": "true" }
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,
@@ -114,8 +118,11 @@
             },
             "en": {
               "buildTarget": "frontend:build:development,en",
-              "port": 4201,
-              "proxyConfig": "proxy.en.conf.json"
+              "port": 4201
+            },
+            "languages": {
+              "buildTarget": "frontend:build:development,languages",
+              "proxyConfig": "proxy.languages.conf.json"
             }
           },
           "defaultConfiguration": "development"

@@ -45,11 +45,14 @@ Backend, aus `backend/` (läuft auf `:8000`):
 uv run uvicorn app.main:app --app-dir src --reload
 ```
 
-Frontend, aus `frontend/` (läuft auf `:4200`):
+Frontend, aus `frontend/` (läuft auf `:4200`, nur Deutsch):
 
 ```bash
 npm run start
 ```
+
+`npm run start:en` startet nur die englische Fassung (`:4201/en/`),
+`npm run start:languages` beide samt funktionierendem Sprachumschalter.
 
 Das Backend erlaubt CORS nur für `localhost:4200` und `127.0.0.1:4200` — im
 Dev-Setup greift das Frontend also direkt zu, in Produktion ist alles
