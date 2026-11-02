@@ -54,8 +54,9 @@ import {
   oneOfParam,
 } from '../../../../core/view/models/query-state';
 import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
+import { SHORT_DATE_TIME } from '../../../../core/i18n/models/date-format';
 
-/** "54", "52–54", "ab 52", "bis 54"; null for every version. */
+/** "54", "52–54", "from 52", "to 54"; null for every version. */
 function versionLabel([from, to]: VersionRange): string | null {
   if (from === null && to === null) {
     return null;
@@ -63,22 +64,41 @@ function versionLabel([from, to]: VersionRange): string | null {
   if (from === to) {
     return `${from}`;
   }
-  return from === null ? `bis ${to}` : to === null ? `ab ${from}` : `${from}–${to}`;
+  if (from === null) {
+    return $localize`:@@eval.upTo:bis ${to}:version:`;
+  }
+  return to === null ? $localize`:@@eval.since:ab ${from}:version:` : `${from}–${to}`;
 }
 
 /** What the outcome counts are called on the page, in reading order. */
 const OUTCOMES: readonly { key: keyof AccuracySummaryDto; label: string; hint: string }[] = [
-  { key: 'correct', label: 'Korrekt', hint: 'Im richtigen Segment gebucht' },
-  { key: 'wrong', label: 'Falsch', hint: 'Gebucht, aber im falschen Segment' },
-  { key: 'missed', label: 'Verpasst', hint: 'Geworfen, von der Kamera nie gebucht' },
-  { key: 'phantom', label: 'Phantom', hint: 'Gebucht, ohne dass ein Pfeil steckte' },
+  {
+    key: 'correct',
+    label: $localize`:@@eval.correct:Korrekt`,
+    hint: $localize`:@@eval.correctHint:Im richtigen Segment gebucht`,
+  },
+  {
+    key: 'wrong',
+    label: $localize`:@@eval.wrong:Falsch`,
+    hint: $localize`:@@eval.wrongHint:Gebucht, aber im falschen Segment`,
+  },
+  {
+    key: 'missed',
+    label: $localize`:@@eval.missed:Verpasst`,
+    hint: $localize`:@@eval.missedHint:Geworfen, von der Kamera nie gebucht`,
+  },
+  {
+    key: 'phantom',
+    label: $localize`:@@eval.phantom:Phantom`,
+    hint: $localize`:@@eval.phantomHint:Gebucht, ohne dass ein Pfeil steckte`,
+  },
 ];
 
 const FIELD_LABELS: Record<FieldKind, string> = {
   single: 'Single',
   double: 'Double',
   triple: 'Triple',
-  outside: 'Daneben',
+  outside: $localize`:@@game.miss:Daneben`,
 };
 
 /** The filters whose picks are remembered and offered back; version and period are not. */
@@ -212,7 +232,7 @@ export class EvaluationComponent {
     ];
     const versions = version ? versionLabel(version) : null;
     if (versions) {
-      chips.push({ key: 'version', label: `Tracker ${versions}` });
+      chips.push({ key: 'version', label: $localize`:@@eval.trackerChip:Tracker ${versions}:versions:` });
     }
     const modes = this.chipLabel('mode', mode ?? []);
     if (modes) {
@@ -222,7 +242,7 @@ export class EvaluationComponent {
       chips.push({ key: 'run', label: RUN_KIND_LABELS[run] });
     }
     if (tilt) {
-      chips.push({ key: 'tilt', label: `Neigung ${tilt[0]}–${tilt[1]}°` });
+      chips.push({ key: 'tilt', label: $localize`:@@eval.tiltChip:Neigung ${tilt[0]}:from:–${tilt[1]}:to:°` });
     }
     return chips;
   });
@@ -264,7 +284,10 @@ export class EvaluationComponent {
   protected readonly scopes = computed<ScopeOption[]>(() => [
     {
       gameId: null,
-      label: `Gesamt (${this.games().length} ${this.games().length === 1 ? 'Spiel' : 'Spiele'})`,
+      label:
+        this.games().length === 1
+          ? $localize`:@@eval.totalOne:Gesamt (1 Spiel)`
+          : $localize`:@@eval.total:Gesamt (${this.games().length}:count: Spiele)`,
     },
     ...this.games().map((game) => ({
       gameId: game.gameId,
@@ -332,6 +355,13 @@ export class EvaluationComponent {
     return (this.summary()?.[key] as number) ?? 0;
   }
 
+  protected readonly sides = {
+    left: $localize`:@@eval.left:links`,
+    right: $localize`:@@eval.right:rechts`,
+    below: $localize`:@@eval.below:unterhalb`,
+    above: $localize`:@@eval.above:oberhalb`,
+  };
+
   protected sideOf(degrees: number, negative: string, positive: string): string {
     const rounded = Math.round(Math.abs(degrees));
     return `${rounded}° ${degrees < 0 ? negative : positive}`;
@@ -351,8 +381,8 @@ export class EvaluationComponent {
   }
 
   private labelOf(game: GameAccuracyDto): string {
-    const date = this.dates.transform(game.createdAt, 'dd.MM.yy HH:mm') ?? '';
-    const marker = game.evaluationEnabled ? ' · Testlauf' : '';
+    const date = this.dates.transform(game.createdAt, SHORT_DATE_TIME) ?? '';
+    const marker = game.evaluationEnabled ? ` · ${RUN_KIND_LABELS.test}` : '';
     return `${date} · ${game.mode}${marker}`;
   }
 
@@ -411,9 +441,9 @@ export class EvaluationComponent {
     summary: AccuracySummaryDto,
   ): { symbol: string; label: string; value: number | null }[] {
     return [
-      { symbol: 'Ø', label: 'Mittelwert', value: summary.meanOffBy },
+      { symbol: 'Ø', label: $localize`:@@eval.mean:Mittelwert`, value: summary.meanOffBy },
       { symbol: 'x̃', label: 'Median', value: summary.medianOffBy },
-      { symbol: 'max', label: 'Größter Abstand', value: summary.worstOffBy },
+      { symbol: 'max', label: $localize`:@@eval.worst:Größter Abstand`, value: summary.worstOffBy },
     ];
   }
 

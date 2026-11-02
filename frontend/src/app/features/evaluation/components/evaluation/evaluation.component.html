@@ -1,7 +1,7 @@
 <section class="view">
   <header class="view__header view__header--sticky">
-    <app-back-link label="Konto" link="/account" />
-    <h1 class="view__title">Auswertung</h1>
+    <app-back-link label="Konto" i18n-label="@@auth.account.title" link="/account" />
+    <h1 class="view__title" i18n="@@auth.account.evaluation">Auswertung</h1>
   </header>
 
   <app-list-toolbar
@@ -14,7 +14,7 @@
     (reset)="resetFilters()"
   >
     <form class="list-filters" [formGroup]="filters">
-      <span class="list-filters__label" id="filter-version">Tracker-Version</span>
+      <span class="list-filters__label" id="filter-version" i18n="@@eval.trackerVersion">Tracker-Version</span>
       <div class="range" role="group" aria-labelledby="filter-version">
         <p-select
           [options]="versionOptions()"
@@ -24,7 +24,9 @@
           [ngModelOptions]="{ standalone: true }"
           (ngModelChange)="setVersion(0, $event)"
           placeholder="Von"
+          i18n-placeholder="@@eval.from"
           ariaLabel="Tracker-Version von"
+          i18n-ariaLabel="@@eval.versionFrom"
           [showClear]="true"
           fluid
         />
@@ -37,12 +39,14 @@
           [ngModelOptions]="{ standalone: true }"
           (ngModelChange)="setVersion(1, $event)"
           placeholder="Bis"
+          i18n-placeholder="@@eval.to"
           ariaLabel="Tracker-Version bis"
+          i18n-ariaLabel="@@eval.versionTo"
           [showClear]="true"
           fluid
         />
       </div>
-      <label class="list-filters__label" for="filter-mode">Modus</label>
+      <label class="list-filters__label" for="filter-mode" i18n="@@game.new.mode">Modus</label>
       <p-multiselect
         inputId="filter-mode"
         formControlName="mode"
@@ -50,11 +54,12 @@
         optionLabel="label"
         optionValue="value"
         placeholder="Alle"
+        i18n-placeholder="@@player.list.all"
         [showHeader]="false"
         [showClear]="true"
         fluid
       />
-      <label class="list-filters__label" for="filter-run">Art</label>
+      <label class="list-filters__label" for="filter-run" i18n="@@eval.run">Art</label>
       <p-select
         inputId="filter-run"
         formControlName="run"
@@ -62,11 +67,12 @@
         optionLabel="label"
         optionValue="value"
         placeholder="Alle"
+        i18n-placeholder="@@player.list.all"
         [showClear]="true"
         fluid
       />
       <span class="list-filters__label" id="filter-tilt">
-        Kameraneigung
+        <ng-container i18n="@@eval.tilt">Kameraneigung</ng-container>
         <span class="tilt__value">{{ tiltDraft()[0] }}–{{ tiltDraft()[1] }}°</span>
       </span>
       <p-slider
@@ -90,23 +96,25 @@
   />
 
   @if (loading() && !total()) {
-    <app-loading-state label="Auswertung wird geladen" />
+    <app-loading-state label="Auswertung wird geladen" i18n-label="@@eval.loading" />
   } @else if (failed()) {
-    <app-load-error message="Die Auswertung konnte nicht geladen werden." (retry)="retry()" />
+    <app-load-error
+      message="Die Auswertung konnte nicht geladen werden."
+      i18n-message="@@eval.loadFailed"
+      (retry)="retry()"
+    />
   } @else if (games().length === 0) {
     <app-empty-state [icon]="filtered() ? 'pi-filter-slash' : 'pi-video'">
-      <p>
-        {{
-          filtered()
-            ? 'Keine Spiele für diese Auswahl.'
-            : 'Noch kein gefilmtes Spiel aufgezeichnet.'
-        }}
-      </p>
+      @if (filtered()) {
+        <p i18n="@@eval.noMatch">Keine Spiele für diese Auswahl.</p>
+      } @else {
+        <p i18n="@@eval.empty">Noch kein gefilmtes Spiel aufgezeichnet.</p>
+      }
     </app-empty-state>
   } @else {
     <div class="results" [class.reloading]="loading()" [attr.aria-busy]="loading()">
       <div class="scope">
-        <label class="scope__label" for="scope">Umfang</label>
+        <label class="scope__label" for="scope" i18n="@@eval.scope">Umfang</label>
         <p-select
           inputId="scope"
           fluid
@@ -122,7 +130,7 @@
       @if (summary(); as summary) {
         <dl class="stat-grid">
           <div class="stat stat--wide stat--lead">
-            <dt class="stat__label">Korrekte Segmente</dt>
+            <dt class="stat__label" i18n="@@eval.correctSegments">Korrekte Segmente</dt>
             <dd class="stat__value">
               @if (accuracy(); as rate) {
                 {{ rate * 100 | number: '1.1-1' }} %
@@ -130,19 +138,19 @@
                 &ndash;
               }
             </dd>
-            <dd class="stat__hint">
+            <dd class="stat__hint" i18n="@@eval.correctOf">
               {{ summary.correct }} von {{ summary.dartsThrown }} geworfenen Pfeilen
             </dd>
           </div>
           <div class="stat">
-            <dt class="stat__label">Visits gewertet</dt>
+            <dt class="stat__label" i18n="@@eval.visits">Visits gewertet</dt>
             <dd class="stat__value">{{ summary.visits }}</dd>
             @if (summary.games > 1) {
-              <dd class="stat__hint">aus {{ summary.games }} Spielen</dd>
+              <dd class="stat__hint" i18n="@@eval.fromGames">aus {{ summary.games }} Spielen</dd>
             }
           </div>
           <div class="stat">
-            <dt class="stat__label">Ohne Korrektur</dt>
+            <dt class="stat__label" i18n="@@eval.clean">Ohne Korrektur</dt>
             <dd class="stat__value">
               @if (cleanVisitRate(); as rate) {
                 {{ rate * 100 | number: '1.0-0' }} %
@@ -150,49 +158,51 @@
                 &ndash;
               }
             </dd>
-            <dd class="stat__hint">{{ summary.cleanVisits }} von {{ summary.visits }} Visits</dd>
+            <dd class="stat__hint" i18n="@@eval.cleanOf">{{ summary.cleanVisits }} von {{ summary.visits }} Visits</dd>
           </div>
           <div class="stat">
-            <dt class="stat__label">Pfeile geworfen</dt>
+            <dt class="stat__label" i18n="@@stats.dartsThrown">Darts geworfen</dt>
             <dd class="stat__value">{{ summary.dartsThrown }}</dd>
           </div>
           <div class="stat">
-            <dt class="stat__label">Von der Kamera gebucht</dt>
+            <dt class="stat__label" i18n="@@eval.booked">Von der Kamera gebucht</dt>
             <dd class="stat__value">{{ summary.dartsBooked }}</dd>
           </div>
         </dl>
 
         @if (selectedGame(); as game) {
           <section class="panel">
-            <h2 class="panel__title">Aufnahme</h2>
-            <p class="panel__hint">
+            <h2 class="panel__title" i18n="@@eval.recording">Aufnahme</h2>
+            <p class="panel__hint" i18n="@@eval.recordingHint">
               Kamerawinkel als Median über die Kalibrierungen der scorenden Kamera
             </p>
             <ul class="rows">
               <li class="row">
-                <span class="row__label">Tracker-Version</span>
-                <span class="row__value">{{
-                  game.trackerVersions.length ? game.trackerVersions.join(', ') : 'unbekannt'
-                }}</span>
+                <span class="row__label" i18n="@@eval.trackerVersion">Tracker-Version</span>
+                @if (game.trackerVersions.length) {
+                  <span class="row__value">{{ game.trackerVersions.join(', ') }}</span>
+                } @else {
+                  <span class="row__value" i18n="@@eval.unknown">unbekannt</span>
+                }
               </li>
               @if (game.camera; as camera) {
                 <li class="row">
-                  <span class="row__label">Neigung zur Scheibe</span>
+                  <span class="row__label" i18n="@@eval.tiltToBoard">Neigung zur Scheibe</span>
                   <span class="row__value">{{ camera.tilt | number: '1.0-0' }}°</span>
                 </li>
                 <li class="row">
-                  <span class="row__label">Seitlich</span>
-                  <span class="row__value">{{ sideOf(camera.horizontal, 'links', 'rechts') }}</span>
+                  <span class="row__label" i18n="@@eval.sideways">Seitlich</span>
+                  <span class="row__value">{{ sideOf(camera.horizontal, sides.left, sides.right) }}</span>
                 </li>
                 <li class="row">
-                  <span class="row__label">Höhe</span>
+                  <span class="row__label" i18n="@@eval.height">Höhe</span>
                   <span class="row__value">{{
-                    sideOf(camera.vertical, 'unterhalb', 'oberhalb')
+                    sideOf(camera.vertical, sides.below, sides.above)
                   }}</span>
                 </li>
               } @else {
                 <li class="row">
-                  <span class="row__label">Kamerawinkel</span>
+                  <span class="row__label" i18n="@@eval.cameraAngle">Kamerawinkel</span>
                   <span class="row__value">&ndash;</span>
                 </li>
               }
@@ -201,8 +211,8 @@
         }
 
         <section class="panel">
-          <h2 class="panel__title">Fehleraufschlüsselung</h2>
-          <p class="panel__hint">
+          <h2 class="panel__title" i18n="@@eval.outcomes">Fehleraufschlüsselung</h2>
+          <p class="panel__hint" i18n="@@eval.outcomesHint">
             Jeder gewertete Pfeil zählt genau einmal &ndash; ein Phantom hatte keinen Pfeil hinter
             sich, ein verpasster keinen Eintrag
           </p>
@@ -222,7 +232,7 @@
                     />
                   </span>
                   <span class="row__line">
-                    <span class="row__hint">davon als 0 eingetragen</span>
+                    <span class="row__hint" i18n="@@eval.missedZeros">davon als 0 eingetragen</span>
                     <ng-container
                       [ngTemplateOutlet]="value"
                       [ngTemplateOutletContext]="{
@@ -252,8 +262,8 @@
         </section>
 
         <section class="panel">
-          <h2 class="panel__title">Fehler nach Feld</h2>
-          <p class="panel__hint">
+          <h2 class="panel__title" i18n="@@eval.byField">Fehler nach Feld</h2>
+          <p class="panel__hint" i18n="@@eval.byFieldHint">
             Geworfene Pfeile nach dem Feld, in dem sie laut Spielern steckten; die Aufteilung als
             Anteil der Pfeile in diesem Feld
           </p>
@@ -271,7 +281,7 @@
                   />
                 </span>
                 <span class="row__line">
-                  <span class="row__hint">falsch</span>
+                  <span class="row__hint" i18n="@@eval.wrongShort">falsch</span>
                   <ng-container
                     [ngTemplateOutlet]="value"
                     [ngTemplateOutletContext]="{
@@ -281,7 +291,7 @@
                   />
                 </span>
                 <span class="row__line">
-                  <span class="row__hint">verpasst</span>
+                  <span class="row__hint" i18n="@@eval.missedShort">verpasst</span>
                   <ng-container
                     [ngTemplateOutlet]="value"
                     [ngTemplateOutletContext]="{
@@ -296,13 +306,13 @@
         </section>
 
         <section class="panel">
-          <h2 class="panel__title">Abstand zum erwarteten Segment</h2>
-          <p class="panel__hint">
+          <h2 class="panel__title" i18n="@@eval.offBy">Abstand zum erwarteten Segment</h2>
+          <p class="panel__hint" i18n="@@eval.offByHint">
             Über die falsch gewerteten Pfeile mit lokalisierter Spitze. Wenige Millimeter heißen
             falsche Drahtseite, zig Millimeter ein Fit auf etwas anderem.
           </p>
           @if (summary.meanOffBy === null) {
-            <p class="panel__hint">Kein falsch gewerteter Pfeil trug eine lokalisierte Spitze.</p>
+            <p class="panel__hint" i18n="@@eval.offByNone">Kein falsch gewerteter Pfeil trug eine lokalisierte Spitze.</p>
           } @else {
             <ul class="rows">
               @for (band of summary.bands; track band.label) {

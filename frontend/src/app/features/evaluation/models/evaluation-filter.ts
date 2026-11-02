@@ -29,6 +29,6 @@ export const TILT_LIMITS: TiltRange = [0, 90];
 export type RunKind = 'test' | 'normal';
 
 export const RUN_KIND_LABELS: Record<RunKind, string> = {
-  test: 'Testlauf',
-  normal: 'Normales Spiel',
+  test: $localize`:@@eval.testRun:Testlauf`,
+  normal: $localize`:@@eval.normalGame:Normales Spiel`,
 };

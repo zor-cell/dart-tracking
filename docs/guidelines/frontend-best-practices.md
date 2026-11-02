@@ -131,6 +131,11 @@ browser's first language, so shared links, QR codes and mail links stay neutral.
   generic word shared across features a `common.` one (`common.cancel`). One id
   always carries the same text.
 - `$localize` needs a literal: label maps write each entry as its own `$localize`.
+- A plural in a template is an ICU expression (`{count, plural, =1 {…} other {…}}`);
+  `$localize` has none, so the code picks between two messages.
+- A translated attribute with an interpolation works on a component input
+  (`ariaLabel="… {{ name }}"`), not on a native element's `aria-label`: there the
+  label is built in the code and bound with `[attr.aria-label]`.
 - `npm run i18n` extracts the texts to `src/locale/messages.json` and lists ids that
   `messages.en.json` misses or still carries. A missing translation also fails the
   build.
