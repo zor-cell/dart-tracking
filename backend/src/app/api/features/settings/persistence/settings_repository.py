@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.settings.domain.app_settings import DEFAULTS, AppSettings
 from app.api.features.settings.domain.filter_use import FilterUse
+from app.api.features.settings.domain.language import Language
 from app.api.features.settings.persistence.user_settings import UserSettingsTable
 
 
@@ -28,6 +29,7 @@ class SettingsRepository:
         return AppSettings(
             advance_on_pull=row.advance_on_pull,
             evaluation_enabled=row.evaluation_enabled,
+            language=Language(row.language) if row.language else None,
             preferred_doubles=tuple(row.preferred_doubles),
         )
 

@@ -69,5 +69,6 @@ fertig sind — auch Migrationen, Doku und Testskripte.
 Stash-Kommando — wann und was committet wird, entscheide ich.
 
 ## Commands
-- `npm run start` — Frontend starten
+- `npm run start` — Frontend starten (Deutsch und Englisch, beide über Port 4200)
+- `npm run i18n` — Texte extrahieren und mit der Übersetzung abgleichen
 - `uv run uvicorn app.main:app --app-dir src --reload` — Backend starten

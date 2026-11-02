@@ -84,3 +84,10 @@
   color: var(--p-text-muted-color);
   font-size: 0.8rem;
 }
+
+/* Without an account there are no settings, so the language is picked beside the title. */
+.header {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}

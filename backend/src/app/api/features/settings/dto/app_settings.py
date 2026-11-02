@@ -4,6 +4,7 @@ from pydantic import Field, field_validator
 
 from app.api.core.dto.base import CamelModel
 from app.api.features.settings.domain.app_settings import AppSettings
+from app.api.features.settings.domain.language import Language
 
 
 class AppSettingsDto(CamelModel):
@@ -13,6 +14,7 @@ class AppSettingsDto(CamelModel):
 
     advance_on_pull: bool
     evaluation_enabled: bool
+    language: Language | None = None
     preferred_doubles: list[Annotated[int, Field(ge=1, le=20)] | Literal[25]] = []
 
     @field_validator("preferred_doubles")
@@ -26,6 +28,7 @@ class AppSettingsDto(CamelModel):
         return cls(
             advance_on_pull=settings.advance_on_pull,
             evaluation_enabled=settings.evaluation_enabled,
+            language=settings.language,
             preferred_doubles=list(settings.preferred_doubles),
         )
 
@@ -33,5 +36,6 @@ class AppSettingsDto(CamelModel):
         return AppSettings(
             advance_on_pull=self.advance_on_pull,
             evaluation_enabled=self.evaluation_enabled,
+            language=self.language,
             preferred_doubles=tuple(self.preferred_doubles),
         )

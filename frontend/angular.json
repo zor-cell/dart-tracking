@@ -27,6 +27,18 @@
       "root": "",
       "sourceRoot": "src",
       "prefix": "app",
+      "i18n": {
+        "sourceLocale": {
+          "code": "de",
+          "subPath": "de"
+        },
+        "locales": {
+          "en-GB": {
+            "translation": "src/locale/messages.en.json",
+            "subPath": "en"
+          }
+        }
+      },
       "architect": {
         "build": {
           "builder": "@angular/build:application",
@@ -40,7 +52,9 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.scss"]
+            "styles": ["src/styles.scss"],
+            "polyfills": ["@angular/localize/init"],
+            "i18nMissingTranslation": "error"
           },
           "configurations": {
             "production": {
@@ -64,7 +78,12 @@
                 },
                 "fonts": true
               },
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "localize": true
+            },
+            "en": {
+              "localize": ["en-GB"],
+              "baseHref": "/en/"
             },
             "development": {
               "optimization": false,
@@ -92,9 +111,21 @@
             },
             "development": {
               "buildTarget": "frontend:build:development"
+            },
+            "en": {
+              "buildTarget": "frontend:build:development,en",
+              "port": 4201,
+              "proxyConfig": "proxy.en.conf.json"
             }
           },
           "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular/build:extract-i18n",
+          "options": {
+            "format": "json",
+            "outputPath": "src/locale"
+          }
         },
         "test": {
           "builder": "@angular/build:unit-test"

@@ -7,6 +7,8 @@ session gets `DEFAULTS` and cannot change them.
 from dataclasses import dataclass, replace
 from typing import Self
 
+from app.api.features.settings.domain.language import Language
+
 
 @dataclass(frozen=True)
 class AppSettings:
@@ -16,6 +18,8 @@ class AppSettings:
     # Hand a visit over once the camera sees its darts pulled out, not only on a tap.
     advance_on_pull: bool = True
     evaluation_enabled: bool = False
+    # None until the account picks one; the browser's own language applies meanwhile.
+    language: Language | None = None
     # Finishing doubles by sector (25 for bull) the checkout suggests first, in order.
     preferred_doubles: tuple[int, ...] = ()
 

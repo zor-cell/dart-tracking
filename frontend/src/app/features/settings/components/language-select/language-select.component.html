@@ -1,0 +1,15 @@
+<p-selectbutton
+  [options]="options"
+  optionLabel="label"
+  optionValue="value"
+  [allowEmpty]="false"
+  [ariaLabelledBy]="labelledBy()"
+  [size]="size()"
+  [ngModel]="language()"
+  (ngModelChange)="select($event)"
+>
+  <ng-template #item let-option>
+    <img class="flag" [ngSrc]="option.flag" width="24" height="16" alt="" />
+    <span class="sr-only">{{ option.label }}</span>
+  </ng-template>
+</p-selectbutton>

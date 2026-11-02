@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import ARRAY, Boolean, DateTime, ForeignKey, Integer, func
+from sqlalchemy import ARRAY, Boolean, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -21,6 +21,7 @@ class UserSettingsTable(Base):
     )
     advance_on_pull: Mapped[bool] = mapped_column(Boolean)
     evaluation_enabled: Mapped[bool] = mapped_column(Boolean)
+    language: Mapped[str | None] = mapped_column(String(8))
     preferred_doubles: Mapped[list[int]] = mapped_column(ARRAY(Integer), server_default="{}")
     # The client's remembered filter picks, stored as it sends them.
     filter_usage: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, server_default="[]")

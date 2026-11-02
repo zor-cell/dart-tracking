@@ -116,3 +116,22 @@ These differ from the rules above on purpose; a refactor must keep them.
 - **Actions end right:** `data-table__actions` keeps the buttons at the row's end.
 - **Skeletons while playing:** the running game and the new-game view load behind
   `p-skeleton` instead of `app-loading-state`, so the layout does not jump.
+
+## Translations
+The app uses Angular's built-in i18n: German is the source language, English
+(`en-GB`) the translation, and each language is its own build under `/de/` and
+`/en/`. nginx sends a path without language on by the `lang` cookie, else by the
+browser's first language, so shared links, QR codes and mail links stay neutral.
+
+- Every text gets a custom id, `feature.component.key` (the component part is left
+  out for the feature's main view): `i18n="@@settings.title"`, `i18n-label`,
+  `` $localize`:@@settings.testResult.spoken:gesprochen` ``. Without one the id
+  changes with every edit to the German text and the translation is lost.
+- `$localize` needs a literal: label maps write each entry as its own `$localize`.
+- `npm run i18n` extracts the texts to `src/locale/messages.json` and lists ids that
+  `messages.en.json` misses or still carries. A missing translation also fails the
+  build.
+- `ng serve` serves one language, so `npm run start` runs two: German on 4200 and
+  English on 4201 under `/en/`, which the German one proxies. Without nginx,
+  `main.ts` follows the cookie on a path without language.
+- Names of languages, the announcer and darts terms (Double Bull, D16) stay as they are.

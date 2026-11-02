@@ -1,0 +1,7 @@
+/* Both flags in one box; the outline keeps the black stripe off the dark background. */
+.flag {
+  display: block;
+  object-fit: cover;
+  border-radius: 2px;
+  outline: 1px solid var(--p-content-border-color);
+}

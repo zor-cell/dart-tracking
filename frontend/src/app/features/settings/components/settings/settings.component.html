@@ -1,19 +1,39 @@
 <section class="view">
   <header class="view__header view__header--sticky">
-    <app-back-link label="Konto" link="/account" />
-    <h1 class="view__title">Einstellungen</h1>
+    <app-back-link label="Konto" i18n-label="@@settings.backLink" link="/account" />
+    <h1 class="view__title" i18n="@@settings.title">Einstellungen</h1>
   </header>
 
   @if (settings.loading()) {
-    <app-loading-state label="Einstellungen werden geladen" />
+    <app-loading-state
+      label="Einstellungen werden geladen"
+      i18n-label="@@settings.loading"
+    />
   } @else {
     <section class="list-group">
-      <h2 class="list-group__title">Spiel</h2>
+      <h2 class="list-group__title" i18n="@@settings.general">Allgemein</h2>
+      <div class="list-group__items">
+        <div class="list-group__item setting">
+          <div class="setting__text">
+            <span class="setting__label" id="language-label" i18n="@@settings.language">
+              Sprache
+            </span>
+            <p class="setting__hint" i18n="@@settings.languageHint">
+              Die App lädt in der gewählten Sprache neu.
+            </p>
+          </div>
+          <app-language-select labelledBy="language-label" />
+        </div>
+      </div>
+    </section>
+
+    <section class="list-group">
+      <h2 class="list-group__title" i18n="@@settings.game">Spiel</h2>
       <div class="list-group__items">
         <div class="list-group__item setting setting--stacked">
           <div class="setting__text">
-            <span class="setting__label">Lieblingsdoppel</span>
-            <p class="setting__hint">
+            <span class="setting__label" i18n="@@settings.favouriteDoubles">Lieblingsdoppel</span>
+            <p class="setting__hint" i18n="@@settings.favouriteDoublesHint">
               Der Checkout-Vorschlag endet bevorzugt auf dem obersten Doppel, dann auf den
               nächsten, solange das Setup dafür nicht schwerer wird. Ohne Auswahl gilt die
               Standard-Reihenfolge.
@@ -27,8 +47,10 @@
 
         <div class="list-group__item setting">
           <div class="setting__text">
-            <label class="setting__label" for="advance-on-pull">Nach dem Ziehen weiter</label>
-            <p class="setting__hint" id="advance-on-pull-hint">
+            <label class="setting__label" for="advance-on-pull" i18n="@@settings.advanceOnPull">
+              Nach dem Ziehen weiter
+            </label>
+            <p class="setting__hint" id="advance-on-pull-hint" i18n="@@settings.advanceOnPullHint">
               Die Kamera erkennt, wenn die Pfeile gezogen sind, und gibt an den nächsten Spieler
               weiter. Sonst geht es erst weiter, wenn du bestätigst.
             </p>
@@ -43,33 +65,49 @@
 
         <div class="list-group__item setting">
           <div class="setting__text">
-            <span class="setting__label">Ansage testen</span>
-            <p class="setting__hint" id="announcement-test-hint">
+            <span class="setting__label" i18n="@@settings.announcementTest">Ansage testen</span>
+            <p class="setting__hint" id="announcement-test-hint" i18n="@@settings.announcementTestHint">
               Sagt einen Satz auf diesem Gerät an.
             </p>
             @if (testResult() || isAdmin()) {
               <dl class="diagnostics">
                 @if (isAdmin()) {
                   <div class="diagnostics__row">
-                    <dt>Sprachausgabe</dt>
-                    <dd>{{ announcer.supported ? 'verfügbar' : 'fehlt' }}</dd>
+                    <dt i18n="@@settings.diagnostics.speech">Sprachausgabe</dt>
+                    @if (announcer.supported) {
+                      <dd i18n="@@settings.diagnostics.available">verfügbar</dd>
+                    } @else {
+                      <dd i18n="@@settings.diagnostics.missing">fehlt</dd>
+                    }
                   </div>
                   <div class="diagnostics__row">
-                    <dt>Freigeschaltet</dt>
-                    <dd>{{ announcer.unlocked() ? 'ja' : 'noch nicht' }}</dd>
+                    <dt i18n="@@settings.diagnostics.unlocked">Freigeschaltet</dt>
+                    @if (announcer.unlocked()) {
+                      <dd i18n="@@settings.diagnostics.yes">ja</dd>
+                    } @else {
+                      <dd i18n="@@settings.diagnostics.notYet">noch nicht</dd>
+                    }
                   </div>
                   <div class="diagnostics__row">
-                    <dt>Ansage-Gerät</dt>
-                    <dd>{{ announcer.isAnnouncer() ? 'ja' : 'nein' }}</dd>
+                    <dt i18n="@@settings.diagnostics.announcer">Ansage-Gerät</dt>
+                    @if (announcer.isAnnouncer()) {
+                      <dd i18n="@@settings.diagnostics.yes">ja</dd>
+                    } @else {
+                      <dd i18n="@@settings.diagnostics.no">nein</dd>
+                    }
                   </div>
                   <div class="diagnostics__row">
-                    <dt>Stumm geschaltet</dt>
-                    <dd>{{ announcer.muted() ? 'ja' : 'nein' }}</dd>
+                    <dt i18n="@@settings.diagnostics.muted">Stumm geschaltet</dt>
+                    @if (announcer.muted()) {
+                      <dd i18n="@@settings.diagnostics.yes">ja</dd>
+                    } @else {
+                      <dd i18n="@@settings.diagnostics.no">nein</dd>
+                    }
                   </div>
                 }
                 @if (testResult(); as result) {
                   <div class="diagnostics__row">
-                    <dt>Letzter Test</dt>
+                    <dt i18n="@@settings.diagnostics.lastTest">Letzter Test</dt>
                     <dd>{{ result }}</dd>
                   </div>
                 }
@@ -79,6 +117,7 @@
           <p-button
             icon="pi pi-volume-up"
             ariaLabel="Ansage testen"
+            i18n-ariaLabel="@@settings.announcementTest"
             ariaLabelledBy="announcement-test-hint"
             [rounded]="true"
             [loading]="testing()"
@@ -94,8 +133,10 @@
         <div class="list-group__items">
           <div class="list-group__item setting">
             <div class="setting__text">
-              <label class="setting__label" for="evaluation">Testlauf aufzeichnen</label>
-              <p class="setting__hint" id="evaluation-hint">
+              <label class="setting__label" for="evaluation" i18n="@@settings.evaluation">
+                Testlauf aufzeichnen
+              </label>
+              <p class="setting__hint" id="evaluation-hint" i18n="@@settings.evaluationHint">
                 Speichert bei neuen Spielen und dem laufenden die Kamerabilder jeder korrigierten
                 Runde als Wurfserie, dazu jedes Bild einer fehlgeschlagenen Kalibrierung.
               </p>

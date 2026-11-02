@@ -36,6 +36,9 @@ export class FavouriteDoublesComponent {
   protected readonly name = (double: number): string =>
     DOUBLE_OPTIONS.find((option) => option.value === double)?.label ?? `D${double}`;
 
+  protected readonly removeLabel = (double: number): string =>
+    $localize`:@@settings.favouriteDoubles.remove:${this.name(double)}:double: entfernen`;
+
   /** Appends the picked double and empties the picker again. */
   protected add({ value }: SelectChangeEvent): void {
     if (value !== null) {

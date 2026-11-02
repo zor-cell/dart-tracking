@@ -3,6 +3,8 @@ import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
+import { Language } from '../../../core/i18n/models/language';
+import { LanguageService } from '../../../core/i18n/services/language.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { AppSettingsDto } from '../dto/app-settings.dto';
 import { DEFAULT_SETTINGS } from '../models/app-settings';
@@ -20,6 +22,7 @@ import { writeStored } from '../../../core/storage/models/browser-storage';
 export class SettingsService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
+  private readonly language = inject(LanguageService);
   private readonly url = `${environment.httpApiUrl}/settings`;
 
   private readonly _settings = signal<AppSettingsDto>(DEFAULT_SETTINGS);
@@ -64,6 +67,19 @@ export class SettingsService {
     this.patch({ preferredDoubles: doubles });
   }
 
+  /** Keep the choice on the account, if there is one, before the page reloads in it. */
+  async setLanguage(language: Language): Promise<void> {
+    if (this.auth.isAuthenticated()) {
+      const next = { ...this._settings(), language };
+      try {
+        this._settings.set(await firstValueFrom(this.http.put<AppSettingsDto>(this.url, next)));
+      } catch {
+        return; // the error toast says why; the page stays in its language
+      }
+    }
+    this.language.switchTo(language);
+  }
+
   /** Apply a change locally so the switch answers at once, then let the server
    * confirm it. Anonymous cannot reach the page, and has nothing to write to. */
   private patch(changes: Partial<AppSettingsDto>): void {
@@ -87,11 +103,11 @@ export class SettingsService {
 
   private async reload(): Promise<void> {
     try {
-      this._settings.set(
-        await firstValueFrom(
-          this.http.get<AppSettingsDto>(this.url, { context: SILENT_ERROR_CONTEXT }),
-        ),
+      const settings = await firstValueFrom(
+        this.http.get<AppSettingsDto>(this.url, { context: SILENT_ERROR_CONTEXT }),
       );
+      this._settings.set(settings);
+      this.language.adopt(settings.language);
     } catch {
       this._settings.set(DEFAULT_SETTINGS);
     } finally {

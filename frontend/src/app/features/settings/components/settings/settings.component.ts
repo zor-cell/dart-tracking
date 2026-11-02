@@ -10,16 +10,17 @@ import { AuthService } from '../../../auth/services/auth.service';
 import { GameService } from '../../../game/services/game.service';
 import { SettingsService } from '../../services/settings.service';
 import { FavouriteDoublesComponent } from '../favourite-doubles/favourite-doubles.component';
+import { LanguageSelectComponent } from '../language-select/language-select.component';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 
 /** What the self-test's outcome is called on the page. */
 const TEST_RESULTS: Record<AnnouncerTestResult, string> = {
-  spoken: 'gesprochen',
-  failed: 'abgebrochen',
-  no_answer: 'keine Rückmeldung',
-  muted: 'stumm geschaltet',
-  unsupported: 'nicht unterstützt',
+  spoken: $localize`:@@settings.testResult.spoken:gesprochen`,
+  failed: $localize`:@@settings.testResult.failed:abgebrochen`,
+  no_answer: $localize`:@@settings.testResult.noAnswer:keine Rückmeldung`,
+  muted: $localize`:@@settings.testResult.muted:stumm geschaltet`,
+  unsupported: $localize`:@@settings.testResult.unsupported:nicht unterstützt`,
 };
 
 @Component({
@@ -29,6 +30,7 @@ const TEST_RESULTS: Record<AnnouncerTestResult, string> = {
     Button,
     FavouriteDoublesComponent,
     FormsModule,
+    LanguageSelectComponent,
     LoadingStateComponent,
     ToggleSwitch,
   ],

@@ -5,5 +5,6 @@ import { AppSettingsDto } from '../dto/app-settings.dto';
 export const DEFAULT_SETTINGS: AppSettingsDto = {
   advanceOnPull: true,
   evaluationEnabled: false,
+  language: null,
   preferredDoubles: [],
 };

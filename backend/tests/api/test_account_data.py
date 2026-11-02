@@ -8,6 +8,7 @@ WINNING_LEG = ([T20, T20, T20], [T20, T17, D5])
 DEFAULTS = {
     "advanceOnPull": True,
     "evaluationEnabled": False,
+    "language": None,
     "preferredDoubles": [],
 }
 EVERYTHING_ON = DEFAULTS | {"evaluationEnabled": True}
@@ -46,6 +47,12 @@ def test_advancing_on_pull_can_be_turned_off(alice):
     alice.put("/settings", json=DEFAULTS | {"advanceOnPull": False})
 
     assert alice.get("/settings").json()["advanceOnPull"] is False
+
+
+def test_language(alice):
+    assert alice.put("/settings", json=DEFAULTS | {"language": "en"}).json()["language"] == "en"
+    assert alice.get("/settings").json()["language"] == "en"
+    assert alice.put("/settings", json=DEFAULTS | {"language": "fr"}).status_code == 422
 
 
 def test_preferred_doubles(alice):
