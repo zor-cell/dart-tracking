@@ -288,7 +288,7 @@ export class StatisticsComponent {
     if (names.length === 0) {
       return null;
     }
-    return key === 'opponentId' ? `Gegen ${orList(names)}` : orList(names);
+    return key === 'opponentId' ? $localize`:@@stats.against:Gegen ${orList(names)}:names:` : orList(names);
   }
 
   private nameOf(key: Remembered, value: unknown): string | null {

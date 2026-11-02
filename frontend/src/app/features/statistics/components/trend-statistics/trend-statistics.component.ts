@@ -1,4 +1,5 @@
-import { DOCUMENT, formatDate } from '@angular/common';
+import { DOCUMENT, formatDate, formatNumber } from '@angular/common';
+import { SHORT_DATE } from '../../../../core/i18n/models/date-format';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -70,7 +71,7 @@ export class TrendStatisticsComponent {
       const prefix = name ? `${name} · ` : '';
       return [
         {
-          label: `${prefix}Spiel`,
+          label: `${prefix}${$localize`:@@common.nav.game:Spiel`}`,
           data: ids.map((id) => value.get(id) ?? null),
           showLine: false,
           pointRadius: 2.5,
@@ -79,7 +80,7 @@ export class TrendStatisticsComponent {
           pointBorderWidth: 0,
         },
         {
-          label: `${prefix}Trend`,
+          label: `${prefix}${$localize`:@@stats.tab.trend:Trend`}`,
           data: ids.map((id) => trend.get(id) ?? null),
           borderColor: color,
           backgroundColor: color,
@@ -98,9 +99,9 @@ export class TrendStatisticsComponent {
     };
     const compared = other ? (this.compareName() ?? '') : null;
     return {
-      labels: [...slots.values()].map((at) => formatDate(at, 'dd.MM.yy', this.locale)),
+      labels: [...slots.values()].map((at) => formatDate(at, SHORT_DATE, this.locale)),
       datasets: [
-        ...series(own, compared === null ? null : 'Du', this.ownColor),
+        ...series(own, compared === null ? null : $localize`:@@player.list.self:Du`, this.ownColor),
         ...(other && compared !== null ? series(other, compared, this.compareColor) : []),
       ],
     };
@@ -108,7 +109,7 @@ export class TrendStatisticsComponent {
 
   protected readonly options = computed<ChartOptions<'line'>>(() => {
     const unit = this.picked().unit;
-    const format = (value: number) => `${value.toFixed(1).replace('.', ',')}${unit}`;
+    const format = (value: number) => `${formatNumber(value, this.locale, '1.1-1')}${unit}`;
     return {
       responsive: true,
       maintainAspectRatio: false,
@@ -144,13 +145,15 @@ export class TrendStatisticsComponent {
   protected readonly ariaLabel = computed(() => {
     const points = this.points();
     const latest = weightedTrend(points, this.metric()).at(-1) ?? null;
-    const label = `${this.picked().label} über ${points.length} Spiele`;
+    const label = $localize`:@@stats.trend.label:${this.picked().label}:metric: über ${points.length}:count: Spiele`;
     const own =
-      latest === null ? label : `${label}, Trend zuletzt ${latest.toFixed(1)}${this.picked().unit}`;
+      latest === null
+        ? label
+        : $localize`:@@stats.trend.latest:${label}:label:, Trend zuletzt ${latest.toFixed(1)}:value:${this.picked().unit}:unit:`;
     const other = this.otherPoints();
     const theirs = other ? (weightedTrend(other, this.metric()).at(-1) ?? null) : null;
     return theirs === null
       ? own
-      : `${own}; ${this.compareName()} zuletzt ${theirs.toFixed(1)}${this.picked().unit}`;
+      : $localize`:@@stats.trend.theirs:${own}:own:; ${this.compareName()}:name: zuletzt ${theirs.toFixed(1)}:value:${this.picked().unit}:unit:`;
   });
 }

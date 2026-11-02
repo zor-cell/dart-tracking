@@ -1,5 +1,5 @@
 <section class="panel">
-  <h2 class="panel__title">Deine Visits</h2>
+  <h2 class="panel__title" i18n="@@stats.visits.title">Deine Visits</h2>
   <p-chart
     class="visits__chart"
     type="bar"
@@ -16,17 +16,20 @@
       [text]="true"
       [rounded]="true"
       ariaLabel="Einen Punkt weniger"
+      i18n-ariaLabel="@@stats.visits.less"
       [disabled]="selected() === 0"
       (appRepeatPress)="step(-1)"
     />
     @let count = counts()[selected()];
     <p class="readout__value" aria-live="polite">
       <strong class="readout__score">{{ selected() }}</strong>
-      {{ count }} {{ count === 1 ? 'Visit' : 'Visits' }}
+      <ng-container i18n="@@stats.visits.count"
+        >{count, plural, =1 {1 Visit} other {{{ count }} Visits}}</ng-container
+      >
       @if (comparison(); as other) {
         <span class="readout__shares">
           <span class="readout__own">
-            <span class="sr-only">Du</span>
+            <span class="sr-only" i18n="@@player.list.self">Du</span>
             {{ shares()[selected()] | number: '1.1-1' }} %
           </span>
           <span class="readout__other">
@@ -42,12 +45,13 @@
       [text]="true"
       [rounded]="true"
       ariaLabel="Einen Punkt mehr"
+      i18n-ariaLabel="@@stats.visits.more"
       [disabled]="selected() === maxVisit"
       (appRepeatPress)="step(1)"
     />
   </div>
   <div class="top">
-    <p class="panel__hint">Am häufigsten geworfen:</p>
+    <p class="panel__hint" i18n="@@stats.visits.top">Am häufigsten geworfen:</p>
     <ul class="visits">
       @for (entry of top(); track entry.score) {
         <li>

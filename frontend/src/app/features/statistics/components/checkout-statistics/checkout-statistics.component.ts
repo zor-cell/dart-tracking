@@ -54,7 +54,7 @@ export class CheckoutStatisticsComponent {
   readonly comparison = input<Comparison | null>(null);
   protected readonly pairColors = [OWN_COLOR, COMPARE_COLOR] as const;
   /** Brings the views the cards open back here. */
-  protected readonly returnState = backState('Statistik');
+  protected readonly returnState = backState($localize`:@@auth.account.stats:Statistik`);
 
   protected readonly selected = signal<string | null>(null);
   protected readonly layerOptions = [...HEATMAP_LAYERS];

@@ -1,6 +1,6 @@
 <section class="panel">
   <header class="trend__header">
-    <h2 class="panel__title">Verlauf</h2>
+    <h2 class="panel__title" i18n="@@game.replay.race">Verlauf</h2>
     <p-selectbutton
       [options]="metricOptions"
       optionLabel="label"
@@ -9,21 +9,26 @@
       [ngModel]="metric()"
       (ngModelChange)="metric.set($event)"
       ariaLabel="Kennzahl im Verlauf"
+      i18n-ariaLabel="@@stats.trend.metric"
       size="small"
     />
   </header>
   @if (points().length < 2) {
     <app-empty-state icon="pi-chart-line">
-      <p>Für einen Verlauf braucht es mindestens zwei gewertete Spiele.</p>
+      <p i18n="@@stats.trend.tooFew">Für einen Verlauf braucht es mindestens zwei gewertete Spiele.</p>
     </app-empty-state>
   } @else {
     <p class="panel__hint trend__legend">
-      <span><span class="trend__dot"></span>Einzelne Spiele</span>
+      <span><span class="trend__dot"></span><ng-container i18n="@@stats.trend.games">Einzelne Spiele</ng-container></span>
       <span>
-        <span class="trend__line" [class.trend__line--own]="!otherPoints()"></span>Trend
+        <span class="trend__line" [class.trend__line--own]="!otherPoints()"></span
+        ><ng-container i18n="@@stats.tab.trend">Trend</ng-container>
       </span>
       @if (otherPoints()) {
-        <span><span class="trend__line trend__line--gap"></span>Ohne Spiel</span>
+        <span
+          ><span class="trend__line trend__line--gap"></span
+          ><ng-container i18n="@@stats.trend.gap">Ohne Spiel</ng-container></span
+        >
       }
     </p>
     <p-chart

@@ -69,11 +69,13 @@ export class DeltaMarkComponent {
       return '';
     }
     if (difference === 0) {
-      return `Gleich wie ${this.name()}`;
+      return $localize`:@@stats.delta.even:Gleich wie ${this.name()}:name:`;
     }
     const digits = this.digits();
     const amount = formatNumber(Math.abs(difference), this.locale, `1.${digits}-${digits}`);
-    return `${amount}${this.unit()} ${difference > 0 ? 'mehr' : 'weniger'} als ${this.name()}`;
+    return difference > 0
+      ? $localize`:@@stats.delta.more:${amount}:amount:${this.unit()}:unit: mehr als ${this.name()}:name:`
+      : $localize`:@@stats.delta.less:${amount}:amount:${this.unit()}:unit: weniger als ${this.name()}:name:`;
   });
 
   protected place(popover: Popover): void {

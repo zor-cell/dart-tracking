@@ -1,10 +1,10 @@
 @let totals = statistics();
 @let other = comparison();
 <section class="panel">
-  <h2 class="panel__title">Allgemein</h2>
+  <h2 class="panel__title" i18n="@@settings.general">Allgemein</h2>
   <dl class="stat-grid">
     <div class="stat stat--lead">
-      <dt class="stat__label">Checkout-Quote</dt>
+      <dt class="stat__label" i18n="@@stats.checkoutRate">Checkout-Quote</dt>
       <dd class="stat__value">
         @let checkout = checkoutRate();
         @if (checkout !== null) {
@@ -34,7 +34,7 @@
       }
     </div>
     <div class="stat stat--lead">
-      <dt class="stat__label">Mögliche Checkouts</dt>
+      <dt class="stat__label" i18n="@@stats.checkoutChances">Mögliche Checkouts</dt>
       <dd class="stat__value">{{ totals.checkoutAttempts | number }}</dd>
       @if (other) {
         <dd class="stat__hint">
@@ -47,7 +47,7 @@
       }
     </div>
     <div class="stat">
-      <dt class="stat__label">Höchstes Finish</dt>
+      <dt class="stat__label" i18n="@@stats.highestFinish">Höchstes Finish</dt>
       <dd class="stat__value">
         @if (other ? null : totals.highestFinishAt; as at) {
           <a
@@ -56,7 +56,7 @@
             [routerLink]="['/account/games', at.gameId]"
             [queryParams]="{ visit: at.visit }"
           >
-            {{ totals.highestFinish }}<span class="sr-only">, im Replay öffnen</span>
+            {{ totals.highestFinish }}<span class="sr-only" i18n="@@stats.openReplay">, im Replay öffnen</span>
             <i class="pi pi-angle-right stat__go" aria-hidden="true"></i>
           </a>
         } @else if (totals.highestFinish > 0) {
@@ -84,7 +84,7 @@
       }
     </div>
     <div class="stat">
-      <dt class="stat__label">Öftestes Finish</dt>
+      <dt class="stat__label" i18n="@@stats.favouriteFinish">Häufigstes Finish</dt>
       <dd class="stat__value">{{ totals.favouriteFinish ?? '–' }}</dd>
       @if (other) {
         <dd class="stat__hint">
@@ -98,11 +98,13 @@
     </div>
     <div class="stat">
       <dt class="stat__label">
-        Ø Abstand zum Checkout
+        <ng-container i18n="@@stats.doubleDistance">Ø Abstand zum Checkout</ng-container>
         <app-info-hint class="stat__info">
           <app-stat-sketch kind="checkout" />
-          Kürzester Weg vom erkannten Dart zum Doppel, auf das er ging. Ein Treffer zählt 0 mm. Nur
-          bei Double-Out.
+          <ng-container i18n="@@stats.doubleDistanceHint"
+            >Kürzester Weg vom erkannten Dart zum Doppel, auf das er ging. Ein Treffer zählt 0 mm.
+            Nur bei Double-Out.</ng-container
+          >
         </app-info-hint>
       </dt>
       @if (totals.doubleDistance !== null) {
@@ -143,8 +145,8 @@
     </div>
     <div class="stat">
       <dt class="stat__label">
-        Ø Darts pro Leg
-        <app-info-hint class="stat__info">
+        <ng-container i18n="@@stats.dartsPerLeg">Ø Darts pro Leg</ng-container>
+        <app-info-hint class="stat__info" i18n="@@stats.dartsPerLegHint">
           Darts vom ersten Wurf bis zum Finish. Nur Legs, die du selbst beendet hast.
         </app-info-hint>
       </dt>
@@ -169,7 +171,7 @@
           />
         </dd>
       } @else {
-        <dd class="stat__hint">aus {{ totals.legsWon }} gewonnenen Legs</dd>
+        <dd class="stat__hint" i18n="@@stats.fromLegsWon">aus {{ totals.legsWon }} gewonnenen Legs</dd>
       }
     </div>
   </dl>
@@ -179,7 +181,7 @@
   @if (other) {
     <!-- Side by side, one double picked on either shows on both. -->
     <header class="doubles__header">
-      <h2 class="panel__title">Trefferbild</h2>
+      <h2 class="panel__title" i18n="@@stats.hitPattern">Trefferbild</h2>
       <p-selectbutton
         [options]="layerOptions"
         optionLabel="label"
@@ -188,12 +190,13 @@
         [ngModel]="layer()"
         (ngModelChange)="selectLayer($event)"
         ariaLabel="Darstellung der Doppel"
+        i18n-ariaLabel="@@stats.doublesLayer"
         size="small"
       />
     </header>
     <div class="doubles-pair">
       <figure class="doubles-pair__side">
-        <figcaption class="doubles-pair__name">Du</figcaption>
+        <figcaption class="doubles-pair__name" i18n="@@player.list.self">Du</figcaption>
         <app-double-board
           [doubles]="totals.doubles"
           [layerSwitch]="false"
@@ -214,10 +217,10 @@
       </figure>
     </div>
   } @else {
-    <h2 class="panel__title">Trefferbild</h2>
+    <h2 class="panel__title" i18n="@@stats.hitPattern">Trefferbild</h2>
     @if (totals.doubles.length === 0) {
       <app-empty-state icon="pi-bullseye">
-        <p>Noch keine Darts auf ein Doppel, das checken konnte.</p>
+        <p i18n="@@stats.noDoubles">Noch keine Darts auf ein Doppel, das checken konnte.</p>
       </app-empty-state>
     } @else {
       <app-double-board [doubles]="totals.doubles" [(layer)]="layer" [(selected)]="selected" />

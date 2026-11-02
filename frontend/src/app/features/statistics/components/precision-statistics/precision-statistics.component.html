@@ -27,7 +27,7 @@
           routerLink="/account/games"
           [queryParams]="bandParams(band)"
         >
-          {{ figure.count }}<span class="sr-only">, Spiele zeigen</span>
+          {{ figure.count }}<span class="sr-only" i18n="@@stats.showGames">, Spiele zeigen</span>
           <i class="pi pi-angle-right stat__go" aria-hidden="true"></i>
         </a>
       } @else {
@@ -37,12 +37,12 @@
   }
 </ng-template>
 <section class="panel">
-  <h2 class="panel__title">Allgemein</h2>
+  <h2 class="panel__title" i18n="@@settings.general">Allgemein</h2>
   <dl class="stat-grid">
     <div class="stat stat--lead">
       <dt class="stat__label">
         3-Dart-<span aria-hidden="true">Ø</span><span class="sr-only">Average</span>
-        <app-info-hint class="stat__info"
+        <app-info-hint class="stat__info" i18n="@@stats.averageHint"
           >Punkte pro drei Darts über alle geworfenen Darts. Darts eines überworfenen Visits zählen
           mit, ihre Punkte nicht.</app-info-hint
         >
@@ -67,7 +67,7 @@
     <div class="stat stat--lead">
       <dt class="stat__label">
         First-9-<span aria-hidden="true">Ø</span><span class="sr-only">Average</span>
-        <app-info-hint class="stat__info"
+        <app-info-hint class="stat__info" i18n="@@stats.firstNineHint"
           >Wie der 3-Dart-Ø, aber nur über die ersten neun Darts jedes Legs, bevor es ans Auschecken
           geht.</app-info-hint
         >
@@ -94,7 +94,7 @@
       }
     </div>
     <div class="stat">
-      <dt class="stat__label">Legs gewonnen</dt>
+      <dt class="stat__label" i18n="@@stats.legsWon">Legs gewonnen</dt>
       <dd class="stat__value">
         @let won = wonRate();
         @if (won !== null) {
@@ -113,7 +113,7 @@
         }
       </dd>
       @if (!other) {
-        <dd class="stat__hint">{{ totals.legsWon }} von {{ totals.legs }} Legs</dd>
+        <dd class="stat__hint" i18n="@@stats.legsOf">{{ totals.legsWon }} von {{ totals.legs }} Legs</dd>
       }
       @if (other) {
         <dd class="stat__hint">
@@ -122,7 +122,7 @@
       }
     </div>
     <div class="stat">
-      <dt class="stat__label">Darts geworfen</dt>
+      <dt class="stat__label" i18n="@@stats.dartsThrown">Darts geworfen</dt>
       <dd class="stat__value">{{ totals.darts | number }}</dd>
       @if (other) {
         <dd class="stat__hint">
@@ -131,7 +131,7 @@
       }
     </div>
     <div class="stat">
-      <dt class="stat__label">Bestes Visit</dt>
+      <dt class="stat__label" i18n="@@game.detail.bestVisit">Bester Visit</dt>
       <dd class="stat__value">
         @if (other ? null : totals.bestVisitAt; as at) {
           <a
@@ -140,7 +140,7 @@
             [routerLink]="['/account/games', at.gameId]"
             [queryParams]="{ visit: at.visit }"
           >
-            {{ totals.bestVisit }}<span class="sr-only">, im Replay öffnen</span>
+            {{ totals.bestVisit }}<span class="sr-only" i18n="@@stats.openReplay">, im Replay öffnen</span>
             <i class="pi pi-angle-right stat__go" aria-hidden="true"></i>
           </a>
         } @else {
@@ -174,7 +174,7 @@
       <ng-container *ngTemplateOutlet="visitBand; context: { band: 140 }" />
     </div>
     <div class="stat">
-      <dt class="stat__label">Öftestes Visit</dt>
+      <dt class="stat__label" i18n="@@stats.favouriteVisit">Häufigster Visit</dt>
       <dd class="stat__value">{{ totals.favouriteVisit ?? '–' }}</dd>
       @if (other) {
         <dd class="stat__hint">
@@ -207,6 +207,7 @@
     [ngModel]="layer()"
     (ngModelChange)="selectLayer($event)"
     ariaLabel="Darstellung der Heatmap"
+    i18n-ariaLabel="@@game.replay.layer"
     size="small"
   />
 </ng-template>
@@ -221,12 +222,12 @@
   @if (other) {
     <!-- Side by side, one field picked on either shows on both. -->
     <header class="heatmap__header">
-      <h2 class="panel__title">Trefferbild</h2>
+      <h2 class="panel__title" i18n="@@stats.hitPattern">Trefferbild</h2>
       <ng-container *ngTemplateOutlet="layerSwitch" />
     </header>
     <div class="heatmap-pair">
       <figure class="heatmap-pair__side">
-        <figcaption class="heatmap-pair__name">Du</figcaption>
+        <figcaption class="heatmap-pair__name" i18n="@@player.list.self">Du</figcaption>
         <div class="heatmap-pair__board">
           <ng-container
             *ngTemplateOutlet="
@@ -255,7 +256,7 @@
       </figure>
     </div>
   } @else {
-    <h2 class="panel__title">Trefferbild</h2>
+    <h2 class="panel__title" i18n="@@stats.hitPattern">Trefferbild</h2>
     <div class="heatmap">
       <ng-container *ngTemplateOutlet="layerSwitch" />
       <ng-container
@@ -269,22 +270,26 @@
 </section>
 
 <section class="panel">
-  <h2 class="panel__title">Streuung</h2>
+  <h2 class="panel__title" i18n="@@game.replay.distribution">Streuung</h2>
   <p class="panel__hint">
     @if (totals.groupingDarts > 0) {
-      Aus {{ totals.groupingDarts }} erkannten Darts in Visits ohne Finish-Chance.
+      <ng-container i18n="@@stats.groupingFrom"
+        >Aus {{ totals.groupingDarts }} erkannten Darts in Visits ohne Finish-Chance.</ng-container
+      >
     } @else {
-      Noch kein Visit ohne Finish-Chance mit mindestens zwei erkannten Darts.
+      <ng-container i18n="@@stats.groupingNone"
+        >Noch kein Visit ohne Finish-Chance mit mindestens zwei erkannten Darts.</ng-container
+      >
     }
   </p>
   <dl class="stat-grid">
     <div class="stat">
       <dt class="stat__label">
-        Ø Pfeilabstand
+        <ng-container i18n="@@game.detail.grouping">Ø Pfeilabstand</ng-container>
         <app-info-hint class="stat__info">
           <app-stat-sketch kind="grouping" />
-          Mittel der Strecken zwischen je zwei erkannten Darts eines Visits. Nur Visits ohne
-          Finish-Chance, wo jeder Dart aufs selbe Ziel geht.
+          <ng-container i18n="@@stats.groupingHint">Mittel der Strecken zwischen je zwei erkannten Darts eines Visits. Nur Visits ohne
+          Finish-Chance, wo jeder Dart aufs selbe Ziel geht.</ng-container>
         </app-info-hint>
       </dt>
       @if (totals.grouping !== null) {
@@ -325,12 +330,12 @@
     </div>
     <div class="stat">
       <dt class="stat__label">
-        Streuform
+        <ng-container i18n="@@stats.spread">Streuform</ng-container>
         <app-info-hint class="stat__info">
           <app-stat-sketch kind="spread" />
-          Wie die Darts eines Visits zueinander liegen: die breite Achse geteilt durch die schmale,
+          <ng-container i18n="@@stats.spreadHint">Wie die Darts eines Visits zueinander liegen: die breite Achse geteilt durch die schmale,
           die Ellipse zeigt die Richtung. Nur Visits ohne Finish-Chance, wo jeder Dart aufs selbe
-          Ziel geht.
+          Ziel geht.</ng-container>
         </app-info-hint>
       </dt>
       <dd class="stat__value">
@@ -436,7 +441,7 @@
       </li>
     }
   </ol>
-  <p class="panel__hint">
+  <p class="panel__hint" i18n="@@stats.perDartHint">
     Ø Punkte pro Dart nach seinem Platz im Visit, auch nur ohne Finish&#8209;Chance.
   </p>
 </section>

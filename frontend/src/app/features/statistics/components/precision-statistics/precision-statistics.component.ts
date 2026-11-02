@@ -52,7 +52,7 @@ export class PrecisionStatisticsComponent {
   protected readonly compareColor = COMPARE_COLOR;
   protected readonly pairColors = [OWN_COLOR, COMPARE_COLOR] as const;
   /** Brings the views the cards open back here. */
-  protected readonly returnState = backState('Statistik');
+  protected readonly returnState = backState($localize`:@@auth.account.stats:Statistik`);
   /** The page's filters as the game list reads them, carried into its links. */
   readonly listParams = input<Params>({});
 

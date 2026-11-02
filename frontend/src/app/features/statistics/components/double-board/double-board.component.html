@@ -9,6 +9,7 @@
       [ngModel]="layer()"
       (ngModelChange)="selectLayer($event)"
       ariaLabel="Darstellung der Doppel"
+      i18n-ariaLabel="@@stats.doublesLayer"
       size="small"
     />
   }
@@ -47,6 +48,7 @@
     <app-heat-board
       [fields]="fields()"
       ariaLabel="Checkout-Darts nach getroffenem Feld"
+      i18n-ariaLabel="@@stats.doubles.label"
       [resolve]="doubleOf"
       [legendMax]="legendMax()"
       [extent]="extent"
@@ -60,11 +62,11 @@
           }}
           &middot; {{ double.rate * 100 | number: '1.0-0' }}&nbsp;%
         } @else {
-          <span class="caption__summary">{{ attempts() }} Checkout-Darts</span>
+          <span class="caption__summary" i18n="@@stats.doubles.attempts">{{ attempts() }} Checkout-Darts</span>
         }
       </span>
       @if (misses() > 0) {
-        <span corner class="misses">{{ misses() }} daneben</span>
+        <span corner class="misses" i18n="@@stats.doubles.misses">{{ misses() }} daneben</span>
       }
     </app-heat-board>
   }

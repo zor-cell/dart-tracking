@@ -62,7 +62,7 @@ export class VisitDistributionComponent {
       datasets: [
         {
           ...bar,
-          label: 'Du',
+          label: $localize`:@@player.list.self:Du`,
           data: others ? this.shares() : this.counts(),
           backgroundColor: OWN_COLOR,
         },
@@ -129,9 +129,9 @@ export class VisitDistributionComponent {
 
   protected readonly ariaLabel = computed(() => {
     const named = this.top()
-      .map((entry) => `${entry.score} ${entry.count}-mal`)
+      .map((entry) => $localize`:@@game.heatmap.times:${entry.score}:field: ${entry.count}:count:-mal`)
       .join(', ');
-    return `Visits nach Punkten von 0 bis ${MAX_VISIT}. Am häufigsten: ${named}`;
+    return $localize`:@@stats.visits.label:Visits nach Punkten von 0 bis ${MAX_VISIT}:max:. Am häufigsten: ${named}:top:`;
   });
 
   constructor() {

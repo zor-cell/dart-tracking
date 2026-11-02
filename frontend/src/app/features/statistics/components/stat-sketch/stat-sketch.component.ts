@@ -85,8 +85,8 @@ interface SpreadPanel {
 
 /** The same tips twice, once even and once stretched, so the ratio reads as a shape. */
 const SPREAD: readonly SpreadPanel[] = [
-  { tips: cloud(6, 6), rx: 12, ry: 12, caption: '1,0× rund' },
-  { tips: cloud(4, 10), rx: 8, ry: 20, caption: '2,5× länglich' },
+  { tips: cloud(6, 6), rx: 12, ry: 12, caption: $localize`:@@stats.sketch.round:1,0× rund` },
+  { tips: cloud(4, 10), rx: 8, ry: 20, caption: $localize`:@@stats.sketch.long:2,5× länglich` },
 ];
 
 /** A gap's length in whole millimetres, as the sketch writes it. */

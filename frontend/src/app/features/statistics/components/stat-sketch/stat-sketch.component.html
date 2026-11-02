@@ -27,7 +27,7 @@
         <text class="sketch__distance" [attr.x]="hit[0]" [attr.y]="hit[1]">0 mm</text>
       }
     </svg>
-    <figcaption class="figure__caption">Ø Abstand {{ average(scene) }} mm</figcaption>
+    <figcaption class="figure__caption" i18n="@@stats.sketch.average">Ø Abstand {{ average(scene) }} mm</figcaption>
   </figure>
 } @else {
   <div class="pair">

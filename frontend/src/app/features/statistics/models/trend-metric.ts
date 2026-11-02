@@ -7,7 +7,7 @@ export const TREND_METRICS: readonly { label: string; value: TrendMetric; unit: 
   { label: '3-Dart-Ø', value: 'average', unit: '' },
   { label: 'First-9-Ø', value: 'firstNine', unit: '' },
   { label: 'Checkout', value: 'checkout', unit: ' %' },
-  { label: 'Darts/Leg', value: 'dartsPerLeg', unit: '' },
+  { label: $localize`:@@stats.trend.dartsPerLeg:Darts/Leg`, value: 'dartsPerLeg', unit: '' },
 ];
 
 /** The newest game's share of the trend line; whatever came before keeps the rest. */

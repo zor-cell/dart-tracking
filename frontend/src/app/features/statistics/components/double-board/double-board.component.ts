@@ -13,6 +13,7 @@ import {
 import { fieldOutline } from '../../../game/models/board-face';
 import { SECTOR_ORDER } from '../../../game/models/board-geometry';
 import { fieldName, parseField } from '../../../game/models/field-label';
+import { dartCount } from '../../../game/models/dart-count';
 import {
   HEATMAP_LAYERS,
   HeatmapLayer,
@@ -89,7 +90,7 @@ export class DoubleBoardComponent {
       .map(([label, count]) => ({
         label,
         share: count / this.most(),
-        ariaLabel: `${fieldName(label)}: ${count} ${count === 1 ? 'Dart' : 'Darts'}`,
+        ariaLabel: `${fieldName(label)}: ${dartCount(count)}`,
       })),
   );
 
@@ -110,7 +111,7 @@ export class DoubleBoardComponent {
     this.doubles().map((double) => ({
       label: double.label,
       d: fieldOutline(double.label, 0) ?? '',
-      ariaLabel: `${fieldName(double.label)}: ${double.hits} von ${double.attempts} getroffen`,
+      ariaLabel: $localize`:@@stats.doubles.hitRate:${fieldName(double.label)}:field:: ${double.hits}:hits: von ${double.attempts}:attempts: getroffen`,
     })),
   );
 
@@ -138,7 +139,7 @@ export class DoubleBoardComponent {
     const rate = Math.round((hits / Math.max(1, located)) * 100);
     return {
       name: double.name,
-      detail: located === 0 ? 'keine Darts erkannt' : `${hits} / ${located} · ${rate} %`,
+      detail: located === 0 ? $localize`:@@stats.doubles.noneDetected:keine Darts erkannt` : `${hits} / ${located} · ${rate} %`,
     };
   });
 
