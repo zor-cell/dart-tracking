@@ -59,8 +59,7 @@
                 appendTo="body"
                 [dropdown]="true"
                 [showEmptyMessage]="false"
-                ariaLabel="Spieler {{ index + 1 }}"
-                i18n-ariaLabel="@@game.new.seat"
+                [ariaLabel]="seatName(index)"
                 placeholder="Name wählen oder eintippen"
                 i18n-placeholder="@@game.new.seatPlaceholder"
                 fluid
@@ -77,8 +76,7 @@
                 pInputText
                 class="setup__input"
                 [formControl]="seat"
-                attr.aria-label="Spieler {{ index + 1 }}"
-                i18n-attr.aria-label="@@game.new.seat"
+                [attr.aria-label]="seatName(index)"
                 [attr.aria-describedby]="'seat-' + index + '-error'"
                 placeholder="Name"
                 i18n-placeholder="@@player.name"

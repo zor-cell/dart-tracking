@@ -9,6 +9,7 @@
       [ngModel]="view()"
       (ngModelChange)="selectView($event)"
       ariaLabel="Ansicht"
+      i18n-ariaLabel="@@game.replay.view"
       size="small"
     />
   </header>
@@ -25,6 +26,7 @@
           [ngModel]="layer()"
           (ngModelChange)="selectLayer($event)"
           ariaLabel="Darstellung der Heatmap"
+          i18n-ariaLabel="@@game.replay.layer"
           size="small"
         />
         @if (layer() === 'fields') {
@@ -73,21 +75,27 @@
           @if (current) {
             Visit {{ visitNumber() }}
           } @else if (atEnd()) {
-            {{ visitCount() }} {{ visitCount() === 1 ? 'Visit' : 'Visits' }}
+            <ng-container i18n="@@game.replay.visits"
+              >{visitCount(), plural, =1 {1 Visit} other {{{ visitCount() }} Visits}}</ng-container
+            >
           }
         </span>
         <span class="replay__rounds-round">
           @if (current) {
-            Runde {{ round() }}&thinsp;/&thinsp;{{ totalRounds() }}
+            <ng-container i18n="@@game.replay.round"
+              >Runde {{ round() }}&thinsp;/&thinsp;{{ totalRounds() }}</ng-container
+            >
+          } @else if (atEnd()) {
+            <ng-container i18n="@@game.replay.end">Spielende</ng-container>
           } @else {
-            {{ atEnd() ? 'Spielende' : 'Spielstart' }}
+            <ng-container i18n="@@game.replay.start">Spielstart</ng-container>
           }
         </span>
         <span class="replay__rounds-side">
           @if (current) {
             Dart {{ current.dart + 1 }}
           } @else if (atEnd()) {
-            {{ dartCount() }} {{ dartCount() === 1 ? 'Dart' : 'Darts' }}
+            {{ dartTotal() }}
           }
         </span>
       </p>
@@ -98,6 +106,7 @@
         [ngModel]="cursor()"
         (ngModelChange)="playing.set(false); seek($event)"
         ariaLabel="Position im Replay"
+        i18n-ariaLabel="@@game.replay.position"
       />
     </div>
 
@@ -108,6 +117,7 @@
         [text]="true"
         [rounded]="true"
         ariaLabel="Zum Anfang"
+        i18n-ariaLabel="@@game.replay.toStart"
         [disabled]="cursor() === 0"
         (onClick)="jumpTo('start')"
       />
@@ -117,13 +127,14 @@
         [text]="true"
         [rounded]="true"
         ariaLabel="Einen Dart zurück"
+        i18n-ariaLabel="@@game.replay.back"
         [disabled]="cursor() === 0"
         (appRepeatPress)="stepBy(-1)"
       />
       <p-button
         [icon]="playing() ? 'pi pi-pause' : 'pi pi-play'"
         [rounded]="true"
-        [ariaLabel]="playing() ? 'Pause' : 'Abspielen'"
+        [ariaLabel]="playing() ? pauseLabel : playLabel"
         [disabled]="steps().length === 0"
         (onClick)="togglePlay()"
       />
@@ -133,6 +144,7 @@
         [text]="true"
         [rounded]="true"
         ariaLabel="Einen Dart weiter"
+        i18n-ariaLabel="@@game.replay.forward"
         [disabled]="cursor() >= end()"
         (appRepeatPress)="stepBy(1)"
       />
@@ -142,6 +154,7 @@
         [text]="true"
         [rounded]="true"
         ariaLabel="Zum Ende"
+        i18n-ariaLabel="@@game.replay.toEnd"
         [disabled]="cursor() >= end()"
         (onClick)="jumpTo('end')"
       />
@@ -156,6 +169,7 @@
         [ngModel]="speed()"
         (ngModelChange)="speed.set($event)"
         ariaLabel="Geschwindigkeit"
+        i18n-ariaLabel="@@game.replay.speed"
         size="small"
       />
       <p-select
@@ -166,6 +180,7 @@
         [ngModel]="playerId()"
         (ngModelChange)="selectPlayer($event)"
         ariaLabel="Spieler im Replay"
+        i18n-ariaLabel="@@game.replay.player"
         size="small"
       />
     </div>

@@ -41,9 +41,11 @@ function pointOf(context: ScriptableContext<'line'>): RacePoint {
   return (context.raw ?? { x: 0, y: 0 }) as RacePoint;
 }
 
-/** "Runde 3 · Dart 2" for a slot index past the start. */
+/** "Round 3 · Dart 2" for a slot index past the start. */
 function slotTitle(index: number): string {
-  return `Runde ${Math.ceil(index / DARTS_PER_TURN)} · Dart ${((index - 1) % DARTS_PER_TURN) + 1}`;
+  const round = Math.ceil(index / DARTS_PER_TURN);
+  const dart = ((index - 1) % DARTS_PER_TURN) + 1;
+  return $localize`:@@game.race.slot:Runde ${round}:round: · Dart ${dart}:dart:`;
 }
 
 function slotLabel(name: string, point: RacePoint): string {
@@ -209,7 +211,7 @@ export class ScoreRaceComponent {
           type: 'linear',
           min: 0,
           max: this.totalRounds(),
-          title: axisTitle(this.theme, 'Runde'),
+          title: axisTitle(this.theme, $localize`:@@game.race.round:Runde`),
           grid: { display: false },
           border: { display: false },
           ticks: { ...axisTicks(this.theme), stepSize: 1 },
@@ -271,6 +273,6 @@ export class ScoreRaceComponent {
     const standings = this.data()
       .datasets.map((set) => `${set.label} ${set.data.at(-1)?.y ?? ''}`)
       .join(', ');
-    return `Verlauf über ${this.totalRounds()} Runden. Stand: ${standings}`;
+    return $localize`:@@game.race.label:Verlauf über ${this.totalRounds()}:rounds: Runden. Stand: ${standings}:standings:`;
   });
 }

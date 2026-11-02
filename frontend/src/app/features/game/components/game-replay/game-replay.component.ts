@@ -17,6 +17,7 @@ import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
 import { Slider } from 'primeng/slider';
 import { countFields } from '../../models/field-label';
+import { dartCount } from '../../models/dart-count';
 import {
   HEATMAP_LAYERS,
   HeatmapLayer,
@@ -45,9 +46,9 @@ const VIEW_KEY = 'dart-tracking.gameView';
 type ReplayView = 'heatmap' | 'race' | 'distribution';
 
 const VIEWS: readonly { label: string; value: ReplayView }[] = [
-  { label: 'Heatmap', value: 'heatmap' },
-  { label: 'Verlauf', value: 'race' },
-  { label: 'Streuung', value: 'distribution' },
+  { label: $localize`:@@game.replay.heatmap:Heatmap`, value: 'heatmap' },
+  { label: $localize`:@@game.replay.race:Verlauf`, value: 'race' },
+  { label: $localize`:@@game.replay.distribution:Streuung`, value: 'distribution' },
 ];
 
 @Component({
@@ -90,8 +91,10 @@ export class GameReplayComponent implements OnInit {
   );
 
   protected readonly speedOptions = [1, 2, 4].map((value) => ({ label: `${value}×`, value }));
+  protected readonly playLabel = $localize`:@@game.replay.play:Abspielen`;
+  protected readonly pauseLabel = $localize`:@@game.replay.pause:Pause`;
   protected readonly playerOptions = computed(() => [
-    { label: 'Alle Spieler', value: null },
+    { label: $localize`:@@game.replay.allPlayers:Alle Spieler`, value: null },
     ...this.players().map((player) => ({ label: player.name, value: player.id })),
   ]);
 
@@ -180,6 +183,7 @@ export class GameReplayComponent implements OnInit {
 
   protected readonly visitCount = computed(() => this.replayedVisits().length);
   protected readonly dartCount = computed(() => this.steps().length);
+  protected readonly dartTotal = computed(() => dartCount(this.dartCount()));
 
   /** Number of the visit on the board among the replayed ones, so it ends at `visitCount`. */
   protected readonly visitNumber = computed(() => {

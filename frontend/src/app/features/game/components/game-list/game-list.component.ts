@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, formatDate } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -37,6 +37,7 @@ import { ListToolbarComponent } from '../../../../core/view/components/list-tool
 import { PeriodPickerComponent } from '../../../../core/view/components/period-picker/period-picker.component';
 import { DayRange, dayRangeLabel } from '../../../../core/view/models/day-range';
 import { backState } from '../../../../core/view/models/back-state';
+import { SHORT_DATE, SHORT_DATE_TIME } from '../../../../core/i18n/models/date-format';
 import {
   FilterChip,
   FilterChipOpen,
@@ -116,6 +117,7 @@ export class GameListComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly variantOptions = [...GAME_VARIANTS];
+  protected readonly shortDate = SHORT_DATE;
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
   protected readonly checkoutOptions = [...CHECKOUT_MODES];
   protected readonly statusOptions = Object.entries(GAME_STATUS_LABELS).map(([value, label]) => ({
@@ -166,7 +168,7 @@ export class GameListComponent {
     }
     const visit = this.visit();
     if (visit) {
-      chips.push({ key: 'visit', label: `Mit ${visitBandLabel(visit)}` });
+      chips.push({ key: 'visit', label: $localize`:@@game.list.with:Mit ${visitBandLabel(visit)}:what:` });
     }
     return chips;
   });
@@ -206,7 +208,7 @@ export class GameListComponent {
     if (names.length === 0) {
       return null;
     }
-    return key === 'opponentId' ? `Mit ${orList(names)}` : orList(names);
+    return key === 'opponentId' ? $localize`:@@game.list.with:Mit ${orList(names)}:what:` : orList(names);
   }
 
   private nameOf(key: Remembered, value: unknown): string | null {
@@ -236,12 +238,21 @@ export class GameListComponent {
   }
 
   protected open(game: GameSummaryDto): void {
-    void this.router.navigate(['/account/games', game.id], { state: backState('Spiele') });
+    void this.router.navigate(['/account/games', game.id], {
+      state: backState($localize`:@@auth.account.games:Spiele`),
+    });
   }
 
-  /** Who played, "Du" for the account itself; past three only the first two and a count. */
+  protected openLabel(game: GameSummaryDto): string {
+    const when = formatDate(game.createdAt, SHORT_DATE_TIME, this.locale);
+    return $localize`:@@game.list.open:Spiel vom ${when}:date: öffnen`;
+  }
+
+  /** Who played, "You" for the account itself; past three only the first two and a count. */
   protected playerNames(game: GameSummaryDto): string {
-    const names = game.players.map((player) => (player.isMe ? 'Du' : player.name));
+    const names = game.players.map((player) =>
+      player.isMe ? $localize`:@@player.list.self:Du` : player.name,
+    );
     if (names.length <= 3) {
       return names.join(', ');
     }

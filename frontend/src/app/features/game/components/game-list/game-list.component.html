@@ -1,11 +1,12 @@
 <section class="view">
   <header class="view__header view__header--sticky">
-    <app-back-link label="Konto" link="/account" />
-    <h1 class="view__title">Spiele</h1>
+    <app-back-link label="Konto" i18n-label="@@auth.account.title" link="/account" />
+    <h1 class="view__title" i18n="@@auth.account.games">Spiele</h1>
   </header>
 
   <app-list-toolbar
     searchLabel="Spieler suchen"
+    i18n-searchLabel="@@player.list.search"
     [filterable]="true"
     [chips]="chips()"
     [suggestions]="suggestions()"
@@ -16,7 +17,7 @@
     (reset)="resetFilters()"
   >
     <form class="list-filters" [formGroup]="filters">
-      <label class="list-filters__label" for="filter-variant">Variante</label>
+      <label class="list-filters__label" for="filter-variant" i18n="@@game.new.variant">Variante</label>
       <p-multiselect
         inputId="filter-variant"
         formControlName="variant"
@@ -24,11 +25,12 @@
         optionLabel="label"
         optionValue="value"
         placeholder="Alle"
+        i18n-placeholder="@@player.list.all"
         [showHeader]="false"
         [showClear]="true"
         fluid
       />
-      <label class="list-filters__label" for="filter-mode">Modus</label>
+      <label class="list-filters__label" for="filter-mode" i18n="@@game.new.mode">Modus</label>
       <p-multiselect
         inputId="filter-mode"
         formControlName="mode"
@@ -36,6 +38,7 @@
         optionLabel="label"
         optionValue="value"
         placeholder="Alle"
+        i18n-placeholder="@@player.list.all"
         [showHeader]="false"
         [showClear]="true"
         fluid
@@ -48,11 +51,12 @@
         optionLabel="label"
         optionValue="value"
         placeholder="Alle"
+        i18n-placeholder="@@player.list.all"
         [showHeader]="false"
         [showClear]="true"
         fluid
       />
-      <label class="list-filters__label" for="filter-status">Status</label>
+      <label class="list-filters__label" for="filter-status" i18n="@@game.list.status">Status</label>
       <p-multiselect
         inputId="filter-status"
         formControlName="status"
@@ -60,11 +64,12 @@
         optionLabel="label"
         optionValue="value"
         placeholder="Ohne ausgeblendete"
+        i18n-placeholder="@@game.list.notHidden"
         [showHeader]="false"
         [showClear]="true"
         fluid
       />
-      <label class="list-filters__label" for="filter-opponent">Mitspieler</label>
+      <label class="list-filters__label" for="filter-opponent" i18n="@@game.list.opponent">Mitspieler</label>
       <p-multiselect
         inputId="filter-opponent"
         formControlName="opponentId"
@@ -72,11 +77,13 @@
         optionLabel="name"
         optionValue="id"
         placeholder="Alle"
+        i18n-placeholder="@@player.list.all"
         filterPlaceHolder="Spieler suchen"
+        i18n-filterPlaceHolder="@@player.list.search"
         [showClear]="true"
         fluid
       />
-      <label class="list-filters__label" for="filter-players">Spieleranzahl</label>
+      <label class="list-filters__label" for="filter-players" i18n="@@game.list.playerCount">Spieleranzahl</label>
       <p-multiselect
         inputId="filter-players"
         formControlName="players"
@@ -84,6 +91,7 @@
         optionLabel="label"
         optionValue="value"
         placeholder="Alle"
+        i18n-placeholder="@@player.list.all"
         [showHeader]="false"
         [showClear]="true"
         fluid
@@ -99,9 +107,13 @@
   />
 
   @if (games.failed()) {
-    <app-load-error message="Die Spiele konnten nicht geladen werden." (retry)="games.load()" />
+    <app-load-error
+      message="Die Spiele konnten nicht geladen werden."
+      i18n-message="@@game.list.loadFailed"
+      (retry)="games.load()"
+    />
   } @else if (!games.loaded()) {
-    <app-loading-state label="Spiele werden geladen" />
+    <app-loading-state label="Spiele werden geladen" i18n-label="@@game.list.loading" />
   } @else {
     <p-table
       [value]="games.items()"
@@ -121,14 +133,14 @@
       size="small"
     >
       <ng-template #loadingicon>
-        <app-loading-state label="Spiele werden geladen" />
+        <app-loading-state label="Spiele werden geladen" i18n-label="@@game.list.loading" />
       </ng-template>
       <ng-template #header>
         <tr>
-          <th scope="col">Datum</th>
-          <th scope="col">Spiel</th>
-          <th scope="col">Spieler</th>
-          <th scope="col">Status</th>
+          <th scope="col" i18n="@@game.list.date">Datum</th>
+          <th scope="col" i18n="@@common.nav.game">Spiel</th>
+          <th scope="col" i18n="@@game.new.players">Spieler</th>
+          <th scope="col" i18n="@@game.list.status">Status</th>
         </tr>
       </ng-template>
       <ng-template #body let-game>
@@ -136,17 +148,17 @@
           class="data-table__link"
           tabindex="0"
           role="link"
-          [attr.aria-label]="'Spiel vom ' + (game.createdAt | date: 'dd.MM.yy HH:mm') + ' öffnen'"
+          [attr.aria-label]="openLabel(game)"
           (click)="open(game)"
           (keydown.enter)="open(game)"
         >
           <td class="games__when">
-            {{ game.createdAt | date: 'dd.MM.yy' }}
+            {{ game.createdAt | date: shortDate }}
             <span class="data-table__hint">{{ game.createdAt | date: 'HH:mm' }}</span>
           </td>
           <td>
             @if (game.variant === 'elimination') {
-              <span class="games__variant">Elim.</span>
+              <span class="games__variant" i18n="@@game.list.elimShort">Elim.</span>
             }
             {{ game.mode }}
           </td>
@@ -160,7 +172,11 @@
         <tr>
           <td colspan="4">
             <app-empty-state [icon]="filtered() ? 'pi-filter-slash' : 'pi-history'">
-              <p>{{ filtered() ? 'Keine Spiele für diese Suche.' : 'Noch keine Spiele.' }}</p>
+              @if (filtered()) {
+                <p i18n="@@game.list.noMatch">Keine Spiele für diese Suche.</p>
+              } @else {
+                <p i18n="@@game.list.empty">Noch keine Spiele.</p>
+              }
             </app-empty-state>
           </td>
         </tr>

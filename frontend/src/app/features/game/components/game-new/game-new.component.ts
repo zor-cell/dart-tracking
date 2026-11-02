@@ -123,8 +123,11 @@ export class GameNewComponent {
     }
   }
 
+  protected readonly seatName = (index: number): string =>
+    $localize`:@@game.new.seatName:Spieler ${index + 1}:number:`;
+
   protected readonly seatLabel = (seat: FormControl<Seat>, index: number): string =>
-    this.label(seat.value) || $localize`:@@game.new.seatName:Spieler ${index + 1}:number:`;
+    this.label(seat.value) || this.seatName(index);
 
   private label(seat: Seat): string {
     return typeof seat === 'string' ? seat : seat.name;

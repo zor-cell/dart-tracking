@@ -19,6 +19,7 @@ import {
 } from '../../models/board-face';
 import { toSvg } from '../../models/board-geometry';
 import { fieldName } from '../../models/field-label';
+import { dartCount } from '../../models/dart-count';
 import { HEAT_CUTOFF, cssColor, heatColor } from '../../models/heat-colors';
 import { TipDensity, TipPoint, tipDensity } from '../../models/tip-density';
 import { BoardFaceComponent, FieldEnter } from '../board-face/board-face.component';
@@ -86,14 +87,16 @@ export class TipHeatmapComponent {
     this.points().reduce((sum, [, , count = 1]) => sum + count, 0),
   );
 
-  protected readonly ariaLabel = computed(() => `Dartscheibe mit ${this.total()} erkannten Darts`);
+  protected readonly ariaLabel = computed(
+    () => $localize`:@@game.heatmap.tipsLabel:Dartscheibe mit ${this.total()}:count: erkannten Darts`,
+  );
 
   /** How many darts the camera placed, written in the corner. */
   protected readonly caption = computed(() => {
     const total = this.total();
     return total === 0
-      ? 'Keine Darts erkannt'
-      : `${total} ${total === 1 ? 'Dart' : 'Darts'} erkannt`;
+      ? $localize`:@@game.heatmap.noneDetected:Keine Darts erkannt`
+      : $localize`:@@game.heatmap.detected:${dartCount(total)}:darts: erkannt`;
   });
 
   protected readonly marks = computed(() =>
@@ -119,7 +122,7 @@ export class TipHeatmapComponent {
   protected readonly fields = computed(() =>
     [...(this.counts() ?? [])].flatMap(([label, count]) => {
       const d = fieldOutline(label, 0);
-      const ariaLabel = `${fieldName(label)}: ${count} ${count === 1 ? 'Dart' : 'Darts'}`;
+      const ariaLabel = `${fieldName(label)}: ${dartCount(count)}`;
       return d === null ? [] : [{ label, d, ariaLabel }];
     }),
   );
@@ -143,10 +146,10 @@ export class TipHeatmapComponent {
     }
     const located = [...(this.counts()?.values() ?? [])].reduce((sum, count) => sum + count, 0);
     const share = Math.round((field.count / Math.max(1, located)) * 100);
-    const darts = `${field.count} ${field.count === 1 ? 'Dart' : 'Darts'}`;
+    const darts = dartCount(field.count);
     return {
       name: field.name,
-      detail: field.count === 0 ? 'keine Treffer' : `${darts} · ${share} %`,
+      detail: field.count === 0 ? $localize`:@@game.heatmap.noHits:keine Treffer` : `${darts} · ${share} %`,
     };
   });
 

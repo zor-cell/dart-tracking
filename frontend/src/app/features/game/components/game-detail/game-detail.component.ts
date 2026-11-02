@@ -19,6 +19,7 @@ import { EmptyStateComponent } from '../../../../core/view/components/empty-stat
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
 import { ConfirmService } from '../../../../core/view/services/confirm.service';
+import { SHORT_DATE_TIME } from '../../../../core/i18n/models/date-format';
 
 const GAME_FIGURES = ['average', 'firstNine', 'darts', 'bestVisit', 'grouping'] as const;
 const CHECKOUT_FIGURES = ['checkout', 'doubleDistance', 'busts'] as const;
@@ -87,6 +88,9 @@ export class GameDetailComponent {
   protected readonly actionError = signal<string | null>(null);
 
   protected readonly isElimination = computed(() => this.detail()?.game.variant === 'elimination');
+  protected readonly shortDateTime = SHORT_DATE_TIME;
+  protected readonly showLabel = $localize`:@@game.detail.show:Wieder einblenden`;
+  protected readonly hideLabel = $localize`:@@game.detail.hide:Für dich ausblenden`;
 
   protected readonly variantLabel = computed(() => {
     const variant = this.detail()?.game.variant;
@@ -127,17 +131,18 @@ export class GameDetailComponent {
 
   /** The figures compared per player, grouped; elimination has no checkout, so busts join the game. */
   protected readonly figureRows = computed<FigureRow[]>(() => {
-    const game = GAME_FIGURES.map((figure) => ({ figure, group: 'Spiel' }));
+    const group = $localize`:@@common.nav.game:Spiel`;
+    const game = GAME_FIGURES.map((figure) => ({ figure, group }));
     return this.isElimination()
-      ? [...game, { figure: 'busts', group: 'Spiel' }]
+      ? [...game, { figure: 'busts', group }]
       : [...game, ...CHECKOUT_FIGURES.map((figure) => ({ figure, group: 'Checkout' }))];
   });
 
   protected confirmResume(): void {
     this.confirm.ask(
-      'Spiel fortsetzen?',
-      'Das Spiel läuft danach wieder und zählt erst in die Statistik, wenn es beendet ist.',
-      'Fortsetzen',
+      $localize`:@@game.detail.resumeTitle:Spiel fortsetzen?`,
+      $localize`:@@game.detail.resumeText:Das Spiel läuft danach wieder und zählt erst in die Statistik, wenn es beendet ist.`,
+      $localize`:@@game.detail.resumeAction:Fortsetzen`,
       () => void this.resume(),
       true,
     );
@@ -158,8 +163,8 @@ export class GameDetailComponent {
       this.actionError.set(
         httpErrorMessage(
           failure,
-          { 404: 'Dieses Spiel ist schon vorbei und lässt sich nicht fortsetzen.' },
-          'Das Spiel konnte nicht fortgesetzt werden.',
+          { 404: $localize`:@@game.detail.resumeGone:Dieses Spiel ist schon vorbei und lässt sich nicht fortsetzen.` },
+          $localize`:@@game.detail.resumeFailed:Das Spiel konnte nicht fortgesetzt werden.`,
         ),
       );
     } finally {
@@ -170,20 +175,17 @@ export class GameDetailComponent {
   protected confirmToggleHidden(): void {
     if (this.hidden()) {
       this.confirm.ask(
-        'Wieder einblenden?',
-        'Das Spiel steht wieder in deiner Spieleliste und zählt in deine Statistik, sobald es ' +
-          'beendet ist.',
-        'Einblenden',
+        $localize`:@@game.detail.showTitle:Wieder einblenden?`,
+        $localize`:@@game.detail.showText:Das Spiel steht wieder in deiner Spieleliste und zählt in deine Statistik, sobald es beendet ist.`,
+        $localize`:@@game.detail.showAction:Einblenden`,
         () => void this.toggleHidden(),
         true,
       );
     } else {
       this.confirm.ask(
-        'Für dich ausblenden?',
-        'Das Spiel zählt nicht mehr in deine Statistik und verschwindet aus deiner Spieleliste, ' +
-          'bis du nach „ausgeblendet“ filterst. Für die anderen Spieler ändert sich nichts. Du ' +
-          'kannst es hier jederzeit wieder einblenden.',
-        'Ausblenden',
+        $localize`:@@game.detail.hideTitle:Für dich ausblenden?`,
+        $localize`:@@game.detail.hideText:Das Spiel zählt nicht mehr in deine Statistik und verschwindet aus deiner Spieleliste, bis du nach „ausgeblendet“ filterst. Für die anderen Spieler ändert sich nichts. Du kannst es hier jederzeit wieder einblenden.`,
+        $localize`:@@game.detail.hideAction:Ausblenden`,
         () => void this.toggleHidden(),
         true,
       );
@@ -203,7 +205,7 @@ export class GameDetailComponent {
       this.detail.set(await this.history.detail(gameId));
     } catch (failure) {
       this.actionError.set(
-        httpErrorMessage(failure, {}, 'Das Spiel konnte nicht geändert werden.'),
+        httpErrorMessage(failure, {}, $localize`:@@game.detail.changeFailed:Das Spiel konnte nicht geändert werden.`),
       );
     } finally {
       this.hiding.set(false);

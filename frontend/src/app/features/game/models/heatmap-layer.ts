@@ -4,8 +4,8 @@ import { readStored, writeStored } from '../../../core/storage/models/browser-st
 export type HeatmapLayer = 'tips' | 'fields';
 
 export const HEATMAP_LAYERS: readonly { label: string; value: HeatmapLayer }[] = [
-  { label: 'Treffer', value: 'tips' },
-  { label: 'Felder', value: 'fields' },
+  { label: $localize`:@@game.layer.tips:Treffer`, value: 'tips' },
+  { label: $localize`:@@game.layer.fields:Felder`, value: 'fields' },
 ];
 
 /** Where the last chosen layer is kept; every heatmap opens on it. */

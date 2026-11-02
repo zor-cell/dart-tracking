@@ -34,16 +34,16 @@ export function visitBandLabel(band: VisitBand): string {
 export type PlayerCount = 'solo' | 'duel' | 'group';
 
 export const PLAYER_COUNT_LABELS: Record<PlayerCount, string> = {
-  solo: 'Allein',
-  duel: 'Zu zweit',
-  group: 'Ab drei',
+  solo: $localize`:@@game.filter.solo:Allein`,
+  duel: $localize`:@@game.filter.duel:Zu zweit`,
+  group: $localize`:@@game.filter.group:Ab drei`,
 };
 
 export const GAME_STATUS_LABELS: Record<GameStatus, string> = {
-  active: 'läuft',
-  finished: 'beendet',
-  abandoned: 'abgebrochen',
-  discarded: 'ausgeblendet',
+  active: $localize`:@@game.status.active:läuft`,
+  finished: $localize`:@@game.status.finished:beendet`,
+  abandoned: $localize`:@@game.status.abandoned:abgebrochen`,
+  discarded: $localize`:@@game.status.discarded:ausgeblendet`,
 };
 
 export type GameStatusSeverity = 'success' | 'secondary' | 'warn' | 'danger';

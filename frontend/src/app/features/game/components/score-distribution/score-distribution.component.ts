@@ -110,7 +110,7 @@ export class ScoreDistributionComponent {
             {
               // Points joined into a vertical stroke, close enough that hovering anywhere on it hits one.
               showLine: true,
-              label: `Durchschnitt ${this.players()[row].name}`,
+              label: $localize`:@@game.distribution.averageOf:Durchschnitt ${this.players()[row].name}:name:`,
               data: Array.from({ length: AVERAGE_STEPS }, (_, step) => ({
                 x: average,
                 y: row - AVERAGE_HALF_HEIGHT + (2 * AVERAGE_HALF_HEIGHT * step) / (AVERAGE_STEPS - 1),
@@ -155,7 +155,7 @@ export class ScoreDistributionComponent {
             scale.ticks = Array.from({ length: MAX_VISIT / 20 + 1 }, (_, i) => ({ value: i * 20 }));
           },
           ticks: axisTicks(this.theme),
-          title: axisTitle(this.theme, 'Punkte pro Visit'),
+          title: axisTitle(this.theme, $localize`:@@game.distribution.axis:Punkte pro Visit`),
         },
         y: {
           reverse: true,
@@ -188,11 +188,13 @@ export class ScoreDistributionComponent {
               // The dot datasets come first, one per player; the average marks follow.
               if (item.datasetIndex >= names.length) {
                 const average = averages[Math.round(item.parsed.y ?? 0)] ?? 0;
-                return `Durchschnitt: ${this.decimal.transform(average, '1.1-1')}`;
+                return $localize`:@@game.distribution.average:Durchschnitt: ${this.decimal.transform(average, '1.1-1')}:value:`;
               }
               const point = item.raw as StripPoint;
               const rounds = point.rounds.join(', ');
-              return point.count === 1 ? `Runde ${rounds}: ${point.x}` : `Runden ${rounds}: ${point.x}`;
+              return point.count === 1
+                ? $localize`:@@game.distribution.round:Runde ${rounds}:rounds:: ${point.x}:points:`
+                : $localize`:@@game.distribution.rounds:Runden ${rounds}:rounds:: ${point.x}:points:`;
             },
           },
         },
@@ -207,10 +209,13 @@ export class ScoreDistributionComponent {
         .map(({ visit }) => visit.points)
         .join(', ');
       const average = this.averages()[row];
-      const shown = average === null ? '' : `, Durchschnitt ${this.decimal.transform(average, '1.1-1')}`;
+      const shown =
+        average === null
+          ? ''
+          : $localize`:@@game.distribution.averageSuffix:, Durchschnitt ${this.decimal.transform(average, '1.1-1')}:value:`;
       return `${player.name}: ${points}${shown}`;
     });
-    return `Punkte jedes Visits pro Spieler. ${rows.join('. ')}`;
+    return $localize`:@@game.distribution.label:Punkte jedes Visits pro Spieler. ${rows.join('. ')}:rows:`;
   });
 }
 

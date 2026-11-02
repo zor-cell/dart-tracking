@@ -4,6 +4,7 @@ import { DartDto } from '../../dto/dart.dto';
 import { fieldOutline } from '../../models/board-face';
 import { dartColor } from '../../models/dart-colors';
 import { fieldName } from '../../models/field-label';
+import { dartCount } from '../../models/dart-count';
 import { FieldFramesComponent } from '../field-frames/field-frames.component';
 import { HeatBoardComponent, HeatField } from '../heat-board/heat-board.component';
 
@@ -29,6 +30,7 @@ export class FieldHeatmapComponent {
   readonly current = input<readonly DartDto[]>([]);
 
   protected readonly miss = MISS;
+  protected readonly dartCount = dartCount;
 
   /** The field last tapped; bound by a view that keeps it across layers. */
   readonly pinned = model<string | null>(null);
@@ -52,11 +54,14 @@ export class FieldHeatmapComponent {
       .map(([label, count]) => ({
         label,
         share: count / this.most(),
-        ariaLabel: `${fieldName(label)}: ${count} ${count === 1 ? 'Dart' : 'Darts'}`,
+        ariaLabel: `${fieldName(label)}: ${dartCount(count)}`,
       })),
   );
 
   protected readonly misses = computed(() => this.counts().get(MISS) ?? 0);
+  protected readonly missLabel = computed(
+    () => $localize`:@@game.heatmap.missLabel:Daneben: ${dartCount(this.misses())}:darts:`,
+  );
   protected readonly missOpacity = computed(() => {
     const misses = this.misses();
     const share = Math.min(1, misses / this.most());
@@ -90,9 +95,9 @@ export class FieldHeatmapComponent {
       .filter(([label]) => label !== MISS)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
-      .map(([label, count]) => `${fieldName(label)} ${count}-mal`)
+      .map(([label, count]) => $localize`:@@game.heatmap.times:${fieldName(label)}:field: ${count}:count:-mal`)
       .join(', ');
-    return `Dartscheibe mit ${this.total()} Darts nach Feld. ${top}`;
+    return $localize`:@@game.heatmap.fieldsLabel:Dartscheibe mit ${this.total()}:count: Darts nach Feld. ${top}:top:`;
   });
 
   protected toggleMiss(): void {

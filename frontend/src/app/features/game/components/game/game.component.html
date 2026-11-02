@@ -211,8 +211,7 @@
                     [class.turn__dart--busted]="turn.busted"
                     [class.turn__dart--selected]="selectedDart() === $index"
                     [attr.aria-pressed]="selectedDart() === $index"
-                    attr.aria-label="{{ dart.label }} auswählen und korrigieren"
-                    i18n-attr.aria-label="@@game.pickDart"
+                    [attr.aria-label]="pickLabel(dart.label)"
                     (click)="selectDart($index)"
                   >
                     {{ dart.label }}

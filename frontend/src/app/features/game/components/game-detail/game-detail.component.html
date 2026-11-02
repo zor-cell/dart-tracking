@@ -1,6 +1,6 @@
 <section class="view">
   <header class="view__header view__header--sticky">
-    <app-back-link label="Spiele" link="/account/games" />
+    <app-back-link label="Spiele" i18n-label="@@auth.account.games" link="/account/games" />
     @if (detail(); as detail) {
       <div class="heading">
         <h1 class="view__title">{{ variantLabel() }} {{ detail.game.mode }}</h1>
@@ -8,7 +8,7 @@
         <div class="heading__actions">
           <p-button
             [icon]="hidden() ? 'pi pi-eye' : 'pi pi-eye-slash'"
-            [ariaLabel]="hidden() ? 'Wieder einblenden' : 'Für dich ausblenden'"
+            [ariaLabel]="hidden() ? showLabel : hideLabel"
             severity="secondary"
             [rounded]="true"
             [text]="true"
@@ -19,6 +19,7 @@
             <p-button
               icon="pi pi-play"
               ariaLabel="Spiel fortsetzen"
+              i18n-ariaLabel="@@game.detail.resume"
               [rounded]="true"
               [loading]="resuming()"
               (onClick)="confirmResume()"
@@ -29,13 +30,13 @@
       <ul class="facts">
         <li class="facts__item">
           <i class="pi pi-calendar" aria-hidden="true"></i>
-          <span class="sr-only">Gestartet</span>
-          {{ detail.createdAt | date: 'dd.MM.yy, HH:mm' }}
+          <span class="sr-only" i18n="@@game.detail.started">Gestartet</span>
+          {{ detail.createdAt | date: shortDateTime }}
         </li>
         @if (durationMinutes(); as minutes) {
           <li class="facts__item">
             <i class="pi pi-stopwatch" aria-hidden="true"></i>
-            <span class="sr-only">Dauer</span>
+            <span class="sr-only" i18n="@@game.detail.duration">Dauer</span>
             {{ minutes }} min
           </li>
         }
@@ -46,36 +47,49 @@
         </li>
       </ul>
     } @else {
-      <h1 class="view__title">Spiel</h1>
+      <h1 class="view__title" i18n="@@common.nav.game">Spiel</h1>
     }
   </header>
 
   @if (loading()) {
-    <app-loading-state label="Spiel wird geladen" />
+    <app-loading-state label="Spiel wird geladen" i18n-label="@@game.loading" />
   } @else if (missing()) {
     <app-empty-state icon="pi-question-circle">
-      <p>Dieses Spiel gibt es nicht, oder du hast nicht mitgespielt.</p>
-      <p-button label="Zu deinen Spielen" icon="pi pi-history" routerLink="/account/games" />
+      <p i18n="@@game.detail.missing">Dieses Spiel gibt es nicht, oder du hast nicht mitgespielt.</p>
+      <p-button
+        label="Zu deinen Spielen"
+        i18n-label="@@game.detail.toGames"
+        icon="pi pi-history"
+        routerLink="/account/games"
+      />
     </app-empty-state>
   } @else if (failed()) {
-    <app-load-error message="Das Spiel konnte nicht geladen werden." (retry)="load()" />
+    <app-load-error
+      message="Das Spiel konnte nicht geladen werden."
+      i18n-message="@@game.detail.loadFailed"
+      (retry)="load()"
+    />
   } @else if (detail(); as detail) {
     @if (actionError(); as message) {
       <p-message severity="error" [text]="message" />
     }
     <section class="panel">
-      <h2 class="panel__title">Spieler</h2>
+      <h2 class="panel__title" i18n="@@game.new.players">Spieler</h2>
       <ol class="standings">
         @for (player of standings(); track player.id) {
           <li class="standings__row" [class.standings__row--winner]="player.won">
             <span class="standings__rank">{{ $index + 1 }}.</span>
             <span class="standings__name">{{ player.name }}</span>
             @if (player.won) {
-              <i class="pi pi-trophy standings__trophy" aria-label="Gewinner"></i>
+              <i class="pi pi-trophy standings__trophy" aria-label="Gewinner" i18n-aria-label="@@game.detail.winner"></i>
             }
             <span class="standings__remaining">
               {{ player.remaining }}
-              <span class="standings__unit">{{ isElimination() ? 'fehlen' : 'Rest' }}</span>
+              @if (isElimination()) {
+                <span class="standings__unit" i18n="@@game.detail.missingPoints">fehlen</span>
+              } @else {
+                <span class="standings__unit" i18n="@@game.detail.remaining">Rest</span>
+              }
             </span>
           </li>
         }
@@ -83,8 +97,8 @@
     </section>
 
     <section class="panel">
-      <h2 class="panel__title">Statistik</h2>
-      <div class="table-scroll" tabindex="0" role="region" aria-label="Statistik pro Spieler">
+      <h2 class="panel__title" i18n="@@auth.account.stats">Statistik</h2>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Statistik pro Spieler" i18n-aria-label="@@game.detail.figures">
         <p-table
           [value]="figureRows()"
           class="data-table"
@@ -95,7 +109,7 @@
         >
           <ng-template #header>
             <tr>
-              <th scope="col"><span class="sr-only">Kennzahl</span></th>
+              <th scope="col"><span class="sr-only" i18n="@@game.detail.figure">Kennzahl</span></th>
               @for (player of standings(); track player.id) {
                 <th scope="col" class="data-table__number">{{ player.name }}</th>
               }
@@ -134,13 +148,13 @@
                   }
                 }
                 @case ('bestVisit') {
-                  <th scope="row" class="figures__label">Bester Visit</th>
+                  <th scope="row" class="figures__label" i18n="@@game.detail.bestVisit">Bester Visit</th>
                   @for (player of standings(); track player.id) {
                     <td class="data-table__number">{{ player.statistics.bestVisit }}</td>
                   }
                 }
                 @case ('grouping') {
-                  <th scope="row" class="figures__label">Ø Pfeilabstand</th>
+                  <th scope="row" class="figures__label" i18n="@@game.detail.grouping">Ø Pfeilabstand</th>
                   @for (player of standings(); track player.id) {
                     <td class="data-table__number">
                       @if (player.statistics.grouping !== null) {
@@ -174,7 +188,7 @@
                   }
                 }
                 @case ('doubleDistance') {
-                  <th scope="row" class="figures__label">Ø Abstand</th>
+                  <th scope="row" class="figures__label" i18n="@@game.detail.doubleDistance">Ø Abstand</th>
                   @for (player of standings(); track player.id) {
                     <td class="data-table__number">
                       @if (player.statistics.doubleDistance !== null) {

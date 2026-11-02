@@ -115,6 +115,8 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly exitFullscreenLabel = $localize`:@@game.exitFullscreen:Vollbild verlassen`;
   protected readonly undoLabel = $localize`:@@game.undo:Zurück`;
   protected readonly deleteDartLabel = $localize`:@@game.deleteDart:Ausgewählten Dart löschen`;
+  protected readonly pickLabel = (label: string): string =>
+    $localize`:@@game.pickDart:${label}:field: auswählen und korrigieren`;
   protected readonly shadowLabel = (label: string | null): string =>
     $localize`:@@game.shadowDart:${label}:field:, erkannt, nicht gewertet`;
   protected readonly deviceRole = this.session.role;

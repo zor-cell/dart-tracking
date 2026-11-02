@@ -10,14 +10,16 @@
   <p caption class="caption">
     @if (selected(); as field) {
       <strong>{{ field.name }}</strong> &middot;
-      @if (field.count === 0) {
-        {{ field.label === miss ? 'keine Darts' : 'keine Treffer' }}
+      @if (field.count === 0 && field.label === miss) {
+        <ng-container i18n="@@game.heatmap.noDarts">keine Darts</ng-container>
+      } @else if (field.count === 0) {
+        <ng-container i18n="@@game.heatmap.noHits">keine Treffer</ng-container>
       } @else {
-        {{ field.count }} {{ field.count === 1 ? 'Dart' : 'Darts' }} &middot;
+        {{ dartCount(field.count) }} &middot;
         {{ field.share | number: '1.0-0' }}&nbsp;%
       }
     } @else {
-      <span class="caption__summary">{{ total() }} Darts</span>
+      <span class="caption__summary">{{ dartCount(total()) }}</span>
     }
   </p>
 
@@ -27,7 +29,7 @@
     class="miss"
     [class.miss--selected]="selected()?.label === miss"
     [attr.aria-pressed]="selected()?.label === miss"
-    [attr.aria-label]="'Daneben: ' + misses() + (misses() === 1 ? ' Dart' : ' Darts')"
+    [attr.aria-label]="missLabel()"
     (click)="toggleMiss()"
     (pointerenter)="onMissEnter($event)"
     (pointerleave)="hovered.set(null)"
@@ -35,7 +37,7 @@
     <span class="miss__swatch" [style.border-color]="missOrdinals()[0]?.color">
       <span class="miss__fill" [style.opacity]="missOpacity()"></span>
     </span>
-    Daneben
+    <ng-container i18n="@@game.miss">Daneben</ng-container>
     @for (ordinal of missOrdinals(); track ordinal.value) {
       <span class="miss__ordinal" [style.color]="ordinal.color">{{ ordinal.value }}</span>
     }
