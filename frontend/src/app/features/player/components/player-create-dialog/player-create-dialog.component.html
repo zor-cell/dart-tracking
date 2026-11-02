@@ -1,5 +1,6 @@
 <p-dialog
   header="Spieler hinzufügen"
+  i18n-header="@@player.create.title"
   [modal]="true"
   [draggable]="false"
   [(visible)]="visible"
@@ -9,7 +10,7 @@
 >
   <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
     <div class="auth-form__field">
-      <label class="auth-form__label" for="create-player-name">Name</label>
+      <label class="auth-form__label" for="create-player-name" i18n="@@player.name">Name</label>
       <input
         pInputText
         id="create-player-name"
@@ -30,6 +31,7 @@
       <p-button
         type="button"
         label="Abbrechen"
+        i18n-label="@@common.cancel"
         severity="secondary"
         [text]="true"
         [disabled]="busy()"
@@ -38,6 +40,7 @@
       <p-button
         type="submit"
         label="Hinzufügen"
+        i18n-label="@@player.create.submit"
         icon="pi pi-plus"
         [loading]="busy()"
         [disabled]="form.invalid"

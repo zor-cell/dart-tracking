@@ -37,6 +37,11 @@ export class PlayerLinksComponent {
   protected readonly leaving = signal<PlayerLinkDto | null>(null);
   protected readonly dialogOpen = signal(false);
   protected readonly busy = signal(false);
+  protected readonly leaveHeader = computed(() =>
+    this.leaving()?.retired
+      ? $localize`:@@player.links.removeHistoryTitle:Bisherige Spiele entfernen`
+      : $localize`:@@player.unlinkTitle:Verknüpfung lösen`,
+  );
 
   constructor() {
     void this.load();

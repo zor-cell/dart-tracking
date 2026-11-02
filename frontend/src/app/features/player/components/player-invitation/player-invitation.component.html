@@ -1,20 +1,20 @@
 <section class="view">
   <header class="view__header">
-    <h1 class="view__title">Spieler verknüpfen</h1>
+    <h1 class="view__title" i18n="@@player.linkPlayer">Spieler verknüpfen</h1>
   </header>
 
   @switch (state()) {
     @case ('loading') {
-      <app-loading-state label="Einladung wird geladen" />
+      <app-loading-state label="Einladung wird geladen" i18n-label="@@player.invitation.loading" />
     }
     @case ('ready') {
       @if (invitation(); as current) {
         <div class="invitation">
-          <p class="invitation__text">
+          <p class="invitation__text" i18n="@@player.invitation.text">
             <strong>{{ current.inviterName }}</strong> möchte den Spieler
             <strong>„{{ current.playerName }}“</strong> mit deinem Konto verknüpfen.
           </p>
-          <p class="invitation__hint">
+          <p class="invitation__hint" i18n="@@player.invitation.hint">
             {{ historyText() }} Du kannst die Verknüpfung jederzeit wieder lösen.
           </p>
 
@@ -34,6 +34,7 @@
           <p-button
             fluid
             label="Verknüpfen"
+            i18n-label="@@player.invitation.accept"
             icon="pi pi-link"
             [loading]="accepting()"
             (onClick)="accept()"
@@ -41,6 +42,7 @@
           <p-button
             fluid
             label="Ablehnen"
+            i18n-label="@@player.invitation.decline"
             severity="secondary"
             [outlined]="true"
             [disabled]="accepting()"
@@ -52,10 +54,17 @@
     @case ('accepted') {
       <p-message severity="success" [text]="acceptedText()" />
       <div class="view__actions">
-        <p-button fluid label="Zur Statistik" icon="pi pi-chart-bar" routerLink="/account/stats" />
+        <p-button
+          fluid
+          label="Zur Statistik"
+          i18n-label="@@player.invitation.toStats"
+          icon="pi pi-chart-bar"
+          routerLink="/account/stats"
+        />
         <p-button
           fluid
           label="Zu deinen Spielern"
+          i18n-label="@@player.invitation.toPlayers"
           icon="pi pi-users"
           severity="secondary"
           [outlined]="true"
@@ -66,7 +75,12 @@
     @case ('failed') {
       <app-empty-state icon="pi-link">
         <p>{{ error() }}</p>
-        <p-button label="Zum Konto" icon="pi pi-user" routerLink="/account" />
+        <p-button
+          label="Zum Konto"
+          i18n-label="@@auth.toAccount"
+          icon="pi pi-user"
+          routerLink="/account"
+        />
       </app-empty-state>
     }
   }

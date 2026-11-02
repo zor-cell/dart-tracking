@@ -4,7 +4,7 @@ import { httpErrorMessage } from '../../../core/notification/models/http-error-m
 export function playerNameError(failure: unknown): string {
   return httpErrorMessage(
     failure,
-    { 409: 'Diesen Namen gibt es schon in deiner Spielerliste.' },
-    'Speichern fehlgeschlagen. Bitte später erneut versuchen.',
+    { 409: $localize`:@@player.nameTaken:Diesen Namen gibt es schon in deiner Spielerliste.` },
+    $localize`:@@player.saveFailed:Speichern fehlgeschlagen. Bitte später erneut versuchen.`,
   );
 }

@@ -33,6 +33,7 @@ import { FilterChip, FilterSuggestion } from '../../../../core/view/models/filte
 import { PagedTable } from '../../../../core/view/models/paged-table';
 import { QueryState, oneOfParam } from '../../../../core/view/models/query-state';
 import { ConfirmService } from '../../../../core/view/services/confirm.service';
+import { SHORT_DATE_TIME } from '../../../../core/i18n/models/date-format';
 import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
 
 /** Offered while the account has no picks of its own. */
@@ -86,6 +87,7 @@ export class PlayerListComponent {
   private readonly memory = inject(FilterMemoryService);
   private readonly destroyRef = inject(DestroyRef);
 
+  protected readonly shortDateTime = SHORT_DATE_TIME;
   protected readonly tab = signal<'own' | 'links'>('own');
   protected readonly query = signal('');
   protected readonly filters = this.fb.group({ linked: this.fb.control<LinkState | null>(null) });
@@ -137,11 +139,11 @@ export class PlayerListComponent {
   protected readonly invitationOpen = signal(false);
   protected readonly invitationHint = computed(() => {
     const name = this.invitation()?.name ?? '';
-    return `${name} scannt den QR-Code oder öffnet den Link und meldet sich an. Danach zählen eure gemeinsamen Spiele auch in der Statistik von ${name}.`;
+    return $localize`:@@player.list.invitationHint:${name}:name: scannt den QR-Code oder öffnet den Link und meldet sich an. Danach zählen eure gemeinsamen Spiele auch in der Statistik von ${name}:name:.`;
   });
   protected readonly invitationShareText = computed(
     () =>
-      `Verknüpfe dein Dart-Konto mit „${this.invitation()?.name ?? ''}“ in meiner Spielerliste:`,
+      $localize`:@@player.list.invitationShare:Verknüpfe dein Dart-Konto mit „${this.invitation()?.name ?? ''}:name:“ in meiner Spielerliste:`,
   );
 
   constructor() {
@@ -199,13 +201,25 @@ export class PlayerListComponent {
     }
   }
 
+  protected linkLabel(player: PlayerIdentityDto): string {
+    return player.linked
+      ? $localize`:@@player.list.unlinkLabel:Verknüpfung von ${player.name}:name: lösen`
+      : $localize`:@@player.list.linkLabel:${player.name}:name: mit einem Konto verknüpfen`;
+  }
+
+  protected renameLabel(player: PlayerIdentityDto): string {
+    return player.isSelf
+      ? $localize`:@@player.list.renameSelf:Deinen Namen ändern`
+      : $localize`:@@player.list.rename:${player.name}:name: umbenennen`;
+  }
+
   protected confirmRemove(player: PlayerIdentityDto): void {
     this.confirm.ask(
-      'Spieler entfernen',
+      $localize`:@@player.list.removeTitle:Spieler entfernen`,
       player.linked
-        ? `${player.name} aus deiner Spielerliste entfernen? Das verknüpfte Konto behält die bisherigen Spiele in seiner Statistik.`
-        : `${player.name} aus deiner Spielerliste entfernen? Bisherige Spiele behalten den Namen.`,
-      'Entfernen',
+        ? $localize`:@@player.list.removeLinked:${player.name}:name: aus deiner Spielerliste entfernen? Das verknüpfte Konto behält die bisherigen Spiele in seiner Statistik.`
+        : $localize`:@@player.list.removeUnlinked:${player.name}:name: aus deiner Spielerliste entfernen? Bisherige Spiele behalten den Namen.`,
+      $localize`:@@player.remove:Entfernen`,
       () => void this.remove(player),
     );
   }
@@ -229,9 +243,9 @@ export class PlayerListComponent {
 
   protected confirmUnlink(player: PlayerIdentityDto): void {
     this.confirm.ask(
-      'Verknüpfung lösen',
-      `${player.name} ist dann nicht mehr mit einem Konto verknüpft. Die bisherigen Spiele bleiben in dessen Statistik, neue zählen dort nicht mehr.`,
-      'Lösen',
+      $localize`:@@player.unlinkTitle:Verknüpfung lösen`,
+      $localize`:@@player.list.unlinkText:${player.name}:name: ist dann nicht mehr mit einem Konto verknüpft. Die bisherigen Spiele bleiben in dessen Statistik, neue zählen dort nicht mehr.`,
+      $localize`:@@player.list.unlink:Lösen`,
       () => void this.unlink(player),
     );
   }

@@ -1,18 +1,19 @@
 <section class="view">
   <header class="view__header view__header--sticky">
-    <app-back-link label="Konto" link="/account" />
-    <h1 class="view__title">Spieler</h1>
+    <app-back-link label="Konto" i18n-label="@@player.backLink" link="/account" />
+    <h1 class="view__title" i18n="@@player.list.title">Spieler</h1>
   </header>
 
   <p-tabs [(value)]="tab">
     <p-tablist>
-      <p-tab value="own">Meine Spieler</p-tab>
-      <p-tab value="links">Verknüpfungen</p-tab>
+      <p-tab value="own" i18n="@@player.list.own">Meine Spieler</p-tab>
+      <p-tab value="links" i18n="@@player.list.links">Verknüpfungen</p-tab>
     </p-tablist>
     <p-tabpanels>
       <p-tabpanel value="own" class="tab">
         <app-list-toolbar
           searchLabel="Spieler suchen"
+          i18n-searchLabel="@@player.list.search"
           [filterable]="true"
           [chips]="chips()"
           [suggestions]="suggestions()"
@@ -22,7 +23,7 @@
           (reset)="filters.reset()"
         >
           <form class="list-filters" [formGroup]="filters">
-            <label class="list-filters__label" for="filter-linked">Verknüpfung</label>
+            <label class="list-filters__label" for="filter-linked" i18n="@@player.list.linkFilter">Verknüpfung</label>
             <p-select
               inputId="filter-linked"
               formControlName="linked"
@@ -30,6 +31,7 @@
               optionLabel="label"
               optionValue="value"
               placeholder="Alle"
+              i18n-placeholder="@@player.list.all"
               [showClear]="true"
               fluid
             />
@@ -37,6 +39,7 @@
           <p-button
             listToolbarAction
             ariaLabel="Neuer Spieler"
+            i18n-ariaLabel="@@player.list.new"
             icon="pi pi-user-plus"
             [rounded]="true"
             (onClick)="createOpen.set(true)"
@@ -46,10 +49,11 @@
         @if (entries.failed()) {
           <app-load-error
             message="Die Spielerliste konnte nicht geladen werden."
+            i18n-message="@@player.list.loadFailed"
             (retry)="entries.load()"
           />
         } @else if (!entries.loaded()) {
-          <app-loading-state label="Spieler werden geladen" />
+          <app-loading-state label="Spieler werden geladen" i18n-label="@@player.list.loading" />
         } @else {
           <p-table
             [value]="entries.items()"
@@ -69,13 +73,13 @@
             size="small"
           >
             <ng-template #loadingicon>
-              <app-loading-state label="Spieler werden geladen" />
+              <app-loading-state label="Spieler werden geladen" i18n-label="@@player.list.loading" />
             </ng-template>
             <ng-template #header>
               <tr>
-                <th scope="col" class="data-table__start">Name</th>
+                <th scope="col" class="data-table__start" i18n="@@player.name">Name</th>
                 <th scope="col" class="data-table__actions">
-                  <span class="sr-only">Aktionen</span>
+                  <span class="sr-only" i18n="@@player.actions">Aktionen</span>
                 </th>
               </tr>
             </ng-template>
@@ -85,8 +89,10 @@
                   <td colspan="2" class="data-table__start">
                     <app-inline-editor
                       [control]="editForm.controls.name"
-                      [label]="'Neuer Name für ' + player.name"
+                      label="Neuer Name für {{ player.name }}"
+                      i18n-label="@@player.list.newName"
                       saveLabel="Namen speichern"
+                      i18n-saveLabel="@@player.list.saveName"
                       [saving]="busyId() === player.id"
                       [error]="editError()"
                       (save)="save()"
@@ -98,9 +104,14 @@
                     <span class="players__name">
                       <span>{{ player.name }}</span>
                       @if (player.isSelf) {
-                        <p-tag value="Du" severity="secondary" />
+                        <p-tag value="Du" i18n-value="@@player.list.self" severity="secondary" />
                       } @else if (player.linked) {
-                        <p-tag value="Verknüpft" icon="pi pi-link" severity="success" />
+                        <p-tag
+                          value="Verknüpft"
+                          i18n-value="@@player.linked"
+                          icon="pi pi-link"
+                          severity="success"
+                        />
                       }
                     </span>
                   </td>
@@ -109,11 +120,7 @@
                       <p-button
                         type="button"
                         icon="pi pi-link"
-                        [ariaLabel]="
-                          player.linked
-                            ? 'Verknüpfung von ' + player.name + ' lösen'
-                            : player.name + ' mit einem Konto verknüpfen'
-                        "
+                        [ariaLabel]="linkLabel(player)"
                         [severity]="player.linked ? 'success' : 'secondary'"
                         [rounded]="true"
                         [text]="true"
@@ -124,9 +131,7 @@
                     <p-button
                       type="button"
                       icon="pi pi-pencil"
-                      [ariaLabel]="
-                        player.isSelf ? 'Deinen Namen ändern' : player.name + ' umbenennen'
-                      "
+                      [ariaLabel]="renameLabel(player)"
                       severity="secondary"
                       [rounded]="true"
                       [text]="true"
@@ -137,7 +142,8 @@
                       <p-button
                         type="button"
                         icon="pi pi-trash"
-                        [ariaLabel]="player.name + ' entfernen'"
+                        ariaLabel="{{ player.name }} entfernen"
+                        i18n-ariaLabel="@@player.list.remove"
                         severity="danger"
                         [rounded]="true"
                         [text]="true"
@@ -154,7 +160,7 @@
               <tr>
                 <td colspan="2">
                   <app-empty-state icon="pi-filter-slash">
-                    <p>Keine Spieler für diese Suche.</p>
+                    <p i18n="@@player.list.noMatch">Keine Spieler für diese Suche.</p>
                   </app-empty-state>
                 </td>
               </tr>
@@ -163,8 +169,8 @@
 
           @if (!filtered() && entries.total() <= 1) {
             <app-empty-state icon="pi-users">
-              <p>Noch keine weiteren Spieler.</p>
-              <p class="empty-state__hint">
+              <p i18n="@@player.list.empty">Noch keine weiteren Spieler.</p>
+              <p class="empty-state__hint" i18n="@@player.list.emptyHint">
                 Lege hier welche an oder trage im neuen Spiel einen Namen ein.
               </p>
             </app-empty-state>
@@ -186,14 +192,16 @@
   @if (invitation(); as current) {
     <app-share-dialog
       header="Spieler verknüpfen"
+      i18n-header="@@player.linkPlayer"
       [hint]="invitationHint()"
       [shareText]="invitationShareText()"
       qrAlt="QR-Code zum Verknüpfen"
+      i18n-qrAlt="@@player.list.qrAlt"
       [url]="current.url"
       [(visible)]="invitationOpen"
     >
-      <p class="invitation__expiry">
-        Gültig bis {{ current.expiresAt | date: 'dd.MM.yy, HH:mm' }} und nur einmal verwendbar.
+      <p class="invitation__expiry" i18n="@@player.list.expiry">
+        Gültig bis {{ current.expiresAt | date: shortDateTime }} und nur einmal verwendbar.
       </p>
     </app-share-dialog>
   }

@@ -1,19 +1,23 @@
 @if (loading()) {
-  <app-loading-state label="Verknüpfungen werden geladen" />
+  <app-loading-state label="Verknüpfungen werden geladen" i18n-label="@@player.links.loading" />
 } @else if (failed()) {
-  <app-load-error message="Die Verknüpfungen konnten nicht geladen werden." (retry)="load()" />
+  <app-load-error
+    message="Die Verknüpfungen konnten nicht geladen werden."
+    i18n-message="@@player.links.loadFailed"
+    (retry)="load()"
+  />
 } @else if (links().length === 0) {
   <app-empty-state icon="pi-link">
-    <p>Du bist bei niemandem verknüpft.</p>
-    <p class="empty-state__hint">
+    <p i18n="@@player.links.empty">Du bist bei niemandem verknüpft.</p>
+    <p class="empty-state__hint" i18n="@@player.links.emptyHint">
       Wer dich in seiner Spielerliste führt, kann dir einen Einladungslink schicken.
     </p>
   </app-empty-state>
 } @else {
   @if (active().length > 0) {
     <section class="panel" aria-labelledby="player-links-title">
-      <h2 class="panel__title" id="player-links-title">Aktuell verknüpft</h2>
-      <p class="panel__hint">
+      <h2 class="panel__title" id="player-links-title" i18n="@@player.links.active">Aktuell verknüpft</h2>
+      <p class="panel__hint" i18n="@@player.links.activeHint">
         Diese Personen führen dich in ihrer Spielerliste. Wählen sie dich für ein Spiel aus, zählt
         es in deinem Verlauf und deiner Statistik.
       </p>
@@ -21,8 +25,10 @@
       <p-table [value]="active()" dataKey="playerId" class="data-table" size="small">
         <ng-template #header>
           <tr>
-            <th scope="col" class="data-table__start">Spielerliste von</th>
-            <th scope="col" class="data-table__actions"><span class="sr-only">Aktionen</span></th>
+            <th scope="col" class="data-table__start" i18n="@@player.links.owner">Spielerliste von</th>
+            <th scope="col" class="data-table__actions">
+              <span class="sr-only" i18n="@@player.actions">Aktionen</span>
+            </th>
           </tr>
         </ng-template>
         <ng-template #body let-link>
@@ -32,7 +38,8 @@
               <p-button
                 type="button"
                 icon="pi pi-times"
-                [ariaLabel]="'Verknüpfung bei ' + link.ownerName + ' lösen'"
+                ariaLabel="Verknüpfung bei {{ link.ownerName }} lösen"
+                i18n-ariaLabel="@@player.links.leave"
                 severity="secondary"
                 [rounded]="true"
                 [text]="true"
@@ -47,16 +54,20 @@
 
   @if (retired().length > 0) {
     <section class="panel" aria-labelledby="player-links-retired-title">
-      <h2 class="panel__title" id="player-links-retired-title">Nur bisherige Spiele</h2>
-      <p class="panel__hint">
+      <h2 class="panel__title" id="player-links-retired-title" i18n="@@player.links.retired">
+        Nur bisherige Spiele
+      </h2>
+      <p class="panel__hint" i18n="@@player.links.retiredHint">
         Nicht mehr verknüpft, die bisherigen Spiele zählen aber weiter in deiner Statistik.
       </p>
 
       <p-table [value]="retired()" dataKey="playerId" class="data-table" size="small">
         <ng-template #header>
           <tr>
-            <th scope="col" class="data-table__start">Spielerliste von</th>
-            <th scope="col" class="data-table__actions"><span class="sr-only">Aktionen</span></th>
+            <th scope="col" class="data-table__start" i18n="@@player.links.owner">Spielerliste von</th>
+            <th scope="col" class="data-table__actions">
+              <span class="sr-only" i18n="@@player.actions">Aktionen</span>
+            </th>
           </tr>
         </ng-template>
         <ng-template #body let-link>
@@ -66,7 +77,8 @@
               <p-button
                 type="button"
                 icon="pi pi-trash"
-                [ariaLabel]="'Bisherige Spiele mit ' + link.ownerName + ' entfernen'"
+                ariaLabel="Bisherige Spiele mit {{ link.ownerName }} entfernen"
+                i18n-ariaLabel="@@player.links.removeHistory"
                 severity="danger"
                 [rounded]="true"
                 [text]="true"
@@ -81,7 +93,7 @@
 }
 
 <p-dialog
-  [header]="leaving()?.retired ? 'Bisherige Spiele entfernen' : 'Verknüpfung lösen'"
+  [header]="leaveHeader()"
   [modal]="true"
   [draggable]="false"
   [(visible)]="dialogOpen"
@@ -91,26 +103,28 @@
   @if (leaving(); as link) {
     <div class="leave">
       @if (link.retired) {
-        <p class="leave__text">
+        <p class="leave__text" i18n="@@player.links.retiredText">
           Die bisherigen Spiele von {{ link.ownerName }} zählen danach nicht mehr in deinem Verlauf
           und deiner Statistik.
         </p>
         <p-button
           fluid
           label="Entfernen"
+          i18n-label="@@player.remove"
           icon="pi pi-trash"
           severity="danger"
           [loading]="busy()"
           (onClick)="leave(false)"
         />
       } @else {
-        <p class="leave__text">
+        <p class="leave__text" i18n="@@player.links.leaveText">
           Wählt {{ link.ownerName }} dich danach für ein Spiel aus, zählt es nicht mehr für dich.
           Was soll mit den bisherigen Spielen passieren?
         </p>
         <p-button
           fluid
           label="Bisherige Spiele behalten"
+          i18n-label="@@player.links.keep"
           icon="pi pi-history"
           [loading]="busy()"
           (onClick)="leave(true)"
@@ -118,6 +132,7 @@
         <p-button
           fluid
           label="Auch bisherige entfernen"
+          i18n-label="@@player.links.removeAll"
           icon="pi pi-trash"
           severity="danger"
           [outlined]="true"
@@ -128,6 +143,7 @@
       <p-button
         fluid
         label="Abbrechen"
+        i18n-label="@@common.cancel"
         severity="secondary"
         [text]="true"
         [disabled]="busy()"

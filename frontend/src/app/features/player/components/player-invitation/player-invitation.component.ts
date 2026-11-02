@@ -43,10 +43,11 @@ export class PlayerInvitationComponent {
   protected readonly historyText = computed(() => {
     const count = this.invitation()?.gameCount ?? 0;
     if (count === 0) {
-      return 'Eure künftigen Spiele erscheinen dann in deinem Verlauf und deiner Statistik.';
+      return $localize`:@@player.invitation.historyNone:Eure künftigen Spiele erscheinen dann in deinem Verlauf und deiner Statistik.`;
     }
-    const past = count === 1 ? 'Das bisherige Spiel' : `Die ${count} bisherigen Spiele`;
-    return `${past} und alle künftigen erscheinen dann in deinem Verlauf und deiner Statistik.`;
+    return count === 1
+      ? $localize`:@@player.invitation.historyOne:Das bisherige Spiel und alle künftigen erscheinen dann in deinem Verlauf und deiner Statistik.`
+      : $localize`:@@player.invitation.historyMany:Die ${count}:count: bisherigen Spiele und alle künftigen erscheinen dann in deinem Verlauf und deiner Statistik.`;
   });
 
   protected readonly reciprocalLabel = computed(() => {
@@ -55,13 +56,13 @@ export class PlayerInvitationComponent {
       return '';
     }
     return invitation.reciprocal === 'link'
-      ? `Deinen Spieler „${invitation.inviterName}“ ebenfalls mit diesem Konto verknüpfen`
-      : `${invitation.inviterName} auch zu deinen Spielern hinzufügen`;
+      ? $localize`:@@player.invitation.reciprocalLink:Deinen Spieler „${invitation.inviterName}:name:“ ebenfalls mit diesem Konto verknüpfen`
+      : $localize`:@@player.invitation.reciprocalCreate:${invitation.inviterName}:name: auch zu deinen Spielern hinzufügen`;
   });
 
   protected readonly acceptedText = computed(
     () =>
-      `Verknüpft. Die Spiele von ${this.invitation()?.inviterName ?? ''} mit dir erscheinen jetzt in deinem Verlauf.`,
+      $localize`:@@player.invitation.accepted:Verknüpft. Die Spiele von ${this.invitation()?.inviterName ?? ''}:name: mit dir erscheinen jetzt in deinem Verlauf.`,
   );
 
   constructor() {
@@ -73,7 +74,7 @@ export class PlayerInvitationComponent {
       this.invitation.set(await this.players.previewInvitation(this.token));
       this.state.set('ready');
     } catch (failure) {
-      this.error.set(describe(failure, 'Die Einladung konnte nicht geladen werden.'));
+      this.error.set(describe(failure, $localize`:@@player.invitation.loadFailed:Die Einladung konnte nicht geladen werden.`));
       this.state.set('failed');
     }
   }
@@ -93,7 +94,10 @@ export class PlayerInvitationComponent {
       this.state.set('accepted');
     } catch (failure) {
       this.acceptError.set(
-        describe(failure, 'Die Verknüpfung ist fehlgeschlagen. Bitte später erneut versuchen.'),
+        describe(
+          failure,
+          $localize`:@@player.invitation.acceptFailed:Die Verknüpfung ist fehlgeschlagen. Bitte später erneut versuchen.`,
+        ),
       );
     } finally {
       this.accepting.set(false);
@@ -105,9 +109,9 @@ function describe(failure: unknown, fallback: string): string {
   return httpErrorMessage(
     failure,
     {
-      400: 'Das ist dein eigener Link. Öffne ihn auf dem Gerät der Person, die du verknüpfen möchtest.',
-      404: 'Der Link ist ungültig, abgelaufen oder wurde schon verwendet.',
-      409: 'Du bist in dieser Spielerliste schon mit einem anderen Spieler verknüpft.',
+      400: $localize`:@@player.invitation.ownLink:Das ist dein eigener Link. Öffne ihn auf dem Gerät der Person, die du verknüpfen möchtest.`,
+      404: $localize`:@@player.invitation.invalid:Der Link ist ungültig, abgelaufen oder wurde schon verwendet.`,
+      409: $localize`:@@player.invitation.alreadyLinked:Du bist in dieser Spielerliste schon mit einem anderen Spieler verknüpft.`,
     },
     fallback,
   );
