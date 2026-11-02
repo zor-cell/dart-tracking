@@ -18,7 +18,7 @@
     </div>
 
     <p-divider class="share__divider" align="center">
-      <span class="share__divider-label">oder sende den Link</span>
+      <span class="share__divider-label" i18n="@@common.share.orSendLink">oder sende den Link</span>
     </p-divider>
 
     <div class="share__link">
@@ -28,12 +28,14 @@
         class="share__link-input"
         [value]="url()"
         aria-label="Link"
+        i18n-aria-label="@@common.share.link"
         (focus)="selectLink($event)"
       />
       <p-button
         icon="pi pi-copy"
         severity="secondary"
         ariaLabel="Link kopieren"
+        i18n-ariaLabel="@@common.share.copy"
         (onClick)="copyLink()"
       />
     </div>
@@ -43,6 +45,7 @@
         fluid
         class="share__native"
         label="Teilen"
+        i18n-label="@@common.share.share"
         icon="pi pi-share-alt"
         (onClick)="share()"
       />

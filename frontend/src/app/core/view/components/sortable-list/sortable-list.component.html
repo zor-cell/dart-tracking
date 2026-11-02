@@ -29,7 +29,7 @@
         type="button"
         class="sortable__grip"
         cdkDragHandle
-        [attr.aria-label]="label()(item, index) + ' verschieben, Pfeiltasten hoch und runter'"
+        [attr.aria-label]="moveLabel(label()(item, index))"
         (keydown.arrowup)="step($event, index, -1)"
         (keydown.arrowdown)="step($event, index, 1)"
       >

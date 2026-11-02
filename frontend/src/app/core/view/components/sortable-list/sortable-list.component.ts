@@ -50,6 +50,9 @@ export class SortableListComponent<T> {
   readonly items = input.required<readonly T[]>();
   /** What a row is called: the dragged preview shows it, the grip's label names it. */
   readonly label = input.required<(item: T, index: number) => string>();
+
+  protected readonly moveLabel = (name: string): string =>
+    $localize`:@@common.sortable.move:${name}:name: verschieben, Pfeiltasten hoch und runter`;
   /** Rows in one bordered box with dividers, instead of spaced apart. */
   readonly bordered = input(false);
 

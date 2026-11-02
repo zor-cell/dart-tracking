@@ -7,7 +7,7 @@ import { tooManyRequestsMessage } from '../models/too-many-requests';
 const DEFAULT_TOAST_LIFE = 3000;
 
 /**
- * User-facing feedback. All texts are German: the HTTP status is the protocol,
+ * User-facing feedback. All texts are localized: the HTTP status is the protocol,
  * the message is presentation. Backend `detail` payloads are deliberately not
  * shown — they are English developer diagnostics (pydantic and Starlette emit
  * them too, and those cannot be translated), and they leak internals.
@@ -18,11 +18,11 @@ const DEFAULT_TOAST_LIFE = 3000;
 export class NotificationService {
   private messageService = inject(MessageService);
 
-  showSuccess(message: string, title = 'Erfolg') {
+  showSuccess(message: string, title = $localize`:@@common.success:Erfolg`) {
     this.messageService.add({ severity: 'success', summary: title, detail: message });
   }
 
-  showError(error: unknown, title = 'Fehler') {
+  showError(error: unknown, title = $localize`:@@common.error:Fehler`) {
     this.messageService.add({
       severity: 'error',
       summary: title,
@@ -36,37 +36,41 @@ export class NotificationService {
    * a message telling the user what to change needs longer on screen than a
    * bare confirmation.
    */
-  showErrorMessage(message: string, title = 'Fehler', life = DEFAULT_TOAST_LIFE) {
+  showErrorMessage(
+    message: string,
+    title = $localize`:@@common.error:Fehler`,
+    life = DEFAULT_TOAST_LIFE,
+  ) {
     this.messageService.add({ severity: 'error', summary: title, detail: message, life });
   }
 
-  showInfo(message: string, title = 'Hinweis') {
+  showInfo(message: string, title = $localize`:@@common.info:Hinweis`) {
     this.messageService.add({ severity: 'info', summary: title, detail: message });
   }
 
-  showWarning(message: string, title = 'Warnung') {
+  showWarning(message: string, title = $localize`:@@common.warning:Warnung`) {
     this.messageService.add({ severity: 'warn', summary: title, detail: message });
   }
 
   private describe(error: unknown): string {
     if (!(error instanceof HttpErrorResponse)) {
-      return 'Unbekannter Fehler.';
+      return $localize`:@@common.unknownError:Unbekannter Fehler.`;
     }
     if (error.status === 0) {
-      return 'Keine Verbindung zum Server. Bitte Netzwerk prüfen und erneut versuchen.';
+      return $localize`:@@common.offline:Keine Verbindung zum Server. Bitte Netzwerk prüfen und erneut versuchen.`;
     }
     if (error.status === 404) {
-      return 'Der angeforderte Eintrag wurde nicht gefunden.';
+      return $localize`:@@common.notFound:Der angeforderte Eintrag wurde nicht gefunden.`;
     }
     if (error.status === 429) {
       return tooManyRequestsMessage(error);
     }
     if (error.status === 422 || error.status === 400) {
-      return 'Die Eingabe ist ungültig.';
+      return $localize`:@@common.invalidInput:Die Eingabe ist ungültig.`;
     }
     if (error.status >= 500) {
-      return 'Serverfehler. Bitte später erneut versuchen.';
+      return $localize`:@@common.serverError:Serverfehler. Bitte später erneut versuchen.`;
     }
-    return 'Die Anfrage konnte nicht verarbeitet werden.';
+    return $localize`:@@common.requestFailed:Die Anfrage konnte nicht verarbeitet werden.`;
   }
 }

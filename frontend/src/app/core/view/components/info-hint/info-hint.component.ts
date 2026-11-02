@@ -16,7 +16,7 @@ const EDGE_GAP = 16;
 })
 export class InfoHintComponent {
   /** What the button is called for screen readers. */
-  readonly label = input('Erklärung');
+  readonly label = input($localize`:@@common.explanation:Erklärung`);
 
   /** Keeps the popover off the screen's edge, then points the arrow at the button. */
   protected place(popover: Popover): void {

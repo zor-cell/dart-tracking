@@ -156,7 +156,7 @@ export class SocketService {
     } else if (this.socket?.readyState === WebSocket.CONNECTING) {
       this.pending.push(message);
     } else {
-      console.warn('SocketService: Nachricht verworfen, WebSocket nicht verbunden', message);
+      console.warn('SocketService: message dropped, WebSocket not connected', message);
     }
   }
 
@@ -171,7 +171,7 @@ export class SocketService {
     details: Pick<DetectionFrameDto, 'trigger' | 'advanceOnPull'> = {},
   ): Promise<void> {
     if (this.socket?.readyState !== WebSocket.OPEN) {
-      console.warn('SocketService: Frame verworfen, WebSocket nicht verbunden');
+      console.warn('SocketService: frame dropped, WebSocket not connected');
       return;
     }
     const image = await blobToBase64(frame);

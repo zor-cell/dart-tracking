@@ -13,7 +13,11 @@ export class ConfirmService {
       header,
       message,
       icon: safe ? 'pi pi-question-circle' : 'pi pi-exclamation-triangle',
-      rejectButtonProps: { label: 'Abbrechen', severity: 'secondary', text: true },
+      rejectButtonProps: {
+        label: $localize`:@@common.cancel:Abbrechen`,
+        severity: 'secondary',
+        text: true,
+      },
       acceptButtonProps: { label: action, severity: safe ? 'primary' : 'danger' },
       accept,
     });

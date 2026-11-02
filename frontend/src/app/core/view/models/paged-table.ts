@@ -23,7 +23,7 @@ export class PagedTable<T> {
   readonly loaded = signal(false);
   readonly pageSize = PAGE_SIZE;
   /** The paginator's note on which entries are shown, out of how many. */
-  readonly pageReport = '{first}–{last} von {totalRecords}';
+  readonly pageReport = $localize`:@@common.pageReport:{first}–{last} von {totalRecords}`;
 
   /** Bumped per load, so a slow answer to an older page or filter is dropped. */
   private generation = 0;

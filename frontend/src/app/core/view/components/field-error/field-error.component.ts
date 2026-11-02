@@ -3,7 +3,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl } from '@angular/forms';
 import { startWith, switchMap } from 'rxjs';
 
-/** The first rule a form control breaks, in German, once it was touched or edited. */
+/** The first rule a form control breaks, once it was touched or edited. */
 @Component({
   selector: 'app-field-error',
   templateUrl: './field-error.component.html',
@@ -37,14 +37,14 @@ function defaultMessage(key: string, detail: unknown): string {
   const length = (detail as { requiredLength?: number }).requiredLength;
   switch (key) {
     case 'required':
-      return 'Bitte ausfüllen.';
+      return $localize`:@@common.field.required:Bitte ausfüllen.`;
     case 'email':
-      return 'Bitte eine gültige E-Mail-Adresse eingeben.';
+      return $localize`:@@common.field.email:Bitte eine gültige E-Mail-Adresse eingeben.`;
     case 'minlength':
-      return `Mindestens ${length} Zeichen.`;
+      return $localize`:@@common.field.minLength:Mindestens ${length}:length: Zeichen.`;
     case 'maxlength':
-      return `Höchstens ${length} Zeichen.`;
+      return $localize`:@@common.field.maxLength:Höchstens ${length}:length: Zeichen.`;
     default:
-      return 'Ungültige Eingabe.';
+      return $localize`:@@common.field.invalid:Ungültige Eingabe.`;
   }
 }

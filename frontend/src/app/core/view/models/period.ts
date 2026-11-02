@@ -17,40 +17,40 @@ export type Period =
   | 'all';
 
 export const PERIOD_UNITS: readonly { label: string; value: PeriodUnit }[] = [
-  { label: 'Zeit', value: 'days' },
-  { label: 'Spiele', value: 'games' },
+  { label: $localize`:@@common.period.time:Zeit`, value: 'days' },
+  { label: $localize`:@@common.period.games:Spiele`, value: 'games' },
 ];
 
 export const PERIODS: Record<PeriodUnit, readonly { label: string; value: Period }[]> = {
   days: [
-    { label: '7 T', value: 'days7' },
-    { label: '30 T', value: 'days30' },
-    { label: '90 T', value: 'days90' },
-    { label: 'Jahr', value: 'days365' },
-    { label: 'Alle', value: 'all' },
-    { label: 'Eigener Zeitraum', value: 'custom' },
+    { label: $localize`:@@common.period.days7Short:7 T`, value: 'days7' },
+    { label: $localize`:@@common.period.days30Short:30 T`, value: 'days30' },
+    { label: $localize`:@@common.period.days90Short:90 T`, value: 'days90' },
+    { label: $localize`:@@common.period.year:Jahr`, value: 'days365' },
+    { label: $localize`:@@common.period.all:Alle`, value: 'all' },
+    { label: $localize`:@@common.period.custom:Eigener Zeitraum`, value: 'custom' },
   ],
   games: [
     { label: '10', value: 'games10' },
     { label: '25', value: 'games25' },
     { label: '50', value: 'games50' },
     { label: '100', value: 'games100' },
-    { label: 'Alle', value: 'all' },
+    { label: $localize`:@@common.period.all:Alle`, value: 'all' },
   ],
 };
 
 /** How the active pick reads as a chip; `custom` shows the picked days instead. */
 export const PERIOD_CHIP_LABELS: Record<Period, string> = {
-  days7: 'Letzte 7 Tage',
-  days30: 'Letzte 30 Tage',
-  days90: 'Letzte 90 Tage',
-  days365: 'Letztes Jahr',
-  custom: 'Eigener Zeitraum',
-  games10: 'Letzte 10 Spiele',
-  games25: 'Letzte 25 Spiele',
-  games50: 'Letzte 50 Spiele',
-  games100: 'Letzte 100 Spiele',
-  all: 'Gesamter Verlauf',
+  days7: $localize`:@@common.period.days7:Letzte 7 Tage`,
+  days30: $localize`:@@common.period.days30:Letzte 30 Tage`,
+  days90: $localize`:@@common.period.days90:Letzte 90 Tage`,
+  days365: $localize`:@@common.period.lastYear:Letztes Jahr`,
+  custom: $localize`:@@common.period.custom:Eigener Zeitraum`,
+  games10: $localize`:@@common.period.games10:Letzte 10 Spiele`,
+  games25: $localize`:@@common.period.games25:Letzte 25 Spiele`,
+  games50: $localize`:@@common.period.games50:Letzte 50 Spiele`,
+  games100: $localize`:@@common.period.games100:Letzte 100 Spiele`,
+  all: $localize`:@@common.period.everything:Gesamter Verlauf`,
 };
 
 /** The pick a unit starts on. */

@@ -28,7 +28,7 @@ export class ShareDialogComponent {
   readonly hint = input('');
   /** Message placed before the link in the share sheet. */
   readonly shareText = input('');
-  readonly qrAlt = input('QR-Code mit dem Link');
+  readonly qrAlt = input($localize`:@@common.share.qrAlt:QR-Code mit dem Link`);
 
   protected readonly canShare = typeof this.document.defaultView?.navigator.share === 'function';
 
@@ -42,9 +42,11 @@ export class ShareDialogComponent {
   protected async copyLink(): Promise<void> {
     try {
       await this.document.defaultView?.navigator.clipboard.writeText(this.url());
-      this.notification.showSuccess('Link kopiert.');
+      this.notification.showSuccess($localize`:@@common.share.copied:Link kopiert.`);
     } catch {
-      this.notification.showWarning('Kopieren nicht möglich — bitte den QR-Code scannen.');
+      this.notification.showWarning(
+        $localize`:@@common.share.copyFailed:Kopieren nicht möglich — bitte den QR-Code scannen.`,
+      );
     }
   }
 

@@ -25,7 +25,7 @@ export class InlineEditorComponent {
   readonly control = input.required<FormControl<string>>();
   /** Accessible name of the input. */
   readonly label = input.required<string>();
-  readonly saveLabel = input('Speichern');
+  readonly saveLabel = input($localize`:@@common.save:Speichern`);
   readonly autocomplete = input('off');
   /** Texts per validator key, passed on to the field error. */
   readonly messages = input<Readonly<Record<string, string>>>({});

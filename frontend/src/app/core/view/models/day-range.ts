@@ -1,4 +1,5 @@
 import { formatDate } from '@angular/common';
+import { SHORT_DATE } from '../../i18n/models/date-format';
 
 /** A range from a range date picker: its first and last day, either still unpicked. */
 export type DayRange = readonly (Date | null)[] | null;
@@ -15,7 +16,7 @@ export function dayRangeLabel(range: DayRange, locale: string): string | null {
   if (!start) {
     return null;
   }
-  const day = (date: Date) => formatDate(date, 'dd.MM.yy', locale);
+  const day = (date: Date) => formatDate(date, SHORT_DATE, locale);
   return end && end.getTime() !== start.getTime() ? `${day(start)} – ${day(end)}` : day(start);
 }
 

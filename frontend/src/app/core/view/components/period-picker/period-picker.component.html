@@ -1,7 +1,7 @@
 <p-popover>
   <div class="period">
     @if (units()) {
-      <span id="period-unit" class="sr-only">Zeitraum zählen in</span>
+      <span id="period-unit" class="sr-only" i18n="@@common.period.unit">Zeitraum zählen in</span>
       <p-selectbutton
         [options]="unitOptions"
         optionLabel="label"
@@ -14,7 +14,7 @@
         fluid
       />
     }
-    <span id="period-pick" class="sr-only">Zeitraum</span>
+    <span id="period-pick" class="sr-only" i18n="@@common.period.pick">Zeitraum</span>
     <p-selectbutton
       [options]="periodOptions()"
       optionLabel="label"
@@ -42,6 +42,7 @@
         selectionMode="range"
         [inline]="true"
         ariaLabel="Eigener Zeitraum"
+        i18n-ariaLabel="@@common.period.custom"
       />
     }
   </div>
