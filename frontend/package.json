@@ -4,11 +4,8 @@
   "scripts": {
     "ng": "ng",
     "version:generate": "node scripts/generate-version.mjs",
-    "prestart": "npm run version:generate",
     "start": "ng serve",
-    "prestart:en": "npm run version:generate",
     "start:en": "ng serve --configuration en",
-    "prestart:languages": "npm run version:generate",
     "start:languages": "node scripts/serve.mjs",
     "prebuild": "npm run version:generate",
     "build": "ng build",

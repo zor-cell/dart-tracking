@@ -1,5 +1,5 @@
 /**
- * Writes src/environments/version.ts before a build or a dev server start:
+ * Writes src/environments/version.ts before a build:
  * major.minor from package.json plus the build counter CI passes as BUILD_NUMBER.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
