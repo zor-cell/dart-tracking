@@ -36,10 +36,10 @@ export function labelPoints(label: string): number {
   return multiplier * Number(label.replace(/^[DT]/, ''));
 }
 
-/** How a field is written for people: T20, D16, 20, Bull, Double Bull, Daneben. */
+/** How a field is written for people: T20, D16, 20, Bull, Double Bull, a miss. */
 export function fieldName(label: string): string {
   if (label === '0') {
-    return 'Daneben';
+    return $localize`:@@game.miss:Daneben`;
   }
   return label === '50' ? 'Double Bull' : label === '25' ? 'Bull' : label;
 }

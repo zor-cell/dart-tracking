@@ -4,7 +4,7 @@
     [severity]="paused() ? 'primary' : 'secondary'"
     [outlined]="!paused()"
     size="small"
-    [ariaLabel]="paused() ? 'Tracking fortsetzen' : 'Tracking pausieren'"
+    [ariaLabel]="paused() ? resumeLabel : pauseLabel"
     [attr.aria-pressed]="paused()"
     (onClick)="onClick()"
   />

@@ -35,7 +35,9 @@ export class VirtualBoardComponent {
   protected readonly ringRadius = BOARD_BACKING_RADIUS + RING_WIDTH / 2;
 
   protected readonly ariaLabel = computed(() => {
-    const shadows = this.shadowDarts().map((dart) => `${dart.label}, nicht gewertet`);
+    const shadows = this.shadowDarts().map(
+      (dart) => $localize`:@@game.board.notCounted:${dart.label}:field:, nicht gewertet`,
+    );
     const described = this.darts()
       .flatMap((dart) => {
         if (dart.position === null) {
@@ -46,7 +48,7 @@ export class VirtualBoardComponent {
       })
       .concat(shadows);
     return described.length === 0
-      ? 'Virtuelle Dartscheibe, keine Treffer dieser Runde'
-      : `Virtuelle Dartscheibe mit ${described.length} Treffern dieser Runde: ${described.join(', ')}`;
+      ? $localize`:@@game.board.empty:Virtuelle Dartscheibe, keine Treffer dieser Runde`
+      : $localize`:@@game.board.hits:Virtuelle Dartscheibe mit ${described.length}:count: Treffern dieser Runde: ${described.join(', ')}:hits:`;
   });
 }

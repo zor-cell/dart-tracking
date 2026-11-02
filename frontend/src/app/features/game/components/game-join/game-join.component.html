@@ -1,23 +1,25 @@
 <section class="view">
   @switch (status()) {
     @case ('resolving') {
-      <app-loading-state label="Spiel wird beigetreten" />
+      <app-loading-state label="Spiel wird beigetreten" i18n-label="@@game.join.loading" />
     }
     @case ('choosing') {
       <div class="join">
-        <h2 class="join__title">Spiel beitreten</h2>
+        <h2 class="join__title" i18n="@@game.join.title">Spiel beitreten</h2>
         <p class="join__summary">{{ summary() }}</p>
 
         <div class="join__options">
           <p-button
             fluid
             label="Mit Kamera"
+            i18n-label="@@game.join.camera"
             icon="pi pi-camera"
             (onClick)="enter('camera')"
           />
           <p-button
             fluid
             label="Ohne Kamera"
+            i18n-label="@@game.join.scoreboard"
             icon="pi pi-chart-pie"
             severity="secondary"
             [outlined]="true"
@@ -28,11 +30,16 @@
     }
     @case ('failed') {
       <app-empty-state icon="pi-link">
-        <p>Dieses Spiel gibt es nicht mehr.</p>
-        <p class="empty-state__hint">
+        <p i18n="@@game.join.gone">Dieses Spiel gibt es nicht mehr.</p>
+        <p class="empty-state__hint" i18n="@@game.join.goneHint">
           Der Link ist abgelaufen — vielleicht wurde das Spiel beendet oder der Server neu gestartet.
         </p>
-        <p-button label="Neues Spiel" icon="pi pi-play-circle" routerLink="/game/new" />
+        <p-button
+          label="Neues Spiel"
+          i18n-label="@@start.newGame"
+          icon="pi pi-play-circle"
+          routerLink="/game/new"
+        />
       </app-empty-state>
     }
   }

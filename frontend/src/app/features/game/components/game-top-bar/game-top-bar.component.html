@@ -7,6 +7,7 @@
         [outlined]="true"
         size="small"
         ariaLabel="Spiel verlassen"
+        i18n-ariaLabel="@@game.leave"
         (onClick)="confirmLeaveGame()"
       />
       <span class="top-bar__title">{{ title() }}</span>
@@ -21,6 +22,7 @@
         severity="secondary"
         size="small"
         ariaLabel="Spiel teilen"
+        i18n-ariaLabel="@@game.share"
         (onClick)="openShareDialog()"
       />
     </div>
@@ -32,9 +34,13 @@
   @defer (when shareDialogVisible(); prefetch on idle) {
     <app-share-dialog
       header="Spiel teilen"
+      i18n-header="@@game.share"
       hint="Scanne den QR-Code damit du den Spielstand auf einem anderen Gerät sehen kannst"
+      i18n-hint="@@game.shareHint"
       shareText="Komm in mein Dart-Spiel:"
+      i18n-shareText="@@game.shareText"
       qrAlt="QR-Code zum Beitreten"
+      i18n-qrAlt="@@game.shareQrAlt"
       [url]="shareUrl()"
       [(visible)]="shareDialogVisible"
     />

@@ -4,6 +4,7 @@
     class="scoreboard"
     tabindex="0"
     aria-label="Spielstand, horizontal scrollbar"
+    i18n-aria-label="@@game.scoreboard"
     [attr.data-visible]="visibleCards()"
   >
     @for (entry of entries; track entry.id) {
@@ -17,16 +18,16 @@
         <span class="scoreboard__name">
           @if (entry.leading) {
             <i class="pi pi-crown scoreboard__lead" aria-hidden="true"></i>
-            <span class="sr-only">Führt:</span>
+            <span class="sr-only" i18n="@@game.scoreboard.leading">Führt:</span>
           }
           @if (entry.reset) {
-            <span class="sr-only">Zurückgesetzt:</span>
+            <span class="sr-only" i18n="@@game.scoreboard.reset">Zurückgesetzt:</span>
           }
           <span class="scoreboard__name-text">{{ entry.name }}</span>
           @if (entry.eliminations) {
             <span class="scoreboard__eliminations">
               <span aria-hidden="true">×{{ entry.eliminations }}</span>
-              <span class="sr-only">, {{ entry.eliminations }} eliminiert</span>
+              <span class="sr-only" i18n="@@game.scoreboard.eliminated">, {{ entry.eliminations }} eliminiert</span>
             </span>
           }
         </span>
@@ -38,9 +39,9 @@
           </span>
           <span class="scoreboard__remaining" [class.scoreboard__remaining--reset]="entry.reset">{{ entry.score }}</span>
           <span class="scoreboard__side">
-            <span class="sr-only">Letzter Visit</span>
+            <span class="sr-only" i18n="@@game.scoreboard.lastVisit">Letzter Visit</span>
             {{ entry.lastVisit ?? '–' }}
-            <span class="scoreboard__label" aria-hidden="true">letzte</span>
+            <span class="scoreboard__label" aria-hidden="true" i18n="@@game.scoreboard.last">letzte</span>
           </span>
         </span>
       </li>

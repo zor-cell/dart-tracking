@@ -72,7 +72,7 @@ export class GameNewComponent {
    * visibly change under the user. */
   protected readonly sessionResolved = signal(false);
   protected readonly suggestions = signal<PlayerIdentityDto[]>([]);
-  protected readonly seatMessages = { required: 'Bitte einen Namen eingeben.' };
+  protected readonly seatMessages = { required: $localize`:@@game.new.nameRequired:Bitte einen Namen eingeben.` };
 
   protected readonly form = this.fb.group({
     mode: this.fb.nonNullable.control<GameMode>(501, Validators.required),
@@ -124,7 +124,7 @@ export class GameNewComponent {
   }
 
   protected readonly seatLabel = (seat: FormControl<Seat>, index: number): string =>
-    this.label(seat.value) || `Spieler ${index + 1}`;
+    this.label(seat.value) || $localize`:@@game.new.seatName:Spieler ${index + 1}:number:`;
 
   private label(seat: Seat): string {
     return typeof seat === 'string' ? seat : seat.name;
@@ -225,7 +225,7 @@ export class GameNewComponent {
    * signed in an empty seat is the prompt to pick someone. */
   private createSeat(position: number): FormControl<Seat> {
     return this.fb.nonNullable.control<Seat>(
-      this.signedIn() ? '' : `Spieler ${position}`,
+      this.signedIn() ? '' : $localize`:@@game.new.seatName:Spieler ${position}:number:`,
       Validators.required,
     );
   }

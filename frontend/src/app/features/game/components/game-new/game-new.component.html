@@ -1,11 +1,11 @@
 <section class="view">
   <header class="view__header">
-    <h1 class="view__title">Neues Spiel</h1>
+    <h1 class="view__title" i18n="@@start.newGame">Neues Spiel</h1>
   </header>
 
   <form class="setup" [formGroup]="form" (ngSubmit)="startGame()">
     <div class="setup__field">
-      <label class="setup__label" for="variant">Variante</label>
+      <label class="setup__label" for="variant" i18n="@@game.new.variant">Variante</label>
       <p-selectbutton
         inputId="variant"
         formControlName="variant"
@@ -17,7 +17,7 @@
     </div>
 
     <div class="setup__field">
-      <label class="setup__label" for="mode">Modus</label>
+      <label class="setup__label" for="mode" i18n="@@game.new.mode">Modus</label>
       <p-selectbutton
         inputId="mode"
         formControlName="mode"
@@ -41,7 +41,7 @@
     </div>
 
     <div class="setup__field">
-      <span class="setup__label">Spieler</span>
+      <span class="setup__label" i18n="@@game.new.players">Spieler</span>
       @if (sessionResolved()) {
         <app-sortable-list
           [items]="seatControls()"
@@ -59,14 +59,16 @@
                 appendTo="body"
                 [dropdown]="true"
                 [showEmptyMessage]="false"
-                [ariaLabel]="'Spieler ' + (index + 1)"
+                ariaLabel="Spieler {{ index + 1 }}"
+                i18n-ariaLabel="@@game.new.seat"
                 placeholder="Name wählen oder eintippen"
+                i18n-placeholder="@@game.new.seatPlaceholder"
                 fluid
               >
                 <ng-template #item let-identity>
                   <span>{{ identity.name }}</span>
                   @if (identity.isSelf) {
-                    <p-tag class="setup__self" value="Du" severity="secondary" />
+                    <p-tag class="setup__self" value="Du" i18n-value="@@player.list.self" severity="secondary" />
                   }
                 </ng-template>
               </p-autocomplete>
@@ -75,9 +77,11 @@
                 pInputText
                 class="setup__input"
                 [formControl]="seat"
-                [attr.aria-label]="'Spieler ' + (index + 1)"
+                attr.aria-label="Spieler {{ index + 1 }}"
+                i18n-attr.aria-label="@@game.new.seat"
                 [attr.aria-describedby]="'seat-' + index + '-error'"
                 placeholder="Name"
+                i18n-placeholder="@@player.name"
               />
             }
             <p-button
@@ -86,7 +90,8 @@
               severity="secondary"
               [text]="true"
               [disabled]="seats.length <= 1"
-              [ariaLabel]="'Spieler ' + (index + 1) + ' entfernen'"
+              ariaLabel="Spieler {{ index + 1 }} entfernen"
+              i18n-ariaLabel="@@game.new.removeSeat"
               (onClick)="removePlayer(index)"
             />
             <app-field-error
@@ -100,6 +105,7 @@
         <p-button
           type="button"
           label="Spieler hinzufügen"
+          i18n-label="@@player.create.title"
           icon="pi pi-plus"
           severity="secondary"
           [text]="true"
@@ -122,6 +128,7 @@
       type="submit"
       fluid
       label="Spiel starten"
+      i18n-label="@@game.new.start"
       icon="pi pi-play"
       [disabled]="form.invalid"
     />

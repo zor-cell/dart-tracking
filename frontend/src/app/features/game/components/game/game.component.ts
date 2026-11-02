@@ -108,7 +108,15 @@ export class GameComponent implements OnInit, OnDestroy {
 
   protected readonly signedIn = inject(AuthService).isAuthenticated;
   /** The game detail leads back here, so a rematch is one tap away. */
-  protected readonly returnState = backState('Spiel');
+  protected readonly returnState = backState($localize`:@@common.nav.game:Spiel`);
+  protected readonly calibrateLabel = $localize`:@@game.calibrate:Board kalibrieren`;
+  protected readonly recalibrateLabel = $localize`:@@game.recalibrate:Rekalibrieren`;
+  protected readonly fullscreenLabel = $localize`:@@game.fullscreen:Kamera im Vollbild`;
+  protected readonly exitFullscreenLabel = $localize`:@@game.exitFullscreen:Vollbild verlassen`;
+  protected readonly undoLabel = $localize`:@@game.undo:Zurück`;
+  protected readonly deleteDartLabel = $localize`:@@game.deleteDart:Ausgewählten Dart löschen`;
+  protected readonly shadowLabel = (label: string | null): string =>
+    $localize`:@@game.shadowDart:${label}:field:, erkannt, nicht gewertet`;
   protected readonly deviceRole = this.session.role;
   protected readonly cameraPhase = this.session.phase;
   protected readonly cameraError = this.session.cameraError;
@@ -139,7 +147,9 @@ export class GameComponent implements OnInit, OnDestroy {
 
   /** Reads as the handover for a normal visit and as the win for the last one. */
   protected readonly confirmLabel = computed(() =>
-    this.game.winPending() ? 'Sieg bestätigen' : 'Runde bestätigen — nächster Spieler',
+    this.game.winPending()
+      ? $localize`:@@game.confirmWin:Sieg bestätigen`
+      : $localize`:@@game.confirmVisit:Runde bestätigen — nächster Spieler`,
   );
 
   protected readonly multiplier = signal<1 | 2 | 3>(1);

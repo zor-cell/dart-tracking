@@ -7,9 +7,10 @@
         <div class="game__camera-overlay">
           <p-progress-spinner
             ariaLabel="Verbindung wird hergestellt"
+            i18n-ariaLabel="@@game.connecting"
             [style]="{ width: '2.5rem', height: '2.5rem' }"
           />
-          <p>Verbindung wird hergestellt …</p>
+          <p i18n="@@game.connectingText">Verbindung wird hergestellt …</p>
         </div>
       </div>
     } @else if (deviceRole() === 'scoreboard') {
@@ -22,17 +23,17 @@
         @if (game.trackingPaused() && roomCalibration() !== 'no_camera') {
           <div class="game__calibration-notice game__calibration-notice--info" role="status">
             <i class="pi pi-pause" aria-hidden="true"></i>
-            <strong>Tracking pausiert</strong>
+            <strong i18n="@@game.trackingPaused">Tracking pausiert</strong>
           </div>
         } @else if (roomCalibrationFailure(); as failure) {
           <div class="game__calibration-notice" role="status">
             <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-            <strong>Kalibrierung fehlgeschlagen</strong>
+            <strong i18n="@@game.calibrationFailed">Kalibrierung fehlgeschlagen</strong>
             <span>{{ failure }}</span>
           </div>
         } @else if (roomCalibration() === 'uncalibrated') {
           <div class="game__calibration-notice game__calibration-notice--info" role="status">
-            <strong>Board nicht kalibriert</strong>
+            <strong i18n="@@game.uncalibrated">Board nicht kalibriert</strong>
           </div>
         }
         <p-button
@@ -42,6 +43,7 @@
           severity="secondary"
           size="small"
           ariaLabel="Dieses Gerät als Kamera verwenden"
+          i18n-ariaLabel="@@game.useAsCamera"
           (onClick)="switchRole()"
         />
         @if (roomCalibration() !== 'no_camera') {
@@ -52,6 +54,7 @@
             severity="primary"
             size="small"
             ariaLabel="Rekalibrieren"
+            i18n-ariaLabel="@@game.recalibrate"
             [attr.aria-busy]="roomCalibration() === 'calibrating'"
             (onClick)="requestCalibration()"
           />
@@ -92,9 +95,13 @@
             @if (calibrationFailure()) {
               <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
             }
-            <strong>{{ calibrationFailure() ? 'Kalibrierung fehlgeschlagen' : 'Board nicht kalibriert' }}</strong>
+            @if (calibrationFailure()) {
+              <strong i18n="@@game.calibrationFailed">Kalibrierung fehlgeschlagen</strong>
+            } @else {
+              <strong i18n="@@game.uncalibrated">Board nicht kalibriert</strong>
+            }
             @if (calibrationStatus() === 'pending') {
-              <span>Wird kalibriert …</span>
+              <span i18n="@@game.calibrating">Wird kalibriert …</span>
             } @else if (calibrationFailure(); as failure) {
               <span>{{ failure }}</span>
             }
@@ -105,7 +112,12 @@
           @case ('idle') {
             <div class="game__camera-overlay">
               <i class="pi pi-camera" aria-hidden="true"></i>
-              <p-button label="Kamera starten" icon="pi pi-video" (onClick)="startCamera()" />
+              <p-button
+                label="Kamera starten"
+                i18n-label="@@game.startCamera"
+                icon="pi pi-video"
+                (onClick)="startCamera()"
+              />
               @if (cameraError(); as error) {
                 <p class="game__camera-error">{{ error }}</p>
               }
@@ -123,7 +135,7 @@
             [rounded]="true"
             severity="primary"
             size="small"
-            [ariaLabel]="cameraPhase() === 'calibrating' ? 'Board kalibrieren' : 'Rekalibrieren'"
+            [ariaLabel]="cameraPhase() === 'calibrating' ? calibrateLabel : recalibrateLabel"
             [attr.aria-busy]="calibrationStatus() === 'pending'"
             (onClick)="calibrateBoard()"
           />
@@ -136,6 +148,7 @@
           severity="secondary"
           size="small"
           ariaLabel="Dieses Gerät als Scoreboard verwenden"
+          i18n-ariaLabel="@@game.useAsScoreboard"
           (onClick)="switchRole()"
         />
 
@@ -146,7 +159,7 @@
             [rounded]="true"
             severity="secondary"
             size="small"
-            [ariaLabel]="cameraExpanded() ? 'Vollbild verlassen' : 'Kamera im Vollbild'"
+            [ariaLabel]="cameraExpanded() ? exitFullscreenLabel : fullscreenLabel"
             (onClick)="toggleCameraExpanded()"
           />
         }
@@ -155,7 +168,7 @@
 
     <!-- The win is shown on the player card; this only voices it. -->
     @if (game.settledWinner(); as winner) {
-      <p class="sr-only" role="status">{{ winner.name }} gewinnt!</p>
+      <p class="sr-only" role="status" i18n="@@game.wins">{{ winner.name }} gewinnt!</p>
     }
 
     <app-scoreboard
@@ -173,7 +186,7 @@
             [icon]="selectedDart() === null ? 'pi pi-arrow-left' : 'pi pi-trash'"
             [rounded]="true"
             severity="secondary"
-            [ariaLabel]="selectedDart() === null ? 'Zurück' : 'Ausgewählten Dart löschen'"
+            [ariaLabel]="selectedDart() === null ? undoLabel : deleteDartLabel"
             [disabled]="selectedDart() === null && !state.canUndo"
             (onClick)="undoOrDelete()"
           />
@@ -181,6 +194,7 @@
           <ul
             class="turn__darts"
             aria-label="Darts dieser Runde"
+            i18n-aria-label="@@game.roundDarts"
             cdkDropList
             cdkDropListOrientation="horizontal"
             [cdkDropListDisabled]="game.settledWinner() !== null"
@@ -197,7 +211,8 @@
                     [class.turn__dart--busted]="turn.busted"
                     [class.turn__dart--selected]="selectedDart() === $index"
                     [attr.aria-pressed]="selectedDart() === $index"
-                    [attr.aria-label]="dart.label + ' auswählen und korrigieren'"
+                    attr.aria-label="{{ dart.label }} auswählen und korrigieren"
+                    i18n-attr.aria-label="@@game.pickDart"
                     (click)="selectDart($index)"
                   >
                     {{ dart.label }}
@@ -214,7 +229,7 @@
                 [class.turn__dart--shadow]="slot.shadow"
                 [class.turn__dart--two-routes]="slot.reset !== null"
                 [attr.aria-hidden]="slot.shadow ? null : 'true'"
-                [attr.aria-label]="slot.shadow ? slot.label + ', erkannt, nicht gewertet' : null"
+                [attr.aria-label]="slot.shadow ? shadowLabel(slot.label) : null"
               >
                 {{ slot.label ?? '–' }}
                 @if (slot.leave !== null) {
@@ -235,6 +250,7 @@
                 [rounded]="true"
                 severity="secondary"
                 ariaLabel="Spielstatistik"
+                i18n-ariaLabel="@@game.statistics"
                 [routerLink]="['/account/games', state.id]"
                 [state]="returnState"
               />
@@ -254,7 +270,7 @@
       }
 
       @if (!game.settledWinner()) {
-        <div class="scorepad" role="group" aria-label="Punkte-Eingabe">
+        <div class="scorepad" role="group" aria-label="Punkte-Eingabe" i18n-aria-label="@@game.scorepad">
           @for (row of padRows; track $index) {
             @for (n of row; track n) {
               <button
@@ -313,6 +329,7 @@
             size="small"
             [dt]="finishButtonTokens"
             label="Revanche"
+            i18n-label="@@game.rematch"
             icon="pi pi-replay"
             routerLink="/game/new"
             [queryParams]="{ rematch: state.id }"
@@ -322,6 +339,7 @@
             size="small"
             [dt]="finishButtonTokens"
             label="Fertig"
+            i18n-label="@@game.done"
             icon="pi pi-check"
             severity="secondary"
             [outlined]="true"
@@ -341,15 +359,21 @@
     </div>
   </header>
 
-  <section class="view game" aria-busy="true" aria-label="Spiel wird geladen">
+  <section
+    class="view game"
+    aria-busy="true"
+    aria-label="Spiel wird geladen"
+    i18n-aria-label="@@game.loading"
+  >
     <!-- Spinner rather than a skeleton: this box holds a live picture, not text. -->
     <div class="game__camera">
       <div class="game__camera-overlay">
         <p-progress-spinner
           ariaLabel="Spiel wird geladen"
+          i18n-ariaLabel="@@game.loading"
           [style]="{ width: '2.5rem', height: '2.5rem' }"
         />
-        <p>Spiel wird geladen …</p>
+        <p i18n="@@game.loadingText">Spiel wird geladen …</p>
       </div>
     </div>
 
@@ -387,8 +411,13 @@
 } @else {
   <section class="view">
     <app-empty-state icon="pi-bullseye">
-      <p>Kein aktives Spiel.</p>
-      <p-button label="Neues Spiel" icon="pi pi-play-circle" routerLink="/game/new" />
+      <p i18n="@@game.none">Kein aktives Spiel.</p>
+      <p-button
+        label="Neues Spiel"
+        i18n-label="@@start.newGame"
+        icon="pi pi-play-circle"
+        routerLink="/game/new"
+      />
     </app-empty-state>
   </section>
 }

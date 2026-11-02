@@ -69,9 +69,9 @@ export class GameTopBarComponent {
       return;
     }
     this.confirm.ask(
-      'Spiel verlassen',
-      'Spiel auf diesem Gerät verlassen? Der bisherige Spielstand bleibt gespeichert.',
-      'Verlassen',
+      $localize`:@@game.leave:Spiel verlassen`,
+      $localize`:@@game.leaveText:Spiel auf diesem Gerät verlassen? Der bisherige Spielstand bleibt gespeichert.`,
+      $localize`:@@game.leaveAction:Verlassen`,
       () => this.leaveGame(),
     );
   }
