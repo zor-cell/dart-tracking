@@ -14,12 +14,12 @@ import { dartColor, SHADOW_DART_COLOR } from '../../game/models/dart-colors';
 const FEEDBACK_DURATION_MS = 2500;
 
 const FAILURE_HINTS: Record<DetectionFailureDto, string> = {
-  invalid_image: 'Bild nicht lesbar',
-  not_calibrated: 'Erst kalibrieren',
-  alignment_failed: 'Kamera hat sich bewegt',
-  no_change: 'Kein Wurf erkannt',
-  implausible_shape: 'Board verdeckt',
-  darts_removed: 'Pfeile entfernt',
+  invalid_image: $localize`:@@detection.invalidImage:Bild nicht lesbar`,
+  not_calibrated: $localize`:@@detection.notCalibrated:Erst kalibrieren`,
+  alignment_failed: $localize`:@@detection.moved:Kamera hat sich bewegt`,
+  no_change: $localize`:@@detection.noThrow:Kein Wurf erkannt`,
+  implausible_shape: $localize`:@@detection.covered:Board verdeckt`,
+  darts_removed: $localize`:@@detection.removed:Pfeile entfernt`,
 };
 
 /** One located dart to draw: its polylines, its place in the visit, and the
@@ -174,7 +174,7 @@ function formatHit(segment: string | null, points: number | null): string {
 }
 
 function hintFor(failure: DetectionFailureDto | null): string {
-  return (failure && FAILURE_HINTS[failure]) ?? 'Kein Wurf erkannt';
+  return (failure && FAILURE_HINTS[failure]) ?? FAILURE_HINTS.no_change;
 }
 
 /** Where an outline belongs in the visit as it now stands — booked darts, then

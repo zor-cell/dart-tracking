@@ -19,9 +19,11 @@ export class AnnouncerToggleComponent {
 
   protected readonly label = computed(() => {
     if (!this.announcer.isAnnouncer()) {
-      return 'Ansage auf dieses Gerät holen';
+      return $localize`:@@announcer.claim:Ansage auf dieses Gerät holen`;
     }
-    return this.announcer.muted() ? 'Ansage einschalten' : 'Ansage stummschalten';
+    return this.announcer.muted()
+      ? $localize`:@@announcer.unmute:Ansage einschalten`
+      : $localize`:@@announcer.mute:Ansage stummschalten`;
   });
 
   protected onClick(): void {

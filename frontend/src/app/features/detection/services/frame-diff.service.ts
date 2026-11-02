@@ -18,12 +18,12 @@ const GREEN_LUMA_WEIGHT = 0.587;
 const BLUE_LUMA_WEIGHT = 0.114;
 
 const STATUS_LABELS: Record<DisplayStatus, string> = {
-  idle: 'Bereit',
-  motion: 'Bewegung erkannt',
-  settling: 'Wird stabilisiert…',
-  sent: 'Frame gesendet',
-  pull: 'Warte aufs Ziehen',
-  paused: 'Tracking pausiert',
+  idle: $localize`:@@detection.idle:Bereit`,
+  motion: $localize`:@@detection.motion:Bewegung erkannt`,
+  settling: $localize`:@@detection.settling:Wird stabilisiert…`,
+  sent: $localize`:@@detection.sent:Frame gesendet`,
+  pull: $localize`:@@detection.pull:Warte aufs Ziehen`,
+  paused: $localize`:@@game.trackingPaused:Tracking pausiert`,
 };
 
 /**

@@ -13,6 +13,8 @@ import { CameraService } from '../../services/camera.service';
 })
 export class TorchToggleComponent {
   protected readonly camera = inject(CameraService);
+  protected readonly torchOnLabel = $localize`:@@camera.torchOn:Licht einschalten`;
+  protected readonly torchOffLabel = $localize`:@@camera.torchOff:Licht ausschalten`;
 
   protected onClick(): void {
     void this.camera.toggleTorch();

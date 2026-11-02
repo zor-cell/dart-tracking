@@ -11,13 +11,13 @@ export function captureFrameAsJpeg(
 
   const context = canvas.getContext('2d');
   if (!context) {
-    return Promise.reject(new Error('Canvas 2D context nicht verfügbar'));
+    return Promise.reject(new Error('Canvas 2D context not available'));
   }
   context.drawImage(video, 0, 0);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error('JPEG-Erstellung fehlgeschlagen'))),
+      (blob) => (blob ? resolve(blob) : reject(new Error('JPEG encoding failed'))),
       'image/jpeg',
       quality,
     );

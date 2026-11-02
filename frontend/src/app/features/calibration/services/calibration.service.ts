@@ -8,19 +8,17 @@ import { SocketService } from '../../../core/socket/services/socket.service';
 export type CalibrationStatus = 'idle' | 'pending' | 'success' | 'error';
 
 const FAILURE_MESSAGES: Record<CalibrationFailureDto, string> = {
-  invalid_image: 'Das Kamerabild konnte nicht gelesen werden. Bitte erneut versuchen.',
-  ellipse_fit_failed: 'Board-Umriss nicht erkennbar. Das gesamte Board ins Bild nehmen.',
-  sector_wires_unclear:
-    'Board nur teilweise erkannt. Verdeckungen und starke Schatten auf dem Board vermeiden.',
-  homography_failed:
-    'Board-Position konnte nicht berechnet werden. Kamera ruhig halten und erneut versuchen.',
+  invalid_image: $localize`:@@calibration.invalidImage:Das Kamerabild konnte nicht gelesen werden. Bitte erneut versuchen.`,
+  ellipse_fit_failed: $localize`:@@calibration.ellipseFailed:Board-Umriss nicht erkennbar. Das gesamte Board ins Bild nehmen.`,
+  sector_wires_unclear: $localize`:@@calibration.wiresUnclear:Board nur teilweise erkannt. Verdeckungen und starke Schatten auf dem Board vermeiden.`,
+  homography_failed: $localize`:@@calibration.homographyFailed:Board-Position konnte nicht berechnet werden. Kamera ruhig halten und erneut versuchen.`,
 };
 
-const UNKNOWN_FAILURE_MESSAGE = 'Bitte erneut versuchen.';
+const UNKNOWN_FAILURE_MESSAGE = $localize`:@@calibration.unknown:Bitte erneut versuchen.`;
 
 // What a device without a camera is told about the scoring camera's attempt;
 // the advice above is addressed to whoever holds that camera.
-const REMOTE_FAILURE_MESSAGE = 'Die Kamera konnte das Board nicht erkennen.';
+const REMOTE_FAILURE_MESSAGE = $localize`:@@calibration.remote:Die Kamera konnte das Board nicht erkennen.`;
 
 /**
  * Board calibration: capture the current video frame, send it as a
