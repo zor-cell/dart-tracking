@@ -3,6 +3,8 @@ Table layout with inline styles, since mail clients ignore most of modern CSS.""
 
 from html import escape
 
+from app.api.features.settings.domain.language import Language
+
 _FONT = "system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
 _PAGE = "#f4f4f5"
 _CARD = "#ffffff"
@@ -12,9 +14,27 @@ _HEADING = "#09090b"
 _MUTED = "#71717a"
 _PRIMARY = "#09090b"
 
+# The frame's own lines: the fallback for a button that does not work, and the footer.
+_FALLBACK = {
+    Language.DE: "Falls der Button nicht funktioniert, öffne diesen Link im Browser:",
+    Language.EN: "If the button does not work, open this link in your browser:",
+}
+_FOOTER = {
+    Language.DE: "Diese Mail wurde automatisch verschickt. Antworten darauf kommen nicht an.",
+    Language.EN: "This email was sent automatically. Replies to it are not received.",
+}
+
 
 def render(
-    *, brand: str, title: str, greeting: str, intro: str, action: str, link: str, outro: str
+    *,
+    language: Language,
+    brand: str,
+    title: str,
+    greeting: str,
+    intro: str,
+    action: str,
+    link: str,
+    outro: str,
 ) -> str:
     """A full HTML document: heading, text, one call-to-action button and a fallback link."""
     brand, title, greeting, intro, action, outro = map(
@@ -22,7 +42,7 @@ def render(
     )
     href = escape(link)
     return f"""<!DOCTYPE html>
-<html lang="de">
+<html lang="{language.value}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -47,10 +67,10 @@ def render(
 </table>
 <p style="margin:24px 0 0;font-size:14px;line-height:1.6;color:{_MUTED};">{outro}</p>
 <hr style="margin:24px 0;border:0;border-top:1px solid {_BORDER};">
-<p style="margin:0 0 6px;font-size:13px;line-height:1.5;color:{_MUTED};">Falls der Button nicht funktioniert, öffne diesen Link im Browser:</p>
+<p style="margin:0 0 6px;font-size:13px;line-height:1.5;color:{_MUTED};">{_FALLBACK[language]}</p>
 <p style="margin:0;font-size:13px;line-height:1.5;word-break:break-all;"><a href="{href}" target="_blank" style="color:{_TEXT};">{href}</a></p>
 </td></tr>
-<tr><td style="padding:16px 4px 0;font-family:{_FONT};font-size:12px;line-height:1.5;color:{_MUTED};">Diese Mail wurde automatisch verschickt. Antworten darauf kommen nicht an.</td></tr>
+<tr><td style="padding:16px 4px 0;font-family:{_FONT};font-size:12px;line-height:1.5;color:{_MUTED};">{_FOOTER[language]}</td></tr>
 </table>
 </td></tr>
 </table>

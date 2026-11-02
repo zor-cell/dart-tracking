@@ -31,6 +31,9 @@ from app.api.features.auth.services.current_user import AuthenticatedUser
 from app.api.features.auth.services.refresh_store import store as refresh_store
 from app.api.features.game.persistence.game_repository import repository as games
 from app.api.features.player.persistence.player_repository import repository as players
+from app.api.features.settings.domain.language import Language
+from app.api.features.settings.persistence.settings_repository import repository as settings_repository
+from app.api.features.settings.services.request_language import request_language
 from app.infrastructure import database, mailer
 from app.infrastructure.config import get_settings
 
@@ -101,9 +104,17 @@ async def _require_password(user: User, password: str) -> None:
     await rate_limit.reset("login-failures", user.email)
 
 
-async def _send_verification(user: User, background: BackgroundTasks) -> None:
+async def _mail_language(user: User, request: Request) -> Language:
+    """The language the account picked, else the one the browser is served in."""
+    async with database.session_scope() as session:
+        picked = (await settings_repository.get(session, user.id)).language
+    return picked or request_language(request)
+
+
+async def _send_verification(user: User, request: Request, background: BackgroundTasks) -> None:
     token = await account_tokens.email_verification.issue(user.id)
-    background.add_task(mailer.send, account_mails.email_verification(user, token))
+    language = await _mail_language(user, request)
+    background.add_task(mailer.send, account_mails.email_verification(user, token, language))
 
 
 @router.post("/register", response_model=SessionDto, status_code=201)
@@ -134,7 +145,7 @@ async def register(
             session, display_name, owner_user_id=user.id, user_id=user.id
         )
 
-    await _send_verification(user, background)
+    await _send_verification(user, request, background)
     return await _begin_session(response, user)
 
 
@@ -200,11 +211,13 @@ async def verify_email(body: VerifyEmailDto) -> UserDto:
 
 
 @router.post("/verify-email/resend", status_code=204)
-async def resend_verification(user: AuthenticatedUser, background: BackgroundTasks) -> None:
+async def resend_verification(
+    user: AuthenticatedUser, request: Request, background: BackgroundTasks
+) -> None:
     if user.email_verified:
         raise HTTPException(status_code=409, detail="email already verified")
     await rate_limit.enforce("verify-resend", user.id, _RESEND_LIMIT, _RESEND_WINDOW)
-    await _send_verification(user, background)
+    await _send_verification(user, request, background)
 
 
 @router.post("/password-reset", status_code=204)
@@ -224,7 +237,8 @@ async def request_password_reset(
     if found is not None:
         user = found[0]
         token = await account_tokens.password_reset.issue(user.id)
-        background.add_task(mailer.send, account_mails.password_reset(user, token))
+        language = await _mail_language(user, request)
+        background.add_task(mailer.send, account_mails.password_reset(user, token, language))
 
 
 @router.post("/password-reset/confirm", status_code=204)
@@ -309,7 +323,7 @@ async def change_password(
 
 @router.put("/me/email", status_code=204)
 async def request_email_change(
-    body: EmailChangeDto, user: AuthenticatedUser, background: BackgroundTasks
+    body: EmailChangeDto, user: AuthenticatedUser, request: Request, background: BackgroundTasks
 ) -> None:
     """Mail a link to the new address; the account keeps the old one until it is opened."""
     email = body.new_email.strip().lower()
@@ -323,7 +337,8 @@ async def request_email_change(
             raise HTTPException(status_code=409, detail="email already in use")
 
     token = await account_tokens.email_change.issue(user.id, email)
-    background.add_task(mailer.send, account_mails.email_change(user, email, token))
+    language = await _mail_language(user, request)
+    background.add_task(mailer.send, account_mails.email_change(user, email, token, language))
 
 
 @router.post("/email-change/confirm", response_model=UserDto)

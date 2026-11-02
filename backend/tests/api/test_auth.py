@@ -22,6 +22,36 @@ def test_register_opens_a_session_and_asks_to_confirm_the_address(register, mail
 
 
 @pytest.mark.parametrize(
+    ("headers", "subject"),
+    [
+        ({"Accept-Language": "en-GB,en;q=0.9"}, "Confirm your email address"),
+        ({"Accept-Language": "de-AT,de;q=0.9"}, "E-Mail-Adresse bestätigen"),
+        ({"Accept-Language": "de", "Cookie": "lang=en"}, "Confirm your email address"),
+    ],
+)
+def test_mails_go_out_in_the_language_the_browser_is_served_in(anon, mails, headers, subject):
+    anon.post(
+        "/auth/register",
+        json={"email": "anna@darts.example.org", "username": "anna", "displayName": "Anna", "password": PASSWORD},
+        headers=headers,
+    )
+
+    assert mails[-1]["Subject"].endswith(subject)
+
+
+def test_mails_follow_the_language_the_account_picked(register, mails):
+    alice = register("alice")
+    alice.put(
+        "/settings",
+        json={"advanceOnPull": True, "evaluationEnabled": False, "language": "de", "preferredDoubles": []},
+    )
+
+    alice.post("/auth/verify-email/resend", headers={"Accept-Language": "en"})
+
+    assert mails[-1]["Subject"].endswith("E-Mail-Adresse bestätigen")
+
+
+@pytest.mark.parametrize(
     ("email", "username", "taken"),
     [
         ("ALICE@darts.example.org", "someone", "email"),
