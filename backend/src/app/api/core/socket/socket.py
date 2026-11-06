@@ -145,12 +145,15 @@ async def websocket_endpoint(
     await _publish_calibration_state(game_id)
 
     # A camera without a calibration for this game cannot detect anything, and
-    # only its own frame can produce one.
-    if (
-        client.role is DeviceRole.CAMERA
-        and await calibration_store.get(game_id, client.id) is None
-    ):
-        await hub.send(connection, CalibrationRequestedDto())
+    # only its own frame can produce one. A calibrated one gets its board outline back.
+    if client.role is DeviceRole.CAMERA:
+        calibration = await calibration_store.get(game_id, client.id)
+        await hub.send(
+            connection,
+            CalibrationRequestedDto()
+            if calibration is None
+            else CalibrationResultDto.from_calibration(calibration),
+        )
 
     messages = TokenBucket(_MESSAGES_PER_SECOND, _MESSAGE_BURST)
     frames = TokenBucket(_FRAMES_PER_SECOND, _FRAME_BURST)

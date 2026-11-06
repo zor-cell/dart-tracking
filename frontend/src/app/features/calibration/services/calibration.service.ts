@@ -63,6 +63,10 @@ export class CalibrationService {
       .pipe(takeUntilDestroyed())
       .subscribe((result) => {
         if (this.status() !== 'pending') {
+          // The stored calibration's outline, resent when this device joins the room.
+          if (result.success && this.status() === 'idle') {
+            this.overlay.set(result.overlay);
+          }
           return;
         }
         this.status.set(result.success ? 'success' : 'error');

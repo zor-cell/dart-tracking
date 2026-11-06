@@ -15,6 +15,9 @@ import { readStored, writeStored } from '../../../core/storage/models/browser-st
 // not to the device for good.
 const PHASE_KEY = 'dart-tracking.cameraPhase';
 
+// Time a restarted camera gets to settle its auto exposure before a frame is used, in ms.
+const CAMERA_SETTLE_MS = 1500;
+
 /**
  * Owns the live camera session (phase + the wiring of camera and the detection
  * loop). It is a singleton, so the session survives route changes: the game view
@@ -211,16 +214,32 @@ export class GameSessionService {
   }
 
   /** Restart the camera after a refresh, landing in the phase the session was
-   * in. Tracking trusts the server-side calibration; a moved camera is one "Neu
-   * kalibrieren" tap away. */
+   * in. Tracking recalibrates on the new stream while the board is empty, and
+   * keeps the server-side calibration while darts are in it. */
   private async resume(target: CameraPhase): Promise<void> {
     if (!this.game.peekGameId() || !(await this.acquireCamera())) {
       return;
     }
-    this.phase.set(target);
-    if (target === 'tracking') {
-      this.runDetectionLoop();
+    if (target !== 'tracking') {
+      this.phase.set(target);
+      return;
     }
+    await new Promise((resolve) => setTimeout(resolve, CAMERA_SETTLE_MS));
+    if (!this.game.peekGameId()) {
+      return;
+    }
+    if (this.boardEmpty()) {
+      this.phase.set('calibrating');
+      await this.calibrate();
+      return;
+    }
+    this.phase.set('tracking');
+    this.runDetectionLoop();
+    await this.camera.lockExposure();
+  }
+
+  private boardEmpty(): boolean {
+    return !this.game.currentTurn()?.darts.length && this.game.shadowDarts().length === 0;
   }
 
   private startTracking(): void {

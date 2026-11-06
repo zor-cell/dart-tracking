@@ -8,6 +8,8 @@ import numpy as np
 import pytest
 from starlette.websockets import WebSocketDisconnect
 
+from app.api.core.socket import socket
+from app.api.features.calibration.domain.calibration import Calibration
 from app.api.features.evaluation.domain.alignment import DartOutcome
 from app.api.features.evaluation.services import accuracy, frame_buffer
 from app.infrastructure import database
@@ -263,6 +265,18 @@ def test_throw_before_calibration(camera):
     with camera() as device:
         device.send("detection_frame", image=jpeg(64, 48))
         assert device.next("detection_result")["failure"] == "not_calibrated"
+
+
+def test_a_calibrated_camera_gets_its_outline_back_on_rejoining(room, camera, game_id, monkeypatch):
+    monkeypatch.setattr(socket.board_detector, "detect_board", lambda image: Calibration(np.eye(3), 64, 48))
+    with camera() as phone:
+        phone.send("calibration_frame", image=jpeg(64, 48))
+        outline = phone.next("calibration_result")["overlay"]
+
+    with room(game_id, phone.id) as rejoined:
+        result = rejoined.next("calibration_result", never=("calibration_requested",))
+        assert result["success"] is True
+        assert result["overlay"] == outline
 
 
 def test_handover_asks_the_cameras_to_calibrate_again(room, camera, game_id):
