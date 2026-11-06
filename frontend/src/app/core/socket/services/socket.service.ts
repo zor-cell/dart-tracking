@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { Injectable, effect, inject, signal, untracked } from '@angular/core';
 import { Observable, Subject, filter } from 'rxjs';
 import { environment } from '../../../../environments/environment';
@@ -16,6 +17,10 @@ export type SocketConnectionStatus = 'disconnected' | 'connecting' | 'connected'
 // knows about the device hangs off it, so nothing else needs storing here.
 const CLIENT_ID_KEY = 'dart-tracking.clientId';
 
+// Wait before the first reconnect attempt, doubled per failed attempt up to the cap, in ms.
+const RECONNECT_BASE_MS = 1000;
+const RECONNECT_MAX_MS = 30_000;
+
 /**
  * The connection to the game's room on the server. Every device playing the
  * same game holds one, and it carries everything that is not the session
@@ -25,6 +30,7 @@ const CLIENT_ID_KEY = 'dart-tracking.clientId';
 @Injectable({ providedIn: 'root' })
 export class SocketService {
   private readonly auth = inject(AuthService);
+  private readonly document = inject(DOCUMENT);
 
   readonly connectionStatus = signal<SocketConnectionStatus>('disconnected');
 
@@ -38,12 +44,15 @@ export class SocketService {
   private socket: WebSocket | null = null;
   private gameId: string | null = null;
 
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectAttempts = 0;
+
   private readonly messages = new Subject<ServerMessage>();
 
   private readonly _clientId = signal<string | null>(readStored(CLIENT_ID_KEY));
   readonly clientId = this._clientId.asReadonly();
 
-  // Commands issued before the socket finished opening, flushed on connect.
+  // Commands issued while no socket is open, flushed on connect.
   // Only commands are held back: a queued frame would describe a board the game
   // has long moved past, so those are dropped instead (see `sendFrame`).
   private pending: ClientMessage[] = [];
@@ -57,6 +66,15 @@ export class SocketService {
     effect(() => {
       if (this.auth.isAdmin() && this.connectionStatus() === 'connected') {
         untracked(() => void this.authenticate());
+      }
+    });
+
+    // Back online or back in the foreground: retry now instead of waiting out the backoff.
+    const view = this.document.defaultView;
+    view?.addEventListener('online', () => this.reconnectNow());
+    this.document.addEventListener('visibilitychange', () => {
+      if (this.document.visibilityState === 'visible') {
+        this.reconnectNow();
       }
     });
   }
@@ -81,9 +99,27 @@ export class SocketService {
     }
     // A different game means a different room; the old connection has nothing
     // left to carry.
-    this.disconnect();
+    if (this.gameId !== gameId) {
+      this.disconnect();
+      this.gameId = gameId;
+    }
+    this.open(gameId);
+  }
 
-    this.gameId = gameId;
+  disconnect(): void {
+    const socket = this.socket;
+    this.socket = null;
+    socket?.close();
+    this.cancelReconnect();
+    this.reconnectAttempts = 0;
+    this.gameId = null;
+    this.pending = [];
+    this.requestedRole = null;
+    this.connectionStatus.set('disconnected');
+  }
+
+  private open(gameId: string): void {
+    this.cancelReconnect();
     this.connectionStatus.set('connecting');
     const socket = new WebSocket(`${environment.wsApiUrl}/games/${gameId}${this.identity()}`);
     this.socket = socket;
@@ -95,6 +131,7 @@ export class SocketService {
       if (!current()) {
         return;
       }
+      this.reconnectAttempts = 0;
       this.connectionStatus.set('connected');
       this.flush();
     });
@@ -107,6 +144,7 @@ export class SocketService {
       if (current()) {
         this.connectionStatus.set('disconnected');
         this.socket = null;
+        this.scheduleReconnect();
       }
     });
     socket.addEventListener('message', (event) => {
@@ -121,13 +159,29 @@ export class SocketService {
     });
   }
 
-  disconnect(): void {
-    this.socket?.close();
-    this.socket = null;
-    this.gameId = null;
-    this.pending = [];
-    this.requestedRole = null;
-    this.connectionStatus.set('disconnected');
+  private scheduleReconnect(): void {
+    if (this.gameId === null || this.reconnectTimer !== null) {
+      return;
+    }
+    const delay = Math.min(RECONNECT_MAX_MS, RECONNECT_BASE_MS * 2 ** this.reconnectAttempts);
+    this.reconnectAttempts++;
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.reconnectNow();
+    }, delay);
+  }
+
+  private reconnectNow(): void {
+    if (this.gameId !== null && this.socket === null) {
+      this.open(this.gameId);
+    }
+  }
+
+  private cancelReconnect(): void {
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
   }
 
   /**
@@ -145,15 +199,15 @@ export class SocketService {
    * Ask the server to change the game. There is no reply to await — the new
    * state arrives as the `game_state` push that goes to the whole room.
    *
-   * A command sent while the socket is still opening is queued rather than
-   * dropped: the game view is on screen as soon as the state is loaded, so a
+   * A command sent while the socket is opening or reconnecting is queued rather
+   * than dropped: the game view is on screen as soon as the state is loaded, so a
    * quick tap can easily beat the handshake, and a silently swallowed dart is
    * indistinguishable from a dead button.
    */
   send(message: ClientMessage): void {
     if (this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify(message));
-    } else if (this.socket?.readyState === WebSocket.CONNECTING) {
+    } else if (this.gameId !== null) {
       this.pending.push(message);
     } else {
       console.warn('SocketService: message dropped, WebSocket not connected', message);
