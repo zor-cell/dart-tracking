@@ -10,6 +10,7 @@ from starlette.websockets import WebSocketDisconnect
 
 from app.api.core.socket import socket
 from app.api.features.calibration.domain.calibration import Calibration
+from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.evaluation.domain.alignment import DartOutcome
 from app.api.features.evaluation.services import accuracy, frame_buffer
 from app.infrastructure import database
@@ -277,6 +278,25 @@ def test_a_calibrated_camera_gets_its_outline_back_on_rejoining(room, camera, ga
         result = rejoined.next("calibration_result", never=("calibration_requested",))
         assert result["success"] is True
         assert result["overlay"] == outline
+
+
+def test_pulling_the_winning_darts_confirms_the_win_in_the_room(room, camera, game_id, monkeypatch):
+    monkeypatch.setattr(socket.board_detector, "detect_board", lambda image: Calibration(np.eye(3), 64, 48))
+    monkeypatch.setattr(socket.dart_detector, "detect_dart", lambda *args: DetectionFailure.DARTS_REMOVED)
+    monkeypatch.setattr(socket, "_darts_pulled", lambda *args: True)
+    with camera() as phone, room(game_id) as scoreboard:
+        phone.send("calibration_frame", image=jpeg(64, 48))
+        phone.next("calibration_result")
+        for dart in [(20, 3), (20, 3), (20, 3), None, (20, 1), None, (20, 3), (19, 3), (2, 2)]:
+            if dart is None:
+                scoreboard.send("next_player")
+            else:
+                scoreboard.throw(*dart)
+            state = scoreboard.next("game_state")
+        assert state["winnerId"] is not None
+
+        phone.send("detection_frame", image=jpeg(64, 48), advanceOnPull=True)
+        scoreboard.next("win_confirmed", never=("calibration_requested", "turn_announcement"))
 
 
 def test_handover_asks_the_cameras_to_calibrate_again(room, camera, game_id):

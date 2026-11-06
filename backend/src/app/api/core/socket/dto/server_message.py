@@ -20,6 +20,7 @@ from app.api.features.calibration.dto.calibration_state import CalibrationStateD
 from app.api.features.detection.dto.detection_result import DetectionResultDto
 from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.dto.rematch_started import RematchStartedDto
+from app.api.features.game.dto.win_confirmed import WinConfirmedDto
 
 ServerMessage = (
     ClientStateDto
@@ -33,4 +34,5 @@ ServerMessage = (
     | TurnAnnouncementDto
     | CalibrationAnnouncementDto
     | RematchStartedDto
+    | WinConfirmedDto
 )

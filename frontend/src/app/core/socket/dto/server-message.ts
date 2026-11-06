@@ -9,6 +9,7 @@ import { CalibrationStateDto } from '../../../features/calibration/dto/calibrati
 import { DetectionResultDto } from '../../../features/detection/dto/detection-result.dto';
 import { GameStateDto } from '../../../features/game/dto/game-state.dto';
 import { RematchStartedDto } from '../../../features/game/dto/rematch-started.dto';
+import { WinConfirmedDto } from '../../../features/game/dto/win-confirmed.dto';
 
 /**
  * Everything the server sends, discriminated by `type`.
@@ -27,4 +28,5 @@ export type ServerMessage =
   | DartAnnouncementDto
   | TurnAnnouncementDto
   | CalibrationAnnouncementDto
-  | RematchStartedDto;
+  | RematchStartedDto
+  | WinConfirmedDto;

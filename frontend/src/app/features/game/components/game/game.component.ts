@@ -358,6 +358,10 @@ export class GameComponent implements OnInit, OnDestroy {
    * take — that dart is not the last one — so it takes that dart instead,
    * which is how a phantom booking in the middle of a visit goes. */
   protected undoOrDelete(): void {
+    if (this.game.settledWinner() !== null) {
+      this.game.reopenWin();
+      return;
+    }
     const selected = this.selectedDart();
     if (selected === null) {
       this.game.undo();

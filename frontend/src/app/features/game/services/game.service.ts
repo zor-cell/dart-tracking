@@ -99,6 +99,15 @@ export class GameService {
       .pipe(takeUntilDestroyed())
       .subscribe((state) => this.setState(state));
 
+    this.socket
+      .on('win_confirmed')
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.winner() !== null) {
+          this.confirmWin();
+        }
+      });
+
     // Every device in the room follows a rematch; its role stays with the device.
     this.socket
       .on('rematch_started')
@@ -161,6 +170,11 @@ export class GameService {
    * nothing left to apply, and confirming is a per-device setting. */
   confirmWin(): void {
     this._winConfirmed.set(true);
+  }
+
+  /** Back from the finished screen to the win that waits for its confirm tap. */
+  reopenWin(): void {
+    this._winConfirmed.set(false);
   }
 
   /** Mark the running game as a tracking test run, or stop. Game-wide: it is

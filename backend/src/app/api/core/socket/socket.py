@@ -82,6 +82,7 @@ from app.api.features.game.dto.command.register_dart import RegisterDartDto
 from app.api.features.game.dto.command.remove_dart import RemoveDartDto
 from app.api.features.game.dto.command.replace_dart import ReplaceDartDto
 from app.api.features.game.dto.command.undo import UndoDto
+from app.api.features.game.dto.win_confirmed import WinConfirmedDto
 from app.api.features.game.domain.dart import Dart as ScoredDart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.persistence.game_repository import repository as game_repository
@@ -715,7 +716,8 @@ def _darts_pulled(
 
 
 async def _clear_board(game_id: str, client_id: str) -> None:
-    """Hand over because the visit's darts were pulled, the ones never found booked as misses."""
+    """Hand over because the visit's darts were pulled, the ones never found booked
+    as misses. After the winning visit there is no handover: the room takes the win."""
     filled = 0
 
     def mutate(game: Game) -> None:
@@ -726,8 +728,13 @@ async def _clear_board(game_id: str, client_id: str) -> None:
     applied = await _apply(
         game_id, mutate, lambda at, changed: handover(at, changed, filled) if changed else None
     )
-    if applied is not None and applied[1]:
-        await _end_visit(applied[0])
+    if applied is None:
+        return
+    game, changed = applied
+    if changed:
+        await _end_visit(game)
+    elif game.winner is not None:
+        await hub.broadcast(game_id, WinConfirmedDto())
 
 
 async def _end_visit(game: Game) -> None:
