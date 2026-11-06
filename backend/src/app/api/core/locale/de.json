@@ -1,0 +1,18 @@
+{
+  "mail.greeting": "Hallo {name},",
+  "mail.fallback": "Falls der Button nicht funktioniert, öffne diesen Link im Browser:",
+  "mail.footer": "Diese Mail wurde automatisch verschickt. Antworten darauf kommen nicht an.",
+  "mail.verification.title": "E-Mail-Adresse bestätigen",
+  "mail.verification.intro": "bitte bestätige noch kurz deine E-Mail-Adresse. So kommt ein Link zum Zurücksetzen auch an, falls du einmal dein Passwort vergisst.",
+  "mail.verification.action": "E-Mail-Adresse bestätigen",
+  "mail.verification.outro": "Der Link ist 24 Stunden gültig. Falls du kein Konto erstellt hast, kannst du diese Mail ignorieren.",
+  "mail.change.title": "Neue E-Mail-Adresse bestätigen",
+  "mail.change.intro": "dein Konto soll künftig diese E-Mail-Adresse verwenden. Bitte bestätige das, erst dann wird die Änderung wirksam.",
+  "mail.change.action": "Neue Adresse bestätigen",
+  "mail.change.outro": "Der Link ist 24 Stunden gültig. Bis dahin bleibt deine bisherige Adresse aktiv. Falls du das nicht angefordert hast, kannst du diese Mail ignorieren.",
+  "mail.reset.title": "Passwort zurücksetzen",
+  "mail.reset.intro": "für dein Konto wurde ein neues Passwort angefordert. Über den folgenden Link kannst du es festlegen.",
+  "mail.reset.action": "Neues Passwort festlegen",
+  "mail.reset.outro": "Der Link ist eine Stunde gültig. Falls du das nicht angefordert hast, kannst du diese Mail ignorieren; dein Passwort bleibt unverändert.",
+  "player.deleted": "Gelöschter Spieler"
+}

@@ -315,8 +315,9 @@ def delete_account(api, password=PASSWORD):
     return api.delete("/auth/me", json={"currentPassword": password})
 
 
-def names_in(api, game_id):
-    game = next(game for game in api.get("/games").json()["items"] if game["id"] == game_id)
+def names_in(api, game_id, **kwargs):
+    games = api.get("/games", **kwargs).json()["items"]
+    game = next(game for game in games if game["id"] == game_id)
     return [player["name"] for player in game["players"]]
 
 
@@ -362,7 +363,8 @@ def test_a_deleted_account_leaves_shared_games_to_the_others(register, session):
 
     assert delete_account(alice).status_code == 204
 
-    assert names_in(bob, shared) == ["Gelöschter Spieler", "Bob"]
+    assert names_in(bob, shared) == ["Deleted player", "Bob"]
+    assert names_in(bob, shared, headers={"Cookie": "lang=de"}) == ["Gelöschter Spieler", "Bob"]
     assert names_in(bob, hosted) == ["Bob", "Ali"]
     assert session.sql("SELECT id FROM games WHERE id = :id", id=alone) == []
     left = session.sql(

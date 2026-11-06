@@ -120,6 +120,18 @@ src/app/
 - The CLI runners in `backend/scripts/` keep `print()`: there the output *is*
   the program's result, not a diagnostic.
 
+## Texts and Languages
+- Text meant for people (mails, names the server fills in) lives in
+  `api/core/locale/<language>.json` with flat keys (`mail.reset.title`) and
+  `{placeholders}`, read through `translate(key, language=None, **params)`. A unit
+  test keeps every language at the same keys and placeholders.
+- Without an explicit language, `translate` takes the request's: the frontend's
+  `lang` cookie, else the browser's first language (`LanguageMiddleware`, for
+  sockets too). Mails go out in the account's own language instead.
+- Error `detail`s stay English codes; the frontend words them.
+- The database stores no translated text: a deleted account's player entry keeps a
+  NULL name, which `shown_name()` turns into the request's word for it.
+
 ## State & Persistence
 - Game/session state is server-authoritative; the client holds only a
   synchronized cache.

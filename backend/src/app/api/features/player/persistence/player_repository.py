@@ -13,11 +13,9 @@ from app.api.features.player.domain.player_filter import PlayerFilter
 from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.domain.player_link import PlayerLink
 from app.api.features.player.domain.reciprocal_link import ReciprocalLink
-from app.api.features.player.persistence.player import PlayerTable
+from app.api.features.player.persistence.player import PlayerTable, shown_name
 
 _SEARCH_LIMIT = 20
-# What a deleted account's own entry is called in the games it leaves behind.
-_DELETED_NAME = "Gelöschter Spieler"
 
 
 def _is_uuid(value: str) -> bool:
@@ -52,7 +50,7 @@ def _address_book_order(owner_user_id: str) -> tuple[ColumnElement[Any], ...]:
 
 
 def _to_domain(row: PlayerTable) -> PlayerIdentity:
-    return PlayerIdentity(id=row.id, display_name=row.display_name, user_id=row.user_id)
+    return PlayerIdentity(id=row.id, display_name=shown_name(row.display_name), user_id=row.user_id)
 
 
 class PlayerRepository:
@@ -314,7 +312,7 @@ class PlayerRepository:
         row.former_owner_user_id = owner_user_id
         row.owner_user_id = None
         await session.flush()
-        return await self.create(session, row.display_name, owner_user_id=owner_user_id)
+        return await self.create(session, shown_name(row.display_name), owner_user_id=owner_user_id)
 
     async def reciprocal(
         self, session: AsyncSession, owner_user_id: str, user_id: str, display_name: str
@@ -390,7 +388,7 @@ class PlayerRepository:
         await session.execute(
             update(PlayerTable)
             .where(own, PlayerTable.user_id == user_id)
-            .values(display_name=_DELETED_NAME)
+            .values(display_name=None)
         )
         await session.execute(update(PlayerTable).where(own).values(owner_user_id=None))
         await session.execute(

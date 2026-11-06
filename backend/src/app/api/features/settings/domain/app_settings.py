@@ -7,7 +7,7 @@ session gets `DEFAULTS` and cannot change them.
 from dataclasses import dataclass, replace
 from typing import Self
 
-from app.api.features.settings.domain.language import Language
+from app.api.core.domain.language import Language
 
 
 @dataclass(frozen=True)

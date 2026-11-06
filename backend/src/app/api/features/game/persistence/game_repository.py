@@ -36,7 +36,7 @@ from app.api.features.game.persistence.game_hide import GameHideTable
 from app.api.features.game.persistence.game_player import GamePlayerTable
 from app.api.features.game.persistence.turn import TurnTable
 from app.api.features.player.domain.player_identity import PlayerIdentity
-from app.api.features.player.persistence.player import PlayerTable
+from app.api.features.player.persistence.player import PlayerTable, shown_name
 from app.api.features.settings.persistence.user_settings import UserSettingsTable
 
 # Games carry a foreign key to `users`, so that table has to be registered too.
@@ -317,7 +317,7 @@ class GameRepository:
             entries = [seat for seat in seats if seat.game_id == row.id]
             players = [
                 GameSummaryPlayer(
-                    name=seat.display_name,
+                    name=shown_name(seat.display_name),
                     remaining=replayed.get(
                         (row.id, seat.player_index),
                         row.mode - scored.get((row.id, seat.player_index), 0),
@@ -395,7 +395,11 @@ class GameRepository:
                 mode=GameMode(row.mode),
                 variant=GameVariant.ELIMINATION,
                 players=[
-                    Player(id=seat.player_index, name=seat.display_name, identity_id=seat.player_id)
+                    Player(
+                        id=seat.player_index,
+                        name=shown_name(seat.display_name),
+                        identity_id=seat.player_id,
+                    )
                     for seat in seats
                     if seat.game_id == row.id
                 ],
@@ -447,7 +451,9 @@ class GameRepository:
             )
         ).scalars().all()
         return {
-            row.id: PlayerIdentity(id=row.id, display_name=row.display_name, user_id=row.user_id)
+            row.id: PlayerIdentity(
+                id=row.id, display_name=shown_name(row.display_name), user_id=row.user_id
+            )
             for row in rows
         }
 
@@ -561,7 +567,7 @@ class GameRepository:
             players=[
                 Player(
                     id=index,
-                    name=name,
+                    name=shown_name(name),
                     identity_id=identity_id,
                     preferred_doubles=preferred.get(identity_id, ()),
                 )

@@ -7,7 +7,9 @@ from typing import Annotated
 from fastapi import APIRouter, BackgroundTasks, Cookie, HTTPException, Request, Response
 from sqlalchemy.exc import IntegrityError
 
+from app.api.core.domain.language import Language
 from app.api.core.services import rate_limit
+from app.api.core.services.request_language import request_language
 from app.api.features.auth.dto.account_deletion import AccountDeletionDto
 from app.api.features.auth.dto.email_change import EmailChangeDto
 from app.api.features.auth.dto.login import LoginDto
@@ -31,9 +33,7 @@ from app.api.features.auth.services.current_user import AuthenticatedUser
 from app.api.features.auth.services.refresh_store import store as refresh_store
 from app.api.features.game.persistence.game_repository import repository as games
 from app.api.features.player.persistence.player_repository import repository as players
-from app.api.features.settings.domain.language import Language
 from app.api.features.settings.persistence.settings_repository import repository as settings_repository
-from app.api.features.settings.services.request_language import request_language
 from app.infrastructure import database, mailer
 from app.infrastructure.config import get_settings
 

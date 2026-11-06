@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.settings.domain.app_settings import DEFAULTS, AppSettings
 from app.api.features.settings.domain.filter_use import FilterUse
-from app.api.features.settings.domain.language import Language
+from app.api.core.domain.language import Language
 from app.api.features.settings.persistence.user_settings import UserSettingsTable
 
 

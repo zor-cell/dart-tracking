@@ -5,6 +5,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import health
+from app.api.core.services.request_language import LanguageMiddleware
 from app.api.core.socket import socket
 from app.api.features.auth import auth
 from app.api.features.evaluation import evaluation
@@ -38,6 +39,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(LanguageMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,

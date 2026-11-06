@@ -11,6 +11,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.api.core.services.translations import translate
 from app.infrastructure.database import Base, uuid_primary_key
 
 
@@ -20,7 +21,8 @@ class PlayerTable(Base):
     __table_args__ = (UniqueConstraint("owner_user_id", "user_id"),)
 
     id: Mapped[str] = uuid_primary_key()
-    display_name: Mapped[str] = mapped_column(String(64))
+    # NULL once the account this entry stood for was deleted.
+    display_name: Mapped[str | None] = mapped_column(String(64))
     user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), default=None)
     owner_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), default=None)
     # The address book a linked entry was taken out of; lets the linked account still find it.
@@ -30,3 +32,8 @@ class PlayerTable(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+def shown_name(display_name: str | None) -> str:
+    """A stored name as people see it: a deleted account's reads in the request's language."""
+    return translate("player.deleted") if display_name is None else display_name

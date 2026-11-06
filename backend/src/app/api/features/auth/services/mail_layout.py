@@ -3,7 +3,8 @@ Table layout with inline styles, since mail clients ignore most of modern CSS.""
 
 from html import escape
 
-from app.api.features.settings.domain.language import Language
+from app.api.core.domain.language import Language
+from app.api.core.services.translations import translate
 
 _FONT = "system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
 _PAGE = "#f4f4f5"
@@ -13,16 +14,6 @@ _TEXT = "#3f3f46"
 _HEADING = "#09090b"
 _MUTED = "#71717a"
 _PRIMARY = "#09090b"
-
-# The frame's own lines: the fallback for a button that does not work, and the footer.
-_FALLBACK = {
-    Language.DE: "Falls der Button nicht funktioniert, öffne diesen Link im Browser:",
-    Language.EN: "If the button does not work, open this link in your browser:",
-}
-_FOOTER = {
-    Language.DE: "Diese Mail wurde automatisch verschickt. Antworten darauf kommen nicht an.",
-    Language.EN: "This email was sent automatically. Replies to it are not received.",
-}
 
 
 def render(
@@ -41,6 +32,8 @@ def render(
         escape, (brand, title, greeting, intro, action, outro)
     )
     href = escape(link)
+    fallback = escape(translate("mail.fallback", language))
+    footer = escape(translate("mail.footer", language))
     return f"""<!DOCTYPE html>
 <html lang="{language.value}">
 <head>
@@ -67,10 +60,10 @@ def render(
 </table>
 <p style="margin:24px 0 0;font-size:14px;line-height:1.6;color:{_MUTED};">{outro}</p>
 <hr style="margin:24px 0;border:0;border-top:1px solid {_BORDER};">
-<p style="margin:0 0 6px;font-size:13px;line-height:1.5;color:{_MUTED};">{_FALLBACK[language]}</p>
+<p style="margin:0 0 6px;font-size:13px;line-height:1.5;color:{_MUTED};">{fallback}</p>
 <p style="margin:0;font-size:13px;line-height:1.5;word-break:break-all;"><a href="{href}" target="_blank" style="color:{_TEXT};">{href}</a></p>
 </td></tr>
-<tr><td style="padding:16px 4px 0;font-family:{_FONT};font-size:12px;line-height:1.5;color:{_MUTED};">{_FOOTER[language]}</td></tr>
+<tr><td style="padding:16px 4px 0;font-family:{_FONT};font-size:12px;line-height:1.5;color:{_MUTED};">{footer}</td></tr>
 </table>
 </td></tr>
 </table>

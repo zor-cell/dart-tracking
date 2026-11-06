@@ -1,0 +1,18 @@
+{
+  "mail.greeting": "Hi {name},",
+  "mail.fallback": "If the button does not work, open this link in your browser:",
+  "mail.footer": "This email was sent automatically. Replies to it are not received.",
+  "mail.verification.title": "Confirm your email address",
+  "mail.verification.intro": "please take a moment to confirm your email address. That way a reset link reaches you too, should you ever forget your password.",
+  "mail.verification.action": "Confirm email address",
+  "mail.verification.outro": "The link is valid for 24 hours. If you did not create an account, you can ignore this email.",
+  "mail.change.title": "Confirm your new email address",
+  "mail.change.intro": "your account is to use this email address from now on. Please confirm it; only then does the change take effect.",
+  "mail.change.action": "Confirm new address",
+  "mail.change.outro": "The link is valid for 24 hours. Until then your current address stays active. If you did not request this, you can ignore this email.",
+  "mail.reset.title": "Reset your password",
+  "mail.reset.intro": "a new password was requested for your account. You can set it with the following link.",
+  "mail.reset.action": "Set new password",
+  "mail.reset.outro": "The link is valid for one hour. If you did not request this, you can ignore this email; your password stays unchanged.",
+  "player.deleted": "Deleted player"
+}

@@ -4,7 +4,7 @@ from pydantic import Field, field_validator
 
 from app.api.core.dto.base import CamelModel
 from app.api.features.settings.domain.app_settings import AppSettings
-from app.api.features.settings.domain.language import Language
+from app.api.core.domain.language import Language
 
 
 class AppSettingsDto(CamelModel):
