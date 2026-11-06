@@ -30,6 +30,8 @@ class Game:
     evaluation_enabled: bool = False
     # While set, the camera books nothing; the keypad still does.
     tracking_paused: bool = False
+    # Whether the room has taken the win; holds only while there is a winner.
+    win_confirmed: bool = False
     current_player_index: int = 0
     turns: list[Turn] = field(default_factory=list)
     # Darts the camera located after a win or bust closed the open visit, in
@@ -284,6 +286,7 @@ class Game:
             for index, player in enumerate(self.players)
             if player.id == self.current_turn.player_id
         )
+        self._drop_lost_win()
 
     def remove_dart(self, index: int) -> None:
         """Take one dart out of the open visit — what a phantom booking is
@@ -327,7 +330,12 @@ class Game:
             if self._busts(dart):
                 turn.busted = True
         self._book_shadow_darts()
+        self._drop_lost_win()
         self.revision += 1
+
+    def _drop_lost_win(self) -> None:
+        if self.winner is None:
+            self.win_confirmed = False
 
     def _book_shadow_darts(self) -> None:
         """Book the shadow darts in throwing order for as long as the visit stays open."""
@@ -389,6 +397,14 @@ class Game:
         if self.tracking_paused == paused:
             return
         self.tracking_paused = paused
+        self.revision += 1
+
+    def set_win_confirmed(self, confirmed: bool) -> None:
+        """Take the win, or go back to it waiting for the confirm tap. Bumps the
+        revision so every device shows the same screen; without a winner, a no-op."""
+        if self.winner is None or self.win_confirmed == confirmed:
+            return
+        self.win_confirmed = confirmed
         self.revision += 1
 
     def _start_turn(self) -> None:

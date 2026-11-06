@@ -24,6 +24,7 @@ from app.api.features.detection.dto.detection_frame import DetectionFrameDto
 from app.api.features.evaluation.dto.command.set_evaluation import SetEvaluationDto
 from app.api.features.game.dto.command.game_command import GameCommand
 from app.api.features.game.dto.command.set_tracking_paused import SetTrackingPausedDto
+from app.api.features.game.dto.command.set_win_confirmed import SetWinConfirmedDto
 
 ClientMessage = Annotated[
     CalibrationFrameDto
@@ -34,6 +35,7 @@ ClientMessage = Annotated[
     | SetEvaluationDto
     | ClaimAnnouncerDto
     | SetTrackingPausedDto
+    | SetWinConfirmedDto
     | GameCommand,
     Field(discriminator="type"),
 ]

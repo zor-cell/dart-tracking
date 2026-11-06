@@ -38,6 +38,7 @@ class GameStateDto(CamelModel):
     elimination: list[str] | None
     evaluation_enabled: bool
     tracking_paused: bool
+    win_confirmed: bool
     resumable: bool
 
     @classmethod
@@ -72,5 +73,6 @@ class GameStateDto(CamelModel):
             elimination=game.elimination,
             evaluation_enabled=game.evaluation_enabled,
             tracking_paused=game.tracking_paused,
+            win_confirmed=game.win_confirmed,
             resumable=is_resumable(game.winner is not None, game.updated_at),
         )

@@ -184,6 +184,7 @@ class GameRepository:
                 revision=game.revision,
                 evaluation_enabled=game.evaluation_enabled,
                 tracking_paused=game.tracking_paused,
+                win_confirmed=game.win_confirmed,
                 shadow_darts=[_dart_json(dart) for dart in game.shadow_darts],
                 status=derived,
                 finished_at=func.now() if finished else None,
@@ -576,6 +577,7 @@ class GameRepository:
             checkout_mode=CheckoutMode(row.checkout_mode),
             evaluation_enabled=row.evaluation_enabled,
             tracking_paused=row.tracking_paused,
+            win_confirmed=row.win_confirmed,
             current_player_index=row.current_player_index,
             turns=[
                 Turn(

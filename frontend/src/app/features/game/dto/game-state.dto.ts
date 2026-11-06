@@ -32,6 +32,8 @@ export interface GameStateDto {
   readonly evaluationEnabled: boolean;
   /** Whether the camera books nothing for now; the keypad still does. */
   readonly trackingPaused: boolean;
+  /** Whether the room has taken the win, which every device then shows as over. */
+  readonly winConfirmed: boolean;
   /** Whether a device that left the game open should still be put back into it. */
   readonly resumable: boolean;
 }

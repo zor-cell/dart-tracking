@@ -37,8 +37,6 @@ export class GameService {
   private readonly _state = signal<GameStateDto | null>(null);
   readonly state = this._state.asReadonly();
 
-  private readonly _winConfirmed = signal(false);
-
   readonly currentTurn = computed<TurnDto | null>(() => this._state()?.turns.at(-1) ?? null);
 
   readonly winner = computed<PlayerDto | null>(() => {
@@ -83,7 +81,7 @@ export class GameService {
 
   /** A win that still waits for the confirm tap, the same gate every other visit
    * passes through. */
-  readonly winPending = computed(() => this.winner() !== null && !this._winConfirmed());
+  readonly winPending = computed(() => this.winner() !== null && !this._state()?.winConfirmed);
 
   /** The winner once the win is settled — what the view shows the game as over
    * by. `winner` alone is only the score reading it rests on. */
@@ -98,15 +96,6 @@ export class GameService {
       .on('game_state')
       .pipe(takeUntilDestroyed())
       .subscribe((state) => this.setState(state));
-
-    this.socket
-      .on('win_confirmed')
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => {
-        if (this.winner() !== null) {
-          this.confirmWin();
-        }
-      });
 
     // Every device in the room follows a rematch; its role stays with the device.
     this.socket
@@ -166,15 +155,14 @@ export class GameService {
     this.socket.send({ type: 'next_player', ...this.seenVisit() });
   }
 
-  /** Take the winning dart as thrown. Local to this device: the server has
-   * nothing left to apply, and confirming is a per-device setting. */
+  /** Take the winning dart as thrown, for the whole room. */
   confirmWin(): void {
-    this._winConfirmed.set(true);
+    this.socket.send({ type: 'set_win_confirmed', confirmed: true });
   }
 
-  /** Back from the finished screen to the win that waits for its confirm tap. */
+  /** Back from the finished screen to the win that waits for its confirm tap, for the whole room. */
   reopenWin(): void {
-    this._winConfirmed.set(false);
+    this.socket.send({ type: 'set_win_confirmed', confirmed: false });
   }
 
   /** Mark the running game as a tracking test run, or stop. Game-wide: it is
@@ -296,11 +284,6 @@ export class GameService {
       return false;
     }
     this._state.set(state);
-    // An undo past the winning dart puts the game back in play, so the next win
-    // is asked about again.
-    if (state.winnerId === null) {
-      this._winConfirmed.set(false);
-    }
     writeStored(ACTIVE_GAME_KEY, state.id);
     return true;
   }

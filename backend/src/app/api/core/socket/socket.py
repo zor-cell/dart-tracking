@@ -82,7 +82,7 @@ from app.api.features.game.dto.command.register_dart import RegisterDartDto
 from app.api.features.game.dto.command.remove_dart import RemoveDartDto
 from app.api.features.game.dto.command.replace_dart import ReplaceDartDto
 from app.api.features.game.dto.command.undo import UndoDto
-from app.api.features.game.dto.win_confirmed import WinConfirmedDto
+from app.api.features.game.dto.command.set_win_confirmed import SetWinConfirmedDto
 from app.api.features.game.domain.dart import Dart as ScoredDart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.persistence.game_repository import repository as game_repository
@@ -255,6 +255,8 @@ async def _dispatch(
             await _handle_set_evaluation(game_id, message)
         case SetTrackingPausedDto():
             await _handle_set_tracking_paused(game_id, message)
+        case SetWinConfirmedDto():
+            await _set_win_confirmed(game_id, message.confirmed)
         case (
             RegisterDartDto()
             | ReplaceDartDto()
@@ -422,6 +424,13 @@ async def _handle_set_tracking_paused(game_id: str, command: SetTrackingPausedDt
     await _publish_state(applied[0])
     if not command.paused:
         await _request_calibration(game_id)
+
+
+async def _set_win_confirmed(game_id: str, confirmed: bool) -> None:
+    """Take the win for the whole room, or go back to it; pushed so every device follows."""
+    applied = await _apply(game_id, lambda game: game.set_win_confirmed(confirmed))
+    if applied is not None and applied[1]:
+        await _publish_state(applied[0])
 
 
 async def _publish_state(game: Game) -> None:
@@ -734,7 +743,7 @@ async def _clear_board(game_id: str, client_id: str) -> None:
     if changed:
         await _end_visit(game)
     elif game.winner is not None:
-        await hub.broadcast(game_id, WinConfirmedDto())
+        await _set_win_confirmed(game_id, True)
 
 
 async def _end_visit(game: Game) -> None:

@@ -287,16 +287,44 @@ def test_pulling_the_winning_darts_confirms_the_win_in_the_room(room, camera, ga
     with camera() as phone, room(game_id) as scoreboard:
         phone.send("calibration_frame", image=jpeg(64, 48))
         phone.next("calibration_result")
-        for dart in [(20, 3), (20, 3), (20, 3), None, (20, 1), None, (20, 3), (19, 3), (2, 2)]:
-            if dart is None:
-                scoreboard.send("next_player")
-            else:
-                scoreboard.throw(*dart)
-            state = scoreboard.next("game_state")
-        assert state["winnerId"] is not None
+        win(scoreboard)
 
         phone.send("detection_frame", image=jpeg(64, 48), advanceOnPull=True)
-        scoreboard.next("win_confirmed", never=("calibration_requested", "turn_announcement"))
+        state = scoreboard.next("game_state", never=("calibration_requested", "turn_announcement"))
+        assert state["winConfirmed"] is True
+
+
+def test_the_win_is_confirmed_and_reopened_for_the_whole_room(room, game_id):
+    with room(game_id) as one, room(game_id) as other:
+        win(one)
+        while other.next("game_state")["winnerId"] is None:
+            pass
+        assert other.state["winConfirmed"] is False
+
+        one.send("set_win_confirmed", confirmed=True)
+        assert other.next("game_state")["winConfirmed"] is True
+
+        one.send("set_win_confirmed", confirmed=False)
+        assert other.next("game_state")["winConfirmed"] is False
+
+        one.send("set_win_confirmed", confirmed=True)
+        other.next("game_state")
+        one.send("undo")
+        state = other.next("game_state")
+        assert state["winnerId"] is None
+        assert state["winConfirmed"] is False
+
+
+def win(device: Device) -> dict[str, Any]:
+    """Play the first player out of 301: 180, then 121 over T20, T19, D2."""
+    for dart in [(20, 3), (20, 3), (20, 3), None, (20, 1), None, (20, 3), (19, 3), (2, 2)]:
+        if dart is None:
+            device.send("next_player")
+        else:
+            device.throw(*dart)
+        state = device.next("game_state")
+    assert state["winnerId"] is not None
+    return state
 
 
 def test_handover_asks_the_cameras_to_calibrate_again(room, camera, game_id):

@@ -11,6 +11,7 @@ import { RemoveDartDto } from '../../../features/game/dto/remove-dart.dto';
 import { ReplaceDartDto } from '../../../features/game/dto/replace-dart.dto';
 import { SetEvaluationDto } from '../../../features/game/dto/set-evaluation.dto';
 import { SetTrackingPausedDto } from '../../../features/game/dto/set-tracking-paused.dto';
+import { SetWinConfirmedDto } from '../../../features/game/dto/set-win-confirmed.dto';
 import { UndoDto } from '../../../features/game/dto/undo.dto';
 
 /**
@@ -31,6 +32,7 @@ export type ClientMessage =
   | MoveDartDto
   | SetEvaluationDto
   | SetTrackingPausedDto
+  | SetWinConfirmedDto
   | ClaimAnnouncerDto
   | UndoDto
   | RemoveDartDto
