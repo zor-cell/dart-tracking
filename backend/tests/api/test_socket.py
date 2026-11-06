@@ -399,6 +399,21 @@ def test_socket_scores_a_throw_series_like_the_pipeline_does(camera):
 
 @pytest.mark.dataset
 @pytest.mark.skipif(dataset_root() is None, reason="TESTDATA_DIR is not set")
+def test_the_first_calibration_calls_the_opening_player_once(camera):
+    entry = ("games/game_01a13481-1426-766f-b71d-524e8038c6ba", {"throw16"})
+    base = next(iter(series_of(dataset_root(), entry).values()))[0][1]
+
+    with camera() as device:
+        device.send("calibration_frame", image=encoded(base))
+        assert device.next("turn_announcement")["player"] == "Ann"
+        device.send("calibration_frame", image=encoded(base))
+        device.next("calibration_result", never=("turn_announcement",))
+        device.send("register_dart", value=20, multiplier=1)
+        device.next("dart_announcement", never=("turn_announcement",))
+
+
+@pytest.mark.dataset
+@pytest.mark.skipif(dataset_root() is None, reason="TESTDATA_DIR is not set")
 @pytest.mark.parametrize("advance_on_pull", [True, False])
 def test_pulled_darts_hand_over_with_the_rest_as_misses(camera, advance_on_pull):
     entry = ("games/game_01a13481-1426-766f-b71d-524e8038c6ba", {"throw16"})

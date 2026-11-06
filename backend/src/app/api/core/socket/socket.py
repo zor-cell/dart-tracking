@@ -530,7 +530,9 @@ async def _handle_calibration_frame(
     darts that are booked.
     """
     client_id = connection.client.id
-    decides = await scoring_camera_store.holder(game_id) in (None, client_id)
+    holder = await scoring_camera_store.holder(game_id)
+    decides = holder in (None, client_id)
+    opens_game = False
     failed_before = decides and await calibration_failure_store.failed(game_id)
     if decides:
         await _start_calibrating(game_id)
@@ -553,6 +555,7 @@ async def _handle_calibration_frame(
         await calibration_store.set(game_id, client_id, outcome)
         detection_store.seed(game_id, client_id, image)
         if await scoring_camera_store.claim(game_id, client_id):
+            opens_game = holder is None
             recorder.remember_frame(game_id, raw)
             angle = camera_angle(outcome)
             if angle is not None:
@@ -569,11 +572,13 @@ async def _handle_calibration_frame(
         if failed_before != await calibration_failure_store.failed(game_id):
             await _announce_calibration(game_id, calibrated=failed_before)
 
-    if decides and game_id in _turn_calls:
+    if decides and (game_id in _turn_calls or opens_game):
+        handover = game_id in _turn_calls
         _turn_calls.discard(game_id)
         async with database.session_scope() as session:
             game = await game_repository.get(session, game_id)
-        if game is not None:
+        # The first claim on a game nobody has thrown in yet calls its opening player.
+        if game is not None and (handover or len(game.turns) == 1):
             await _call_turn(game)
 
 
