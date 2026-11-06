@@ -68,6 +68,8 @@
           [hidden]="cameraPhase() === 'idle'"
           muted
           playsinline
+          (resize)="relayoutVideo(video)"
+          (playing)="relayoutVideo(video)"
         ></video>
         <canvas #diffCanvas width="160" height="90" class="game__hidden-canvas"></canvas>
         <canvas #captureCanvas class="game__hidden-canvas" aria-hidden="true"></canvas>

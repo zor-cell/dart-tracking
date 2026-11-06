@@ -311,6 +311,13 @@ export class GameComponent implements OnInit, OnDestroy {
 
   /** Fills the screen with the camera below the top bar; browser fullscreen where
    * supported, a fixed overlay otherwise (iPhone). */
+  /** WebKit keeps painting the stream at its old size once the frame size changes;
+   * narrowing the element for one frame makes it lay the picture out again. */
+  protected relayoutVideo(video: HTMLVideoElement): void {
+    video.style.width = 'calc(100% - 1px)';
+    requestAnimationFrame(() => (video.style.width = ''));
+  }
+
   protected toggleCameraExpanded(): void {
     if (this.cameraExpanded()) {
       this.collapseCamera();
