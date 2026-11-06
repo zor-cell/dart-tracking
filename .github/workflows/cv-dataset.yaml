@@ -14,6 +14,7 @@ permissions:
 
 jobs:
   dataset:
+    name: CV dataset run
     runs-on: [self-hosted, rpi5]
     timeout-minutes: 180
     env:
@@ -22,13 +23,18 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v7
+      - name: Check out the repository
+        uses: actions/checkout@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-      - run: uv sync --frozen
-      - run: uv run pytest tests/cv --cv-set dataset ${{ inputs.update-baseline && '--update-baseline' || '' }}
-      - if: inputs.update-baseline
+      - name: Install the backend dependencies
+        run: uv sync --frozen
+      - name: Replay the whole dataset through the CV pipeline
+        run: uv run pytest tests/cv --cv-set dataset ${{ inputs.update-baseline && '--update-baseline' || '' }}
+      - name: Upload the new baseline
+        if: inputs.update-baseline
         uses: actions/upload-artifact@v6
         with:
           name: cv-baseline

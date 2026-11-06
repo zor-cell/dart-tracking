@@ -14,9 +14,11 @@ permissions:
 
 jobs:
   test:
+    name: Test
     uses: ./.github/workflows/test.yaml
 
   changes:
+    name: Detect CV changes
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
@@ -37,7 +39,8 @@ jobs:
         backend/uv.lock
         .github/workflows/deploy.yaml
     steps:
-      - uses: actions/checkout@v5
+      - name: Check out the full history
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Check whether the push touches the CV pipeline
@@ -55,6 +58,7 @@ jobs:
           fi
 
   test-cv:
+    name: CV tests on the Pi
     needs: changes
     if: needs.changes.outputs.cv == 'true'
     runs-on: [self-hosted, rpi5]
@@ -89,15 +93,21 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v7
+      - name: Check out the repository
+        uses: actions/checkout@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-      - run: uv sync --frozen
-      - run: uv run pytest tests/cv
-      - run: uv run pytest tests/api -m dataset
+      - name: Install the backend dependencies
+        run: uv sync --frozen
+      - name: Replay the gate photos through the CV pipeline
+        run: uv run pytest tests/cv
+      - name: Run the socket tests on recorded photos
+        run: uv run pytest tests/api -m dataset
 
   deploy:
+    name: Deploy to the Pi
     needs: [test, changes, test-cv]
     # A skipped test-cv means the push left the CV pipeline alone, not that it failed.
     if: >-
@@ -127,7 +137,8 @@ jobs:
       MAIL_FROM: ${{ vars.MAIL_FROM }}
       APP_URL: https://darts.zorphy.net
     steps:
-      - uses: actions/checkout@v5
+      - name: Check out the full history
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0 # the tracker version counts commits over the whole history
       - name: Check whether the push touches the tracker
@@ -145,6 +156,7 @@ jobs:
           docker compose up -d --build --wait
 
   cv-dataset:
+    name: CV dataset
     needs: deploy
     if: needs.deploy.outputs.tracker-changed == 'true'
     uses: ./.github/workflows/cv-dataset.yaml

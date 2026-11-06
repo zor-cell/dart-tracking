@@ -16,17 +16,23 @@ defaults:
 
 jobs:
   unit:
+    name: Backend unit tests
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v7
+      - name: Check out the repository
+        uses: actions/checkout@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-      - run: uv sync --frozen
-      - run: uv run pytest tests/unit
+      - name: Install the backend dependencies
+        run: uv sync --frozen
+      - name: Run the unit tests
+        run: uv run pytest tests/unit
 
   api:
+    name: Backend API tests
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
@@ -54,26 +60,35 @@ jobs:
       REDIS_PORT: 6379
       JWT_SECRET: test-only-secret-padded-to-32-bytes
     steps:
-      - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v7
+      - name: Check out the repository
+        uses: actions/checkout@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-      - run: uv sync --frozen
-      - run: uv run pytest tests/api
+      - name: Install the backend dependencies
+        run: uv sync --frozen
+      - name: Run the API tests against Postgres and Redis
+        run: uv run pytest tests/api
 
   frontend:
+    name: Frontend build
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     defaults:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - name: Check out the repository
+        uses: actions/checkout@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
+      - name: Install the frontend dependencies
+        run: npm ci
       # Builds every language, so a text without translation fails here before the deploy.
-      - run: npm run build
+      - name: Build the app in every language
+        run: npm run build
