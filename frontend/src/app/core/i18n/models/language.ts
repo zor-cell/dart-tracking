@@ -1,5 +1,4 @@
-/** True only on the dev server that proxies the English one (`npm run start:languages`). */
-declare const DEV_LANGUAGE_SWITCH: boolean;
+import { environment } from '../../../../environments/environment';
 
 /** The languages the app is built in; each is served under its own path, e.g. `/en/`. */
 export type Language = 'de' | 'en';
@@ -38,7 +37,11 @@ export function rememberedLanguage(cookies: string): string | undefined {
  */
 export function redirectToRememberedLanguage(): boolean {
   const remembered = rememberedLanguage(document.cookie);
-  if (!DEV_LANGUAGE_SWITCH || !remembered || remembered === languageOf($localize.locale ?? 'de')) {
+  if (
+    !environment.languageSwitch ||
+    !remembered ||
+    remembered === languageOf($localize.locale ?? 'de')
+  ) {
     return false;
   }
   location.replace(`/${remembered}${location.pathname}${location.search}${location.hash}`);

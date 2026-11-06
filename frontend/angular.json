@@ -54,8 +54,7 @@
             ],
             "styles": ["src/styles.scss"],
             "polyfills": ["@angular/localize/init"],
-            "i18nMissingTranslation": "error",
-            "define": { "DEV_LANGUAGE_SWITCH": "false" }
+            "i18nMissingTranslation": "error"
           },
           "configurations": {
             "production": {
@@ -87,7 +86,12 @@
               "baseHref": "/en/"
             },
             "languages": {
-              "define": { "DEV_LANGUAGE_SWITCH": "true" }
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.languages.ts"
+                }
+              ]
             },
             "development": {
               "optimization": false,
@@ -118,7 +122,8 @@
             },
             "en": {
               "buildTarget": "frontend:build:development,en",
-              "port": 4201
+              "port": 4201,
+              "prebundle": false
             },
             "languages": {
               "buildTarget": "frontend:build:development,languages",
