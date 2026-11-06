@@ -148,7 +148,7 @@ export class GameDetailComponent {
     );
   }
 
-  /** Takes the game up again and goes into it; a device that still has it open skips the role. */
+  /** Takes the game up again and goes into it, joining it first unless this device has it open. */
   private async resume(): Promise<void> {
     const gameId = this.detail()?.game.id;
     if (!gameId) {
