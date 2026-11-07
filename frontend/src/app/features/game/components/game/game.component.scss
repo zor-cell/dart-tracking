@@ -21,7 +21,8 @@
     overflow: hidden;
   }
 
-  .game > :not(.game__camera) {
+  .game > :not(.game__stage),
+  .game__stage > :not(.game__camera) {
     display: none;
   }
 }
@@ -51,15 +52,50 @@
 
 // Camera and board share one box: whatever the keypad leaves, the same height
 // in either role, so switching or the stream loading never moves the keypad.
-.game__camera,
-.game__board {
+.game__stage {
   position: relative;
   flex: 1 1 0;
   // A floor the picture keeps whatever else is on screen.
   min-height: 12rem;
   display: flex;
+}
+
+.game__camera,
+.game__board {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
   align-items: center;
   justify-content: center;
+}
+
+// The running camera, shrunk into the board's lower left corner.
+.game__camera--inset {
+  position: absolute;
+  left: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 3;
+  height: min(45%, 9rem);
+  max-width: 45%;
+  border: 2px solid var(--p-content-border-color);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
+}
+
+.game__inset-open {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: -2px;
+  }
 }
 
 .game__camera {
@@ -81,7 +117,6 @@
 
 .game__camera--expanded {
   flex: 1;
-  min-height: 0;
   border-radius: 0;
   background: #000;
 

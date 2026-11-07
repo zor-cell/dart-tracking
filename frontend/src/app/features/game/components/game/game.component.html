@@ -2,171 +2,211 @@
   <app-game-top-bar />
 
   <section class="view game">
-    @if (deviceRole() === null) {
-      <div class="game__camera" role="status">
-        <div class="game__camera-overlay">
-          <p-progress-spinner
-            ariaLabel="Verbindung wird hergestellt"
-            i18n-ariaLabel="@@game.connecting"
-            [style]="{ width: '2.5rem', height: '2.5rem' }"
-          />
-          <p i18n="@@game.connectingText">Verbindung wird hergestellt …</p>
-        </div>
-      </div>
-    } @else if (deviceRole() === 'scoreboard') {
-      <div class="game__board">
-        <app-virtual-board
-          [darts]="currentDarts()"
-          [shadowDarts]="game.shadowDarts()"
-          [calibration]="roomCalibration()"
-        />
-        @if (game.trackingPaused() && roomCalibration() !== 'no_camera') {
-          <div class="game__calibration-notice game__calibration-notice--info" role="status">
-            <i class="pi pi-pause" aria-hidden="true"></i>
-            <strong i18n="@@game.trackingPaused">Tracking pausiert</strong>
-          </div>
-        } @else if (roomCalibrationFailure(); as failure) {
-          <div class="game__calibration-notice" role="status">
-            <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-            <strong i18n="@@game.calibrationFailed">Kalibrierung fehlgeschlagen</strong>
-            <span>{{ failure }}</span>
-          </div>
-        } @else if (roomCalibration() === 'uncalibrated') {
-          <div class="game__calibration-notice game__calibration-notice--info" role="status">
-            <strong i18n="@@game.uncalibrated">Board nicht kalibriert</strong>
-          </div>
-        }
-        <p-button
-          class="game__switch-role"
-          icon="pi pi-video"
-          [rounded]="true"
-          severity="secondary"
-          size="small"
-          ariaLabel="Dieses Gerät als Kamera verwenden"
-          i18n-ariaLabel="@@game.useAsCamera"
-          (onClick)="switchRole()"
-        />
-        @if (roomCalibration() !== 'no_camera') {
-          <p-button
-            class="game__recalibrate"
-            [icon]="roomCalibration() === 'calibrating' ? 'pi pi-sync pi-spin' : 'pi pi-sync'"
-            [rounded]="true"
-            severity="primary"
-            size="small"
-            ariaLabel="Rekalibrieren"
-            i18n-ariaLabel="@@game.recalibrate"
-            [attr.aria-busy]="roomCalibration() === 'calibrating'"
-            (onClick)="requestCalibration()"
-          />
-        }
-      </div>
-    } @else {
-      <div class="game__camera" [class.game__camera--expanded]="cameraExpanded()">
-        <video
-          #video
-          class="game__video"
-          [hidden]="cameraPhase() === 'idle'"
-          muted
-          playsinline
-          (resize)="relayoutVideo(video)"
-          (playing)="relayoutVideo(video)"
-        ></video>
-        <canvas #diffCanvas width="160" height="90" class="game__hidden-canvas"></canvas>
-        <canvas #captureCanvas class="game__hidden-canvas" aria-hidden="true"></canvas>
-
-        @if (cameraPhase() !== 'idle') {
-          <app-overlay [polylines]="calibrationOverlay()" [video]="video" />
-          @for (dart of roundDarts(); track $index) {
-            <app-overlay
-              [polylines]="dart.polylines"
-              [video]="video"
-              [color]="dart.color"
-              [lineWidth]="1.5"
-              [label]="dart.corrected ? null : '' + (dart.dartIndex + 1)"
-              [outlined]="true"
+    <div class="game__stage">
+      @if (deviceRole() === null) {
+        <div class="game__camera" role="status">
+          <div class="game__camera-overlay">
+            <p-progress-spinner
+              ariaLabel="Verbindung wird hergestellt"
+              i18n-ariaLabel="@@game.connecting"
+              [style]="{ width: '2.5rem', height: '2.5rem' }"
             />
-          }
-        }
-
-        @if (cameraPhase() === 'calibrating' || (cameraPhase() === 'tracking' && calibrationFailure())) {
-          <div
-            class="game__calibration-notice"
-            [class.game__calibration-notice--info]="!calibrationFailure()"
-            role="status"
-          >
-            @if (calibrationFailure()) {
-              <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+            <p i18n="@@game.connectingText">Verbindung wird hergestellt …</p>
+          </div>
+        </div>
+      } @else {
+        @if (deviceRole() === 'scoreboard' || boardShown()) {
+          <div class="game__board">
+            <app-virtual-board
+              [darts]="currentDarts()"
+              [shadowDarts]="game.shadowDarts()"
+              [calibration]="roomCalibration()"
+            />
+            @if (game.trackingPaused() && roomCalibration() !== 'no_camera') {
+              <div class="game__calibration-notice game__calibration-notice--info" role="status">
+                <i class="pi pi-pause" aria-hidden="true"></i>
+                <strong i18n="@@game.trackingPaused">Tracking pausiert</strong>
+              </div>
+            } @else if (roomCalibrationFailure(); as failure) {
+              <div class="game__calibration-notice" role="status">
+                <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+                <strong i18n="@@game.calibrationFailed">Kalibrierung fehlgeschlagen</strong>
+                <span>{{ failure }}</span>
+              </div>
+            } @else if (roomCalibration() === 'uncalibrated') {
+              <div class="game__calibration-notice game__calibration-notice--info" role="status">
+                <strong i18n="@@game.uncalibrated">Board nicht kalibriert</strong>
+              </div>
             }
-            @if (calibrationFailure()) {
-              <strong i18n="@@game.calibrationFailed">Kalibrierung fehlgeschlagen</strong>
+            @if (boardShown()) {
+              <p-button
+                class="game__switch-role"
+                icon="pi pi-video"
+                [rounded]="true"
+                severity="secondary"
+                size="small"
+                ariaLabel="Kamerabild groß anzeigen"
+                i18n-ariaLabel="@@game.showCamera"
+                (onClick)="boardShown.set(false)"
+              />
             } @else {
-              <strong i18n="@@game.uncalibrated">Board nicht kalibriert</strong>
+              <p-button
+                class="game__switch-role"
+                icon="pi pi-video"
+                [rounded]="true"
+                severity="secondary"
+                size="small"
+                ariaLabel="Dieses Gerät als Kamera verwenden"
+                i18n-ariaLabel="@@game.useAsCamera"
+                (onClick)="switchRole()"
+              />
             }
-            @if (calibrationStatus() === 'pending') {
-              <span i18n="@@game.calibrating">Wird kalibriert …</span>
-            } @else if (calibrationFailure(); as failure) {
-              <span>{{ failure }}</span>
+            @if (roomCalibration() !== 'no_camera') {
+              <p-button
+                class="game__recalibrate"
+                [icon]="roomCalibration() === 'calibrating' ? 'pi pi-sync pi-spin' : 'pi pi-sync'"
+                [rounded]="true"
+                severity="primary"
+                size="small"
+                ariaLabel="Rekalibrieren"
+                i18n-ariaLabel="@@game.recalibrate"
+                [attr.aria-busy]="roomCalibration() === 'calibrating'"
+                (onClick)="requestCalibration()"
+              />
             }
           </div>
         }
+        @if (deviceRole() === 'camera') {
+          <div
+            class="game__camera"
+            [class.game__camera--expanded]="cameraExpanded()"
+            [class.game__camera--inset]="boardShown()"
+            [style.aspect-ratio]="boardShown() ? videoAspect() : null"
+          >
+            <video
+              #video
+              class="game__video"
+              [hidden]="cameraPhase() === 'idle'"
+              muted
+              playsinline
+              (resize)="relayoutVideo(video)"
+              (playing)="relayoutVideo(video)"
+            ></video>
+            <canvas #diffCanvas width="160" height="90" class="game__hidden-canvas"></canvas>
+            <canvas #captureCanvas class="game__hidden-canvas" aria-hidden="true"></canvas>
 
-        @switch (cameraPhase()) {
-          @case ('idle') {
-            <div class="game__camera-overlay">
-              <i class="pi pi-camera" aria-hidden="true"></i>
-              <p-button
-                label="Kamera starten"
-                i18n-label="@@game.startCamera"
-                icon="pi pi-video"
-                (onClick)="startCamera()"
-              />
-              @if (cameraError(); as error) {
-                <p class="game__camera-error">{{ error }}</p>
+            @if (cameraPhase() !== 'idle') {
+              <app-overlay [polylines]="boardShown() ? null : calibrationOverlay()" [video]="video" />
+              @for (dart of roundDarts(); track $index) {
+                <app-overlay
+                  [polylines]="dart.polylines"
+                  [video]="video"
+                  [color]="dart.color"
+                  [lineWidth]="1.5"
+                  [label]="dart.corrected ? null : '' + (dart.dartIndex + 1)"
+                  [outlined]="true"
+                />
               }
-            </div>
-          }
-          @case ('tracking') {
-            <span class="game__camera-badge">{{ detectionFeedback() ?? detectionStatusLabel() }}</span>
-          }
-        }
+            }
 
-        @if (cameraPhase() !== 'idle') {
-          <p-button
-            class="game__recalibrate"
-            [icon]="calibrationStatus() === 'pending' ? 'pi pi-sync pi-spin' : 'pi pi-sync'"
-            [rounded]="true"
-            severity="primary"
-            size="small"
-            [ariaLabel]="cameraPhase() === 'calibrating' ? calibrateLabel : recalibrateLabel"
-            [attr.aria-busy]="calibrationStatus() === 'pending'"
-            (onClick)="calibrateBoard()"
-          />
-        }
+            @if (boardShown()) {
+              <button
+                type="button"
+                class="game__inset-open"
+                aria-label="Kamerabild groß anzeigen"
+                i18n-aria-label="@@game.showCamera"
+                (click)="boardShown.set(false)"
+              ></button>
+            } @else {
+              @if (cameraPhase() === 'calibrating' || (cameraPhase() === 'tracking' && calibrationFailure())) {
+                <div
+                  class="game__calibration-notice"
+                  [class.game__calibration-notice--info]="!calibrationFailure()"
+                  role="status"
+                >
+                  @if (calibrationFailure()) {
+                    <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+                  }
+                  @if (calibrationFailure()) {
+                    <strong i18n="@@game.calibrationFailed">Kalibrierung fehlgeschlagen</strong>
+                  } @else {
+                    <strong i18n="@@game.uncalibrated">Board nicht kalibriert</strong>
+                  }
+                  @if (calibrationStatus() === 'pending') {
+                    <span i18n="@@game.calibrating">Wird kalibriert …</span>
+                  } @else if (calibrationFailure(); as failure) {
+                    <span>{{ failure }}</span>
+                  }
+                </div>
+              }
 
-        <p-button
-          class="game__switch-role"
-          icon="pi pi-bullseye"
-          [rounded]="true"
-          severity="secondary"
-          size="small"
-          ariaLabel="Dieses Gerät als Scoreboard verwenden"
-          i18n-ariaLabel="@@game.useAsScoreboard"
-          (onClick)="switchRole()"
-        />
+              @switch (cameraPhase()) {
+                @case ('idle') {
+                  <div class="game__camera-overlay">
+                    <i class="pi pi-camera" aria-hidden="true"></i>
+                    <p-button
+                      label="Kamera starten"
+                      i18n-label="@@game.startCamera"
+                      icon="pi pi-video"
+                      (onClick)="startCamera()"
+                    />
+                    @if (cameraError(); as error) {
+                      <p class="game__camera-error">{{ error }}</p>
+                    }
+                  </div>
+                }
+                @case ('tracking') {
+                  <span class="game__camera-badge">{{ detectionFeedback() ?? detectionStatusLabel() }}</span>
+                }
+              }
 
-        @if (cameraPhase() !== 'idle') {
-          <p-button
-            class="game__expand"
-            [icon]="cameraExpanded() ? 'pi pi-window-minimize' : 'pi pi-expand'"
-            [rounded]="true"
-            severity="secondary"
-            size="small"
-            [ariaLabel]="cameraExpanded() ? exitFullscreenLabel : fullscreenLabel"
-            (onClick)="toggleCameraExpanded()"
-          />
+              @if (cameraPhase() === 'idle') {
+                <p-button
+                  class="game__switch-role"
+                  icon="pi pi-bullseye"
+                  [rounded]="true"
+                  severity="secondary"
+                  size="small"
+                  ariaLabel="Dieses Gerät als Scoreboard verwenden"
+                  i18n-ariaLabel="@@game.useAsScoreboard"
+                  (onClick)="switchRole()"
+                />
+              } @else {
+                <p-button
+                  class="game__recalibrate"
+                  [icon]="calibrationStatus() === 'pending' ? 'pi pi-sync pi-spin' : 'pi pi-sync'"
+                  [rounded]="true"
+                  severity="primary"
+                  size="small"
+                  [ariaLabel]="cameraPhase() === 'calibrating' ? calibrateLabel : recalibrateLabel"
+                  [attr.aria-busy]="calibrationStatus() === 'pending'"
+                  (onClick)="calibrateBoard()"
+                />
+                <p-button
+                  class="game__switch-role"
+                  icon="pi pi-bullseye"
+                  [rounded]="true"
+                  severity="secondary"
+                  size="small"
+                  ariaLabel="Board anzeigen, Kamera läuft weiter"
+                  i18n-ariaLabel="@@game.showBoard"
+                  (onClick)="showBoard()"
+                />
+                <p-button
+                  class="game__expand"
+                  [icon]="cameraExpanded() ? 'pi pi-window-minimize' : 'pi pi-expand'"
+                  [rounded]="true"
+                  severity="secondary"
+                  size="small"
+                  [ariaLabel]="cameraExpanded() ? exitFullscreenLabel : fullscreenLabel"
+                  (onClick)="toggleCameraExpanded()"
+                />
+              }
+            }
+          </div>
         }
-      </div>
-    }
+      }
+    </div>
 
     <!-- The win is shown on the player card; this only voices it. -->
     @if (game.settledWinner(); as winner) {
@@ -367,6 +407,7 @@
     i18n-aria-label="@@game.loading"
   >
     <!-- Spinner rather than a skeleton: this box holds a live picture, not text. -->
+    <div class="game__stage">
     <div class="game__camera">
       <div class="game__camera-overlay">
         <p-progress-spinner
@@ -376,6 +417,7 @@
         />
         <p i18n="@@game.loadingText">Spiel wird geladen …</p>
       </div>
+    </div>
     </div>
 
     <app-scoreboard [entries]="null" />

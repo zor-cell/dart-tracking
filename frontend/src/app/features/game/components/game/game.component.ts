@@ -136,6 +136,11 @@ export class GameComponent implements OnInit, OnDestroy {
 
   protected readonly cameraExpanded = signal(false);
 
+  /** Whether this camera device shows the drawn board, its picture shrunk to an inset. */
+  protected readonly boardShown = signal(false);
+  /** The stream's width over its height, which the inset takes on. */
+  protected readonly videoAspect = signal(4 / 3);
+
   /** Whether the game is still being fetched — the placeholder below the view is
    * for "no game", which is a different answer from "not yet known". Without a
    * persisted id there is nothing to fetch, so the answer is known at once. */
@@ -253,6 +258,7 @@ export class GameComponent implements OnInit, OnDestroy {
     effect(() => {
       if (this.cameraPhase() === 'idle') {
         this.collapseCamera();
+        this.boardShown.set(false);
       }
     });
 
@@ -314,6 +320,9 @@ export class GameComponent implements OnInit, OnDestroy {
   /** WebKit keeps painting the stream at its old size once the frame size changes;
    * narrowing the element for one frame makes it lay the picture out again. */
   protected relayoutVideo(video: HTMLVideoElement): void {
+    if (video.videoWidth && video.videoHeight) {
+      this.videoAspect.set(video.videoWidth / video.videoHeight);
+    }
     video.style.width = 'calc(100% - 1px)';
     requestAnimationFrame(() => (video.style.width = ''));
   }
@@ -327,7 +336,14 @@ export class GameComponent implements OnInit, OnDestroy {
     this.document.documentElement.requestFullscreen?.().catch(() => {});
   }
 
+  /** The board in the picture's place, while the camera keeps tracking in an inset. */
+  protected showBoard(): void {
+    this.collapseCamera();
+    this.boardShown.set(true);
+  }
+
   protected switchRole(): void {
+    this.boardShown.set(false);
     this.session.setRole(this.deviceRole() === 'camera' ? 'scoreboard' : 'camera');
   }
 
