@@ -1,20 +1,22 @@
 @if (game.state(); as state) {
   <header class="top-bar">
     <div class="top-bar__heading">
-      <p-button
-        icon="pi pi-times"
-        severity="secondary"
-        [outlined]="true"
-        size="small"
-        ariaLabel="Spiel verlassen"
-        i18n-ariaLabel="@@game.leave"
-        (onClick)="confirmLeaveGame()"
-      />
+      <div class="top-bar__actions">
+        <p-button
+          icon="pi pi-times"
+          severity="secondary"
+          [outlined]="true"
+          size="small"
+          ariaLabel="Spiel verlassen"
+          i18n-ariaLabel="@@game.leave"
+          (onClick)="confirmLeaveGame()"
+        />
+        <app-tracking-toggle />
+      </div>
       <span class="top-bar__title">{{ title() }}</span>
     </div>
 
     <div class="top-bar__actions">
-      <app-tracking-toggle />
       <app-torch-toggle />
       <app-announcer-toggle />
       <p-button
