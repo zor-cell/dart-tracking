@@ -20,6 +20,9 @@ const DART_COLORS = [
 /** The colour of a shadow dart: located after the visit closed, not counted. */
 export const SHADOW_DART_COLOR = '#9aa0a6';
 
+/** The colour of a located dart that was booked as another field by hand. */
+export const CORRECTED_DART_COLOR = 'rgba(154, 160, 166, 0.55)';
+
 /**
  * The colour for the dart at `index`, held at the last one beyond the third: an
  * over-eager trigger can land more than three detections in one visit, and

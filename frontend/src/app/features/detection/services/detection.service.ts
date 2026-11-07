@@ -8,7 +8,7 @@ import { DetectionResultDto } from '../dto/detection-result.dto';
 import { ThrowTriggerDto } from '../dto/throw-trigger.dto';
 import { DartDto } from '../../game/dto/dart.dto';
 import { GameStateDto } from '../../game/dto/game-state.dto';
-import { dartColor, SHADOW_DART_COLOR } from '../../game/models/dart-colors';
+import { locatedDart, placeOverlay, RoundDartOverlay } from '../models/round-dart-overlay';
 
 /** How long a hit/failure line stays in the badge before it clears. */
 const FEEDBACK_DURATION_MS = 2500;
@@ -21,17 +21,6 @@ const FAILURE_HINTS: Record<DetectionFailureDto, string> = {
   implausible_shape: $localize`:@@detection.covered:Board verdeckt`,
   darts_removed: $localize`:@@detection.removed:Pfeile entfernt`,
 };
-
-/** One located dart to draw: its polylines, its place in the visit, and the
- * colour for that place. */
-export interface RoundDartOverlay {
-  readonly polylines: number[][][];
-  readonly dartIndex: number;
-  readonly color: string;
-  /** The tip this outline was drawn at, in board millimetres — what it is
-   * matched back to the visit by. Null until the state holding it has arrived. */
-  readonly tip: readonly [number, number] | null;
-}
 
 /**
  * The client half of dart detection: sends the triggered throw frame and tracks
@@ -72,8 +61,9 @@ export class DetectionService {
   readonly sendsFrames = computed(() => this.acceptsThrows() || this.game.watchesPull());
 
   private feedbackTimeoutId: ReturnType<typeof setTimeout> | null = null;
-  // The turn count from the last reconciled state.
+  // The turn count and the open visit's dart count from the last reconciled state.
   private lastTurnCount: number | null = null;
+  private lastDartCount = 0;
 
   constructor() {
     // Located darts arrive over the socket, one `detection_result` per throw.
@@ -115,10 +105,7 @@ export class DetectionService {
     }
     const booked = this.game.currentTurn()?.darts.length ?? 0;
     const dartIndex = booked + this.game.shadowDarts().length;
-    this.roundDarts.update((darts) => [
-      ...darts,
-      { polylines, dartIndex, color: colorFor(dartIndex, booked), tip: null },
-    ]);
+    this.roundDarts.update((darts) => [...darts, locatedDart(polylines, dartIndex, booked)]);
   }
 
   /**
@@ -134,10 +121,11 @@ export class DetectionService {
       this.roundDarts.set([]);
     } else {
       this.roundDarts.update((overlays) =>
-        overlays.flatMap((o) => place(o, darts, booked.length)),
+        overlays.flatMap((o) => placeOverlay(o, darts, booked.length, this.lastDartCount)),
       );
     }
     this.lastTurnCount = count;
+    this.lastDartCount = darts.length;
   }
 
   /** Send a triggered throw frame; the result arrives asynchronously. */
@@ -175,30 +163,4 @@ function formatHit(segment: string | null, points: number | null): string {
 
 function hintFor(failure: DetectionFailureDto | null): string {
   return (failure && FAILURE_HINTS[failure]) ?? FAILURE_HINTS.no_change;
-}
-
-/** Where an outline belongs in the visit as it now stands — booked darts, then
- * shadow darts — or nothing when the dart it marked is gone. Looked up by its tip. */
-function place(
-  overlay: RoundDartOverlay,
-  darts: readonly DartDto[],
-  booked: number,
-): RoundDartOverlay[] {
-  const tip = overlay.tip ?? darts[overlay.dartIndex]?.position ?? null;
-  const dartIndex = tip === null ? overlay.dartIndex : darts.findIndex((d) => sameTip(d.position, tip));
-  if (dartIndex < 0 || dartIndex >= darts.length) {
-    return [];
-  }
-  return [{ ...overlay, tip, dartIndex, color: colorFor(dartIndex, booked) }];
-}
-
-function colorFor(dartIndex: number, booked: number): string {
-  return dartIndex < booked ? dartColor(dartIndex) : SHADOW_DART_COLOR;
-}
-
-function sameTip(
-  a: readonly [number, number] | null,
-  b: readonly [number, number],
-): boolean {
-  return a !== null && a[0] === b[0] && a[1] === b[1];
 }

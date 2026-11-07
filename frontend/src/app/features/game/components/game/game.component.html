@@ -82,7 +82,7 @@
               [video]="video"
               [color]="dart.color"
               [lineWidth]="1.5"
-              [label]="'' + (dart.dartIndex + 1)"
+              [label]="dart.corrected ? null : '' + (dart.dartIndex + 1)"
               [outlined]="true"
             />
           }
