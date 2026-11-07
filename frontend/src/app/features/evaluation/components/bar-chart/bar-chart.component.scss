@@ -1,0 +1,33 @@
+:host {
+  display: block;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  list-style: none;
+  color: var(--p-text-muted-color);
+  font-size: 0.8rem;
+}
+
+.legend__swatch {
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  margin-right: 0.4rem;
+  border-radius: 0.15rem;
+  vertical-align: -0.05rem;
+}
+
+.caption {
+  margin: 0 0 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.legend__note {
+  font-variant-numeric: tabular-nums;
+}

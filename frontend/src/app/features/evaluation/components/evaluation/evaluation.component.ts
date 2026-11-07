@@ -1,4 +1,3 @@
-import { DatePipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -12,10 +11,31 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { MenuItem } from 'primeng/api';
+import { Button } from 'primeng/button';
+import { Menu } from 'primeng/menu';
 import { MultiSelect } from 'primeng/multiselect';
 import { Select } from 'primeng/select';
 import { Slider } from 'primeng/slider';
-import { AccuracySummaryDto, FieldKind, GameAccuracyDto } from '../../dto/accuracy.dto';
+import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
+import {
+  AccuracySummaryDto,
+  FailureCountDto,
+  GameAccuracyDto,
+  GroupBreakdownDto,
+  GroupKind,
+  MismatchDto,
+  TipDto,
+} from '../../dto/accuracy.dto';
+import { ChartGroup } from '../../models/chart-parts';
+import { GROUP_KINDS, groupLabel } from '../../models/evaluation-groups';
+import { AccuracyChartsComponent } from '../accuracy-charts/accuracy-charts.component';
+import { AccuracySummaryComponent } from '../accuracy-summary/accuracy-summary.component';
+import { AccuracyTrendComponent } from '../accuracy-trend/accuracy-trend.component';
+import { GameTableComponent } from '../game-table/game-table.component';
+import { GroupChartsComponent } from '../group-charts/group-charts.component';
+import { MismatchTableComponent } from '../mismatch-table/mismatch-table.component';
 import {
   EvaluationFilter,
   RUN_KIND_LABELS,
@@ -54,7 +74,7 @@ import {
   oneOfParam,
 } from '../../../../core/view/models/query-state';
 import { FilterMemoryService } from '../../../../core/view/services/filter-memory.service';
-import { SHORT_DATE_TIME } from '../../../../core/i18n/models/date-format';
+import { backState } from '../../../../core/view/models/back-state';
 
 /** "54", "52–54", "from 52", "to 54"; null for every version. */
 function versionLabel([from, to]: VersionRange): string | null {
@@ -69,37 +89,6 @@ function versionLabel([from, to]: VersionRange): string | null {
   }
   return to === null ? $localize`:@@eval.since:ab ${from}:version:` : `${from}–${to}`;
 }
-
-/** What the outcome counts are called on the page, in reading order. */
-const OUTCOMES: readonly { key: keyof AccuracySummaryDto; label: string; hint: string }[] = [
-  {
-    key: 'correct',
-    label: $localize`:@@eval.correct:Korrekt`,
-    hint: $localize`:@@eval.correctHint:Im richtigen Segment gebucht`,
-  },
-  {
-    key: 'wrong',
-    label: $localize`:@@eval.wrong:Falsch`,
-    hint: $localize`:@@eval.wrongHint:Gebucht, aber im falschen Segment`,
-  },
-  {
-    key: 'missed',
-    label: $localize`:@@eval.missed:Verpasst`,
-    hint: $localize`:@@eval.missedHint:Geworfen, von der Kamera nie gebucht`,
-  },
-  {
-    key: 'phantom',
-    label: $localize`:@@eval.phantom:Phantom`,
-    hint: $localize`:@@eval.phantomHint:Gebucht, ohne dass ein Pfeil steckte`,
-  },
-];
-
-const FIELD_LABELS: Record<FieldKind, string> = {
-  single: 'Single',
-  double: 'Double',
-  triple: 'Triple',
-  outside: $localize`:@@game.miss:Daneben`,
-};
 
 /** The filters whose picks are remembered and offered back; version and period are not. */
 const REMEMBERED = ['mode', 'run'] as const;
@@ -142,36 +131,45 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
   { key: 'run', label: RUN_KIND_LABELS.test, value: 'test' },
 ];
 
-interface ScopeOption {
-  readonly gameId: string | null;
-  readonly label: string;
-}
+/** The tabs of the page, kept in the URL so a game opened from one leads back to it. */
+const TABS = ['overview', 'analysis', 'games'] as const;
+type EvaluationTab = (typeof TABS)[number];
 
 @Component({
   selector: 'app-evaluation',
   imports: [
+    AccuracyChartsComponent,
+    AccuracySummaryComponent,
+    AccuracyTrendComponent,
     BackLinkComponent,
-    DecimalPipe,
+    Button,
+    GameTableComponent,
+    GroupChartsComponent,
+    MismatchTableComponent,
     FormsModule,
     ListToolbarComponent,
     LoadErrorComponent,
     LoadingStateComponent,
+    Menu,
     MultiSelect,
-    NgTemplateOutlet,
     EmptyStateComponent,
     PeriodPickerComponent,
     ReactiveFormsModule,
     Select,
     Slider,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
   ],
   templateUrl: './evaluation.component.html',
   styleUrl: './evaluation.component.scss',
-  providers: [DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EvaluationComponent {
   private readonly evaluation = inject(EvaluationService);
-  private readonly dates = inject(DatePipe);
+  private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly locale = inject(LOCALE_ID);
   private readonly memory = inject(FilterMemoryService);
@@ -179,13 +177,42 @@ export class EvaluationComponent {
 
   protected readonly total = signal<AccuracySummaryDto | null>(null);
   protected readonly games = signal<readonly GameAccuracyDto[]>([]);
-  protected readonly selectedGameId = signal<string | null>(null);
+  protected readonly groups = signal<readonly GroupBreakdownDto[]>([]);
+  protected readonly failures = signal<readonly FailureCountDto[]>([]);
+  protected readonly mismatches = signal<readonly MismatchDto[]>([]);
+  protected readonly tips = signal<readonly TipDto[]>([]);
+  protected readonly tab = signal<EvaluationTab>('overview');
+  /** What the analysis splits the darts by; null shows them all together. */
+  protected readonly groupKind = signal<GroupKind | null>(null);
+  protected readonly groupName = computed(
+    () => GROUP_KINDS.find((kind) => kind.value === this.groupKind())?.label ?? null,
+  );
+  /** The groupings to pick from, the current one ticked. */
+  protected readonly groupItems = computed<MenuItem[]>(() => {
+    const current = this.groupKind();
+    const item = (label: string, kind: GroupKind | null): MenuItem => ({
+      label,
+      icon: kind === current ? 'pi pi-check' : 'pi pi-fw',
+      command: () => this.groupBy(kind),
+    });
+    return [
+      item($localize`:@@eval.group.off:Nicht gruppieren`, null),
+      ...GROUP_KINDS.map((kind) => item(kind.label, kind.value)),
+    ];
+  });
+  /** The groups of the current grouping, worded; null while nothing is grouped. */
+  protected readonly chartGroups = computed<ChartGroup[] | null>(() => {
+    const kind = this.groupKind();
+    if (kind === null) {
+      return null;
+    }
+    const rows = this.groups().find((group) => group.kind === kind)?.rows ?? [];
+    return rows.map((row) => ({ ...row, label: groupLabel(kind, row.key) }));
+  });
+  protected readonly downloading = signal(false);
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
   private requests = 0;
-
-  protected readonly outcomes = OUTCOMES;
-  protected readonly fieldLabels = FIELD_LABELS;
 
   /** Tracker versions there are games of, newest first; null until they are known. */
   protected readonly versions = signal<number[] | null>(null);
@@ -232,7 +259,10 @@ export class EvaluationComponent {
     ];
     const versions = version ? versionLabel(version) : null;
     if (versions) {
-      chips.push({ key: 'version', label: $localize`:@@eval.trackerChip:Tracker ${versions}:versions:` });
+      chips.push({
+        key: 'version',
+        label: $localize`:@@eval.trackerChip:Tracker ${versions}:versions:`,
+      });
     }
     const modes = this.chipLabel('mode', mode ?? []);
     if (modes) {
@@ -242,7 +272,10 @@ export class EvaluationComponent {
       chips.push({ key: 'run', label: RUN_KIND_LABELS[run] });
     }
     if (tilt) {
-      chips.push({ key: 'tilt', label: $localize`:@@eval.tiltChip:Neigung ${tilt[0]}:from:–${tilt[1]}:to:°` });
+      chips.push({
+        key: 'tilt',
+        label: $localize`:@@eval.tiltChip:Neigung ${tilt[0]}:from:–${tilt[1]}:to:°`,
+      });
     }
     return chips;
   });
@@ -280,41 +313,6 @@ export class EvaluationComponent {
     };
   });
 
-  /** The whole set first, then one entry per logged game, newest first. */
-  protected readonly scopes = computed<ScopeOption[]>(() => [
-    {
-      gameId: null,
-      label:
-        this.games().length === 1
-          ? $localize`:@@eval.totalOne:Gesamt (1 Spiel)`
-          : $localize`:@@eval.total:Gesamt (${this.games().length}:count: Spiele)`,
-    },
-    ...this.games().map((game) => ({
-      gameId: game.gameId,
-      label: this.labelOf(game),
-    })),
-  ]);
-
-  protected readonly selectedGame = computed<GameAccuracyDto | null>(() => {
-    const gameId = this.selectedGameId();
-    return this.games().find((game) => game.gameId === gameId) ?? null;
-  });
-
-  protected readonly summary = computed<AccuracySummaryDto | null>(() =>
-    this.selectedGameId() === null ? this.total() : (this.selectedGame()?.summary ?? null),
-  );
-
-  /** Share of thrown darts booked in the right segment. */
-  protected readonly accuracy = computed(() => {
-    const summary = this.summary();
-    return !summary || summary.dartsThrown === 0 ? null : summary.correct / summary.dartsThrown;
-  });
-
-  protected readonly cleanVisitRate = computed(() => {
-    const summary = this.summary();
-    return !summary || summary.visits === 0 ? null : summary.cleanVisits / summary.visits;
-  });
-
   constructor() {
     this.queryState.signal(
       'period',
@@ -323,6 +321,13 @@ export class EvaluationComponent {
       'all',
     );
     this.queryState.signal('range', this.range, DAY_RANGE_PARAM, null);
+    this.queryState.signal(
+      'group',
+      this.groupKind,
+      oneOfParam(GROUP_KINDS.map((kind) => kind.value)) as QueryParam<GroupKind | null>,
+      null,
+    );
+    this.queryState.signal('tab', this.tab, oneOfParam(TABS), 'overview');
     this.queryState.form(this.filters, FILTER_PARAMS);
     this.tiltDraft.set([...(this.filters.controls.tilt.value ?? TILT_LIMITS)]);
     this.filters.controls.tilt.valueChanges
@@ -340,33 +345,6 @@ export class EvaluationComponent {
     });
   }
 
-  /** Every judged dart, phantoms included: the base of the outcome shares. */
-  protected readonly judged = computed(() => {
-    const summary = this.summary();
-    return summary ? summary.correct + summary.wrong + summary.missed + summary.phantom : 0;
-  });
-
-  protected share(count: number): number | null {
-    const judged = this.judged();
-    return judged === 0 ? null : count / judged;
-  }
-
-  protected count(key: keyof AccuracySummaryDto): number {
-    return (this.summary()?.[key] as number) ?? 0;
-  }
-
-  protected readonly sides = {
-    left: $localize`:@@eval.left:links`,
-    right: $localize`:@@eval.right:rechts`,
-    below: $localize`:@@eval.below:unterhalb`,
-    above: $localize`:@@eval.above:oberhalb`,
-  };
-
-  protected sideOf(degrees: number, negative: string, positive: string): string {
-    const rounded = Math.round(Math.abs(degrees));
-    return `${rounded}° ${degrees < 0 ? negative : positive}`;
-  }
-
   /** How a filter's picks read on a chip; null when none of them is known to this page. */
   private chipLabel(key: string, picks: readonly unknown[]): string | null {
     const names = picks.flatMap((pick) => {
@@ -380,10 +358,12 @@ export class EvaluationComponent {
     return names.length === 0 ? null : orList(names);
   }
 
-  private labelOf(game: GameAccuracyDto): string {
-    const date = this.dates.transform(game.createdAt, SHORT_DATE_TIME) ?? '';
-    const marker = game.evaluationEnabled ? ` · ${RUN_KIND_LABELS.test}` : '';
-    return `${date} · ${game.mode}${marker}`;
+  /** Groups the analysis and shows it, since only the analysis is split. */
+  protected groupBy(kind: GroupKind | null): void {
+    this.groupKind.set(kind);
+    if (kind !== null) {
+      this.tab.set('analysis');
+    }
   }
 
   /** The period chip opens the period picker under it. */
@@ -436,15 +416,27 @@ export class EvaluationComponent {
     }, TILT_DEBOUNCE_MS);
   }
 
-  /** The off-by spread as symbol, name and value, for the line under the bands. */
-  protected offByFigures(
-    summary: AccuracySummaryDto,
-  ): { symbol: string; label: string; value: number | null }[] {
-    return [
-      { symbol: 'Ø', label: $localize`:@@eval.mean:Mittelwert`, value: summary.meanOffBy },
-      { symbol: 'x̃', label: 'Median', value: summary.medianOffBy },
-      { symbol: 'max', label: $localize`:@@eval.worst:Größter Abstand`, value: summary.worstOffBy },
-    ];
+  /** The selection as a Markdown report; a failure shows as the interceptor's toast. */
+  protected async download(): Promise<void> {
+    const criteria = this.criteria();
+    if (!criteria || this.downloading()) {
+      return;
+    }
+    this.downloading.set(true);
+    try {
+      await this.evaluation.downloadReport(criteria);
+    } catch {
+      // Already reported by the error interceptor.
+    } finally {
+      this.downloading.set(false);
+    }
+  }
+
+  /** One game's figures on their own page; going back returns to this tab and filters. */
+  protected openGame(gameId: string): void {
+    void this.router.navigate(['/account/evaluation', gameId], {
+      state: backState($localize`:@@auth.account.evaluation:Auswertung`),
+    });
   }
 
   protected retry(): void {
@@ -486,9 +478,10 @@ export class EvaluationComponent {
       if (request === this.requests) {
         this.total.set(report.total);
         this.games.set(report.games);
-        if (!report.games.some((game) => game.gameId === this.selectedGameId())) {
-          this.selectedGameId.set(null);
-        }
+        this.groups.set(report.groups);
+        this.failures.set(report.failures);
+        this.mismatches.set(report.mismatches);
+        this.tips.set(report.tips);
       }
     } catch {
       if (request === this.requests) {

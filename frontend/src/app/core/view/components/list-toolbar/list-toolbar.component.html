@@ -81,6 +81,7 @@
           (onClick)="togglePanel($event)"
         />
       }
+      <ng-content select="[listToolbarTool]" />
     }
     <div class="list-toolbar__action">
       <ng-content select="[listToolbarAction]" />

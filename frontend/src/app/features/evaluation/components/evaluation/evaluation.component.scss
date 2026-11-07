@@ -1,4 +1,23 @@
-/* The figures below the filters, spaced like the view; faded while new ones load. */
+:host {
+  --p-tabs-tabpanel-padding: 1.25rem 0 0;
+}
+
+/* Right under the filters, the tab padding as the only gap, as in the statistics. */
+p-tabs {
+  margin-top: -1.25rem;
+}
+
+/* The tabs share the bar evenly. */
+p-tab {
+  flex: 1 1 0;
+  text-align: center;
+}
+
+.status {
+  margin-top: 1.25rem;
+}
+
+/* The games tab's panels, spaced like the view. */
 .results {
   display: flex;
   flex-direction: column;
@@ -28,107 +47,16 @@
   margin: 0.6rem 0.5rem 0.4rem;
 }
 
-/* The off-by spread: each figure's symbol over its value, side by side. */
-.spread {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  margin: 0;
-}
-
-.spread__figure {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.1rem;
-}
-
-.spread__label {
-  color: var(--p-text-muted-color);
-  font-size: 0.8rem;
-}
-
-.spread__value {
-  margin: 0;
-  font-size: 0.9rem;
-  white-space: nowrap;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
 .reloading {
   opacity: 0.6;
   transition: opacity 0.15s;
 }
 
-.scope {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
+/* The grouping button, labelled once a grouping is set, as compact as the chips. */
+.group-button {
+  --p-button-sm-padding-y: 0.25rem;
+  --p-button-sm-padding-x: 0.625rem;
+  --p-button-sm-font-size: 0.8125rem;
 
-.scope__label {
-  color: var(--p-text-muted-color);
-  font-size: 0.8rem;
-}
-
-.rows {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.6rem 1rem;
-  border: 1px solid var(--p-content-border-color);
-  border-radius: 0.5rem;
-}
-
-.row--split {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.3rem;
-}
-
-.row__line {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.row__text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
-
-.row__label {
-  font-weight: 600;
-}
-
-.row__hint {
-  color: var(--p-text-muted-color);
-  font-size: 0.75rem;
-}
-
-.row__value {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.row__share {
-  color: var(--p-text-muted-color);
-  font-size: 0.8rem;
-  font-weight: 400;
+  flex: none;
 }

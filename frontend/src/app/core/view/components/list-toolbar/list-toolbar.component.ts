@@ -22,8 +22,8 @@ import { FilterChip, FilterChipOpen, FilterSuggestion } from '../../models/filte
 import { centrePopoverArrow } from '../../models/popover-arrow';
 
 /** Above a list: the active filters and suggestions in one scrolling row, a search
- * that opens from its icon, a filter popover around the projected fields, and an
- * optional `listToolbarAction` button set slightly apart at the end. */
+ * that opens from its icon, a filter popover around the projected fields, optional
+ * `listToolbarTool` buttons beside the filter and a `listToolbarAction` set apart at the end. */
 @Component({
   selector: 'app-list-toolbar',
   imports: [AutoFocus, Button, Chip, IconField, InputIcon, InputText, Popover, ReactiveFormsModule],

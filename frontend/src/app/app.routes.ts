@@ -142,6 +142,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'account/evaluation/:gameId',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./features/evaluation/components/evaluation-game/evaluation-game.component').then(
+        (m) => m.EvaluationGameComponent,
+      ),
+  },
+  {
     path: 'imprint',
     loadComponent: () =>
       import('./features/legal/components/imprint/imprint.component').then(

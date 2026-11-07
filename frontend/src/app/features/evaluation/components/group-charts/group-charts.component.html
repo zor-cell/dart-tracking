@@ -1,0 +1,63 @@
+<section class="panel">
+  <h2 class="panel__title">{{ titles.outcomes }}</h2>
+  <app-bar-chart
+    [rows]="outcomeRows()"
+    [series]="outcomeSeries"
+    [percent]="true"
+    [inside]="true"
+    [label]="titles.outcomes"
+    [axis]="axes.dartShare"
+  />
+</section>
+
+@if (fieldCharts().length) {
+  <section class="panel">
+    <h2 class="panel__title">{{ titles.fields }}</h2>
+    @for (chart of fieldCharts(); track chart.kind; let first = $first, last = $last) {
+      <app-bar-chart
+        [rows]="chart.rows"
+        [series]="fieldSeries"
+        [bare]="!first"
+        [caption]="chart.label"
+        [percent]="true"
+        [inside]="true"
+        [label]="titles.fields + ': ' + chart.label"
+        [axis]="last ? axes.fieldShare : null"
+      />
+    }
+  </section>
+}
+
+<section class="panel">
+  <h2 class="panel__title">{{ titles.offBy }}</h2>
+  @if (offByRows().length === 0) {
+    <p class="panel__hint" i18n="@@eval.offByNone">
+      Kein falsch gewerteter Pfeil trug eine lokalisierte Spitze.
+    </p>
+  } @else {
+    <app-bar-chart
+      [rows]="offByRows()"
+      [series]="bandSeries()"
+      [percent]="true"
+      [inside]="true"
+      [label]="titles.offBy"
+      [axis]="axes.offByShare"
+    />
+  }
+</section>
+
+@if (!failuresUngrouped()) {
+  <section class="panel">
+    <h2 class="panel__title">{{ titles.failures }}</h2>
+    @if (failureRows().length === 0 || failureSeries().length === 0) {
+      <p class="panel__hint" i18n="@@eval.failuresNone">Keine.</p>
+    } @else {
+      <app-bar-chart
+        [rows]="failureRows()"
+        [series]="failureSeries()"
+        [label]="titles.failures"
+        [axis]="axes.images"
+      />
+    }
+  </section>
+}

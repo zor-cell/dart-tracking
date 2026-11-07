@@ -20,10 +20,7 @@ becomes a test case without being labelled by hand.
 
 import argparse
 import asyncio
-import math
 import sys
-from collections import Counter
-from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
@@ -33,17 +30,8 @@ _BACKEND = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_BACKEND))
 sys.path.insert(0, str(_BACKEND / "src"))
 
-from app.api.features.calibration.domain.camera_angle import CameraAngle  # noqa: E402
-from app.api.features.evaluation.domain.accuracy import (  # noqa: E402
-    Accuracy,
-    JudgedGame,
-    Judgement,
-    summarise,
-)
-from app.api.features.evaluation.domain.alignment import (  # noqa: E402
-    DartOutcome,
-    align,
-)
+from app.api.features.evaluation.domain.accuracy import JudgedGame, summarise  # noqa: E402
+from app.api.features.evaluation.domain.alignment import align  # noqa: E402
 from app.api.features.evaluation.domain.visit_replay import Visit  # noqa: E402
 from app.api.features.evaluation.services.accuracy import judged_games  # noqa: E402
 from app.api.features.evaluation.services.frame_buffer import (  # noqa: E402
@@ -52,28 +40,17 @@ from app.api.features.evaluation.services.frame_buffer import (  # noqa: E402
     read_manifest,
     series_name,
 )
+from app.api.features.evaluation.services.report_markdown import build_report  # noqa: E402
 from app.infrastructure import database  # noqa: E402
 from app.infrastructure.config import get_settings  # noqa: E402
 
-from scripts.common import rate_table, write_markdown  # noqa: E402
+from scripts.common import write_markdown  # noqa: E402
 from scripts.evaluation.selection import add_selection_arguments  # noqa: E402
 
 REPORT_DIR = _BACKEND / "testdata" / "_reports"
 GROUND_TRUTH_NAME = "ground_truth.txt"
 # What a frame holding no new dart is called in the offline runner's truth files.
 NO_CHANGE_LABEL = "NO_CHANGE"
-
-# A mismatch closer than this to the expected segment is a wire's-width miss
-# rather than a structural failure - the same cut the offline runner makes.
-NEAR_MISS_MM = 5.0
-
-# Radius of the board itself, in mm. A booked MISS beyond it lies off the board.
-BOARD_EDGE_MM = 225.0
-
-# Upper edges of the camera tilt bands, in degrees.
-TILT_BANDS = (20, 35, 50)
-# A horizontal or vertical angle within this many degrees counts as level with the bull.
-LEVEL_DEG = 15.0
 
 
 def series_labels(folder: Path, visit: Visit) -> list[str] | None:
@@ -128,279 +105,6 @@ def write_ground_truth(game_id: str, visits: list[Visit]) -> Path | None:
     return path
 
 
-def error_table(accuracy: Accuracy) -> list[str]:
-    """Counts and shares per outcome, over every judged dart."""
-    total = max(sum(accuracy.outcomes.values()), 1)
-    lines = ["| outcome | darts | share |", "|---|---|---|"]
-    for outcome, count in accuracy.outcomes.items():
-        lines.append(f"| {outcome.value} | {count} | {100 * count / total:.1f}% |")
-    return lines + [
-        "",
-        f"{accuracy.missed_zeros} of the {accuracy.outcomes[DartOutcome.MISSED]} "
-        "missed darts were booked as a zero by the players.",
-    ]
-
-
-def field_table(accuracy: Accuracy) -> list[str]:
-    """Outcomes per kind of field the thrown darts belonged in."""
-    lines = [
-        "| field | thrown | correct | wrong | of which ring | missed | accuracy |",
-        "|---|---|---|---|---|---|---|",
-    ]
-    for field in accuracy.fields:
-        rate = f"{100 * field.correct / field.thrown:.1f}%" if field.thrown else "-"
-        lines.append(
-            f"| {field.kind.value} | {field.thrown} | {field.correct} | {field.wrong} "
-            f"| {field.wrong_ring} | {field.missed} | {rate} |"
-        )
-    return lines
-
-
-def distance_table(accuracy: Accuracy) -> list[str]:
-    """How far the mis-scored darts landed from where they belonged: a few
-    millimetres is the wrong side of a wire, tens of millimetres a fit that
-    anchored on something else."""
-    if not accuracy.distances:
-        return ["No mis-scored dart carried a located tip."]
-
-    lines = ["| off by | darts |", "|---|---|"]
-    lines += [f"| {band.label} | {band.darts} |" for band in accuracy.bands]
-    return lines + [
-        "",
-        f"Mean {accuracy.mean_off_by:.1f} mm, median "
-        f"{accuracy.median_off_by:.1f} mm, worst {accuracy.worst_off_by:.1f} mm.",
-    ]
-
-
-def mismatch_table(judgements: list[Judgement]) -> list[str]:
-    """Every dart the tracker got wrong, nearest first."""
-    wrong = [j for j in judgements if j.outcome is not DartOutcome.CORRECT]
-    if not wrong:
-        return ["No mismatches."]
-
-    wrong.sort(key=lambda j: (j.off_by_mm is None, j.off_by_mm or 0.0))
-    near = sum(1 for j in wrong if j.off_by_mm is not None and j.off_by_mm <= NEAR_MISS_MM)
-
-    lines = [
-        f"{near} of {len(wrong)} mismatches are within {NEAR_MISS_MM:.0f} mm of the "
-        "expected segment.",
-        "",
-        "| throw | tracked | expected | outcome | off by | fragments |",
-        "|---|---|---|---|---|---|",
-    ]
-    for judgement in wrong:
-        off_by = "-" if judgement.off_by_mm is None else f"{judgement.off_by_mm:.1f} mm"
-        lines.append(
-            f"| {judgement.key} "
-            f"| {judgement.tracked.label if judgement.tracked else '-'} "
-            f"| {judgement.expected_label or '-'} "
-            f"| {judgement.outcome.value} "
-            f"| {off_by} "
-            f"| {judgement.fragments if judgement.fragments is not None else '-'} |"
-        )
-    return lines
-
-
-def cohesion_table(judgements: list[Judgement]) -> list[str]:
-    """Correctness against how many fragments the dart had to be fused from -
-    the live counterpart of the offline runner's cohesion table."""
-    located = [j for j in judgements if j.fragments is not None]
-    if not located:
-        return ["No detector metrics recorded."]
-
-    def bucket(judgement: Judgement) -> str:
-        count = judgement.fragments or 0
-        if count <= 1:
-            return "1 component"
-        return "2 components" if count == 2 else "3+ components"
-
-    return rate_table(
-        located, bucket, lambda j: j.outcome is DartOutcome.CORRECT, "blob", "correct"
-    )
-
-
-def miss_table(judgements: list[Judgement]) -> list[str]:
-    """Booked MISS darts by where their tip landed. A correct one off the board
-    may be a phantom that happened to meet a zero entered by hand."""
-    booked = [
-        j for j in judgements
-        if j.tracked is not None and j.tracked.label == "MISS" and j.tracked.position
-    ]
-    if not booked:
-        return ["No MISS was booked."]
-
-    def band(judgement: Judgement) -> str:
-        on_board = math.hypot(*judgement.tracked.position) <= BOARD_EDGE_MM
-        return "on the board" if on_board else f"beyond {BOARD_EDGE_MM:.0f} mm"
-
-    counts = Counter((band(j), j.outcome) for j in booked)
-    lines = ["| tip | correct | wrong | phantom |", "|---|---|---|---|"]
-    for name in ("on the board", f"beyond {BOARD_EDGE_MM:.0f} mm"):
-        lines.append(
-            f"| {name} | {counts[name, DartOutcome.CORRECT]} "
-            f"| {counts[name, DartOutcome.WRONG]} | {counts[name, DartOutcome.PHANTOM]} |"
-        )
-    return lines
-
-
-def version_of(game: JudgedGame) -> str:
-    versions = game.game.tracker_versions
-    return ", ".join(map(str, versions)) if versions else "unknown"
-
-
-def tilt_band(angle: CameraAngle) -> str:
-    """Overall tilt off the board normal, in bands of TILT_BANDS."""
-    low = 0
-    for high in TILT_BANDS:
-        if angle.tilt < high:
-            return f"{low} - {high}°"
-        low = high
-    return f">= {low}°"
-
-
-def side_of(degrees: float, negative: str, positive: str) -> str:
-    if degrees < -LEVEL_DEG:
-        return negative
-    return positive if degrees > LEVEL_DEG else f"within ±{LEVEL_DEG:.0f}°"
-
-
-def game_table(games: list[JudgedGame]) -> list[str]:
-    """Every game with the tracker version and camera angle it was played with."""
-    lines = [
-        "| game | version | tilt | horizontal | vertical | correct | total | rate |",
-        "|---|---|---|---|---|---|---|---|",
-    ]
-    for game in games:
-        thrown = [j for j in game.judgements if j.outcome is not DartOutcome.PHANTOM]
-        correct = sum(1 for j in thrown if j.outcome is DartOutcome.CORRECT)
-        camera = game.camera
-        angles = (
-            f"{camera.tilt:.0f}° | {camera.horizontal:+.0f}° | {camera.vertical:+.0f}°"
-            if camera
-            else "- | - | -"
-        )
-        rate = f"{100 * correct / len(thrown):.0f}%" if thrown else "-"
-        lines.append(
-            f"| {game.game.id[:8]} | {version_of(game)} | {angles} "
-            f"| {correct} | {len(thrown)} | {rate} |"
-        )
-    return lines
-
-
-def grouped_table(
-    games: list[JudgedGame], key: Callable[[JudgedGame], str | None], header: str
-) -> list[str]:
-    """Darts thrown and correct per group of games; games `key` cannot place are left out."""
-    by_game = {game.game.id: key(game) for game in games}
-    thrown = [
-        j
-        for game in games
-        for j in game.judgements
-        if j.outcome is not DartOutcome.PHANTOM and by_game[game.game.id] is not None
-    ]
-    if not thrown:
-        return ["No game carries this yet."]
-    return rate_table(
-        thrown,
-        lambda j: by_game[j.game_id],
-        lambda j: j.outcome is DartOutcome.CORRECT,
-        header,
-        "correct",
-    )
-
-
-def camera_key(pick: Callable[[CameraAngle], str]) -> Callable[[JudgedGame], str | None]:
-    return lambda game: None if game.camera is None else pick(game.camera)
-
-
-def failure_table(failures: Counter) -> list[str]:
-    if not failures:
-        return ["None."]
-    lines = ["| failure | count |", "|---|---|"]
-    return lines + [f"| {name} | {count} |" for name, count in failures.most_common()]
-
-
-def build_report(
-    accuracy: Accuracy,
-    games: list[JudgedGame],
-    judgements: list[Judgement],
-    failures: Counter,
-) -> list[str]:
-    return [
-        "# Tracking accuracy",
-        "",
-        "What the camera booked against what the players accepted, aligned per",
-        "visit. *Correct* is a dart booked in the",
-        "right segment; *missed* is a dart thrown that the camera never booked -",
-        "a detection that came back empty included, since nothing was scored.",
-        "*Phantom* is one it booked with no dart behind it.",
-        "",
-        f"- Games: **{accuracy.games}**, visits judged: **{accuracy.visits}**",
-        f"- Darts thrown: **{accuracy.darts_thrown}**, booked by the camera: "
-        f"**{accuracy.darts_booked}**",
-        f"- Correct segment: **{accuracy.correct} / {accuracy.darts_thrown} - "
-        f"{100 * accuracy.accuracy:.1f}%**",
-        f"- Visits accepted without a correction: **{accuracy.clean_visits} / "
-        f"{accuracy.visits} - {100 * accuracy.clean_visit_rate:.1f}%**",
-        "",
-        "## Error breakdown",
-        "",
-        *error_table(accuracy),
-        "",
-        "## Accuracy per field",
-        "",
-        *field_table(accuracy),
-        "",
-        "## Distance from the expected segment",
-        "",
-        *distance_table(accuracy),
-        "",
-        "## Per game",
-        "",
-        # Phantoms are left out so the denominator is the darts thrown, as in
-        # the headline rate above.
-        *game_table(games),
-        "",
-        "## Per tracker version",
-        "",
-        *grouped_table(games, version_of, "version"),
-        "",
-        "## Per camera angle",
-        "",
-        "Median over the scoring camera's calibrations in each game.",
-        "",
-        *grouped_table(games, camera_key(tilt_band), "tilt"),
-        "",
-        *grouped_table(
-            games,
-            camera_key(lambda a: side_of(a.horizontal, "left", "right")),
-            "horizontal",
-        ),
-        "",
-        *grouped_table(
-            games,
-            camera_key(lambda a: side_of(a.vertical, "below", "above")),
-            "vertical",
-        ),
-        "",
-        "## Per blob cohesion",
-        "",
-        *cohesion_table(judgements),
-        "",
-        "## Booked MISS darts",
-        "",
-        *miss_table(judgements),
-        "",
-        "## Detections that came back empty",
-        "",
-        *failure_table(failures),
-        "",
-        "## Mismatches",
-        "",
-        *mismatch_table(judgements),
-    ]
-
-
 async def gather(
     game_ids: list[str] | None,
     test_runs_only: bool,
@@ -446,24 +150,20 @@ def main() -> int:
         print("no judged darts in the selected games - was a camera scoring?")
         return 1
 
-    all_visits: list[Visit] = []
-    judgements: list[Judgement] = []
-    failures: Counter = Counter()
-
     for game in games:
-        all_visits += game.visits
-        judgements += game.judgements
-        failures.update(event.failure for event in game.events if event.failure)
-
         truth = write_ground_truth(game.game.id, game.visits)
         if truth is not None:
             print(f"labelled kept frames: {truth}")
 
-    accuracy = summarise(len(games), all_visits, judgements)
+    accuracy = summarise(
+        len(games),
+        [visit for game in games for visit in game.visits],
+        [j for game in games for j in game.judgements],
+    )
     args.out.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    now = datetime.now()
     path = write_markdown(
-        args.out, f"accuracy_{stamp}.md", build_report(accuracy, games, judgements, failures)
+        args.out, f"accuracy_{now:%Y%m%d-%H%M%S}.md", build_report(games, created_at=now)
     )
 
     print(

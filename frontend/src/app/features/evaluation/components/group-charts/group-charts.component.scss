@@ -1,0 +1,10 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* The per-field charts under one title, apart from each other. */
+app-bar-chart + app-bar-chart {
+  margin-top: 0.75rem;
+}

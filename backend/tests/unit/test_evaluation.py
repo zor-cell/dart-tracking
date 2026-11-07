@@ -168,6 +168,8 @@ def test_summary_counts_thrown_and_booked_darts_apart():
     assert accuracy.clean_visits == 0
     triple = next(field for field in accuracy.fields if field.kind is FieldKind.TRIPLE)
     assert (triple.wrong, triple.wrong_ring) == (1, 1)
+    outside = next(field for field in accuracy.fields if field.kind is FieldKind.OUTSIDE)
+    assert (outside.missed, outside.missed_zeros) == (1, 1)
     assert accuracy.distances == (150.0 - 107.4,)
 
 

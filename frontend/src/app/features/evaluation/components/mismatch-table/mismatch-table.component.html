@@ -1,0 +1,54 @@
+<section class="panel">
+  <h2 class="panel__title" i18n="@@eval.mismatch.title">Fehlwürfe</h2>
+  <p class="panel__hint" i18n="@@eval.mismatch.hint">
+    Jeder Pfeil, den die Kamera nicht richtig gebucht hat, der knappste zuerst
+  </p>
+  <p-table
+    [value]="rows()"
+    dataKey="index"
+    [paginator]="rows().length > 0"
+    [showCurrentPageReport]="true"
+    [currentPageReportTemplate]="pageReport"
+    [rows]="pageSize"
+    [pageLinks]="3"
+    class="data-table"
+    size="small"
+  >
+    <ng-template #header>
+      <tr>
+        <th scope="col" i18n="@@eval.mismatch.when">Wurf</th>
+        <th scope="col" i18n="@@eval.mismatch.tracked">Erkannt</th>
+        <th scope="col" i18n="@@eval.mismatch.expected">Erwartet</th>
+        <th scope="col" i18n="@@eval.mismatch.outcome">Ergebnis</th>
+        <th scope="col" class="data-table__number" i18n="@@eval.mismatch.offBy">Abstand</th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-row>
+      <tr>
+        <td>
+          {{ row.playedAt | date: shortDate }}
+          <span class="data-table__hint">{{ throwLabel(row.turnIndex, row.position) }}</span>
+        </td>
+        <td>{{ row.tracked ?? '–' }}</td>
+        <td>{{ row.expected ?? '–' }}</td>
+        <td><p-tag [value]="row.tag.label" [severity]="row.tag.severity" /></td>
+        <td class="data-table__number">
+          @if (row.offBy !== null) {
+            {{ row.offBy | number: '1.1-1' }} mm
+          } @else {
+            &ndash;
+          }
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="5">
+          <app-empty-state icon="pi-check-circle">
+            <p i18n="@@eval.mismatch.none">Die Kamera hat jeden Pfeil richtig gebucht.</p>
+          </app-empty-state>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</section>

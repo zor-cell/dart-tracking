@@ -1,0 +1,14 @@
+<p class="panel__hint trend__legend">
+  <span><span class="trend__dot"></span><ng-container i18n="@@stats.trend.games">Einzelne Spiele</ng-container></span>
+  <span class="trend__entry">
+    <span class="trend__line"></span><ng-container i18n="@@stats.tab.trend">Trend</ng-container>
+    <app-info-hint>
+      <ng-container i18n="@@eval.trend.hint"
+        >Anteil korrekt gewerteter Darts über ein Spiel und die {{ before }} davor, also die letzten
+        {{ window }} Spiele zusammen. Gezählt wird nach Darts: Ein Spiel mit mehr Darts zählt
+        mehr.</ng-container
+      >
+    </app-info-hint>
+  </span>
+</p>
+<p-chart type="line" height="13rem" [data]="data()" [options]="options()" [ariaLabel]="ariaLabel()" />

@@ -1,0 +1,52 @@
+<section class="panel">
+  <h2 class="panel__title" i18n="@@eval.errorBoard">Fehler auf der Scheibe</h2>
+  <ul class="legend" aria-live="polite">
+    @for (entry of legend(); track entry.outcome) {
+      <li>
+        <button
+          type="button"
+          class="legend__pill"
+          [class.legend__pill--off]="!entry.shown"
+          [attr.aria-pressed]="entry.shown"
+          (click)="toggle(entry.outcome)"
+        >
+          <span class="legend__dot" [style.background]="entry.color"></span>{{ entry.label }}
+          <span class="legend__count">{{ entry.count }}</span>
+        </button>
+      </li>
+    }
+  </ul>
+  <div class="board">
+    <svg
+      class="board__svg"
+      [attr.viewBox]="viewBox"
+      role="img"
+      [attr.aria-label]="ariaLabel()"
+      (click)="onBoardClick($event)"
+    >
+      <g app-board-face [faded]="true" [interactive]="true"></g>
+      @for (mark of marks(); track $index) {
+        @if (mark.transform; as transform) {
+          <path
+            class="board__tip"
+            [attr.d]="arrowPath"
+            [attr.transform]="transform"
+            [attr.fill]="mark.color"
+          />
+        } @else {
+          <circle
+            class="board__tip"
+            [attr.cx]="mark.x"
+            [attr.cy]="mark.y"
+            [attr.r]="tipRadius"
+            [attr.fill]="mark.color"
+          />
+        }
+      }
+      @if (outline(); as outline) {
+        <path class="board__picked board__picked--halo" [attr.d]="outline" />
+        <path class="board__picked" [attr.d]="outline" />
+      }
+    </svg>
+  </div>
+</section>

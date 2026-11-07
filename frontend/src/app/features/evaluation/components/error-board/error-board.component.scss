@@ -1,0 +1,78 @@
+:host {
+  display: block;
+}
+
+.board {
+  height: 22rem;
+}
+
+.board__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Slightly see-through with a rim in the page colour, so crowded spots stay readable;
+   taps fall through to the field beneath. */
+.board__tip {
+  fill-opacity: 0.8;
+  stroke: var(--p-content-background);
+  stroke-width: 0.8;
+  pointer-events: none;
+}
+
+.board__picked {
+  fill: none;
+  stroke: var(--p-text-color);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  pointer-events: none;
+
+  &--halo {
+    stroke: var(--p-content-background);
+    stroke-width: 5;
+  }
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  margin: 0.5rem 0 0.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.legend__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 1rem;
+  background: none;
+  color: var(--p-text-color);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.legend__pill--off {
+  color: var(--p-text-muted-color);
+  text-decoration: line-through;
+
+  .legend__dot {
+    opacity: 0.3;
+  }
+}
+
+.legend__dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+}
+
+.legend__count {
+  color: var(--p-text-muted-color);
+  font-variant-numeric: tabular-nums;
+}

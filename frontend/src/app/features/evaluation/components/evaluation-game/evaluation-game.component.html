@@ -1,0 +1,35 @@
+<section class="view">
+  <header class="view__header view__header--sticky">
+    <app-back-link label="Auswertung" i18n-label="@@auth.account.evaluation" link="/account/evaluation" />
+    @if (report(); as report) {
+      <h1 class="view__title">
+        {{ report.game.createdAt | date: shortDateTime }} · {{ report.game.mode }}
+      </h1>
+      @if (report.game.evaluationEnabled) {
+        <p class="view__subtitle">{{ testRun }}</p>
+      }
+    } @else {
+      <h1 class="view__title" i18n="@@common.nav.game">Spiel</h1>
+    }
+  </header>
+
+  @if (loading()) {
+    <app-loading-state label="Auswertung wird geladen" i18n-label="@@eval.loading" />
+  } @else if (failed()) {
+    <app-load-error
+      message="Die Auswertung konnte nicht geladen werden."
+      i18n-message="@@eval.loadFailed"
+      (retry)="load()"
+    />
+  } @else if (report(); as report) {
+    <div class="results">
+      <app-accuracy-summary
+        [summary]="report.game.summary"
+        [game]="report.game"
+        [tips]="report.tips"
+      />
+      <app-accuracy-charts [summary]="report.game.summary" [failures]="report.failures" />
+      <app-mismatch-table [mismatches]="report.mismatches" [games]="[report.game]" />
+    </div>
+  }
+</section>

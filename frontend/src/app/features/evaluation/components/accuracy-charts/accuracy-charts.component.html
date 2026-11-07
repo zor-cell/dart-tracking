@@ -1,0 +1,55 @@
+<section class="panel">
+  <h2 class="panel__title">{{ titles.outcomes }}</h2>
+  <app-bar-chart
+    [rows]="outcomeRows()"
+    [series]="outcomeSeries()"
+    [label]="titles.outcomes"
+    [axis]="axes.darts"
+  />
+</section>
+
+@if (fieldRows().length) {
+  <section class="panel">
+    <h2 class="panel__title">{{ titles.fields }}</h2>
+    <app-bar-chart
+      [rows]="fieldRows()"
+      [series]="fieldSeries()"
+      [inside]="true"
+      [label]="titles.fields"
+      [axis]="axes.darts"
+    />
+  </section>
+}
+
+<section class="panel">
+  <h2 class="panel__title">{{ titles.offBy }}</h2>
+  @if (summary().meanOffBy === null) {
+    <p class="panel__hint" i18n="@@eval.offByNone">
+      Kein falsch gewerteter Pfeil trug eine lokalisierte Spitze.
+    </p>
+  } @else {
+    <app-bar-chart
+      [rows]="offByRows()"
+      [series]="offBySeries"
+      [notes]="offByNotes()"
+      [label]="titles.offBy"
+      [axis]="axes.darts"
+    />
+  }
+</section>
+
+@if (failures()) {
+  <section class="panel">
+    <h2 class="panel__title">{{ titles.failures }}</h2>
+    @if (failureRows().length === 0) {
+      <p class="panel__hint" i18n="@@eval.failuresNone">Keine.</p>
+    } @else {
+      <app-bar-chart
+        [rows]="failureRows()"
+        [series]="failureSeries"
+        [label]="titles.failures"
+        [axis]="axes.images"
+      />
+    }
+  </section>
+}

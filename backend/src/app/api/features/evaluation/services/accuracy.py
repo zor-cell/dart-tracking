@@ -65,11 +65,8 @@ async def versions(session: AsyncSession) -> list[int]:
     return sorted({version for game in games for version in game.tracker_versions}, reverse=True)
 
 
-async def overview(
-    session: AsyncSession, criteria: EvaluationFilter = EvaluationFilter()
-) -> AccuracyOverview:
-    """Every finished, judged game `criteria` selects, newest first, and the totals over them."""
-    games = await judged_games(session, criteria=criteria)
+def overview_of(games: list[JudgedGame]) -> AccuracyOverview:
+    """Every game on its own, newest first, and the totals over all of them."""
     per_game = [
         GameAccuracy(
             game=g.game, accuracy=summarise(1, g.visits, g.judgements), camera=g.camera

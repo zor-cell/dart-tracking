@@ -1,0 +1,23 @@
+@if (legend().length || (notes().length && !bare())) {
+  <ul class="legend">
+    @for (series of legend(); track series.label) {
+      <li class="legend__item">
+        <span class="legend__swatch" [style.background]="series.fill"></span>{{ series.label }}
+      </li>
+    }
+    @for (note of notes(); track $index) {
+      <li class="legend__note">{{ note }}</li>
+    }
+  </ul>
+}
+@if (caption(); as caption) {
+  <p class="caption">{{ caption }}</p>
+}
+<p-chart
+  type="bar"
+  [height]="height()"
+  [data]="data()"
+  [options]="options()"
+  [plugins]="plugins"
+  [ariaLabel]="ariaLabel()"
+/>

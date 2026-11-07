@@ -1,0 +1,87 @@
+<dl class="stat-grid">
+  <div class="stat stat--wide stat--lead">
+    <dt class="stat__label" i18n="@@eval.correctSegments">Korrekte Segmente</dt>
+    <dd class="stat__value">
+      @if (accuracy(); as rate) {
+        {{ rate * 100 | number: '1.1-1' }} %
+      } @else {
+        &ndash;
+      }
+    </dd>
+    <dd class="stat__hint" i18n="@@eval.correctOf">
+      {{ summary().correct }} von {{ summary().dartsThrown }} geworfenen Pfeilen
+    </dd>
+  </div>
+  <div class="stat">
+    <dt class="stat__label" i18n="@@eval.visits">Visits gewertet</dt>
+    <dd class="stat__value">{{ summary().visits }}</dd>
+    @if (summary().games > 1) {
+      <dd class="stat__hint" i18n="@@eval.fromGames">aus {{ summary().games }} Spielen</dd>
+    }
+  </div>
+  <div class="stat">
+    <dt class="stat__label" i18n="@@eval.clean">Ohne Korrektur</dt>
+    <dd class="stat__value">
+      @if (cleanVisitRate(); as rate) {
+        {{ rate * 100 | number: '1.0-0' }} %
+      } @else {
+        &ndash;
+      }
+    </dd>
+    <dd class="stat__hint" i18n="@@eval.cleanOf">
+      {{ summary().cleanVisits }} von {{ summary().visits }} Visits
+    </dd>
+  </div>
+  <div class="stat">
+    <dt class="stat__label" i18n="@@stats.dartsThrown">Darts geworfen</dt>
+    <dd class="stat__value">{{ summary().dartsThrown }}</dd>
+  </div>
+  <div class="stat">
+    <dt class="stat__label" i18n="@@eval.booked">Darts gebucht</dt>
+    <dd class="stat__value">{{ summary().dartsBooked }}</dd>
+  </div>
+</dl>
+
+@if (game(); as game) {
+  <section class="panel">
+    <h2 class="panel__title" i18n="@@eval.recording">Aufnahme</h2>
+    <p class="panel__hint" i18n="@@eval.recordingHint">
+      Kamerawinkel als Median über die Kalibrierungen der scorenden Kamera
+    </p>
+    <ul class="rows">
+      <li class="row">
+        <span class="row__label" i18n="@@eval.trackerVersion">Tracker-Version</span>
+        @if (game.trackerVersions.length) {
+          <span class="row__value">{{ game.trackerVersions.join(', ') }}</span>
+        } @else {
+          <span class="row__value" i18n="@@eval.unknown">unbekannt</span>
+        }
+      </li>
+      @if (game.camera; as camera) {
+        <li class="row">
+          <span class="row__label" i18n="@@eval.tiltToBoard">Neigung zur Scheibe</span>
+          <span class="row__value">{{ camera.tilt | number: '1.0-0' }}°</span>
+        </li>
+        <li class="row">
+          <span class="row__label" i18n="@@eval.sideways">Seitlich</span>
+          <span class="row__value">{{ sideOf(camera.horizontal, sides.left, sides.right) }}</span>
+        </li>
+        <li class="row">
+          <span class="row__label" i18n="@@eval.height">Höhe</span>
+          <span class="row__value">{{ sideOf(camera.vertical, sides.below, sides.above) }}</span>
+        </li>
+      } @else {
+        <li class="row">
+          <span class="row__label" i18n="@@eval.cameraAngle">Kamerawinkel</span>
+          <span class="row__value">&ndash;</span>
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+<ng-content />
+
+@if (tips(); as tips) {
+  <app-error-board [tips]="tips" />
+}

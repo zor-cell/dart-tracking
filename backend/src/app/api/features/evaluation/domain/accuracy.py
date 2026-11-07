@@ -95,6 +95,7 @@ class FieldErrors:
     wrong: int
     wrong_ring: int  # booked in the right sector, but in another ring
     missed: int
+    missed_zeros: int  # missed darts the players booked as a zero
 
     @property
     def thrown(self) -> int:
@@ -227,6 +228,8 @@ def field_errors(judgements: list[Judgement]) -> tuple[FieldErrors, ...]:
             booked = judgement.tracked.segment
             if booked is not None and booked.value == expected.value:
                 tally["wrong_ring"] += 1
+        if judgement.outcome is DartOutcome.MISSED and expected == MISS:
+            tally["missed_zeros"] += 1
     return tuple(
         FieldErrors(
             kind=kind,
@@ -234,6 +237,7 @@ def field_errors(judgements: list[Judgement]) -> tuple[FieldErrors, ...]:
             wrong=tally[DartOutcome.WRONG.value],
             wrong_ring=tally["wrong_ring"],
             missed=tally[DartOutcome.MISSED.value],
+            missed_zeros=tally["missed_zeros"],
         )
         for kind, tally in counts.items()
     )

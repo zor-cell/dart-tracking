@@ -2,6 +2,10 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from app.api.features.evaluation.domain.game_event import GameEvent, GameEventKind
+from app.api.features.evaluation.persistence.evaluation_repository import repository
+from app.infrastructure import database
+
 T20, T17, D5, S1, MISS = (20, 3), (17, 3), (5, 2), (1, 1), (0, 0)
 WINNING_LEG = ([T20, T20, T20], [T20, T17, D5])
 
@@ -277,6 +281,68 @@ def test_accuracy_report_is_for_admins(alice, anon, session):
         },
     )
     assert filtered.json()["games"] == []
+    assert [group["kind"] for group in filtered.json()["groups"]] == [
+        "version", "tilt", "fragments",
+    ]
+
+
+def test_markdown_report_is_for_admins_and_names_the_selection(alice, anon, session):
+    assert anon.get("/evaluation/report").status_code == 401
+    assert alice.get("/evaluation/report").status_code == 403
+
+    session.make_admin(alice)
+    report = alice.get("/evaluation/report", params={"mode": 301, "testRun": "true"})
+
+    assert report.status_code == 200
+    assert report.headers["content-type"].startswith("text/markdown")
+    assert 'filename="accuracy_' in report.headers["content-disposition"]
+    assert "# Tracking accuracy" in report.text
+    assert "- Modes 301" in report.text
+    assert "- Test runs only" in report.text
+
+
+def log_events(session, game_id, *events):
+    async def write():
+        async with database.session_scope() as db:
+            for event in events:
+                repository.append(db, game_id, event)
+
+    session.run(write)
+
+
+def detected(field, **fields):
+    kind = fields.pop("kind", GameEventKind.DETECTED)
+    value, multiplier = field if field is not None else (None, None)
+    return GameEvent(
+        kind=kind, turn_index=0, player_index=0, accepted=True,
+        value=value, multiplier=multiplier, **fields,
+    )
+
+
+def test_game_report_shows_one_game_and_its_mismatches(alice, session):
+    K = GameEventKind
+    session.make_admin(alice)
+    game_id = own_game(alice)
+    log_events(
+        session,
+        game_id,
+        detected((20, 1), position=(0.0, 50.0)),
+        detected((20, 1), position=(0.0, 150.0)),
+        detected((20, 3), kind=K.DART_REPLACED, dart_index=1),
+        detected(None, kind=K.NEXT_PLAYER),
+    )
+
+    report = alice.get(f"/evaluation/games/{game_id}").json()
+
+    assert report["game"]["gameId"] == game_id
+    assert (report["game"]["summary"]["correct"], report["game"]["summary"]["dartsThrown"]) == (1, 2)
+    assert [(m["tracked"], m["expected"]) for m in report["mismatches"]] == [("S20", "T20")]
+    assert sorted((t["y"], t["tracked"], t["outcome"]) for t in report["tips"]) == [
+        (50.0, "S20", "correct"),
+        (150.0, "S20", "wrong"),
+    ]
+    assert "bookedMisses" not in report
+    assert alice.get(f"/evaluation/games/{own_game(alice)}").status_code == 404
 
 
 def test_compared_player_counts_only_in_games_the_account_can_see(alice, register, session):

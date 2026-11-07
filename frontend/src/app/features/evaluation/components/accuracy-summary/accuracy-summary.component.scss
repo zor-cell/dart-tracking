@@ -1,0 +1,33 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 0.5rem;
+}
+
+.row__label {
+  font-weight: 600;
+}
+
+.row__value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
