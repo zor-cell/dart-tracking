@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
 from app.api import health
 from app.api.core.services.request_language import LanguageMiddleware
@@ -48,6 +49,8 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["Retry-After"],
 )
+# Compresses responses past 1 KB, such as the evaluation with every located tip.
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(health.router)
