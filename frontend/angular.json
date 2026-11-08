@@ -138,9 +138,6 @@
             "format": "json",
             "outputPath": "src/locale"
           }
-        },
-        "test": {
-          "builder": "@angular/build:unit-test"
         }
       }
     }
