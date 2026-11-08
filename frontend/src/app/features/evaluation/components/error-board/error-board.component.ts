@@ -13,7 +13,9 @@ import {
 import { toSvg } from '../../../game/models/board-geometry';
 
 /** The outcomes a located tip can have, in the legend's order. */
-const TIP_OUTCOMES: readonly DartOutcome[] = ['correct', 'wrong', 'phantom'];
+export const TIP_OUTCOMES: readonly DartOutcome[] = ['correct', 'wrong', 'phantom'];
+/** The outcomes of a mis-scored tip, without the correct ones. */
+export const ERROR_OUTCOMES: readonly DartOutcome[] = ['wrong', 'phantom'];
 /** The order the tips are drawn in, so the wrong ones lie on top. */
 const DRAW_ORDER: readonly DartOutcome[] = ['correct', 'phantom', 'wrong'];
 
@@ -75,6 +77,8 @@ export function outcomeCounts(
 })
 export class ErrorBoardComponent {
   readonly tips = input.required<readonly TipDto[]>();
+  /** The outcomes the legend offers, in its order. */
+  readonly outcomes = input<readonly DartOutcome[]>(TIP_OUTCOMES);
 
   /** Outcomes hidden from the board through the legend. */
   protected readonly hidden = signal<ReadonlySet<DartOutcome>>(new Set());
@@ -93,7 +97,7 @@ export class ErrorBoardComponent {
   /** Each outcome with its colour, name and darts on the board or in the picked field. */
   protected readonly legend = computed(() => {
     const counts = outcomeCounts(this.tips(), this.picked());
-    return TIP_OUTCOMES.map((outcome) => ({
+    return this.outcomes().map((outcome) => ({
       outcome,
       color: OUTCOME_COLORS[outcome],
       label: OUTCOME_LABELS[outcome],

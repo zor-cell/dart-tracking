@@ -1,7 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { AccuracySummaryDto, GameAccuracyDto, TipDto } from '../../dto/accuracy.dto';
-import { ErrorBoardComponent } from '../error-board/error-board.component';
+import { AccuracySummaryDto, DartOutcome, GameAccuracyDto, TipDto } from '../../dto/accuracy.dto';
+import { ErrorBoardComponent, TIP_OUTCOMES } from '../error-board/error-board.component';
 
 /** The headline figures of a set of games, or of one with its recording, and where the camera
  * put the darts; projects the trend between them. */
@@ -18,6 +18,8 @@ export class AccuracySummaryComponent {
   readonly game = input<GameAccuracyDto | null>(null);
   /** Every located tip, drawn on a board in its outcome's colour. */
   readonly tips = input<readonly TipDto[] | null>(null);
+  /** The outcomes the tips come in. */
+  readonly tipOutcomes = input<readonly DartOutcome[]>(TIP_OUTCOMES);
 
   /** Share of thrown darts booked in the right segment. */
   protected readonly accuracy = computed(() => {

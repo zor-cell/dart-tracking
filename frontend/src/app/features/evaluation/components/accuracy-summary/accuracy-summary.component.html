@@ -83,5 +83,5 @@
 <ng-content />
 
 @if (tips(); as tips) {
-  <app-error-board [tips]="tips" />
+  <app-error-board [tips]="tips" [outcomes]="tipOutcomes()" />
 }

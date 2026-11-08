@@ -345,6 +345,27 @@ def test_game_report_shows_one_game_and_its_mismatches(alice, session):
     assert alice.get(f"/evaluation/games/{own_game(alice)}").status_code == 404
 
 
+def test_accuracy_report_leaves_the_correct_tips_out(alice, session):
+    K = GameEventKind
+    session.make_admin(alice)
+    game_id = own_game(alice)
+    session.play(game_id, *WINNING_LEG)
+    log_events(
+        session,
+        game_id,
+        detected((20, 1), position=(0.0, 50.0)),
+        detected((20, 1), position=(0.0, 150.0)),
+        detected((20, 3), kind=K.DART_REPLACED, dart_index=1),
+        detected(None, kind=K.NEXT_PLAYER),
+    )
+
+    overview = alice.get("/evaluation/accuracy").json()
+    game = alice.get(f"/evaluation/games/{game_id}").json()
+
+    assert [(t["tracked"], t["outcome"]) for t in overview["tips"]] == [("S20", "wrong")]
+    assert len(game["tips"]) == 2
+
+
 def test_compared_player_counts_only_in_games_the_account_can_see(alice, register, session):
     bob = register("bob")
     bob_id = alice.add_player("Bob")

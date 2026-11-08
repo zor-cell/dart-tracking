@@ -209,7 +209,8 @@ class TipDto(CamelModel):
 
 class AccuracyReportDto(CamelModel):
     """Totals plus every game on its own, so the page switches without asking
-    the server again, and the splits of the report over all of them."""
+    the server again, and the splits of the report over all of them. Its tips
+    leave the correct darts out; a single game's report keeps them."""
 
     total: AccuracySummaryDto
     games: list[GameAccuracyDto]
@@ -227,7 +228,7 @@ class AccuracyReportDto(CamelModel):
                 GroupBreakdownDto.from_entity(kind, rows)
                 for kind, rows in breakdowns.groups.items()
             ],
-            **_issues(breakdowns),
+            **_issues(breakdowns, correct_tips=False),
         )
 
 
@@ -241,14 +242,20 @@ class GameReportDto(CamelModel):
 
     @classmethod
     def from_entity(cls, game: GameAccuracy, breakdowns: Breakdowns) -> Self:
-        return cls(game=GameAccuracyDto.from_entity(game), **_issues(breakdowns))
+        return cls(
+            game=GameAccuracyDto.from_entity(game), **_issues(breakdowns, correct_tips=True)
+        )
 
 
-def _issues(breakdowns: Breakdowns) -> dict[str, list]:
+def _issues(breakdowns: Breakdowns, *, correct_tips: bool) -> dict[str, list]:
     return {
         "failures": FailureCountDto.all_of(breakdowns.failures),
         "mismatches": [MismatchDto.from_entity(j) for j in breakdowns.mismatches],
-        "tips": [TipDto.from_entity(j) for j in breakdowns.tips],
+        "tips": [
+            TipDto.from_entity(j)
+            for j in breakdowns.tips
+            if correct_tips or j.outcome is not DartOutcome.CORRECT
+        ],
     }
 
 

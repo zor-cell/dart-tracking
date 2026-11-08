@@ -32,6 +32,7 @@ import { ChartGroup } from '../../models/chart-parts';
 import { GROUP_KINDS, groupLabel } from '../../models/evaluation-groups';
 import { AccuracyChartsComponent } from '../accuracy-charts/accuracy-charts.component';
 import { AccuracySummaryComponent } from '../accuracy-summary/accuracy-summary.component';
+import { ERROR_OUTCOMES } from '../error-board/error-board.component';
 import { AccuracyTrendComponent } from '../accuracy-trend/accuracy-trend.component';
 import { GameTableComponent } from '../game-table/game-table.component';
 import { GroupChartsComponent } from '../group-charts/group-charts.component';
@@ -180,7 +181,9 @@ export class EvaluationComponent {
   protected readonly groups = signal<readonly GroupBreakdownDto[]>([]);
   protected readonly failures = signal<readonly FailureCountDto[]>([]);
   protected readonly mismatches = signal<readonly MismatchDto[]>([]);
+  /** The mis-scored located tips; the overview leaves the correct ones out. */
   protected readonly tips = signal<readonly TipDto[]>([]);
+  protected readonly errorOutcomes = ERROR_OUTCOMES;
   protected readonly tab = signal<EvaluationTab>('overview');
   /** What the analysis splits the darts by; null shows them all together. */
   protected readonly groupKind = signal<GroupKind | null>(null);
