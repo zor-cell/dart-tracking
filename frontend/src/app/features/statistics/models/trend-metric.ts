@@ -3,11 +3,27 @@ import { TrendPointDto } from '../dto/trend-point.dto';
 /** Which figure the trend follows across the games. */
 export type TrendMetric = 'average' | 'firstNine' | 'checkout' | 'dartsPerLeg';
 
-export const TREND_METRICS: readonly { label: string; value: TrendMetric; unit: string }[] = [
-  { label: '3-Dart-Ø', value: 'average', unit: '' },
-  { label: 'First-9-Ø', value: 'firstNine', unit: '' },
-  { label: 'Checkout', value: 'checkout', unit: ' %' },
-  { label: $localize`:@@stats.trend.dartsPerLeg:Darts/Leg`, value: 'dartsPerLeg', unit: '' },
+/** Each figure with its toggle label, value unit and y-axis title. */
+export const TREND_METRICS: readonly {
+  label: string;
+  value: TrendMetric;
+  unit: string;
+  axis: string;
+}[] = [
+  { label: '3-Dart-Ø', value: 'average', unit: '', axis: '3-Dart-Ø' },
+  { label: 'First-9-Ø', value: 'firstNine', unit: '', axis: 'First-9-Ø' },
+  {
+    label: 'Checkout',
+    value: 'checkout',
+    unit: ' %',
+    axis: $localize`:@@stats.trend.axis.checkout:Checkout-Quote in %`,
+  },
+  {
+    label: $localize`:@@stats.trend.dartsPerLeg:Darts/Leg`,
+    value: 'dartsPerLeg',
+    unit: '',
+    axis: $localize`:@@stats.trend.axis.dartsPerLeg:Darts pro gewonnenem Leg`,
+  },
 ];
 
 /** The newest game's share of the trend line; whatever came before keeps the rest. */

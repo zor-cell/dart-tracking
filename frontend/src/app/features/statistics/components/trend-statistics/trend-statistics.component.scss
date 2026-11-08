@@ -28,7 +28,18 @@
 .trend__legend {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.25rem 1rem;
+}
+
+/* The info button sits beside the entry without making the legend taller. */
+.trend__entry {
+  display: inline-flex;
+  align-items: center;
+
+  app-info-hint {
+    margin-block: -0.5rem;
+  }
 }
 
 .trend__dot,

@@ -15,10 +15,17 @@ import { UIChart } from 'primeng/chart';
 import { SelectButton } from 'primeng/selectbutton';
 import { TrendPointDto } from '../../dto/trend-point.dto';
 import { COMPARE_COLOR, OWN_COLOR } from '../../models/comparison';
-import { TREND_METRICS, TrendMetric, trendValue, weightedTrend } from '../../models/trend-metric';
+import {
+  TREND_METRICS,
+  TREND_WEIGHT,
+  TrendMetric,
+  trendValue,
+  weightedTrend,
+} from '../../models/trend-metric';
 import { chartTheme } from '../../../../core/charts/models/chart-plugins';
-import { axisTicks, tooltipStyle } from '../../../../core/charts/models/chart-styles';
+import { axisTicks, axisTitle, tooltipStyle } from '../../../../core/charts/models/chart-styles';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
+import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 
 /** Dash and gap of a trend line where its player has no game, in pixels. */
 const GAP_DASH = [4, 4];
@@ -27,7 +34,7 @@ const GAP_DASH = [4, 4];
  * a second line for a compared player. */
 @Component({
   selector: 'app-trend-statistics',
-  imports: [EmptyStateComponent, FormsModule, SelectButton, UIChart],
+  imports: [EmptyStateComponent, FormsModule, InfoHintComponent, SelectButton, UIChart],
   templateUrl: './trend-statistics.component.html',
   styleUrl: './trend-statistics.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,6 +51,9 @@ export class TrendStatisticsComponent {
 
   protected readonly metricOptions = [...TREND_METRICS];
   protected readonly metric = signal<TrendMetric>('average');
+  /** The newest game's and the one before's share of the trend, in percent. */
+  protected readonly newestShare = Math.round(TREND_WEIGHT * 100);
+  protected readonly olderShare = Math.round((1 - TREND_WEIGHT) * 100);
 
   private readonly ownColor = OWN_COLOR;
   private readonly compareColor = COMPARE_COLOR;
@@ -108,7 +118,7 @@ export class TrendStatisticsComponent {
   });
 
   protected readonly options = computed<ChartOptions<'line'>>(() => {
-    const unit = this.picked().unit;
+    const { unit, axis } = this.picked();
     const format = (value: number) => `${formatNumber(value, this.locale, '1.1-1')}${unit}`;
     return {
       responsive: true,
@@ -126,6 +136,7 @@ export class TrendStatisticsComponent {
           grid: { color: this.theme.grid },
           border: { display: false },
           ticks: { ...axisTicks(this.theme), maxTicksLimit: 5 },
+          title: axisTitle(this.theme, axis),
         },
       },
       plugins: {

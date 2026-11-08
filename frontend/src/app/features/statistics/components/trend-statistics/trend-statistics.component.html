@@ -20,9 +20,20 @@
   } @else {
     <p class="panel__hint trend__legend">
       <span><span class="trend__dot"></span><ng-container i18n="@@stats.trend.games">Einzelne Spiele</ng-container></span>
-      <span>
+      <span class="trend__entry">
         <span class="trend__line" [class.trend__line--own]="!otherPoints()"></span
         ><ng-container i18n="@@stats.tab.trend">Trend</ng-container>
+        <app-info-hint>
+          <span i18n="@@stats.trend.hint"
+            >Gewichteter Schnitt bis zu jedem Spiel: Das neueste zählt {{ newestShare }} %, jedes
+            ältere {{ olderShare }} % vom Gewicht des nächstneueren. So folgt die Linie neuen Spielen,
+            ohne bei einem Ausreißer zu springen.</span
+          >
+          <span i18n="@@stats.trend.hintRates"
+            >Checkout und Darts/Leg gewichten zusätzlich nach Versuchen und gewonnenen Legs. Ein
+            Spiel ohne Wert lässt die Linie, wo sie ist.</span
+          >
+        </app-info-hint>
       </span>
       @if (otherPoints()) {
         <span
