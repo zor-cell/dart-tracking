@@ -561,6 +561,8 @@
     "eval.outcomes": "Error breakdown",
     "eval.missedZerosOf": "of which {$count} entered as 0",
     "eval.dartCount": "{$count} darts",
+    "eval.scale": "Bar length",
+    "eval.scale.share": "Share",
     "eval.byField": "Errors by field",
     "eval.fieldShare": "{$share} of all darts thrown",
     "eval.offBy": "Distance to the expected segment",

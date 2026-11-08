@@ -6,7 +6,10 @@ import {
   computed,
   inject,
   input,
+  signal,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { SelectButton } from 'primeng/selectbutton';
 import { AccuracySummaryDto, FailureCountDto } from '../../dto/accuracy.dto';
 import {
   FAILURE_LABELS,
@@ -27,7 +30,7 @@ import { chartTheme } from '../../../../core/charts/models/chart-plugins';
  * and why detections came back empty. */
 @Component({
   selector: 'app-accuracy-charts',
-  imports: [BarChartComponent],
+  imports: [BarChartComponent, FormsModule, SelectButton],
   templateUrl: './accuracy-charts.component.html',
   styleUrl: './accuracy-charts.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,12 +49,20 @@ export class AccuracyChartsComponent {
   };
   protected readonly axes = {
     darts: 'Darts',
+    fieldShare: $localize`:@@eval.axis.fieldShare:Anteil der Darts im Feld`,
     images: $localize`:@@eval.axis.images:Bilder`,
   };
   protected readonly offBySeries: BarSeries[] = [{ label: '', color: OUTCOME_COLORS.wrong }];
   /** Empty detections are no outcome, so they stay neutral. */
   protected readonly failureSeries: BarSeries[] = [
     { label: '', color: chartTheme(inject(DOCUMENT)).muted },
+  ];
+
+  /** Whether each field's bar is as long as its darts or spans the full width. */
+  protected readonly fieldScale = signal<'darts' | 'share'>('darts');
+  protected readonly scaleOptions = [
+    { label: 'Darts', value: 'darts' },
+    { label: $localize`:@@eval.scale.share:Anteil`, value: 'share' },
   ];
 
   private readonly counts = computed(() => countsOf(this.summary()));
@@ -66,7 +77,7 @@ export class AccuracyChartsComponent {
     ] as const;
   });
 
-  protected readonly outcomeSeries = computed(() => partSeries(this.stripes(), []));
+  protected readonly outcomeSeries = computed(() => partSeries(this.stripes(), OUTCOMES));
   protected readonly fieldSeries = computed(() =>
     partSeries(STRIPE_NAMES, ['correct', 'wrong', 'missed']),
   );
@@ -96,19 +107,25 @@ export class AccuracyChartsComponent {
     });
   });
 
-  /** Each kind of field the thrown darts belonged in, as long as its darts, split by how
-   * they were judged. */
+  /** Each kind of field the thrown darts belonged in, split by how they were judged: as long
+   * as its darts, or each over the full width. */
   protected readonly fieldRows = computed<BarRow[]>(() => {
     const summary = this.summary();
+    const share = this.fieldScale() === 'share';
     return summary.fields
       .filter((field) => field.thrown > 0)
       .map((field) => {
         const { thrown } = field;
+        const parts = outcomeParts(field);
+        const ofAll = this.percent(thrown, summary.dartsThrown);
+        const count = $localize`:@@eval.dartCount:${thrown}:count: Darts`;
         return {
           label: FIELD_LABELS[field.kind],
-          values: outcomeParts(field),
-          tip: this.percent(thrown, summary.dartsThrown),
-          tooltip: [$localize`:@@eval.dartCount:${thrown}:count: Darts`],
+          values: share ? parts.map((part) => (100 * part) / thrown) : parts,
+          tip: share ? count : ofAll,
+          tooltip: [
+            share ? $localize`:@@eval.fieldShare:${ofAll}:share: aller geworfenen Darts` : count,
+          ],
         };
       });
   });

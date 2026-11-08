@@ -1,8 +1,16 @@
 @if (legend().length || (notes().length && !bare())) {
   <ul class="legend">
-    @for (series of legend(); track series.label) {
-      <li class="legend__item">
-        <span class="legend__swatch" [style.background]="series.fill"></span>{{ series.label }}
+    @for (series of legend(); track series.index) {
+      <li>
+        <button
+          type="button"
+          class="legend__item"
+          [class.legend__item--off]="!series.shown"
+          [attr.aria-pressed]="series.shown"
+          (click)="toggle(series.index)"
+        >
+          <span class="legend__swatch" [style.background]="series.fill"></span>{{ series.label }}
+        </button>
       </li>
     }
     @for (note of notes(); track $index) {

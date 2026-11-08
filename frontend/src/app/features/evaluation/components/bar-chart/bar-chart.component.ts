@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, model } from '@angular/core';
 import type { ChartData, ChartOptions, Plugin, ScriptableContext } from 'chart.js';
 import { UIChart } from 'primeng/chart';
 import { chartTheme } from '../../../../core/charts/models/chart-plugins';
@@ -20,6 +20,22 @@ export interface BarRow {
   readonly values: readonly number[];
   readonly tip: string;
   readonly tooltip: readonly string[];
+}
+
+/** A bar row with its hidden parts at zero; `whole` keeps the total of every part. */
+interface ShownRow extends BarRow {
+  readonly whole: number;
+}
+
+/** The CSS fill of a series' swatch, striped like its bars where they are. */
+function swatch(series: BarSeries): string {
+  return series.hatched
+    ? `repeating-linear-gradient(135deg, ${series.color} 0 2px, ${series.color}59 2px 4px)`
+    : series.color;
+}
+
+function sum(values: readonly number[]): number {
+  return values.reduce((total, value) => total + value, 0);
 }
 
 /** Diagonal stripes of `color` over a faint wash of it, as a canvas fill. */
@@ -121,24 +137,49 @@ export class BarChartComponent {
   readonly bare = input(false);
   /** A name above the bars, for one of several charts in a panel. */
   readonly caption = input<string | null>(null);
+  /** Indices of the series switched off in the legend; the value axis fits the rest. */
+  readonly hiddenSeries = model<ReadonlySet<number>>(new Set());
 
-  /** The named series of a stacked chart, each with the CSS fill of its swatch. */
-  protected readonly legend = computed(() =>
-    this.bare() || this.series().length < 2
+  /** The named series of a stacked chart, each with its swatch and whether it is shown. */
+  protected readonly legend = computed(() => {
+    const hidden = this.hiddenSeries();
+    return this.bare() || this.series().length < 2
       ? []
       : this.series()
-          .filter((series) => series.label)
-          .map((series) => ({
+          .map((series, index) => ({ series, index }))
+          .filter(({ series }) => series.label)
+          .map(({ series, index }) => ({
+            index,
             label: series.label,
-            fill: series.hatched
-              ? `repeating-linear-gradient(135deg, ${series.color} 0 2px, ${series.color}59 2px 4px)`
-              : series.color,
-          })),
-  );
+            fill: swatch(series),
+            shown: !hidden.has(index),
+          }));
+  });
+
+  /** The bars as drawn: hidden series at zero, and bars with nothing left dropped. */
+  private readonly shown = computed<ShownRow[]>(() => {
+    const hidden = this.hiddenSeries();
+    const rows = this.rows().map((row) => ({
+      ...row,
+      whole: sum(row.values),
+      values: row.values.map((value, index) => (hidden.has(index) ? 0 : value)),
+    }));
+    return hidden.size === 0 ? rows : rows.filter((row) => sum(row.values) > 0);
+  });
 
   protected readonly height = computed(
-    () => `${this.rows().length * BAND_PX + 28 + (this.axis() ? 16 : 0)}px`,
+    () => `${this.shown().length * BAND_PX + 28 + (this.axis() ? 16 : 0)}px`,
   );
+
+  protected toggle(index: number): void {
+    this.hiddenSeries.update((hidden) => {
+      const next = new Set(hidden);
+      if (!next.delete(index)) {
+        next.add(index);
+      }
+      return next;
+    });
+  }
 
   private readonly hatches = new Map<string, CanvasPattern | string>();
 
@@ -152,11 +193,11 @@ export class BarChartComponent {
   }
 
   private isEnd(row: number, series: number): boolean {
-    return endsBar(this.rows()[row].values, series);
+    return endsBar(this.shown()[row].values, series);
   }
 
   protected readonly data = computed<ChartData<'bar', number[]>>(() => {
-    const rows = this.rows();
+    const rows = this.shown();
     return {
       labels: rows.map((row) => row.label),
       datasets: this.series().map((series, index) => ({
@@ -176,15 +217,13 @@ export class BarChartComponent {
   });
 
   protected readonly options = computed<ChartOptions<'bar'>>(() => {
-    const rows = this.rows();
+    const rows = this.shown();
     const percent = this.percent();
     const axis = this.axis();
     const longestTip = Math.max(0, ...rows.map((row) => row.tip.length));
-    const longestBar = Math.max(
-      0,
-      ...rows.map((row) => row.values.reduce((sum, value) => sum + value, 0)),
-    );
-    const scale = percent ? { max: 100, step: 25 } : countAxis(longestBar);
+    const longestBar = Math.max(0, ...rows.map((row) => sum(row.values)));
+    const scale =
+      percent && this.hiddenSeries().size === 0 ? { max: 100, step: 25 } : countAxis(longestBar);
     return {
       indexAxis: 'y',
       responsive: true,
@@ -235,13 +274,13 @@ export class BarChartComponent {
       id: 'tipLabels',
       afterDatasetsDraw: (chart) => {
         const { ctx } = chart;
-        const rows = this.rows();
+        const rows = this.shown();
         ctx.save();
         ctx.font = `600 11px ${this.theme.font}`;
         ctx.fillStyle = this.theme.text;
         ctx.textBaseline = 'middle';
         chart.getDatasetMeta(0).data.forEach((element, index) => {
-          const end = rows[index].values.reduce((sum, value) => sum + value, 0);
+          const end = sum(rows[index].values);
           const x = chart.scales['x'].getPixelForValue(end) + TIP_GAP_PX;
           ctx.fillText(rows[index].tip, x, element.y);
         });
@@ -255,7 +294,7 @@ export class BarChartComponent {
           return;
         }
         const { ctx } = chart;
-        const rows = this.rows();
+        const rows = this.shown();
         ctx.save();
         ctx.font = `600 10px ${this.theme.font}`;
         ctx.textAlign = 'center';
@@ -272,13 +311,10 @@ export class BarChartComponent {
           }
           chart.getDatasetMeta(index).data.forEach((element, row) => {
             const values = rows[row].values.slice(index, last + 1);
-            const value = values.reduce((sum, next) => sum + next, 0);
+            const value = sum(values);
             const { base } = element.getProps(['base'], true) as { base: number };
-            const x = chart.scales['x'].getPixelForValue(
-              rows[row].values.slice(0, last + 1).reduce((sum, next) => sum + next, 0),
-            );
-            const whole = rows[row].values.reduce((sum, next) => sum + next, 0);
-            const text = `${Math.round((100 * value) / whole)} %`;
+            const x = chart.scales['x'].getPixelForValue(sum(rows[row].values.slice(0, last + 1)));
+            const text = `${Math.round((100 * value) / rows[row].whole)} %`;
             if (value <= 0 || x - base < ctx.measureText(text).width + INSIDE_PAD_PX) {
               return;
             }
@@ -293,7 +329,7 @@ export class BarChartComponent {
 
   protected readonly ariaLabel = computed(
     () =>
-      `${this.label()}: ${this.rows()
+      `${this.label()}: ${this.shown()
         .map((row) => `${row.label} ${row.tip}`)
         .join(', ')}`,
   );

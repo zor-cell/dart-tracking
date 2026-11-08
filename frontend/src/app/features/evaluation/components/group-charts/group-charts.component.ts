@@ -6,6 +6,7 @@ import {
   computed,
   inject,
   input,
+  signal,
 } from '@angular/core';
 import { AccuracySummaryDto, FailureCountDto } from '../../dto/accuracy.dto';
 import {
@@ -60,6 +61,8 @@ export class GroupChartsComponent {
 
   protected readonly outcomeSeries = partSeries(STRIPE_NAMES, OUTCOMES);
   protected readonly fieldSeries = partSeries(STRIPE_NAMES, ['correct', 'wrong', 'missed']);
+  /** The field series switched off, shared by every field's chart. */
+  protected readonly fieldHidden = signal<ReadonlySet<number>>(new Set());
 
   /** Each group's judged darts, phantoms included, as shares of its bar. */
   protected readonly outcomeRows = computed<BarRow[]>(() =>

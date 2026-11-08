@@ -17,6 +17,7 @@
       <app-bar-chart
         [rows]="chart.rows"
         [series]="fieldSeries"
+        [(hiddenSeries)]="fieldHidden"
         [bare]="!first"
         [caption]="chart.label"
         [percent]="true"

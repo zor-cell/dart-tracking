@@ -10,13 +10,27 @@
 
 @if (fieldRows().length) {
   <section class="panel">
-    <h2 class="panel__title">{{ titles.fields }}</h2>
+    <header class="panel__head">
+      <h2 class="panel__title">{{ titles.fields }}</h2>
+      <p-selectbutton
+        [options]="scaleOptions"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false"
+        [ngModel]="fieldScale()"
+        (ngModelChange)="fieldScale.set($event)"
+        ariaLabel="Balkenlänge"
+        i18n-ariaLabel="@@eval.scale"
+        size="small"
+      />
+    </header>
     <app-bar-chart
       [rows]="fieldRows()"
       [series]="fieldSeries()"
       [inside]="true"
+      [percent]="fieldScale() === 'share'"
       [label]="titles.fields"
-      [axis]="axes.darts"
+      [axis]="fieldScale() === 'share' ? axes.fieldShare : axes.darts"
     />
   </section>
 }
