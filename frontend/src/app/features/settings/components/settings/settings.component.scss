@@ -59,3 +59,19 @@
     text-align: right;
   }
 }
+
+.volume {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  &__slider {
+    flex: 1;
+  }
+
+  &__value {
+    min-width: 3.5rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+}

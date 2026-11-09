@@ -62,6 +62,35 @@
             (ngModelChange)="settings.setAdvanceOnPull($event)"
           />
         </div>
+      </div>
+    </section>
+
+    <section class="list-group">
+      <h2 class="list-group__title" i18n="@@settings.announcer">Ansage</h2>
+      <div class="list-group__items">
+        <div class="list-group__item setting setting--stacked">
+          <div class="setting__text">
+            <span class="setting__label" id="announcer-volume-label" i18n="@@settings.announcerVolume">
+              Ansage-Lautstärke
+            </span>
+            <p class="setting__hint" i18n="@@settings.announcerVolumeHint">
+              Gilt für dieses Gerät. Über 100 % wird die Ansage verstärkt, etwa gegen Musik
+              auf derselben Box.
+            </p>
+          </div>
+          <div class="volume">
+            <p-slider
+              class="volume__slider"
+              [min]="0"
+              [max]="maxVolume"
+              [step]="10"
+              [ngModel]="volumePercent()"
+              (ngModelChange)="setVolume($event)"
+              ariaLabelledBy="announcer-volume-label"
+            />
+            <span class="volume__value">{{ volumePercent() }} %</span>
+          </div>
+        </div>
 
         <div class="list-group__item setting">
           <div class="setting__text">

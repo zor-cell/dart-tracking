@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
+import { Slider } from 'primeng/slider';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 import {
   AnnouncerService,
   AnnouncerTestResult,
+  MAX_VOLUME,
 } from '../../../announcement/services/announcer.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { GameService } from '../../../game/services/game.service';
@@ -32,6 +34,7 @@ const TEST_RESULTS: Record<AnnouncerTestResult, string> = {
     FormsModule,
     LanguageSelectComponent,
     LoadingStateComponent,
+    Slider,
     ToggleSwitch,
   ],
   templateUrl: './settings.component.html',
@@ -56,6 +59,9 @@ export class SettingsComponent {
     () => this.game.state()?.evaluationEnabled ?? this.settings.evaluationEnabled(),
   );
 
+  protected readonly maxVolume = MAX_VOLUME * 100;
+  protected readonly volumePercent = computed(() => Math.round(this.announcer.volume() * 100));
+
   protected readonly testing = signal(false);
   protected readonly testResult = signal<string | null>(null);
 
@@ -66,6 +72,10 @@ export class SettingsComponent {
     this.testing.set(true);
     this.testResult.set(TEST_RESULTS[await spoken]);
     this.testing.set(false);
+  }
+
+  protected setVolume(percent: number): void {
+    this.announcer.setVolume(percent / 100);
   }
 
   /**

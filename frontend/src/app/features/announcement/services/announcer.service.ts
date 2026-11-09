@@ -10,6 +10,14 @@ import { readStored, writeStored } from '../../../core/storage/models/browser-st
 import { SpeechTestDto } from '../dto/speech-test.dto';
 
 const MUTED_KEY = 'dart-tracking.announcerMuted';
+const VOLUME_KEY = 'dart-tracking.announcerVolume';
+
+/** Highest volume, as a factor: above 1 the calls are boosted. */
+export const MAX_VOLUME = 3;
+
+/** Level and length of the faint noise that keeps a Bluetooth speaker awake. */
+const KEEP_AWAKE_LEVEL = 0.0005;
+const KEEP_AWAKE_SECONDS = 2;
 
 /** Events that count as a user activation on touch and mouse alike. */
 const GESTURE_EVENTS = ['touchend', 'click'] as const;
@@ -40,8 +48,11 @@ export class AnnouncerService {
   private readonly announcerId = signal<string | null>(null);
   private readonly _muted = signal(readStored(MUTED_KEY) === 'true');
   private readonly _unlocked = signal(false);
+  private readonly _volume = signal(storedVolume());
 
   private audio: AudioContext | null = null;
+  private output: GainNode | null = null;
+  private keepAwake: AudioBufferSourceNode | null = null;
   private readonly clips = new Map<string, Promise<AudioBuffer>>();
   /** Bumped by every interruption, so the clips of an older announcement stop. */
   private generation = 0;
@@ -49,6 +60,8 @@ export class AnnouncerService {
   private current: AudioBufferSourceNode | null = null;
 
   readonly muted = this._muted.asReadonly();
+  /** Volume of the calls on this device, as a factor from 0 to `MAX_VOLUME`. */
+  readonly volume = this._volume.asReadonly();
   readonly supported = this.contextType() !== null;
 
   /** Whether the browser lets this page play sound; until a tap it may not. */
@@ -86,8 +99,27 @@ export class AnnouncerService {
       }
     });
 
+    // Without sound, the phone lets the Bluetooth link sleep and the next call's
+    // first second is lost while it wakes.
+    effect(() => {
+      if (this.isAnnouncer() && !this._muted() && this._unlocked()) {
+        this.startKeepAwake();
+      } else {
+        this.stopKeepAwake();
+      }
+    });
+
     for (const event of GESTURE_EVENTS) {
       this.document.addEventListener(event, () => this.resume(), { capture: true });
+    }
+  }
+
+  setVolume(volume: number): void {
+    const clamped = Math.min(Math.max(volume, 0), MAX_VOLUME);
+    this._volume.set(clamped);
+    writeStored(VOLUME_KEY, String(clamped));
+    if (this.audio !== null && this.output !== null) {
+      this.output.gain.setTargetAtTime(clamped, this.audio.currentTime, 0.02);
     }
   }
 
@@ -146,7 +178,7 @@ export class AnnouncerService {
     return new Promise((resolve) => {
       const source = audio.createBufferSource();
       source.buffer = buffer;
-      source.connect(audio.destination);
+      source.connect(this.output ?? audio.destination);
       source.onended = () => {
         if (this.current === source) {
           this.current = null;
@@ -227,6 +259,29 @@ export class AnnouncerService {
     return result;
   }
 
+  private startKeepAwake(): void {
+    const audio = this.audio;
+    if (audio === null || this.keepAwake !== null) {
+      return;
+    }
+    const buffer = audio.createBuffer(1, audio.sampleRate * KEEP_AWAKE_SECONDS, audio.sampleRate);
+    const samples = buffer.getChannelData(0);
+    for (let i = 0; i < samples.length; i++) {
+      samples[i] = (Math.random() * 2 - 1) * KEEP_AWAKE_LEVEL;
+    }
+    const source = audio.createBufferSource();
+    source.buffer = buffer;
+    source.loop = true;
+    source.connect(audio.destination);
+    source.start();
+    this.keepAwake = source;
+  }
+
+  private stopKeepAwake(): void {
+    this.keepAwake?.stop();
+    this.keepAwake = null;
+  }
+
   /** Browsers only allow sound after a user gesture, so every tap resumes the audio. */
   private resume(): void {
     const audio = this.context();
@@ -243,6 +298,14 @@ export class AnnouncerService {
       }
       this.audio = new context();
       const audio = this.audio;
+      // Boosted calls run into a compressor rather than clipping.
+      const limiter = audio.createDynamicsCompressor();
+      limiter.threshold.value = -6;
+      limiter.ratio.value = 20;
+      limiter.connect(audio.destination);
+      this.output = audio.createGain();
+      this.output.gain.value = this._volume();
+      this.output.connect(limiter);
       const note = () => this._unlocked.set(audio.state === 'running');
       audio.addEventListener('statechange', note);
       note();
@@ -254,4 +317,10 @@ export class AnnouncerService {
     const view = this.document.defaultView as WebAudioWindow | null;
     return view?.AudioContext ?? view?.webkitAudioContext ?? null;
   }
+}
+
+/** The volume this device was set to, else full. */
+function storedVolume(): number {
+  const volume = Number(readStored(VOLUME_KEY) ?? 1);
+  return Number.isFinite(volume) ? Math.min(Math.max(volume, 0), MAX_VOLUME) : 1;
 }
