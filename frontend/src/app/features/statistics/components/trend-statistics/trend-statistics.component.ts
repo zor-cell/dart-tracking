@@ -17,20 +17,23 @@ import { TrendPointDto } from '../../dto/trend-point.dto';
 import { COMPARE_COLOR, OWN_COLOR } from '../../models/comparison';
 import {
   TREND_METRICS,
-  TREND_WEIGHT,
+  TREND_WINDOW,
   TrendMetric,
+  rollingTrend,
   trendValue,
-  weightedTrend,
 } from '../../models/trend-metric';
 import { chartTheme } from '../../../../core/charts/models/chart-plugins';
 import { axisTicks, axisTitle, tooltipStyle } from '../../../../core/charts/models/chart-styles';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 
+/** The parts of the chart its legend switches on and off. */
+type TrendPart = 'games' | 'trend';
+
 /** Dash and gap of a trend line where its player has no game, in pixels. */
 const GAP_DASH = [4, 4];
 
-/** One figure game by game under the page's filters, with a weighted trend line through it, and
+/** One figure game by game under the page's filters, with a rolling trend line through it, and
  * a second line for a compared player. */
 @Component({
   selector: 'app-trend-statistics',
@@ -51,9 +54,8 @@ export class TrendStatisticsComponent {
 
   protected readonly metricOptions = [...TREND_METRICS];
   protected readonly metric = signal<TrendMetric>('average');
-  /** The newest game's and the one before's share of the trend, in percent. */
-  protected readonly newestShare = Math.round(TREND_WEIGHT * 100);
-  protected readonly olderShare = Math.round((1 - TREND_WEIGHT) * 100);
+  protected readonly window = TREND_WINDOW;
+  protected readonly hidden = signal<ReadonlySet<TrendPart>>(new Set());
 
   private readonly ownColor = OWN_COLOR;
   private readonly compareColor = COMPARE_COLOR;
@@ -67,6 +69,7 @@ export class TrendStatisticsComponent {
     const own = this.points();
     const other = this.otherPoints();
     const metric = this.metric();
+    const hidden = this.hidden();
     const slots = new Map<string, string>();
     for (const point of [...own, ...(other ?? [])].sort((a, b) =>
       a.playedAt.localeCompare(b.playedAt),
@@ -76,13 +79,14 @@ export class TrendStatisticsComponent {
     const ids = [...slots.keys()];
     const series = (points: readonly TrendPointDto[], name: string | null, color: string) => {
       const value = new Map(points.map((point) => [point.gameId, trendValue(point, metric)]));
-      const weighted = weightedTrend(points, metric);
-      const trend = new Map(points.map((point, index) => [point.gameId, weighted[index]]));
+      const rolling = rollingTrend(points, metric);
+      const trend = new Map(points.map((point, index) => [point.gameId, rolling[index]]));
       const prefix = name ? `${name} · ` : '';
       return [
         {
           label: `${prefix}${$localize`:@@common.nav.game:Spiel`}`,
           data: ids.map((id) => value.get(id) ?? null),
+          hidden: hidden.has('games'),
           showLine: false,
           pointRadius: 2.5,
           pointHoverRadius: 4,
@@ -94,6 +98,7 @@ export class TrendStatisticsComponent {
           data: ids.map((id) => trend.get(id) ?? null),
           borderColor: color,
           backgroundColor: color,
+          hidden: hidden.has('trend'),
           borderWidth: 2,
           pointRadius: 0,
           pointHoverRadius: 3,
@@ -152,17 +157,27 @@ export class TrendStatisticsComponent {
     };
   });
 
+  protected toggle(part: TrendPart): void {
+    this.hidden.update((hidden) => {
+      const next = new Set(hidden);
+      if (!next.delete(part)) {
+        next.add(part);
+      }
+      return next;
+    });
+  }
+
   /** The figure and where its trend line ends, for screen readers. */
   protected readonly ariaLabel = computed(() => {
     const points = this.points();
-    const latest = weightedTrend(points, this.metric()).at(-1) ?? null;
+    const latest = rollingTrend(points, this.metric()).at(-1) ?? null;
     const label = $localize`:@@stats.trend.label:${this.picked().label}:metric: über ${points.length}:count: Spiele`;
     const own =
       latest === null
         ? label
         : $localize`:@@stats.trend.latest:${label}:label:, Trend zuletzt ${latest.toFixed(1)}:value:${this.picked().unit}:unit:`;
     const other = this.otherPoints();
-    const theirs = other ? (weightedTrend(other, this.metric()).at(-1) ?? null) : null;
+    const theirs = other ? (rollingTrend(other, this.metric()).at(-1) ?? null) : null;
     return theirs === null
       ? own
       : $localize`:@@stats.trend.theirs:${own}:own:; ${this.compareName()}:name: zuletzt ${theirs.toFixed(1)}:value:${this.picked().unit}:unit:`;

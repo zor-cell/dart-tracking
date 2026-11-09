@@ -19,19 +19,30 @@
     </app-empty-state>
   } @else {
     <p class="panel__hint trend__legend">
-      <span><span class="trend__dot"></span><ng-container i18n="@@stats.trend.games">Einzelne Spiele</ng-container></span>
+      <button
+        type="button"
+        class="legend-toggle"
+        [class.legend-toggle--off]="hidden().has('games')"
+        [attr.aria-pressed]="!hidden().has('games')"
+        (click)="toggle('games')"
+      >
+        <span class="trend__dot"></span
+        ><ng-container i18n="@@stats.trend.games">Einzelne Spiele</ng-container>
+      </button>
       <span class="trend__entry">
-        <span class="trend__line" [class.trend__line--own]="!otherPoints()"></span
-        ><ng-container i18n="@@stats.tab.trend">Trend</ng-container>
+        <button
+          type="button"
+          class="legend-toggle"
+          [class.legend-toggle--off]="hidden().has('trend')"
+          [attr.aria-pressed]="!hidden().has('trend')"
+          (click)="toggle('trend')"
+        >
+          <span class="trend__line" [class.trend__line--own]="!otherPoints()"></span
+          ><ng-container i18n="@@stats.tab.trend">Trend</ng-container>
+        </button>
         <app-info-hint>
-          <span i18n="@@stats.trend.hint"
-            >Gewichteter Schnitt bis zu jedem Spiel: Das neueste zählt {{ newestShare }} %, jedes
-            ältere {{ olderShare }} % vom Gewicht des nächstneueren. So folgt die Linie neuen Spielen,
-            ohne bei einem Ausreißer zu springen.</span
-          >
-          <span i18n="@@stats.trend.hintRates"
-            >Checkout und Darts/Leg gewichten zusätzlich nach Versuchen und gewonnenen Legs. Ein
-            Spiel ohne Wert lässt die Linie, wo sie ist.</span
+          <ng-container i18n="@@stats.trend.hint"
+            >Schnitt über die letzten {{ window }} Spiele.</ng-container
           >
         </app-info-hint>
       </span>

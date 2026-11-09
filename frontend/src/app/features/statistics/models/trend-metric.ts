@@ -26,8 +26,8 @@ export const TREND_METRICS: readonly {
   },
 ];
 
-/** The newest game's share of the trend line; whatever came before keeps the rest. */
-export const TREND_WEIGHT = 0.2;
+/** How many games, up to the current one, the trend line averages. */
+export const TREND_WINDOW = 5;
 
 /** A game's value; null where it has none, such as no checkout chance. */
 export function trendValue(point: TrendPointDto, metric: TrendMetric): number | null {
@@ -45,35 +45,19 @@ export function trendValue(point: TrendPointDto, metric: TrendMetric): number | 
   }
 }
 
-/** What a game adds to the trend and how much it weighs; rates weigh their attempts. */
-function trendShare(point: TrendPointDto, metric: TrendMetric): [amount: number, count: number] {
-  switch (metric) {
-    case 'checkout':
-      return [point.checkoutHits * 100, point.checkoutAttempts];
-    case 'dartsPerLeg':
-      return [point.wonLegDarts, point.legsWon];
-    default: {
-      const value = trendValue(point, metric);
-      return value === null ? [0, 0] : [value, 1];
-    }
-  }
-}
-
-/** A weighted average up to each game: the newest counts `TREND_WEIGHT`, each one before it
- * that share less again. Rates weigh their attempts, since a game's rate rests on very few. */
-export function weightedTrend(
+/** The mean of each game's value and the ones before it within `TREND_WINDOW`, games without
+ * a value left out. */
+export function rollingTrend(
   points: readonly TrendPointDto[],
   metric: TrendMetric,
 ): (number | null)[] {
-  let sum = 0;
-  let weight = 0;
-  return points.map((point) => {
-    const [amount, count] = trendShare(point, metric);
-    // A game without a value leaves the line where it was.
-    if (count > 0) {
-      sum = TREND_WEIGHT * amount + (1 - TREND_WEIGHT) * sum;
-      weight = TREND_WEIGHT * count + (1 - TREND_WEIGHT) * weight;
-    }
-    return weight === 0 ? null : sum / weight;
+  const values = points.map((point) => trendValue(point, metric));
+  return values.map((_, index) => {
+    const pooled = values
+      .slice(Math.max(0, index - TREND_WINDOW + 1), index + 1)
+      .filter((value) => value !== null);
+    return pooled.length === 0
+      ? null
+      : pooled.reduce((sum, value) => sum + value, 0) / pooled.length;
   });
 }
