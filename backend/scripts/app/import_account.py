@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 # Import app.* from src/, as `--app-dir src` does at runtime.
-_BACKEND = Path(__file__).resolve().parents[1]
+_BACKEND = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_BACKEND / "src"))
 
 from sqlalchemy import func, select, text  # noqa: E402
