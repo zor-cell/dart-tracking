@@ -21,7 +21,8 @@ class UserTable(Base):
     email: Mapped[str] = mapped_column(String(320), unique=True)
     username: Mapped[str] = mapped_column(String(32), unique=True)
     display_name: Mapped[str] = mapped_column(String(64))
-    password_hash: Mapped[str] = mapped_column(String(255))
+    password_hash: Mapped[str | None] = mapped_column(String(255))
+    google_subject: Mapped[str | None] = mapped_column(String(255), unique=True)
     role: Mapped[str] = mapped_column(String(16), server_default=UserRole.USER.value)
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(

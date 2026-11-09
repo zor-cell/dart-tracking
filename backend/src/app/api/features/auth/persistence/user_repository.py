@@ -19,6 +19,8 @@ def _to_domain(row: UserTable) -> User:
         created_at=row.created_at,
         role=UserRole(row.role),
         email_verified=row.email_verified_at is not None,
+        has_password=row.password_hash is not None,
+        google_linked=row.google_subject is not None,
     )
 
 
@@ -29,13 +31,18 @@ class UserRepository:
         email: str,
         username: str,
         display_name: str,
-        password_hash: str,
+        password_hash: str | None,
+        *,
+        google_subject: str | None = None,
     ) -> User:
+        """An account made through Google starts with its address confirmed."""
         row = UserTable(
             email=email,
             username=username,
             display_name=display_name,
             password_hash=password_hash,
+            google_subject=google_subject,
+            email_verified_at=None if google_subject is None else func.now(),
         )
         session.add(row)
         # Both the id (uuidv7) and created_at come from the server, so the row
@@ -56,14 +63,14 @@ class UserRepository:
 
     async def find_by_email(
         self, session: AsyncSession, email: str
-    ) -> tuple[User, str] | None:
+    ) -> tuple[User, str | None] | None:
         """The account plus its password hash — the one place the hash leaves
         the persistence layer, for the password checks."""
         return await self._with_hash(session, UserTable.email == email)
 
     async def find_for_login(
         self, session: AsyncSession, identifier: str
-    ) -> tuple[User, str] | None:
+    ) -> tuple[User, str | None] | None:
         """By email if the identifier holds an `@`, which no username may contain."""
         if "@" in identifier:
             return await self.find_by_email(session, identifier.lower())
@@ -73,11 +80,58 @@ class UserRepository:
 
     async def _with_hash(
         self, session: AsyncSession, condition: ColumnElement[bool]
-    ) -> tuple[User, str] | None:
+    ) -> tuple[User, str | None] | None:
         row = (
             await session.execute(select(UserTable).where(condition))
         ).scalar_one_or_none()
         return None if row is None else (_to_domain(row), row.password_hash)
+
+    async def find_by_google_subject(self, session: AsyncSession, subject: str) -> User | None:
+        row = (
+            await session.execute(select(UserTable).where(UserTable.google_subject == subject))
+        ).scalar_one_or_none()
+        return None if row is None else _to_domain(row)
+
+    async def credentials(
+        self, session: AsyncSession, user_id: str
+    ) -> tuple[str | None, str | None] | None:
+        """Password hash and Google subject, for confirming a sensitive change."""
+        row = await session.get(UserTable, user_id)
+        return None if row is None else (row.password_hash, row.google_subject)
+
+    async def link_google(
+        self, session: AsyncSession, user_id: str, subject: str, *, drop_password: bool
+    ) -> User | None:
+        """Attach the Google identity; Google vouches for the address, so it counts as confirmed."""
+        row = await session.get(UserTable, user_id)
+        if row is None:
+            return None
+        row.google_subject = subject
+        row.email_verified_at = func.coalesce(UserTable.email_verified_at, func.now())
+        if drop_password:
+            row.password_hash = None
+        await session.flush()
+        await session.refresh(row)
+        return _to_domain(row)
+
+    async def free_username(self, session: AsyncSession, base: str) -> str:
+        """`base`, or `base` with the lowest number appended that no account holds yet."""
+        stem = base[:28]
+        taken = set(
+            (
+                await session.execute(
+                    select(func.lower(UserTable.username)).where(
+                        func.lower(UserTable.username).startswith(stem.lower(), autoescape=True)
+                    )
+                )
+            ).scalars()
+        )
+        if base.lower() not in taken:
+            return base
+        number = 2
+        while f"{stem}{number}".lower() in taken:
+            number += 1
+        return f"{stem}{number}"
 
     async def update_profile(
         self, session: AsyncSession, user_id: str, username: str, display_name: str

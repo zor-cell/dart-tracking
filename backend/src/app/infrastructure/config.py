@@ -50,6 +50,8 @@ class Settings(BaseSettings):
     access_token_minutes: int = 15
     refresh_token_days: int = 30
     cookie_secure: bool = False
+    # OAuth client of the Google sign-in button; public, the frontend reads it from the API.
+    google_client_id: str
 
     smtp_host: str = "localhost"
     smtp_port: int = 10024

@@ -1,8 +1,7 @@
-from pydantic import EmailStr, Field
+from pydantic import EmailStr
 
-from app.api.core.dto.base import CamelModel
+from app.api.features.auth.dto.identity_confirmation import IdentityConfirmationDto
 
 
-class EmailChangeDto(CamelModel):
+class EmailChangeDto(IdentityConfirmationDto):
     new_email: EmailStr
-    current_password: str = Field(max_length=128)

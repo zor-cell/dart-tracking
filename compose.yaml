@@ -28,6 +28,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?missing in .env}
 
       JWT_SECRET: ${JWT_SECRET:?missing in .env}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?missing in .env}
       COOKIE_SECURE: true
       CORS_ORIGINS: "[]" # nginx serves the app and /api under one origin, so nothing here is ever cross-origin
       FORWARDED_ALLOW_IPS: "172.16.0.0/12" # trust nginx's X-Forwarded-For on the compose network

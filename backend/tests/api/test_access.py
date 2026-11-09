@@ -8,6 +8,8 @@ PUBLIC = {
     ("GET", "/api/health"),
     ("POST", "/api/auth/register"),
     ("POST", "/api/auth/login"),
+    ("GET", "/api/auth/google"),
+    ("POST", "/api/auth/google"),
     ("POST", "/api/auth/refresh"),
     ("POST", "/api/auth/logout"),
     ("POST", "/api/auth/verify-email"),

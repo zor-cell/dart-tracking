@@ -1,7 +1,5 @@
-from pydantic import Field
-
-from app.api.core.dto.base import CamelModel
+from app.api.features.auth.dto.identity_confirmation import IdentityConfirmationDto
 
 
-class AccountDeletionDto(CamelModel):
-    current_password: str = Field(max_length=128)
+class AccountDeletionDto(IdentityConfirmationDto):
+    pass

@@ -59,6 +59,7 @@ jobs:
       POSTGRES_PORT: 5432
       REDIS_PORT: 6379
       JWT_SECRET: test-only-secret-padded-to-32-bytes
+      GOOGLE_CLIENT_ID: test-only.apps.googleusercontent.com
     steps:
       - name: Check out the repository
         uses: actions/checkout@v5

@@ -15,6 +15,8 @@ class User:
     created_at: datetime
     role: UserRole = UserRole.USER
     email_verified: bool = False
+    has_password: bool = True
+    google_linked: bool = False
 
     @property
     def is_admin(self) -> bool:
