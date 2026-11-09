@@ -10,7 +10,7 @@ import {
 /** The finishing doubles a player can prefer, by sector (25 for the bull), as the checkout labels them. */
 const DOUBLE_OPTIONS = [
   ...Array.from({ length: 20 }, (_, i) => ({ label: `D${20 - i}`, value: 20 - i })),
-  { label: 'Double Bull', value: 25 },
+  { label: 'Bull', value: 25 },
 ];
 
 /** The player's favourite doubles as a ranked list: first is tried first. */
