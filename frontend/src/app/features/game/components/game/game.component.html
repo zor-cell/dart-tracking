@@ -96,7 +96,7 @@
             <canvas #captureCanvas class="game__hidden-canvas" aria-hidden="true"></canvas>
 
             @if (cameraPhase() !== 'idle') {
-              <app-overlay [polylines]="boardShown() ? null : calibrationOverlay()" [video]="video" />
+              <app-overlay [polylines]="calibrationOverlay()" [video]="video" />
               @for (dart of roundDarts(); track $index) {
                 <app-overlay
                   [polylines]="dart.polylines"
