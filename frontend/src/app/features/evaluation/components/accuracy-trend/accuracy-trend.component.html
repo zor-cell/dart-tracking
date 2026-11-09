@@ -1,12 +1,27 @@
 <p class="panel__hint trend__legend">
-  <span><span class="trend__dot"></span><ng-container i18n="@@stats.trend.games">Einzelne Spiele</ng-container></span>
+  <button
+    type="button"
+    class="legend-toggle"
+    [class.legend-toggle--off]="hidden().has('games')"
+    [attr.aria-pressed]="!hidden().has('games')"
+    (click)="toggle('games')"
+  >
+    <span class="trend__dot"></span
+    ><ng-container i18n="@@stats.trend.games">Einzelne Spiele</ng-container>
+  </button>
   <span class="trend__entry">
-    <span class="trend__line"></span><ng-container i18n="@@stats.tab.trend">Trend</ng-container>
+    <button
+      type="button"
+      class="legend-toggle"
+      [class.legend-toggle--off]="hidden().has('trend')"
+      [attr.aria-pressed]="!hidden().has('trend')"
+      (click)="toggle('trend')"
+    >
+      <span class="trend__line"></span><ng-container i18n="@@stats.tab.trend">Trend</ng-container>
+    </button>
     <app-info-hint>
       <ng-container i18n="@@eval.trend.hint"
-        >Anteil korrekt gewerteter Darts über ein Spiel und die {{ before }} davor, also die letzten
-        {{ window }} Spiele zusammen. Gezählt wird nach Darts: Ein Spiel mit mehr Darts zählt
-        mehr.</ng-container
+        >Anteil korrekt gewerteter Darts über die letzten {{ window }} Spiele.</ng-container
       >
     </app-info-hint>
   </span>

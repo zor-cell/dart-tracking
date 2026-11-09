@@ -1,7 +1,21 @@
 <section class="view">
   <header class="view__header view__header--sticky">
     <app-back-link label="Konto" i18n-label="@@auth.account.title" link="/account" />
-    <h1 class="view__title" i18n="@@auth.account.evaluation">Auswertung</h1>
+    <div class="heading">
+      <h1 class="view__title" i18n="@@auth.account.evaluation">Auswertung</h1>
+      <p-button
+        class="heading__action"
+        icon="pi pi-download"
+        severity="secondary"
+        [rounded]="true"
+        [text]="true"
+        [loading]="downloading()"
+        [disabled]="games().length === 0"
+        ariaLabel="Bericht als Markdown herunterladen"
+        i18n-ariaLabel="@@eval.download"
+        (onClick)="download()"
+      />
+    </div>
   </header>
 
   <app-list-toolbar
@@ -91,7 +105,7 @@
     <p-button
       listToolbarTool
       class="group-button"
-      icon="pi pi-objects-column"
+      icon="pi pi-sitemap"
       [label]="groupName() ?? undefined"
       ariaLabel="Gruppieren nach"
       i18n-ariaLabel="@@eval.group.by"
@@ -100,16 +114,6 @@
       [rounded]="true"
       [text]="groupKind() === null"
       (onClick)="groupMenu.toggle($event)"
-    />
-    <p-button
-      listToolbarAction
-      icon="pi pi-download"
-      [rounded]="true"
-      [loading]="downloading()"
-      [disabled]="games().length === 0"
-      ariaLabel="Bericht als Markdown herunterladen"
-      i18n-ariaLabel="@@eval.download"
-      (onClick)="download()"
     />
   </app-list-toolbar>
   <p-menu #groupMenu [model]="groupItems()" [popup]="true" appendTo="body" />
@@ -155,7 +159,7 @@
             @if (games().length > 1) {
               <section class="panel">
                 <h2 class="panel__title" i18n="@@game.replay.race">Verlauf</h2>
-                <app-accuracy-trend [games]="games()" (gameOpen)="openGame($event)" />
+                <app-accuracy-trend [games]="games()" />
               </section>
             }
           </app-accuracy-summary>
@@ -166,7 +170,7 @@
               @if (groups.length) {
                 <app-group-charts [summary]="total" [failures]="failures()" [groups]="groups" />
               } @else {
-                <app-empty-state icon="pi-objects-column">
+                <app-empty-state icon="pi-sitemap">
                   <p i18n="@@eval.group.none">Kein Spiel trägt diese Angabe.</p>
                 </app-empty-state>
               }

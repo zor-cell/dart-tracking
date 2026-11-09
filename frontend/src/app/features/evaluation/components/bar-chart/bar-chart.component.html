@@ -4,8 +4,8 @@
       <li>
         <button
           type="button"
-          class="legend__item"
-          [class.legend__item--off]="!series.shown"
+          class="legend-toggle"
+          [class.legend-toggle--off]="!series.shown"
           [attr.aria-pressed]="series.shown"
           (click)="toggle(series.index)"
         >

@@ -549,3 +549,18 @@ html p-autocomplete.ng-invalid.ng-dirty .p-autocomplete-input::placeholder {
   justify-content: flex-end;
   gap: 0.5rem;
 }
+
+/* A chart legend entry that switches its series on and off. */
+.legend-toggle {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+
+  &--off {
+    text-decoration: line-through;
+    opacity: 0.5;
+  }
+}

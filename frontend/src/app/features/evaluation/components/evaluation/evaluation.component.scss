@@ -7,6 +7,17 @@ p-tabs {
   margin-top: -1.25rem;
 }
 
+/* The title with the download at its end. */
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.heading__action {
+  margin-left: auto;
+}
+
 /* The tabs share the bar evenly. */
 p-tab {
   flex: 1 1 0;

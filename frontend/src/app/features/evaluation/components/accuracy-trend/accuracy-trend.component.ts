@@ -6,7 +6,7 @@ import {
   computed,
   inject,
   input,
-  output,
+  signal,
 } from '@angular/core';
 import type { ChartData, ChartOptions } from 'chart.js';
 import { UIChart } from 'primeng/chart';
@@ -30,6 +30,9 @@ export function rollingAccuracy(games: readonly GameAccuracyDto[], window = TREN
   });
 }
 
+/** The parts of the chart its legend switches on and off. */
+type TrendPart = 'games' | 'trend';
+
 /** Each game's accuracy in the order they were played as dots, a rolling trend through them. */
 @Component({
   selector: 'app-accuracy-trend',
@@ -43,12 +46,10 @@ export class AccuracyTrendComponent {
   private readonly theme = chartTheme(inject(DOCUMENT));
 
   protected readonly window = TREND_WINDOW;
-  protected readonly before = TREND_WINDOW - 1;
+  protected readonly hidden = signal<ReadonlySet<TrendPart>>(new Set());
 
   /** The games newest first, as the report lists them. */
   readonly games = input.required<readonly GameAccuracyDto[]>();
-  /** A game's dot was tapped. */
-  readonly gameOpen = output<string>();
 
   /** Oldest first, and only games with a thrown dart. */
   private readonly played = computed(() =>
@@ -61,6 +62,7 @@ export class AccuracyTrendComponent {
       {
         label: $localize`:@@common.nav.game:Spiel`,
         data: this.played().map((game) => (100 * game.summary.correct) / game.summary.dartsThrown),
+        hidden: this.hidden().has('games'),
         showLine: false,
         pointRadius: 3,
         pointHoverRadius: 4,
@@ -73,6 +75,7 @@ export class AccuracyTrendComponent {
         data: rollingAccuracy(this.played()),
         borderColor: SERIES_COLORS[0],
         backgroundColor: SERIES_COLORS[0],
+        hidden: this.hidden().has('trend'),
         borderWidth: 2,
         pointRadius: 0,
         pointHoverRadius: 4,
@@ -88,29 +91,6 @@ export class AccuracyTrendComponent {
       animation: false,
       font: { family: this.theme.font },
       interaction: { mode: 'index', intersect: false },
-      onClick: (event, _, chart) => {
-        const [hit] = chart.getElementsAtEventForMode(
-          event as unknown as Event,
-          'nearest',
-          { intersect: true },
-          false,
-        );
-        if (hit?.datasetIndex === 0) {
-          this.gameOpen.emit(games[hit.index].gameId);
-        }
-      },
-      onHover: (event, _, chart) => {
-        const target = event.native?.target as HTMLElement | undefined;
-        const over = chart.getElementsAtEventForMode(
-          event as unknown as Event,
-          'nearest',
-          { intersect: true },
-          false,
-        );
-        if (target) {
-          target.style.cursor = over.some((hit) => hit.datasetIndex === 0) ? 'pointer' : 'default';
-        }
-      },
       scales: {
         x: {
           grid: { display: false },
@@ -145,12 +125,21 @@ export class AccuracyTrendComponent {
               const { correct, dartsThrown } = games[item.dataIndex].summary;
               return $localize`:@@eval.trend.tooltip:${correct}:correct: von ${dartsThrown}:thrown: Darts korrekt (${rate}:rate: %)`;
             },
-            footer: () => $localize`:@@eval.trend.open:Antippen öffnet das Spiel`,
           },
         },
       },
     };
   });
+
+  protected toggle(part: TrendPart): void {
+    this.hidden.update((hidden) => {
+      const next = new Set(hidden);
+      if (!next.delete(part)) {
+        next.add(part);
+      }
+      return next;
+    });
+  }
 
   protected readonly ariaLabel = computed(() => {
     const played = this.played();
