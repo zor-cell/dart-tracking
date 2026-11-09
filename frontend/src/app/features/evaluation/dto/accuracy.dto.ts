@@ -56,7 +56,7 @@ export interface GameAccuracyDto {
   readonly summary: AccuracySummaryDto;
 }
 
-export type GroupKind = 'version' | 'tilt' | 'fragments';
+export type GroupKind = 'version' | 'tilt' | 'fragments' | 'dart';
 
 /** One group's darts and empty detections; `key` is a code such as `20-35` or `3+`. */
 export interface GroupRowDto {

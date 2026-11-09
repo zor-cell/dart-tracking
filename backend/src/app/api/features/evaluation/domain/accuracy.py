@@ -38,6 +38,8 @@ class Judgement:
     game_id: str
     turn_index: int
     position: int  # place within the visit, 1-based
+    # Which dart of the visit, 1-based: its throw, or for a phantom its booking.
+    dart: int
     outcome: DartOutcome
     tracked: GameEvent | None
     expected_label: str | None
@@ -182,6 +184,7 @@ def judge(game_id: str, visit: Visit) -> list[Judgement]:
             game_id=game_id,
             turn_index=visit.turn_index,
             position=position,
+            dart=(right if right is not None else left or 0) + 1,
             outcome=outcome_of(
                 tracked[left] if left is not None else None,
                 expected[right] if right is not None else None,

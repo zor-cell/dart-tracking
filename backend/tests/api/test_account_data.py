@@ -282,7 +282,7 @@ def test_accuracy_report_is_for_admins(alice, anon, session):
     )
     assert filtered.json()["games"] == []
     assert [group["kind"] for group in filtered.json()["groups"]] == [
-        "version", "tilt", "fragments",
+        "version", "tilt", "fragments", "dart",
     ]
 
 

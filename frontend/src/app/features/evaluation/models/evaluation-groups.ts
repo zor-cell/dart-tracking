@@ -5,6 +5,7 @@ export const GROUP_KINDS: readonly { readonly value: GroupKind; readonly label: 
   { value: 'version', label: $localize`:@@eval.trackerVersion:Tracker-Version` },
   { value: 'tilt', label: $localize`:@@eval.tilt:Kameraneigung` },
   { value: 'fragments', label: $localize`:@@eval.group.fragments:Blob-Fragmente` },
+  { value: 'dart', label: $localize`:@@eval.group.dart:Dart im Visit` },
 ];
 
 /** How a group's code reads on the page: `20-35` as `20–35°`, `3+` as `3+ Fragmente`. */
@@ -20,6 +21,8 @@ export function groupLabel(kind: GroupKind, key: string): string {
       return key === '1'
         ? $localize`:@@eval.group.oneFragment:1 Fragment`
         : $localize`:@@eval.group.fragmentCount:${key}:count: Fragmente`;
+    case 'dart':
+      return $localize`:@@eval.group.dartNumber:Dart ${key}:number:`;
     default:
       return key;
   }

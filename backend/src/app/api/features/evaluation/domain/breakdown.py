@@ -1,5 +1,5 @@
 """The judged darts split by technical properties: tracker version, camera tilt, blob
-cohesion. Shared by the evaluation page and the Markdown report."""
+cohesion, dart within the visit. Shared by the evaluation page and the Markdown report."""
 
 import math
 from collections import Counter
@@ -28,6 +28,7 @@ class GroupKind(StrEnum):
     VERSION = "version"
     TILT = "tilt"
     FRAGMENTS = "fragments"
+    DART = "dart"
 
 
 @dataclass(frozen=True)
@@ -82,10 +83,16 @@ def fragments_of(judgement: Judgement) -> str | None:
     return "1" if count <= 1 else "2" if count == 2 else "3+"
 
 
-# The group of a whole game; blob cohesion is the one kind that splits a game's darts.
+# The group of a whole game.
 _GAME_KEYS: dict[GroupKind, Callable[[JudgedGame], str | None]] = {
     GroupKind.VERSION: version_of,
     GroupKind.TILT: lambda game: None if game.camera is None else tilt_band(game.camera),
+}
+
+# The group of a single dart, for the kinds that split a game's darts.
+_DART_KEYS: dict[GroupKind, Callable[[Judgement], str | None]] = {
+    GroupKind.FRAGMENTS: fragments_of,
+    GroupKind.DART: lambda judgement: str(judgement.dart),
 }
 
 
@@ -100,9 +107,9 @@ def _members(games: list[JudgedGame], kind: GroupKind) -> dict[str, _Members]:
     neither visits nor failures along."""
     groups: dict[str, _Members] = {}
     for game in games:
-        if kind is GroupKind.FRAGMENTS:
+        if kind in _DART_KEYS:
             for judgement in game.judgements:
-                key = fragments_of(judgement)
+                key = _DART_KEYS[kind](judgement)
                 if key is not None:
                     group = groups.setdefault(key, _Members())
                     group.game_ids.add(game.game.id)

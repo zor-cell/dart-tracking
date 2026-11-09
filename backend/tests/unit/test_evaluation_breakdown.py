@@ -114,6 +114,32 @@ def test_breakdown_by_blob_cohesion_counts_located_darts_only():
     assert all(row.accuracy.visits == 0 and row.failures == [] for row in rows)
 
 
+def test_breakdown_by_dart_splits_each_visit_in_throw_order():
+    rows = breakdown([judged("a", ONE_WRONG), judged("b", ALL_RIGHT)], GroupKind.DART)
+
+    assert [
+        (row.key, row.accuracy.games, row.accuracy.correct, row.accuracy.darts_thrown)
+        for row in rows
+    ] == [("1", 2, 2, 2), ("2", 1, 0, 1)]
+
+
+def test_dart_number_follows_the_throw_past_a_missed_dart():
+    events = [
+        event(K.DETECTED, (20, 1)),
+        event(K.MANUAL, (5, 1)),
+        event(K.DETECTED, (1, 1)),
+        event(K.NEXT_PLAYER),
+    ]
+
+    judgements = judged("a", events).judgements
+
+    assert [(j.dart, j.outcome) for j in judgements] == [
+        (1, DartOutcome.CORRECT),
+        (2, DartOutcome.MISSED),
+        (3, DartOutcome.CORRECT),
+    ]
+
+
 def test_booked_misses_split_by_where_the_tip_landed():
     events = [
         event(K.DETECTED, (0, 0), position=(0.0, 300.0)),
@@ -153,9 +179,16 @@ def test_report_names_the_selection_and_every_section():
     assert "- Tracker versions 5 to 5" in report
     assert "- Modes 501" in report
     assert "Correct segment: **1 / 2 - 50.0%**" in report
-    for heading in ("## Per game", "## Per group", "## Per blob cohesion", "## Mismatches"):
+    for heading in (
+        "## Per game",
+        "## Per group",
+        "## Per blob cohesion",
+        "## Per dart in the visit",
+        "## Mismatches",
+    ):
         assert heading in report
     assert "| 20-35 | 1 | 1 | 2 | 50% |" in report
+    assert "| 2 | 1 | 0 | 1 | 0% |" in report
 
 
 def test_breakdowns_cover_every_group_kind():

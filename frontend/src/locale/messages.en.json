@@ -620,6 +620,8 @@
     "eval.group.tiltFrom": "from {$low}°",
     "eval.group.oneFragment": "1 fragment",
     "eval.group.fragmentCount": "{$count} fragments",
+    "eval.group.dart": "Dart in the visit",
+    "eval.group.dartNumber": "Dart {$number}",
     "announcer.claim": "Move the caller to this device",
     "announcer.unmute": "Unmute the caller",
     "announcer.mute": "Mute the caller",
