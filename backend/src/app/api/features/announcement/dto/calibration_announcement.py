@@ -9,3 +9,4 @@ class CalibrationAnnouncementDto(CamelModel):
 
     type: Literal["calibration_announcement"] = "calibration_announcement"
     calibrated: bool
+    clips: list[str]

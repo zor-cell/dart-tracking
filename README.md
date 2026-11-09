@@ -45,6 +45,15 @@ Backend, aus `backend/` (läuft auf `:8000`):
 uv run uvicorn app.main:app --app-dir src --reload
 ```
 
+Die Ansagen spricht das Backend mit [Piper](https://github.com/OHF-Voice/piper1-gpl).
+Einmalig lädt dieser Befehl die Stimmen nach `backend/voices/` und erzeugt alle
+Ansagen ohne Spielernamen vorab in `backend/speech/`. Ohne Stimmen bleibt die
+Ansage stumm:
+
+```bash
+uv run python scripts/app/prebuild_speech.py
+```
+
 Frontend, aus `frontend/` (läuft auf `:4200`, nur Deutsch):
 
 ```bash

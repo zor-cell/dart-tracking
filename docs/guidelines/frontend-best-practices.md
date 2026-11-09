@@ -142,4 +142,6 @@ browser's first language, so shared links, QR codes and mail links stay neutral.
 - `ng serve` serves one language: `npm run start` German, `npm run start:en`
   English under `/en/`. To try the switch, `npm run start:languages` runs both,
   English on 4201 proxied by German on 4200, where `main.ts` follows the cookie.
-- Names of languages, the announcer and darts terms (Double Bull, D16) stay as they are.
+- Names of languages and darts terms (D16) stay as they are.
+- The announcer's calls are worded and voiced on the server (`announcer.*` in the
+  backend's locale), in the announcer device's language; the client only plays them.

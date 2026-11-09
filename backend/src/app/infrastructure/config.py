@@ -15,6 +15,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # One `.env` at the repository root, shared with docker compose. Absent inside
 # the container, where the values arrive as environment variables.
 _ENV_FILE = Path(__file__).resolve().parents[4] / ".env"
+_BACKEND_DIR = Path(__file__).resolve().parents[3]
 
 
 class SmtpSecurity(StrEnum):
@@ -60,6 +61,11 @@ class Settings(BaseSettings):
 
     # Pipeline version the image was built from (see deploy.yaml); unset in a local run.
     tracker_version: int | None = None
+
+    # Piper voice models, the clips voiced ahead in the image, and those voiced on demand.
+    voices_dir: Path = _BACKEND_DIR / "voices"
+    speech_prebuilt_dir: Path | None = None
+    speech_dir: Path = _BACKEND_DIR / "speech"
 
     @field_validator("tracker_version", "smtp_username", "smtp_password", mode="before")
     @classmethod

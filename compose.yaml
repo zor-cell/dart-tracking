@@ -52,6 +52,7 @@ services:
       start_period: 40s
     volumes:
       - ${TESTDATA_DIR:-./backend/testdata}:/app/testdata
+      - speech_data:/app/speech # announcer phrases with player names, voiced on demand
 
   frontend:
     build:
@@ -98,3 +99,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  speech_data:

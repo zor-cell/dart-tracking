@@ -28,7 +28,12 @@ from app.api import tables  # noqa: E402, F401
 from app.infrastructure import database, mailer, redis_client  # noqa: E402
 from app.infrastructure.database import Base  # noqa: E402
 from app.main import app  # noqa: E402
+from app.api.features.announcement.services.speech import speech_store  # noqa: E402
 from tests.api.support import Api, Session, alembic_config  # noqa: E402
+from tests.audio import silent_wav  # noqa: E402
+
+# No test voices with Piper, so the app's start loads no voice either.
+speech_store().synthesize = silent_wav
 
 
 async def _recreate_schema(settings: Settings) -> None:
@@ -95,3 +100,19 @@ def anon(client: TestClient) -> Api:
 @pytest.fixture
 def register(session: Session) -> Callable[..., Api]:
     return session.register
+
+
+@pytest.fixture(autouse=True)
+def voiced(tmp_path, monkeypatch) -> list[str]:
+    """Every phrase voiced during the test, as silence into a temporary directory."""
+    store = speech_store()
+    phrases: list[str] = []
+
+    def synthesize(text: str, language: object) -> bytes:
+        phrases.append(text)
+        return silent_wav(text, language)
+
+    monkeypatch.setattr(store, "synthesize", synthesize)
+    monkeypatch.setattr(store, "cache_dir", tmp_path / "speech")
+    monkeypatch.setattr(store, "prebuilt_dir", None)
+    return phrases

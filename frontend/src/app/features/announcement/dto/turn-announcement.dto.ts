@@ -4,4 +4,5 @@ export interface TurnAnnouncementDto {
   readonly type: 'turn_announcement';
   readonly player: string;
   readonly score: number;
+  readonly clips: readonly string[];
 }

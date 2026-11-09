@@ -1,13 +1,12 @@
 from typing import Literal, Self
 
 from app.api.core.dto.base import CamelModel
-from app.api.features.game.domain.dart import Dart
-from app.api.features.game.domain.game import Game
+from app.api.features.announcement.domain.calls import DartCall
 
 
 class DartAnnouncementDto(CamelModel):
-    """Server -> announcer: a dart just booked, tracked or entered by hand, for
-    the client to phrase.
+    """Server -> announcer: a dart just booked, tracked or entered by hand, with
+    the clips that call it in the announcer's language.
 
     `visit_points` is set once the visit is full, busted or won; `eliminated`
     names whoever the dart sent back to zero.
@@ -20,17 +19,16 @@ class DartAnnouncementDto(CamelModel):
     busted: bool
     won: bool
     eliminated: list[str]
+    clips: list[str]
 
     @classmethod
-    def from_entity(cls, dart: Dart, game: Game, eliminated: set[int]) -> Self:
-        turn = game.current_turn
-        won = game.winner is not None
-        visit_over = won or game.darts_remaining == 0
+    def from_entity(cls, call: DartCall, clips: list[str]) -> Self:
         return cls(
-            value=dart.value,
-            multiplier=dart.multiplier,
-            visit_points=turn.points if visit_over else None,
-            busted=turn.busted,
-            won=won,
-            eliminated=[player.name for player in game.players if player.id in eliminated],
+            value=call.value,
+            multiplier=call.multiplier,
+            visit_points=call.visit_points,
+            busted=call.busted,
+            won=call.won,
+            eliminated=list(call.eliminated),
+            clips=clips,
         )

@@ -121,7 +121,7 @@ src/app/
   the program's result, not a diagnostic.
 
 ## Texts and Languages
-- Text meant for people (mails, names the server fills in) lives in
+- Text meant for people (mails, names the server fills in, the announcer's calls) lives in
   `api/core/locale/<language>.json` with flat keys (`mail.reset.title`) and
   `{placeholders}`, read through `translate(key, language=None, **params)`. A unit
   test keeps every language at the same keys and placeholders.

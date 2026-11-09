@@ -17,6 +17,8 @@ PUBLIC = {
     ("POST", "/api/games"),
     ("GET", "/api/games/{game_id}"),
     ("GET", "/api/settings"),
+    ("GET", "/api/announcer/clips/{clip}.wav"),
+    ("GET", "/api/announcer/test"),
 }
 SOME_ID = "00000000-0000-0000-0000-000000000000"
 

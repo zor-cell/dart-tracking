@@ -1,4 +1,4 @@
-/** Server -> announcer: a dart just booked, tracked or entered by hand.
+/** Server -> announcer: a dart just booked, tracked or entered by hand, and the clips calling it.
  * `visitPoints` is set once the visit is full, busted or won; `eliminated` names
  * whoever the dart sent back to zero. */
 export interface DartAnnouncementDto {
@@ -9,4 +9,5 @@ export interface DartAnnouncementDto {
   readonly busted: boolean;
   readonly won: boolean;
   readonly eliminated: readonly string[];
+  readonly clips: readonly string[];
 }

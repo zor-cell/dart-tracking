@@ -14,5 +14,19 @@
   "mail.reset.intro": "für dein Konto wurde ein neues Passwort angefordert. Über den folgenden Link kannst du es festlegen.",
   "mail.reset.action": "Neues Passwort festlegen",
   "mail.reset.outro": "Der Link ist eine Stunde gültig. Falls du das nicht angefordert hast, kannst du diese Mail ignorieren; dein Passwort bleibt unverändert.",
-  "player.deleted": "Gelöschter Spieler"
+  "player.deleted": "Gelöschter Spieler",
+  "announcer.single": "Single {value}",
+  "announcer.double": "Doppel {value}",
+  "announcer.triple": "Trippel {value}",
+  "announcer.outerBull": "25",
+  "announcer.bull": "Bull",
+  "announcer.miss": "Daneben",
+  "announcer.and": "und",
+  "announcer.eliminated": "{players} eliminiert",
+  "announcer.gameShot": "Spiel gewonnen",
+  "announcer.bust": "Überworfen",
+  "announcer.turn": "{player}, {score}",
+  "announcer.calibrated": "Board kalibriert",
+  "announcer.calibrationFailed": "Kalibrierung fehlgeschlagen",
+  "announcer.test": "Los geht's"
 }

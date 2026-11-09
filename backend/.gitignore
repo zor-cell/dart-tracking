@@ -4,3 +4,5 @@ testdata/
 .hypothesis/
 .pytest_cache/
 .coverage
+voices/
+speech/

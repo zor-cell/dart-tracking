@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -8,6 +9,8 @@ from fastapi.middleware.gzip import GZipMiddleware
 from app.api import health
 from app.api.core.services.request_language import LanguageMiddleware
 from app.api.core.socket import socket
+from app.api.features.announcement import announcements
+from app.api.features.announcement.services import speech
 from app.api.features.auth import auth
 from app.api.features.evaluation import evaluation
 from app.api.features.game import games
@@ -24,11 +27,14 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Hold the database and Redis connections for the lifetime of the app."""
+    """Hold the database and Redis connections for the lifetime of the app, and load
+    the announcer's voices meanwhile."""
     configure_logging()
     database.init(settings.database_url)
     redis_client.init(settings.redis_url)
+    voices = asyncio.create_task(speech.warm_up())
     yield
+    await voices
     await redis_client.close()
     await database.close()
 
@@ -61,5 +67,6 @@ api_router.include_router(players.router)
 api_router.include_router(evaluation.router)
 api_router.include_router(statistics.router)
 api_router.include_router(user_settings.router)
+api_router.include_router(announcements.router)
 
 app.include_router(api_router)

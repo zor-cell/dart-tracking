@@ -1,60 +1,57 @@
 import { DOCUMENT } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../../environments/environment';
+import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
 import { SocketService } from '../../../core/socket/services/socket.service';
-import { announcementPhrases, calibrationPhrase, turnPhrase } from '../models/announcement-text';
 import { readStored, writeStored } from '../../../core/storage/models/browser-storage';
+import { SpeechTestDto } from '../dto/speech-test.dto';
 
 const MUTED_KEY = 'dart-tracking.announcerMuted';
-// The calls are darts English, so a British voice reads them as a caller would.
-const ANNOUNCEMENT_LANG = 'en-GB';
-
-/** Spoken nearly silent to prime the synthesiser; must not be empty on WebKit. */
-const UNLOCK_PHRASE = 'ok';
-const UNLOCK_VOLUME = 0.01;
 
 /** Events that count as a user activation on touch and mouse alike. */
 const GESTURE_EVENTS = ['touchend', 'click'] as const;
 
-/** What the self-test says out loud. */
-const TEST_PHRASE = 'Game on';
+/** Decoded clips kept for reuse, since the fixed calls repeat all game long. */
+const CLIP_CACHE_SIZE = 64;
 
-/** Watchdog for an utterance that never reports back, in ms. */
-const UTTERANCE_TIMEOUT_BASE = 2000;
-const UTTERANCE_TIMEOUT_PER_CHAR = 120;
+/** How long the self-test waits for its clip to play through, in ms. */
+const TEST_TIMEOUT = 8000;
 
 /** Older WebKit has the audio context under a prefix. */
 type WebAudioWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
 
-/** What the synthesiser did with the self-test's utterance. `spoken` says it ran
- * to the end, not that anything was audible. */
+/** What became of the self-test's clip. `spoken` says it played to the end, not
+ * that anything was audible. */
 export type AnnouncerTestResult = 'spoken' | 'failed' | 'no_answer' | 'muted' | 'unsupported';
 
 /**
- * Speaks the darts the camera books and calls the next player, on the one
- * device the server picked as announcer. Muting is local to this device.
+ * Plays the clips the server voices for booked darts and the next player, on the
+ * one device the server picked as announcer. Muting is local to this device.
  */
 @Injectable({ providedIn: 'root' })
 export class AnnouncerService {
   private readonly socket = inject(SocketService);
+  private readonly http = inject(HttpClient);
   private readonly document = inject(DOCUMENT);
 
   private readonly announcerId = signal<string | null>(null);
   private readonly _muted = signal(readStored(MUTED_KEY) === 'true');
-
-  private readonly pending: string[] = [];
-  private audio: AudioContext | null = null;
-  private current: SpeechSynthesisUtterance | null = null;
-  private testing = false;
   private readonly _unlocked = signal(false);
-  private watchdog: ReturnType<typeof setTimeout> | null = null;
-  private readonly onGesture = () => this.unlock();
+
+  private audio: AudioContext | null = null;
+  private readonly clips = new Map<string, Promise<AudioBuffer>>();
+  /** Bumped by every interruption, so the clips of an older announcement stop. */
+  private generation = 0;
+  private queue: Promise<unknown> = Promise.resolve();
+  private current: AudioBufferSourceNode | null = null;
 
   readonly muted = this._muted.asReadonly();
-  readonly supported = this.synth() !== null;
+  readonly supported = this.contextType() !== null;
 
-  /** Whether an utterance has been heard to start on this device. Until then the
-   * browser may be dropping them, which is what the self-test makes visible. */
+  /** Whether the browser lets this page play sound; until a tap it may not. */
   readonly unlocked = this._unlocked.asReadonly();
   readonly isAnnouncer = computed(
     () => this.announcerId() !== null && this.announcerId() === this.socket.clientId(),
@@ -69,17 +66,17 @@ export class AnnouncerService {
     this.socket
       .on('dart_announcement')
       .pipe(takeUntilDestroyed())
-      .subscribe((announcement) => this.speak(announcementPhrases(announcement), true));
+      .subscribe((announcement) => this.announce(announcement.clips, true));
 
     this.socket
       .on('turn_announcement')
       .pipe(takeUntilDestroyed())
-      .subscribe((announcement) => this.speak([turnPhrase(announcement)]));
+      .subscribe((announcement) => this.announce(announcement.clips));
 
     this.socket
       .on('calibration_announcement')
       .pipe(takeUntilDestroyed())
-      .subscribe((announcement) => this.speak([calibrationPhrase(announcement)]));
+      .subscribe((announcement) => this.announce(announcement.clips));
 
     // The room re-sends the announcer on every join, so a stale one must not
     // outlive the connection it came from.
@@ -90,7 +87,7 @@ export class AnnouncerService {
     });
 
     for (const event of GESTURE_EVENTS) {
-      this.document.addEventListener(event, this.onGesture, { capture: true });
+      this.document.addEventListener(event, () => this.resume(), { capture: true });
     }
   }
 
@@ -107,184 +104,154 @@ export class AnnouncerService {
     }
   }
 
-  /** With `interrupt`, cuts off whatever earlier announcements still had to say,
-   * so quick manual entries do not queue up behind each other. */
-  private speak(phrases: string[], interrupt = false): void {
-    if (this.synth() === null || this._muted()) {
-      return;
+  private announce(urls: readonly string[], interrupt = false): void {
+    void this.play(urls, interrupt).catch(() => undefined);
+  }
+
+  /** Play one clip after the other, behind the announcements before. With
+   * `interrupt`, cuts those off, so quick manual entries do not queue up.
+   * Resolves whether every clip played to the end. */
+  private play(urls: readonly string[], interrupt = false): Promise<boolean> {
+    const audio = this.context();
+    if (audio === null || this._muted() || urls.length === 0) {
+      return Promise.resolve(false);
     }
-    if (interrupt && !this.testing) {
+    if (interrupt) {
       this.stop();
     }
-    this.pending.push(...phrases);
-    this.drain();
+    const generation = this.generation;
+    const buffers = urls.map((url) => this.clip(audio, url));
+    const played = this.queue.then(() => this.playInTurn(audio, buffers, generation));
+    this.queue = played.catch(() => undefined);
+    return played;
   }
 
-  /** Speaks one phrase at a time; WebKit drops all but the head of its queue. */
-  private drain(): void {
-    const synth = this.synth();
-    if (synth === null || this.current !== null) {
-      return;
-    }
-    const phrase = this.pending.shift();
-    if (phrase === undefined) {
-      return;
-    }
-
-    // WebKit swallows every later utterance once its queue is stuck, and leaves
-    // the synthesiser paused after the page was backgrounded.
-    synth.cancel();
-    synth.resume();
-
-    const utterance = this.utterance(phrase);
-
-    const finish = () => {
-      if (this.current !== utterance) {
-        return;
+  private async playInTurn(
+    audio: AudioContext,
+    buffers: readonly Promise<AudioBuffer>[],
+    generation: number,
+  ): Promise<boolean> {
+    for (const buffer of buffers) {
+      const decoded = await buffer;
+      // A suspended context never ends a clip; the call is dropped rather than held.
+      if (generation !== this.generation || audio.state !== 'running') {
+        return false;
       }
-      this.current = null;
-      this.clearWatchdog();
-      this.drain();
-    };
-    utterance.onend = finish;
-    utterance.onerror = finish;
-
-    this.current = utterance;
-    this.watchdog = setTimeout(
-      finish,
-      UTTERANCE_TIMEOUT_BASE + phrase.length * UTTERANCE_TIMEOUT_PER_CHAR,
-    );
-    synth.speak(utterance);
+      await this.playClip(audio, decoded);
+    }
+    return generation === this.generation;
   }
 
-  private stop(): void {
-    this.pending.length = 0;
-    this.current = null;
-    this.clearWatchdog();
-    this.synth()?.cancel();
-  }
-
-  private clearWatchdog(): void {
-    if (this.watchdog !== null) {
-      clearTimeout(this.watchdog);
-      this.watchdog = null;
-    }
-  }
-
-  /**
-   * Browsers only allow speech after a user gesture. WebKit grants it when an
-   * utterance actually starts inside one, so every tap retries until it does.
-   */
-  private unlock(): void {
-    const synth = this.synth();
-    if (
-      this._unlocked() ||
-      synth === null ||
-      this.current !== null ||
-      synth.pending ||
-      synth.speaking
-    ) {
-      return;
-    }
-    this.primeAudio();
-    const utterance = this.utterance(UNLOCK_PHRASE);
-    utterance.volume = UNLOCK_VOLUME;
-    synth.resume();
-    synth.speak(utterance);
-  }
-
-  /**
-   * Say one phrase out loud and report what the synthesiser made of it. Speaks
-   * from inside the caller's click, the one moment WebKit allows a first
-   * utterance.
-   */
-  test(): Promise<AnnouncerTestResult> {
-    const synth = this.synth();
-    if (synth === null) {
-      return Promise.resolve<AnnouncerTestResult>('unsupported');
-    }
-    if (this._muted()) {
-      return Promise.resolve<AnnouncerTestResult>('muted');
-    }
-
-    this.primeAudio();
-    this.stop();
-    const utterance = this.utterance(TEST_PHRASE);
-
+  private playClip(audio: AudioContext, buffer: AudioBuffer): Promise<void> {
     return new Promise((resolve) => {
-      const settle = (result: AnnouncerTestResult) => {
-        if (this.current === utterance) {
+      const source = audio.createBufferSource();
+      source.buffer = buffer;
+      source.connect(audio.destination);
+      source.onended = () => {
+        if (this.current === source) {
           this.current = null;
-          this.testing = false;
-          this.clearWatchdog();
-          resolve(result);
-          this.drain();
         }
+        resolve();
       };
-      utterance.onend = () => settle('spoken');
-      utterance.onerror = () => settle('failed');
-
-      // Held like a queued phrase, so an announcement arriving mid-test waits
-      // rather than talking over it.
-      this.current = utterance;
-      this.testing = true;
-      this.watchdog = setTimeout(
-        () => settle('no_answer'),
-        UTTERANCE_TIMEOUT_BASE + TEST_PHRASE.length * UTTERANCE_TIMEOUT_PER_CHAR,
-      );
-      synth.resume();
-      synth.speak(utterance);
+      this.current = source;
+      source.start();
     });
   }
 
+  private stop(): void {
+    this.generation++;
+    const current = this.current;
+    this.current = null;
+    current?.stop();
+  }
+
+  /** A clip fetched and decoded once, then reused. */
+  private clip(audio: AudioContext, url: string): Promise<AudioBuffer> {
+    const cached = this.clips.get(url);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const decoded = firstValueFrom(
+      this.http.get(url, { responseType: 'arraybuffer', context: SILENT_ERROR_CONTEXT }),
+    ).then((data) => audio.decodeAudioData(data));
+    decoded.catch(() => this.clips.delete(url));
+    this.clips.set(url, decoded);
+    if (this.clips.size > CLIP_CACHE_SIZE) {
+      this.clips.delete(this.clips.keys().next().value!);
+    }
+    return decoded;
+  }
+
   /**
-   * Open and resume an audio context, from inside a gesture. iOS keeps speech
-   * silent while the page holds no running audio session.
+   * Play the server's test phrase and report what became of it. Resumes the
+   * audio before anything is awaited, the one moment WebKit allows it.
    */
-  private primeAudio(): void {
-    const view = this.document.defaultView as WebAudioWindow | null;
-    const context = view?.AudioContext ?? view?.webkitAudioContext;
-    if (context === undefined) {
-      return;
+  async test(): Promise<AnnouncerTestResult> {
+    const audio = this.context();
+    if (audio === null) {
+      return 'unsupported';
     }
-    const audio = (this.audio ??= new context());
-    void audio.resume().catch(() => {});
-  }
-
-  /** An utterance in the announcement voice, and the note that speech works on
-   * this device once it starts. */
-  private utterance(phrase: string): SpeechSynthesisUtterance {
-    const utterance = new SpeechSynthesisUtterance(phrase);
-    utterance.lang = ANNOUNCEMENT_LANG;
-    const voice = this.englishVoice();
-    if (voice !== null) {
-      utterance.voice = voice;
+    if (this._muted()) {
+      return 'muted';
     }
-    utterance.onstart = () => {
-      this._unlocked.set(true);
-      for (const event of GESTURE_EVENTS) {
-        this.document.removeEventListener(event, this.onGesture, { capture: true });
-      }
-    };
-    return utterance;
-  }
+    const resumed = audio.resume().catch(() => undefined);
+    this.stop();
 
-  /** A British voice where the device has one, else any English one. */
-  private englishVoice(): SpeechSynthesisVoice | null {
-    const voices = this.synth()?.getVoices() ?? [];
-    return (
-      voices.find((voice) => languageOf(voice) === 'en-gb') ??
-      voices.find((voice) => languageOf(voice).startsWith('en')) ??
-      null
+    let clips: readonly string[];
+    try {
+      const test = this.http.get<SpeechTestDto>(`${environment.httpApiUrl}/announcer/test`, {
+        context: SILENT_ERROR_CONTEXT,
+      });
+      clips = (await firstValueFrom(test)).clips;
+    } catch {
+      return 'failed';
+    }
+    await resumed;
+    if (clips.length === 0) {
+      return 'failed';
+    }
+    if (audio.state !== 'running') {
+      return 'no_answer';
+    }
+
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<AnnouncerTestResult>((resolve) => {
+      timer = setTimeout(() => resolve('no_answer'), TEST_TIMEOUT);
+    });
+    const played = this.play(clips).then(
+      (done): AnnouncerTestResult => (done ? 'spoken' : 'failed'),
+      (): AnnouncerTestResult => 'failed',
     );
+    const result = await Promise.race([played, timeout]);
+    clearTimeout(timer);
+    return result;
   }
 
-  private synth(): SpeechSynthesis | null {
-    return this.document.defaultView?.speechSynthesis ?? null;
+  /** Browsers only allow sound after a user gesture, so every tap resumes the audio. */
+  private resume(): void {
+    const audio = this.context();
+    if (audio !== null && audio.state !== 'running') {
+      void audio.resume().catch(() => undefined);
+    }
   }
-}
 
-/** A voice's language tag, the same whichever way the device writes it. */
-function languageOf(voice: SpeechSynthesisVoice): string {
-  return voice.lang.replace('_', '-').toLowerCase();
+  private context(): AudioContext | null {
+    if (this.audio === null) {
+      const context = this.contextType();
+      if (context === null) {
+        return null;
+      }
+      this.audio = new context();
+      const audio = this.audio;
+      const note = () => this._unlocked.set(audio.state === 'running');
+      audio.addEventListener('statechange', note);
+      note();
+    }
+    return this.audio;
+  }
+
+  private contextType(): typeof AudioContext | null {
+    const view = this.document.defaultView as WebAudioWindow | null;
+    return view?.AudioContext ?? view?.webkitAudioContext ?? null;
+  }
 }

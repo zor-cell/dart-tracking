@@ -22,6 +22,7 @@ from pydantic import ValidationError
 
 from app.api.core.domain.device_role import DeviceRole
 from app.api.core.services.client_store import store as client_store
+from app.api.core.services.request_language import current_language
 from app.api.core.socket.dto.client_state import ClientStateDto
 from app.api.core.socket.dto.command.authenticate import AuthenticateDto
 from app.api.core.socket.dto.command.client_command import ClientCommand
@@ -33,6 +34,7 @@ from app.api.core.socket.dto.client_message import (
 from app.api.core.socket.services.game_hub import Connection, hub
 from app.api.core.socket.services.jpeg_header import jpeg_size
 from app.api.features.announcement.domain.announcer import choose_announcer
+from app.api.features.announcement.domain.calls import DartCall, TurnCall
 from app.api.features.announcement.dto.announcer_state import AnnouncerStateDto
 from app.api.features.announcement.dto.calibration_announcement import (
     CalibrationAnnouncementDto,
@@ -43,6 +45,12 @@ from app.api.features.announcement.dto.turn_announcement import TurnAnnouncement
 from app.api.features.auth.persistence.user_repository import repository as user_repository
 from app.api.features.auth.services import access_tokens
 from app.api.features.announcement.services.announcer_store import store as announcer_store
+from app.api.features.announcement.services.phrases import (
+    calibration_phrase,
+    dart_phrases,
+    turn_phrase,
+)
+from app.api.features.announcement.services.speech import speech_store
 from app.api.features.calibration.dto.calibration_frame import CalibrationFrameDto
 from app.api.features.calibration.dto.calibration_requested import (
     CalibrationRequestedDto,
@@ -139,7 +147,7 @@ async def websocket_endpoint(
     client = await client_store.resolve(client_id)
 
     await websocket.accept()
-    connection = hub.join(game_id, websocket, client)
+    connection = hub.join(game_id, websocket, client, current_language.get())
     await hub.send(connection, ClientStateDto.from_entity(client))
     await hub.send(connection, GameStateDto.from_entity(game))
     await _publish_announcer(game_id)
@@ -447,21 +455,33 @@ async def _current_announcer(game_id: str) -> str | None:
     )
 
 
+async def _announcer_connection(game_id: str) -> Connection | None:
+    """The announcer's connection, which carries the language it is spoken to in."""
+    announcer = await _current_announcer(game_id)
+    return next((c for c in hub.connections(game_id) if c.client.id == announcer), None)
+
+
 async def _announce(game: Game, dart: ScoredDart, eliminated: set[int]) -> None:
     """Have the room's announcer speak a dart just booked, with whoever it eliminated."""
-    announcer = await _current_announcer(game.id)
+    announcer = await _announcer_connection(game.id)
     if announcer is not None:
+        call = DartCall.of(dart, game, eliminated)
+        clips = await speech_store().urls(dart_phrases(call, announcer.language), announcer.language)
         await hub.send_to_client(
-            game.id, announcer, DartAnnouncementDto.from_entity(dart, game, eliminated)
+            game.id, announcer.client.id, DartAnnouncementDto.from_entity(call, clips)
         )
 
 
 async def _announce_calibration(game_id: str, calibrated: bool) -> None:
     """Have the room's announcer say that the calibration failed, or holds again."""
-    announcer = await _current_announcer(game_id)
+    announcer = await _announcer_connection(game_id)
     if announcer is not None:
+        phrase = calibration_phrase(calibrated, announcer.language)
+        clips = await speech_store().urls([phrase], announcer.language)
         await hub.send_to_client(
-            game_id, announcer, CalibrationAnnouncementDto(calibrated=calibrated)
+            game_id,
+            announcer.client.id,
+            CalibrationAnnouncementDto(calibrated=calibrated, clips=clips),
         )
 
 
@@ -469,9 +489,13 @@ async def _call_turn(game: Game) -> None:
     """Have the room's announcer call the next player, while their visit is still empty."""
     if game.winner is not None or game.current_turn.darts:
         return
-    announcer = await _current_announcer(game.id)
+    announcer = await _announcer_connection(game.id)
     if announcer is not None:
-        await hub.send_to_client(game.id, announcer, TurnAnnouncementDto.from_entity(game))
+        call = TurnCall.of(game)
+        clips = await speech_store().urls([turn_phrase(call, announcer.language)], announcer.language)
+        await hub.send_to_client(
+            game.id, announcer.client.id, TurnAnnouncementDto.from_entity(call, clips)
+        )
 
 
 async def _publish_announcer(game_id: str) -> None:

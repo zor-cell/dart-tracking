@@ -16,7 +16,7 @@ import { LoadingStateComponent } from '../../../../core/view/components/loading-
 
 /** What the self-test's outcome is called on the page. */
 const TEST_RESULTS: Record<AnnouncerTestResult, string> = {
-  spoken: $localize`:@@settings.testResult.spoken:gesprochen`,
+  spoken: $localize`:@@settings.testResult.spoken:abgespielt`,
   failed: $localize`:@@settings.testResult.failed:abgebrochen`,
   no_answer: $localize`:@@settings.testResult.noAnswer:keine Rückmeldung`,
   muted: $localize`:@@settings.testResult.muted:stumm geschaltet`,
@@ -59,10 +59,8 @@ export class SettingsComponent {
   protected readonly testing = signal(false);
   protected readonly testResult = signal<string | null>(null);
 
-  /**
-   * Say a phrase out loud and report what the synthesiser did with it. Nothing
-   * may be awaited before the utterance goes out, or WebKit drops it.
-   */
+  /** Play the server's test phrase and report what became of it; called straight
+   * from the click, so the audio may start. */
   protected async testAnnouncement(): Promise<void> {
     const spoken = this.announcer.test();
     this.testing.set(true);

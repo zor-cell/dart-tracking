@@ -19,6 +19,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 
 from app.api.core.domain.client import Client
 from app.api.core.domain.device_role import DeviceRole
+from app.api.core.domain.language import Language
 from app.api.core.socket.dto.server_message import ServerMessage
 
 
@@ -33,6 +34,7 @@ class Connection:
 
     websocket: WebSocket
     client: Client
+    language: Language = Language.DE
     admin: bool = False
 
 
@@ -41,8 +43,10 @@ class GameHub:
         # Keyed by socket so a leaving device is found without scanning the room.
         self._rooms: dict[str, dict[WebSocket, Connection]] = {}
 
-    def join(self, game_id: str, websocket: WebSocket, client: Client) -> Connection:
-        connection = Connection(websocket=websocket, client=client)
+    def join(
+        self, game_id: str, websocket: WebSocket, client: Client, language: Language = Language.DE
+    ) -> Connection:
+        connection = Connection(websocket=websocket, client=client, language=language)
         self._rooms.setdefault(game_id, {})[websocket] = connection
         return connection
 
