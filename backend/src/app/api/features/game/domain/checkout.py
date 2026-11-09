@@ -150,7 +150,7 @@ def setup_route(
     rank = _finish_rank(double_out, preferred)
     lowest_leave = 2 if double_out else 1
 
-    best_cost: tuple[int, tuple[bool, Difficulty], int, Difficulty, int, int] | None = None
+    best_cost: tuple[int, bool, Difficulty, int, int, int] | None = None
     best: Setup | None = None
     for setup_size in range(1, darts + 1):
         for total, ((difficulty, spread), labels) in _setups_by_total(setup_size).items():
@@ -160,11 +160,12 @@ def setup_route(
             route = checkout_route(leave, 2, double_out, preferred)
             if route is None:
                 continue
+            bullseye, leave_difficulty = _route_difficulty(route, double_out, preferred)
             cost = (
                 len(route),
-                _route_difficulty(route, double_out, preferred),
+                bullseye,
+                (difficulty[0] + leave_difficulty[0], difficulty[1] + leave_difficulty[1]),
                 rank(route[-1]),
-                difficulty,
                 setup_size,
                 spread,
             )

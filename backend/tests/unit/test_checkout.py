@@ -92,6 +92,16 @@ def test_setup_leaves_a_two_dart_finish(double_out):
         assert checkout_route(setup.leave, 2, double_out) is not None
 
 
+def test_single_setup_dart_beats_a_preferred_double():
+    assert setup_route(60, 1, True, (16, 20)).darts == ("20",)
+    assert setup_route(56, 1, True, (16, 20)).darts == ("16",)
+
+
+def test_setup_aims_at_the_preferred_double_at_equal_difficulty():
+    assert setup_route(52, 1, True, (16, 20)).darts == ("20",)
+    assert setup_route(52, 1, True).darts == ("12",)
+
+
 def test_no_setup_beyond_finishing_range():
     assert setup_route(171, 1, True) is None
     assert setup_route(181, 1, False) is None
