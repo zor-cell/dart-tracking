@@ -1,0 +1,14 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+p-divider {
+  margin: 0;
+}
+
+.google-sign-in__or {
+  font-size: 0.875rem;
+  color: var(--p-text-muted-color);
+}

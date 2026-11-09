@@ -68,6 +68,8 @@ export class ProfileComponent {
   protected readonly emailDialogOpen = signal(false);
   protected readonly passwordDialogOpen = signal(false);
   protected readonly deleteDialogOpen = signal(false);
+  protected readonly changePasswordLabel = $localize`:@@auth.changePassword:Passwort ändern`;
+  protected readonly setPasswordLabel = $localize`:@@auth.setPassword:Passwort festlegen`;
   protected readonly emailStatus = computed(() =>
     this.user()?.emailVerified
       ? $localize`:@@auth.profile.emailConfirmed:E-Mail-Adresse bestätigt`

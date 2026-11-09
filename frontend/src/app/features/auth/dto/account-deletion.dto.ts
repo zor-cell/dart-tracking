@@ -1,3 +1,3 @@
-export interface AccountDeletionDto {
-  readonly currentPassword: string;
-}
+import { IdentityConfirmationDto } from './identity-confirmation.dto';
+
+export type AccountDeletionDto = IdentityConfirmationDto;

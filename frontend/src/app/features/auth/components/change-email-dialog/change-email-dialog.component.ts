@@ -1,18 +1,38 @@
-import { ChangeDetectionStrategy, Component, inject, model, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  model,
+  signal,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
+import { AutoFocus } from 'primeng/autofocus';
 import { Message } from 'primeng/message';
 import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
 import { NotificationService } from '../../../../core/notification/services/notification.service';
 import { AuthService } from '../../services/auth.service';
 import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
 import { DIALOG_STYLE } from '../../../../core/view/models/dialog-style';
+import { identityProof } from '../../models/identity-proof';
+import { GoogleConfirmComponent } from '../google-confirm/google-confirm.component';
 
 @Component({
   selector: 'app-change-email-dialog',
-  imports: [ReactiveFormsModule, Button, Dialog, InputText, Message, FieldErrorComponent],
+  imports: [
+    ReactiveFormsModule,
+    AutoFocus,
+    Button,
+    Dialog,
+    InputText,
+    Message,
+    FieldErrorComponent,
+    GoogleConfirmComponent,
+  ],
   templateUrl: './change-email-dialog.component.html',
   styleUrl: './change-email-dialog.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,13 +53,33 @@ export class ChangeEmailDialogComponent {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  /** Accounts without a password confirm through Google; linked ones may choose it. */
+  protected readonly viaGoogle = computed(() => this.auth.user()?.hasPassword === false);
+  protected readonly googleCredential = signal<string | null>(null);
+  protected readonly googleLinked = computed(() => this.auth.user()?.googleLinked === true);
+  protected readonly unconfirmed = computed(
+    () => this.viaGoogle() && this.googleCredential() === null,
+  );
+
+  constructor() {
+    effect(() => {
+      const password = this.form.controls.currentPassword;
+      if (this.viaGoogle() || this.googleCredential() !== null) {
+        password.disable();
+      } else {
+        password.enable();
+      }
+    });
+  }
+
   protected async submit(): Promise<void> {
-    if (this.form.invalid || this.busy()) {
+    if (this.form.invalid || this.busy() || this.unconfirmed()) {
       return;
     }
     this.busy.set(true);
     this.error.set(null);
-    const change = this.form.getRawValue();
+    const { newEmail, currentPassword } = this.form.getRawValue();
+    const change = { newEmail, ...identityProof(currentPassword, this.googleCredential()) };
     try {
       await this.auth.requestEmailChange(change);
       this.notification.showInfo(
@@ -56,13 +96,15 @@ export class ChangeEmailDialogComponent {
   protected reset(): void {
     this.form.reset();
     this.error.set(null);
+    this.googleCredential.set(null);
   }
 
   private describe(failure: unknown): string {
     return httpErrorMessage(
       failure,
       {
-        403: $localize`:@@auth.currentPasswordWrong:Das aktuelle Passwort stimmt nicht.`,
+        403: () =>
+          this.refused($localize`:@@auth.currentPasswordWrong:Das aktuelle Passwort stimmt nicht.`),
         409: (error) =>
           error.error?.detail === 'email unchanged'
             ? $localize`:@@auth.changeEmail.unchanged:Das ist bereits deine aktuelle Adresse.`
@@ -70,5 +112,14 @@ export class ChangeEmailDialogComponent {
       },
       $localize`:@@auth.changeEmail.failed:Anfrage fehlgeschlagen. Bitte erneut versuchen.`,
     );
+  }
+
+  /** A spent Google confirmation is dropped, so the button shows again. */
+  private refused(wrongPassword: string): string {
+    if (this.googleCredential() === null) {
+      return wrongPassword;
+    }
+    this.googleCredential.set(null);
+    return $localize`:@@auth.google.confirmFailed:Die Bestätigung mit Google hat nicht geklappt. Bitte erneut versuchen.`;
   }
 }

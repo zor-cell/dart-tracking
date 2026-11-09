@@ -7,10 +7,19 @@ import { Message } from 'primeng/message';
 import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
 import { AuthService } from '../../services/auth.service';
 import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
+import { GoogleSignInComponent } from '../google-sign-in/google-sign-in.component';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, Button, InputText, Message, FieldErrorComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    Button,
+    InputText,
+    Message,
+    FieldErrorComponent,
+    GoogleSignInComponent,
+  ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

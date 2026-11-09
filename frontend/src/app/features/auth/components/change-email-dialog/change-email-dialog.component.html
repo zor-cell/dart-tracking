@@ -9,43 +9,57 @@
   (onHide)="reset()"
 >
   <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
-    <div class="auth-form__field">
-      <label class="auth-form__label" for="new-email" i18n="@@auth.changeEmail.newEmail">
-        Neue E-Mail-Adresse
-      </label>
-      <input
-        pInputText
-        id="new-email"
-        type="email"
-        formControlName="newEmail"
-        autocomplete="email"
-        aria-describedby="new-email-hint new-email-error"
-        fluid
-      />
-      <small class="auth-form__hint" id="new-email-hint" i18n="@@auth.changeEmail.hint">
-        Wir schicken dir einen Link an die neue Adresse. Erst wenn du ihn öffnest, wird sie aktiv.
-      </small>
-      <app-field-error id="new-email-error" [control]="form.controls.newEmail" />
-    </div>
+    @if (viaGoogle()) {
+      <app-google-confirm [(credential)]="googleCredential" />
+    }
 
-    <div class="auth-form__field">
-      <label class="auth-form__label" for="email-current-password" i18n="@@auth.currentPassword">
-        Aktuelles Passwort
-      </label>
-      <input
-        pInputText
-        id="email-current-password"
-        type="password"
-        formControlName="currentPassword"
-        aria-describedby="email-current-password-error"
-        autocomplete="current-password"
-        fluid
-      />
-      <app-field-error
-        id="email-current-password-error"
-        [control]="form.controls.currentPassword"
-      />
-    </div>
+    @if (!unconfirmed()) {
+      <div class="auth-form__field">
+        <label class="auth-form__label" for="new-email" i18n="@@auth.changeEmail.newEmail">
+          Neue E-Mail-Adresse
+        </label>
+        <input
+          pInputText
+          id="new-email"
+          type="email"
+          formControlName="newEmail"
+          [pAutoFocus]="viaGoogle()"
+          autocomplete="email"
+          aria-describedby="new-email-hint new-email-error"
+          fluid
+        />
+        <small class="auth-form__hint" id="new-email-hint" i18n="@@auth.changeEmail.hint">
+          Wir schicken dir einen Link an die neue Adresse. Erst wenn du ihn öffnest, wird sie aktiv.
+        </small>
+        <app-field-error id="new-email-error" [control]="form.controls.newEmail" />
+      </div>
+    }
+
+    @if (!viaGoogle()) {
+      @if (!googleCredential()) {
+        <div class="auth-form__field">
+          <label class="auth-form__label" for="email-current-password" i18n="@@auth.currentPassword">
+            Aktuelles Passwort
+          </label>
+          <input
+            pInputText
+            id="email-current-password"
+            type="password"
+            formControlName="currentPassword"
+            aria-describedby="email-current-password-error"
+            autocomplete="current-password"
+            fluid
+          />
+          <app-field-error
+            id="email-current-password-error"
+            [control]="form.controls.currentPassword"
+          />
+        </div>
+      }
+      @if (googleLinked()) {
+        <app-google-confirm [(credential)]="googleCredential" [alternative]="true" />
+      }
+    }
 
     @if (error(); as message) {
       <p-message severity="error" [text]="message" />
@@ -61,14 +75,16 @@
         [disabled]="busy()"
         (onClick)="visible.set(false)"
       />
-      <p-button
-        type="submit"
-        label="Link senden"
-        i18n-label="@@auth.changeEmail.submit"
-        icon="pi pi-envelope"
-        [loading]="busy()"
-        [disabled]="form.invalid"
-      />
+      @if (!unconfirmed()) {
+        <p-button
+          type="submit"
+          label="Link senden"
+          i18n-label="@@auth.changeEmail.submit"
+          icon="pi pi-envelope"
+          [loading]="busy()"
+          [disabled]="form.invalid"
+        />
+      }
     </div>
   </form>
 </p-dialog>

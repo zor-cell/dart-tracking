@@ -72,12 +72,17 @@
 
         <div class="list-group__item field">
           <span class="field__label" i18n="@@auth.password">Passwort</span>
-          <span class="field__value" aria-hidden="true">••••••••</span>
+          @if (account.hasPassword) {
+            <span class="field__value" aria-hidden="true">••••••••</span>
+          } @else {
+            <span class="field__value field__value--muted" i18n="@@auth.profile.noPassword">
+              nicht festgelegt
+            </span>
+          }
           <p-button
             type="button"
             icon="pi pi-pencil"
-            ariaLabel="Passwort ändern"
-            i18n-ariaLabel="@@auth.changePassword"
+            [ariaLabel]="account.hasPassword ? changePasswordLabel : setPasswordLabel"
             severity="secondary"
             [rounded]="true"
             [text]="true"

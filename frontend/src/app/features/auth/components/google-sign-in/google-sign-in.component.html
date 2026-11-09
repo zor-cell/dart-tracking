@@ -1,0 +1,9 @@
+<p-divider align="center">
+  <span class="google-sign-in__or" i18n="@@auth.google.or">oder</span>
+</p-divider>
+
+<app-google-button [text]="text()" (credential)="signIn($event)" />
+
+@if (error(); as message) {
+  <p-message severity="error" [text]="message" />
+}

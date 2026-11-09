@@ -1,0 +1,24 @@
+:host {
+  display: block;
+}
+
+/* Google's frame is light by default; a dark scheme here would paint it white. */
+.google-button {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+  color-scheme: light;
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+
+  &--settled {
+    opacity: 1;
+  }
+}
+
+.google-button__unavailable {
+  margin: 0;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--p-text-muted-color);
+}

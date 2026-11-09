@@ -1,0 +1,19 @@
+<div class="auth-form__field">
+  @if (credential()) {
+    <p class="google-confirm__done" role="status">
+      <i class="pi pi-check-circle" aria-hidden="true"></i>
+      <span i18n="@@auth.google.confirmed">Mit Google bestätigt</span>
+    </p>
+  } @else {
+    @if (alternative()) {
+      <span class="auth-form__label" i18n="@@auth.google.confirmAlternative">
+        Oder bestätige mit Google.
+      </span>
+    } @else {
+      <span class="auth-form__label" i18n="@@auth.google.confirmLabel">
+        Bestätige zuerst mit Google, dass du es bist.
+      </span>
+    }
+    <app-google-button text="continue_with" (credential)="credential.set($event)" />
+  }
+</div>

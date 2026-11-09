@@ -22,6 +22,10 @@
     text-align: right;
     overflow-wrap: anywhere;
 
+    &--muted {
+      color: var(--p-text-muted-color);
+    }
+
     &--scroll {
       overflow-x: auto;
       white-space: nowrap;

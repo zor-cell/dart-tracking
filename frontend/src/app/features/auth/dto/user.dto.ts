@@ -8,4 +8,6 @@ export interface UserDto {
   readonly createdAt: string;
   readonly role: UserRole;
   readonly emailVerified: boolean;
+  readonly hasPassword: boolean;
+  readonly googleLinked: boolean;
 }

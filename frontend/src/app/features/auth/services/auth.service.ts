@@ -9,6 +9,7 @@ import {
 } from '../../../core/interceptors';
 import { AccountDeletionDto } from '../dto/account-deletion.dto';
 import { EmailChangeDto } from '../dto/email-change.dto';
+import { GoogleSignInDto } from '../dto/google-sign-in.dto';
 import { LoginDto } from '../dto/login.dto';
 import { PasswordChangeDto } from '../dto/password-change.dto';
 import { PasswordResetRequestDto } from '../dto/password-reset-request.dto';
@@ -49,6 +50,12 @@ export class AuthService {
 
   async login(credentials: LoginDto): Promise<void> {
     this.adopt(await this.post<SessionDto>('login', credentials));
+  }
+
+  /** Signs in, links or creates the account the Google ID token names. */
+  async loginWithGoogle(credential: string): Promise<void> {
+    const body: GoogleSignInDto = { credential };
+    this.adopt(await this.post<SessionDto>('google', body));
   }
 
   async register(registration: RegisterDto): Promise<void> {

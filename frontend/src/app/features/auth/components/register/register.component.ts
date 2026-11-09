@@ -15,10 +15,19 @@ import {
 import { AuthService } from '../../services/auth.service';
 import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
 import { backState } from '../../../../core/view/models/back-state';
+import { GoogleSignInComponent } from '../google-sign-in/google-sign-in.component';
 
 @Component({
   selector: 'app-register',
-  imports: [ReactiveFormsModule, RouterLink, Button, InputText, Message, FieldErrorComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    Button,
+    InputText,
+    Message,
+    FieldErrorComponent,
+    GoogleSignInComponent,
+  ],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

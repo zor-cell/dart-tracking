@@ -1,0 +1,6 @@
+<div class="google-button" [class.google-button--settled]="settled()" #slot></div>
+@if (unavailable()) {
+  <p class="google-button__unavailable" i18n="@@auth.google.unavailable">
+    Die Anmeldung mit Google ist gerade nicht erreichbar.
+  </p>
+}

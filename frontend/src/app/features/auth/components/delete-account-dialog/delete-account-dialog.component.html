@@ -15,21 +15,30 @@
       erhalten, du stehst darin nur noch als „Gelöschter Spieler“.
     </p>
 
-    <div class="auth-form__field">
-      <label class="auth-form__label" for="delete-password" i18n="@@auth.deleteAccount.password">
-        Passwort zur Bestätigung
-      </label>
-      <input
-        pInputText
-        id="delete-password"
-        type="password"
-        formControlName="currentPassword"
-        aria-describedby="delete-account-hint delete-password-error"
-        autocomplete="current-password"
-        fluid
-      />
-      <app-field-error id="delete-password-error" [control]="form.controls.currentPassword" />
-    </div>
+    @if (viaGoogle()) {
+      <app-google-confirm [(credential)]="googleCredential" />
+    } @else {
+      @if (!googleCredential()) {
+        <div class="auth-form__field">
+          <label class="auth-form__label" for="delete-password" i18n="@@auth.deleteAccount.password">
+            Passwort zur Bestätigung
+          </label>
+          <input
+            pInputText
+            id="delete-password"
+            type="password"
+            formControlName="currentPassword"
+            aria-describedby="delete-account-hint delete-password-error"
+            autocomplete="current-password"
+            fluid
+          />
+          <app-field-error id="delete-password-error" [control]="form.controls.currentPassword" />
+        </div>
+      }
+      @if (googleLinked()) {
+        <app-google-confirm [(credential)]="googleCredential" [alternative]="true" />
+      }
+    }
 
     @if (error(); as message) {
       <p-message severity="error" [text]="message" />
@@ -52,7 +61,7 @@
         icon="pi pi-trash"
         severity="danger"
         [loading]="busy()"
-        [disabled]="form.invalid"
+        [disabled]="form.invalid || unconfirmed()"
       />
     </div>
   </form>
