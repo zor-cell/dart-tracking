@@ -14,6 +14,8 @@ DEFAULTS = {
     "evaluationEnabled": False,
     "language": None,
     "preferredDoubles": [],
+    "announcerLanguage": None,
+    "announcerVoice": "first",
 }
 EVERYTHING_ON = DEFAULTS | {"evaluationEnabled": True}
 
@@ -57,6 +59,15 @@ def test_language(alice):
     assert alice.put("/settings", json=DEFAULTS | {"language": "en"}).json()["language"] == "en"
     assert alice.get("/settings").json()["language"] == "en"
     assert alice.put("/settings", json=DEFAULTS | {"language": "fr"}).status_code == 422
+
+
+def test_announcer_language_and_voice(alice):
+    picked = DEFAULTS | {"announcerLanguage": "en", "announcerVoice": "second"}
+
+    assert alice.put("/settings", json=picked).json() == picked
+    assert alice.get("/settings").json() == picked
+    for invalid in ({"announcerLanguage": "fr"}, {"announcerVoice": "robot"}):
+        assert alice.put("/settings", json=DEFAULTS | invalid).status_code == 422
 
 
 def test_preferred_doubles(alice):

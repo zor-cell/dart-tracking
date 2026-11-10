@@ -108,9 +108,9 @@ def voiced(tmp_path, monkeypatch) -> list[str]:
     store = speech_store()
     phrases: list[str] = []
 
-    def synthesize(text: str, language: object) -> bytes:
+    def synthesize(text: str, speaker: object) -> bytes:
         phrases.append(text)
-        return silent_wav(text, language)
+        return silent_wav(text, speaker)
 
     monkeypatch.setattr(store, "synthesize", synthesize)
     monkeypatch.setattr(store, "cache_dir", tmp_path / "speech")

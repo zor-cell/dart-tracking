@@ -2,7 +2,7 @@ import io
 import wave
 
 
-def silent_wav(text: str, language: object) -> bytes:
+def silent_wav(text: str, speaker: object) -> bytes:
     """A short silent clip in place of Piper's voice."""
     buffer = io.BytesIO()
     with wave.open(buffer, "wb") as wav:

@@ -23,6 +23,8 @@ class UserSettingsTable(Base):
     evaluation_enabled: Mapped[bool] = mapped_column(Boolean)
     language: Mapped[str | None] = mapped_column(String(8))
     preferred_doubles: Mapped[list[int]] = mapped_column(ARRAY(Integer), server_default="{}")
+    announcer_language: Mapped[str | None] = mapped_column(String(8))
+    announcer_voice: Mapped[str] = mapped_column(String(16), server_default="first")
     # The client's remembered filter picks, stored as it sends them.
     filter_usage: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, server_default="[]")
     updated_at: Mapped[datetime] = mapped_column(

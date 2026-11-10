@@ -62,9 +62,9 @@ export class SocketService {
   private requestedRole: DeviceRole | null = null;
 
   constructor() {
-    // An admin's connection is signed in on every connect and on a sign-in while connected.
+    // A signed-in connection names its account on every connect and on a sign-in while connected.
     effect(() => {
-      if (this.auth.isAdmin() && this.connectionStatus() === 'connected') {
+      if (this.auth.isAuthenticated() && this.connectionStatus() === 'connected') {
         untracked(() => void this.authenticate());
       }
     });

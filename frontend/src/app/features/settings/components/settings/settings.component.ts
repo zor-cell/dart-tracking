@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
+import { Select } from 'primeng/select';
 import { Slider } from 'primeng/slider';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 import {
@@ -8,7 +9,10 @@ import {
   AnnouncerTestResult,
   MAX_VOLUME,
 } from '../../../announcement/services/announcer.service';
+import { AnnouncerVoice, VOICE_NAMES } from '../../../announcement/models/announcer-voice';
 import { AuthService } from '../../../auth/services/auth.service';
+import { LANGUAGE_NAMES, Language } from '../../../../core/i18n/models/language';
+import { LanguageService } from '../../../../core/i18n/services/language.service';
 import { GameService } from '../../../game/services/game.service';
 import { SettingsService } from '../../services/settings.service';
 import { FavouriteDoublesComponent } from '../favourite-doubles/favourite-doubles.component';
@@ -34,6 +38,7 @@ const TEST_RESULTS: Record<AnnouncerTestResult, string> = {
     FormsModule,
     LanguageSelectComponent,
     LoadingStateComponent,
+    Select,
     Slider,
     ToggleSwitch,
   ],
@@ -48,6 +53,7 @@ export class SettingsComponent {
 
   private readonly game = inject(GameService);
   private readonly auth = inject(AuthService);
+  private readonly appLanguage = inject(LanguageService).current;
 
   /** The debug and recording switches make the server write camera images, so
    * they are an admin's; the server masks them off for everyone else as well. */
@@ -62,6 +68,19 @@ export class SettingsComponent {
   protected readonly maxVolume = MAX_VOLUME * 100;
   protected readonly volumePercent = computed(() => Math.round(this.announcer.volume() * 100));
 
+  protected readonly announcerLanguageOptions: { label: string; value: Language | 'app' }[] = [
+    { label: $localize`:@@settings.announcerLanguage.app:Wie die App`, value: 'app' },
+    { label: LANGUAGE_NAMES.de, value: 'de' },
+    { label: LANGUAGE_NAMES.en, value: 'en' },
+  ];
+  protected readonly announcerLanguage = computed(() => this.settings.announcerLanguage() ?? 'app');
+
+  /** The voices by name in the language the announcer speaks. */
+  protected readonly voiceOptions = computed(() => {
+    const names = VOICE_NAMES[this.settings.announcerLanguage() ?? this.appLanguage];
+    return (['first', 'second'] as const).map((voice) => ({ label: names[voice], value: voice }));
+  });
+
   protected readonly testing = signal(false);
   protected readonly testResult = signal<string | null>(null);
 
@@ -72,6 +91,14 @@ export class SettingsComponent {
     this.testing.set(true);
     this.testResult.set(TEST_RESULTS[await spoken]);
     this.testing.set(false);
+  }
+
+  protected setAnnouncerLanguage(language: Language | 'app'): void {
+    this.settings.setAnnouncerLanguage(language === 'app' ? null : language);
+  }
+
+  protected setAnnouncerVoice(voice: AnnouncerVoice): void {
+    this.settings.setAnnouncerVoice(voice);
   }
 
   protected setVolume(percent: number): void {

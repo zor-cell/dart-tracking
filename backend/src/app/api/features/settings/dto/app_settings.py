@@ -5,6 +5,7 @@ from pydantic import Field, field_validator
 from app.api.core.dto.base import CamelModel
 from app.api.features.settings.domain.app_settings import AppSettings
 from app.api.core.domain.language import Language
+from app.api.features.announcement.domain.speaker import Voice
 
 
 class AppSettingsDto(CamelModel):
@@ -16,6 +17,8 @@ class AppSettingsDto(CamelModel):
     evaluation_enabled: bool
     language: Language | None = None
     preferred_doubles: list[Annotated[int, Field(ge=1, le=20)] | Literal[25]] = []
+    announcer_language: Language | None = None
+    announcer_voice: Voice = Voice.FIRST
 
     @field_validator("preferred_doubles")
     @classmethod
@@ -30,6 +33,8 @@ class AppSettingsDto(CamelModel):
             evaluation_enabled=settings.evaluation_enabled,
             language=settings.language,
             preferred_doubles=list(settings.preferred_doubles),
+            announcer_language=settings.announcer_language,
+            announcer_voice=settings.announcer_voice,
         )
 
     def to_entity(self) -> AppSettings:
@@ -38,4 +43,6 @@ class AppSettingsDto(CamelModel):
             evaluation_enabled=self.evaluation_enabled,
             language=self.language,
             preferred_doubles=tuple(self.preferred_doubles),
+            announcer_language=self.announcer_language,
+            announcer_voice=self.announcer_voice,
         )

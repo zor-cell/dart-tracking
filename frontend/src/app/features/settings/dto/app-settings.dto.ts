@@ -1,4 +1,5 @@
 import { Language } from '../../../core/i18n/models/language';
+import { AnnouncerVoice } from '../../announcement/models/announcer-voice';
 
 /**
  * The whole set of switches, both ways: the answer to a read and the body of a
@@ -10,4 +11,6 @@ export interface AppSettingsDto {
   readonly evaluationEnabled: boolean;
   readonly language: Language | null; // null until the account picks one
   readonly preferredDoubles: readonly number[]; // by sector, 25 for bull, in order
+  readonly announcerLanguage: Language | null; // null speaks in the app's language
+  readonly announcerVoice: AnnouncerVoice;
 }

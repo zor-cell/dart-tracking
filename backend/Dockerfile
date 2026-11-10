@@ -19,7 +19,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 
 # the announcer's Piper voices (see VOICES in services/speech.py), in a layer of their own
 RUN .venv/bin/python -m piper.download_voices --download-dir /app/voices \
-    de_DE-thorsten-medium en_GB-alan-medium
+    de_DE-thorsten-medium de_DE-pavoque-low en_GB-alan-medium en_GB-jenny_dioco-medium
 
 COPY . .
 RUN uv sync --frozen --no-dev

@@ -12,7 +12,6 @@ sys.path.insert(0, str(_BACKEND / "src"))
 
 from piper.download_voices import download_voice  # noqa: E402
 
-from app.api.core.domain.language import Language  # noqa: E402
 from app.api.features.announcement.services.phrases import fixed_phrases  # noqa: E402
 from app.api.features.announcement.services.speech import (  # noqa: E402
     VOICES,
@@ -34,12 +33,12 @@ def main() -> None:
             download_voice(voice, args.voices)
 
     store = SpeechStore(PiperSynthesizer(args.voices), args.out, None)
-    for language in Language:
+    for speaker, voice in VOICES.items():
         started = time.perf_counter()
-        phrases = fixed_phrases(language)
+        phrases = fixed_phrases(speaker.language)
         for phrase in phrases:
-            store.make(phrase, language)
-        print(f"{language}: {len(phrases)} clips in {time.perf_counter() - started:.1f} s")
+            store.make(phrase, speaker)
+        print(f"{voice}: {len(phrases)} clips in {time.perf_counter() - started:.1f} s")
 
 
 if __name__ == "__main__":

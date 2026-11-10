@@ -68,6 +68,44 @@
     <section class="list-group">
       <h2 class="list-group__title" i18n="@@settings.announcer">Ansage</h2>
       <div class="list-group__items">
+        <div class="list-group__item setting">
+          <div class="setting__text">
+            <label class="setting__label" for="announcer-language" i18n="@@settings.announcerLanguage">
+              Sprache
+            </label>
+          </div>
+          <div class="setting__select">
+            <p-select
+              inputId="announcer-language"
+              [options]="announcerLanguageOptions"
+              optionLabel="label"
+              optionValue="value"
+              [ngModel]="announcerLanguage()"
+              (ngModelChange)="setAnnouncerLanguage($event)"
+              fluid
+            />
+          </div>
+        </div>
+
+        <div class="list-group__item setting">
+          <div class="setting__text">
+            <label class="setting__label" for="announcer-voice" i18n="@@settings.announcerVoice">
+              Stimme
+            </label>
+          </div>
+          <div class="setting__select">
+            <p-select
+              inputId="announcer-voice"
+              [options]="voiceOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [ngModel]="settings.announcerVoice()"
+              (ngModelChange)="setAnnouncerVoice($event)"
+              fluid
+            />
+          </div>
+        </div>
+
         <div class="list-group__item setting setting--stacked">
           <div class="setting__text">
             <span class="setting__label" id="announcer-volume-label" i18n="@@settings.announcerVolume">

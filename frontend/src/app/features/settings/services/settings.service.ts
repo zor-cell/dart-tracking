@@ -6,6 +6,7 @@ import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
 import { Language } from '../../../core/i18n/models/language';
 import { LanguageService } from '../../../core/i18n/services/language.service';
 import { AuthService } from '../../auth/services/auth.service';
+import { AnnouncerVoice } from '../../announcement/models/announcer-voice';
 import { AppSettingsDto } from '../dto/app-settings.dto';
 import { DEFAULT_SETTINGS } from '../models/app-settings';
 import { writeStored } from '../../../core/storage/models/browser-storage';
@@ -35,6 +36,8 @@ export class SettingsService {
   readonly advanceOnPull = computed(() => this._settings().advanceOnPull);
   readonly evaluationEnabled = computed(() => this._settings().evaluationEnabled);
   readonly preferredDoubles = computed(() => this._settings().preferredDoubles);
+  readonly announcerLanguage = computed(() => this._settings().announcerLanguage);
+  readonly announcerVoice = computed(() => this._settings().announcerVoice);
 
   constructor() {
     // Left over from when these lived in the browser; the server owns them now.
@@ -65,6 +68,14 @@ export class SettingsService {
 
   setPreferredDoubles(doubles: readonly number[]): void {
     this.patch({ preferredDoubles: doubles });
+  }
+
+  setAnnouncerLanguage(language: Language | null): void {
+    this.patch({ announcerLanguage: language });
+  }
+
+  setAnnouncerVoice(voice: AnnouncerVoice): void {
+    this.patch({ announcerVoice: voice });
   }
 
   /** Keep the choice on the account, if there is one, before the page reloads in it. */

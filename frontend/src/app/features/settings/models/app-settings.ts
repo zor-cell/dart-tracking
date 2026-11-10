@@ -7,4 +7,6 @@ export const DEFAULT_SETTINGS: AppSettingsDto = {
   evaluationEnabled: false,
   language: null,
   preferredDoubles: [],
+  announcerLanguage: null,
+  announcerVoice: 'first',
 };

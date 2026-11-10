@@ -1,16 +1,20 @@
 import asyncio
 
 from app.api.core.domain.language import Language
+from app.api.features.announcement.domain.speaker import Speaker, Voice
 from app.api.features.announcement.services.speech import SpeechStore, clip_id, clip_url
 from tests.audio import silent_wav
+
+
+EN, DE = Speaker(Language.EN), Speaker(Language.DE)
 
 
 def recording_store(tmp_path, prebuilt=None):
     voiced: list[str] = []
 
-    def synthesize(text: str, language: Language) -> bytes:
+    def synthesize(text: str, speaker: Speaker) -> bytes:
         voiced.append(text)
-        return silent_wav(text, language)
+        return silent_wav(text, speaker)
 
     return SpeechStore(synthesize, tmp_path / "cache", prebuilt), voiced
 
@@ -18,26 +22,27 @@ def recording_store(tmp_path, prebuilt=None):
 def test_a_phrase_is_voiced_once_and_then_read_from_disk(tmp_path):
     store, voiced = recording_store(tmp_path)
 
-    first = store.make("Double 20", Language.EN)
-    second = store.make("Double 20", Language.EN)
+    first = store.make("Double 20", EN)
+    second = store.make("Double 20", EN)
 
     assert first == second
     assert voiced == ["Double 20"]
     assert store.path(first) == tmp_path / "cache" / f"{first}.wav"
 
 
-def test_the_same_text_gets_a_clip_per_language():
-    assert clip_id("Bull", Language.EN) != clip_id("Bull", Language.DE)
+def test_the_same_text_gets_a_clip_per_language_and_voice():
+    assert clip_id("Bull", EN) != clip_id("Bull", DE)
+    assert clip_id("Bull", EN) != clip_id("Bull", Speaker(Language.EN, Voice.SECOND))
 
 
 def test_a_prebuilt_clip_is_not_voiced_again(tmp_path):
     prebuilt = tmp_path / "prebuilt"
     prebuilt.mkdir()
-    clip = clip_id("Bull", Language.EN)
+    clip = clip_id("Bull", EN)
     (prebuilt / f"{clip}.wav").write_bytes(b"RIFF")
     store, voiced = recording_store(tmp_path, prebuilt)
 
-    assert store.make("Bull", Language.EN) == clip
+    assert store.make("Bull", EN) == clip
     assert voiced == []
     assert store.path(clip) == prebuilt / f"{clip}.wav"
 
@@ -54,15 +59,15 @@ def test_only_clip_ids_are_looked_up(tmp_path):
 def test_urls_name_each_clip_in_order(tmp_path):
     store, _ = recording_store(tmp_path)
 
-    urls = asyncio.run(store.urls(["Single 20", "60"], Language.DE))
+    urls = asyncio.run(store.urls(["Single 20", "60"], DE))
 
-    assert urls == [clip_url(clip_id(text, Language.DE)) for text in ("Single 20", "60")]
+    assert urls == [clip_url(clip_id(text, DE)) for text in ("Single 20", "60")]
 
 
 def test_a_voice_that_fails_leaves_the_announcement_silent(tmp_path):
-    def broken(text: str, language: Language) -> bytes:
+    def broken(text: str, speaker: Speaker) -> bytes:
         raise FileNotFoundError("no voice model")
 
     store = SpeechStore(broken, tmp_path / "cache", None)
 
-    assert asyncio.run(store.urls(["Bull"], Language.EN)) == []
+    assert asyncio.run(store.urls(["Bull"], EN)) == []

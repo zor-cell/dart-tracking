@@ -36,6 +36,7 @@ class Connection:
     client: Client
     language: Language = Language.DE
     admin: bool = False
+    user_id: str | None = None
 
 
 class GameHub:

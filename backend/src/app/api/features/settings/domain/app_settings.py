@@ -8,6 +8,7 @@ from dataclasses import dataclass, replace
 from typing import Self
 
 from app.api.core.domain.language import Language
+from app.api.features.announcement.domain.speaker import Voice
 
 
 @dataclass(frozen=True)
@@ -22,6 +23,9 @@ class AppSettings:
     language: Language | None = None
     # Finishing doubles by sector (25 for bull) the checkout suggests first, in order.
     preferred_doubles: tuple[int, ...] = ()
+    # None speaks in the language the announcing device shows the app in.
+    announcer_language: Language | None = None
+    announcer_voice: Voice = Voice.FIRST
 
     def without_diagnostics(self) -> Self:
         """This set with the recording switch off: what an account that is not

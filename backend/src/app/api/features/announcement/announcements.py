@@ -6,7 +6,9 @@ from fastapi.responses import FileResponse
 from app.api.core.services.request_language import current_language
 from app.api.features.announcement.dto.speech_test import SpeechTestDto
 from app.api.features.announcement.services.phrases import self_test_phrase
+from app.api.features.announcement.services.speakers import speaker_for
 from app.api.features.announcement.services.speech import speech_store
+from app.api.features.auth.services.current_user import CurrentUser
 
 router = APIRouter(prefix="/announcer", tags=["Announcer"])
 
@@ -25,7 +27,8 @@ async def clip(clip: str) -> FileResponse:
 
 
 @router.get("/test", response_model=SpeechTestDto)
-async def speech_test() -> SpeechTestDto:
-    """The test phrase in the request's language."""
-    language = current_language.get()
-    return SpeechTestDto(clips=await speech_store().urls([self_test_phrase(language)], language))
+async def speech_test(user: CurrentUser) -> SpeechTestDto:
+    """The test phrase as the account's announcer speaks it, else in the request's language."""
+    speaker = await speaker_for(None if user is None else user.id, current_language.get())
+    clips = await speech_store().urls([self_test_phrase(speaker.language)], speaker)
+    return SpeechTestDto(clips=clips)

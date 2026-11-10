@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.features.settings.domain.app_settings import DEFAULTS, AppSettings
 from app.api.features.settings.domain.filter_use import FilterUse
 from app.api.core.domain.language import Language
+from app.api.features.announcement.domain.speaker import Voice
 from app.api.features.settings.persistence.user_settings import UserSettingsTable
 
 
@@ -31,6 +32,8 @@ class SettingsRepository:
             evaluation_enabled=row.evaluation_enabled,
             language=Language(row.language) if row.language else None,
             preferred_doubles=tuple(row.preferred_doubles),
+            announcer_language=Language(row.announcer_language) if row.announcer_language else None,
+            announcer_voice=Voice(row.announcer_voice),
         )
 
     async def save(

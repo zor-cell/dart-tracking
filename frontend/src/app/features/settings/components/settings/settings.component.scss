@@ -16,6 +16,12 @@
   }
 }
 
+/* The announcer's dropdowns share one width, so they line up. */
+.setting__select {
+  flex-shrink: 0;
+  width: 11rem;
+}
+
 .setting__text {
   display: flex;
   flex: 1;
