@@ -2,7 +2,14 @@ import asyncio
 
 from app.api.core.domain.language import Language
 from app.api.features.announcement.domain.speaker import Speaker, Voice
-from app.api.features.announcement.services.speech import SpeechStore, clip_id, clip_url
+from app.api.features.announcement.services import speech
+from app.api.features.announcement.services.speech import (
+    VOICES,
+    PiperSynthesizer,
+    SpeechStore,
+    clip_id,
+    clip_url,
+)
 from tests.audio import silent_wav
 
 
@@ -71,3 +78,18 @@ def test_a_voice_that_fails_leaves_the_announcement_silent(tmp_path):
     store = SpeechStore(broken, tmp_path / "cache", None)
 
     assert asyncio.run(store.urls(["Bull"], EN)) == []
+
+
+def test_every_voice_is_loaded_at_startup(tmp_path, monkeypatch):
+    loaded: list[Speaker] = []
+
+    class Recording(PiperSynthesizer):
+        def load(self, speakers: list[Speaker]) -> None:
+            loaded.extend(speakers)
+
+    store = SpeechStore(Recording(tmp_path), tmp_path / "cache", None)
+    monkeypatch.setattr(speech, "speech_store", lambda: store)
+
+    asyncio.run(speech.warm_up())
+
+    assert loaded == list(VOICES)

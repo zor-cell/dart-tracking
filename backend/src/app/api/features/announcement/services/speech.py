@@ -109,12 +109,11 @@ class SpeechStore:
 
 
 async def warm_up() -> None:
-    """Load the default voices ahead of the first call that names a player."""
+    """Load every voice ahead of the first call that names a player."""
     synthesize = speech_store().synthesize
     if isinstance(synthesize, PiperSynthesizer):
-        defaults = [speaker for speaker in VOICES if speaker.voice is Voice.FIRST]
         try:
-            await asyncio.to_thread(synthesize.load, defaults)
+            await asyncio.to_thread(synthesize.load, list(VOICES))
         except Exception:
             logger.warning("[speech] no voices in %s, the announcer stays silent", synthesize.voices_dir)
 
