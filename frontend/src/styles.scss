@@ -562,6 +562,7 @@ html p-autocomplete.ng-invalid.ng-dirty .p-autocomplete-input::placeholder {
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 
   &:hover {
     text-decoration: underline;

@@ -15,6 +15,9 @@ import { Skeleton } from 'primeng/skeleton';
 import { GoogleButtonText } from '../../models/google-identity';
 import { GoogleIdentityService } from '../../services/google-identity.service';
 
+/** Height of the slot in px: the large button Google draws, without its frame's focus margin. */
+const SLOT_HEIGHT = 40;
+
 /** Google's own sign-in button; emits the ID token of the account the user picked. */
 @Component({
   selector: 'app-google-button',
@@ -77,22 +80,18 @@ export class GoogleButtonComponent {
     }
   }
 
-  /** Google shifts its frame once more after loading, so the button fades in after that. */
+  /** Google draws a stand-in above its frame and drops it once the frame is ready;
+   * the button fades in when only the frame is left. */
   private revealWhenSettled(slot: HTMLElement): void {
-    const frame = slot.querySelector('iframe');
-    const reveal = (): void => this.settled.set(true);
-    if (!frame) {
-      reveal();
-      return;
-    }
-    const fallback = setTimeout(reveal, 2000);
-    frame.addEventListener(
-      'load',
-      () => {
-        clearTimeout(fallback);
-        setTimeout(reveal, 300);
-      },
-      { once: true },
-    );
+    const started = Date.now();
+    const check = setInterval(() => {
+      const frame = slot.querySelector('iframe');
+      const height = slot.firstElementChild?.getBoundingClientRect().height ?? 0;
+      const ready = frame !== null && frame.offsetHeight > 0 && height <= SLOT_HEIGHT;
+      if (ready || Date.now() - started > 4000) {
+        clearInterval(check);
+        setTimeout(() => this.settled.set(true), 150);
+      }
+    }, 100);
   }
 }

@@ -6,7 +6,9 @@
 .google-button {
   display: flex;
   justify-content: center;
-  min-height: 44px;
+  /* Fixed and clipped, so the stand-in Google stacks above its frame never moves the page. */
+  height: 40px;
+  overflow-y: clip;
   color-scheme: light;
   opacity: 0;
   transition: opacity 150ms ease-out;
