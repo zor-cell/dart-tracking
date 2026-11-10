@@ -16,6 +16,20 @@
   }
 }
 
+.google-button__frame {
+  position: relative;
+}
+
+/* Holds the button's place, at the width Google draws it, until it has settled. */
+.google-button__skeleton {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  width: min(400px, 100%);
+  margin: 0 auto;
+}
+
 .google-button__unavailable {
   margin: 0;
   text-align: center;

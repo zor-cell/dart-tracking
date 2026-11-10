@@ -11,12 +11,14 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { Skeleton } from 'primeng/skeleton';
 import { GoogleButtonText } from '../../models/google-identity';
 import { GoogleIdentityService } from '../../services/google-identity.service';
 
 /** Google's own sign-in button; emits the ID token of the account the user picked. */
 @Component({
   selector: 'app-google-button',
+  imports: [Skeleton],
   templateUrl: './google-button.component.html',
   styleUrl: './google-button.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
