@@ -43,6 +43,7 @@ def test_a_full_visit_ends_with_its_points():
 
 def test_a_bust_and_a_win_replace_the_points():
     assert dart_phrases(call(points=0, busted=True), DE) == ["Single 20", "Überworfen"]
+    assert dart_phrases(call(points=0, busted=True), EN) == ["Single 20", "Bust!"]
     assert dart_phrases(call(25, 2, points=90, won=True), EN) == ["Bull", "Game shot"]
     assert dart_phrases(call(25, 2, points=90, won=True), DE) == ["Bull", "Spiel gewonnen"]
 

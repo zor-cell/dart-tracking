@@ -24,7 +24,7 @@
   "announcer.and": "and",
   "announcer.eliminated": "{players} eliminated",
   "announcer.gameShot": "Game shot",
-  "announcer.bust": "Bust",
+  "announcer.bust": "Bust!",
   "announcer.turn": "{player}, {score}",
   "announcer.calibrated": "Board calibrated",
   "announcer.calibrationFailed": "Calibration failed",
