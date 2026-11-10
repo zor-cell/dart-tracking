@@ -89,6 +89,7 @@ jobs:
       POSTGRES_PORT: 10032
       REDIS_PORT: 10033
       JWT_SECRET: test-only-secret-padded-to-32-bytes
+      GOOGLE_CLIENT_ID: test-only.apps.googleusercontent.com
     defaults:
       run:
         working-directory: backend
