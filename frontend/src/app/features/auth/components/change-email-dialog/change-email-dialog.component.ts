@@ -57,6 +57,7 @@ export class ChangeEmailDialogComponent {
   protected readonly viaGoogle = computed(() => this.auth.user()?.hasPassword === false);
   protected readonly googleCredential = signal<string | null>(null);
   protected readonly googleLinked = computed(() => this.auth.user()?.googleLinked === true);
+  protected readonly useGoogle = signal(false);
   protected readonly unconfirmed = computed(
     () => this.viaGoogle() && this.googleCredential() === null,
   );
@@ -96,6 +97,18 @@ export class ChangeEmailDialogComponent {
   protected reset(): void {
     this.form.reset();
     this.error.set(null);
+    this.googleCredential.set(null);
+    this.useGoogle.set(false);
+  }
+
+  protected useGoogleInstead(): void {
+    this.form.controls.currentPassword.reset();
+    this.useGoogle.set(true);
+  }
+
+  protected usePassword(): void {
+    this.form.controls.currentPassword.reset();
+    this.useGoogle.set(false);
     this.googleCredential.set(null);
   }
 

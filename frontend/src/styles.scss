@@ -550,6 +550,30 @@ html p-autocomplete.ng-invalid.ng-dirty .p-autocomplete-input::placeholder {
   gap: 0.5rem;
 }
 
+/* A link-styled button that swaps one way of confirming for the other. */
+.auth-form__switch {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  border-radius: 0.25rem;
+  background: none;
+  color: var(--p-primary-color);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+  }
+}
+
 /* A chart legend entry that switches its series on and off. */
 .legend-toggle {
   padding: 0;

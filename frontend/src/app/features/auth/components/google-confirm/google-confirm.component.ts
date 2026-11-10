@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { GoogleButtonComponent } from '../google-button/google-button.component';
 
 /** Confirms a sensitive change by signing in with Google again, alone or as the alternative to a password. */
@@ -12,4 +12,5 @@ import { GoogleButtonComponent } from '../google-button/google-button.component'
 export class GoogleConfirmComponent {
   readonly credential = model<string | null>(null);
   readonly alternative = input(false);
+  readonly back = output<void>();
 }

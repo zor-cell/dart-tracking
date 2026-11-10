@@ -18,7 +18,13 @@
     @if (viaGoogle()) {
       <app-google-confirm [(credential)]="googleCredential" />
     } @else {
-      @if (!googleCredential()) {
+      @if (useGoogle()) {
+        <app-google-confirm
+          [(credential)]="googleCredential"
+          [alternative]="true"
+          (back)="usePassword()"
+        />
+      } @else {
         <div class="auth-form__field">
           <label class="auth-form__label" for="delete-password" i18n="@@auth.deleteAccount.password">
             Passwort zur Bestätigung
@@ -33,10 +39,18 @@
             fluid
           />
           <app-field-error id="delete-password-error" [control]="form.controls.currentPassword" />
+          @if (googleLinked()) {
+            <button
+              type="button"
+              class="auth-form__switch"
+              i18n="@@auth.google.useGoogle"
+              (mousedown)="$event.preventDefault()"
+              (click)="useGoogleInstead()"
+            >
+              Stattdessen mit Google bestätigen
+            </button>
+          }
         </div>
-      }
-      @if (googleLinked()) {
-        <app-google-confirm [(credential)]="googleCredential" [alternative]="true" />
       }
     }
 
