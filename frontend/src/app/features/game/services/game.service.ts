@@ -8,6 +8,7 @@ import { SocketService } from '../../../core/socket/services/socket.service';
 import { GameCommandDto } from '../dto/game-command.dto';
 import { GameStateDto } from '../dto/game-state.dto';
 import { PlayerDto } from '../dto/player.dto';
+import { QuickStartDto } from '../dto/quick-start.dto';
 import { TurnDto } from '../dto/turn.dto';
 import { DARTS_PER_TURN } from '../models/visit';
 import {GameConfigDto} from "../dto/game-config.dto";
@@ -198,6 +199,19 @@ export class GameService {
     }
     this.setState(state);
     return true;
+  }
+
+  /** The setup the signed-in account plays most; null before it has played or on a failure. */
+  async quickStart(): Promise<QuickStartDto | null> {
+    try {
+      return await firstValueFrom(
+        this.http.get<QuickStartDto | null>(`${this.baseUrl}/quick-start`, {
+          context: SILENT_ERROR_CONTEXT,
+        }),
+      );
+    } catch {
+      return null;
+    }
   }
 
   /** Read a game without adopting it — the setup screen copies a finished one's

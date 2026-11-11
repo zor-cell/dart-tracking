@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Location } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  afterRenderEffect,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -13,7 +23,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
-import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
 import { Skeleton } from 'primeng/skeleton';
 import { Tag } from 'primeng/tag';
@@ -26,7 +35,8 @@ import { PlayerService } from '../../../player/services/player.service';
 import { SettingsService } from '../../../settings/services/settings.service';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { CHECKOUT_MODES, CheckoutMode } from '../../models/checkout-mode';
-import { GAME_VARIANTS, GameVariant } from '../../models/game-variant';
+import { GAME_VARIANTS, GameVariant, variantLabel } from '../../models/game-variant';
+import { GAME_RULES } from '../../models/game-rules';
 import {
   CLOCK_ZONES,
   CRICKET_SCORINGS,
@@ -35,14 +45,19 @@ import {
   KILLER_LIVES,
   KILLER_ZONES,
   KillerZone,
+  optionLabel,
+  scoringLabel,
 } from '../../models/variant-options';
 import { standings } from '../../models/variant-standing';
+import { GameConfigDto } from '../../dto/game-config.dto';
 import { GameStateDto } from '../../dto/game-state.dto';
+import { QuickStartDto } from '../../dto/quick-start.dto';
 import { PlayerDto } from '../../dto/player.dto';
 import { PlayerSlotDto } from '../../dto/player-slot.dto';
 import { GameService } from '../../services/game.service';
 import { GameSessionService } from '../../services/game-session.service';
 import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
+import { GameRulesComponent } from '../game-rules/game-rules.component';
 import {
   SortableListComponent,
   SortableMove,
@@ -58,12 +73,12 @@ type Seat = PlayerIdentityDto | string;
     AutoComplete,
     Button,
     InputText,
-    Select,
     SelectButton,
     Skeleton,
     Tag,
     ToggleSwitch,
     FieldErrorComponent,
+    GameRulesComponent,
     SortableListComponent,
   ],
   templateUrl: './game-new.component.html',
@@ -80,9 +95,13 @@ export class GameNewComponent {
   private readonly players = inject(PlayerService);
   private readonly settings = inject(SettingsService);
   private readonly socket = inject(SocketService);
+  private readonly location = inject(Location);
 
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
-  protected readonly variantOptions = [...GAME_VARIANTS];
+  protected readonly tiles = TILES;
+  protected readonly trainingLabel = TRAINING;
+  protected readonly rules = GAME_RULES;
+  protected readonly variantName = variantLabel;
   protected readonly checkoutModeOptions = [...CHECKOUT_MODES];
   protected readonly cricketScoringOptions = [...CRICKET_SCORINGS];
   protected readonly killerLivesOptions = KILLER_LIVES.map((lives) => ({ label: `${lives}`, value: lives }));
@@ -127,8 +146,35 @@ export class GameNewComponent {
     this.form.controls.players.valueChanges.pipe(map(() => [...this.seats.controls])),
     { initialValue: [] },
   );
-  /** Elimination counts up, so the score field is a target rather than a mode. */
-  protected readonly isElimination = computed(() => this.variant() === 'elimination');
+  /** The game picked in the first step, kept in the URL so the back button returns to the tiles. */
+  protected readonly chosen = toSignal(
+    this.route.queryParamMap.pipe(map((params) => parseVariant(params.get('game')))),
+    { initialValue: parseVariant(this.route.snapshot.queryParamMap.get('game')) },
+  );
+  private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
+  /** Whether the tiles led here, so changing the game can step back instead of adding history. */
+  private pickedHere = false;
+
+  /** The setup played most, offered for one tap: undefined while it loads, null for none. */
+  protected readonly quickStart = signal<QuickStartDto | null | undefined>(null);
+  /** The own address-book entry, named "Du" in the quick start. */
+  private readonly selfId = signal<string | null>(null);
+  protected readonly starting = signal(false);
+  protected readonly quickTitle = computed(() => {
+    const quick = this.quickStart();
+    return quick ? setupTitle(quick) : '';
+  });
+  protected readonly quickPlayers = computed(() =>
+    (this.quickStart()?.players ?? [])
+      .map((seat) => (seat.playerId !== null && seat.playerId === this.selfId() ? $localize`:@@player.list.self:Du` : seat.name))
+      .join(', '),
+  );
+  protected readonly quickLabel = computed(
+    () => $localize`:@@game.new.quickStartLabel:Schnellstart: ${this.quickTitle()}:setup: mit ${this.quickPlayers()}:players:`,
+  );
+
+  protected readonly rulesOpen = signal(false);
+  protected readonly rulesVariant = signal<GameVariant>('x01');
   private readonly clockZone = toSignal(this.form.controls.clockZone.valueChanges, {
     initialValue: this.form.controls.clockZone.value,
   });
@@ -137,6 +183,24 @@ export class GameNewComponent {
 
   constructor() {
     void this.restoreSeats();
+
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const variant = parseVariant(params.get('game'));
+      if (variant !== null && variant !== this.form.controls.variant.value) {
+        this.form.controls.variant.setValue(variant);
+        this.form.controls.variant.markAsDirty();
+      }
+    });
+
+    // A new step puts the focus, and with it the view, on its heading.
+    let shown: HTMLElement | undefined;
+    afterRenderEffect(() => {
+      const heading = this.heading()?.nativeElement;
+      if (shown !== undefined && heading !== undefined && heading !== shown) {
+        heading.focus();
+      }
+      shown = heading ?? shown;
+    });
 
     // Another device started the rematch first: join it instead of creating a second one.
     this.socket
@@ -147,6 +211,51 @@ export class GameNewComponent {
           void this.router.navigate(['/game']);
         }
       });
+  }
+
+  protected pickVariant(variant: GameVariant): void {
+    this.pickedHere = true;
+    void this.showStep(variant, false);
+  }
+
+  protected changeGame(): void {
+    if (this.pickedHere) {
+      this.pickedHere = false;
+      this.location.back();
+    } else {
+      void this.showStep(null, true);
+    }
+  }
+
+  private showStep(variant: GameVariant | null, replaceUrl: boolean): Promise<boolean> {
+    return this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { game: variant },
+      queryParamsHandling: 'merge',
+      replaceUrl,
+    });
+  }
+
+  protected readonly tileSummary = (tile: Tile): string =>
+    tile.kind ? `${tile.kind} · ${this.rules[tile.variant].summary}` : this.rules[tile.variant].summary;
+
+  protected readonly rulesLabel = (variant: GameVariant): string =>
+    $localize`:@@game.new.rulesOf:Regeln für ${variantLabel(variant)}:game:`;
+
+  protected openRules(variant: GameVariant): void {
+    this.rulesVariant.set(variant);
+    this.rulesOpen.set(true);
+  }
+
+  /** Start the setup played most at once, with its players. */
+  protected startQuick(quick: QuickStartDto): void {
+    this.create({
+      ...quick,
+      players: quick.players.map((seat) =>
+        seat.playerId === null ? { name: seat.name } : { playerId: seat.playerId },
+      ),
+      evaluationEnabled: this.settings.evaluationEnabled(),
+    });
   }
 
   protected get seats(): FormArray<FormControl<Seat>> {
@@ -198,26 +307,33 @@ export class GameNewComponent {
     const seats = (players as Seat[]).map<PlayerSlotDto>((seat) =>
       typeof seat === 'string' ? { name: seat.trim() } : { playerId: seat.id },
     );
-    const rematchOf = this.rematchId ?? undefined;
+    this.create({
+      mode,
+      variant,
+      checkoutMode,
+      cricket: { scoring: cricketScoring },
+      killer: { lives: killerLives, zone: killerZone },
+      aroundTheClock: { zone: clockZone, skip: clockZone === 'any' && clockSkip },
+      players: seats,
+      evaluationEnabled: this.settings.evaluationEnabled(),
+      rematchOf: this.rematchId ?? undefined,
+    });
+  }
 
+  private create(config: GameConfigDto): void {
+    const rematchOf = config.rematchOf;
+    this.starting.set(true);
     this.game
-      .createGame({
-        mode,
-        variant,
-        checkoutMode,
-        cricket: { scoring: cricketScoring },
-        killer: { lives: killerLives, zone: killerZone },
-        aroundTheClock: { zone: clockZone, skip: clockZone === 'any' && clockSkip },
-        players: seats,
-        evaluationEnabled: this.settings.evaluationEnabled(),
-        rematchOf,
-      })
-      .subscribe(() => {
-        // A rematch keeps every device's role; a fresh game starts on the camera.
-        if (rematchOf === undefined) {
-          this.session.setRole('camera');
-        }
-        this.router.navigate(['/game']);
+      .createGame(config)
+      .subscribe({
+        error: () => this.starting.set(false),
+        next: () => {
+          // A rematch keeps every device's role; a fresh game starts on the camera.
+          if (rematchOf === undefined) {
+            this.session.setRole('camera');
+          }
+          void this.router.navigate(['/game']);
+        },
       });
   }
 
@@ -238,6 +354,9 @@ export class GameNewComponent {
 
     if (previous !== null) {
       this.form.patchValue(settingsOf(previous));
+      if (this.chosen() === null) {
+        void this.showStep(previous.variant, true);
+      }
       // Worst finish throws first, the winner last.
       const ranks = standings(previous, (value) => `${value}`).map((standing) => standing.rank);
       const order = previous.players
@@ -249,9 +368,14 @@ export class GameNewComponent {
         this.seats.push(this.fb.nonNullable.control<Seat>(seat, Validators.required));
       }
     } else {
+      if (this.signedIn()) {
+        this.quickStart.set(undefined);
+        void this.game.quickStart().then((quick) => this.quickStart.set(quick));
+      }
       const self = this.signedIn()
         ? (await this.players.search('')).find((identity) => identity.isSelf)
         : undefined;
+      this.selfId.set(self?.id ?? null);
 
       this.seats.push(self ? this.fb.nonNullable.control<Seat>(self) : this.createSeat(1));
     }
@@ -279,6 +403,58 @@ export class GameNewComponent {
       this.signedIn() ? '' : $localize`:@@game.new.seatName:Spieler ${position}:number:`,
       Validators.required,
     );
+  }
+}
+
+const GROUP = $localize`:@@game.category.group:Gruppe`;
+const TRAINING = $localize`:@@game.category.training:Training`;
+
+/** A game on the first step's tiles; group and training games say so beside their line. */
+interface Tile {
+  variant: GameVariant;
+  kind?: string;
+}
+
+const TILES: readonly Tile[] = [
+  { variant: 'x01' },
+  { variant: 'cricket' },
+  { variant: 'killer', kind: GROUP },
+  { variant: 'elimination', kind: GROUP },
+  { variant: 'around_the_clock', kind: TRAINING },
+];
+
+function parseVariant(value: string | null): GameVariant | null {
+  return GAME_VARIANTS.find((option) => option.value === value)?.value ?? null;
+}
+
+/** A setup in one line: the game, then the settings that differ from its defaults. */
+function setupTitle(quick: QuickStartDto): string {
+  const checkout = optionLabel(CHECKOUT_MODES, quick.checkoutMode);
+  switch (quick.variant) {
+    case 'x01':
+      return `${quick.mode} · ${checkout}`;
+    case 'elimination':
+      return `Elimination ${quick.mode} · ${checkout}`;
+    case 'cricket': {
+      const scoring = quick.cricket?.scoring ?? 'standard';
+      return scoring === 'standard' ? 'Cricket' : `Cricket · ${scoringLabel(scoring)}`;
+    }
+    case 'killer': {
+      const lives = $localize`:@@game.detail.lives:${quick.killer?.lives ?? 3}:count: Leben`;
+      const zone = quick.killer?.zone ?? 'double';
+      return zone === 'double' ? `Killer · ${lives}` : `Killer · ${lives} · ${optionLabel(KILLER_ZONES, zone)}`;
+    }
+    case 'around_the_clock': {
+      const zone = quick.aroundTheClock?.zone ?? 'any';
+      const parts = ['Around the Clock'];
+      if (zone !== 'any') {
+        parts.push(optionLabel(CLOCK_ZONES, zone));
+      }
+      if (quick.aroundTheClock?.skip) {
+        parts.push($localize`:@@game.detail.skip:mit Springen`);
+      }
+      return parts.join(' · ');
+    }
   }
 }
 

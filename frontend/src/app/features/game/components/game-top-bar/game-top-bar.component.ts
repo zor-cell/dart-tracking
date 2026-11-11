@@ -4,6 +4,7 @@ import { Button } from 'primeng/button';
 import { AnnouncerToggleComponent } from '../../../announcement/components/announcer-toggle/announcer-toggle.component';
 import { TorchToggleComponent } from '../../../camera/components/torch-toggle/torch-toggle.component';
 import { TrackingToggleComponent } from '../tracking-toggle/tracking-toggle.component';
+import { GameRulesComponent } from '../game-rules/game-rules.component';
 import { ShareDialogComponent } from '../../../../core/view/components/share-dialog/share-dialog.component';
 import { ConfirmService } from '../../../../core/view/services/confirm.service';
 import { variantLabel } from '../../models/game-variant';
@@ -22,6 +23,7 @@ import { GameSessionService } from '../../services/game-session.service';
     TorchToggleComponent,
     TrackingToggleComponent,
     Button,
+    GameRulesComponent,
     ShareDialogComponent,
   ],
   templateUrl: './game-top-bar.component.html',
@@ -37,6 +39,13 @@ export class GameTopBarComponent {
   private readonly confirm = inject(ConfirmService);
 
   protected readonly shareDialogVisible = signal(false);
+  protected readonly rulesOpen = signal(false);
+  protected readonly rulesLabel = computed(() => {
+    const state = this.game.state();
+    return state === null
+      ? ''
+      : $localize`:@@game.new.rulesOf:Regeln für ${variantLabel(state.variant)}:game:`;
+  });
 
   /** The mode alone names an x01 game; elimination shares those numbers as its
    * target and has to say so, and the other variants go by their name. */

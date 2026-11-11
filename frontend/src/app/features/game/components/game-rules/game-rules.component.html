@@ -1,0 +1,15 @@
+<p-dialog
+  [header]="title()"
+  [modal]="true"
+  [draggable]="false"
+  [dismissableMask]="true"
+  [(visible)]="visible"
+  [style]="dialogStyle"
+  appendTo="body"
+>
+  <ol class="rules">
+    @for (rule of rules(); track $index) {
+      <li>{{ rule }}</li>
+    }
+  </ol>
+</p-dialog>

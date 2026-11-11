@@ -57,10 +57,8 @@ type CheckoutSlot = {
   readonly shadow: boolean;
 };
 
-/** Keypad numbers to emphasise, and numbers to dim. */
-type PadHints = { readonly target: ReadonlySet<number>; readonly off: ReadonlySet<number> };
-
-const NO_HINTS: PadHints = { target: new Set(), off: new Set() };
+/** Fields to suggest in the empty slots; `hostile` when they take an opponent's life. */
+type TargetRoute = { readonly darts: readonly string[]; readonly hostile: boolean };
 
 const MISS: FixedKey = { label: '0', value: 0, multiplier: 0 };
 const BULL: FixedKey = { label: '25', value: 25, multiplier: 1 };
@@ -222,18 +220,12 @@ export class GameComponent implements OnInit, OnDestroy {
   });
 
   /** The fields the variant has the thrower aim at next, without a checkout to suggest. */
-  private readonly targetRoute = computed<readonly string[] | null>(() => {
+  private readonly targetRoute = computed<TargetRoute | null>(() => {
     const state = this.game.state();
     if (state === null || state.winnerId !== null) {
       return null;
     }
     return targetRoute(state);
-  });
-
-  /** Keypad numbers that count for the thrower, and in Cricket the ones that never do. */
-  protected readonly padHints = computed<PadHints>(() => {
-    const state = this.game.state();
-    return state === null ? NO_HINTS : padHints(state);
   });
 
   /**
@@ -249,8 +241,10 @@ export class GameComponent implements OnInit, OnDestroy {
     const checkout = state?.checkout ?? null;
     const elimination = state?.elimination ?? null;
     const setup = checkout === null ? (state?.setup ?? null) : null;
-    const route = checkout ?? setup?.darts ?? elimination ?? this.targetRoute();
-    const eliminating = checkout === null && setup === null && elimination !== null;
+    const target = this.targetRoute();
+    const route = checkout ?? setup?.darts ?? elimination ?? target?.darts ?? null;
+    const eliminating =
+      checkout === null && setup === null && (elimination !== null || target?.hostile === true);
     const shadows = this.game.shadowDarts();
     return Array.from({ length: DARTS_PER_TURN - thrown }, (_, index) => {
       const shadow = shadows[index];
@@ -470,8 +464,9 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 }
 
-/** Around the Clock: the next targets in turn; Killer: the own number until it makes a killer. */
-function targetRoute(state: GameStateDto): readonly string[] | null {
+/** Around the Clock: the next targets in turn. Killer: the own field until it makes a
+ * killer, then the strongest opponent's, which goes after a player like a reset. */
+function targetRoute(state: GameStateDto): TargetRoute | null {
   const seat = state.currentPlayerIndex;
   const clock = state.aroundTheClock;
   if (clock !== null) {
@@ -482,33 +477,30 @@ function targetRoute(state: GameStateDto): readonly string[] | null {
     const ahead = [...Array.from({ length: 20 }, (_, index) => index + 1), 25].filter((n) =>
       target === 25 ? n === 25 : n >= target,
     );
-    return ahead.slice(0, state.dartsRemaining).map((n) => zoneLabel(n, clock.zone));
+    return { darts: ahead.slice(0, state.dartsRemaining).map((n) => zoneLabel(n, clock.zone)), hostile: false };
   }
   const killer = state.killer;
-  if (killer !== null && !killer.players[seat].killer) {
-    return [zoneLabel(killer.players[seat].number, killer.zone)];
+  if (killer === null) {
+    return null;
   }
-  return null;
-}
-
-/** The keypad numbers worth throwing at in the variant that is played, and those that count for nothing. */
-function padHints(state: GameStateDto): PadHints {
-  const seat = state.currentPlayerIndex;
-  if (state.cricket !== null) {
-    const targets = state.cricket.targets;
-    return { target: new Set(), off: new Set(PAD_ROWS.flat().filter((n) => !targets.includes(n))) };
+  const own = killer.players[seat];
+  if (!own.killer) {
+    return { darts: [zoneLabel(own.number, killer.zone)], hostile: false };
   }
-  if (state.aroundTheClock !== null) {
-    const target = state.aroundTheClock.players[seat].target;
-    return { target: new Set(target === null ? [] : [target]), off: new Set() };
+  const count = killer.players.length;
+  const victim = killer.players
+    .map((player, index) => ({ player, after: (index - seat + count) % count }))
+    .filter(({ player, after }) => after !== 0 && player.lives > 0)
+    .sort(
+      (a, b) =>
+        b.player.lives - a.player.lives ||
+        Number(b.player.killer) - Number(a.player.killer) ||
+        b.player.kills - a.player.kills ||
+        a.after - b.after,
+    )[0]?.player;
+  if (victim === undefined) {
+    return null;
   }
-  if (state.killer !== null) {
-    const players = state.killer.players;
-    const own = players[seat];
-    const aimed = own.killer
-      ? players.filter((player, index) => index !== seat && player.lives > 0).map((player) => player.number)
-      : [own.number];
-    return { target: new Set(aimed), off: new Set() };
-  }
-  return NO_HINTS;
+  const field = zoneLabel(victim.number, killer.zone);
+  return { darts: Array.from({ length: state.dartsRemaining }, () => field), hostile: true };
 }

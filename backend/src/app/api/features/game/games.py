@@ -32,6 +32,7 @@ from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.dto.game_status_update import GameStatusUpdateDto
 from app.api.features.game.dto.game_summary import GameSummaryDto
 from app.api.features.game.dto.player_slot import PlayerSlotDto
+from app.api.features.game.dto.quick_start import QuickStartDto
 from app.api.features.game.dto.rematch_started import RematchStartedDto
 from app.api.features.game.persistence.game_repository import repository
 from app.api.features.player.domain.player_identity import PlayerIdentity
@@ -130,7 +131,7 @@ async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) 
             body.mode if points else None,
             identities,
             body.variant,
-            body.checkout_mode if points else None,
+            (body.checkout_mode or CheckoutMode.DOUBLE_OUT) if points else None,
             owner_user_id=owner_id,
             evaluation_enabled=body.evaluation_enabled and user is not None and user.is_admin,
             options=body.options(),
@@ -205,6 +206,16 @@ async def resume_game(game_id: str, user: AuthenticatedUser) -> None:
 
     if not resumed:
         raise HTTPException(status_code=404, detail="game not found")
+
+
+@router.get("/quick-start", response_model=QuickStartDto | None)
+async def get_quick_start(user: AuthenticatedUser) -> QuickStartDto | None:
+    """The setup this account plays most, with the players of its latest game; null
+    before the account has played."""
+    async with database.session_scope() as session:
+        found = await repository.quick_start(session, user.id)
+
+    return None if found is None else QuickStartDto.from_entity(*found)
 
 
 @router.get("/{game_id}", response_model=GameStateDto)

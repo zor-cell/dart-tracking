@@ -14,7 +14,8 @@ class GameConfigDto(CamelModel):
     mode: GameMode | None = None
     players: list[PlayerSlotDto]
     variant: GameVariant = GameVariant.X01
-    checkout_mode: CheckoutMode = CheckoutMode.DOUBLE_OUT
+    # Null takes double out; ignored outside the points variants.
+    checkout_mode: CheckoutMode | None = CheckoutMode.DOUBLE_OUT
     # The played variant's settings; left out, its defaults.
     cricket: CricketOptionsDto | None = None
     killer: KillerOptionsDto | None = None

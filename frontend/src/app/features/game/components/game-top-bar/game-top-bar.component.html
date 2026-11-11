@@ -14,6 +14,15 @@
         <app-tracking-toggle />
       </div>
       <span class="top-bar__title">{{ title() }}</span>
+      <p-button
+        icon="pi pi-info-circle"
+        severity="secondary"
+        size="small"
+        [text]="true"
+        [rounded]="true"
+        [ariaLabel]="rulesLabel()"
+        (onClick)="rulesOpen.set(true)"
+      />
     </div>
 
     <div class="top-bar__actions">
@@ -47,4 +56,6 @@
       [(visible)]="shareDialogVisible"
     />
   }
+
+  <app-game-rules [variant]="state.variant" [(visible)]="rulesOpen" />
 }

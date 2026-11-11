@@ -1,205 +1,269 @@
 <section class="view">
-  <header class="view__header">
-    <h1 class="view__title" i18n="@@start.newGame">Neues Spiel</h1>
-  </header>
-
-  <form class="setup" [formGroup]="form" (ngSubmit)="startGame()">
-    <div class="setup__field">
-      <label id="variant-label" class="setup__label" for="variant" i18n="@@game.new.variant">Variante</label>
-      <p-select
-        inputId="variant"
-        ariaLabelledBy="variant-label"
-        formControlName="variant"
-        [options]="variantOptions"
-        optionLabel="label"
-        optionValue="value"
-        fluid
+  @if (chosen(); as picked) {
+    <header class="view__header">
+      <p-button
+        class="setup__back"
+        label="Spiel ändern"
+        i18n-label="@@game.new.changeGame"
+        icon="pi pi-chevron-left"
+        severity="secondary"
+        size="small"
+        [text]="true"
+        (onClick)="changeGame()"
       />
-    </div>
-
-    @switch (variant()) {
-      @case ('cricket') {
-        <div class="setup__field">
-          <label class="setup__label" for="cricketScoring" i18n="@@game.new.scoring">Punkte</label>
-          <p-selectbutton
-            inputId="cricketScoring"
-            formControlName="cricketScoring"
-            [allowEmpty]="false"
-            [options]="cricketScoringOptions"
-            optionLabel="label"
-            optionValue="value"
-          />
-        </div>
-      }
-      @case ('killer') {
-        <div class="setup__field">
-          <label class="setup__label" for="killerLives" i18n="@@game.new.lives">Leben</label>
-          <p-selectbutton
-            inputId="killerLives"
-            formControlName="killerLives"
-            [allowEmpty]="false"
-            [options]="killerLivesOptions"
-            optionLabel="label"
-            optionValue="value"
-          />
-        </div>
-        <div class="setup__field">
-          <label class="setup__label" for="killerZone" i18n="@@game.new.zone">Feld</label>
-          <p-selectbutton
-            inputId="killerZone"
-            formControlName="killerZone"
-            [allowEmpty]="false"
-            [options]="killerZoneOptions"
-            optionLabel="label"
-            optionValue="value"
-          />
-        </div>
-      }
-      @case ('around_the_clock') {
-        <div class="setup__field">
-          <label class="setup__label" for="clockZone" i18n="@@game.new.zone">Feld</label>
-          <p-selectbutton
-            inputId="clockZone"
-            formControlName="clockZone"
-            [allowEmpty]="false"
-            [options]="clockZoneOptions"
-            optionLabel="label"
-            optionValue="value"
-          />
-        </div>
-        @if (clockSkippable()) {
-          <div class="setup__switch">
-            <p-toggleswitch inputId="clockSkip" formControlName="clockSkip" />
-            <label for="clockSkip" i18n="@@game.new.clockSkip">Double und Triple springen weiter</label>
-          </div>
-        }
-      }
-      @default {
-        <div class="setup__field">
-          <label class="setup__label" for="mode" i18n="@@game.new.mode">Modus</label>
-          <p-selectbutton
-            inputId="mode"
-            formControlName="mode"
-            [allowEmpty]="false"
-            [options]="modeOptions"
-            optionLabel="label"
-            optionValue="value"
-          />
-        </div>
-
-        <div class="setup__field">
-          <label class="setup__label" for="checkoutMode">Checkout</label>
-          <p-selectbutton
-            inputId="checkoutMode"
-            formControlName="checkoutMode"
-            [allowEmpty]="false"
-            [options]="checkoutModeOptions"
-            optionLabel="label"
-            optionValue="value"
-          />
-        </div>
-      }
-    }
-
-    <div class="setup__field">
-      <span class="setup__label" i18n="@@game.new.players">Spieler</span>
-      @if (sessionResolved()) {
-        <app-sortable-list
-          [items]="seatControls()"
-          [label]="seatLabel"
-          (moved)="moveSeat($event)"
-        >
-          <ng-template let-seat let-index="index">
-            @if (signedIn()) {
-              <p-autocomplete
-                class="setup__input"
-                [formControl]="seat"
-                [suggestions]="suggestions()"
-                (completeMethod)="completeSeat($event)"
-                optionLabel="name"
-                appendTo="body"
-                [dropdown]="true"
-                [showEmptyMessage]="false"
-                [ariaLabel]="seatName(index)"
-                placeholder="Name wählen oder eintippen"
-                i18n-placeholder="@@game.new.seatPlaceholder"
-                fluid
-              >
-                <ng-template #item let-identity>
-                  <span>{{ identity.name }}</span>
-                  @if (identity.isSelf) {
-                    <p-tag class="setup__self" value="Du" i18n-value="@@player.list.self" severity="secondary" />
-                  }
-                </ng-template>
-              </p-autocomplete>
-            } @else if (seatIdentity(seat); as identity) {
-              <!-- A player carried over from the last game keeps their seat as they are. -->
-              <input
-                pInputText
-                class="setup__input"
-                [value]="identity.name"
-                readonly
-                [attr.aria-label]="seatName(index)"
-              />
-            } @else {
-              <input
-                pInputText
-                class="setup__input"
-                [formControl]="seat"
-                [attr.aria-label]="seatName(index)"
-                [attr.aria-describedby]="'seat-' + index + '-error'"
-                placeholder="Name"
-                i18n-placeholder="@@player.name"
-              />
-            }
-            <p-button
-              type="button"
-              icon="pi pi-minus-circle"
-              severity="secondary"
-              [text]="true"
-              [disabled]="seats.length <= 1"
-              ariaLabel="Spieler {{ index + 1 }} entfernen"
-              i18n-ariaLabel="@@game.new.removeSeat"
-              (onClick)="removePlayer(index)"
-            />
-            <app-field-error
-              class="setup__error"
-              [attr.id]="'seat-' + index + '-error'"
-              [control]="seat"
-              [messages]="seatMessages"
-            />
-          </ng-template>
-        </app-sortable-list>
-        <app-field-error [control]="form" [messages]="formMessages" />
+      <div class="setup__heading">
+        <h1 #heading class="view__title" tabindex="-1">{{ variantName(picked) }}</h1>
         <p-button
-          type="button"
-          label="Spieler hinzufügen"
-          i18n-label="@@player.create.title"
-          icon="pi pi-plus"
+          icon="pi pi-info-circle"
           severity="secondary"
           [text]="true"
-          (onClick)="addPlayer()"
+          [rounded]="true"
+          [ariaLabel]="rulesLabel(picked)"
+          (onClick)="openRules(picked)"
         />
-      } @else {
-        <!-- Placeholder seats while the address book answers, so the form does not jump. -->
-        @for (row of skeletonSeats; track $index) {
-          <div class="setup__skeleton">
-            <p-skeleton width="1.5rem" [height]="seatRowHeight" />
-            <p-skeleton class="setup__input" [height]="seatRowHeight" />
-            <p-skeleton width="2.5rem" [height]="seatRowHeight" />
+      </div>
+    </header>
+
+    <form class="setup" [formGroup]="form" (ngSubmit)="startGame()">
+      @switch (variant()) {
+        @case ('cricket') {
+          <div class="setup__field">
+            <label class="setup__label" for="cricketScoring" i18n="@@game.new.scoring">Punkte</label>
+            <p-selectbutton
+              inputId="cricketScoring"
+              formControlName="cricketScoring"
+              [allowEmpty]="false"
+              [options]="cricketScoringOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
           </div>
         }
-        <p-skeleton width="11.5rem" [height]="seatRowHeight" />
-      }
-    </div>
+        @case ('killer') {
+          <div class="setup__field">
+            <label class="setup__label" for="killerLives" i18n="@@game.new.lives">Leben</label>
+            <p-selectbutton
+              inputId="killerLives"
+              formControlName="killerLives"
+              [allowEmpty]="false"
+              [options]="killerLivesOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
+          </div>
+          <div class="setup__field">
+            <label class="setup__label" for="killerZone" i18n="@@game.new.zone">Feld</label>
+            <p-selectbutton
+              inputId="killerZone"
+              formControlName="killerZone"
+              [allowEmpty]="false"
+              [options]="killerZoneOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
+          </div>
+        }
+        @case ('around_the_clock') {
+          <div class="setup__field">
+            <label class="setup__label" for="clockZone" i18n="@@game.new.zone">Feld</label>
+            <p-selectbutton
+              inputId="clockZone"
+              formControlName="clockZone"
+              [allowEmpty]="false"
+              [options]="clockZoneOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
+          </div>
+          @if (clockSkippable()) {
+            <div class="setup__switch">
+              <p-toggleswitch inputId="clockSkip" formControlName="clockSkip" />
+              <label for="clockSkip" i18n="@@game.new.clockSkip">Double und Triple springen weiter</label>
+            </div>
+          }
+        }
+        @default {
+          <div class="setup__field">
+            <label class="setup__label" for="mode" i18n="@@game.new.mode">Modus</label>
+            <p-selectbutton
+              inputId="mode"
+              formControlName="mode"
+              [allowEmpty]="false"
+              [options]="modeOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
+          </div>
 
-    <p-button
-      type="submit"
-      fluid
-      label="Spiel starten"
-      i18n-label="@@game.new.start"
-      icon="pi pi-play"
-      [disabled]="form.invalid"
-    />
-  </form>
+          <div class="setup__field">
+            <label class="setup__label" for="checkoutMode">Checkout</label>
+            <p-selectbutton
+              inputId="checkoutMode"
+              formControlName="checkoutMode"
+              [allowEmpty]="false"
+              [options]="checkoutModeOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
+          </div>
+        }
+      }
+
+      <div class="setup__field">
+        <span class="setup__label" i18n="@@game.new.players">Spieler</span>
+        @if (sessionResolved()) {
+          <app-sortable-list
+            [items]="seatControls()"
+            [label]="seatLabel"
+            (moved)="moveSeat($event)"
+          >
+            <ng-template let-seat let-index="index">
+              @if (signedIn()) {
+                <p-autocomplete
+                  class="setup__input"
+                  [formControl]="seat"
+                  [suggestions]="suggestions()"
+                  (completeMethod)="completeSeat($event)"
+                  optionLabel="name"
+                  appendTo="body"
+                  [dropdown]="true"
+                  [showEmptyMessage]="false"
+                  [ariaLabel]="seatName(index)"
+                  placeholder="Name wählen oder eintippen"
+                  i18n-placeholder="@@game.new.seatPlaceholder"
+                  fluid
+                >
+                  <ng-template #item let-identity>
+                    <span>{{ identity.name }}</span>
+                    @if (identity.isSelf) {
+                      <p-tag class="setup__self" value="Du" i18n-value="@@player.list.self" severity="secondary" />
+                    }
+                  </ng-template>
+                </p-autocomplete>
+              } @else if (seatIdentity(seat); as identity) {
+                <!-- A player carried over from the last game keeps their seat as they are. -->
+                <input
+                  pInputText
+                  class="setup__input"
+                  [value]="identity.name"
+                  readonly
+                  [attr.aria-label]="seatName(index)"
+                />
+              } @else {
+                <input
+                  pInputText
+                  class="setup__input"
+                  [formControl]="seat"
+                  [attr.aria-label]="seatName(index)"
+                  [attr.aria-describedby]="'seat-' + index + '-error'"
+                  placeholder="Name"
+                  i18n-placeholder="@@player.name"
+                />
+              }
+              <p-button
+                type="button"
+                icon="pi pi-minus-circle"
+                severity="secondary"
+                [text]="true"
+                [disabled]="seats.length <= 1"
+                ariaLabel="Spieler {{ index + 1 }} entfernen"
+                i18n-ariaLabel="@@game.new.removeSeat"
+                (onClick)="removePlayer(index)"
+              />
+              <app-field-error
+                class="setup__error"
+                [attr.id]="'seat-' + index + '-error'"
+                [control]="seat"
+                [messages]="seatMessages"
+              />
+            </ng-template>
+          </app-sortable-list>
+          <app-field-error [control]="form" [messages]="formMessages" />
+          <p-button
+            type="button"
+            label="Spieler hinzufügen"
+            i18n-label="@@player.create.title"
+            icon="pi pi-plus"
+            severity="secondary"
+            [text]="true"
+            (onClick)="addPlayer()"
+          />
+        } @else {
+          <!-- Placeholder seats while the address book answers, so the form does not jump. -->
+          @for (row of skeletonSeats; track $index) {
+            <div class="setup__skeleton">
+              <p-skeleton width="1.5rem" [height]="seatRowHeight" />
+              <p-skeleton class="setup__input" [height]="seatRowHeight" />
+              <p-skeleton width="2.5rem" [height]="seatRowHeight" />
+            </div>
+          }
+          <p-skeleton width="11.5rem" [height]="seatRowHeight" />
+        }
+      </div>
+
+      <p-button
+        type="submit"
+        fluid
+        label="Spiel starten"
+        i18n-label="@@game.new.start"
+        icon="pi pi-play"
+        [disabled]="form.invalid"
+      />
+    </form>
+  } @else {
+    <header class="view__header">
+      <h1 #heading class="view__title" tabindex="-1" i18n="@@start.newGame">Neues Spiel</h1>
+    </header>
+
+    @if (quickStart() === undefined) {
+      <p-skeleton height="4.5rem" borderRadius="0.75rem" />
+    } @else if (quickStart(); as quick) {
+      <button
+        type="button"
+        class="quick"
+        [attr.aria-label]="quickLabel()"
+        [disabled]="starting()"
+        (click)="startQuick(quick)"
+      >
+        <span class="quick__text">
+          <span class="quick__kicker" i18n="@@game.new.quickStart">Schnellstart</span>
+          <span class="quick__title">{{ quickTitle() }}</span>
+          <span class="quick__players">{{ quickPlayers() }}</span>
+        </span>
+        <span class="quick__play" aria-hidden="true"><i class="pi pi-play"></i></span>
+      </button>
+    }
+
+    <ul class="tiles" aria-label="Spiel" i18n-aria-label="@@game.new.game">
+      @for (tile of tiles; track tile.variant) {
+        <li class="tile">
+          <button type="button" class="tile__pick" (click)="pickVariant(tile.variant)">
+            <span class="tile__name">{{ variantName(tile.variant) }}</span>
+            <span class="tile__summary">{{ tileSummary(tile) }}</span>
+          </button>
+          <p-button
+            class="tile__corner"
+            icon="pi pi-info-circle"
+            severity="secondary"
+            size="small"
+            [text]="true"
+            [rounded]="true"
+            [ariaLabel]="rulesLabel(tile.variant)"
+            (onClick)="openRules(tile.variant)"
+          />
+        </li>
+      }
+      <li class="tile tile--soon">
+        <span class="tile__pick">
+          <span class="tile__name" i18n="@@game.new.weaknessTraining">Schwächen­training</span>
+          <span class="tile__summary">
+            {{ trainingLabel }} · <ng-container i18n="@@game.new.weaknessTrainingSummary">Übt, was dir am schwersten fällt</ng-container>
+          </span>
+        </span>
+        <p-tag class="tile__corner" value="bald" i18n-value="@@game.new.soon" severity="secondary" />
+      </li>
+    </ul>
+  }
+
+  <app-game-rules [variant]="rulesVariant()" [(visible)]="rulesOpen" />
 </section>

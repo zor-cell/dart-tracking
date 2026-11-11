@@ -9,12 +9,12 @@ import {KillerOptionsDto} from "./killer-options.dto";
 export interface GameConfigDto {
   readonly players: readonly PlayerSlotDto[];
   /** Required for the points variants, ignored by the others. */
-  readonly mode: GameMode;
+  readonly mode: GameMode | null;
   readonly variant: GameVariant;
-  readonly checkoutMode: CheckoutMode;
-  readonly cricket?: CricketOptionsDto;
-  readonly killer?: KillerOptionsDto;
-  readonly aroundTheClock?: ClockOptionsDto;
+  readonly checkoutMode: CheckoutMode | null;
+  readonly cricket?: CricketOptionsDto | null;
+  readonly killer?: KillerOptionsDto | null;
+  readonly aroundTheClock?: ClockOptionsDto | null;
   readonly evaluationEnabled: boolean;
   readonly rematchOf?: string;
 }

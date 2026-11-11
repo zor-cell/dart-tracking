@@ -32,6 +32,12 @@ from app.api.features.game.domain.game_status import (
 )
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.game_summary import GameSummary, GameSummaryPlayer
+from app.api.features.game.domain.quick_start import (
+    GameSetup,
+    PlayedSetup,
+    QuickStartSeat,
+    favourite,
+)
 from app.api.features.game.domain.player import Player
 from app.api.features.game.domain.turn import Turn
 from app.api.features.game.persistence.dart import DartTable
@@ -42,6 +48,9 @@ from app.api.features.game.persistence.turn import TurnTable
 from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.persistence.player import PlayerTable, shown_name
 from app.api.features.settings.persistence.user_settings import UserSettingsTable
+
+# How many of the account's latest games the quick start weighs.
+_QUICK_START_GAMES = 100
 
 # Games carry a foreign key to `users`, so that table has to be registered too.
 from app.api import tables  # noqa: F401
@@ -423,6 +432,58 @@ class GameRepository:
                 ],
             )
         return games
+
+    async def quick_start(
+        self, session: AsyncSession, user_id: str
+    ) -> tuple[PlayedSetup, list[QuickStartSeat]] | None:
+        """The setup this account plays most among its recent games with darts, and
+        the seats of the latest game with it; None before any such game."""
+        darts = select(DartTable.game_id).where(DartTable.game_id == GameTable.id).exists()
+        rows = (
+            await session.execute(
+                select(GameTable)
+                .where(_involving(user_id), GameTable.id.not_in(hidden_by(user_id)), darts)
+                .order_by(GameTable.created_at.desc())
+                .limit(_QUICK_START_GAMES)
+            )
+        ).scalars().all()
+        played = []
+        for row in rows:
+            variant = GameVariant(row.variant)
+            setup = GameSetup.of(
+                variant,
+                _mode(row.mode),
+                _checkout_mode(row.checkout_mode),
+                _options_from_json(variant, row.options),
+            )
+            played.append(PlayedSetup(row.id, row.created_at, setup))
+        chosen = favourite(played, datetime.now(UTC))
+        if chosen is None:
+            return None
+
+        own = await session.scalar(
+            select(PlayerTable.id).where(
+                PlayerTable.owner_user_id == user_id, PlayerTable.user_id == user_id
+            )
+        )
+        entries = (
+            await session.execute(
+                select(PlayerTable)
+                .join(GamePlayerTable, GamePlayerTable.player_id == PlayerTable.id)
+                .where(GamePlayerTable.game_id == chosen.game_id)
+                .order_by(GamePlayerTable.player_index)
+            )
+        ).scalars().all()
+        seats = []
+        for entry in entries:
+            name = shown_name(entry.display_name)
+            if entry.user_id == user_id and own is not None:
+                seats.append(QuickStartSeat(own, name))
+            elif entry.owner_user_id == user_id:
+                seats.append(QuickStartSeat(entry.id, name))
+            else:
+                seats.append(QuickStartSeat(None, name))
+        return chosen, seats
 
     async def is_recent(self, session: AsyncSession, game_id: str) -> bool:
         """Whether the game can still be resumed, or followed by a rematch that
