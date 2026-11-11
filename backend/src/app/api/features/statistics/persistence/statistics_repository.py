@@ -28,6 +28,10 @@ from app.api.features.statistics.domain.player_statistics import PlayerStatistic
 from app.api.features.statistics.domain.trend import TrendPoint
 
 
+# The figures are points, checkouts and busts, so the other variants stay out.
+_POINTS_VARIANTS = [variant.value for variant in GameVariant if variant.counts_points]
+
+
 @dataclass(frozen=True)
 class _Leg:
     """One counted seat: the player's own turns with where and from what each began."""
@@ -91,6 +95,7 @@ class StatisticsRepository:
                 .where(
                     *seats_of,
                     GameTable.status == GameStatus.FINISHED.value,
+                    GameTable.variant.in_(_POINTS_VARIANTS),
                     *game_filter_clauses(criteria),
                 )
                 .order_by(GameTable.created_at.desc(), GameTable.id)

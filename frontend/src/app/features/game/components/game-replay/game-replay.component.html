@@ -2,11 +2,11 @@
   <header class="replay__header">
     <h2 class="panel__title">Replay</h2>
     <p-selectbutton
-      [options]="viewOptions"
+      [options]="viewOptions()"
       optionLabel="label"
       optionValue="value"
       [allowEmpty]="false"
-      [ngModel]="view()"
+      [ngModel]="shownView()"
       (ngModelChange)="selectView($event)"
       ariaLabel="Ansicht"
       i18n-ariaLabel="@@game.replay.view"
@@ -14,7 +14,7 @@
     />
   </header>
 
-  @switch (view()) {
+  @switch (shownView()) {
     @case ('heatmap') {
       <div class="replay__heatmap">
         <p-selectbutton
@@ -48,14 +48,16 @@
       </div>
     }
     @case ('race') {
+      @if (mode(); as mode) {
       <app-score-race
         [visits]="visits()"
         [players]="players()"
-        [mode]="mode()"
+        [mode]="mode"
         [variant]="variant()"
         [position]="position()"
         [highlightId]="playerId()"
       />
+      }
     }
     @case ('distribution') {
       <app-score-distribution

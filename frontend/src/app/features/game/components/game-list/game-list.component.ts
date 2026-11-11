@@ -30,7 +30,7 @@ import {
 } from '../../models/game-filter';
 import { CHECKOUT_MODES, CheckoutMode } from '../../models/checkout-mode';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
-import { GAME_VARIANTS, GameVariant } from '../../models/game-variant';
+import { GAME_VARIANTS, GameVariant, variantLabel } from '../../models/game-variant';
 import { GameHistoryService } from '../../services/game-history.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { ListToolbarComponent } from '../../../../core/view/components/list-toolbar/list-toolbar.component';
@@ -242,6 +242,8 @@ export class GameListComponent {
       state: backState($localize`:@@auth.account.games:Spiele`),
     });
   }
+
+  protected readonly variantName = variantLabel;
 
   protected openLabel(game: GameSummaryDto): string {
     const when = formatDate(game.createdAt, SHORT_DATE_TIME, this.locale);

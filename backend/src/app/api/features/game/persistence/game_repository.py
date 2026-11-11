@@ -13,12 +13,16 @@ from sqlalchemy import ColumnElement, Row, Select, and_, case, delete, func, or_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.features.game.domain.around_the_clock import ClockOptions, ClockZone
 from app.api.features.game.domain.checkout_mode import CheckoutMode
+from app.api.features.game.domain.cricket import CricketOptions, CricketScoring
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.game_filter import GameFilter
 from app.api.features.game.domain.game_record import GameRecord
 from app.api.features.game.domain.game_mode import GameMode
+from app.api.features.game.domain.game_options import GameOptions
+from app.api.features.game.domain.killer import KillerOptions, KillerZone
 from app.api.features.game.domain.game_status import (
     ABANDON_AFTER,
     MIN_ABANDONED_DARTS,
@@ -47,12 +51,13 @@ class GameRepository:
     async def create(
         self,
         session: AsyncSession,
-        mode: GameMode,
+        mode: GameMode | None,
         identities: list[PlayerIdentity],
         variant: GameVariant,
-        checkout_mode: CheckoutMode,
+        checkout_mode: CheckoutMode | None,
         owner_user_id: str | None = None,
         evaluation_enabled: bool = False,
+        options: GameOptions | None = None,
     ) -> Game:
         """The identities are resolved by the router, which owns the rules about
         who may take a seat. Here they are only seated, in the order given."""
@@ -66,13 +71,15 @@ class GameRepository:
                 for seat, identity in enumerate(identities)
             ],
             checkout_mode=checkout_mode,
+            options=options,
             evaluation_enabled=evaluation_enabled,
         )
 
         row = GameTable(
-            mode=int(mode),
+            mode=None if mode is None else int(mode),
             variant=variant.value,
-            checkout_mode=checkout_mode.value,
+            checkout_mode=None if checkout_mode is None else checkout_mode.value,
+            options=_options_json(game.options),
             status=GameStatus.ACTIVE.value,
             current_player_index=game.current_player_index,
             revision=game.revision,
@@ -311,38 +318,37 @@ class GameRepository:
 
         scored = {(t.game_id, t.player_index): t.scored for t in tallies}
         thrown = {(t.game_id, t.player_index): t.darts for t in tallies}
-        replayed = await self._elimination_remaining(session, rows, seats)
+        replayed = await self._replayed(session, rows, seats)
 
         summaries: list[GameSummary] = []
         for row in rows:
             entries = [seat for seat in seats if seat.game_id == row.id]
+            game = replayed.get(row.id)
             players = [
                 GameSummaryPlayer(
                     name=shown_name(seat.display_name),
-                    remaining=replayed.get(
-                        (row.id, seat.player_index),
-                        row.mode - scored.get((row.id, seat.player_index), 0),
-                    ),
+                    remaining=_summary_remaining(row, seat.player_index, game, scored),
                     is_me=seat.user_id == user_id,
                 )
                 for seat in entries
             ]
+            if game is not None:
+                winner = game.winner
+                winner_index = None if winner is None else winner.id
+            else:
+                winner_index = next(
+                    (index for index, player in enumerate(players) if player.remaining == 0),
+                    None,
+                )
             summaries.append(
                 GameSummary(
                     id=row.id,
-                    mode=GameMode(row.mode),
+                    mode=_mode(row.mode),
                     variant=GameVariant(row.variant),
-                    checkout_mode=CheckoutMode(row.checkout_mode),
+                    checkout_mode=_checkout_mode(row.checkout_mode),
                     status=_status(row, row.id in hidden),
                     players=players,
-                    winner_index=next(
-                        (
-                            index
-                            for index, player in enumerate(players)
-                            if player.remaining == 0
-                        ),
-                        None,
-                    ),
+                    winner_index=winner_index,
                     dart_count=sum(
                         thrown.get((row.id, seat.player_index), 0) for seat in entries
                     ),
@@ -357,12 +363,12 @@ class GameRepository:
             select(func.count()).select_from(GameTable).where(*_history_clauses(user_id, criteria))
         ) or 0
 
-    async def _elimination_remaining(
+    async def _replayed(
         self, session: AsyncSession, rows: Sequence[GameTable], seats: Sequence[Row[Any]]
-    ) -> dict[tuple[str, int], int]:
-        """Remaining points per seat of the elimination games among `rows`, replayed
-        in throwing order because a reset depends on everyone's score at the time."""
-        ids = [row.id for row in rows if GameVariant(row.variant) is GameVariant.ELIMINATION]
+    ) -> dict[str, Game]:
+        """The games among `rows` whose standing cannot be summed in SQL, replayed in
+        throwing order: an elimination reset or a variant's rules depend on everyone."""
+        ids = [row.id for row in rows if GameVariant(row.variant) is not GameVariant.X01]
         if not ids:
             return {}
 
@@ -387,14 +393,16 @@ class GameRepository:
                 Dart(value=dart.value, multiplier=dart.multiplier)
             )
 
-        remaining: dict[tuple[str, int], int] = {}
+        games: dict[str, Game] = {}
         for row in rows:
             if row.id not in ids:
                 continue
-            game = Game(
+            variant = GameVariant(row.variant)
+            games[row.id] = Game(
                 id=row.id,
-                mode=GameMode(row.mode),
-                variant=GameVariant.ELIMINATION,
+                mode=_mode(row.mode),
+                variant=variant,
+                options=_options_from_json(variant, row.options),
                 players=[
                     Player(
                         id=seat.player_index,
@@ -414,9 +422,7 @@ class GameRepository:
                     if turn.game_id == row.id
                 ],
             )
-            for player in game.players:
-                remaining[(row.id, player.id)] = game.remaining(player.id)
-        return remaining
+        return games
 
     async def is_recent(self, session: AsyncSession, game_id: str) -> bool:
         """Whether the game can still be resumed, or followed by a rematch that
@@ -561,10 +567,12 @@ class GameRepository:
 
         preferred = await self._preferred_doubles(session, [entry[2] for entry in entries])
 
+        variant = GameVariant(row.variant)
         return Game(
             id=row.id,
-            mode=GameMode(row.mode),
-            variant=GameVariant(row.variant),
+            mode=_mode(row.mode),
+            variant=variant,
+            options=_options_from_json(variant, row.options),
             players=[
                 Player(
                     id=index,
@@ -574,7 +582,7 @@ class GameRepository:
                 )
                 for index, name, identity_id in entries
             ],
-            checkout_mode=CheckoutMode(row.checkout_mode),
+            checkout_mode=_checkout_mode(row.checkout_mode),
             evaluation_enabled=row.evaluation_enabled,
             tracking_paused=row.tracking_paused,
             win_confirmed=row.win_confirmed,
@@ -606,6 +614,57 @@ class GameRepository:
             )
         ).all()
         return {row.id: tuple(row.preferred_doubles) for row in rows}
+
+
+def _mode(value: int | None) -> GameMode | None:
+    return None if value is None else GameMode(value)
+
+
+def _checkout_mode(value: str | None) -> CheckoutMode | None:
+    return None if value is None else CheckoutMode(value)
+
+
+def _summary_remaining(
+    row: GameTable, seat: int, game: Game | None, scored: dict[tuple[str, int], int]
+) -> int | None:
+    """Points a seat still needed: summed in SQL for x01, replayed for elimination,
+    none outside the points variants."""
+    if row.mode is None:
+        return None
+    if game is not None:
+        return game.remaining(seat)
+    return row.mode - scored.get((row.id, seat), 0)
+
+
+def _options_json(options: GameOptions | None) -> dict[str, Any] | None:
+    match options:
+        case CricketOptions():
+            return {"scoring": options.scoring.value}
+        case KillerOptions():
+            return {
+                "numbers": list(options.numbers),
+                "lives": options.lives,
+                "zone": options.zone.value,
+            }
+        case ClockOptions():
+            return {"zone": options.zone.value, "skip": options.skip}
+    return None
+
+
+def _options_from_json(variant: GameVariant, data: dict[str, Any] | None) -> GameOptions | None:
+    """The stored settings; None leaves the variant's defaults to the domain."""
+    if data is None:
+        return None
+    match variant:
+        case GameVariant.CRICKET:
+            return CricketOptions(scoring=CricketScoring(data["scoring"]))
+        case GameVariant.KILLER:
+            return KillerOptions(
+                numbers=tuple(data["numbers"]), lives=data["lives"], zone=KillerZone(data["zone"])
+            )
+        case GameVariant.AROUND_THE_CLOCK:
+            return ClockOptions(zone=ClockZone(data["zone"]), skip=data["skip"])
+    return None
 
 
 def _dart_json(dart: Dart) -> dict[str, Any]:

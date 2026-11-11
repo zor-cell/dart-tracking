@@ -12,6 +12,7 @@
         class="scoreboard__row"
         [class.scoreboard__row--active]="$index === activeIndex()"
         [class.scoreboard__row--reset]="entry.reset"
+        [class.scoreboard__row--out]="entry.out"
         [class.scoreboard__row--winner]="entry.id === winnerId()"
         [attr.aria-current]="$index === activeIndex() ? 'true' : null"
       >
@@ -20,8 +21,14 @@
             <i class="pi pi-crown scoreboard__lead" aria-hidden="true"></i>
             <span class="sr-only" i18n="@@game.scoreboard.leading">Führt:</span>
           }
-          @if (entry.reset) {
+          @if (entry.out) {
+            <span class="sr-only" i18n="@@game.scoreboard.out">Ausgeschieden:</span>
+          } @else if (entry.reset) {
             <span class="sr-only" i18n="@@game.scoreboard.reset">Zurückgesetzt:</span>
+          }
+          @if (entry.killer) {
+            <span class="scoreboard__killer" aria-hidden="true">K</span>
+            <span class="sr-only">Killer:</span>
           }
           <span class="scoreboard__name-text">{{ entry.name }}</span>
           @if (entry.eliminations) {
@@ -31,17 +38,28 @@
             </span>
           }
         </span>
+        @if (entry.marks; as marks) {
+          <ol class="marks" aria-label="Marks pro Zahl" i18n-aria-label="@@game.scoreboard.marks">
+            @for (mark of marks; track mark.label) {
+              <li class="marks__target" [class.marks__target--dead]="mark.dead">
+                <span class="marks__label">{{ mark.label }}</span>
+                <span class="marks__glyph" aria-hidden="true">{{ glyphs[mark.marks] }}</span>
+                <span class="sr-only">: {{ mark.marks }}</span>
+              </li>
+            }
+          </ol>
+        }
         <span class="scoreboard__figures">
           <span class="scoreboard__side">
-            <span class="sr-only">Average</span>
-            {{ entry.average === null ? '–' : (entry.average | number: '1.1-1') }}
-            <span class="scoreboard__label" aria-hidden="true">Ø</span>
+            <span class="sr-only">{{ entry.left.srLabel }}</span>
+            {{ entry.left.value }}
+            <span class="scoreboard__label" aria-hidden="true">{{ entry.left.label }}</span>
           </span>
           <span class="scoreboard__remaining" [class.scoreboard__remaining--reset]="entry.reset">{{ entry.score }}</span>
           <span class="scoreboard__side">
-            <span class="sr-only" i18n="@@game.scoreboard.lastVisit">Letzter Visit</span>
-            {{ entry.lastVisit ?? '–' }}
-            <span class="scoreboard__label" aria-hidden="true" i18n="@@game.scoreboard.last">letzte</span>
+            <span class="sr-only">{{ entry.right.srLabel }}</span>
+            {{ entry.right.value }}
+            <span class="scoreboard__label" aria-hidden="true">{{ entry.right.label }}</span>
           </span>
         </span>
       </li>

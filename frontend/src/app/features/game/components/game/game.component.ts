@@ -6,12 +6,13 @@ import {
   effect,
   ElementRef,
   inject,
+  LOCALE_ID,
   OnDestroy,
   OnInit,
   signal,
   viewChild,
 } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
+import { DOCUMENT, formatNumber } from '@angular/common';
 import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
 import {RouterLink} from '@angular/router';
 import {Button} from 'primeng/button';
@@ -23,8 +24,10 @@ import {CalibrationService} from '../../../calibration/services/calibration.serv
 import {DetectionService} from '../../../detection/services/detection.service';
 import {FrameDiffService} from '../../../detection/services/frame-diff.service';
 import {DartDto} from '../../dto/dart.dto';
-import {PlayerDto} from '../../dto/player.dto';
+import {GameStateDto} from '../../dto/game-state.dto';
 import {ScoreboardEntry} from '../../models/scoreboard-entry';
+import {standings} from '../../models/variant-standing';
+import {zoneLabel} from '../../models/variant-options';
 import {DARTS_PER_TURN} from '../../models/visit';
 import {GameService} from '../../services/game.service';
 import {GameSessionService} from '../../services/game-session.service';
@@ -53,6 +56,11 @@ type CheckoutSlot = {
   readonly leave: number | null;
   readonly shadow: boolean;
 };
+
+/** Keypad numbers to emphasise, and numbers to dim. */
+type PadHints = { readonly target: ReadonlySet<number>; readonly off: ReadonlySet<number> };
+
+const NO_HINTS: PadHints = { target: new Set(), off: new Set() };
 
 const MISS: FixedKey = { label: '0', value: 0, multiplier: 0 };
 const BULL: FixedKey = { label: '25', value: 25, multiplier: 1 };
@@ -99,6 +107,7 @@ export class GameComponent implements OnInit, OnDestroy {
   private readonly detection = inject(DetectionService);
   private readonly wakeLock = inject(ScreenWakeLockService);
   private readonly document = inject(DOCUMENT);
+  private readonly locale = inject(LOCALE_ID);
 
   // Optional: these live behind the "game active" gate, so they are absent until
   // the state is (re)loaded — which after a full reload is a few ticks after init.
@@ -195,20 +204,36 @@ export class GameComponent implements OnInit, OnDestroy {
 
   protected readonly scoreboardEntries = computed<ScoreboardEntry[]>(() => {
     const state = this.game.state();
-    const players = state?.players ?? [];
-    const closest = Math.min(...players.map((player) => player.remaining));
-    const alone = players.filter((player) => player.remaining === closest).length === 1;
-    const open = state?.winnerId === null && players.length > 1;
-    return players.map((player) => ({
+    if (state === null) {
+      return [];
+    }
+    const seats = standings(state, (value, digits) => formatNumber(value, this.locale, digits));
+    const best = Math.max(...seats.map((seat) => seat.rank));
+    const alone = seats.filter((seat) => seat.rank === best).length === 1;
+    const open = state.winnerId === null && seats.length > 1;
+    return state.players.map((player, seat) => ({
+      ...seats[seat],
       id: player.id,
       name: player.name,
-      score: this.score(player),
-      average: player.average,
-      lastVisit: player.lastVisit,
-      leading: open && alone && player.remaining === closest,
+      leading: open && alone && seats[seat].rank === best,
       reset: player.justReset,
-      eliminations: state?.variant === 'elimination' ? player.eliminations : null,
+      eliminations: state.variant === 'elimination' ? player.eliminations : null,
     }));
+  });
+
+  /** The fields the variant has the thrower aim at next, without a checkout to suggest. */
+  private readonly targetRoute = computed<readonly string[] | null>(() => {
+    const state = this.game.state();
+    if (state === null || state.winnerId !== null) {
+      return null;
+    }
+    return targetRoute(state);
+  });
+
+  /** Keypad numbers that count for the thrower, and in Cricket the ones that never do. */
+  protected readonly padHints = computed<PadHints>(() => {
+    const state = this.game.state();
+    return state === null ? NO_HINTS : padHints(state);
   });
 
   /**
@@ -224,7 +249,7 @@ export class GameComponent implements OnInit, OnDestroy {
     const checkout = state?.checkout ?? null;
     const elimination = state?.elimination ?? null;
     const setup = checkout === null ? (state?.setup ?? null) : null;
-    const route = checkout ?? setup?.darts ?? elimination;
+    const route = checkout ?? setup?.darts ?? elimination ?? this.targetRoute();
     const eliminating = checkout === null && setup === null && elimination !== null;
     const shadows = this.game.shadowDarts();
     return Array.from({ length: DARTS_PER_TURN - thrown }, (_, index) => {
@@ -242,16 +267,6 @@ export class GameComponent implements OnInit, OnDestroy {
           };
     });
   });
-
-  /** The number on a player's card: points still needed in x01, points gathered
-   * so far in elimination — the same value read from opposite ends. */
-  protected score(player: PlayerDto): number {
-    const state = this.game.state();
-    if (state === null || state.variant !== 'elimination') {
-      return player.remaining;
-    }
-    return state.mode - player.remaining;
-  }
 
   constructor() {
 
@@ -453,4 +468,47 @@ export class GameComponent implements OnInit, OnDestroy {
     this.session.detachView();
     this.wakeLock.release();
   }
+}
+
+/** Around the Clock: the next targets in turn; Killer: the own number until it makes a killer. */
+function targetRoute(state: GameStateDto): readonly string[] | null {
+  const seat = state.currentPlayerIndex;
+  const clock = state.aroundTheClock;
+  if (clock !== null) {
+    const target = clock.players[seat].target;
+    if (target === null) {
+      return null;
+    }
+    const ahead = [...Array.from({ length: 20 }, (_, index) => index + 1), 25].filter((n) =>
+      target === 25 ? n === 25 : n >= target,
+    );
+    return ahead.slice(0, state.dartsRemaining).map((n) => zoneLabel(n, clock.zone));
+  }
+  const killer = state.killer;
+  if (killer !== null && !killer.players[seat].killer) {
+    return [zoneLabel(killer.players[seat].number, killer.zone)];
+  }
+  return null;
+}
+
+/** The keypad numbers worth throwing at in the variant that is played, and those that count for nothing. */
+function padHints(state: GameStateDto): PadHints {
+  const seat = state.currentPlayerIndex;
+  if (state.cricket !== null) {
+    const targets = state.cricket.targets;
+    return { target: new Set(), off: new Set(PAD_ROWS.flat().filter((n) => !targets.includes(n))) };
+  }
+  if (state.aroundTheClock !== null) {
+    const target = state.aroundTheClock.players[seat].target;
+    return { target: new Set(target === null ? [] : [target]), off: new Set() };
+  }
+  if (state.killer !== null) {
+    const players = state.killer.players;
+    const own = players[seat];
+    const aimed = own.killer
+      ? players.filter((player, index) => index !== seat && player.lives > 0).map((player) => player.number)
+      : [own.number];
+    return { target: new Set(aimed), off: new Set() };
+  }
+  return NO_HINTS;
 }

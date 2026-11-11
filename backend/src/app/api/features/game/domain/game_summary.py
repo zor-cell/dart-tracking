@@ -1,6 +1,6 @@
 """A game as it appears in a list, without its turns. Aggregated in the query,
 because a list of a hundred games must not load a hundred aggregates; only
-elimination games are replayed, in one batch."""
+games beyond plain x01 are replayed, in one batch."""
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -14,16 +14,17 @@ from app.api.features.game.domain.game_variant import GameVariant
 @dataclass(frozen=True)
 class GameSummaryPlayer:
     name: str
-    remaining: int
+    # None outside the points variants.
+    remaining: int | None
     is_me: bool
 
 
 @dataclass(frozen=True)
 class GameSummary:
     id: str
-    mode: GameMode
+    mode: GameMode | None
     variant: GameVariant
-    checkout_mode: CheckoutMode
+    checkout_mode: CheckoutMode | None
     # Already derived (`effective_status`), so `abandoned` can appear here even
     # though no row ever holds it.
     status: GameStatus

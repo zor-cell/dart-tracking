@@ -34,6 +34,8 @@ def dart_phrases(call: DartCall, language: Language) -> list[str]:
 
 
 def turn_phrase(call: TurnCall, language: Language) -> str:
+    if call.score is None:
+        return call.player
     return translate("announcer.turn", language, player=call.player, score=call.score)
 
 

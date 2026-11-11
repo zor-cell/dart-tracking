@@ -6,6 +6,7 @@ import { TorchToggleComponent } from '../../../camera/components/torch-toggle/to
 import { TrackingToggleComponent } from '../tracking-toggle/tracking-toggle.component';
 import { ShareDialogComponent } from '../../../../core/view/components/share-dialog/share-dialog.component';
 import { ConfirmService } from '../../../../core/view/services/confirm.service';
+import { variantLabel } from '../../models/game-variant';
 import { GameService } from '../../services/game.service';
 import { GameSessionService } from '../../services/game-session.service';
 
@@ -38,13 +39,17 @@ export class GameTopBarComponent {
   protected readonly shareDialogVisible = signal(false);
 
   /** The mode alone names an x01 game; elimination shares those numbers as its
-   * target and has to say so. */
+   * target and has to say so, and the other variants go by their name. */
   protected readonly title = computed(() => {
     const state = this.game.state();
     if (state === null) {
       return '';
     }
-    return state.variant === 'elimination' ? `Elimination ${state.mode}` : `${state.mode}`;
+    if (state.variant === 'x01') {
+      return `${state.mode}`;
+    }
+    const name = variantLabel(state.variant);
+    return state.variant === 'elimination' ? `${name} ${state.mode}` : name;
   });
 
   /**

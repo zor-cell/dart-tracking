@@ -7,14 +7,13 @@ import {
   input,
   viewChild,
 } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { Skeleton } from 'primeng/skeleton';
 import { ScoreboardEntry } from '../../models/scoreboard-entry';
 
 /** A row of player cards that keeps the active one centred; null entries draw placeholders. */
 @Component({
   selector: 'app-scoreboard',
-  imports: [DecimalPipe, Skeleton],
+  imports: [Skeleton],
   templateUrl: './scoreboard.component.html',
   styleUrl: './scoreboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,6 +24,9 @@ export class ScoreboardComponent {
   readonly winnerId = input<number | null>(null);
 
   private readonly listRef = viewChild<ElementRef<HTMLUListElement>>('list');
+
+  /** A Cricket target's marks as drawn on a chalk board: none, slash, cross, circled cross. */
+  protected readonly glyphs = ['', '/', '✕', 'ⓧ'];
 
   /** Placeholder cards while the state is on its way: two, the smallest game. */
   protected readonly skeletonEntries = [0, 1];

@@ -76,13 +76,20 @@ export class GameReplayComponent implements OnInit {
 
   readonly visits = input.required<readonly VisitDto[]>();
   readonly players = input.required<readonly PlayerDto[]>();
-  readonly mode = input.required<GameMode>();
+  /** The points variants' starting score; null for the others, which replay on the heatmap only. */
+  readonly mode = input.required<GameMode | null>();
   readonly variant = input.required<GameVariant>();
   /** A visit to open on, right after its last dart, counted as in `visits`. */
   readonly startVisit = input<number | null>(null);
 
-  protected readonly viewOptions = [...VIEWS];
-  protected readonly view = signal<ReplayView>(
+  protected readonly viewOptions = computed(() =>
+    this.mode() === null ? VIEWS.filter((view) => view.value === 'heatmap') : [...VIEWS],
+  );
+  /** The view picked, or the heatmap where the game has no points to chart. */
+  protected readonly shownView = computed<ReplayView>(() =>
+    this.mode() === null ? 'heatmap' : this.view(),
+  );
+  private readonly view = signal<ReplayView>(
     stored(
       VIEW_KEY,
       VIEWS.map((view) => view.value),

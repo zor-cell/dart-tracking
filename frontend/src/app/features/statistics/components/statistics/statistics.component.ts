@@ -24,7 +24,7 @@ import { StatisticsService } from '../../services/statistics.service';
 import { CHECKOUT_MODES, CheckoutMode } from '../../../game/models/checkout-mode';
 import { PLAYER_COUNT_LABELS, PlayerCount } from '../../../game/models/game-filter';
 import { GAME_MODES, GameMode } from '../../../game/models/game-mode';
-import { GAME_VARIANTS, GameVariant } from '../../../game/models/game-variant';
+import { GAME_VARIANTS, GameVariant, POINTS_VARIANTS } from '../../../game/models/game-variant';
 import { PlayerIdentityDto } from '../../../player/dto/player-identity.dto';
 import { PlayerService } from '../../../player/services/player.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
@@ -81,7 +81,7 @@ const TAB_KEY = 'dart-tracking.statisticsTab';
 
 /** How each filter is kept in the query params. */
 const FILTER_PARAMS = {
-  variant: listParam(oneOfParam(GAME_VARIANTS.map((variant) => variant.value))),
+  variant: listParam(oneOfParam(POINTS_VARIANTS.map((variant) => variant.value))),
   opponentId: listParam(TEXT_PARAM),
   players: listParam(oneOfParam(Object.keys(PLAYER_COUNT_LABELS) as PlayerCount[])),
   mode: listParam(oneOfParam(GAME_MODES)),
@@ -149,7 +149,8 @@ export class StatisticsComponent {
   protected readonly period = signal<Period>(DEFAULT_PERIODS.days);
   protected readonly range = signal<DayRange>(null);
 
-  protected readonly variantOptions = [...GAME_VARIANTS];
+  // The figures are points and checkouts, which the other variants do not have.
+  protected readonly variantOptions = [...POINTS_VARIANTS];
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
   protected readonly checkoutOptions = [...CHECKOUT_MODES];
   protected readonly playerCountOptions = Object.entries(PLAYER_COUNT_LABELS).map(

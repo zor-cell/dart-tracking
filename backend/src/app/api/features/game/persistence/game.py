@@ -14,9 +14,11 @@ class GameTable(Base):
     __tablename__ = "games"
 
     id: Mapped[str] = uuid_primary_key()
-    mode: Mapped[int] = mapped_column(Integer)
+    # Null outside the points variants, which keep their settings in `options`.
+    mode: Mapped[int | None] = mapped_column(Integer)
     variant: Mapped[str] = mapped_column(String(16))
-    checkout_mode: Mapped[str] = mapped_column(String(16))
+    checkout_mode: Mapped[str | None] = mapped_column(String(16))
+    options: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
     status: Mapped[str] = mapped_column(String(16))
     current_player_index: Mapped[int] = mapped_column(Integer)
     revision: Mapped[int] = mapped_column(Integer)

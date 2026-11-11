@@ -107,7 +107,7 @@ class CameraAngleDto(CamelModel):
 
 class GameAccuracyDto(CamelModel):
     game_id: str
-    mode: int
+    mode: int | None
     created_at: datetime
     evaluation_enabled: bool
     tracker_versions: list[int]

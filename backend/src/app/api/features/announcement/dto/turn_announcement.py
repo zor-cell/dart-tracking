@@ -6,11 +6,11 @@ from app.api.features.announcement.domain.calls import TurnCall
 
 class TurnAnnouncementDto(CamelModel):
     """Server -> announcer: the next visit is ready to be thrown by `player`.
-    `score` is the number the scoreboard shows for them."""
+    `score` is the number the scoreboard shows for them, if the variant has one."""
 
     type: Literal["turn_announcement"] = "turn_announcement"
     player: str
-    score: int
+    score: int | None
     clips: list[str]
 
     @classmethod

@@ -7,15 +7,15 @@ export type GameStatus = 'active' | 'finished' | 'abandoned' | 'discarded';
 
 export interface GameSummaryPlayerDto {
   readonly name: string;
-  readonly remaining: number;
+  readonly remaining: number | null;
   readonly isMe: boolean;
 }
 
 export interface GameSummaryDto {
   readonly id: string;
-  readonly mode: GameMode;
+  readonly mode: GameMode | null;
   readonly variant: GameVariant;
-  readonly checkoutMode: CheckoutMode;
+  readonly checkoutMode: CheckoutMode | null;
   readonly status: GameStatus;
   readonly players: readonly GameSummaryPlayerDto[];
   readonly winnerIndex: number | null;

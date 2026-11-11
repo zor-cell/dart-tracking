@@ -9,11 +9,15 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field, replace
 from datetime import datetime
 
+from app.api.features.game.domain.around_the_clock import ClockOptions, clock_progress
 from app.api.features.game.domain.checkout import Setup, checkout_route, setup_route
 from app.api.features.game.domain.checkout_mode import CheckoutMode
+from app.api.features.game.domain.cricket import CricketOptions, cricket_progress
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game_mode import GameMode
+from app.api.features.game.domain.game_options import GameOptions, GameProgress, default_options
 from app.api.features.game.domain.game_variant import GameVariant
+from app.api.features.game.domain.killer import KillerOptions, KillerProgress, killer_progress
 from app.api.features.game.domain.player import Player
 from app.api.features.game.domain.turn import Turn
 
@@ -23,10 +27,13 @@ DARTS_PER_TURN = 3
 @dataclass
 class Game:
     id: str
-    mode: GameMode
+    # The starting score of the points variants; None for the others.
+    mode: GameMode | None
     players: list[Player]
     variant: GameVariant = GameVariant.X01
-    checkout_mode: CheckoutMode = CheckoutMode.DOUBLE_OUT
+    checkout_mode: CheckoutMode | None = CheckoutMode.DOUBLE_OUT
+    # The variant's own settings; None for the points variants.
+    options: GameOptions | None = None
     evaluation_enabled: bool = False
     # While set, the camera books nothing; the keypad still does.
     tracking_paused: bool = False
@@ -42,10 +49,25 @@ class Game:
     updated_at: datetime | None = None
 
     def __post_init__(self) -> None:
+        if self.options is None:
+            self.options = default_options(self.variant, len(self.players))
         # Invariant: a turn is always open for the current player, so `turns` is
         # never empty and `current_turn` never has to guess where it ends.
         if not self.turns:
             self._start_turn()
+
+    @property
+    def progress(self) -> GameProgress | None:
+        """Where every player stands in a variant with own rules, replayed from the turns."""
+        ids = [player.id for player in self.players]
+        match self.options:
+            case CricketOptions():
+                return cricket_progress(ids, self.turns, self.options)
+            case KillerOptions():
+                return killer_progress(ids, self.turns, self.options)
+            case ClockOptions():
+                return clock_progress(ids, self.turns, self.options)
+        return None
 
     @property
     def current_player(self) -> Player:
@@ -57,12 +79,28 @@ class Game:
 
     @property
     def darts_remaining(self) -> int:
-        turn = self.current_turn
-        return 0 if turn.busted else DARTS_PER_TURN - len(turn.darts)
+        return 0 if self._visit_closed() else DARTS_PER_TURN - len(self.current_turn.darts)
 
     @property
     def winner(self) -> Player | None:
-        return next((player for player in self.players if self.remaining(player.id) == 0), None)
+        if self.variant.counts_points:
+            return next(
+                (player for player in self.players if self.remaining(player.id) == 0), None
+            )
+        progress = self.progress
+        winner_id = progress.winner_id if progress is not None else None
+        return next((player for player in self.players if player.id == winner_id), None)
+
+    def is_out(self, player_id: int) -> bool:
+        """Whether the player has lost every life in Killer and no longer throws."""
+        progress = self.progress
+        return isinstance(progress, KillerProgress) and progress.players[player_id].out
+
+    def _visit_closed(self) -> bool:
+        """Whether the open visit takes no more darts short of a win: it busted, or
+        its thrower knocked themselves out."""
+        turn = self.current_turn
+        return turn.busted or self.is_out(turn.player_id)
 
     @property
     def can_undo(self) -> bool:
@@ -73,7 +111,7 @@ class Game:
         """A suggested finish for the current player within this turn's darts, or
         None when none exists. Depends on the checkout mode: double-out routes
         must end on a double."""
-        if self.winner is not None:
+        if not self.variant.counts_points or self.winner is not None:
             return None
         route = checkout_route(
             self.remaining(self.current_player.id),
@@ -128,9 +166,13 @@ class Game:
         return list(best[1]) if best is not None else None
 
     def just_reset(self) -> set[int]:
-        """Players the latest visit with darts sent back to zero: the open one once
-        it has darts, the one before it until then. Elimination only."""
+        """Players the latest visit with darts sent back to zero in elimination, or
+        knocked out in Killer: the open one once it has darts, the one before it until then."""
         latest = len(self.turns) - (1 if self.current_turn.darts else 2)
+        progress = self.progress
+        if isinstance(progress, KillerProgress):
+            knocked = progress.knocked_out
+            return set(knocked[latest]) if 0 <= latest < len(knocked) else set()
         return next(
             (reset for index, (_, reset) in enumerate(self._resets()) if index == latest), set()
         )
@@ -158,7 +200,13 @@ class Game:
         """Points a player still needs to finish: x01 counts this down to zero,
         elimination counts the score up to the mode. Holding the distance rather
         than the score is what lets both share the bust, win and checkout rules."""
-        return self.mode - self._scores()[player_id]
+        return self._start - self._scores()[player_id]
+
+    @property
+    def _start(self) -> int:
+        if self.mode is None:
+            raise ValueError(f"{self.variant} keeps no points total")
+        return int(self.mode)
 
     def average(self, player_id: int) -> float | None:
         """Points per three darts so far; a bust counts its darts but no points."""
@@ -170,16 +218,27 @@ class Game:
 
     def last_visit(self, player_id: int) -> int | None:
         """Points of the player's last closed visit, a bust scoring none; None before it."""
-        closed = self.turns if self.winner is not None else self.turns[:-1]
-        turn = next((turn for turn in reversed(closed) if turn.player_id == player_id), None)
-        if turn is None:
+        index = self.last_closed_turn(player_id)
+        if index is None:
             return None
+        turn = self.turns[index]
         return 0 if turn.busted else turn.points
 
+    def last_closed_turn(self, player_id: int) -> int | None:
+        """Index of the player's last visit that was handed over or won."""
+        closed = len(self.turns) if self.winner is not None else len(self.turns) - 1
+        return next(
+            (index for index in reversed(range(closed)) if self.turns[index].player_id == player_id),
+            None,
+        )
+
     def standings_after_turns(self) -> list[dict[int, int]]:
-        """Points every player still needed after each turn, in turn order."""
+        """Points every player still needed after each turn, in turn order; empty
+        outside the points variants."""
+        if not self.variant.counts_points:
+            return [{} for _ in self.turns]
         return [
-            {player_id: self.mode - score for player_id, score in scores.items()}
+            {player_id: self._start - score for player_id, score in scores.items()}
             for _, scores in self._replay()
         ]
 
@@ -187,10 +246,10 @@ class Game:
         """Points each turn's player still needed as the turn began, in turn order;
         in elimination that holds the resets the others caused."""
         before: list[int] = []
-        needed = {player.id: int(self.mode) for player in self.players}
+        needed = {player.id: self._start for player in self.players}
         for turn, scores in self._replay():
             before.append(needed[turn.player_id])
-            needed = {player_id: self.mode - score for player_id, score in scores.items()}
+            needed = {player_id: self._start - score for player_id, score in scores.items()}
         return before
 
     def _scores(self) -> dict[int, int]:
@@ -247,7 +306,7 @@ class Game:
         darts = list(turn.darts)
         if len(darts) >= DARTS_PER_TURN:
             return
-        closed = turn.busted or self.winner is not None
+        closed = self._visit_closed() or self.winner is not None
         darts.insert(len(darts) - 1 if closed else len(darts), dart)
         self._rescore(darts)
 
@@ -258,6 +317,8 @@ class Game:
         zero with anything but a double — the bullseye is the double bull, so it
         finishes — and leaving exactly one point, which no double can finish.
         """
+        if not self.variant.counts_points:
+            return False
         remaining = self.remaining(self.current_turn.player_id)
         if remaining < 0:
             return True
@@ -319,13 +380,18 @@ class Game:
         self._rescore(darts)
 
     def _rescore(self, darts: list[Dart]) -> None:
-        """Take the open visit as this sequence of darts, re-applying the bust
-        rule from the start — whether a dart busts depends on the darts before
-        it, so any change to the order or the fields re-decides it."""
+        """Take the open visit as this sequence of darts, re-deciding busts from the
+        start. Outside the points variants a win or a knock-out closes the visit
+        instead, and the darts after it wait as shadows."""
         turn = self.current_turn
         turn.darts = []
         turn.busted = False
-        for dart in darts:
+        for index, dart in enumerate(darts):
+            if not self.variant.counts_points and (
+                self.winner is not None or self._visit_closed()
+            ):
+                self.shadow_darts[:0] = darts[index:]
+                break
             turn.darts.append(dart)
             if self._busts(dart):
                 turn.busted = True
@@ -362,10 +428,19 @@ class Game:
             self.revision += 1
             filled += 1
         self.revision += 1
-        self.current_player_index = (self.current_player_index + 1) % len(self.players)
+        self.current_player_index = self._next_seat()
         self.shadow_darts = []
         self._start_turn()
         return filled
+
+    def _next_seat(self) -> int:
+        """The seat after the current one, passing over players knocked out of Killer."""
+        count = len(self.players)
+        for step in range(1, count + 1):
+            seat = (self.current_player_index + step) % count
+            if not self.is_out(self.players[seat].id):
+                return seat
+        return self.current_player_index
 
     def stamp(self, now: datetime) -> None:
         """Date what the last change booked or closed: new darts, the visit just

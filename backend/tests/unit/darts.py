@@ -4,6 +4,7 @@ from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.game_mode import GameMode
+from app.api.features.game.domain.game_options import GameOptions
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.player import Player
 from app.api.features.game.domain.turn import Turn
@@ -30,14 +31,26 @@ def new_game(
     mode: int = 301,
     variant: GameVariant = GameVariant.X01,
     checkout: CheckoutMode = CheckoutMode.DOUBLE_OUT,
+    options: GameOptions | None = None,
 ) -> Game:
+    points = variant.counts_points
     return Game(
         id="game",
-        mode=GameMode(mode),
+        mode=GameMode(mode) if points else None,
         players=[Player(id=seat, name=f"P{seat}", identity_id=f"id{seat}") for seat in range(players)],
         variant=variant,
-        checkout_mode=checkout,
+        checkout_mode=checkout if points else None,
+        options=options,
     )
+
+
+def play(game: Game, *visits: str) -> None:
+    """Throw each visit, labels split on spaces, handing over between them."""
+    for index, visit in enumerate(visits):
+        if index:
+            game.next_player()
+        for label in visit.split():
+            game.register_dart(dart(label))
 
 
 def leg_at(remaining: int, checkout: CheckoutMode = CheckoutMode.DOUBLE_OUT) -> Game:

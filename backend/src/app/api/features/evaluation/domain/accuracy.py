@@ -251,7 +251,7 @@ class LoggedGame:
     """A game that left an event log behind, with what it takes to name it."""
 
     id: str
-    mode: int
+    mode: int | None
     created_at: datetime
     evaluation_enabled: bool
     tracker_versions: tuple[int, ...] = ()  # the ones its events were recorded with, ascending

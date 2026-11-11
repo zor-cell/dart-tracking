@@ -23,6 +23,7 @@ from app.api.features.game.domain.game_filter import GameFilter
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_status import GameStatus
 from app.api.features.game.domain.game_variant import GameVariant
+from app.api.features.game.domain.killer import KILLER_NUMBERS
 from app.api.features.game.domain.player_count import PlayerCount
 from app.api.features.game.dto.game_config import GameConfigDto
 from app.api.features.game.dto.game_detail import GameDetailDto
@@ -42,6 +43,9 @@ router = APIRouter(prefix="/games", tags=["Game"])
 
 # Games started without an account, per IP per hour.
 _ANONYMOUS_GAME_LIMIT, _ANONYMOUS_GAME_WINDOW = 30, 60 * 60
+
+# Killer needs someone to knock out, and a number of its own for everyone.
+_KILLER_PLAYERS = range(2, len(KILLER_NUMBERS) + 1)
 
 
 async def _resolve_players(
@@ -90,6 +94,11 @@ async def _resolve_players(
 async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) -> GameStateDto:
     if not body.players:
         raise HTTPException(status_code=422, detail="at least one player is required")
+    points = body.variant.counts_points
+    if points and body.mode is None:
+        raise HTTPException(status_code=422, detail="mode is required")
+    if body.variant is GameVariant.KILLER and len(body.players) not in _KILLER_PLAYERS:
+        raise HTTPException(status_code=422, detail="killer needs two to twenty players")
     if user is None:
         await rate_limit.enforce(
             "anonymous-game",
@@ -118,12 +127,13 @@ async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) 
         )
         game = await repository.create(
             session,
-            body.mode,
+            body.mode if points else None,
             identities,
             body.variant,
-            body.checkout_mode,
+            body.checkout_mode if points else None,
             owner_user_id=owner_id,
             evaluation_enabled=body.evaluation_enabled and user is not None and user.is_admin,
+            options=body.options(),
         )
 
     if body.rematch_of:
@@ -219,8 +229,8 @@ async def get_game_detail(game_id: str, user: AuthenticatedUser) -> GameDetailDt
         raise HTTPException(status_code=404, detail="game not found")
 
     statistics = []
-    starts = game.remaining_before_turns()
-    for player in game.players:
+    starts = game.remaining_before_turns() if game.variant.counts_points else []
+    for player in game.players if starts else []:
         entry = PlayerStatistics()
         own = [
             (turn, start)

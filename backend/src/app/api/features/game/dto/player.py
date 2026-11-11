@@ -8,7 +8,8 @@ class PlayerDto(CamelModel):
     id: int
     name: str
     identity_id: str
-    remaining: int
+    # Points still needed in the points variants; None in the others.
+    remaining: int | None
     # Points per three darts in this game; None before the first dart.
     average: float | None
     # Points of the last closed visit; None before it.
@@ -22,7 +23,7 @@ class PlayerDto(CamelModel):
     def from_entity(
         cls,
         player: Player,
-        remaining: int,
+        remaining: int | None,
         average: float | None,
         last_visit: int | None,
         just_reset: bool,

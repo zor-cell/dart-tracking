@@ -1,6 +1,6 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe, formatNumber } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, LOCALE_ID, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
 import { Message } from 'primeng/message';
@@ -9,7 +9,8 @@ import { TableModule } from 'primeng/table';
 import { GameDetailDto } from '../../dto/game-detail.dto';
 import { GAME_STATUS_LABELS, GAME_STATUS_SEVERITIES, isResumable } from '../../models/game-filter';
 import { CHECKOUT_MODES } from '../../models/checkout-mode';
-import { GAME_VARIANTS } from '../../models/game-variant';
+import { countsPoints, variantLabel } from '../../models/game-variant';
+import { CLOCK_ZONES, KILLER_ZONES, optionLabel, scoringLabel } from '../../models/variant-options';
 import { activeGameId } from '../../services/active-game';
 import { GameHistoryService } from '../../services/game-history.service';
 import { GameReplayComponent } from '../game-replay/game-replay.component';
@@ -25,6 +26,12 @@ const GAME_FIGURES = ['average', 'firstNine', 'darts', 'bestVisit', 'grouping'] 
 const CHECKOUT_FIGURES = ['checkout', 'doubleDistance', 'busts'] as const;
 
 type Figure = (typeof GAME_FIGURES)[number] | (typeof CHECKOUT_FIGURES)[number];
+
+/** One row of a variant's figures: its label and one value per player. */
+interface VariantRow {
+  readonly label: string;
+  readonly values: readonly string[];
+}
 
 /** One row of the figures table and the subheading it sits under. */
 interface FigureRow {
@@ -67,6 +74,7 @@ export class GameDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly confirm = inject(ConfirmService);
+  private readonly locale = inject(LOCALE_ID);
 
   protected readonly detail = signal<GameDetailDto | null>(null);
   protected readonly loading = signal(true);
@@ -94,12 +102,108 @@ export class GameDetailComponent {
 
   protected readonly variantLabel = computed(() => {
     const variant = this.detail()?.game.variant;
-    return GAME_VARIANTS.find((option) => option.value === variant)?.label ?? '';
+    return variant === undefined ? '' : variantLabel(variant);
   });
 
-  protected readonly checkoutLabel = computed(() => {
-    const mode = this.detail()?.game.checkoutMode;
-    return CHECKOUT_MODES.find((option) => option.value === mode)?.label ?? '';
+  /** Whether the game ran on points, with the x01 figures; the other variants have their own. */
+  protected readonly countsPoints = computed(() => {
+    const variant = this.detail()?.game.variant;
+    return variant !== undefined && countsPoints(variant);
+  });
+
+  /** How the game finished, or for the other variants the settings it was played with. */
+  protected readonly settingsLabel = computed(() => {
+    const game = this.detail()?.game;
+    if (game === undefined) {
+      return '';
+    }
+    if (game.cricket !== null) {
+      return scoringLabel(game.cricket.scoring);
+    }
+    if (game.killer !== null) {
+      const lives = $localize`:@@game.detail.lives:${game.killer.lives}:count: Leben`;
+      return `${lives} · ${optionLabel(KILLER_ZONES, game.killer.zone)}`;
+    }
+    if (game.aroundTheClock !== null) {
+      const zone = optionLabel(CLOCK_ZONES, game.aroundTheClock.zone);
+      return game.aroundTheClock.skip ? `${zone} · ${$localize`:@@game.detail.skip:mit Springen`}` : zone;
+    }
+    return optionLabel(CHECKOUT_MODES, game.checkoutMode);
+  });
+
+  /** Each player's result in the variant's own terms, in seat order: a value and its unit. */
+  protected readonly results = computed<readonly { value: string; unit: string }[]>(() => {
+    const game = this.detail()?.game;
+    if (game === undefined) {
+      return [];
+    }
+    return game.players.map((player, seat) => {
+      if (game.cricket !== null) {
+        const own = game.cricket.players[seat];
+        const closed = own.marks.filter((marks) => marks >= 3).length;
+        return game.cricket.scoring === 'no_score'
+          ? { value: `${closed}/${own.marks.length}`, unit: $localize`:@@game.detail.closed:zu` }
+          : { value: `${own.points}`, unit: $localize`:@@game.detail.points:Punkte` };
+      }
+      if (game.killer !== null) {
+        return { value: `${game.killer.players[seat].lives}`, unit: $localize`:@@game.scoreboard.lives:Leben` };
+      }
+      if (game.aroundTheClock !== null) {
+        return { value: `${game.aroundTheClock.players[seat].done}/21`, unit: $localize`:@@game.detail.fields:Felder` };
+      }
+      return game.variant === 'elimination'
+        ? { value: `${player.remaining}`, unit: $localize`:@@game.detail.missingPoints:fehlen` }
+        : { value: `${player.remaining}`, unit: $localize`:@@game.detail.remaining:Rest` };
+    });
+  });
+
+  /** The figures of Cricket, Killer and Around the Clock, compared per player. */
+  protected readonly variantRows = computed<VariantRow[]>(() => {
+    const detail = this.detail();
+    if (detail === null) {
+      return [];
+    }
+    const { game, visits } = detail;
+    const darts = game.players.map((player) =>
+      sum(visits.filter((visit) => visit.playerId === player.id).map((visit) => visit.darts.length)),
+    );
+    const dartsRow = { label: 'Darts', values: darts.map((count) => `${count}`) };
+    const number = (value: number | null, digits: string) =>
+      value === null ? '–' : formatNumber(value, this.locale, digits);
+    if (game.cricket !== null) {
+      const players = game.cricket.players;
+      const rows: VariantRow[] = [
+        dartsRow,
+        { label: 'MPR', values: players.map((player) => number(player.marksPerRound, '1.2-2')) },
+        {
+          label: $localize`:@@game.detail.closedTargets:Geschlossen`,
+          values: players.map((player) => `${player.marks.filter((marks) => marks >= 3).length}/7`),
+        },
+      ];
+      return game.cricket.scoring === 'no_score'
+        ? rows
+        : [...rows, { label: $localize`:@@game.detail.points:Punkte`, values: players.map((p) => `${p.points}`) }];
+    }
+    if (game.killer !== null) {
+      const players = game.killer.players;
+      return [
+        dartsRow,
+        { label: $localize`:@@game.detail.livesLeft:Leben übrig`, values: players.map((p) => `${p.lives}`) },
+        { label: $localize`:@@game.scoreboard.kills:Abschüsse`, values: players.map((p) => `${p.kills}`) },
+      ];
+    }
+    if (game.aroundTheClock !== null) {
+      const players = game.aroundTheClock.players;
+      return [
+        dartsRow,
+        { label: $localize`:@@game.detail.hits:Treffer`, values: players.map((p) => `${p.hits}`) },
+        {
+          label: $localize`:@@game.scoreboard.hitRateLong:Trefferquote`,
+          values: players.map((p) => (p.darts === 0 ? '–' : `${number((100 * p.hits) / p.darts, '1.0-0')} %`)),
+        },
+      ];
+    }
+    return [];
   });
 
   /** Minutes of actual play, while that is known. */
@@ -115,13 +219,14 @@ export class GameDetailComponent {
       return [];
     }
     const { game, statistics, visits } = detail;
+    // The x01 figures; the other variants come without, and read `results` instead.
     return game.players.map((player, seat) => ({
       ...player,
       won: player.id === game.winnerId,
       statistics: statistics[seat],
       busts: visits.filter((visit) => visit.playerId === player.id && visit.busted).length,
-      doublesLocated: sum(statistics[seat].doubles.map((double) => double.located)),
-      doublesThrown: sum(statistics[seat].doubles.map((double) => double.attempts)),
+      doublesLocated: sum(statistics[seat]?.doubles.map((double) => double.located) ?? []),
+      doublesThrown: sum(statistics[seat]?.doubles.map((double) => double.attempts) ?? []),
     }));
   });
 

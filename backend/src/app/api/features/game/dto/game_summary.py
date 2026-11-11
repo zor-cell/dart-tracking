@@ -11,7 +11,7 @@ from app.api.features.game.domain.game_variant import GameVariant
 
 class GameSummaryPlayerDto(CamelModel):
     name: str
-    remaining: int
+    remaining: int | None
     is_me: bool
 
     @classmethod
@@ -21,9 +21,9 @@ class GameSummaryPlayerDto(CamelModel):
 
 class GameSummaryDto(CamelModel):
     id: str
-    mode: GameMode
+    mode: GameMode | None
     variant: GameVariant
-    checkout_mode: CheckoutMode
+    checkout_mode: CheckoutMode | None
     status: GameStatus
     players: list[GameSummaryPlayerDto]
     winner_index: int | None

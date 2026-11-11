@@ -317,6 +317,8 @@
               <button
                 type="button"
                 class="scorepad__key"
+                [class.scorepad__key--target]="padHints().target.has(n)"
+                [class.scorepad__key--off]="padHints().off.has(n)"
                 [disabled]="!padAccepts()"
                 [attr.aria-label]="multiplierPrefix() + n"
                 (click)="enterNumber(n)"

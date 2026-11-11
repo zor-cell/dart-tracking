@@ -1,7 +1,10 @@
 import { GameMode } from '../models/game-mode';
 import { CheckoutMode } from '../models/checkout-mode';
 import { GameVariant } from '../models/game-variant';
+import { ClockStateDto } from './clock-state.dto';
+import { CricketStateDto } from './cricket-state.dto';
 import { DartDto } from './dart.dto';
+import { KillerStateDto } from './killer-state.dto';
 import { PlayerDto } from './player.dto';
 import { SetupDto } from './setup.dto';
 import { TurnDto } from './turn.dto';
@@ -15,9 +18,10 @@ export interface GameStateDto {
   readonly type: 'game_state';
   readonly id: string;
   readonly revision: number;
-  readonly mode: GameMode;
+  /** The points variants' starting score and finish; null for the others. */
+  readonly mode: GameMode | null;
   readonly variant: GameVariant;
-  readonly checkoutMode: CheckoutMode;
+  readonly checkoutMode: CheckoutMode | null;
   readonly players: readonly PlayerDto[];
   readonly currentPlayerIndex: number;
   readonly turns: readonly TurnDto[];
@@ -29,6 +33,10 @@ export interface GameStateDto {
   readonly checkout: readonly string[] | null;
   readonly setup: SetupDto | null;
   readonly elimination: readonly string[] | null;
+  /** The standing of the variant that is played; null for the others. */
+  readonly cricket: CricketStateDto | null;
+  readonly killer: KillerStateDto | null;
+  readonly aroundTheClock: ClockStateDto | null;
   readonly evaluationEnabled: boolean;
   /** Whether the camera books nothing for now; the keypad still does. */
   readonly trackingPaused: boolean;

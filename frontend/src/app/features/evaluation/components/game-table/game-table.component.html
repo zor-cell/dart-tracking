@@ -35,7 +35,7 @@
           <span class="data-table__hint">{{ game.createdAt | date: 'HH:mm' }}</span>
         </td>
         <td>
-          {{ game.mode }}
+          {{ game.mode ?? '–' }}
         </td>
         <td>{{ game.versions }}</td>
         <td class="data-table__number">{{ game.summary.dartsThrown }}</td>

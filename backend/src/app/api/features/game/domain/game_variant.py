@@ -2,8 +2,16 @@ from enum import StrEnum
 
 
 class GameVariant(StrEnum):
-    """Which direction the score runs: x01 counts down from the mode to zero,
-    elimination counts up to it and resets whoever is on the score just hit."""
+    """Which game is played. x01 counts down from the mode to zero, elimination counts
+    up to it and resets whoever is on the score just hit; the others have own rules."""
 
     X01 = "x01"
     ELIMINATION = "elimination"
+    CRICKET = "cricket"
+    KILLER = "killer"
+    AROUND_THE_CLOCK = "around_the_clock"
+
+    @property
+    def counts_points(self) -> bool:
+        """Whether the game runs on a points total between zero and the mode."""
+        return self in (GameVariant.X01, GameVariant.ELIMINATION)

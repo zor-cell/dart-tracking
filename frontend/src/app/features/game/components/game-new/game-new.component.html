@@ -5,40 +5,101 @@
 
   <form class="setup" [formGroup]="form" (ngSubmit)="startGame()">
     <div class="setup__field">
-      <label class="setup__label" for="variant" i18n="@@game.new.variant">Variante</label>
-      <p-selectbutton
+      <label id="variant-label" class="setup__label" for="variant" i18n="@@game.new.variant">Variante</label>
+      <p-select
         inputId="variant"
+        ariaLabelledBy="variant-label"
         formControlName="variant"
-        [allowEmpty]="false"
         [options]="variantOptions"
         optionLabel="label"
         optionValue="value"
+        fluid
       />
     </div>
 
-    <div class="setup__field">
-      <label class="setup__label" for="mode" i18n="@@game.new.mode">Modus</label>
-      <p-selectbutton
-        inputId="mode"
-        formControlName="mode"
-        [allowEmpty]="false"
-        [options]="modeOptions"
-        optionLabel="label"
-        optionValue="value"
-      />
-    </div>
+    @switch (variant()) {
+      @case ('cricket') {
+        <div class="setup__field">
+          <label class="setup__label" for="cricketScoring" i18n="@@game.new.scoring">Punkte</label>
+          <p-selectbutton
+            inputId="cricketScoring"
+            formControlName="cricketScoring"
+            [allowEmpty]="false"
+            [options]="cricketScoringOptions"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div>
+      }
+      @case ('killer') {
+        <div class="setup__field">
+          <label class="setup__label" for="killerLives" i18n="@@game.new.lives">Leben</label>
+          <p-selectbutton
+            inputId="killerLives"
+            formControlName="killerLives"
+            [allowEmpty]="false"
+            [options]="killerLivesOptions"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div>
+        <div class="setup__field">
+          <label class="setup__label" for="killerZone" i18n="@@game.new.zone">Feld</label>
+          <p-selectbutton
+            inputId="killerZone"
+            formControlName="killerZone"
+            [allowEmpty]="false"
+            [options]="killerZoneOptions"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div>
+      }
+      @case ('around_the_clock') {
+        <div class="setup__field">
+          <label class="setup__label" for="clockZone" i18n="@@game.new.zone">Feld</label>
+          <p-selectbutton
+            inputId="clockZone"
+            formControlName="clockZone"
+            [allowEmpty]="false"
+            [options]="clockZoneOptions"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div>
+        @if (clockSkippable()) {
+          <div class="setup__switch">
+            <p-toggleswitch inputId="clockSkip" formControlName="clockSkip" />
+            <label for="clockSkip" i18n="@@game.new.clockSkip">Double und Triple springen weiter</label>
+          </div>
+        }
+      }
+      @default {
+        <div class="setup__field">
+          <label class="setup__label" for="mode" i18n="@@game.new.mode">Modus</label>
+          <p-selectbutton
+            inputId="mode"
+            formControlName="mode"
+            [allowEmpty]="false"
+            [options]="modeOptions"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div>
 
-    <div class="setup__field">
-      <label class="setup__label" for="checkoutMode">Checkout</label>
-      <p-selectbutton
-        inputId="checkoutMode"
-        formControlName="checkoutMode"
-        [allowEmpty]="false"
-        [options]="checkoutModeOptions"
-        optionLabel="label"
-        optionValue="value"
-      />
-    </div>
+        <div class="setup__field">
+          <label class="setup__label" for="checkoutMode">Checkout</label>
+          <p-selectbutton
+            inputId="checkoutMode"
+            formControlName="checkoutMode"
+            [allowEmpty]="false"
+            [options]="checkoutModeOptions"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div>
+      }
+    }
 
     <div class="setup__field">
       <span class="setup__label" i18n="@@game.new.players">Spieler</span>
@@ -100,6 +161,7 @@
             />
           </ng-template>
         </app-sortable-list>
+        <app-field-error [control]="form" [messages]="formMessages" />
         <p-button
           type="button"
           label="Spieler hinzufügen"

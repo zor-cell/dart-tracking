@@ -3,7 +3,7 @@
     <app-back-link label="Spiele" i18n-label="@@auth.account.games" link="/account/games" />
     @if (detail(); as detail) {
       <div class="heading">
-        <h1 class="view__title">{{ variantLabel() }} {{ detail.game.mode }}</h1>
+        <h1 class="view__title">{{ variantLabel() }} {{ detail.game.mode ?? '' }}</h1>
         <p-tag [value]="statusLabels[detail.status]" [severity]="statusSeverities[detail.status]" />
         <div class="heading__actions">
           <p-button
@@ -42,8 +42,12 @@
         }
         <li class="facts__item">
           <i class="pi pi-flag" aria-hidden="true"></i>
-          <span class="sr-only">Checkout</span>
-          {{ checkoutLabel() }}
+          @if (countsPoints()) {
+            <span class="sr-only">Checkout</span>
+          } @else {
+            <span class="sr-only" i18n="@@game.detail.settings">Regeln</span>
+          }
+          {{ settingsLabel() }}
         </li>
       </ul>
     } @else {
@@ -84,12 +88,8 @@
               <i class="pi pi-trophy standings__trophy" aria-label="Gewinner" i18n-aria-label="@@game.detail.winner"></i>
             }
             <span class="standings__remaining">
-              {{ player.remaining }}
-              @if (isElimination()) {
-                <span class="standings__unit" i18n="@@game.detail.missingPoints">fehlen</span>
-              } @else {
-                <span class="standings__unit" i18n="@@game.detail.remaining">Rest</span>
-              }
+              {{ results()[$index].value }}
+              <span class="standings__unit">{{ results()[$index].unit }}</span>
             </span>
           </li>
         }
@@ -99,6 +99,26 @@
     <section class="panel">
       <h2 class="panel__title" i18n="@@auth.account.stats">Statistik</h2>
       <div class="table-scroll" tabindex="0" role="region" aria-label="Statistik pro Spieler" i18n-aria-label="@@game.detail.figures">
+        @if (!countsPoints()) {
+          <p-table [value]="variantRows()" class="data-table" size="small">
+            <ng-template #header>
+              <tr>
+                <th scope="col"><span class="sr-only" i18n="@@game.detail.figure">Kennzahl</span></th>
+                @for (player of standings(); track player.id) {
+                  <th scope="col" class="data-table__number">{{ player.name }}</th>
+                }
+              </tr>
+            </ng-template>
+            <ng-template #body let-row>
+              <tr>
+                <th scope="row" class="figures__label">{{ row.label }}</th>
+                @for (value of row.values; track $index) {
+                  <td class="data-table__number">{{ value }}</td>
+                }
+              </tr>
+            </ng-template>
+          </p-table>
+        } @else {
         <p-table
           [value]="figureRows()"
           class="data-table"
@@ -212,6 +232,7 @@
             </tr>
           </ng-template>
         </p-table>
+        }
       </div>
     </section>
 

@@ -1,13 +1,23 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormArray, FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormArray,
+  FormBuilder,
+  FormControl,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
+import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
 import { Skeleton } from 'primeng/skeleton';
 import { Tag } from 'primeng/tag';
+import { ToggleSwitch } from 'primeng/toggleswitch';
 import { map } from 'rxjs';
 import { SocketService } from '../../../../core/socket/services/socket.service';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -17,6 +27,17 @@ import { SettingsService } from '../../../settings/services/settings.service';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { CHECKOUT_MODES, CheckoutMode } from '../../models/checkout-mode';
 import { GAME_VARIANTS, GameVariant } from '../../models/game-variant';
+import {
+  CLOCK_ZONES,
+  CRICKET_SCORINGS,
+  ClockZone,
+  CricketScoring,
+  KILLER_LIVES,
+  KILLER_ZONES,
+  KillerZone,
+} from '../../models/variant-options';
+import { standings } from '../../models/variant-standing';
+import { GameStateDto } from '../../dto/game-state.dto';
 import { PlayerDto } from '../../dto/player.dto';
 import { PlayerSlotDto } from '../../dto/player-slot.dto';
 import { GameService } from '../../services/game.service';
@@ -37,9 +58,11 @@ type Seat = PlayerIdentityDto | string;
     AutoComplete,
     Button,
     InputText,
+    Select,
     SelectButton,
     Skeleton,
     Tag,
+    ToggleSwitch,
     FieldErrorComponent,
     SortableListComponent,
   ],
@@ -61,6 +84,10 @@ export class GameNewComponent {
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
   protected readonly variantOptions = [...GAME_VARIANTS];
   protected readonly checkoutModeOptions = [...CHECKOUT_MODES];
+  protected readonly cricketScoringOptions = [...CRICKET_SCORINGS];
+  protected readonly killerLivesOptions = KILLER_LIVES.map((lives) => ({ label: `${lives}`, value: lives }));
+  protected readonly killerZoneOptions = [...KILLER_ZONES];
+  protected readonly clockZoneOptions = [...CLOCK_ZONES];
 
   protected readonly signedIn = this.auth.isAuthenticated;
   /** One placeholder row per seat `restoreSeats` will open. */
@@ -73,18 +100,26 @@ export class GameNewComponent {
   protected readonly sessionResolved = signal(false);
   protected readonly suggestions = signal<PlayerIdentityDto[]>([]);
   protected readonly seatMessages = { required: $localize`:@@game.new.nameRequired:Bitte einen Namen eingeben.` };
+  protected readonly formMessages = {
+    killerSeats: $localize`:@@game.new.killerSeats:Killer braucht mindestens zwei Spieler.`,
+  };
 
   protected readonly form = this.fb.group({
     mode: this.fb.nonNullable.control<GameMode>(501, Validators.required),
     variant: this.fb.nonNullable.control<GameVariant>('x01', Validators.required),
     checkoutMode: this.fb.nonNullable.control<CheckoutMode>('double_out', Validators.required),
+    cricketScoring: this.fb.nonNullable.control<CricketScoring>('standard'),
+    killerLives: this.fb.nonNullable.control(3),
+    killerZone: this.fb.nonNullable.control<KillerZone>('double'),
+    clockZone: this.fb.nonNullable.control<ClockZone>('any'),
+    clockSkip: this.fb.nonNullable.control(false),
     players: this.fb.array<FormControl<Seat>>([]),
-  });
+  }, { validators: killerSeats });
 
   /** The finished game being replayed, once `restoreSeats` has confirmed it exists. */
   private rematchId: string | null = null;
 
-  private readonly variant = toSignal(this.form.controls.variant.valueChanges, {
+  protected readonly variant = toSignal(this.form.controls.variant.valueChanges, {
     initialValue: this.form.controls.variant.value,
   });
   /** The seat controls as a new array on every change; the array itself is mutated in place. */
@@ -94,6 +129,11 @@ export class GameNewComponent {
   );
   /** Elimination counts up, so the score field is a target rather than a mode. */
   protected readonly isElimination = computed(() => this.variant() === 'elimination');
+  private readonly clockZone = toSignal(this.form.controls.clockZone.valueChanges, {
+    initialValue: this.form.controls.clockZone.value,
+  });
+  /** Skipping ahead needs singles to tell apart from doubles and triples. */
+  protected readonly clockSkippable = computed(() => this.clockZone() === 'any');
 
   constructor() {
     void this.restoreSeats();
@@ -149,7 +189,8 @@ export class GameNewComponent {
     if (this.form.invalid) {
       return;
     }
-    const { mode, variant, checkoutMode, players } = this.form.getRawValue();
+    const { mode, variant, checkoutMode, players, cricketScoring, killerLives, killerZone, clockZone, clockSkip } =
+      this.form.getRawValue();
     const seats = (players as Seat[]).map<PlayerSlotDto>((seat) =>
       typeof seat === 'string' ? { name: seat.trim() } : { playerId: seat.id },
     );
@@ -160,6 +201,9 @@ export class GameNewComponent {
         mode,
         variant,
         checkoutMode,
+        cricket: { scoring: cricketScoring },
+        killer: { lives: killerLives, zone: killerZone },
+        aroundTheClock: { zone: clockZone, skip: clockZone === 'any' && clockSkip },
         players: seats,
         evaluationEnabled: this.settings.evaluationEnabled(),
         rematchOf,
@@ -189,13 +233,13 @@ export class GameNewComponent {
     this.rematchId = previous?.id ?? null;
 
     if (previous !== null) {
-      this.form.patchValue({
-        mode: previous.mode,
-        variant: previous.variant,
-        checkoutMode: previous.checkoutMode,
-      });
-      // Worst finish throws first: most points left leads, the winner goes last.
-      const order = [...previous.players].sort((a, b) => b.remaining - a.remaining);
+      this.form.patchValue(settingsOf(previous));
+      // Worst finish throws first, the winner last.
+      const ranks = standings(previous, (value) => `${value}`).map((standing) => standing.rank);
+      const order = previous.players
+        .map((player, seat) => ({ player, rank: ranks[seat] }))
+        .sort((a, b) => a.rank - b.rank)
+        .map(({ player }) => player);
       const seats = await Promise.all(order.map((player) => this.reseat(player)));
       for (const seat of seats) {
         this.seats.push(this.fb.nonNullable.control<Seat>(seat, Validators.required));
@@ -232,4 +276,26 @@ export class GameNewComponent {
       Validators.required,
     );
   }
+}
+
+/** Killer needs someone to knock out. */
+function killerSeats(form: AbstractControl): ValidationErrors | null {
+  const variant = form.get('variant')?.value as GameVariant | undefined;
+  const seats = (form.get('players') as FormArray | null)?.length ?? 0;
+  return variant === 'killer' && seats < 2 ? { killerSeats: true } : null;
+}
+
+/** The settings of a finished game, for its rematch; what it did not use stays as is. */
+function settingsOf(game: GameStateDto) {
+  return {
+    variant: game.variant,
+    ...(game.mode !== null && { mode: game.mode }),
+    ...(game.checkoutMode !== null && { checkoutMode: game.checkoutMode }),
+    ...(game.cricket !== null && { cricketScoring: game.cricket.scoring }),
+    ...(game.killer !== null && { killerLives: game.killer.lives, killerZone: game.killer.zone }),
+    ...(game.aroundTheClock !== null && {
+      clockZone: game.aroundTheClock.zone,
+      clockSkip: game.aroundTheClock.skip,
+    }),
+  };
 }
