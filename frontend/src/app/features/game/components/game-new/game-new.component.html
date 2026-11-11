@@ -132,6 +132,15 @@
                   }
                 </ng-template>
               </p-autocomplete>
+            } @else if (seatIdentity(seat); as identity) {
+              <!-- A player carried over from the last game keeps their seat as they are. -->
+              <input
+                pInputText
+                class="setup__input"
+                [value]="identity.name"
+                readonly
+                [attr.aria-label]="seatName(index)"
+              />
             } @else {
               <input
                 pInputText

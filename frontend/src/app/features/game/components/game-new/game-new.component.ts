@@ -166,6 +166,10 @@ export class GameNewComponent {
   protected readonly seatName = (index: number): string =>
     $localize`:@@game.new.seatName:Spieler ${index + 1}:number:`;
 
+  /** The identity a seat holds, or null for a typed name. */
+  protected readonly seatIdentity = (seat: FormControl<Seat>): PlayerIdentityDto | null =>
+    typeof seat.value === 'string' ? null : seat.value;
+
   protected readonly seatLabel = (seat: FormControl<Seat>, index: number): string =>
     this.label(seat.value) || this.seatName(index);
 
