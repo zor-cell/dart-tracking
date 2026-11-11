@@ -355,7 +355,11 @@ class Game:
             return 0
         filled = 0
         while self.darts_remaining > 0:
-            self.register_dart(Dart(value=0, multiplier=0))
+            miss = Dart(value=0, multiplier=0)
+            self.current_turn.darts.append(miss)
+            if self._busts(miss):
+                self.current_turn.busted = True
+            self.revision += 1
             filled += 1
         self.revision += 1
         self.current_player_index = (self.current_player_index + 1) % len(self.players)

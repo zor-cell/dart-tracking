@@ -313,6 +313,16 @@ def test_paused_tracking_books_only_the_keypad():
     assert [d.points for d in game.current_turn.darts] == [5]
 
 
+def test_a_handover_while_tracking_is_paused_still_fills_the_visit():
+    game = new_game()
+    game.set_tracking_paused(True)
+    game.add_dart(dart("5"))
+
+    assert game.next_player() == 2
+    assert game.turns[0].darts == darts("5", "0", "0")
+    assert game.current_player.id == 1
+
+
 def test_elimination_suggests_the_cheapest_reset():
     game = new_game(players=3, variant=GameVariant.ELIMINATION)
     throw(game, "T20", "T20")
