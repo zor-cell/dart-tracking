@@ -5,6 +5,7 @@ from app.api.features.game.domain.game_options import GameOptions
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.dto.around_the_clock import ClockOptionsDto
 from app.api.features.game.dto.cricket import CricketOptionsDto
+from app.api.features.game.dto.elimination import EliminationOptionsDto
 from app.api.features.game.dto.killer import KillerOptionsDto
 from app.api.features.game.dto.player_slot import PlayerSlotDto
 
@@ -20,6 +21,7 @@ class GameConfigDto(CamelModel):
     cricket: CricketOptionsDto | None = None
     killer: KillerOptionsDto | None = None
     around_the_clock: ClockOptionsDto | None = None
+    elimination: EliminationOptionsDto | None = None
     evaluation_enabled: bool = False
     rematch_of: str | None = None
 
@@ -32,4 +34,6 @@ class GameConfigDto(CamelModel):
                 return (self.killer or KillerOptionsDto()).to_entity(len(self.players))
             case GameVariant.AROUND_THE_CLOCK:
                 return (self.around_the_clock or ClockOptionsDto()).to_entity()
+            case GameVariant.ELIMINATION:
+                return (self.elimination or EliminationOptionsDto()).to_entity()
         return None

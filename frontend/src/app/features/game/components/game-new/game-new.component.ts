@@ -38,6 +38,8 @@ import { CHECKOUT_MODES, CheckoutMode } from '../../models/checkout-mode';
 import { GAME_VARIANTS, GameVariant, variantLabel } from '../../models/game-variant';
 import {
   CLOCK_ZONES,
+  ELIMINATION_KILLS,
+  EliminationKill,
   CRICKET_SCORINGS,
   ClockZone,
   CricketScoring,
@@ -104,6 +106,7 @@ export class GameNewComponent {
   protected readonly killerLivesOptions = KILLER_LIVES.map((lives) => ({ label: `${lives}`, value: lives }));
   protected readonly killerZoneOptions = [...KILLER_ZONES];
   protected readonly clockZoneOptions = [...CLOCK_ZONES];
+  protected readonly eliminationKillOptions = [...ELIMINATION_KILLS];
 
   protected readonly signedIn = this.auth.isAuthenticated;
   /** One placeholder row per seat `restoreSeats` will open. */
@@ -117,7 +120,7 @@ export class GameNewComponent {
   protected readonly suggestions = signal<PlayerIdentityDto[]>([]);
   protected readonly seatMessages = { required: $localize`:@@game.new.nameRequired:Bitte einen Namen eingeben.` };
   protected readonly formMessages = {
-    killerSeats: $localize`:@@game.new.killerSeats:Killer braucht mindestens zwei Spieler.`,
+    groupSeats: $localize`:@@game.new.groupSeats:Wähle mindestens 2 Spieler.`,
   };
 
   protected readonly form = this.fb.group({
@@ -129,8 +132,9 @@ export class GameNewComponent {
     killerZone: this.fb.nonNullable.control<KillerZone>('double'),
     clockZone: this.fb.nonNullable.control<ClockZone>('any'),
     clockSkip: this.fb.nonNullable.control(false),
+    eliminationKill: this.fb.nonNullable.control<EliminationKill>('any'),
     players: this.fb.array<FormControl<Seat>>([]),
-  }, { validators: killerSeats });
+  }, { validators: groupSeats });
 
   /** The finished game being replayed, once `restoreSeats` has confirmed it exists. */
   private rematchId: string | null = null;
@@ -296,8 +300,10 @@ export class GameNewComponent {
     if (this.form.invalid) {
       return;
     }
-    const { mode, variant, checkoutMode, players, cricketScoring, killerLives, killerZone, clockZone, clockSkip } =
-      this.form.getRawValue();
+    const {
+      mode, variant, checkoutMode, players, cricketScoring, killerLives, killerZone,
+      clockZone, clockSkip, eliminationKill,
+    } = this.form.getRawValue();
     const seats = (players as Seat[]).map<PlayerSlotDto>((seat) =>
       typeof seat === 'string' ? { name: seat.trim() } : { playerId: seat.id },
     );
@@ -308,6 +314,7 @@ export class GameNewComponent {
       cricket: { scoring: cricketScoring },
       killer: { lives: killerLives, zone: killerZone },
       aroundTheClock: { zone: clockZone, skip: clockZone === 'any' && clockSkip },
+      elimination: { kill: eliminationKill },
       players: seats,
       evaluationEnabled: this.settings.evaluationEnabled(),
       rematchOf: this.rematchId ?? undefined,
@@ -427,7 +434,9 @@ function setupTitle(quick: QuickStartDto): string {
     case 'x01':
       return `${quick.mode} ${checkout}`;
     case 'elimination':
-      return `Elimination ${quick.mode} ${checkout}`;
+      return quick.elimination?.kill === 'double'
+        ? `Elimination ${quick.mode} ${checkout} Double Kill`
+        : `Elimination ${quick.mode} ${checkout}`;
     case 'cricket': {
       const scoring = quick.cricket?.scoring ?? 'standard';
       return scoring === 'standard' ? 'Cricket' : `Cricket ${scoringLabel(scoring)}`;
@@ -451,11 +460,11 @@ function setupTitle(quick: QuickStartDto): string {
   }
 }
 
-/** Killer needs someone to knock out. */
-function killerSeats(form: AbstractControl): ValidationErrors | null {
+/** Killer and Elimination need someone to knock out or reset. */
+function groupSeats(form: AbstractControl): ValidationErrors | null {
   const variant = form.get('variant')?.value as GameVariant | undefined;
   const seats = (form.get('players') as FormArray | null)?.length ?? 0;
-  return variant === 'killer' && seats < 2 ? { killerSeats: true } : null;
+  return (variant === 'killer' || variant === 'elimination') && seats < 2 ? { groupSeats: true } : null;
 }
 
 /** The settings of a finished game, for its rematch; what it did not use stays as is. */
@@ -466,6 +475,7 @@ function settingsOf(game: GameStateDto) {
     ...(game.checkoutMode !== null && { checkoutMode: game.checkoutMode }),
     ...(game.cricket !== null && { cricketScoring: game.cricket.scoring }),
     ...(game.killer !== null && { killerLives: game.killer.lives, killerZone: game.killer.zone }),
+    ...(game.eliminationKill !== null && { eliminationKill: game.eliminationKill }),
     ...(game.aroundTheClock !== null && {
       clockZone: game.aroundTheClock.zone,
       clockSkip: game.aroundTheClock.skip,

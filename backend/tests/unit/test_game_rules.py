@@ -1,6 +1,7 @@
 import pytest
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
+from app.api.features.game.domain.elimination import EliminationKill, EliminationOptions
 from app.api.features.game.domain.game_variant import GameVariant
 from tests.unit.darts import dart, darts, leg_at, new_game
 
@@ -331,6 +332,42 @@ def test_elimination_suggests_the_cheapest_reset():
     game.next_player()
 
     assert game.elimination == ["T20"]
+
+
+DOUBLE_KILL = EliminationOptions(kill=EliminationKill.DOUBLE)
+
+
+@pytest.mark.parametrize(
+    ("first", "level", "reset"), [("20", "D10", True), ("20", "20", False), ("T20", "T20", False)]
+)
+def test_a_double_kill_resets_only_with_a_double(first, level, reset):
+    game = new_game(variant=GameVariant.ELIMINATION, options=DOUBLE_KILL)
+    throw(game, first)
+    game.next_player()
+    throw(game, level)
+
+    assert (game.remaining(0) == 301) is reset
+
+
+def test_a_double_kill_resets_with_the_bullseye():
+    game = new_game(variant=GameVariant.ELIMINATION, options=DOUBLE_KILL)
+    throw(game, "50")
+    game.next_player()
+    throw(game, "50")
+
+    assert game.remaining(0) == 301
+
+
+def test_a_double_kill_suggests_a_reset_ending_on_a_double():
+    game = new_game(variant=GameVariant.ELIMINATION, options=DOUBLE_KILL)
+    throw(game, "20")
+    game.next_player()
+
+    assert game.elimination == ["D10"]
+
+
+def test_elimination_kills_with_any_dart_by_default():
+    assert new_game(variant=GameVariant.ELIMINATION).options == EliminationOptions()
 
 
 def test_suggestions_stop_once_the_leg_is_won():

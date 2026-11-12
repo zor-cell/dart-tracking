@@ -4,6 +4,7 @@ import { GameVariant } from '../models/game-variant';
 import { ClockOptionsDto } from './clock-options.dto';
 import { CricketOptionsDto } from './cricket-options.dto';
 import { KillerOptionsDto } from './killer-options.dto';
+import { EliminationOptionsDto } from './elimination-options.dto';
 
 export interface QuickStartSeatDto {
   /** The identity to seat, or null to seat a guest by `name`. */
@@ -19,5 +20,6 @@ export interface QuickStartDto {
   readonly cricket: CricketOptionsDto | null;
   readonly killer: KillerOptionsDto | null;
   readonly aroundTheClock: ClockOptionsDto | null;
+  readonly elimination: EliminationOptionsDto | null;
   readonly players: readonly QuickStartSeatDto[];
 }

@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.features.game.domain.around_the_clock import ClockOptions, ClockZone
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.cricket import CricketOptions, CricketScoring
+from app.api.features.game.domain.elimination import EliminationKill, EliminationOptions
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.game_filter import GameFilter
@@ -709,6 +710,8 @@ def _options_json(options: GameOptions | None) -> dict[str, Any] | None:
             }
         case ClockOptions():
             return {"zone": options.zone.value, "skip": options.skip}
+        case EliminationOptions():
+            return {"kill": options.kill.value}
     return None
 
 
@@ -725,6 +728,8 @@ def _options_from_json(variant: GameVariant, data: dict[str, Any] | None) -> Gam
             )
         case GameVariant.AROUND_THE_CLOCK:
             return ClockOptions(zone=ClockZone(data["zone"]), skip=data["skip"])
+        case GameVariant.ELIMINATION:
+            return EliminationOptions(kill=EliminationKill(data["kill"]))
     return None
 
 

@@ -1,8 +1,9 @@
-// The settings of Cricket, Killer and Around the Clock; values match the backend enums.
+// The settings of Cricket, Killer, Around the Clock and Elimination; values match the backend enums.
 
 export type CricketScoring = 'standard' | 'cut_throat' | 'no_score';
 export type KillerZone = 'double' | 'triple' | 'any';
 export type ClockZone = 'any' | 'double' | 'triple';
+export type EliminationKill = 'any' | 'double';
 
 export const CRICKET_SCORINGS: readonly { label: string; value: CricketScoring }[] = [
   { label: 'Standard', value: 'standard' },
@@ -24,9 +25,14 @@ export const KILLER_ZONES: readonly { label: string; value: KillerZone }[] = [
 ];
 
 export const CLOCK_ZONES: readonly { label: string; value: ClockZone }[] = [
-  { label: $localize`:@@game.variant.anyRing:Ganze Zahl`, value: 'any' },
+  { label: 'Single', value: 'any' },
   { label: 'Double', value: 'double' },
   { label: 'Triple', value: 'triple' },
+];
+
+export const ELIMINATION_KILLS: readonly { label: string; value: EliminationKill }[] = [
+  { label: 'Single', value: 'any' },
+  { label: 'Double', value: 'double' },
 ];
 
 export const KILLER_LIVES: readonly number[] = [3, 5];

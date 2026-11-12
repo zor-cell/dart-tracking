@@ -19,6 +19,7 @@ export const GAME_RULES: Readonly<Record<GameVariant, GameRules>> = {
       $localize`:@@game.rules.elimination.1:Alle starten bei null und zählen hoch bis 301, 501 oder 701.`,
       $localize`:@@game.rules.elimination.2:Wer mit einem Dart genau auf den Punktestand eines anderen kommt, schickt diesen auf null zurück.`,
       $localize`:@@game.rules.elimination.3:Überwerfen ist ein Bust. Wer das Ziel genau trifft, gewinnt, bei Double Out mit einem Double.`,
+      $localize`:@@game.rules.elimination.4:Bei Double Kill schickt nur ein Double oder das Bullseye zurück.`,
     ],
   },
   cricket: {
@@ -42,7 +43,7 @@ export const GAME_RULES: Readonly<Record<GameVariant, GameRules>> = {
   around_the_clock: {
     rules: [
       $localize`:@@game.rules.clock.1:Triff 1 bis 20 der Reihe nach, dann das Bull. Wer zuerst durch ist, gewinnt.`,
-      $localize`:@@game.rules.clock.2:Bei „Ganze Zahl“ zählt jeder Ring, bei Double oder Triple nur dieser; am Bull dann nur das Bullseye.`,
+      $localize`:@@game.rules.clock.2:Bei Single zählt jeder Ring, bei Double oder Triple nur dieser; am Bull dann nur das Bullseye.`,
       $localize`:@@game.rules.clock.3:Mit Springen bringt ein Double zwei Felder weiter, ein Triple drei, aber nie am Bull vorbei.`,
     ],
   },

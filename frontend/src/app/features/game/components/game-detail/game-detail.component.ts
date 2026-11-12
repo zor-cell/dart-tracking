@@ -128,7 +128,8 @@ export class GameDetailComponent {
       const zone = optionLabel(CLOCK_ZONES, game.aroundTheClock.zone);
       return game.aroundTheClock.skip ? `${zone}, ${$localize`:@@game.detail.skip:mit Springen`}` : zone;
     }
-    return optionLabel(CHECKOUT_MODES, game.checkoutMode);
+    const checkout = optionLabel(CHECKOUT_MODES, game.checkoutMode);
+    return game.eliminationKill === 'double' ? `${checkout}, Double Kill` : checkout;
   });
 
   /** Each player's result in the variant's own terms, in seat order: a value and its unit. */

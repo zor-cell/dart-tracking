@@ -1,6 +1,7 @@
 import { GameMode } from '../models/game-mode';
 import { CheckoutMode } from '../models/checkout-mode';
 import { GameVariant } from '../models/game-variant';
+import { EliminationKill } from '../models/variant-options';
 import { ClockStateDto } from './clock-state.dto';
 import { CricketStateDto } from './cricket-state.dto';
 import { DartDto } from './dart.dto';
@@ -22,6 +23,8 @@ export interface GameStateDto {
   readonly mode: GameMode | null;
   readonly variant: GameVariant;
   readonly checkoutMode: CheckoutMode | null;
+  /** Which darts reset in elimination; null for the other variants. */
+  readonly eliminationKill: EliminationKill | null;
   readonly players: readonly PlayerDto[];
   readonly currentPlayerIndex: number;
   readonly turns: readonly TurnDto[];

@@ -100,6 +100,8 @@ async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) 
         raise HTTPException(status_code=422, detail="mode is required")
     if body.variant is GameVariant.KILLER and len(body.players) not in _KILLER_PLAYERS:
         raise HTTPException(status_code=422, detail="killer needs two to twenty players")
+    if body.variant is GameVariant.ELIMINATION and len(body.players) < 2:
+        raise HTTPException(status_code=422, detail="elimination needs at least two players")
     if user is None:
         await rate_limit.enforce(
             "anonymous-game",

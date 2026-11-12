@@ -175,7 +175,7 @@ def test_history_filters_and_paging(alice, session):
     bob = alice.add_player("Bob")
     finished = alice.new_game(me, bob)["id"]
     session.play(finished, WINNING_LEG[0], [MISS], WINNING_LEG[1])
-    elimination = alice.new_game(me, variant="elimination", mode=501)["id"]
+    elimination = alice.new_game(me, alice.add_player("Dave"), variant="elimination", mode=501)["id"]
     abandoned = alice.new_game(me, alice.add_player("Carol"), bob)["id"]
     session.play(abandoned, [S1, S1, S1], [S1, S1, S1], [S1, S1, S1])
     session.age_game(abandoned, hours=48)
@@ -196,10 +196,10 @@ def test_history_filters_and_paging(alice, session):
     assert ids(status="discarded") == {discarded}
     assert ids(status=["finished", "active"]) == {finished, elimination}
     assert ids(opponent=bob) == {finished, abandoned}
-    assert ids(players="duel") == {finished}
-    assert ids(players="solo") == {elimination}
+    assert ids(players="duel") == {finished, elimination}
+    assert ids(players="solo") == set()
     assert ids(players="group") == {abandoned}
-    assert ids(players=["solo", "group"]) == {elimination, abandoned}
+    assert ids(players=["solo", "group"]) == {abandoned}
     assert ids(mode=[301, 501], variant=["x01", "elimination"]) == {finished, elimination, abandoned}
     assert ids(until=(datetime.now(UTC) - timedelta(hours=1)).isoformat()) == {abandoned}
     assert ids(since=(datetime.now(UTC) - timedelta(hours=1)).isoformat()) == {finished, elimination}

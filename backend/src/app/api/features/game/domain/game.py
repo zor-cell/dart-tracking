@@ -14,6 +14,7 @@ from app.api.features.game.domain.checkout import Setup, checkout_route, setup_r
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.cricket import CricketOptions, cricket_progress
 from app.api.features.game.domain.dart import Dart
+from app.api.features.game.domain.elimination import EliminationKill, EliminationOptions, can_kill
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_options import GameOptions, GameProgress, default_options
 from app.api.features.game.domain.game_variant import GameVariant
@@ -140,9 +141,9 @@ class Game:
 
     @property
     def elimination(self) -> list[str] | None:
-        """A route that lands exactly on an opponent's score, resetting them, or
-        None when none fits the darts left. The easiest target wins: fewest
-        darts first, then the smallest gap."""
+        """A route that lands exactly on an opponent's score, resetting them, on a
+        double under a double kill; None when none fits the darts left. The easiest
+        target wins: fewest darts first, then the smallest gap."""
         if self.variant is not GameVariant.ELIMINATION or self.winner is not None:
             return None
 
@@ -155,8 +156,12 @@ class Game:
             gap = scores[player.id] - mine
             if player.id == self.current_player.id or gap <= 0:
                 continue
-            # No double needed: a reset is not a finish, so any field will do.
-            route = checkout_route(gap, self.darts_remaining, False)
+            route = checkout_route(
+                gap,
+                self.darts_remaining,
+                self._kill is EliminationKill.DOUBLE,
+                self.current_player.preferred_doubles,
+            )
             if route is None:
                 continue
             cost = (len(route), gap)
@@ -267,9 +272,14 @@ class Game:
             if not turn.busted:
                 for dart in turn.darts:
                     scores[turn.player_id] += dart.points
-                    if self.variant is GameVariant.ELIMINATION:
+                    if self.variant is GameVariant.ELIMINATION and can_kill(dart, self._kill):
                         self._eliminate(scores, turn.player_id)
             yield turn, scores
+
+    @property
+    def _kill(self) -> EliminationKill:
+        options = self.options
+        return options.kill if isinstance(options, EliminationOptions) else EliminationKill.ANY
 
     def _eliminate(self, scores: dict[int, int], thrower_id: int) -> None:
         """Reset every other player the thrower just drew level with. Zero is

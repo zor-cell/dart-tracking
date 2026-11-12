@@ -6,7 +6,7 @@ from datetime import datetime
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.game_mode import GameMode
-from app.api.features.game.domain.game_options import GameOptions
+from app.api.features.game.domain.game_options import GameOptions, default_options
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.killer import KillerOptions
 
@@ -29,7 +29,9 @@ class GameSetup:
         checkout_mode: CheckoutMode | None,
         options: GameOptions | None,
     ) -> "GameSetup":
-        """Killer's dealt numbers are left out: a new game deals them afresh."""
+        """Killer's dealt numbers are left out: a new game deals them afresh. Games
+        stored before their variant had settings count as its defaults."""
+        options = options or default_options(variant, 0)
         if isinstance(options, KillerOptions):
             options = replace(options, numbers=())
         return cls(variant, mode, checkout_mode, options)

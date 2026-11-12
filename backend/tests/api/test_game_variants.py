@@ -42,7 +42,7 @@ def test_a_variant_game_keeps_no_points_and_carries_its_own_standing(anon, varia
 
 def test_a_points_game_needs_a_mode(anon):
     assert create(anon, "Ann", variant="x01").status_code == 422
-    assert create(anon, "Ann", variant="elimination").status_code == 422
+    assert create(anon, "Ann", "Ben", variant="elimination").status_code == 422
 
 
 @pytest.mark.parametrize(
@@ -65,6 +65,28 @@ def test_killer_needs_a_number_for_everyone(anon):
 
     assert create(anon, *names, variant="killer").status_code == 422
     assert create(anon, *names[:20], variant="killer").status_code == 201
+
+
+def test_elimination_needs_someone_to_reset(anon):
+    assert create(anon, "Ann", variant="elimination", mode=501).status_code == 422
+    assert create(anon, "Ann", "Ben", variant="elimination", mode=501).status_code == 201
+
+
+def test_elimination_keeps_its_kill_rule(anon):
+    double = create(
+        anon, "Ann", "Ben", variant="elimination", mode=501, elimination={"kill": "double"}
+    )
+    default = create(anon, "Ann", "Ben", variant="elimination", mode=501)
+    x01 = create(anon, "Ann", "Ben", mode=501)
+
+    assert double.status_code == 201, double.text
+    game = double.json()
+    assert game["eliminationKill"] == "double"
+    assert anon.get(f"/games/{game['id']}").json() == game
+    assert default.json()["eliminationKill"] == "any"
+    assert x01.json()["eliminationKill"] is None
+    triple = create(anon, "Ann", "Ben", variant="elimination", mode=501, elimination={"kill": "triple"})
+    assert triple.status_code == 422
 
 
 def test_killer_deals_every_seat_its_own_number(anon):

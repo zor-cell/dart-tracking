@@ -38,7 +38,9 @@ def test_the_setup_played_most_comes_with_the_last_players(alice, session):
 
     assert found["variant"] == "cricket"
     assert found["cricket"] == {"scoring": "cut_throat"}
-    assert (found["mode"], found["killer"], found["aroundTheClock"]) == (None, None, None)
+    assert (found["mode"], found["killer"], found["aroundTheClock"], found["elimination"]) == (
+        None, None, None, None
+    )
     assert [seat["name"] for seat in found["players"]] == ["Bob", "Alice", "Cid"]
     assert [seat["playerId"] for seat in found["players"]][:2] == [bob, me]
 
@@ -87,3 +89,15 @@ def test_a_seat_in_someone_elses_game_maps_to_the_own_entry(alice, bob, session)
         {"playerId": alice.own_entry()["id"], "name": "Alice"},
     ]
     assert found["mode"] == 301
+
+
+def test_elimination_settings_come_along(alice, session):
+    me = alice.own_entry()["id"]
+    game = alice.new_game(
+        me, alice.add_player("Ben"), variant="elimination", mode=501, elimination={"kill": "double"}
+    )
+    session.play(game["id"], [MISS])
+
+    found = quick_start(alice)
+
+    assert (found["variant"], found["elimination"]) == ("elimination", {"kill": "double"})

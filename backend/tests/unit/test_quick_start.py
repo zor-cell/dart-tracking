@@ -2,6 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.cricket import CricketOptions
+from app.api.features.game.domain.elimination import EliminationKill, EliminationOptions
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.killer import KillerOptions, KillerZone
@@ -54,3 +55,19 @@ def test_killer_games_with_other_numbers_are_the_same_setup():
 
     assert first == second
     assert first != other
+
+
+def test_an_elimination_stored_without_settings_is_the_default_setup():
+    stored = GameSetup.of(GameVariant.ELIMINATION, GameMode.X01_501, CheckoutMode.DOUBLE_OUT, None)
+    new = GameSetup.of(
+        GameVariant.ELIMINATION, GameMode.X01_501, CheckoutMode.DOUBLE_OUT, EliminationOptions()
+    )
+    double = GameSetup.of(
+        GameVariant.ELIMINATION,
+        GameMode.X01_501,
+        CheckoutMode.DOUBLE_OUT,
+        EliminationOptions(kill=EliminationKill.DOUBLE),
+    )
+
+    assert stored == new
+    assert stored != double

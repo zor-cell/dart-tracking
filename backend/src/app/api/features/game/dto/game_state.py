@@ -3,6 +3,7 @@ from typing import Literal, Self
 from app.api.core.dto.base import CamelModel
 from app.api.features.game.domain.around_the_clock import ClockOptions, ClockProgress
 from app.api.features.game.domain.cricket import CricketOptions, CricketProgress
+from app.api.features.game.domain.elimination import EliminationKill, EliminationOptions
 from app.api.features.game.domain.killer import KillerOptions, KillerProgress
 from app.api.features.game.dto.around_the_clock import ClockStateDto
 from app.api.features.game.dto.cricket import CricketStateDto
@@ -33,6 +34,8 @@ class GameStateDto(CamelModel):
     mode: GameMode | None
     variant: GameVariant
     checkout_mode: CheckoutMode | None
+    # Which darts reset in elimination; null for the other variants.
+    elimination_kill: EliminationKill | None
     players: list[PlayerDto]
     current_player_index: int
     turns: list[TurnDto]
@@ -64,6 +67,7 @@ class GameStateDto(CamelModel):
             mode=game.mode,
             variant=game.variant,
             checkout_mode=game.checkout_mode,
+            elimination_kill=options.kill if isinstance(options, EliminationOptions) else None,
             players=[
                 PlayerDto.from_entity(
                     player,

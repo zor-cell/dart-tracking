@@ -106,6 +106,20 @@
               optionValue="value"
             />
           </div>
+
+          @if (variant() === 'elimination') {
+            <div class="setup__field">
+              <label class="setup__label" for="eliminationKill">Kill</label>
+              <p-selectbutton
+                inputId="eliminationKill"
+                formControlName="eliminationKill"
+                [allowEmpty]="false"
+                [options]="eliminationKillOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
+          }
         }
       }
 
@@ -264,7 +278,7 @@
               </li>
             } @else {
               <li class="list-group__item game game--soon">
-                <span class="list-group__name game__pick" i18n="@@game.new.weaknessTraining">Schwächen­training</span>
+                <span class="list-group__name game__pick" i18n="@@game.new.weaknessTraining">Persönliches Training</span>
                 <p-tag value="bald" i18n-value="@@game.new.soon" severity="secondary" />
               </li>
             }
