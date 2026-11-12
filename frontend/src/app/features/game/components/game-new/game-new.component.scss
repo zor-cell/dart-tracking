@@ -57,137 +57,89 @@
   outline: none;
 }
 
-// One tap to the setup played most, the play button on the right.
-.quick {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.75rem 0.75rem 0.75rem 1rem;
-  border: none;
-  border-radius: 0.75rem;
-  background: var(--p-content-hover-background);
-  color: var(--p-text-color);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-
-  &:disabled {
-    cursor: progress;
-    opacity: 0.6;
-  }
-}
-
-.quick__text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.quick__kicker {
-  color: var(--p-text-muted-color);
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.quick__title {
-  font-weight: 600;
-}
-
-.quick__players {
-  color: var(--p-text-muted-color);
-  font-size: 0.875rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
+// The play button beside the quick start, filled like a media player's.
 .quick__play {
   flex: none;
   display: grid;
   place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 50%;
   background: var(--p-primary-color);
   color: var(--p-primary-contrast-color);
-  font-size: 0.875rem;
+  font-size: 0.8rem;
 }
 
-// The games of the first step, two to a row.
-.tiles {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+.games {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.tile {
+.game {
   position: relative;
-  border: 1px solid var(--p-content-border-color);
-  border-radius: 0.75rem;
+  isolation: isolate;
+  gap: 0.25rem;
+  padding: 0 1rem 0 0;
 }
 
-.tile--soon {
+.game--soon {
+  gap: 0.5rem;
   color: var(--p-text-muted-color);
 }
 
-.tile__pick {
+.game__pick {
+  min-width: 0;
+  align-self: stretch;
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  width: 100%;
-  height: 100%;
-  min-height: 6rem;
-  padding: 0.75rem 2.25rem 0.75rem 0.875rem;
+  align-items: center;
+  padding: 0.6rem 0.25rem 0.6rem 1rem;
   border: none;
   border-radius: inherit;
   background: none;
   color: inherit;
-  font: inherit;
+  font-family: inherit;
+  font-size: inherit;
   text-align: left;
 }
 
-button.tile__pick {
+// The whole row picks the game; the info button sits above it.
+button.game__pick {
   cursor: pointer;
 
-  &:hover {
+  &::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  @media (hover: hover) {
+    &:hover::after {
+      background: var(--p-content-hover-background);
+    }
+  }
+
+  &:active::after {
     background: var(--p-content-hover-background);
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  &:focus-visible::after {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: -2px;
   }
 }
 
-.tile__kind {
-  color: var(--p-text-muted-color);
-  font-size: 0.6875rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+.game__info {
+  position: relative;
+  z-index: 1;
 }
 
-.tile__name {
-  font-weight: 600;
-  hyphens: manual;
-}
-
-.tile__summary {
-  color: var(--p-text-muted-color);
-  font-size: 0.8125rem;
-}
-
-.tile__corner {
-  position: absolute;
-  top: 0.25rem;
-  right: 0.25rem;
-}
-
-.tile--soon .tile__pick {
-  padding-right: 3rem;
-}
-
-.tile--soon .tile__corner {
-  top: 0.625rem;
-  right: 0.5rem;
+.game__chevron {
+  margin-left: auto;
 }

@@ -36,7 +36,6 @@ import { SettingsService } from '../../../settings/services/settings.service';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { CHECKOUT_MODES, CheckoutMode } from '../../models/checkout-mode';
 import { GAME_VARIANTS, GameVariant, variantLabel } from '../../models/game-variant';
-import { GAME_RULES } from '../../models/game-rules';
 import {
   CLOCK_ZONES,
   CRICKET_SCORINGS,
@@ -98,9 +97,7 @@ export class GameNewComponent {
   private readonly location = inject(Location);
 
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
-  protected readonly tiles = TILES;
-  protected readonly trainingLabel = TRAINING;
-  protected readonly rules = GAME_RULES;
+  protected readonly sections = SECTIONS;
   protected readonly variantName = variantLabel;
   protected readonly checkoutModeOptions = [...CHECKOUT_MODES];
   protected readonly cricketScoringOptions = [...CRICKET_SCORINGS];
@@ -146,13 +143,13 @@ export class GameNewComponent {
     this.form.controls.players.valueChanges.pipe(map(() => [...this.seats.controls])),
     { initialValue: [] },
   );
-  /** The game picked in the first step, kept in the URL so the back button returns to the tiles. */
+  /** The game picked in the first step, kept in the URL so the back button returns to the list. */
   protected readonly chosen = toSignal(
     this.route.queryParamMap.pipe(map((params) => parseVariant(params.get('game')))),
     { initialValue: parseVariant(this.route.snapshot.queryParamMap.get('game')) },
   );
   private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
-  /** Whether the tiles led here, so changing the game can step back instead of adding history. */
+  /** Whether the list led here, so changing the game can step back instead of adding history. */
   private pickedHere = false;
 
   /** The setup played most, offered for one tap: undefined while it loads, null for none. */
@@ -403,21 +400,20 @@ export class GameNewComponent {
   }
 }
 
+const STANDARD = $localize`:@@game.category.standard:Standard`;
 const GROUP = $localize`:@@game.category.group:Gruppe`;
 const TRAINING = $localize`:@@game.category.training:Training`;
 
-/** A game on the first step's tiles; group and training games say so above their name. */
-interface Tile {
-  variant: GameVariant;
-  kind?: string;
+/** The games of the first step under their kind; null is the coming weakness training. */
+interface GameSection {
+  kind: string;
+  games: readonly (GameVariant | null)[];
 }
 
-const TILES: readonly Tile[] = [
-  { variant: 'x01' },
-  { variant: 'cricket' },
-  { variant: 'killer', kind: GROUP },
-  { variant: 'elimination', kind: GROUP },
-  { variant: 'around_the_clock', kind: TRAINING },
+const SECTIONS: readonly GameSection[] = [
+  { kind: STANDARD, games: ['x01', 'cricket'] },
+  { kind: TRAINING, games: ['around_the_clock', null] },
+  { kind: GROUP, games: ['killer', 'elimination'] },
 ];
 
 function parseVariant(value: string | null): GameVariant | null {

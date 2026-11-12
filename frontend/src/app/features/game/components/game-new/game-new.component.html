@@ -215,56 +215,63 @@
       <h1 #heading class="view__title" tabindex="-1" i18n="@@start.newGame">Neues Spiel</h1>
     </header>
 
-    @if (quickStart() === undefined) {
-      <p-skeleton height="4.5rem" borderRadius="0.75rem" />
-    } @else if (quickStart(); as quick) {
-      <button
-        type="button"
-        class="quick"
-        [attr.aria-label]="quickLabel()"
-        [disabled]="starting()"
-        (click)="startQuick(quick)"
-      >
-        <span class="quick__text">
-          <span class="quick__kicker" i18n="@@game.new.quickStart">Schnellstart</span>
-          <span class="quick__title">{{ quickTitle() }}</span>
-          <span class="quick__players">{{ quickPlayers() }}</span>
-        </span>
-        <span class="quick__play" aria-hidden="true"><i class="pi pi-play"></i></span>
-      </button>
+    @if (quickStart() !== null) {
+      <section class="list-group" aria-labelledby="quick-start">
+        <h2 class="list-group__title" id="quick-start" i18n="@@game.new.quickStart">Schnellstart</h2>
+        @if (quickStart(); as quick) {
+          <div class="list-group__items">
+            <button
+              type="button"
+              class="list-group__item"
+              [attr.aria-label]="quickLabel()"
+              [disabled]="starting()"
+              (click)="startQuick(quick)"
+            >
+              <span class="list-group__body">
+                <span class="list-group__name">{{ quickTitle() }}</span>
+                <span class="list-group__hint">{{ quickPlayers() }}</span>
+              </span>
+              <span class="quick__play" aria-hidden="true"><i class="pi pi-play"></i></span>
+            </button>
+          </div>
+        } @else {
+          <p-skeleton height="3.75rem" borderRadius="0.75rem" />
+        }
+      </section>
     }
 
-    <ul class="tiles" aria-label="Spiel" i18n-aria-label="@@game.new.game">
-      @for (tile of tiles; track tile.variant) {
-        <li class="tile">
-          <button type="button" class="tile__pick" (click)="pickVariant(tile.variant)">
-            @if (tile.kind) {
-              <span class="tile__kind">{{ tile.kind }}</span>
+    @for (section of sections; track section.kind; let index = $index) {
+      <section class="list-group" [attr.aria-labelledby]="'games-' + index">
+        <h2 class="list-group__title" [id]="'games-' + index">{{ section.kind }}</h2>
+        <ul class="list-group__items games">
+          @for (variant of section.games; track variant) {
+            @if (variant) {
+              <li class="list-group__item game">
+                <button type="button" class="list-group__name game__pick" (click)="pickVariant(variant)">
+                  {{ variantName(variant) }}
+                </button>
+                <p-button
+                  class="game__info"
+                  icon="pi pi-info-circle"
+                  severity="secondary"
+                  size="small"
+                  [text]="true"
+                  [rounded]="true"
+                  [ariaLabel]="rulesLabel(variant)"
+                  (onClick)="openRules(variant)"
+                />
+                <i class="list-group__chevron game__chevron pi pi-chevron-right" aria-hidden="true"></i>
+              </li>
+            } @else {
+              <li class="list-group__item game game--soon">
+                <span class="list-group__name game__pick" i18n="@@game.new.weaknessTraining">Schwächen­training</span>
+                <p-tag value="bald" i18n-value="@@game.new.soon" severity="secondary" />
+              </li>
             }
-            <span class="tile__name">{{ variantName(tile.variant) }}</span>
-            <span class="tile__summary">{{ rules[tile.variant].summary }}</span>
-          </button>
-          <p-button
-            class="tile__corner"
-            icon="pi pi-info-circle"
-            severity="secondary"
-            size="small"
-            [text]="true"
-            [rounded]="true"
-            [ariaLabel]="rulesLabel(tile.variant)"
-            (onClick)="openRules(tile.variant)"
-          />
-        </li>
-      }
-      <li class="tile tile--soon">
-        <span class="tile__pick">
-          <span class="tile__kind">{{ trainingLabel }}</span>
-          <span class="tile__name" i18n="@@game.new.weaknessTraining">Schwächen­training</span>
-          <span class="tile__summary" i18n="@@game.new.weaknessTrainingSummary">Übt, was dir am schwersten fällt</span>
-        </span>
-        <p-tag class="tile__corner" value="bald" i18n-value="@@game.new.soon" severity="secondary" />
-      </li>
-    </ul>
+          }
+        </ul>
+      </section>
+    }
   }
 
   <app-game-rules [variant]="rulesVariant()" [(visible)]="rulesOpen" />

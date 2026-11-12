@@ -28,6 +28,7 @@ body {
   /* Prevent the whole page from bouncing/scrolling on mobile; scrolling
      happens inside the shell content area instead. */
   overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Quick taps on controls and boards, such as the keypad or the replay's buttons, never
@@ -324,6 +325,17 @@ p-popover {
   & + & {
     border-top: 1px solid var(--p-content-border-color);
   }
+
+  /* Rounded like the box, so a focus ring follows its corners. */
+  &:first-child {
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+  }
+
+  &:last-child {
+    border-bottom-left-radius: inherit;
+    border-bottom-right-radius: inherit;
+  }
 }
 
 /* A row that runs an action rather than opening a page. */
@@ -343,7 +355,13 @@ button.list-group__item {
 
 a.list-group__item,
 button.list-group__item:enabled {
-  &:hover {
+  @media (hover: hover) {
+    &:hover {
+      background: var(--p-content-hover-background);
+    }
+  }
+
+  &:active {
     background: var(--p-content-hover-background);
   }
 
@@ -534,6 +552,17 @@ button.list-group__item:enabled {
 
 /* Invalid fields turn red once left as well as once edited; the placeholder stays grey.
    `html` outranks PrimeNG's equally specific rules, which are injected later. */
+/* On touch, a tapped text button keeps no hover and presses as softly as a list row. */
+@media (hover: none) {
+  html .p-button.p-button-text:not(:disabled):hover {
+    background: transparent;
+  }
+
+  html .p-button.p-button-text:not(:disabled):active {
+    background: var(--p-content-hover-background);
+  }
+}
+
 html .p-inputtext.ng-invalid.ng-touched,
 html p-autocomplete.ng-invalid.ng-touched .p-inputtext {
   border-color: var(--p-inputtext-invalid-border-color);
@@ -562,7 +591,6 @@ html p-autocomplete.ng-invalid.ng-dirty .p-autocomplete-input::placeholder {
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 
   &:hover {
     text-decoration: underline;

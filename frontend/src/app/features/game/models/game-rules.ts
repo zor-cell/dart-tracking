@@ -1,14 +1,12 @@
 import { GameVariant } from './game-variant';
 
-/** A variant explained: one line for the list, the rules for the info dialog. */
+/** A variant explained for the info dialog. */
 export interface GameRules {
-  readonly summary: string;
   readonly rules: readonly string[];
 }
 
 export const GAME_RULES: Readonly<Record<GameVariant, GameRules>> = {
   x01: {
-    summary: $localize`:@@game.rules.x01.summary:Von 301, 501 oder 701 auf genau null`,
     rules: [
       $localize`:@@game.rules.x01.1:Jeder startet mit 301, 501 oder 701 Punkten und zieht ab, was er wirft.`,
       $localize`:@@game.rules.x01.2:Wer genau auf null kommt, gewinnt.`,
@@ -17,7 +15,6 @@ export const GAME_RULES: Readonly<Record<GameVariant, GameRules>> = {
     ],
   },
   elimination: {
-    summary: $localize`:@@game.rules.elimination.summary:Hochzählen, Gleichstand schickt zurück`,
     rules: [
       $localize`:@@game.rules.elimination.1:Alle starten bei null und zählen hoch bis 301, 501 oder 701.`,
       $localize`:@@game.rules.elimination.2:Wer mit einem Dart genau auf den Punktestand eines anderen kommt, schickt diesen auf null zurück.`,
@@ -25,7 +22,6 @@ export const GAME_RULES: Readonly<Record<GameVariant, GameRules>> = {
     ],
   },
   cricket: {
-    summary: $localize`:@@game.rules.cricket.summary:15 bis 20 und Bull schließen`,
     rules: [
       $localize`:@@game.rules.cricket.1:Gespielt wird auf 20 bis 15 und Bull. Single zählt 1 Mark, Double 2, Triple 3; der äußere Bull 1, das Bullseye 2.`,
       $localize`:@@game.rules.cricket.2:Mit 3 Marks ist eine Zahl zu. Weitere Marks bringen ihren Wert als Punkte, solange ein Gegner sie noch offen hat.`,
@@ -35,7 +31,6 @@ export const GAME_RULES: Readonly<Record<GameVariant, GameRules>> = {
     ],
   },
   killer: {
-    summary: $localize`:@@game.rules.killer.summary:Leben nehmen, der Letzte gewinnt`,
     rules: [
       $localize`:@@game.rules.killer.1:Jeder bekommt eine eigene Zahl und 3 oder 5 Leben.`,
       $localize`:@@game.rules.killer.2:Triffst du dein eigenes Feld, wirst du Killer.`,
@@ -45,7 +40,6 @@ export const GAME_RULES: Readonly<Record<GameVariant, GameRules>> = {
     ],
   },
   around_the_clock: {
-    summary: $localize`:@@game.rules.clock.summary:1 bis 20, dann Bull`,
     rules: [
       $localize`:@@game.rules.clock.1:Triff 1 bis 20 der Reihe nach, dann das Bull. Wer zuerst durch ist, gewinnt.`,
       $localize`:@@game.rules.clock.2:Bei „Ganze Zahl“ zählt jeder Ring, bei Double oder Triple nur dieser; am Bull dann nur das Bullseye.`,
