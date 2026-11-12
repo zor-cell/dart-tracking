@@ -352,6 +352,7 @@
     "game.new.players": "Players",
     "game.new.seatPlaceholder": "Pick or type a name",
     "game.new.removeSeat": "Remove player {$INTERPOLATION}",
+    "game.new.shuffle": "Shuffle",
     "game.new.start": "Start game",
     "game.new.nameRequired": "Please enter a name.",
     "game.new.seatName": "Player {$number}",

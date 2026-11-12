@@ -37,6 +37,18 @@
   padding-left: calc(2.75rem + 0.5rem);
 }
 
+.setup__actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+// Sized like the PrimeIcons font beside it; turned by code.
+.setup__shuffle-icon {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
+
 .setup__self {
   margin-left: 0.5rem;
 }

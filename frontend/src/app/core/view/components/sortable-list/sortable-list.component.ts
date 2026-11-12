@@ -11,6 +11,7 @@ import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   Injector,
   TemplateRef,
   afterNextRender,
@@ -46,6 +47,7 @@ export interface SortableMove {
 export class SortableListComponent<T> {
   private readonly document = inject(DOCUMENT);
   private readonly injector = inject(Injector);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly items = input.required<readonly T[]>();
   /** What a row is called: the dragged preview shows it, the grip's label names it. */
@@ -66,6 +68,30 @@ export class SortableListComponent<T> {
     if (event.previousIndex !== event.currentIndex) {
       this.moved.emit({ from: event.previousIndex, to: event.currentIndex });
     }
+  }
+
+  /** Slides the rows from where they are now to where the next render puts them. */
+  animateReorder(): void {
+    if (this.document.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+    const rows = this.host.nativeElement.querySelectorAll<HTMLElement>(':scope > .sortable > .sortable__row');
+    const before = new Map([...rows].map((row) => [row, row.getBoundingClientRect().top]));
+    afterNextRender(
+      () => {
+        for (const [row, top] of before) {
+          row.getAnimations().forEach((animation) => animation.cancel());
+          const shift = top - row.getBoundingClientRect().top;
+          if (shift !== 0) {
+            row.animate([{ transform: `translateY(${shift}px)` }, { transform: 'none' }], {
+              duration: 400,
+              easing: 'cubic-bezier(0.2, 0, 0, 1)',
+            });
+          }
+        }
+      },
+      { injector: this.injector },
+    );
   }
 
   /** Closes the on-screen keyboard, so the viewport does not resize mid-drag. */

@@ -193,15 +193,36 @@
             </ng-template>
           </app-sortable-list>
           <app-field-error [control]="form" [messages]="formMessages" />
-          <p-button
-            type="button"
-            label="Spieler hinzufügen"
-            i18n-label="@@player.create.title"
-            icon="pi pi-plus"
-            severity="secondary"
-            [text]="true"
-            (onClick)="addPlayer()"
-          />
+          <div class="setup__actions">
+            <p-button
+              type="button"
+              label="Spieler hinzufügen"
+              i18n-label="@@player.create.title"
+              icon="pi pi-plus"
+              severity="secondary"
+              [text]="true"
+              (onClick)="addPlayer()"
+            />
+            <p-button
+              type="button"
+              label="Mischen"
+              i18n-label="@@game.new.shuffle"
+              severity="secondary"
+              [text]="true"
+              [disabled]="seats.length < 2"
+              (onClick)="shuffleSeats()"
+            >
+              <ng-template #icon>
+                <!-- PrimeIcons' raw-svg/sort-alt.svg, cropped to the box the font glyph fills. -->
+                <svg #shuffleIcon class="setup__shuffle-icon" viewBox="4 4 16 16" aria-hidden="true">
+                  <path d="M10.5,8.25c-.19,0-.38-.07-.53-.22l-1.97-1.97-1.97,1.97c-.29,.29-.77,.29-1.06,0s-.29-.77,0-1.06l2.5-2.5c.29-.29,.77-.29,1.06,0l2.5,2.5c.29,.29,.29,.77,0,1.06-.15,.15-.34,.22-.53,.22Z" />
+                  <path d="M8,19.75c-.41,0-.75-.34-.75-.75V5c0-.41,.34-.75,.75-.75s.75,.34,.75,.75v14c0,.41-.34,.75-.75,.75Z" />
+                  <path d="M16,19.75c-.19,0-.38-.07-.53-.22l-2.5-2.5c-.29-.29-.29-.77,0-1.06s.77-.29,1.06,0l1.97,1.97,1.97-1.97c.29-.29,.77-.29,1.06,0s.29,.77,0,1.06l-2.5,2.5c-.15,.15-.34,.22-.53,.22Z" />
+                  <path d="M16,19.75c-.41,0-.75-.34-.75-.75V5c0-.41,.34-.75,.75-.75s.75,.34,.75,.75v14c0,.41-.34,.75-.75,.75Z" />
+                </svg>
+              </ng-template>
+            </p-button>
+          </div>
         } @else {
           <!-- Placeholder seats while the address book answers, so the form does not jump. -->
           @for (row of skeletonSeats; track $index) {

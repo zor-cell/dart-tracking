@@ -153,6 +153,8 @@ export class GameNewComponent {
     { initialValue: parseVariant(this.route.snapshot.queryParamMap.get('game')) },
   );
   private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
+  private readonly seatList = viewChild(SortableListComponent);
+  private readonly shuffleIcon = viewChild<ElementRef<SVGElement>>('shuffleIcon');
   /** Whether the list led here, so changing the game can step back instead of adding history. */
   private pickedHere = false;
   /** Whether changes are kept as the draft: from the restore on, never for a rematch. */
@@ -343,6 +345,21 @@ export class GameNewComponent {
       });
   }
 
+  /** Puts the seats in a random order, turning the icon and sliding the rows there. */
+  protected shuffleSeats(): void {
+    const order = shuffled(this.seats.controls);
+    this.shuffleIcon()?.nativeElement.animate(
+      [{ transform: 'rotate(0)' }, { transform: 'rotate(180deg)' }],
+      { duration: 500, easing: 'cubic-bezier(0.2, 0, 0, 1)' },
+    );
+    this.seatList()?.animateReorder();
+    this.seats.clear({ emitEvent: false });
+    for (const seat of order) {
+      this.seats.push(seat, { emitEvent: false });
+    }
+    this.seats.updateValueAndValidity();
+  }
+
   protected moveSeat({ from, to }: SortableMove): void {
     const seat = this.seats.at(from);
     this.seats.removeAt(from);
@@ -501,6 +518,16 @@ function groupSeats(form: AbstractControl): ValidationErrors | null {
   const variant = form.get('variant')?.value as GameVariant | undefined;
   const seats = (form.get('players') as FormArray | null)?.length ?? 0;
   return (variant === 'killer' || variant === 'elimination') && seats < 2 ? { groupSeats: true } : null;
+}
+
+/** A copy of the items in random order (Fisher–Yates). */
+function shuffled<T>(items: readonly T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
 }
 
 /** The settings of a finished game, for its rematch; what it did not use stays as is. */
