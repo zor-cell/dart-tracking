@@ -81,10 +81,9 @@ export class TrendStatisticsComponent {
       const value = new Map(points.map((point) => [point.gameId, trendValue(point, metric)]));
       const rolling = rollingTrend(points, metric);
       const trend = new Map(points.map((point, index) => [point.gameId, rolling[index]]));
-      const prefix = name ? `${name} · ` : '';
       return [
         {
-          label: `${prefix}${$localize`:@@common.nav.game:Spiel`}`,
+          label: withName($localize`:@@common.nav.game:Spiel`, name),
           data: ids.map((id) => value.get(id) ?? null),
           hidden: hidden.has('games'),
           showLine: false,
@@ -94,7 +93,7 @@ export class TrendStatisticsComponent {
           pointBorderWidth: 0,
         },
         {
-          label: `${prefix}${$localize`:@@stats.tab.trend:Trend`}`,
+          label: withName($localize`:@@stats.tab.trend:Trend`, name),
           data: ids.map((id) => trend.get(id) ?? null),
           borderColor: color,
           backgroundColor: color,
@@ -182,4 +181,9 @@ export class TrendStatisticsComponent {
       ? own
       : $localize`:@@stats.trend.theirs:${own}:own:; ${this.compareName()}:name: zuletzt ${theirs.toFixed(1)}:value:${this.picked().unit}:unit:`;
   });
+}
+
+/** A series label, with the player's name in brackets when players are compared. */
+function withName(label: string, name: string | null): string {
+  return name ? `${label} (${name})` : label;
 }

@@ -51,7 +51,7 @@ export class DetectionService {
    */
   readonly roundDarts = signal<readonly RoundDartOverlay[]>([]);
 
-  /** Transient hit ("T20 · 60") or failure hint, shown briefly in the badge. */
+  /** Transient hit ("T20 (60)") or failure hint, shown briefly in the badge. */
   readonly feedbackLabel = signal<string | null>(null);
 
   /** Whether a tracked throw is still taken, as a booked or as a shadow dart. */
@@ -158,7 +158,7 @@ function formatHit(segment: string | null, points: number | null): string {
   if (!segment) {
     return 'Treffer';
   }
-  return points === null ? segment : `${segment} · ${points}`;
+  return points === null ? segment : `${segment} (${points})`;
 }
 
 function hintFor(failure: DetectionFailureDto | null): string {

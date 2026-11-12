@@ -139,7 +139,7 @@ export class DoubleBoardComponent {
     const rate = Math.round((hits / Math.max(1, located)) * 100);
     return {
       name: double.name,
-      detail: located === 0 ? $localize`:@@stats.doubles.noneDetected:keine Darts erkannt` : `${hits} / ${located} · ${rate} %`,
+      detail: located === 0 ? $localize`:@@stats.doubles.noneDetected:keine Darts erkannt` : `${hits} / ${located} (${rate} %)`,
     };
   });
 

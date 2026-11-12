@@ -149,7 +149,7 @@ export class TipHeatmapComponent {
     const darts = dartCount(field.count);
     return {
       name: field.name,
-      detail: field.count === 0 ? $localize`:@@game.heatmap.noHits:keine Treffer` : `${darts} · ${share} %`,
+      detail: field.count === 0 ? $localize`:@@game.heatmap.noHits:keine Treffer` : `${darts} (${share} %)`,
     };
   });
 

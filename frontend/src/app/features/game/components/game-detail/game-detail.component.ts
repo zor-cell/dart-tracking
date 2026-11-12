@@ -122,11 +122,11 @@ export class GameDetailComponent {
     }
     if (game.killer !== null) {
       const lives = $localize`:@@game.detail.lives:${game.killer.lives}:count: Leben`;
-      return `${lives} · ${optionLabel(KILLER_ZONES, game.killer.zone)}`;
+      return `${lives}, ${optionLabel(KILLER_ZONES, game.killer.zone)}`;
     }
     if (game.aroundTheClock !== null) {
       const zone = optionLabel(CLOCK_ZONES, game.aroundTheClock.zone);
-      return game.aroundTheClock.skip ? `${zone} · ${$localize`:@@game.detail.skip:mit Springen`}` : zone;
+      return game.aroundTheClock.skip ? `${zone}, ${$localize`:@@game.detail.skip:mit Springen`}` : zone;
     }
     return optionLabel(CHECKOUT_MODES, game.checkoutMode);
   });

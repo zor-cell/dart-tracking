@@ -101,6 +101,8 @@ heatmaps.
 - **Dialogs:** destructive actions ask through `ConfirmService.ask()`, other actions worth
   a confirmation through `ask(…, safe = true)`; the one `p-confirmdialog` lives in the
   app shell. Other dialogs use `DIALOG_STYLE`.
+- **Joining labels:** a space, a comma or brackets ("501 Double Out", "Runde 3, Dart 2",
+  "T20 (60)"), never a middle dot.
 - **Colours:** theme tokens (`var(--p-…)`) without hex fallbacks. Hardcoded colours
   only where the theme has none, such as the board or overlays on the camera picture.
 - **Bundle budget:** the limits in `angular.json` are a rough guard. Raise them when a

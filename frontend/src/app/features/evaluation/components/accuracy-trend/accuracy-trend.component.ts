@@ -115,7 +115,7 @@ export class AccuracyTrendComponent {
             title: (items) => {
               const game = games[items[0].dataIndex];
               const versions = game.trackerVersions.join(', ') || '–';
-              return `${items[0].label} · ${game.mode ?? '–'} · Tracker ${versions}`;
+              return `${items[0].label}, ${game.mode ?? '–'}, Tracker ${versions}`;
             },
             label: (item) => {
               const rate = formatNumber(item.raw as number, this.locale, '1.0-0');

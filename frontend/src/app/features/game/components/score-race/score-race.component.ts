@@ -41,11 +41,11 @@ function pointOf(context: ScriptableContext<'line'>): RacePoint {
   return (context.raw ?? { x: 0, y: 0 }) as RacePoint;
 }
 
-/** "Round 3 · Dart 2" for a slot index past the start. */
+/** "Round 3, Dart 2" for a slot index past the start. */
 function slotTitle(index: number): string {
   const round = Math.ceil(index / DARTS_PER_TURN);
   const dart = ((index - 1) % DARTS_PER_TURN) + 1;
-  return $localize`:@@game.race.slot:Runde ${round}:round: · Dart ${dart}:dart:`;
+  return $localize`:@@game.race.slot:Runde ${round}:round:, Dart ${dart}:dart:`;
 }
 
 function slotLabel(name: string, point: RacePoint): string {

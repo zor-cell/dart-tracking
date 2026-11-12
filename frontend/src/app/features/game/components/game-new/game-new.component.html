@@ -238,8 +238,11 @@
       @for (tile of tiles; track tile.variant) {
         <li class="tile">
           <button type="button" class="tile__pick" (click)="pickVariant(tile.variant)">
+            @if (tile.kind) {
+              <span class="tile__kind">{{ tile.kind }}</span>
+            }
             <span class="tile__name">{{ variantName(tile.variant) }}</span>
-            <span class="tile__summary">{{ tileSummary(tile) }}</span>
+            <span class="tile__summary">{{ rules[tile.variant].summary }}</span>
           </button>
           <p-button
             class="tile__corner"
@@ -255,10 +258,9 @@
       }
       <li class="tile tile--soon">
         <span class="tile__pick">
+          <span class="tile__kind">{{ trainingLabel }}</span>
           <span class="tile__name" i18n="@@game.new.weaknessTraining">Schwächen­training</span>
-          <span class="tile__summary">
-            {{ trainingLabel }} · <ng-container i18n="@@game.new.weaknessTrainingSummary">Übt, was dir am schwersten fällt</ng-container>
-          </span>
+          <span class="tile__summary" i18n="@@game.new.weaknessTrainingSummary">Übt, was dir am schwersten fällt</span>
         </span>
         <p-tag class="tile__corner" value="bald" i18n-value="@@game.new.soon" severity="secondary" />
       </li>

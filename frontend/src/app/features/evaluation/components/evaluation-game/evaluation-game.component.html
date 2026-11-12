@@ -3,7 +3,7 @@
     <app-back-link label="Auswertung" i18n-label="@@auth.account.evaluation" link="/account/evaluation" />
     @if (report(); as report) {
       <h1 class="view__title">
-        {{ report.game.createdAt | date: shortDateTime }} · {{ report.game.mode ?? '–' }}
+        {{ report.game.createdAt | date: shortDateTime }} ({{ report.game.mode ?? '–' }})
       </h1>
       @if (report.game.evaluationEnabled) {
         <p class="view__subtitle">{{ testRun }}</p>

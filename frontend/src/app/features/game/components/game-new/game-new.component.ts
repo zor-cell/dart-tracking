@@ -236,9 +236,6 @@ export class GameNewComponent {
     });
   }
 
-  protected readonly tileSummary = (tile: Tile): string =>
-    tile.kind ? `${tile.kind} · ${this.rules[tile.variant].summary}` : this.rules[tile.variant].summary;
-
   protected readonly rulesLabel = (variant: GameVariant): string =>
     $localize`:@@game.new.rulesOf:Regeln für ${variantLabel(variant)}:game:`;
 
@@ -409,7 +406,7 @@ export class GameNewComponent {
 const GROUP = $localize`:@@game.category.group:Gruppe`;
 const TRAINING = $localize`:@@game.category.training:Training`;
 
-/** A game on the first step's tiles; group and training games say so beside their line. */
+/** A game on the first step's tiles; group and training games say so above their name. */
 interface Tile {
   variant: GameVariant;
   kind?: string;
@@ -432,17 +429,17 @@ function setupTitle(quick: QuickStartDto): string {
   const checkout = optionLabel(CHECKOUT_MODES, quick.checkoutMode);
   switch (quick.variant) {
     case 'x01':
-      return `${quick.mode} · ${checkout}`;
+      return `${quick.mode} ${checkout}`;
     case 'elimination':
-      return `Elimination ${quick.mode} · ${checkout}`;
+      return `Elimination ${quick.mode} ${checkout}`;
     case 'cricket': {
       const scoring = quick.cricket?.scoring ?? 'standard';
-      return scoring === 'standard' ? 'Cricket' : `Cricket · ${scoringLabel(scoring)}`;
+      return scoring === 'standard' ? 'Cricket' : `Cricket ${scoringLabel(scoring)}`;
     }
     case 'killer': {
       const lives = $localize`:@@game.detail.lives:${quick.killer?.lives ?? 3}:count: Leben`;
       const zone = quick.killer?.zone ?? 'double';
-      return zone === 'double' ? `Killer · ${lives}` : `Killer · ${lives} · ${optionLabel(KILLER_ZONES, zone)}`;
+      return zone === 'double' ? `Killer ${lives}` : `Killer ${lives}, ${optionLabel(KILLER_ZONES, zone)}`;
     }
     case 'around_the_clock': {
       const zone = quick.aroundTheClock?.zone ?? 'any';
@@ -453,7 +450,7 @@ function setupTitle(quick: QuickStartDto): string {
       if (quick.aroundTheClock?.skip) {
         parts.push($localize`:@@game.detail.skip:mit Springen`);
       }
-      return parts.join(' · ');
+      return parts.join(' ');
     }
   }
 }

@@ -467,7 +467,7 @@
     "game.distribution.rounds": "Rounds {$rounds}: {$points}",
     "game.distribution.averageSuffix": ", average {$value}",
     "game.distribution.label": "Points of every visit per player. {$rows}",
-    "game.race.slot": "Round {$round} · Dart {$dart}",
+    "game.race.slot": "Round {$round}, Dart {$dart}",
     "game.race.round": "Round",
     "game.race.label": "Progress over {$rounds} rounds. Score: {$standings}",
     "game.heatmap.tipsLabel": "Dartboard with {$count} detected darts",

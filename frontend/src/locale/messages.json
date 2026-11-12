@@ -453,7 +453,7 @@
     "game.distribution.rounds": "Runden {$rounds}: {$points}",
     "game.distribution.averageSuffix": ", Durchschnitt {$value}",
     "game.distribution.label": "Punkte jedes Visits pro Spieler. {$rows}",
-    "game.race.slot": "Runde {$round} · Dart {$dart}",
+    "game.race.slot": "Runde {$round}, Dart {$dart}",
     "game.race.round": "Runde",
     "game.race.label": "Verlauf über {$rounds} Runden. Stand: {$standings}",
     "game.scoreboard": "Spielstand, horizontal scrollbar",
