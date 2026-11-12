@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { DOCUMENT, formatNumber } from '@angular/common';
 import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
-import {RouterLink} from '@angular/router';
+import {Router, RouterLink} from '@angular/router';
 import {Button} from 'primeng/button';
 import {ProgressSpinner} from 'primeng/progressspinner';
 import {Skeleton} from 'primeng/skeleton';
@@ -31,6 +31,7 @@ import {zoneLabel} from '../../models/variant-options';
 import {DARTS_PER_TURN} from '../../models/visit';
 import {GameService} from '../../services/game.service';
 import {GameSessionService} from '../../services/game-session.service';
+import {GameDraftService} from '../../services/game-draft.service';
 import {ScreenWakeLockService} from '../../services/screen-wake-lock.service';
 import {GameTopBarComponent} from '../game-top-bar/game-top-bar.component';
 import {ScoreboardComponent} from '../scoreboard/scoreboard.component';
@@ -113,7 +114,10 @@ export class GameComponent implements OnInit, OnDestroy {
   private readonly diffCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('diffCanvas');
   private readonly captureCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('captureCanvas');
 
-  protected readonly signedIn = inject(AuthService).isAuthenticated;
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly drafts = inject(GameDraftService);
+  protected readonly signedIn = this.auth.isAuthenticated;
   /** The game detail leads back here, so a rematch is one tap away. */
   protected readonly returnState = backState($localize`:@@common.nav.game:Spiel`);
   protected readonly calibrateLabel = $localize`:@@game.calibrate:Board kalibrieren`;
@@ -263,6 +267,14 @@ export class GameComponent implements OnInit, OnDestroy {
   });
 
   constructor() {
+
+    // Without a game, a setup left half done is where the game tab leads.
+    effect(() => {
+      const account = this.auth.user()?.id ?? null;
+      if (!this.restoring() && this.game.state() === null && this.drafts.read(account) !== null) {
+        void this.router.navigate(['/game/new'], { replaceUrl: true });
+      }
+    });
 
     effect(() => {
       if (this.cameraPhase() === 'idle') {

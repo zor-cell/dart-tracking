@@ -57,15 +57,14 @@ import { PlayerDto } from '../../dto/player.dto';
 import { PlayerSlotDto } from '../../dto/player-slot.dto';
 import { GameService } from '../../services/game.service';
 import { GameSessionService } from '../../services/game-session.service';
+import { GameDraftService } from '../../services/game-draft.service';
+import { GameDraft, Seat } from '../../models/game-draft';
 import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
 import { GameRulesComponent } from '../game-rules/game-rules.component';
 import {
   SortableListComponent,
   SortableMove,
 } from '../../../../core/view/components/sortable-list/sortable-list.component';
-
-/** What a seat holds: a known identity, or the name typed for a guest. */
-type Seat = PlayerIdentityDto | string;
 
 @Component({
   selector: 'app-game-setup',
@@ -97,6 +96,7 @@ export class GameNewComponent {
   private readonly settings = inject(SettingsService);
   private readonly socket = inject(SocketService);
   private readonly location = inject(Location);
+  private readonly drafts = inject(GameDraftService);
 
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
   protected readonly sections = SECTIONS;
@@ -155,6 +155,8 @@ export class GameNewComponent {
   private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
   /** Whether the list led here, so changing the game can step back instead of adding history. */
   private pickedHere = false;
+  /** Whether changes are kept as the draft: from the restore on, never for a rematch. */
+  private drafting = false;
 
   /** The setup played most, offered for one tap: undefined while it loads, null for none. */
   protected readonly quickStart = signal<QuickStartDto | null | undefined>(null);
@@ -191,7 +193,9 @@ export class GameNewComponent {
         this.form.controls.variant.setValue(variant);
         this.form.controls.variant.markAsDirty();
       }
+      this.saveDraft();
     });
+    this.form.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.saveDraft());
 
     // A new step puts the focus, and with it the view, on its heading.
     let shown: HTMLElement | undefined;
@@ -333,6 +337,7 @@ export class GameNewComponent {
           if (rematchOf === undefined) {
             this.session.setRole('camera');
           }
+          this.drafts.clear();
           void this.router.navigate(['/game']);
         },
       });
@@ -378,9 +383,40 @@ export class GameNewComponent {
         : undefined;
       this.selfId.set(self?.id ?? null);
 
-      this.seats.push(self ? this.fb.nonNullable.control<Seat>(self) : this.createSeat(1));
+      const draft = this.drafts.read(this.account());
+      if (draft !== null) {
+        this.resume(draft);
+      } else {
+        this.seats.push(self ? this.fb.nonNullable.control<Seat>(self) : this.createSeat(1));
+      }
+      this.drafting = true;
+      this.saveDraft();
     }
     this.sessionResolved.set(true);
+  }
+
+  /** Pick up the setup left here earlier; a game named in the URL wins over its pick. */
+  private resume(draft: GameDraft): void {
+    const chosen = this.chosen();
+    this.form.patchValue({ ...draft.settings, ...(chosen !== null && { variant: chosen }) });
+    for (const seat of draft.seats) {
+      this.seats.push(this.fb.nonNullable.control<Seat>(seat, Validators.required));
+    }
+    if (chosen === null && draft.chosen !== null) {
+      void this.showStep(draft.chosen, true);
+    }
+  }
+
+  private saveDraft(): void {
+    if (!this.drafting) {
+      return;
+    }
+    const { players, ...settings } = this.form.getRawValue();
+    this.drafts.save({ account: this.account(), chosen: this.chosen(), settings, seats: players });
+  }
+
+  private account(): string | null {
+    return this.auth.user()?.id ?? null;
   }
 
   /** The identity behind a previous seat: this account's address-book entry if
