@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { NgOptimizedImage, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Select } from 'primeng/select';
@@ -11,7 +12,7 @@ import {
 } from '../../../announcement/services/announcer.service';
 import { AnnouncerVoice, VOICE_NAMES } from '../../../announcement/models/announcer-voice';
 import { AuthService } from '../../../auth/services/auth.service';
-import { LANGUAGE_NAMES, Language } from '../../../../core/i18n/models/language';
+import { LANGUAGE_FLAGS, LANGUAGE_NAMES, Language } from '../../../../core/i18n/models/language';
 import { LanguageService } from '../../../../core/i18n/services/language.service';
 import { GameService } from '../../../game/services/game.service';
 import { SettingsService } from '../../services/settings.service';
@@ -19,6 +20,8 @@ import { FavouriteDoublesComponent } from '../favourite-doubles/favourite-double
 import { LanguageSelectComponent } from '../language-select/language-select.component';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
+import { ThemeMode } from '../../../../core/theme/models/theme';
+import { ThemeService } from '../../../../core/theme/services/theme.service';
 
 /** What the self-test's outcome is called on the page. */
 const TEST_RESULTS: Record<AnnouncerTestResult, string> = {
@@ -29,6 +32,14 @@ const TEST_RESULTS: Record<AnnouncerTestResult, string> = {
   unsupported: $localize`:@@settings.testResult.unsupported:nicht unterstützt`,
 };
 
+/** A dropdown option, shown with a flag or else an icon. */
+interface SettingChoice<T> {
+  readonly label: string;
+  readonly value: T;
+  readonly icon?: string;
+  readonly flag?: string;
+}
+
 @Component({
   selector: 'app-settings',
   imports: [
@@ -37,6 +48,8 @@ const TEST_RESULTS: Record<AnnouncerTestResult, string> = {
     FavouriteDoublesComponent,
     FormsModule,
     LanguageSelectComponent,
+    NgOptimizedImage,
+    NgTemplateOutlet,
     LoadingStateComponent,
     Select,
     Slider,
@@ -50,6 +63,13 @@ export class SettingsComponent {
   protected readonly settings = inject(SettingsService);
 
   protected readonly announcer = inject(AnnouncerService);
+  protected readonly theme = inject(ThemeService);
+
+  protected readonly themeOptions: SettingChoice<ThemeMode>[] = [
+    { label: $localize`:@@settings.theme.system:System`, value: 'system', icon: 'pi pi-desktop' },
+    { label: $localize`:@@settings.theme.light:Hell`, value: 'light', icon: 'pi pi-sun' },
+    { label: $localize`:@@settings.theme.dark:Dunkel`, value: 'dark', icon: 'pi pi-moon' },
+  ];
 
   private readonly game = inject(GameService);
   private readonly auth = inject(AuthService);
@@ -68,10 +88,10 @@ export class SettingsComponent {
   protected readonly maxVolume = MAX_VOLUME * 100;
   protected readonly volumePercent = computed(() => Math.round(this.announcer.volume() * 100));
 
-  protected readonly announcerLanguageOptions: { label: string; value: Language | 'app' }[] = [
-    { label: $localize`:@@settings.announcerLanguage.app:Wie die App`, value: 'app' },
-    { label: LANGUAGE_NAMES.de, value: 'de' },
-    { label: LANGUAGE_NAMES.en, value: 'en' },
+  protected readonly announcerLanguageOptions: SettingChoice<Language | 'app'>[] = [
+    { label: $localize`:@@settings.announcerLanguage.app:App`, value: 'app', icon: 'pi pi-mobile' },
+    { label: LANGUAGE_NAMES.de, value: 'de', flag: LANGUAGE_FLAGS.de },
+    { label: LANGUAGE_NAMES.en, value: 'en', flag: LANGUAGE_FLAGS.en },
   ];
   protected readonly announcerLanguage = computed(() => this.settings.announcerLanguage() ?? 'app');
 

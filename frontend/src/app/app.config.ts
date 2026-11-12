@@ -11,6 +11,7 @@ import { AnnouncerService } from './features/announcement/services/announcer.ser
 import { CalibrationService } from './features/calibration/services/calibration.service';
 import { primeNgTranslation } from './core/config/primeng-translation';
 import { SettingsService } from './features/settings/services/settings.service';
+import { ThemeService } from './core/theme/services/theme.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -19,7 +20,8 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([errorInterceptor, authInterceptor])),
     providePrimeNG({
       theme: {
-        preset: Noir
+        preset: Noir,
+        options: { darkModeSelector: '.app-dark' },
       },
     }),
     provideAppInitializer(() =>
@@ -32,5 +34,6 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => void inject(CalibrationService)),
     // Loads the account's settings from app start, so its language is followed after sign-in too.
     provideAppInitializer(() => void inject(SettingsService)),
+    provideAppInitializer(() => void inject(ThemeService)),
   ]
 };

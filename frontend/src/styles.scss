@@ -382,7 +382,7 @@ button.list-group__item:enabled {
 .list-group__item--danger .list-group__icon {
   color: var(--p-red-600);
 
-  @media (prefers-color-scheme: dark) {
+  .app-dark & {
     color: var(--p-red-400);
   }
 }

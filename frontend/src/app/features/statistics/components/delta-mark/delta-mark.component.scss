@@ -33,7 +33,7 @@
   color: var(--p-text-muted-color);
 }
 
-@media (prefers-color-scheme: dark) {
+:host-context(.app-dark) {
   .mark--better {
     color: var(--p-green-400);
   }

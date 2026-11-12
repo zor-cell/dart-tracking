@@ -16,10 +16,25 @@
   }
 }
 
-/* The announcer's dropdowns share one width, so they line up. */
+/* As wide as the widest option, which the hidden sizers stacked under it lay out. */
 .setting__select {
   flex-shrink: 0;
-  width: 11rem;
+  display: grid;
+  max-width: 10rem;
+
+  > * {
+    grid-area: 1 / 1;
+  }
+}
+
+/* An option as the select shows it: its padding, border and dropdown button around. */
+.setting__sizer {
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  padding-left: calc(var(--p-select-padding-x) + 1px);
+  padding-right: calc(var(--p-select-padding-x) + var(--p-select-dropdown-width) + 1px);
+  white-space: nowrap;
 }
 
 .setting__text {
@@ -80,4 +95,22 @@
     text-align: right;
     font-variant-numeric: tabular-nums;
   }
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.choice__icon {
+  width: 1.125rem;
+  text-align: center;
+}
+
+/* The outline keeps the black stripe off the dark background. */
+.choice__flag {
+  flex: none;
+  border-radius: 2px;
+  outline: 1px solid var(--p-content-border-color);
 }

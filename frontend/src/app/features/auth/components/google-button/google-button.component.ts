@@ -14,6 +14,7 @@ import {
 import { Skeleton } from 'primeng/skeleton';
 import { GoogleButtonText } from '../../models/google-identity';
 import { GoogleIdentityService } from '../../services/google-identity.service';
+import { ThemeService } from '../../../../core/theme/services/theme.service';
 
 /** Height of the slot in px: the large button Google draws, without its frame's focus margin. */
 const SLOT_HEIGHT = 40;
@@ -29,6 +30,7 @@ const SLOT_HEIGHT = 40;
 export class GoogleButtonComponent {
   private readonly google = inject(GoogleIdentityService);
   private readonly locale = inject(LOCALE_ID);
+  private readonly theme = inject(ThemeService);
   private readonly slot = viewChild.required<ElementRef<HTMLElement>>('slot');
 
   readonly text = input<GoogleButtonText>('signin_with');
@@ -58,8 +60,7 @@ export class GoogleButtonComponent {
 
   private async render(width: number): Promise<void> {
     const slot = this.slot().nativeElement;
-    const view = slot.ownerDocument.defaultView;
-    const dark = view?.matchMedia('(prefers-color-scheme: dark)').matches ?? false;
+    const dark = this.theme.dark();
     try {
       await this.google.renderButton(
         slot,

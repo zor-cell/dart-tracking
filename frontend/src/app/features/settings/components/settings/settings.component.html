@@ -1,3 +1,15 @@
+<!-- A dropdown option with its flag or icon. -->
+<ng-template #choice let-option>
+  <span class="choice">
+    @if (option.flag) {
+      <img class="choice__flag" [ngSrc]="option.flag" width="18" height="12" alt="" />
+    } @else if (option.icon) {
+      <i class="choice__icon" [class]="option.icon" aria-hidden="true"></i>
+    }
+    {{ option.label }}
+  </span>
+</ng-template>
+
 <section class="view">
   <header class="view__header view__header--sticky">
     <app-back-link label="Konto" i18n-label="@@settings.backLink" link="/account" />
@@ -23,6 +35,37 @@
             </p>
           </div>
           <app-language-select labelledBy="language-label" />
+        </div>
+
+        <div class="list-group__item setting">
+          <div class="setting__text">
+            <label class="setting__label" for="theme" i18n="@@settings.theme">Darstellung</label>
+            <p class="setting__hint" i18n="@@settings.themeHint">Gilt für dieses Gerät.</p>
+          </div>
+          <div class="setting__select">
+            <p-select
+              inputId="theme"
+              [options]="themeOptions"
+              optionLabel="label"
+              optionValue="value"
+              appendTo="body"
+              fluid
+              [ngModel]="theme.mode()"
+              (ngModelChange)="theme.setMode($event)"
+            >
+              <ng-template #selectedItem let-option>
+                <ng-container *ngTemplateOutlet="choice; context: { $implicit: option }" />
+              </ng-template>
+              <ng-template #item let-option>
+                <ng-container *ngTemplateOutlet="choice; context: { $implicit: option }" />
+              </ng-template>
+            </p-select>
+            @for (option of themeOptions; track option.value) {
+              <span class="setting__sizer" aria-hidden="true">
+                <ng-container *ngTemplateOutlet="choice; context: { $implicit: option }" />
+              </span>
+            }
+          </div>
         </div>
       </div>
     </section>
@@ -73,6 +116,9 @@
             <label class="setting__label" for="announcer-language" i18n="@@settings.announcerLanguage">
               Sprache
             </label>
+            <p class="setting__hint" i18n="@@settings.announcerLanguageHint">
+              In dieser Sprache werden die Würfe angesagt.
+            </p>
           </div>
           <div class="setting__select">
             <p-select
@@ -80,10 +126,23 @@
               [options]="announcerLanguageOptions"
               optionLabel="label"
               optionValue="value"
+              appendTo="body"
+              fluid
               [ngModel]="announcerLanguage()"
               (ngModelChange)="setAnnouncerLanguage($event)"
-              fluid
-            />
+            >
+              <ng-template #selectedItem let-option>
+                <ng-container *ngTemplateOutlet="choice; context: { $implicit: option }" />
+              </ng-template>
+              <ng-template #item let-option>
+                <ng-container *ngTemplateOutlet="choice; context: { $implicit: option }" />
+              </ng-template>
+            </p-select>
+            @for (option of announcerLanguageOptions; track option.value) {
+              <span class="setting__sizer" aria-hidden="true">
+                <ng-container *ngTemplateOutlet="choice; context: { $implicit: option }" />
+              </span>
+            }
           </div>
         </div>
 
@@ -92,6 +151,9 @@
             <label class="setting__label" for="announcer-voice" i18n="@@settings.announcerVoice">
               Stimme
             </label>
+            <p class="setting__hint" i18n="@@settings.announcerVoiceHint">
+              Wer in der gewählten Sprache ansagt.
+            </p>
           </div>
           <div class="setting__select">
             <p-select
@@ -99,10 +161,16 @@
               [options]="voiceOptions()"
               optionLabel="label"
               optionValue="value"
+              appendTo="body"
+              fluid
               [ngModel]="settings.announcerVoice()"
               (ngModelChange)="setAnnouncerVoice($event)"
-              fluid
             />
+            @for (option of voiceOptions(); track option.value) {
+              <span class="setting__sizer" aria-hidden="true">
+                <ng-container *ngTemplateOutlet="choice; context: { $implicit: option }" />
+              </span>
+            }
           </div>
         </div>
 
@@ -112,8 +180,7 @@
               Ansage-Lautstärke
             </span>
             <p class="setting__hint" i18n="@@settings.announcerVolumeHint">
-              Gilt für dieses Gerät. Über 100 % wird die Ansage verstärkt, etwa gegen Musik
-              auf derselben Box.
+              Gilt für dieses Gerät. Über 100 % wird die Ansage zusätzlich verstärkt.
             </p>
           </div>
           <div class="volume">
