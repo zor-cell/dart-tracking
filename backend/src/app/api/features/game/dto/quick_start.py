@@ -31,6 +31,8 @@ class QuickStartDto(CamelModel):
     killer: KillerOptionsDto | None
     around_the_clock: ClockOptionsDto | None
     elimination: EliminationOptionsDto | None
+    catch_up: bool
+    play_on: bool
     players: list[QuickStartSeatDto]
 
     @classmethod
@@ -61,5 +63,7 @@ class QuickStartDto(CamelModel):
                 if isinstance(options, EliminationOptions)
                 else None
             ),
+            catch_up=setup.finish.catch_up,
+            play_on=setup.finish.play_on,
             players=[QuickStartSeatDto(player_id=seat.player_id, name=seat.name) for seat in seats],
         )

@@ -101,3 +101,13 @@ def test_elimination_settings_come_along(alice, session):
     found = quick_start(alice)
 
     assert (found["variant"], found["elimination"]) == ("elimination", {"kill": "double"})
+
+
+def test_the_finish_rules_come_with_the_setup(alice, session):
+    me = alice.own_entry()["id"]
+    game = alice.new_game(me, {"name": "Ben"}, mode=501, catchUp=True, playOn=True)
+    session.play(game["id"], [T20])
+
+    found = quick_start(alice)
+
+    assert (found["catchUp"], found["playOn"]) == (True, True)

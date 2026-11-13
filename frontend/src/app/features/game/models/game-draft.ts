@@ -23,6 +23,8 @@ export interface GameDraft {
     readonly clockZone: ClockZone;
     readonly clockSkip: boolean;
     readonly eliminationKill: EliminationKill;
+    readonly catchUp: boolean;
+    readonly playOn: boolean;
   };
   readonly seats: readonly Seat[];
 }

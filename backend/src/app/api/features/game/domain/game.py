@@ -9,12 +9,13 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field, replace
 from datetime import datetime
 
-from app.api.features.game.domain.around_the_clock import ClockOptions, clock_progress
+from app.api.features.game.domain.around_the_clock import ClockBoard, ClockOptions, clock_progress
 from app.api.features.game.domain.checkout import Setup, checkout_route, setup_route
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.cricket import CricketOptions, cricket_progress
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.elimination import EliminationKill, EliminationOptions, can_kill
+from app.api.features.game.domain.finish import Finish, FinishRules, race
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_options import GameOptions, GameProgress, default_options
 from app.api.features.game.domain.game_variant import GameVariant
@@ -35,6 +36,8 @@ class Game:
     checkout_mode: CheckoutMode | None = CheckoutMode.DOUBLE_OUT
     # The variant's own settings; None for the points variants.
     options: GameOptions | None = None
+    # How a race ends; only the race variants use it.
+    finish: FinishRules = FinishRules()
     evaluation_enabled: bool = False
     # While set, the camera books nothing; the keypad still does.
     tracking_paused: bool = False
@@ -52,6 +55,8 @@ class Game:
     def __post_init__(self) -> None:
         if self.options is None:
             self.options = default_options(self.variant, len(self.players))
+        if not self.variant.races:
+            self.finish = FinishRules()
         # Invariant: a turn is always open for the current player, so `turns` is
         # never empty and `current_turn` never has to guess where it ends.
         if not self.turns:
@@ -67,8 +72,15 @@ class Game:
             case KillerOptions():
                 return killer_progress(ids, self.turns, self.options)
             case ClockOptions():
-                return clock_progress(ids, self.turns, self.options)
+                return clock_progress(ids, self.turns, self.options, self.race().voided)
         return None
+
+    def race(self) -> Finish:
+        """Places, finishers and who throws next, replayed from the turns; race variants only."""
+        seats = [player.id for player in self.players]
+        if isinstance(self.options, ClockOptions):
+            return race(seats, self.turns, self.finish, ClockBoard.start(seats, self.options))
+        return race(seats, self.turns, self.finish, _PointsBoard(self, dict.fromkeys(seats, 0)))
 
     @property
     def current_player(self) -> Player:
@@ -84,10 +96,11 @@ class Game:
 
     @property
     def winner(self) -> Player | None:
-        if self.variant.counts_points:
-            return next(
-                (player for player in self.players if self.remaining(player.id) == 0), None
-            )
+        """The first place once the game is over; None while it runs."""
+        if self.variant.races:
+            state = self.race()
+            winner_id = state.places[0] if state.over else None
+            return next((player for player in self.players if player.id == winner_id), None)
         progress = self.progress
         winner_id = progress.winner_id if progress is not None else None
         return next((player for player in self.players if player.id == winner_id), None)
@@ -98,10 +111,17 @@ class Game:
         return isinstance(progress, KillerProgress) and progress.players[player_id].out
 
     def _visit_closed(self) -> bool:
-        """Whether the open visit takes no more darts short of a win: it busted, or
-        its thrower knocked themselves out."""
+        """Whether the open visit takes no more darts short of a win: it busted, its
+        thrower knocked themselves out or reached the goal, or a tiebreak took it back."""
         turn = self.current_turn
-        return turn.busted or self.is_out(turn.player_id)
+        if turn.busted or self.is_out(turn.player_id):
+            return True
+        if not self.variant.races:
+            return False
+        state = self.race()
+        if state.over:
+            return False
+        return len(self.turns) - 1 in state.voided or state.board.reached(turn.player_id)
 
     @property
     def can_undo(self) -> bool:
@@ -258,23 +278,28 @@ class Game:
         return before
 
     def _scores(self) -> dict[int, int]:
-        scores = {player.id: 0 for player in self.players}
-        for _, scores in self._replay():
-            pass
-        return scores
+        board = self.race().board
+        assert isinstance(board, _PointsBoard)
+        return board.scores
 
     def _replay(self) -> Iterator[tuple[Turn, dict[int, int]]]:
         """Points scored per player after each turn, replayed in throwing order. An
         elimination reset depends on what everyone stood at when the dart landed,
-        so this cannot be a per-player sum."""
+        so this cannot be a per-player sum. A turn a tiebreak took back scores nothing."""
+        voided = self.race().voided if self.variant.races else set()
         scores = {player.id: 0 for player in self.players}
-        for turn in self.turns:
-            if not turn.busted:
-                for dart in turn.darts:
-                    scores[turn.player_id] += dart.points
-                    if self.variant is GameVariant.ELIMINATION and can_kill(dart, self._kill):
-                        self._eliminate(scores, turn.player_id)
+        for index, turn in enumerate(self.turns):
+            if index not in voided:
+                self._score(scores, turn)
             yield turn, scores
+
+    def _score(self, scores: dict[int, int], turn: Turn) -> None:
+        if turn.busted:
+            return
+        for dart in turn.darts:
+            scores[turn.player_id] += dart.points
+            if self.variant is GameVariant.ELIMINATION and can_kill(dart, self._kill):
+                self._eliminate(scores, turn.player_id)
 
     @property
     def _kill(self) -> EliminationKill:
@@ -283,9 +308,10 @@ class Game:
 
     def _eliminate(self, scores: dict[int, int], thrower_id: int) -> None:
         """Reset every other player the thrower just drew level with. Zero is
-        exempt: everyone starts there, so an opening miss would wipe the field."""
+        exempt: everyone starts there, so an opening miss would wipe the field; so
+        is the goal, which a finished player keeps."""
         hit = scores[thrower_id]
-        if hit == 0:
+        if hit in (0, self._start):
             return
         for player in self.players:
             if player.id != thrower_id and scores[player.id] == hit:
@@ -444,7 +470,13 @@ class Game:
         return filled
 
     def _next_seat(self) -> int:
-        """The seat after the current one, passing over players knocked out of Killer."""
+        """The seat after the current one, passing over players knocked out of Killer,
+        and in a race those placed, finished in this round or sitting out a tiebreak."""
+        if self.variant.races:
+            pending = self.race().pending
+            if not pending:
+                return self.current_player_index
+            return next(seat for seat, player in enumerate(self.players) if player.id == pending[0])
         count = len(self.players)
         for step in range(1, count + 1):
             seat = (self.current_player_index + step) % count
@@ -498,3 +530,20 @@ class Game:
 
     def _start_turn(self) -> None:
         self.turns.append(Turn(player_id=self.current_player.id))
+
+
+@dataclass
+class _PointsBoard:
+    """The points scored so far, for replaying the race of the points variants."""
+
+    game: Game
+    scores: dict[int, int]
+
+    def play(self, turn: Turn) -> None:
+        self.game._score(self.scores, turn)
+
+    def reached(self, player_id: int) -> bool:
+        return self.scores[player_id] == self.game._start
+
+    def copy(self) -> "_PointsBoard":
+        return _PointsBoard(self.game, dict(self.scores))

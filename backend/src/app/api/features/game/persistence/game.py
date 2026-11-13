@@ -19,6 +19,8 @@ class GameTable(Base):
     variant: Mapped[str] = mapped_column(String(16))
     checkout_mode: Mapped[str | None] = mapped_column(String(16))
     options: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
+    catch_up: Mapped[bool] = mapped_column(Boolean, default=False)
+    play_on: Mapped[bool] = mapped_column(Boolean, default=False)
     status: Mapped[str] = mapped_column(String(16))
     current_player_index: Mapped[int] = mapped_column(Integer)
     revision: Mapped[int] = mapped_column(Integer)

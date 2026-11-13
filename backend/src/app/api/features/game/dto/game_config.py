@@ -1,5 +1,6 @@
 from app.api.core.dto.base import CamelModel
 from app.api.features.game.domain.checkout_mode import CheckoutMode
+from app.api.features.game.domain.finish import FinishRules
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_options import GameOptions
 from app.api.features.game.domain.game_variant import GameVariant
@@ -22,8 +23,14 @@ class GameConfigDto(CamelModel):
     killer: KillerOptionsDto | None = None
     around_the_clock: ClockOptionsDto | None = None
     elimination: EliminationOptionsDto | None = None
+    # How a race ends; ignored outside the race variants.
+    catch_up: bool = False
+    play_on: bool = False
     evaluation_enabled: bool = False
     rematch_of: str | None = None
+
+    def finish(self) -> FinishRules:
+        return FinishRules(catch_up=self.catch_up, play_on=self.play_on)
 
     def options(self) -> GameOptions | None:
         """The domain settings of the chosen variant, Killer's numbers dealt."""

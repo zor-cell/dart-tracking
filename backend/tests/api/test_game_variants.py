@@ -197,3 +197,41 @@ def test_a_rematch_takes_the_settings_and_deals_again(anon):
 
     assert rematch.status_code == 201, rematch.text
     assert rematch.json()["killer"]["lives"] == 2
+
+
+def test_a_race_keeps_its_finish_rules_and_reports_places(anon):
+    response = create(anon, "Ann", "Ben", "Cid", mode=301, catchUp=True, playOn=True)
+
+    assert response.status_code == 201, response.text
+    game = response.json()
+    assert (game["catchUp"], game["playOn"]) == (True, True)
+    assert (game["places"], game["finisherIds"], game["waitingIds"]) == ([], [], [])
+
+    state = anon.get(f"/games/{game['id']}").json()
+    assert (state["catchUp"], state["playOn"]) == (True, True)
+
+
+def test_a_shared_finish_takes_both_finishes_back_and_shows_who_waits(anon, session):
+    game = create(anon, "Ann", "Ben", "Cid", mode=301, catchUp=True).json()
+    to_sixteen = [(60, 1), (45, 1)]
+    session.play(game["id"], [T20] * 3, [T20] * 3, [MISS], to_sixteen, to_sixteen, [MISS])
+    session.play(game["id"], [(8, 2)], [(8, 2)], [MISS] * 3, hand_over=False)
+
+    state = anon.get(f"/games/{game['id']}").json()
+    assert state["winnerId"] is None
+    assert (state["finisherIds"], state["waitingIds"]) == ([0, 1], [])
+    assert [player["remaining"] for player in state["players"]] == [0, 0, 301]
+
+    session.play(game["id"], [])
+    state = anon.get(f"/games/{game['id']}").json()
+    assert (state["finisherIds"], state["waitingIds"]) == ([], [2])
+    assert [player["remaining"] for player in state["players"]] == [16, 16, 301]
+    assert state["places"] == []
+
+
+@pytest.mark.parametrize("variant", ["cricket", "killer"])
+def test_variants_without_a_race_drop_the_finish_rules(anon, variant):
+    game = create(anon, "Ann", "Ben", variant=variant, catchUp=True, playOn=True).json()
+
+    assert (game["catchUp"], game["playOn"]) == (False, False)
+    assert game["places"] == []

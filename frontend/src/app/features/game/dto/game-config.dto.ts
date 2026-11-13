@@ -17,6 +17,9 @@ export interface GameConfigDto {
   readonly killer?: KillerOptionsDto | null;
   readonly aroundTheClock?: ClockOptionsDto | null;
   readonly elimination?: EliminationOptionsDto | null;
+  /** How a race ends; ignored outside the race variants. */
+  readonly catchUp?: boolean;
+  readonly playOn?: boolean;
   readonly evaluationEnabled: boolean;
   readonly rematchOf?: string;
 }

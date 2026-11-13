@@ -12,7 +12,8 @@
         class="scoreboard__row"
         [class.scoreboard__row--active]="$index === activeIndex()"
         [class.scoreboard__row--reset]="entry.reset"
-        [class.scoreboard__row--out]="entry.out"
+        [class.scoreboard__row--out]="entry.out || entry.waiting"
+        [class.scoreboard__row--finished]="entry.finished"
         [class.scoreboard__row--winner]="entry.id === winnerId()"
         [attr.aria-current]="$index === activeIndex() ? 'true' : null"
       >
@@ -21,8 +22,16 @@
             <i class="pi pi-crown scoreboard__lead" aria-hidden="true"></i>
             <span class="sr-only" i18n="@@game.scoreboard.leading">Führt:</span>
           }
+          @if (entry.place !== null) {
+            <span class="scoreboard__place" aria-hidden="true">{{ entry.place }}.</span>
+            <span class="sr-only" i18n="@@game.scoreboard.place">Platz {{ entry.place }}:</span>
+          }
           @if (entry.out) {
             <span class="sr-only" i18n="@@game.scoreboard.out">Ausgeschieden:</span>
+          } @else if (entry.waiting) {
+            <span class="sr-only" i18n="@@game.scoreboard.waiting">Setzt aus:</span>
+          } @else if (entry.finished && entry.place === null) {
+            <span class="sr-only" i18n="@@game.scoreboard.finished">Fertig:</span>
           } @else if (entry.reset) {
             <span class="sr-only" i18n="@@game.scoreboard.reset">Zurückgesetzt:</span>
           }

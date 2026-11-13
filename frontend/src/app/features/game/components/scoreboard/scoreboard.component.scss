@@ -73,27 +73,30 @@
 }
 
 // How a player stands, in one colour each. It takes over the active card's fill
-// and top bar; the winner, declared last, outranks the reset and always has the bar.
+// and top bar; finishers, declared last, outrank the reset, and the winner always has the bar.
 .scoreboard__row--reset {
   --standing: var(--p-red-500);
 }
 
+.scoreboard__row--finished,
 .scoreboard__row--winner {
   --standing: var(--p-green-500);
 }
 
 .scoreboard__row--reset,
+.scoreboard__row--finished,
 .scoreboard__row--winner {
   border-color: var(--standing);
   background: color-mix(in srgb, var(--standing) 22%, var(--p-content-background));
 }
 
 .scoreboard__row--active.scoreboard__row--reset,
+.scoreboard__row--active.scoreboard__row--finished,
 .scoreboard__row--winner {
   box-shadow: inset 0 3px 0 0 var(--standing);
 }
 
-// Knocked out of Killer: still in the row, but no longer in the game.
+// Knocked out of Killer, or sitting out a tiebreak: still in the row, but not throwing.
 .scoreboard__row--out {
   opacity: 0.45;
 }
@@ -124,6 +127,13 @@
   font-size: 0.7rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+// A race's decided place, where the leader's crown would sit.
+.scoreboard__place {
+  flex: none;
+  margin-right: 0.2rem;
+  font-weight: 700;
 }
 
 .scoreboard__lead {

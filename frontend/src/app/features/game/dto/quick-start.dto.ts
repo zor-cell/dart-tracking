@@ -21,5 +21,7 @@ export interface QuickStartDto {
   readonly killer: KillerOptionsDto | null;
   readonly aroundTheClock: ClockOptionsDto | null;
   readonly elimination: EliminationOptionsDto | null;
+  readonly catchUp: boolean;
+  readonly playOn: boolean;
   readonly players: readonly QuickStartSeatDto[];
 }

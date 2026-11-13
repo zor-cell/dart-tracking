@@ -25,6 +25,9 @@ export interface GameStateDto {
   readonly checkoutMode: CheckoutMode | null;
   /** Which darts reset in elimination; null for the other variants. */
   readonly eliminationKill: EliminationKill | null;
+  /** How a race ends; both false outside the race variants. */
+  readonly catchUp: boolean;
+  readonly playOn: boolean;
   readonly players: readonly PlayerDto[];
   readonly currentPlayerIndex: number;
   readonly turns: readonly TurnDto[];
@@ -33,6 +36,12 @@ export interface GameStateDto {
   readonly dartsRemaining: number;
   readonly canUndo: boolean;
   readonly winnerId: number | null;
+  /** A race's places so far, best first; empty outside the race variants. */
+  readonly places: readonly number[];
+  /** Who reached the goal: placed, or finished in the round under way. */
+  readonly finisherIds: readonly number[];
+  /** Who sits out a tiebreak between the players ahead of them. */
+  readonly waitingIds: readonly number[];
   readonly checkout: readonly string[] | null;
   readonly setup: SetupDto | null;
   readonly elimination: readonly string[] | null;

@@ -36,6 +36,9 @@ class GameStateDto(CamelModel):
     checkout_mode: CheckoutMode | None
     # Which darts reset in elimination; null for the other variants.
     elimination_kill: EliminationKill | None
+    # How a race ends; both false outside the race variants.
+    catch_up: bool
+    play_on: bool
     players: list[PlayerDto]
     current_player_index: int
     turns: list[TurnDto]
@@ -43,6 +46,12 @@ class GameStateDto(CamelModel):
     darts_remaining: int
     can_undo: bool
     winner_id: int | None
+    # A race's places so far, best first; empty outside the race variants.
+    places: list[int]
+    # Who reached the goal: placed, or finished in the round under way.
+    finisher_ids: list[int]
+    # Who sits out a tiebreak between the players ahead of them.
+    waiting_ids: list[int]
     checkout: list[str] | None
     setup: SetupDto | None
     elimination: list[str] | None
@@ -61,6 +70,7 @@ class GameStateDto(CamelModel):
         eliminations = game.eliminations()
         progress = game.progress
         options = game.options
+        race = game.race() if game.variant.races else None
         return cls(
             id=game.id,
             revision=game.revision,
@@ -68,6 +78,8 @@ class GameStateDto(CamelModel):
             variant=game.variant,
             checkout_mode=game.checkout_mode,
             elimination_kill=options.kill if isinstance(options, EliminationOptions) else None,
+            catch_up=game.finish.catch_up,
+            play_on=game.finish.play_on,
             players=[
                 PlayerDto.from_entity(
                     player,
@@ -85,6 +97,9 @@ class GameStateDto(CamelModel):
             darts_remaining=game.darts_remaining,
             can_undo=game.can_undo,
             winner_id=game.winner.id if game.winner is not None else None,
+            places=race.places if race is not None else [],
+            finisher_ids=race.finishers if race is not None else [],
+            waiting_ids=race.waiting if race is not None else [],
             checkout=game.checkout,
             setup=SetupDto.from_entity(game.setup) if game.setup is not None else None,
             elimination=game.elimination,

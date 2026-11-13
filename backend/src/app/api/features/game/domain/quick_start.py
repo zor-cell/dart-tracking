@@ -5,6 +5,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
+from app.api.features.game.domain.finish import FinishRules
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_options import GameOptions, default_options
 from app.api.features.game.domain.game_variant import GameVariant
@@ -20,6 +21,7 @@ class GameSetup:
     mode: GameMode | None
     checkout_mode: CheckoutMode | None
     options: GameOptions | None
+    finish: FinishRules = FinishRules()
 
     @classmethod
     def of(
@@ -28,13 +30,14 @@ class GameSetup:
         mode: GameMode | None,
         checkout_mode: CheckoutMode | None,
         options: GameOptions | None,
+        finish: FinishRules = FinishRules(),
     ) -> "GameSetup":
         """Killer's dealt numbers are left out: a new game deals them afresh. Games
         stored before their variant had settings count as its defaults."""
         options = options or default_options(variant, 0)
         if isinstance(options, KillerOptions):
             options = replace(options, numbers=())
-        return cls(variant, mode, checkout_mode, options)
+        return cls(variant, mode, checkout_mode, options, finish if variant.races else FinishRules())
 
 
 @dataclass(frozen=True)

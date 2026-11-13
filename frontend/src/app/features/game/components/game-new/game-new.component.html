@@ -123,6 +123,34 @@
         }
       }
 
+      @if (racing()) {
+        <div class="setup__field">
+          <span class="setup__label" i18n="@@game.new.finish">Spielende</span>
+          <div class="setup__switch">
+            <p-toggleswitch inputId="catchUp" formControlName="catchUp" />
+            <label for="catchUp" i18n="@@game.new.catchUp">Mit Nachziehen</label>
+            <app-info-hint
+              class="setup__hint"
+              label="Was heißt mit Nachziehen?"
+              i18n-label="@@game.new.catchUpInfo"
+              i18n="@@game.new.catchUpHint"
+            >Ist jemand fertig, werfen die übrigen die Runde noch zu Ende. Sind dann mehrere fertig, wiederholen nur sie die Runde, jeder ab seinem Stand davor.</app-info-hint>
+          </div>
+          @if (placesLeft()) {
+            <div class="setup__switch">
+              <p-toggleswitch inputId="playOn" formControlName="playOn" />
+              <label for="playOn" i18n="@@game.new.playOn">Plätze ausspielen</label>
+              <app-info-hint
+                class="setup__hint"
+                label="Was heißt Plätze ausspielen?"
+                i18n-label="@@game.new.playOnInfo"
+                i18n="@@game.new.playOnHint"
+              >Nach dem Sieger wird weitergespielt, bis alle Plätze vergeben sind.</app-info-hint>
+            </div>
+          }
+        </div>
+      }
+
       <div class="setup__field">
         <span class="setup__label" i18n="@@game.new.players">Spieler</span>
         @if (sessionResolved()) {

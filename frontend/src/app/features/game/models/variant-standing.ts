@@ -24,7 +24,11 @@ const MARKS_TO_CLOSE = 3;
 export function standings(state: GameStateDto, format: NumberFormat): Standing[] {
   return state.players.map((player, seat) => {
     const standing = standingOf(state, seat, format);
-    return player.id === state.winnerId ? { ...standing, rank: Number.POSITIVE_INFINITY } : standing;
+    if (player.id === state.winnerId) {
+      return { ...standing, rank: Number.POSITIVE_INFINITY };
+    }
+    const place = state.places.indexOf(player.id);
+    return place < 0 ? standing : { ...standing, rank: Number.MAX_SAFE_INTEGER - place };
   });
 }
 

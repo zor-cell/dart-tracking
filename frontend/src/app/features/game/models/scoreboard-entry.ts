@@ -29,6 +29,12 @@ export interface ScoreboardEntry {
   readonly killer: boolean;
   /** Killer: whether the player has no lives left. */
   readonly out: boolean;
+  /** A race: whether the player reached the goal; the last one left does not. */
+  readonly finished: boolean;
+  /** A race: whether the player sits out a tiebreak between those ahead. */
+  readonly waiting: boolean;
+  /** A race played for every place: the player's place once decided. */
+  readonly place: number | null;
   /** Cricket: the marks per target; null in the other variants. */
   readonly marks: readonly CricketMark[] | null;
 }

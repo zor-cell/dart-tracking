@@ -15,3 +15,8 @@ class GameVariant(StrEnum):
     def counts_points(self) -> bool:
         """Whether the game runs on a points total between zero and the mode."""
         return self in (GameVariant.X01, GameVariant.ELIMINATION)
+
+    @property
+    def races(self) -> bool:
+        """Whether everyone runs for the same goal, so places follow the finishing order."""
+        return self in (GameVariant.X01, GameVariant.ELIMINATION, GameVariant.AROUND_THE_CLOCK)

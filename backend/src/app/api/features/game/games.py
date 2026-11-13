@@ -137,6 +137,7 @@ async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) 
             owner_user_id=owner_id,
             evaluation_enabled=body.evaluation_enabled and user is not None and user.is_admin,
             options=body.options(),
+            finish=body.finish(),
         )
 
     if body.rematch_of:

@@ -27,6 +27,7 @@ import { SelectButton } from 'primeng/selectbutton';
 import { Skeleton } from 'primeng/skeleton';
 import { Tag } from 'primeng/tag';
 import { ToggleSwitch } from 'primeng/toggleswitch';
+import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { map } from 'rxjs';
 import { SocketService } from '../../../../core/socket/services/socket.service';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -77,6 +78,7 @@ import {
     Skeleton,
     Tag,
     ToggleSwitch,
+    InfoHintComponent,
     FieldErrorComponent,
     GameRulesComponent,
     SortableListComponent,
@@ -133,6 +135,8 @@ export class GameNewComponent {
     clockZone: this.fb.nonNullable.control<ClockZone>('any'),
     clockSkip: this.fb.nonNullable.control(false),
     eliminationKill: this.fb.nonNullable.control<EliminationKill>('any'),
+    catchUp: this.fb.nonNullable.control(false),
+    playOn: this.fb.nonNullable.control(false),
     players: this.fb.array<FormControl<Seat>>([]),
   }, { validators: groupSeats });
 
@@ -185,6 +189,10 @@ export class GameNewComponent {
   });
   /** Skipping ahead needs singles to tell apart from doubles and triples. */
   protected readonly clockSkippable = computed(() => this.clockZone() === 'any');
+  /** Whether everyone runs for the same goal, so a round can catch up and places follow. */
+  protected readonly racing = computed(() => RACES.includes(this.variant()));
+  /** Places after the winner need someone left to play for them. */
+  protected readonly placesLeft = computed(() => this.seatControls().length > 2);
 
   constructor() {
     void this.restoreSeats();
@@ -308,8 +316,9 @@ export class GameNewComponent {
     }
     const {
       mode, variant, checkoutMode, players, cricketScoring, killerLives, killerZone,
-      clockZone, clockSkip, eliminationKill,
+      clockZone, clockSkip, eliminationKill, catchUp, playOn,
     } = this.form.getRawValue();
+    const racing = RACES.includes(variant);
     const seats = (players as Seat[]).map<PlayerSlotDto>((seat) =>
       typeof seat === 'string' ? { name: seat.trim() } : { playerId: seat.id },
     );
@@ -321,6 +330,8 @@ export class GameNewComponent {
       killer: { lives: killerLives, zone: killerZone },
       aroundTheClock: { zone: clockZone, skip: clockZone === 'any' && clockSkip },
       elimination: { kill: eliminationKill },
+      catchUp: racing && catchUp,
+      playOn: racing && seats.length > 2 && playOn,
       players: seats,
       evaluationEnabled: this.settings.evaluationEnabled(),
       rematchOf: this.rematchId ?? undefined,
@@ -476,12 +487,23 @@ const SECTIONS: readonly GameSection[] = [
   { kind: GROUP, games: ['killer', 'elimination'] },
 ];
 
+/** The games where everyone runs for the same goal. */
+const RACES: readonly GameVariant[] = ['x01', 'elimination', 'around_the_clock'];
+
 function parseVariant(value: string | null): GameVariant | null {
   return GAME_VARIANTS.find((option) => option.value === value)?.value ?? null;
 }
 
 /** A setup in one line: the game, then the settings that differ from its defaults. */
 function setupTitle(quick: QuickStartDto): string {
+  const finish = [
+    ...(quick.catchUp ? [$localize`:@@game.new.catchUp:Mit Nachziehen`] : []),
+    ...(quick.playOn ? [$localize`:@@game.new.playOn:Plätze ausspielen`] : []),
+  ];
+  return [gameTitle(quick), ...finish].join(', ');
+}
+
+function gameTitle(quick: QuickStartDto): string {
   const checkout = optionLabel(CHECKOUT_MODES, quick.checkoutMode);
   switch (quick.variant) {
     case 'x01':
@@ -543,5 +565,7 @@ function settingsOf(game: GameStateDto) {
       clockZone: game.aroundTheClock.zone,
       clockSkip: game.aroundTheClock.skip,
     }),
+    catchUp: game.catchUp,
+    playOn: game.playOn,
   };
 }

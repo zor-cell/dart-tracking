@@ -124,12 +124,18 @@ export class GameDetailComponent {
       const lives = $localize`:@@game.detail.lives:${game.killer.lives}:count: Leben`;
       return `${lives}, ${optionLabel(KILLER_ZONES, game.killer.zone)}`;
     }
+    const finish = [
+      ...(game.catchUp ? [$localize`:@@game.new.catchUp:Mit Nachziehen`] : []),
+      ...(game.playOn ? [$localize`:@@game.new.playOn:Plätze ausspielen`] : []),
+    ];
     if (game.aroundTheClock !== null) {
       const zone = optionLabel(CLOCK_ZONES, game.aroundTheClock.zone);
-      return game.aroundTheClock.skip ? `${zone}, ${$localize`:@@game.detail.skip:mit Springen`}` : zone;
+      const skip = game.aroundTheClock.skip ? [$localize`:@@game.detail.skip:mit Springen`] : [];
+      return [zone, ...skip, ...finish].join(', ');
     }
     const checkout = optionLabel(CHECKOUT_MODES, game.checkoutMode);
-    return game.eliminationKill === 'double' ? `${checkout}, Double Kill` : checkout;
+    const kill = game.eliminationKill === 'double' ? ['Double Kill'] : [];
+    return [checkout, ...kill, ...finish].join(', ');
   });
 
   /** Each player's result in the variant's own terms, in seat order: a value and its unit. */

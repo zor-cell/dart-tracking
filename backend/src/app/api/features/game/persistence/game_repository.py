@@ -22,6 +22,7 @@ from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.game_filter import GameFilter
 from app.api.features.game.domain.game_record import GameRecord
 from app.api.features.game.domain.game_mode import GameMode
+from app.api.features.game.domain.finish import FinishRules
 from app.api.features.game.domain.game_options import GameOptions
 from app.api.features.game.domain.killer import KillerOptions, KillerZone
 from app.api.features.game.domain.game_status import (
@@ -68,6 +69,7 @@ class GameRepository:
         owner_user_id: str | None = None,
         evaluation_enabled: bool = False,
         options: GameOptions | None = None,
+        finish: FinishRules = FinishRules(),
     ) -> Game:
         """The identities are resolved by the router, which owns the rules about
         who may take a seat. Here they are only seated, in the order given."""
@@ -82,6 +84,7 @@ class GameRepository:
             ],
             checkout_mode=checkout_mode,
             options=options,
+            finish=finish,
             evaluation_enabled=evaluation_enabled,
         )
 
@@ -90,6 +93,8 @@ class GameRepository:
             variant=variant.value,
             checkout_mode=None if checkout_mode is None else checkout_mode.value,
             options=_options_json(game.options),
+            catch_up=game.finish.catch_up,
+            play_on=game.finish.play_on,
             status=GameStatus.ACTIVE.value,
             current_player_index=game.current_player_index,
             revision=game.revision,
@@ -456,6 +461,7 @@ class GameRepository:
                 _mode(row.mode),
                 _checkout_mode(row.checkout_mode),
                 _options_from_json(variant, row.options),
+                FinishRules(catch_up=row.catch_up, play_on=row.play_on),
             )
             played.append(PlayedSetup(row.id, row.created_at, setup))
         chosen = favourite(played, datetime.now(UTC))
@@ -635,6 +641,7 @@ class GameRepository:
             mode=_mode(row.mode),
             variant=variant,
             options=_options_from_json(variant, row.options),
+            finish=FinishRules(catch_up=row.catch_up, play_on=row.play_on),
             players=[
                 Player(
                     id=index,

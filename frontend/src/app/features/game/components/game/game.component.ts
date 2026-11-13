@@ -210,16 +210,23 @@ export class GameComponent implements OnInit, OnDestroy {
       return [];
     }
     const seats = standings(state, (value, digits) => formatNumber(value, this.locale, digits));
-    const best = Math.max(...seats.map((seat) => seat.rank));
-    const alone = seats.filter((seat) => seat.rank === best).length === 1;
-    const open = state.winnerId === null && seats.length > 1;
+    const finished = (id: number) => state.finisherIds.includes(id);
+    const out = (id: number) => finished(id) || state.places.includes(id) || state.waitingIds.includes(id);
+    const running = state.players.filter((player) => !out(player.id));
+    const ranks = running.map((player) => seats[state.players.indexOf(player)].rank);
+    const best = Math.max(...ranks);
+    const alone = ranks.filter((rank) => rank === best).length === 1;
+    const open = state.winnerId === null && running.length > 1;
     return state.players.map((player, seat) => ({
       ...seats[seat],
       id: player.id,
       name: player.name,
-      leading: open && alone && seats[seat].rank === best,
+      leading: open && alone && running.includes(player) && seats[seat].rank === best,
       reset: player.justReset,
       eliminations: state.variant === 'elimination' ? player.eliminations : null,
+      finished: finished(player.id),
+      waiting: state.waitingIds.includes(player.id),
+      place: state.playOn && state.places.includes(player.id) ? state.places.indexOf(player.id) + 1 : null,
     }));
   });
 
