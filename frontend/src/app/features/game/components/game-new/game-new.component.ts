@@ -28,6 +28,9 @@ import { Skeleton } from 'primeng/skeleton';
 import { Tag } from 'primeng/tag';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
+import { centrePopoverArrow } from '../../../../core/view/models/popover-arrow';
+import { Popover } from 'primeng/popover';
+import { SetupBadge, setupBadges, setupName } from '../../models/setup-badges';
 import {
   CHECKOUT_HINTS,
   CLOCK_ZONE_HINTS,
@@ -54,8 +57,6 @@ import {
   KILLER_LIVES,
   KILLER_ZONES,
   KillerZone,
-  optionLabel,
-  scoringLabel,
 } from '../../models/variant-options';
 import { standings } from '../../models/variant-standing';
 import { GameConfigDto } from '../../dto/game-config.dto';
@@ -86,6 +87,7 @@ import {
     Tag,
     ToggleSwitch,
     InfoHintComponent,
+    Popover,
     FieldErrorComponent,
     GameRulesComponent,
     SortableListComponent,
@@ -187,15 +189,25 @@ export class GameNewComponent {
   protected readonly starting = signal(false);
   protected readonly quickTitle = computed(() => {
     const quick = this.quickStart();
-    return quick ? setupTitle(quick) : '';
+    return quick ? setupName(quick) : '';
   });
+  /** The quick start's settings that differ from the defaults. */
+  protected readonly quickBadges = computed(() => {
+    const quick = this.quickStart();
+    return quick ? setupBadges(quick) : [];
+  });
+  /** The badge whose explanation the popover shows. */
+  protected readonly shownBadge = signal<SetupBadge | null>(null);
   protected readonly quickPlayers = computed(() =>
     (this.quickStart()?.players ?? [])
       .map((seat) => (seat.playerId !== null && seat.playerId === this.selfId() ? $localize`:@@player.list.self:Du` : seat.name))
       .join(', '),
   );
   protected readonly quickLabel = computed(
-    () => $localize`:@@game.new.quickStartLabel:Schnellstart: ${this.quickTitle()}:setup: mit ${this.quickPlayers()}:players:`,
+    () => {
+      const setup = [this.quickTitle(), ...this.quickBadges().map((badge) => badge.title)].join(', ');
+      return $localize`:@@game.new.quickStartLabel:Schnellstart: ${setup}:setup: mit ${this.quickPlayers()}:players:`;
+    },
   );
 
   protected readonly rulesOpen = signal(false);
@@ -274,6 +286,18 @@ export class GameNewComponent {
     this.rulesVariant.set(variant);
     this.rulesOpen.set(true);
   }
+
+  /** Opens the explanation of a quick start badge, or closes it on a second tap. */
+  protected explainBadge(event: MouseEvent, badge: SetupBadge, popover: Popover): void {
+    if (popover.overlayVisible && this.shownBadge() === badge) {
+      popover.hide();
+      return;
+    }
+    this.shownBadge.set(badge);
+    popover.show(event, event.currentTarget);
+  }
+
+  protected readonly centreArrow = (popover: Popover) => centrePopoverArrow(popover);
 
   /** Start the setup played most at once, with its players. */
   protected startQuick(quick: QuickStartDto): void {
@@ -508,47 +532,6 @@ const RACES: readonly GameVariant[] = ['x01', 'elimination', 'around_the_clock']
 
 function parseVariant(value: string | null): GameVariant | null {
   return GAME_VARIANTS.find((option) => option.value === value)?.value ?? null;
-}
-
-/** A setup in one line: the game, then the settings that differ from its defaults. */
-function setupTitle(quick: QuickStartDto): string {
-  const finish = [
-    ...(quick.catchUp ? [$localize`:@@game.new.catchUp:Mit Nachziehen`] : []),
-    ...(quick.playOn ? [$localize`:@@game.new.playOn:Plätze ausspielen`] : []),
-  ];
-  return [gameTitle(quick), ...finish].join(', ');
-}
-
-function gameTitle(quick: QuickStartDto): string {
-  const checkout = optionLabel(CHECKOUT_MODES, quick.checkoutMode);
-  switch (quick.variant) {
-    case 'x01':
-      return `${quick.mode} ${checkout}`;
-    case 'elimination':
-      return quick.elimination?.kill === 'double'
-        ? `Elimination ${quick.mode} ${checkout} Double Kill`
-        : `Elimination ${quick.mode} ${checkout}`;
-    case 'cricket': {
-      const scoring = quick.cricket?.scoring ?? 'standard';
-      return scoring === 'standard' ? 'Cricket' : `Cricket ${scoringLabel(scoring)}`;
-    }
-    case 'killer': {
-      const lives = $localize`:@@game.detail.lives:${quick.killer?.lives ?? 3}:count: Leben`;
-      const zone = quick.killer?.zone ?? 'double';
-      return zone === 'double' ? `Killer ${lives}` : `Killer ${lives}, ${optionLabel(KILLER_ZONES, zone)}`;
-    }
-    case 'around_the_clock': {
-      const zone = quick.aroundTheClock?.zone ?? 'any';
-      const parts = ['Around the Clock'];
-      if (zone !== 'any') {
-        parts.push(optionLabel(CLOCK_ZONES, zone));
-      }
-      if (quick.aroundTheClock?.skip) {
-        parts.push($localize`:@@game.detail.skip:mit Springen`);
-      }
-      return parts.join(' ');
-    }
-  }
 }
 
 /** Killer and Elimination need someone to knock out or reset. */

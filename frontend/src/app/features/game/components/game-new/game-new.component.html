@@ -316,20 +316,47 @@
         <h2 class="list-group__title" id="quick-start" i18n="@@game.new.quickStart">Schnellstart</h2>
         @if (quickStart(); as quick) {
           <div class="list-group__items">
-            <button
-              type="button"
-              class="list-group__item"
-              [attr.aria-label]="quickLabel()"
-              [disabled]="starting()"
-              (click)="startQuick(quick)"
-            >
+            <div class="list-group__item quick" [class.quick--starting]="starting()">
               <span class="list-group__body">
-                <span class="list-group__name">{{ quickTitle() }}</span>
-                <span class="list-group__hint">{{ quickPlayers() }}</span>
+                <span class="quick__title">
+                  <button
+                    type="button"
+                    class="list-group__name quick__start"
+                    [attr.aria-label]="quickLabel()"
+                    [disabled]="starting()"
+                    (click)="startQuick(quick)"
+                  >
+                    {{ quickTitle() }}
+                  </button>
+                  @for (badge of quickBadges(); track badge.title) {
+                    <button
+                      type="button"
+                      class="quick__badge"
+                      [attr.aria-label]="badge.title"
+                      (click)="explainBadge($event, badge, badgePopover)"
+                    >
+                      {{ badge.label }}
+                      @if (badge.icon) {
+                        <i class="pi {{ badge.icon }}" aria-hidden="true"></i>
+                      }
+                    </button>
+                  }
+                </span>
+                <span class="list-group__hint" aria-hidden="true">{{ quickPlayers() }}</span>
               </span>
               <span class="quick__play" aria-hidden="true"><i class="pi pi-play"></i></span>
-            </button>
+            </div>
           </div>
+          <p-popover #badgePopover (onShow)="centreArrow(badgePopover)">
+            @if (shownBadge(); as badge) {
+              <p class="quick__explained">
+                <strong>{{ badge.title }}</strong>
+                @if (badge.hint) {
+                  {{ badge.hint }}
+                }
+              </p>
+            }
+          </p-popover>
         } @else {
           <p-skeleton height="3.75rem" borderRadius="0.75rem" />
         }

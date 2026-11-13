@@ -90,6 +90,112 @@
   outline: none;
 }
 
+// The whole card starts the quick start; its badges sit above and explain themselves.
+.quick {
+  position: relative;
+  isolation: isolate;
+}
+
+.quick--starting {
+  opacity: 0.6;
+}
+
+// Taps on the text fall through to the start button stretched beneath it.
+.quick .list-group__body,
+.quick__play {
+  pointer-events: none;
+}
+
+.quick__start,
+.quick__badge {
+  pointer-events: auto;
+}
+
+.quick__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.quick__start {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+
+  &::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  @media (hover: hover) {
+    &:enabled:hover::after {
+      background: var(--p-content-hover-background);
+    }
+  }
+
+  &:enabled:active::after {
+    background: var(--p-content-hover-background);
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  &:focus-visible::after {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: -2px;
+  }
+}
+
+// A setting off its default, at least 24px for a finger.
+.quick__badge {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.35rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 0.375rem;
+  background: var(--p-content-background);
+  color: var(--p-text-muted-color);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  .pi {
+    font-size: 0.75rem;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 1px;
+  }
+}
+
+.quick__explained {
+  max-width: 17rem;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
 // The play button beside the quick start, filled like a media player's.
 .quick__play {
   flex: none;
