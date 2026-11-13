@@ -28,6 +28,13 @@ import { Skeleton } from 'primeng/skeleton';
 import { Tag } from 'primeng/tag';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
+import {
+  CHECKOUT_HINTS,
+  CLOCK_ZONE_HINTS,
+  KILLER_ZONE_HINTS,
+  KILL_HINTS,
+  SCORING_HINTS,
+} from '../../models/setting-hints';
 import { map } from 'rxjs';
 import { SocketService } from '../../../../core/socket/services/socket.service';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -109,6 +116,15 @@ export class GameNewComponent {
   protected readonly killerZoneOptions = [...KILLER_ZONES];
   protected readonly clockZoneOptions = [...CLOCK_ZONES];
   protected readonly eliminationKillOptions = [...ELIMINATION_KILLS];
+  protected readonly checkoutHints = CHECKOUT_HINTS;
+  protected readonly killHints = KILL_HINTS;
+  protected readonly scoringHints = SCORING_HINTS;
+  protected readonly killerZoneHints = KILLER_ZONE_HINTS;
+  protected readonly clockZoneHints = CLOCK_ZONE_HINTS;
+  protected readonly scoringName = $localize`:@@game.new.scoring:Punkte`;
+  protected readonly zoneName = $localize`:@@game.new.zone:Feld`;
+  protected readonly hintLabel = (setting: string): string =>
+    $localize`:@@game.new.hintLabel:Was die Optionen bei ${setting}:setting: bedeuten`;
 
   protected readonly signedIn = this.auth.isAuthenticated;
   /** One placeholder row per seat `restoreSeats` will open. */

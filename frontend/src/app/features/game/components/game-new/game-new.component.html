@@ -28,7 +28,14 @@
       @switch (variant()) {
         @case ('cricket') {
           <div class="setup__field">
-            <label class="setup__label" for="cricketScoring" i18n="@@game.new.scoring">Punkte</label>
+            <div class="setup__label-row">
+              <label class="setup__label" for="cricketScoring" i18n="@@game.new.scoring">Punkte</label>
+              <app-info-hint [label]="hintLabel(scoringName)">
+                @for (hint of scoringHints; track hint.label) {
+                  <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
+                }
+              </app-info-hint>
+            </div>
             <p-selectbutton
               inputId="cricketScoring"
               formControlName="cricketScoring"
@@ -52,7 +59,14 @@
             />
           </div>
           <div class="setup__field">
-            <label class="setup__label" for="killerZone" i18n="@@game.new.zone">Feld</label>
+            <div class="setup__label-row">
+              <label class="setup__label" for="killerZone" i18n="@@game.new.zone">Feld</label>
+              <app-info-hint [label]="hintLabel(zoneName)">
+                @for (hint of killerZoneHints; track hint.label) {
+                  <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
+                }
+              </app-info-hint>
+            </div>
             <p-selectbutton
               inputId="killerZone"
               formControlName="killerZone"
@@ -65,7 +79,14 @@
         }
         @case ('around_the_clock') {
           <div class="setup__field">
-            <label class="setup__label" for="clockZone" i18n="@@game.new.zone">Feld</label>
+            <div class="setup__label-row">
+              <label class="setup__label" for="clockZone" i18n="@@game.new.zone">Feld</label>
+              <app-info-hint [label]="hintLabel(zoneName)">
+                @for (hint of clockZoneHints; track hint.label) {
+                  <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
+                }
+              </app-info-hint>
+            </div>
             <p-selectbutton
               inputId="clockZone"
               formControlName="clockZone"
@@ -96,7 +117,14 @@
           </div>
 
           <div class="setup__field">
-            <label class="setup__label" for="checkoutMode">Checkout</label>
+            <div class="setup__label-row">
+              <label class="setup__label" for="checkoutMode">Checkout</label>
+              <app-info-hint [label]="hintLabel('Checkout')">
+                @for (hint of checkoutHints; track hint.label) {
+                  <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
+                }
+              </app-info-hint>
+            </div>
             <p-selectbutton
               inputId="checkoutMode"
               formControlName="checkoutMode"
@@ -109,7 +137,14 @@
 
           @if (variant() === 'elimination') {
             <div class="setup__field">
-              <label class="setup__label" for="eliminationKill">Kill</label>
+              <div class="setup__label-row">
+                <label class="setup__label" for="eliminationKill">Kill</label>
+                <app-info-hint [label]="hintLabel('Kill')">
+                  @for (hint of killHints; track hint.label) {
+                    <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
+                  }
+                </app-info-hint>
+              </div>
               <p-selectbutton
                 inputId="eliminationKill"
                 formControlName="eliminationKill"
@@ -130,7 +165,6 @@
             <p-toggleswitch inputId="catchUp" formControlName="catchUp" />
             <label for="catchUp" i18n="@@game.new.catchUp">Mit Nachziehen</label>
             <app-info-hint
-              class="setup__hint"
               label="Was heißt mit Nachziehen?"
               i18n-label="@@game.new.catchUpInfo"
               i18n="@@game.new.catchUpHint"
@@ -141,7 +175,6 @@
               <p-toggleswitch inputId="playOn" formControlName="playOn" />
               <label for="playOn" i18n="@@game.new.playOn">Plätze ausspielen</label>
               <app-info-hint
-                class="setup__hint"
                 label="Was heißt Plätze ausspielen?"
                 i18n-label="@@game.new.playOnInfo"
                 i18n="@@game.new.playOnHint"
@@ -310,9 +343,6 @@
           @for (variant of section.games; track variant) {
             @if (variant) {
               <li class="list-group__item game">
-                <button type="button" class="list-group__name game__pick" (click)="pickVariant(variant)">
-                  {{ variantName(variant) }}
-                </button>
                 <p-button
                   class="game__info"
                   icon="pi pi-info-circle"
@@ -323,10 +353,19 @@
                   [ariaLabel]="rulesLabel(variant)"
                   (onClick)="openRules(variant)"
                 />
+                <button type="button" class="list-group__name game__pick" (click)="pickVariant(variant)">
+                  {{ variantName(variant) }}
+                </button>
                 <i class="list-group__chevron game__chevron pi pi-chevron-right" aria-hidden="true"></i>
               </li>
             } @else {
               <li class="list-group__item game game--soon">
+                <app-info-hint
+                  class="game__info"
+                  label="Was ist Persönliches Training?"
+                  i18n-label="@@game.new.weaknessTrainingInfo"
+                  i18n="@@game.new.weaknessTrainingHint"
+                >Ein Training, das aus deinen Spielen deine Schwächen erkennt und sie gezielt übt. Kommt bald.</app-info-hint>
                 <span class="list-group__name game__pick" i18n="@@game.new.weaknessTraining">Persönliches Training</span>
                 <p-tag value="bald" i18n-value="@@game.new.soon" severity="secondary" />
               </li>

@@ -14,10 +14,31 @@
   font-weight: 500;
 }
 
+// A setting's name with the info button that explains its options.
+.setup__label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  // Overhangs the line instead of making it taller than a name without one.
+  app-info-hint {
+    margin-block: -0.1875rem;
+  }
+}
+
+.setup__hint-line {
+  margin: 0;
+}
+
 .setup__switch {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+
+  // As close to its text as beside a setting's name.
+  app-info-hint {
+    margin-left: -0.5rem;
+  }
 }
 
 .setup__skeleton {
@@ -92,7 +113,7 @@
   position: relative;
   isolation: isolate;
   gap: 0.25rem;
-  padding: 0 1rem 0 0;
+  padding: 0 1rem 0 0.5rem;
 }
 
 .game--soon {
@@ -105,7 +126,7 @@
   align-self: stretch;
   display: flex;
   align-items: center;
-  padding: 0.6rem 0.25rem 0.6rem 1rem;
+  padding: 0.6rem 0.25rem;
   border: none;
   border-radius: inherit;
   background: none;
@@ -150,6 +171,13 @@ button.game__pick {
 .game__info {
   position: relative;
   z-index: 1;
+}
+
+// As wide as the rules buttons above it, so the names line up.
+app-info-hint.game__info {
+  --p-button-sm-icon-only-width: 2rem;
+
+  margin-right: -0.25rem;
 }
 
 .game__chevron {

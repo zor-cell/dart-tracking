@@ -19,9 +19,9 @@ export function scoringLabel(scoring: CricketScoring): string {
 }
 
 export const KILLER_ZONES: readonly { label: string; value: KillerZone }[] = [
+  { label: 'Single', value: 'any' },
   { label: 'Double', value: 'double' },
   { label: 'Triple', value: 'triple' },
-  { label: $localize`:@@game.variant.anyRing:Ganze Zahl`, value: 'any' },
 ];
 
 export const CLOCK_ZONES: readonly { label: string; value: ClockZone }[] = [
