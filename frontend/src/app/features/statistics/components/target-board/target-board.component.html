@@ -1,0 +1,74 @@
+<div class="board">
+  <p-selectbutton
+    class="layer"
+    [options]="layerOptions"
+    optionLabel="label"
+    optionValue="value"
+    [allowEmpty]="false"
+    [ngModel]="layer()"
+    (ngModelChange)="selectLayer($event)"
+    ariaLabel="Darstellung der Ziele"
+    i18n-ariaLabel="@@stats.targets.layer"
+    size="small"
+  />
+
+  @if (layer() === 'tips') {
+    <app-tip-heatmap
+      [points]="tips()"
+      mode="cloud"
+      [extent]="extent"
+      [picked]="tipPick()"
+      (click)="pickSegment($event)"
+    >
+      <svg:g overlay>
+        @for (target of overlay(); track target.key) {
+          <svg:path
+            class="targets__field"
+            [attr.d]="target.d"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="target.ariaLabel"
+            [attr.aria-pressed]="selected() === target.key"
+            (click)="toggle(target.key, $event)"
+            (keydown.enter)="toggle(target.key, $event)"
+            (keydown.space)="toggle(target.key, $event)"
+            (pointerenter)="onTargetEnter(target.key, $event)"
+            (pointerleave)="hovered.set(null)"
+          />
+        }
+        @if (outline(); as d) {
+          <svg:path class="targets__selected targets__selected--halo" [attr.d]="d" />
+          <svg:path class="targets__selected" [attr.d]="d" />
+        }
+      </svg:g>
+    </app-tip-heatmap>
+  } @else {
+    <app-heat-board
+      [fields]="fields()"
+      ariaLabel="Darts auf Ziele nach getroffenem Feld"
+      i18n-ariaLabel="@@stats.targets.boardLabel"
+      [resolve]="resolve"
+      [outlineOf]="outlineOf"
+      [legendMax]="legendMax()"
+      [extent]="extent"
+      [(selected)]="selected"
+      [(hovered)]="hovered"
+    >
+      <span caption>
+        @if (shown(); as target) {
+          <strong>{{ target.name }}</strong> &middot;
+          @if (target.rate === null) {
+            <ng-container i18n="@@game.heatmap.noHits">keine Treffer</ng-container>
+          } @else {
+            {{ target.hits }}&nbsp;/&nbsp;{{ target.darts }} &middot; {{ target.rate * 100 | number: '1.0-0' }}&nbsp;%
+          }
+        } @else {
+          <span class="caption__summary" i18n="@@stats.targets.darts">{{ darts() }} Darts auf Ziele</span>
+        }
+      </span>
+      @if (misses() > 0) {
+        <span corner class="misses" i18n="@@stats.doubles.misses">{{ misses() }} daneben</span>
+      }
+    </app-heat-board>
+  }
+</div>

@@ -1,0 +1,156 @@
+@let totals = statistics();
+<section class="panel">
+  <h2 class="panel__title" i18n="@@settings.general">Allgemein</h2>
+  <dl class="stat-grid">
+    <div class="stat stat--lead">
+      <dt class="stat__label">
+        <ng-container i18n="@@stats.all.playTime">Spielzeit</ng-container>
+        <app-info-hint class="stat__info" i18n="@@stats.all.playTimeHint">
+          Vom Anlegen jedes Spiels bis zu seinem Ende, zusammengezählt.
+        </app-info-hint>
+      </dt>
+      <dd class="stat__value">{{ playTime() }}</dd>
+      @if (timePerGame(); as perGame) {
+        <dd class="stat__hint" i18n="@@stats.all.perGame">Ø {{ perGame }} pro Spiel</dd>
+      }
+    </div>
+    <div class="stat stat--lead">
+      <dt class="stat__label">
+        <ng-container i18n="@@stats.winRate">Siegquote</ng-container>
+        <app-info-hint class="stat__info" i18n="@@stats.winRateGamesHint">Nur Spiele mit Gegner.</app-info-hint>
+      </dt>
+      <dd class="stat__value">
+        @if (winRate() !== null) {
+          {{ winRate() | number: '1.0-0' }} %
+        } @else {
+          &ndash;
+        }
+      </dd>
+      <dd class="stat__hint" i18n="@@stats.kills.wins">{{ totals.wins }} von {{ totals.gamesWithOpponent }} gewonnen</dd>
+    </div>
+    <div class="stat">
+      <dt class="stat__label" i18n="@@stats.all.misses">Daneben</dt>
+      <dd class="stat__value">{{ missRate() | number: '1.0-0' }} %</dd>
+      <dd class="stat__hint" i18n="@@stats.all.missesHint">{{ totals.misses | number }} Darts ohne Feld</dd>
+    </div>
+    <div class="stat">
+      <dt class="stat__label">
+        <ng-container i18n="@@stats.all.located">Erkannt</ng-container>
+        <app-info-hint class="stat__info" i18n="@@stats.all.locatedHint">
+          Darts, deren Position die Kamera erfasst hat. Nur sie zeigt das Trefferbild als Punktwolke.
+        </app-info-hint>
+      </dt>
+      <dd class="stat__value">{{ locatedRate() | number: '1.0-0' }} %</dd>
+      <dd class="stat__hint" i18n="@@stats.all.locatedOf">{{ totals.located | number }} Darts mit Position</dd>
+    </div>
+  </dl>
+</section>
+
+<section class="panel">
+  <h2 class="panel__title" i18n="@@stats.all.byGame">Nach Spielart</h2>
+  <ul class="bars">
+    @for (row of variants(); track row.key) {
+      <li>
+        @if (row.game; as game) {
+          <button type="button" class="bar bar--link" (click)="pick.emit(game)">
+            <ng-container *ngTemplateOutlet="barContent; context: { $implicit: row }" />
+            <i class="pi pi-angle-right bar__go" aria-hidden="true"></i>
+          </button>
+        } @else {
+          <div class="bar">
+            <ng-container *ngTemplateOutlet="barContent; context: { $implicit: row }" />
+            <span class="bar__go"></span>
+          </div>
+        }
+      </li>
+    }
+  </ul>
+</section>
+
+<ng-template #barContent let-row>
+  <span class="bar__label">{{ row.label }}</span>
+  <span class="bar__track"><span class="bar__fill" [style.width.%]="row.share * 100"></span></span>
+  <span class="bar__figure">{{ row.figure }}</span>
+</ng-template>
+
+<section class="panel">
+  <header class="heatmap__header">
+    <h2 class="panel__title" i18n="@@stats.hitPattern">Trefferbild</h2>
+    <p-selectbutton
+      [options]="layerOptions"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+      [ngModel]="layer()"
+      (ngModelChange)="selectLayer($event)"
+      ariaLabel="Darstellung der Heatmap"
+      i18n-ariaLabel="@@game.replay.layer"
+      size="small"
+    />
+  </header>
+  <div class="heatmap">
+    @if (layer() === 'fields') {
+      <app-field-heatmap [counts]="fieldCounts()" [(pinned)]="pinnedField" />
+    } @else {
+      <app-tip-heatmap [points]="totals.heatmap" mode="cloud" [counts]="tipCounts()" [(pinned)]="pinnedField" />
+    }
+  </div>
+  <h3 class="rings__title" i18n="@@stats.all.rings">Ringe</h3>
+  <ul class="bars">
+    @for (row of rings(); track row.key) {
+      <li>
+        <div class="bar">
+          <ng-container *ngTemplateOutlet="barContent; context: { $implicit: row }" />
+          <span class="bar__go"></span>
+        </div>
+      </li>
+    }
+  </ul>
+</section>
+
+<section class="panel">
+  <h2 class="panel__title" i18n="@@stats.all.activity">Aktivität</h2>
+  <p-chart
+    type="bar"
+    height="10rem"
+    [data]="weeksData()"
+    [options]="weeksOptions()"
+    ariaLabel="Darts pro Woche"
+    i18n-ariaLabel="@@stats.all.dartsPerWeek"
+  />
+  <dl class="stat-grid">
+    <div class="stat">
+      <dt class="stat__label" i18n="@@stats.all.streak">Längste Serie</dt>
+      <dd class="stat__value" i18n="@@stats.all.days">{totals.longestStreak, plural, =1 {1 Tag} other {{{ totals.longestStreak }} Tage}}</dd>
+      <dd class="stat__hint" i18n="@@stats.all.streakHint">am Stück gespielt</dd>
+    </div>
+    <div class="stat">
+      <dt class="stat__label" i18n="@@stats.all.busiest">Aktivster Tag</dt>
+      @if (totals.busiestDay; as day) {
+        <dd class="stat__value">{{ day.darts | number }}</dd>
+        <dd class="stat__hint" i18n="@@stats.all.busiestHint">Darts am {{ day.day | date: shortDate }}</dd>
+      } @else {
+        <dd class="stat__value">&ndash;</dd>
+      }
+    </div>
+  </dl>
+</section>
+
+<section class="panel">
+  <h2 class="panel__title" i18n="@@stats.opponent">Gegner</h2>
+  <dl class="stat-grid">
+    <div class="stat">
+      <dt class="stat__label" i18n="@@stats.all.rival">Häufigster Gegner</dt>
+      @if (totals.rival; as rival) {
+        <dd class="stat__value rival">{{ rival.name }}</dd>
+        <dd class="stat__hint" i18n="@@stats.all.rivalHint">{{ rival.games }} Spiele, {{ rival.wins }} gewonnen</dd>
+      } @else {
+        <dd class="stat__value">&ndash;</dd>
+      }
+    </div>
+    <div class="stat">
+      <dt class="stat__label" i18n="@@stats.all.opponents">Verschiedene Gegner</dt>
+      <dd class="stat__value">{{ totals.opponents | number }}</dd>
+    </div>
+  </dl>
+</section>

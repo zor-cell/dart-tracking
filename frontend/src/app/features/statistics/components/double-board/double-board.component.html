@@ -57,10 +57,12 @@
     >
       <span caption>
         @if (shown(); as double) {
-          <strong>{{ double.name }}</strong> &middot; {{ double.hits }}&nbsp;/&nbsp;{{
-            double.attempts
-          }}
-          &middot; {{ double.rate * 100 | number: '1.0-0' }}&nbsp;%
+          <strong>{{ double.name }}</strong> &middot;
+          @if (double.rate === null) {
+            <ng-container i18n="@@game.heatmap.noHits">keine Treffer</ng-container>
+          } @else {
+            {{ double.hits }}&nbsp;/&nbsp;{{ double.attempts }} &middot; {{ double.rate * 100 | number: '1.0-0' }}&nbsp;%
+          }
         } @else {
           <span class="caption__summary" i18n="@@stats.doubles.attempts">{{ attempts() }} Checkout-Darts</span>
         }

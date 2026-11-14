@@ -39,6 +39,8 @@ export class HeatBoardComponent {
   readonly legendMax = input<string | null>(null);
   /** Half the drawn area, in board millimetres. */
   readonly extent = input(BOARD_VIEW_EXTENT);
+  /** The outline drawn for a picked or hovered field. */
+  readonly outlineOf = input<(picked: string) => string | null>((label) => fieldOutline(label, 0));
 
   /** The field last tapped or focused. */
   readonly selected = model<string | null>(null);
@@ -56,7 +58,7 @@ export class HeatBoardComponent {
 
   protected readonly outline = computed(() => {
     const label = this.hovered() ?? this.selected();
-    return label === null ? null : fieldOutline(label, 0);
+    return label === null ? null : this.outlineOf()(label);
   });
 
   protected readonly legendColor = (share: number): string =>

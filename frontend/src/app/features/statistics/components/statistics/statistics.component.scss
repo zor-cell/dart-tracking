@@ -2,9 +2,11 @@
   --p-tabs-tabpanel-padding: 1.25rem 0 0;
 }
 
-/* Right under the filters, the tab padding as the only gap, so both read as one block. */
-p-tabs {
-  margin-top: -1.25rem;
+/* The game, its filters and the count under them, closer than the sections below. */
+.selection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
 }
 
 /* The tabs share the bar evenly, as in the player list. */
@@ -35,7 +37,6 @@ p-tab {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.25rem 1.25rem;
-  margin: -0.75rem 0 1rem;
   font-size: 0.875rem;
 }
 

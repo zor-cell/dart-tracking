@@ -50,15 +50,14 @@ export class DoubleBoardComponent {
   protected readonly layerOptions = [...HEATMAP_LAYERS];
   protected readonly extent = VIEW_EXTENT;
 
-  /** The double of the sector `label` lies in, the bull for both bull rings; null if never
-   * thrown at. */
+  /** The double of the sector `label` lies in, the bull for both bull rings; null off the
+   * board. */
   protected readonly doubleOf = (label: string): string | null => {
     const field = parseField(label);
     if (field === null) {
       return null;
     }
-    const double = 'index' in field ? `D${SECTOR_ORDER[field.index]}` : '50';
-    return this.doubles().some((entry) => entry.label === double) ? double : null;
+    return 'index' in field ? `D${SECTOR_ORDER[field.index]}` : '50';
   };
 
   protected readonly attempts = computed(() =>
@@ -67,9 +66,8 @@ export class DoubleBoardComponent {
 
   /** What the darts at the picked double hit, or at every double without a pick, tracked or not. */
   private readonly scored = computed(() => {
-    const picked = this.picked();
     const counts = new Map<string, number>();
-    for (const double of picked ? [picked] : this.doubles()) {
+    for (const double of this.shownDoubles()) {
       for (const [label, count] of Object.entries(double.fields)) {
         counts.set(label, (counts.get(label) ?? 0) + count);
       }
@@ -100,11 +98,16 @@ export class DoubleBoardComponent {
     () => this.doubles().find((double) => double.label === this.selected()) ?? null,
   );
 
-  /** Where the darts at the picked double landed, or at every double without a pick. */
-  protected readonly tips = computed<TipPoint[]>(() => {
+  /** The picked double, none for one never thrown at, or every double without a pick. */
+  private readonly shownDoubles = computed(() => {
     const picked = this.picked();
-    return (picked ? [picked] : this.doubles()).flatMap((double) => double.cells);
+    return picked ? [picked] : this.selected() === null ? this.doubles() : [];
   });
+
+  /** Where the darts at the picked double landed, or at every double without a pick. */
+  protected readonly tips = computed<TipPoint[]>(() =>
+    this.shownDoubles().flatMap((double) => double.cells),
+  );
 
   /** Every double as a tap target over the tip cloud, with the hovered or picked one outlined. */
   protected readonly targets = computed(() =>
@@ -120,13 +123,17 @@ export class DoubleBoardComponent {
     return label === null ? null : fieldOutline(label, 0);
   });
 
-  /** The double under the pointer or picked, with its rate over every dart thrown at it. */
+  /** The double under the pointer or picked, with its rate over every dart thrown at it;
+   * one never thrown at has none. */
   protected readonly shown = computed(() => {
     const label = this.hovered() ?? this.selected();
+    if (label === null) {
+      return null;
+    }
     const double = this.doubles().find((entry) => entry.label === label);
     return double
       ? { ...double, name: fieldName(double.label), rate: double.hits / double.attempts }
-      : null;
+      : { ...emptyDouble(label), name: fieldName(label), rate: null };
   });
 
   /** The same double on the cloud, its rate over the darts that were located. */
@@ -137,10 +144,7 @@ export class DoubleBoardComponent {
     }
     const { located, locatedHits: hits } = double;
     const rate = Math.round((hits / Math.max(1, located)) * 100);
-    return {
-      name: double.name,
-      detail: located === 0 ? $localize`:@@stats.doubles.noneDetected:keine Darts erkannt` : `${hits} / ${located} (${rate} %)`,
-    };
+    return { name: double.name, detail: located === 0 ? $localize`:@@game.heatmap.noHits:keine Treffer` : `${hits} / ${located} (${rate} %)` };
   });
 
   protected selectLayer(layer: HeatmapLayer): void {
@@ -166,4 +170,9 @@ export class DoubleBoardComponent {
       this.hovered.set(label);
     }
   }
+}
+
+/** A double nobody threw at, so a pick on it shows no hits. */
+function emptyDouble(label: string): DoubleStatisticsDto {
+  return { label, attempts: 0, hits: 0, distance: null, fields: {}, located: 0, locatedHits: 0, cells: [] };
 }

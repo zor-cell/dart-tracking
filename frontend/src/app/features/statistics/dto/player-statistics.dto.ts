@@ -8,6 +8,12 @@ export type HeatmapCell = readonly [x: number, y: number, count: number];
 export interface PlayerStatisticsDto {
   readonly legs: number;
   readonly legsWon: number;
+  /** Legs against someone else, and those of them won. */
+  readonly duelLegs: number;
+  readonly duelLegsWon: number;
+  /** The fewest darts a won leg took, and where it was finished. */
+  readonly fewestDarts: number | null;
+  readonly fewestDartsAt: VisitRefDto | null;
   readonly darts: number;
   /** Darts per won leg; null without one. */
   readonly dartsPerLeg: number | null;
@@ -33,6 +39,9 @@ export interface PlayerStatisticsDto {
   readonly visits60Plus: number;
   readonly checkoutAttempts: number;
   readonly checkoutHits: number;
+  /** Visits begun with a finish in reach, and those of them that busted. */
+  readonly finishVisits: number;
+  readonly busts: number;
   readonly fields: Readonly<Record<string, number>>;
   /** Located darts per field, the ones the heatmap draws. */
   readonly locatedFields: Readonly<Record<string, number>>;

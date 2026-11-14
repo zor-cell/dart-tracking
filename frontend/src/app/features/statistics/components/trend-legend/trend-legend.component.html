@@ -1,0 +1,17 @@
+@for (entry of entries(); track entry.key) {
+  <span class="entry">
+    <button
+      type="button"
+      class="legend-toggle"
+      [class.legend-toggle--off]="hidden().has(entry.key)"
+      [attr.aria-pressed]="!hidden().has(entry.key)"
+      (click)="toggle.emit(entry.key)"
+    >
+      <span class="swatch swatch--{{ entry.swatch }}" [style.background]="entry.color"></span>{{ entry.label }}
+    </button>
+    @if (entry.hint) {
+      <app-info-hint>{{ entry.hint }}</app-info-hint>
+    }
+  </span>
+}
+<ng-content />

@@ -1,0 +1,7 @@
+/* The toggle in one line; the row scrolls sideways where it does not fit. */
+:host {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+}

@@ -94,7 +94,10 @@
       }
     </div>
     <div class="stat">
-      <dt class="stat__label" i18n="@@stats.legsWon">Legs gewonnen</dt>
+      <dt class="stat__label">
+        <ng-container i18n="@@stats.winRate">Siegquote</ng-container>
+        <app-info-hint class="stat__info" i18n="@@stats.winRateLegsHint">Nur Legs mit Gegner.</app-info-hint>
+      </dt>
       <dd class="stat__value">
         @let won = wonRate();
         @if (won !== null) {
@@ -113,7 +116,7 @@
         }
       </dd>
       @if (!other) {
-        <dd class="stat__hint" i18n="@@stats.legsOf">{{ totals.legsWon }} von {{ totals.legs }} Legs</dd>
+        <dd class="stat__hint" i18n="@@stats.legsOf">{{ totals.duelLegsWon }} von {{ totals.duelLegs }} Legs</dd>
       }
       @if (other) {
         <dd class="stat__hint">
@@ -122,14 +125,44 @@
       }
     </div>
     <div class="stat">
-      <dt class="stat__label" i18n="@@stats.dartsThrown">Darts geworfen</dt>
-      <dd class="stat__value">{{ totals.darts | number }}</dd>
+      <dt class="stat__label">
+        <ng-container i18n="@@stats.bustRate">Bust-Quote</ng-container>
+        <app-info-hint class="stat__info" i18n="@@stats.bustRateHint"
+          >Anteil der Aufnahmen mit 170 oder weniger Rest, die überworfen haben.</app-info-hint
+        >
+      </dt>
+      <dd class="stat__value">
+        @let bust = bustRate();
+        @if (bust !== null) {
+          {{ bust | number: '1.0-0' }} %
+        } @else {
+          &ndash;
+        }
+        @if (other) {
+          <app-delta-mark
+            [own]="bustRate()"
+            [other]="otherBustRate()"
+            [name]="other.name"
+            [digits]="0"
+            unit=" %"
+            [lowerIsBetter]="true"
+          />
+        }
+      </dd>
       @if (other) {
         <dd class="stat__hint">
-          <app-compared-value [name]="other.name" [other]="other.statistics.darts" [digits]="0" />
+          <app-compared-value [name]="other.name" [other]="otherBustRate()" [digits]="0" unit=" %" />
         </dd>
+      } @else {
+        <dd class="stat__hint" i18n="@@stats.bustsOf">{{ totals.busts }} von {{ totals.finishVisits }} Aufnahmen</dd>
       }
     </div>
+  </dl>
+</section>
+
+<section class="panel">
+  <h2 class="panel__title" i18n="@@stats.visits">Visits</h2>
+  <dl class="stat-grid">
     <div class="stat">
       <dt class="stat__label" i18n="@@game.detail.bestVisit">Bester Visit</dt>
       <dd class="stat__value">
@@ -196,6 +229,8 @@
     </div>
   </dl>
 </section>
+
+<ng-content />
 
 <ng-template #layerSwitch>
   <p-selectbutton

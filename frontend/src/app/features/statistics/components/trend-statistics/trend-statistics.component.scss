@@ -24,52 +24,16 @@
   }
 }
 
-/* What a dot and a line stand for; who they belong to is the page legend's colour. */
-.trend__legend {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.25rem 1rem;
-}
-
-/* The info button sits beside the entry without making the legend taller. */
-.trend__entry {
-  display: inline-flex;
-  align-items: center;
-
-  app-info-hint {
-    margin-block: -0.5rem;
-  }
-}
-
-.trend__dot,
-.trend__line {
+/* The swatch of the gap marker projected into the legend. */
+.trend__line--gap {
   display: inline-block;
-  margin-right: 0.4rem;
-  background: var(--p-text-muted-color);
-  vertical-align: middle;
-}
-
-.trend__dot {
-  width: 0.4rem;
-  height: 0.4rem;
-  border-radius: 50%;
-}
-
-.trend__line {
   width: 1rem;
   height: 0.15rem;
-  border-radius: 0.1rem;
-
-  &--own {
-    background: var(--own-text-color);
-  }
-
-  &--gap {
-    background: repeating-linear-gradient(
-      to right,
-      var(--p-text-muted-color) 0 0.25rem,
-      transparent 0.25rem 0.5rem
-    );
-  }
+  margin-right: 0.4rem;
+  vertical-align: middle;
+  background: repeating-linear-gradient(
+    to right,
+    var(--p-text-muted-color) 0 0.25rem,
+    transparent 0.25rem 0.5rem
+  );
 }

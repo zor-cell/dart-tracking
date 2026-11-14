@@ -2,11 +2,11 @@
   <header class="trend__header">
     <h2 class="panel__title" i18n="@@game.replay.race">Verlauf</h2>
     <p-selectbutton
-      [options]="metricOptions"
+      [options]="metricOptions()"
       optionLabel="label"
       optionValue="value"
       [allowEmpty]="false"
-      [ngModel]="metric()"
+      [ngModel]="picked().value"
       (ngModelChange)="metric.set($event)"
       ariaLabel="Kennzahl im Verlauf"
       i18n-ariaLabel="@@stats.trend.metric"
@@ -18,41 +18,14 @@
       <p i18n="@@stats.trend.tooFew">Für einen Verlauf braucht es mindestens zwei gewertete Spiele.</p>
     </app-empty-state>
   } @else {
-    <p class="panel__hint trend__legend">
-      <button
-        type="button"
-        class="legend-toggle"
-        [class.legend-toggle--off]="hidden().has('games')"
-        [attr.aria-pressed]="!hidden().has('games')"
-        (click)="toggle('games')"
-      >
-        <span class="trend__dot"></span
-        ><ng-container i18n="@@stats.trend.games">Einzelne Spiele</ng-container>
-      </button>
-      <span class="trend__entry">
-        <button
-          type="button"
-          class="legend-toggle"
-          [class.legend-toggle--off]="hidden().has('trend')"
-          [attr.aria-pressed]="!hidden().has('trend')"
-          (click)="toggle('trend')"
-        >
-          <span class="trend__line" [class.trend__line--own]="!otherPoints()"></span
-          ><ng-container i18n="@@stats.tab.trend">Trend</ng-container>
-        </button>
-        <app-info-hint>
-          <ng-container i18n="@@stats.trend.hint"
-            >Schnitt über die letzten {{ window }} Spiele.</ng-container
-          >
-        </app-info-hint>
-      </span>
+    <app-trend-legend [entries]="legend()" [hidden]="hidden()" (toggle)="toggle($event)">
       @if (otherPoints()) {
         <span
           ><span class="trend__line trend__line--gap"></span
           ><ng-container i18n="@@stats.trend.gap">Ohne Spiel</ng-container></span
         >
       }
-    </p>
+    </app-trend-legend>
     <p-chart
       type="line"
       height="16rem"

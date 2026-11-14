@@ -1,0 +1,40 @@
+@let totals = statistics();
+<section class="panel">
+  <h2 class="panel__title">Kills</h2>
+  <dl class="stat-grid">
+    <div class="stat stat--lead">
+      <dt class="stat__label">
+        <ng-container i18n="@@stats.kills.total">Kills</ng-container>
+        <app-info-hint class="stat__info">
+          @if (killer()) {
+            <ng-container i18n="@@stats.kills.killerHint">Leben, die du als Killer anderen genommen hast.</ng-container>
+          } @else {
+            <ng-container i18n="@@stats.kills.eliminationHint">Wie oft du einen anderen auf null zurückgeschickt hast.</ng-container>
+          }
+        </app-info-hint>
+      </dt>
+      <dd class="stat__value">{{ totals.kills | number }}</dd>
+    </div>
+    <div class="stat stat--lead">
+      <dt class="stat__label" i18n="@@stats.kills.livesLost">Leben verloren</dt>
+      <dd class="stat__value">{{ totals.losses | number }}</dd>
+    </div>
+    <div class="stat">
+      <dt class="stat__label" i18n="@@stats.kills.most">Meiste Kills</dt>
+      <dd class="stat__value">
+        @if (totals.most; as most) {
+          <a class="stat__link" [state]="returnState" [routerLink]="['/account/games', most.gameId]">
+            {{ most.kills }}<span class="sr-only" i18n="@@stats.targets.openGame">, Spiel öffnen</span>
+            <i class="pi pi-angle-right stat__go" aria-hidden="true"></i>
+          </a>
+        } @else {
+          &ndash;
+        }
+      </dd>
+    </div>
+    <div class="stat">
+      <dt class="stat__label" i18n="@@stats.kills.perGame">Ø Kills pro Spiel</dt>
+      <dd class="stat__value">{{ (perGame() | number: '1.1-1') ?? '–' }}</dd>
+    </div>
+  </dl>
+</section>

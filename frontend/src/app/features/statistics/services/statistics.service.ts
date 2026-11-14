@@ -3,7 +3,10 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
 import { environment } from '../../../../environments/environment';
+import { KillStatisticsDto } from '../dto/kill-statistics.dto';
+import { OverallStatisticsDto } from '../dto/overall-statistics.dto';
 import { StatisticsOverviewDto } from '../dto/statistics-overview.dto';
+import { TargetStatisticsDto } from '../dto/target-statistics.dto';
 import { StatisticsFilter } from '../models/statistics-filter';
 
 /** The signed-in account's own throwing record, or that of a player from its address book
@@ -22,11 +25,45 @@ export class StatisticsService {
     );
   }
 
+  /** The darts thrown at named fields in the games the filter selects. */
+  targets(filter: StatisticsFilter, player: string | null = null): Promise<TargetStatisticsDto> {
+    return firstValueFrom(
+      this.http.get<TargetStatisticsDto>(`${this.baseUrl}/targets`, {
+        params: this.params(filter, player),
+        context: SILENT_ERROR_CONTEXT,
+      }),
+    );
+  }
+
+  /** Every finished game of any kind the filter selects, added up. */
+  overall(filter: StatisticsFilter): Promise<OverallStatisticsDto> {
+    return firstValueFrom(
+      this.http.get<OverallStatisticsDto>(`${this.baseUrl}/all`, {
+        params: this.params(filter, null),
+        context: SILENT_ERROR_CONTEXT,
+      }),
+    );
+  }
+
+  /** The kills in the Elimination and Killer games the filter selects. */
+  kills(filter: StatisticsFilter): Promise<KillStatisticsDto> {
+    return firstValueFrom(
+      this.http.get<KillStatisticsDto>(`${this.baseUrl}/kills`, {
+        params: this.params(filter, null),
+        context: SILENT_ERROR_CONTEXT,
+      }),
+    );
+  }
+
   private params(filter: StatisticsFilter, player: string | null): HttpParams {
     const lists: Record<string, readonly (string | number)[]> = {
       variant: filter.variants,
       mode: filter.modes,
       checkoutMode: filter.checkoutModes,
+      killerZone: filter.killerZones,
+      clockZone: filter.clockZones,
+      trainingGoal: filter.trainingGoals,
+      trainingRing: filter.trainingRings,
       opponent: filter.opponentIds,
       players: filter.playerCounts,
     };

@@ -3,7 +3,7 @@ import { BoardFaceComponent } from '../../../game/components/board-face/board-fa
 import { dartColor } from '../../../game/models/dart-colors';
 
 /** Which figure the sketch explains. */
-export type StatSketchKind = 'grouping' | 'checkout' | 'spread';
+export type StatSketchKind = 'grouping' | 'checkout' | 'treble' | 'spread';
 
 type Point = readonly [x: number, y: number];
 
@@ -56,6 +56,21 @@ const CHECKOUT: BoardScene = {
     { from: [16, -176], to: [15.4, -169.3], label: [19, -175], off: true },
   ],
   hits: [[7, -163.5]],
+};
+
+/** Sector 20 around its treble: one dart in it, one short and one beyond, each to the edge. */
+const TREBLE: BoardScene = {
+  viewBox: '-48 -128 96 44',
+  darts: [
+    [3, -102],
+    [-10, -88],
+    [14, -114],
+  ],
+  gaps: [
+    { from: [-10, -88], to: [-11, -96.8], label: [-30, -90] },
+    { from: [14, -114], to: [13.1, -106.6], label: [17, -114] },
+  ],
+  hits: [[6, -100]],
 };
 
 /** Centre of sector 20's treble, where the spread clouds sit. */
@@ -125,6 +140,8 @@ export class StatSketchComponent {
         return GROUPING;
       case 'checkout':
         return CHECKOUT;
+      case 'treble':
+        return TREBLE;
       default:
         return null;
     }

@@ -4,92 +4,189 @@
     <h1 class="view__title" i18n="@@auth.account.stats">Statistik</h1>
   </header>
 
-  <app-list-toolbar
-    [filterable]="true"
-    [chips]="chips()"
-    [suggestions]="suggestions()"
-    (chipRemove)="clearFilter($event)"
-    (chipOpen)="openPicker($event, periodPicker)"
-    (suggestionPick)="pickSuggestion($event)"
-    (reset)="resetFilters()"
-  >
-    <form class="list-filters" [formGroup]="filters">
-      <label class="list-filters__label" for="filter-variant" i18n="@@game.new.variant">Variante</label>
-      <p-multiselect
-        inputId="filter-variant"
-        formControlName="variant"
-        [options]="variantOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Alle"
-        i18n-placeholder="@@player.list.all"
-        [showHeader]="false"
-        [showClear]="true"
-        fluid
-      />
-      <label class="list-filters__label" for="filter-opponent" i18n="@@stats.opponent">Gegner</label>
-      <p-multiselect
-        inputId="filter-opponent"
-        formControlName="opponentId"
-        [options]="opponents()"
-        optionLabel="name"
-        optionValue="id"
-        placeholder="Alle"
-        i18n-placeholder="@@player.list.all"
-        filterPlaceHolder="Spieler suchen"
-        i18n-filterPlaceHolder="@@player.list.search"
-        [showClear]="true"
-        fluid
-      />
-      <label class="list-filters__label" for="filter-players" i18n="@@game.list.playerCount">Spieleranzahl</label>
-      <p-multiselect
-        inputId="filter-players"
-        formControlName="players"
-        [options]="playerCountOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Alle"
-        i18n-placeholder="@@player.list.all"
-        [showHeader]="false"
-        [showClear]="true"
-        fluid
-      />
-      <label class="list-filters__label" for="filter-mode" i18n="@@game.new.mode">Modus</label>
-      <p-multiselect
-        inputId="filter-mode"
-        formControlName="mode"
-        [options]="modeOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Alle"
-        i18n-placeholder="@@player.list.all"
-        [showHeader]="false"
-        [showClear]="true"
-        fluid
-      />
-      <label class="list-filters__label" for="filter-checkout">Checkout</label>
-      <p-multiselect
-        inputId="filter-checkout"
-        formControlName="checkoutMode"
-        [options]="checkoutOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Alle"
-        i18n-placeholder="@@player.list.all"
-        [showHeader]="false"
-        [showClear]="true"
-        fluid
-      />
-    </form>
-    <p-button
-      listToolbarAction
-      icon="pi pi-arrow-right-arrow-left"
-      [rounded]="true"
-      ariaLabel="Mit anderem Spieler vergleichen"
-      i18n-ariaLabel="@@stats.compare"
-      (onClick)="comparePicker.toggle($event)"
+  <div class="selection">
+    <app-game-pills
+      [options]="gameOptions"
+      [(game)]="game"
+      ariaLabel="Spielart"
+      i18n-ariaLabel="@@stats.game"
     />
-  </app-list-toolbar>
+
+    <app-list-toolbar
+      [filterable]="true"
+      [chips]="chips()"
+      [suggestions]="suggestions()"
+      (chipRemove)="clearFilter($event)"
+      (chipOpen)="openPicker($event, periodPicker)"
+      (suggestionPick)="pickSuggestion($event)"
+      (reset)="resetFilters()"
+    >
+      <form class="list-filters" [formGroup]="filters">
+        <label class="list-filters__label" for="filter-opponent" i18n="@@stats.opponent">Gegner</label>
+        <p-multiselect
+          inputId="filter-opponent"
+          formControlName="opponentId"
+          [options]="opponents()"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="Alle"
+          i18n-placeholder="@@player.list.all"
+          filterPlaceHolder="Spieler suchen"
+          i18n-filterPlaceHolder="@@player.list.search"
+          [showClear]="true"
+          fluid
+        />
+        <label class="list-filters__label" for="filter-players" i18n="@@game.list.playerCount">Spieleranzahl</label>
+        <p-multiselect
+          inputId="filter-players"
+          formControlName="players"
+          [options]="playerCountOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Alle"
+          i18n-placeholder="@@player.list.all"
+          [showHeader]="false"
+          [showClear]="true"
+          fluid
+        />
+        @if (points()) {
+          <label class="list-filters__label" for="filter-mode" i18n="@@game.new.mode">Modus</label>
+          <p-multiselect
+            inputId="filter-mode"
+            formControlName="mode"
+            [options]="modeOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Alle"
+            i18n-placeholder="@@player.list.all"
+            [showHeader]="false"
+            [showClear]="true"
+            fluid
+          />
+          <label class="list-filters__label" for="filter-checkout">Checkout</label>
+          <p-multiselect
+            inputId="filter-checkout"
+            formControlName="checkoutMode"
+            [options]="checkoutOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Alle"
+            i18n-placeholder="@@player.list.all"
+            [showHeader]="false"
+            [showClear]="true"
+            fluid
+          />
+        }
+        @switch (game()) {
+          @case ('around_the_clock') {
+            <label class="list-filters__label" for="filter-clockZone" i18n="@@game.new.zone">Feld</label>
+            <p-multiselect
+              inputId="filter-clockZone"
+              formControlName="clockZone"
+              [options]="clockZoneOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Alle"
+              i18n-placeholder="@@player.list.all"
+              [showHeader]="false"
+              [showClear]="true"
+              fluid
+            />
+          }
+          @case ('killer') {
+            <label class="list-filters__label" for="filter-killerZone" i18n="@@game.new.zone">Feld</label>
+            <p-multiselect
+              inputId="filter-killerZone"
+              formControlName="killerZone"
+              [options]="killerZoneOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Alle"
+              i18n-placeholder="@@player.list.all"
+              [showHeader]="false"
+              [showClear]="true"
+              fluid
+            />
+          }
+          @case ('training') {
+            <label class="list-filters__label" for="filter-trainingGoal" i18n="@@game.new.goal">Ziel</label>
+            <p-multiselect
+              inputId="filter-trainingGoal"
+              formControlName="trainingGoal"
+              [options]="trainingGoalOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Alle"
+              i18n-placeholder="@@player.list.all"
+              [showHeader]="false"
+              [showClear]="true"
+              fluid
+            />
+            <label class="list-filters__label" for="filter-trainingRing" i18n="@@game.new.zone">Feld</label>
+            <p-multiselect
+              inputId="filter-trainingRing"
+              formControlName="trainingRing"
+              [options]="trainingRingOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Alle"
+              i18n-placeholder="@@player.list.all"
+              [showHeader]="false"
+              [showClear]="true"
+              fluid
+            />
+          }
+        }
+      </form>
+      @if (points()) {
+        <p-button
+          listToolbarAction
+          icon="pi pi-arrow-right-arrow-left"
+          [rounded]="true"
+          ariaLabel="Mit anderem Spieler vergleichen"
+          i18n-ariaLabel="@@stats.compare"
+          (onClick)="comparePicker.toggle($event)"
+        />
+      }
+    </app-list-toolbar>
+    @if (points() ? comparedPlayer() : null; as player) {
+      <div class="compare-note">
+        <span class="compare-note__key">
+          <span class="compare-note__dot" [style.background]="ownColor"></span>
+          <strong i18n="@@player.list.self">Du</strong>
+          @if (totals(); as own) {
+            <span class="compare-note__games">
+              <ng-container i18n="@@stats.games"
+                >{own.legs, plural, =1 {1 Spiel} other {{{ own.legs }} Spiele}}</ng-container
+              >
+            </span>
+          }
+        </span>
+        <span class="compare-note__key">
+          <span class="compare-note__dot" [style.background]="compareColor"></span>
+          <strong>{{ player.name }}</strong>
+          @if (others(); as loaded) {
+            <span class="compare-note__games">
+              <ng-container i18n="@@stats.games"
+                >{loaded.legs, plural, =1 {1 Spiel} other {{{ loaded.legs }} Spiele}}</ng-container
+              >
+            </span>
+          }
+        </span>
+        <app-info-hint class="compare-note__info" i18n="@@stats.compareHint">
+          Bei {{ player.name }} zählen nur Spiele, die du sehen kannst: die du angelegt oder
+          mitgespielt hast.
+        </app-info-hint>
+      </div>
+    } @else if (counted(); as counted) {
+      <div class="compare-note">
+        <span>
+          <strong i18n="@@stats.games">{counted.games, plural, =1 {1 Spiel} other {{{ counted.games }} Spiele}}</strong>,
+          <span class="compare-note__games" i18n="@@stats.darts">{counted.darts, plural, =1 {1 Dart} other {{{ counted.darts | number }} Darts}}</span>
+        </span>
+      </div>
+    }
+  </div>
   <p-popover #comparePicker (onShow)="centreArrow(comparePicker)">
     <div class="compare-picker list-filters">
       <label class="list-filters__label" for="compare-player" i18n="@@stats.compareWith">Vergleichen mit</label>
@@ -120,54 +217,82 @@
     [(range)]="range"
   />
 
-  @if (comparedPlayer(); as player) {
-    <div class="compare-note">
-      <span class="compare-note__key">
-        <span class="compare-note__dot" [style.background]="ownColor"></span>
-        <strong i18n="@@player.list.self">Du</strong>
-        @if (totals(); as own) {
-          <span class="compare-note__games">
-            <ng-container i18n="@@stats.games"
-              >{own.legs, plural, =1 {1 Spiel} other {{{ own.legs }} Spiele}}</ng-container
-            >
-          </span>
+  <ng-template #killPanel>
+    @if (kills(); as kills) {
+      @if (kills.games.length > 0) {
+        <app-kill-statistics [statistics]="kills" [killer]="game() === 'killer'" />
+      }
+    }
+  </ng-template>
+  @if (points()) {
+    <p-tabs [(value)]="tab" [showNavigators]="false">
+      <p-tablist>
+        <p-tab value="precision" i18n="@@stats.tab.precision">Präzision</p-tab>
+        <p-tab value="checkout">Checkout</p-tab>
+        <p-tab value="trend" i18n="@@stats.tab.trend">Trend</p-tab>
+      </p-tablist>
+      @if (loading() && !totals()) {
+        <app-loading-state class="status" label="Statistik wird geladen" i18n-label="@@stats.loading" />
+      } @else if (failed()) {
+        <app-load-error
+          class="status"
+          message="Die Statistik konnte nicht geladen werden."
+          i18n-message="@@stats.loadFailed"
+          (retry)="reload()"
+        />
+      } @else if (totals(); as totals) {
+        @if (totals.legs === 0) {
+          <app-empty-state class="status" [icon]="filtered() ? 'pi-filter-slash' : 'pi-chart-bar'">
+            @if (filtered()) {
+              <p i18n="@@stats.noMatch">Keine gewerteten Spiele für diese Auswahl.</p>
+            } @else {
+              <p i18n="@@stats.empty">Noch keine gewerteten Spiele.</p>
+            }
+          </app-empty-state>
+        } @else {
+          <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
+            <p-tabpanel value="precision">
+              <app-precision-statistics
+                [statistics]="totals"
+                [comparison]="comparison()"
+                [listParams]="gameListParams()"
+              >
+                <ng-container *ngTemplateOutlet="killPanel" />
+              </app-precision-statistics>
+            </p-tabpanel>
+            <p-tabpanel value="checkout">
+              <app-checkout-statistics [statistics]="totals" [comparison]="comparison()" />
+            </p-tabpanel>
+            <p-tabpanel value="trend">
+              <div class="trend">
+                <app-trend-statistics
+                  [figures]="pointsFigures"
+                  [points]="totals.trend"
+                  [otherPoints]="comparison() ? (others()?.trend ?? null) : null"
+                  [compareName]="comparison()?.name ?? null"
+                />
+                <app-visit-distribution
+                  [visitScores]="totals.visitScores"
+                  [comparison]="comparison()"
+                />
+              </div>
+            </p-tabpanel>
+          </p-tabpanels>
         }
-      </span>
-      <span class="compare-note__key">
-        <span class="compare-note__dot" [style.background]="compareColor"></span>
-        <strong>{{ player.name }}</strong>
-        @if (others(); as loaded) {
-          <span class="compare-note__games">
-            <ng-container i18n="@@stats.games"
-              >{loaded.legs, plural, =1 {1 Spiel} other {{{ loaded.legs }} Spiele}}</ng-container
-            >
-          </span>
-        }
-      </span>
-      <app-info-hint class="compare-note__info" i18n="@@stats.compareHint">
-        Bei {{ player.name }} zählen nur Spiele, die du sehen kannst: die du angelegt oder
-        mitgespielt hast.
-      </app-info-hint>
-    </div>
-  }
-  <p-tabs [(value)]="tab" [showNavigators]="false">
-    <p-tablist>
-      <p-tab value="precision" i18n="@@stats.tab.precision">Präzision</p-tab>
-      <p-tab value="checkout">Checkout</p-tab>
-      <p-tab value="trend" i18n="@@stats.tab.trend">Trend</p-tab>
-    </p-tablist>
-    @if (loading() && !totals()) {
-      <app-loading-state class="status" label="Statistik wird geladen" i18n-label="@@stats.loading" />
+      }
+    </p-tabs>
+  } @else if (game() === 'all') {
+    @if (loading() && !overall()) {
+      <app-loading-state label="Statistik wird geladen" i18n-label="@@stats.loading" />
     } @else if (failed()) {
       <app-load-error
-        class="status"
         message="Die Statistik konnte nicht geladen werden."
         i18n-message="@@stats.loadFailed"
         (retry)="reload()"
       />
-    } @else if (totals(); as totals) {
-      @if (totals.legs === 0) {
-        <app-empty-state class="status" [icon]="filtered() ? 'pi-filter-slash' : 'pi-chart-bar'">
+    } @else if (overall(); as overall) {
+      @if (overall.games === 0) {
+        <app-empty-state [icon]="filtered() ? 'pi-filter-slash' : 'pi-chart-bar'">
           @if (filtered()) {
             <p i18n="@@stats.noMatch">Keine gewerteten Spiele für diese Auswahl.</p>
           } @else {
@@ -175,32 +300,51 @@
           }
         </app-empty-state>
       } @else {
-        <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
-          <p-tabpanel value="precision">
-            <app-precision-statistics
-              [statistics]="totals"
-              [comparison]="comparison()"
-              [listParams]="gameListParams()"
-            />
-          </p-tabpanel>
-          <p-tabpanel value="checkout">
-            <app-checkout-statistics [statistics]="totals" [comparison]="comparison()" />
-          </p-tabpanel>
-          <p-tabpanel value="trend">
-            <div class="trend">
-              <app-trend-statistics
-                [points]="totals.trend"
-                [otherPoints]="comparison() ? (others()?.trend ?? null) : null"
-                [compareName]="comparison()?.name ?? null"
-              />
-              <app-visit-distribution
-                [visitScores]="totals.visitScores"
-                [comparison]="comparison()"
-              />
-            </div>
-          </p-tabpanel>
-        </p-tabpanels>
+        <app-overall-statistics
+          [class.reloading]="loading()"
+          [attr.aria-busy]="loading()"
+          [statistics]="overall"
+          (pick)="game.set($event)"
+        />
       }
     }
-  </p-tabs>
+  } @else {
+    <p-tabs [value]="targetTab()" (valueChange)="tab.set($any($event))" [showNavigators]="false">
+      <p-tablist>
+        <p-tab value="precision" i18n="@@stats.tab.precision">Präzision</p-tab>
+        <p-tab value="trend" i18n="@@stats.tab.trend">Trend</p-tab>
+      </p-tablist>
+      @if (loading() && !targets()) {
+        <app-loading-state class="status" label="Statistik wird geladen" i18n-label="@@stats.loading" />
+      } @else if (failed()) {
+        <app-load-error
+          class="status"
+          message="Die Statistik konnte nicht geladen werden."
+          i18n-message="@@stats.loadFailed"
+          (retry)="reload()"
+        />
+      } @else if (targets(); as targets) {
+        @if (targets.darts === 0) {
+          <app-empty-state class="status" [icon]="filtered() ? 'pi-filter-slash' : 'pi-chart-bar'">
+            @if (filtered()) {
+              <p i18n="@@stats.noMatch">Keine gewerteten Spiele für diese Auswahl.</p>
+            } @else {
+              <p i18n="@@stats.empty">Noch keine gewerteten Spiele.</p>
+            }
+          </app-empty-state>
+        } @else {
+          <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
+            <p-tabpanel value="precision">
+              <app-target-statistics [statistics]="targets" [game]="game()" [wins]="killerWins()">
+                <ng-container *ngTemplateOutlet="killPanel" />
+              </app-target-statistics>
+            </p-tabpanel>
+            <p-tabpanel value="trend">
+              <app-trend-statistics [figures]="targetFigures" [points]="targets.games" />
+            </p-tabpanel>
+          </p-tabpanels>
+        }
+      }
+    </p-tabs>
+  }
 </section>

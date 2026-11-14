@@ -259,3 +259,27 @@ def test_darts_per_leg_counts_only_won_legs():
 
     assert statistics.legs_won == 2
     assert statistics.darts_per_leg == (6 + 11) / 2
+
+
+def test_legs_against_others_and_the_fewest_darts_of_a_won_leg():
+    statistics = PlayerStatistics()
+    long = [visit("20", "20", "20"), visit("1", "D10")]
+    short = [visit("T20", "D20")]
+    statistics.add_leg(101, CheckoutMode.DOUBLE_OUT, [visit("20", "20", "20")], against_others=True)
+    statistics.add_leg(81, CheckoutMode.DOUBLE_OUT, long, against_others=True)
+    statistics.add_leg(100, CheckoutMode.DOUBLE_OUT, short)
+
+    assert (statistics.duel_legs, statistics.duel_legs_won) == (2, 1)
+    assert (statistics.legs, statistics.legs_won) == (3, 2)
+    assert statistics.fewest_darts == 2
+
+
+def test_busts_count_among_the_visits_with_a_finish_in_reach():
+    statistics = PlayerStatistics()
+    statistics.add_leg(
+        201,
+        CheckoutMode.DOUBLE_OUT,
+        [visit("T20", "T20", "20"), visit("T20", "20", busted=True), visit("1", "D20")],
+    )
+
+    assert (statistics.finish_visits, statistics.busts) == (2, 1)

@@ -1,0 +1,38 @@
+/* What a dot and a line stand for; who they belong to is the page legend's colour. */
+:host {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  color: var(--p-text-muted-color);
+  font-size: 0.85rem;
+}
+
+/* The info button sits beside the entry without making the legend taller. */
+.entry {
+  display: inline-flex;
+  align-items: center;
+
+  app-info-hint {
+    margin-block: -0.5rem;
+  }
+}
+
+.swatch {
+  display: inline-block;
+  margin-right: 0.4rem;
+  background: var(--p-text-muted-color);
+  vertical-align: middle;
+
+  &--dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+  }
+
+  &--line {
+    width: 1rem;
+    height: 0.15rem;
+    border-radius: 0.1rem;
+  }
+}

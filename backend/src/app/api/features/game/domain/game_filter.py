@@ -4,11 +4,16 @@ empty one leaves it open, except `statuses`."""
 from dataclasses import dataclass
 from datetime import datetime
 
+from app.api.features.game.domain.around_the_clock import ClockZone
 from app.api.features.game.domain.checkout_mode import CheckoutMode
+from app.api.features.game.domain.cricket import CricketScoring
+from app.api.features.game.domain.elimination import EliminationKill
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_status import GameStatus
 from app.api.features.game.domain.game_variant import GameVariant
+from app.api.features.game.domain.killer import KillerZone
 from app.api.features.game.domain.player_count import PlayerCount
+from app.api.features.game.domain.training import TrainingGoal, TrainingRing
 
 
 @dataclass(frozen=True)
@@ -18,6 +23,13 @@ class GameFilter:
     variants: tuple[GameVariant, ...] = ()
     modes: tuple[GameMode, ...] = ()
     checkout_modes: tuple[CheckoutMode, ...] = ()
+    # Settings of one variant each; a game of another variant never matches them.
+    elimination_kills: tuple[EliminationKill, ...] = ()
+    cricket_scorings: tuple[CricketScoring, ...] = ()
+    killer_zones: tuple[KillerZone, ...] = ()
+    clock_zones: tuple[ClockZone, ...] = ()
+    training_goals: tuple[TrainingGoal, ...] = ()
+    training_rings: tuple[TrainingRing, ...] = ()
     # Empty hides discarded games and abandoned ones too short to count.
     statuses: tuple[GameStatus, ...] = ()
     # Player identities of which one has to hold a seat in the game.

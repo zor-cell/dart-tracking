@@ -75,8 +75,14 @@ class VisitRefDto(CamelModel):
 class PlayerStatisticsDto(CamelModel):
     legs: int
     legs_won: int
+    # Legs against someone else, and those of them won.
+    duel_legs: int
+    duel_legs_won: int
     darts: int
     darts_per_leg: float | None
+    # The fewest darts a won leg took, and where it was finished.
+    fewest_darts: int | None
+    fewest_darts_at: VisitRefDto | None
     points: int
     average: float
     first_nine_average: float
@@ -94,6 +100,9 @@ class PlayerStatisticsDto(CamelModel):
     visits60_plus: int
     checkout_attempts: int
     checkout_hits: int
+    # Visits begun with a finish in reach, and those of them that busted.
+    finish_visits: int
+    busts: int
     fields: dict[str, int]
     located_fields: dict[str, int]
     heatmap: list[tuple[int, int, int]]
@@ -111,8 +120,12 @@ class PlayerStatisticsDto(CamelModel):
         return cls(
             legs=statistics.legs,
             legs_won=statistics.legs_won,
+            duel_legs=statistics.duel_legs,
+            duel_legs_won=statistics.duel_legs_won,
             darts=statistics.darts,
             darts_per_leg=_rounded(statistics.darts_per_leg),
+            fewest_darts=statistics.fewest_darts,
+            fewest_darts_at=VisitRefDto.from_entity(statistics.fewest_darts_at),
             points=statistics.points,
             average=round(statistics.average, 2),
             first_nine_average=round(statistics.first_nine_average, 2),
@@ -128,6 +141,8 @@ class PlayerStatisticsDto(CamelModel):
             visits100_plus=statistics.visits_100_plus,
             visits60_plus=statistics.visits_60_plus,
             checkout_attempts=statistics.checkout_attempts,
+            finish_visits=statistics.finish_visits,
+            busts=statistics.busts,
             checkout_hits=statistics.checkout_hits,
             fields=dict(statistics.fields),
             located_fields=dict(statistics.located_fields),

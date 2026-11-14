@@ -43,9 +43,13 @@ class _Leg:
     turns: list[Turn]
     refs: list[VisitRef | None]
     starts: list[int]
+    # Whether anyone else threw in the game.
+    against_others: bool = False
 
     def add_to(self, statistics: PlayerStatistics) -> None:
-        statistics.add_leg(self.mode, self.checkout_mode, self.turns, self.refs, self.starts)
+        statistics.add_leg(
+            self.mode, self.checkout_mode, self.turns, self.refs, self.starts, self.against_others
+        )
 
 
 class StatisticsRepository:
@@ -59,7 +63,7 @@ class StatisticsRepository:
     ) -> StatisticsOverview:
         """Every counted leg of the games `criteria` selects, in one tally and game by game;
         `last` keeps only the most recent games that count, `player` reads that one instead."""
-        seats = [*_seats(user_id, player), GameTable.id.not_in(hidden_by(user_id))]
+        seats = [*seat_clauses(user_id, player), GameTable.id.not_in(hidden_by(user_id))]
         legs = await self._legs(session, seats, criteria, last)
         totals = PlayerStatistics()
         games: dict[str, TrendPoint] = {}
@@ -189,13 +193,14 @@ class StatisticsRepository:
                     turns=turns,
                     refs=refs,
                     starts=[start for _, _, start in own],
+                    against_others=len(game.players) > 1,
                 )
             )
 
         return legs
 
 
-def _seats(user_id: str, player: PlayerIdentity | None) -> list[ColumnElement[bool]]:
+def seat_clauses(user_id: str, player: PlayerIdentity | None) -> list[ColumnElement[bool]]:
     """The account's own seats, or those of `player` in the games the account set up
     or sat in; a linked entry counts every seat of its account."""
     if player is None:

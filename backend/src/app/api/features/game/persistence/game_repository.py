@@ -35,12 +35,16 @@ from app.api.features.game.domain.quick_start import (
 )
 from app.api.features.game.domain.player import Player
 from app.api.features.game.domain.turn import Turn
+from app.api.features.game.persistence.clock_settings import ClockSettingsTable
+from app.api.features.game.persistence.cricket_settings import CricketSettingsTable
 from app.api.features.game.persistence.dart import DartTable
 from app.api.features.game.persistence.elimination_settings import EliminationSettingsTable
 from app.api.features.game.persistence.game import GameTable
 from app.api.features.game.persistence.game_hide import GameHideTable
 from app.api.features.game.persistence.game_player import GamePlayerTable
 from app.api.features.game.persistence.game_settings import load_setups, settings_row
+from app.api.features.game.persistence.killer_settings import KillerSettingsTable
+from app.api.features.game.persistence.training_settings import TrainingSettingsTable
 from app.api.features.game.persistence.turn import TurnTable
 from app.api.features.game.persistence.x01_settings import X01SettingsTable
 from app.api.features.player.domain.player_identity import PlayerIdentity
@@ -610,56 +614,56 @@ class GameRepository:
             )
         ).scalars().all()
 
-        darts: dict[int, list[Dart]] = {}
-        for dart in dart_rows:
-            position = None if dart.pos_x is None else (dart.pos_x, dart.pos_y)
-            darts.setdefault(dart.turn_index, []).append(
-                Dart(
-                    value=dart.value,
-                    multiplier=dart.multiplier,
-                    position=position,
-                    thrown_at=dart.thrown_at,
-                )
-            )
-
         preferred = await self._preferred_doubles(session, [entry[2] for entry in entries])
+        setup = (await load_setups(session, {row.id: GameVariant(row.variant)}))[row.id]
+        return _assemble(row, setup, entries, turn_rows, dart_rows, preferred)
 
-        variant = GameVariant(row.variant)
-        setup = (await load_setups(session, {row.id: variant}))[row.id]
-        return Game(
-            id=row.id,
-            mode=setup.mode,
-            variant=variant,
-            options=setup.options,
-            finish=setup.finish,
-            players=[
-                Player(
-                    id=index,
-                    name=shown_name(name),
-                    identity_id=identity_id,
-                    preferred_doubles=preferred.get(identity_id, ()),
+    async def many(self, session: AsyncSession, game_ids: Sequence[str]) -> dict[str, Game]:
+        """The games `game_ids` names, each replayable, loaded in a few queries."""
+        if not game_ids:
+            return {}
+        rows = (
+            await session.execute(select(GameTable).where(GameTable.id.in_(game_ids)))
+        ).scalars().all()
+        seats = (
+            await session.execute(
+                select(
+                    GamePlayerTable.game_id,
+                    GamePlayerTable.player_index,
+                    PlayerTable.display_name,
+                    GamePlayerTable.player_id,
                 )
-                for index, name, identity_id in entries
-            ],
-            checkout_mode=setup.checkout_mode,
-            evaluation_enabled=row.evaluation_enabled,
-            tracking_paused=row.tracking_paused,
-            win_confirmed=row.win_confirmed,
-            ended=variant.open_ended and row.status == GameStatus.FINISHED.value,
-            current_player_index=row.current_player_index,
-            turns=[
-                Turn(
-                    player_id=turn.player_index,
-                    darts=darts.get(turn.turn_index, []),
-                    busted=turn.busted,
-                    ended_at=turn.ended_at,
-                )
-                for turn in turn_rows
-            ],
-            shadow_darts=[_dart_from_json(dart) for dart in row.shadow_darts],
-            revision=row.revision,
-            updated_at=row.updated_at,
-        )
+                .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
+                .where(GamePlayerTable.game_id.in_(game_ids))
+                .order_by(GamePlayerTable.game_id, GamePlayerTable.player_index)
+            )
+        ).all()
+        turns = (
+            await session.execute(
+                select(TurnTable)
+                .where(TurnTable.game_id.in_(game_ids))
+                .order_by(TurnTable.game_id, TurnTable.turn_index)
+            )
+        ).scalars().all()
+        darts = (
+            await session.execute(
+                select(DartTable)
+                .where(DartTable.game_id.in_(game_ids))
+                .order_by(DartTable.game_id, DartTable.turn_index, DartTable.dart_index)
+            )
+        ).scalars().all()
+        setups = await load_setups(session, {row.id: GameVariant(row.variant) for row in rows})
+        return {
+            row.id: _assemble(
+                row,
+                setups[row.id],
+                [(seat[1], seat[2], seat[3]) for seat in seats if seat[0] == row.id],
+                [turn for turn in turns if turn.game_id == row.id],
+                [dart for dart in darts if dart.game_id == row.id],
+                {},
+            )
+            for row in rows
+        }
 
 
     async def _preferred_doubles(
@@ -674,6 +678,63 @@ class GameRepository:
             )
         ).all()
         return {row.id: tuple(row.preferred_doubles) for row in rows}
+
+
+def _assemble(
+    row: GameTable,
+    setup: GameSetup,
+    entries: Sequence[tuple[int, str | None, str]],
+    turn_rows: Sequence[TurnTable],
+    dart_rows: Sequence[DartTable],
+    preferred: dict[str, tuple[int, ...]],
+) -> Game:
+    """A game from its rows: seats as (index, name, player id), turns and darts in order."""
+    darts: dict[int, list[Dart]] = {}
+    for dart in dart_rows:
+        position = None if dart.pos_x is None else (dart.pos_x, dart.pos_y)
+        darts.setdefault(dart.turn_index, []).append(
+            Dart(
+                value=dart.value,
+                multiplier=dart.multiplier,
+                position=position,
+                thrown_at=dart.thrown_at,
+            )
+        )
+    variant = setup.variant
+    return Game(
+        id=row.id,
+        mode=setup.mode,
+        variant=variant,
+        options=setup.options,
+        finish=setup.finish,
+        players=[
+            Player(
+                id=index,
+                name=shown_name(name),
+                identity_id=identity_id,
+                preferred_doubles=preferred.get(identity_id, ()),
+            )
+            for index, name, identity_id in entries
+        ],
+        checkout_mode=setup.checkout_mode,
+        evaluation_enabled=row.evaluation_enabled,
+        tracking_paused=row.tracking_paused,
+        win_confirmed=row.win_confirmed,
+        ended=variant.open_ended and row.status == GameStatus.FINISHED.value,
+        current_player_index=row.current_player_index,
+        turns=[
+            Turn(
+                player_id=turn.player_index,
+                darts=darts.get(turn.turn_index, []),
+                busted=turn.busted,
+                ended_at=turn.ended_at,
+            )
+            for turn in turn_rows
+        ],
+        shadow_darts=[_dart_from_json(dart) for dart in row.shadow_darts],
+        revision=row.revision,
+        updated_at=row.updated_at,
+    )
 
 
 def _summary_remaining(
@@ -811,6 +872,19 @@ def game_filter_clauses(criteria: GameFilter) -> list[ColumnElement[bool]]:
     if criteria.checkout_modes:
         checkouts = [mode.value for mode in criteria.checkout_modes]
         clauses.append(_points_games(lambda table: table.checkout_mode.in_(checkouts)))
+    for column, values in (
+        (EliminationSettingsTable.kill, criteria.elimination_kills),
+        (CricketSettingsTable.scoring, criteria.cricket_scorings),
+        (KillerSettingsTable.zone, criteria.killer_zones),
+        (ClockSettingsTable.zone, criteria.clock_zones),
+        (TrainingSettingsTable.goal, criteria.training_goals),
+        (TrainingSettingsTable.ring, criteria.training_rings),
+    ):
+        if values:
+            chosen = [value.value for value in values]
+            clauses.append(
+                GameTable.id.in_(select(column.class_.game_id).where(column.in_(chosen)))
+            )
     if criteria.opponent_ids:
         clauses.append(
             GameTable.id.in_(

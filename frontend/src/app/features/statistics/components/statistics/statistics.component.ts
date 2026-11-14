@@ -1,3 +1,4 @@
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -18,13 +19,30 @@ import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { StatisticsOverviewDto } from '../../dto/statistics-overview.dto';
+import { TargetStatisticsDto } from '../../dto/target-statistics.dto';
 import { COMPARE_COLOR, Comparison, OWN_COLOR } from '../../models/comparison';
 import { StatisticsFilter } from '../../models/statistics-filter';
+import { GamePillsComponent } from '../game-pills/game-pills.component';
+import { KillStatisticsComponent } from '../kill-statistics/kill-statistics.component';
+import { KillStatisticsDto } from '../../dto/kill-statistics.dto';
+import { STATISTICS_VIEWS, StatisticsGame, StatisticsView, showsPoints } from '../../models/statistics-game';
+import { POINTS_FIGURES, TARGET_FIGURES } from '../../models/trend-metric';
+import { OverallStatisticsComponent } from '../overall-statistics/overall-statistics.component';
+import { OverallStatisticsDto } from '../../dto/overall-statistics.dto';
 import { StatisticsService } from '../../services/statistics.service';
 import { CHECKOUT_MODES, CheckoutMode } from '../../../game/models/checkout-mode';
 import { PLAYER_COUNT_LABELS, PlayerCount } from '../../../game/models/game-filter';
 import { GAME_MODES, GameMode } from '../../../game/models/game-mode';
-import { GAME_VARIANTS, GameVariant, POINTS_VARIANTS } from '../../../game/models/game-variant';
+import {
+  CLOCK_ZONES,
+  ClockZone,
+  KILLER_ZONES,
+  KillerZone,
+  TRAINING_GOALS,
+  TRAINING_RINGS,
+  TrainingGoal,
+  TrainingRing,
+} from '../../../game/models/variant-options';
 import { PlayerIdentityDto } from '../../../player/dto/player-identity.dto';
 import { PlayerService } from '../../../player/services/player.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
@@ -64,13 +82,36 @@ import {
 } from '../../../../core/view/models/query-state';
 import { CheckoutStatisticsComponent } from '../checkout-statistics/checkout-statistics.component';
 import { PrecisionStatisticsComponent } from '../precision-statistics/precision-statistics.component';
+import { TargetStatisticsComponent } from '../target-statistics/target-statistics.component';
 import { TrendStatisticsComponent } from '../trend-statistics/trend-statistics.component';
 import { VisitDistributionComponent } from '../visit-distribution/visit-distribution.component';
 
 /** The filters whose picks are remembered and offered back; the period is not among them. */
-const REMEMBERED = ['variant', 'opponentId', 'players', 'mode', 'checkoutMode'] as const;
+const REMEMBERED = [
+  'opponentId',
+  'players',
+  'mode',
+  'checkoutMode',
+  'clockZone',
+  'killerZone',
+  'trainingGoal',
+  'trainingRing',
+] as const;
 
 type Remembered = (typeof REMEMBERED)[number];
+
+/** The filters that are settings of one game, by the games they apply to. */
+const GAME_FILTERS: Partial<Record<Remembered, readonly StatisticsView[]>> = {
+  mode: ['x01', 'elimination'],
+  checkoutMode: ['x01', 'elimination'],
+  clockZone: ['around_the_clock'],
+  killerZone: ['killer'],
+  trainingGoal: ['training'],
+  trainingRing: ['training'],
+};
+
+/** The filters the game list knows too, for links into it. */
+const GAME_LIST_FILTERS: readonly Remembered[] = ['opponentId', 'players', 'mode', 'checkoutMode'];
 
 type StatisticsTab = 'precision' | 'checkout' | 'trend';
 
@@ -81,11 +122,14 @@ const TAB_KEY = 'dart-tracking.statisticsTab';
 
 /** How each filter is kept in the query params. */
 const FILTER_PARAMS = {
-  variant: listParam(oneOfParam(POINTS_VARIANTS.map((variant) => variant.value))),
   opponentId: listParam(TEXT_PARAM),
   players: listParam(oneOfParam(Object.keys(PLAYER_COUNT_LABELS) as PlayerCount[])),
   mode: listParam(oneOfParam(GAME_MODES)),
   checkoutMode: listParam(oneOfParam(CHECKOUT_MODES.map((mode) => mode.value))),
+  clockZone: listParam(oneOfParam(CLOCK_ZONES.map((zone) => zone.value))),
+  killerZone: listParam(oneOfParam(KILLER_ZONES.map((zone) => zone.value))),
+  trainingGoal: listParam(oneOfParam(TRAINING_GOALS.map((goal) => goal.value))),
+  trainingRing: listParam(oneOfParam(TRAINING_RINGS.map((ring) => ring.value))),
 };
 
 /** The quick picks the game list knows too; a count of games has no counterpart there. */
@@ -99,6 +143,8 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
 @Component({
   selector: 'app-statistics',
   imports: [
+    DecimalPipe,
+    NgTemplateOutlet,
     BackLinkComponent,
     Button,
     CheckoutStatisticsComponent,
@@ -107,6 +153,9 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
     ListToolbarComponent,
     LoadErrorComponent,
     FormsModule,
+    GamePillsComponent,
+    KillStatisticsComponent,
+    OverallStatisticsComponent,
     InfoHintComponent,
     MultiSelect,
     PeriodPickerComponent,
@@ -119,6 +168,7 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
     TabPanel,
     TabPanels,
     Tabs,
+    TargetStatisticsComponent,
     TrendStatisticsComponent,
     VisitDistributionComponent,
   ],
@@ -137,9 +187,51 @@ export class StatisticsComponent {
   protected readonly totals = signal<StatisticsOverviewDto | null>(null);
   /** The compared player's figures under the same filters, null while nobody is compared. */
   protected readonly others = signal<StatisticsOverviewDto | null>(null);
+  /** The darts at targets, for the games whose figures are not points. */
+  protected readonly targets = signal<TargetStatisticsDto | null>(null);
+  /** Kills, for Elimination and Killer; null for the other games. */
+  protected readonly kills = signal<KillStatisticsDto | null>(null);
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
   private requests = 0;
+
+  /** The game whose figures are shown. */
+  protected readonly game = signal<StatisticsView>('all');
+  protected readonly gameOptions = [...STATISTICS_VIEWS];
+  protected readonly points = computed(() => {
+    const game = this.game();
+    return game !== 'all' && showsPoints(game);
+  });
+  protected readonly pointsFigures = POINTS_FIGURES;
+  protected readonly targetFigures = TARGET_FIGURES;
+
+  /** The tab of a game at targets, which has no checkout tab: that one opens its precision. */
+  protected readonly targetTab = computed(() => (this.tab() === 'trend' ? 'trend' : 'precision'));
+
+  /** Killer's games won, for its figures; null for the other games. */
+  protected readonly killerWins = computed(() => {
+    const kills = this.game() === 'killer' ? this.kills() : null;
+    return kills && kills.games.length > 0 ? { wins: kills.wins, games: kills.games.length } : null;
+  });
+  /** Every game together, for the view over all of them. */
+  protected readonly overall = signal<OverallStatisticsDto | null>(null);
+
+  /** How many games and darts the figures shown are counted from; null before they are
+   * loaded or without a game. */
+  protected readonly counted = computed(() => {
+    if (this.failed()) {
+      return null;
+    }
+    const points = this.points() ? this.totals() : null;
+    const overall = this.game() === 'all' ? this.overall() : null;
+    const other = this.game() === 'all' ? null : (this.kills() ?? this.targets());
+    const tally = points
+      ? { games: points.legs, darts: points.darts }
+      : overall
+        ? { games: overall.games, darts: overall.darts }
+        : other && { games: other.games.length, darts: other.darts };
+    return tally && tally.games > 0 ? tally : null;
+  });
 
   protected readonly tab = signal<StatisticsTab>(
     TABS.find((tab) => tab === readStored(TAB_KEY)) ?? 'precision',
@@ -149,8 +241,10 @@ export class StatisticsComponent {
   protected readonly period = signal<Period>(DEFAULT_PERIODS.days);
   protected readonly range = signal<DayRange>(null);
 
-  // The figures are points and checkouts, which the other variants do not have.
-  protected readonly variantOptions = [...POINTS_VARIANTS];
+  protected readonly clockZoneOptions = [...CLOCK_ZONES];
+  protected readonly killerZoneOptions = [...KILLER_ZONES];
+  protected readonly trainingGoalOptions = [...TRAINING_GOALS];
+  protected readonly trainingRingOptions = [...TRAINING_RINGS];
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
   protected readonly checkoutOptions = [...CHECKOUT_MODES];
   protected readonly playerCountOptions = Object.entries(PLAYER_COUNT_LABELS).map(
@@ -173,11 +267,14 @@ export class StatisticsComponent {
   });
 
   protected readonly filters = this.fb.group({
-    variant: this.fb.control<GameVariant[]>([], { nonNullable: true }),
     opponentId: this.fb.control<string[]>([], { nonNullable: true }),
     players: this.fb.control<PlayerCount[]>([], { nonNullable: true }),
     mode: this.fb.control<GameMode[]>([], { nonNullable: true }),
     checkoutMode: this.fb.control<CheckoutMode[]>([], { nonNullable: true }),
+    clockZone: this.fb.control<ClockZone[]>([], { nonNullable: true }),
+    killerZone: this.fb.control<KillerZone[]>([], { nonNullable: true }),
+    trainingGoal: this.fb.control<TrainingGoal[]>([], { nonNullable: true }),
+    trainingRing: this.fb.control<TrainingRing[]>([], { nonNullable: true }),
   });
   private readonly filterValue = toSignal(this.filters.valueChanges, {
     initialValue: this.filters.value,
@@ -196,7 +293,7 @@ export class StatisticsComponent {
         removable: false,
         opens: true,
       },
-      ...REMEMBERED.flatMap((key) => {
+      ...REMEMBERED.filter((key) => this.applies(key)).flatMap((key) => {
         const label = this.chipLabel(key, value[key] ?? []);
         return label ? [{ key, label }] : [];
       }),
@@ -220,12 +317,18 @@ export class StatisticsComponent {
   );
 
   protected readonly criteria = computed<StatisticsFilter>(() => {
-    const { variant, opponentId, players, mode, checkoutMode } = this.filterValue();
+    const value = this.filterValue();
+    const { opponentId, players } = value;
     const period = this.period();
+    const picks = <K extends Remembered>(key: K) => (this.applies(key) ? (value[key] ?? []) : []);
     return {
-      variants: variant ?? [],
-      modes: mode ?? [],
-      checkoutModes: checkoutMode ?? [],
+      variants: this.game() === 'all' ? [] : [this.game() as StatisticsGame],
+      modes: picks('mode') as GameMode[],
+      checkoutModes: picks('checkoutMode') as CheckoutMode[],
+      clockZones: picks('clockZone') as ClockZone[],
+      killerZones: picks('killerZone') as KillerZone[],
+      trainingGoals: picks('trainingGoal') as TrainingGoal[],
+      trainingRings: picks('trainingRing') as TrainingRing[],
       opponentIds: opponentId ?? [],
       playerCounts: players ?? [],
       ...periodBounds(period, this.range(), new Date()),
@@ -237,8 +340,9 @@ export class StatisticsComponent {
    * has no counterpart there, so that period is left out. */
   protected readonly gameListParams = computed<Params>(() => {
     const value = this.filterValue();
-    const params: Record<string, string> = {};
-    for (const key of REMEMBERED) {
+    const game = this.game();
+    const params: Record<string, string> = game === 'all' ? {} : { variant: game };
+    for (const key of GAME_LIST_FILTERS.filter((key) => this.applies(key))) {
       const picks = (value[key] ?? []) as never[];
       if (picks.length > 0) {
         params[key] = FILTER_PARAMS[key].format(picks);
@@ -264,6 +368,12 @@ export class StatisticsComponent {
       DEFAULT_PERIODS.days,
     );
     this.queryState.signal('range', this.range, DAY_RANGE_PARAM, null);
+    this.queryState.signal(
+      'game',
+      this.game,
+      oneOfParam(STATISTICS_VIEWS.map((option) => option.value)),
+      'all',
+    );
     this.queryState.form(this.filters, FILTER_PARAMS);
     this.queryState.signal('compare', this.compareId, TEXT_PARAM, '');
     void this.players.list().then((all) => {
@@ -278,13 +388,21 @@ export class StatisticsComponent {
     effect(() => writeStored(TAB_KEY, this.tab()));
     effect(() => {
       const criteria = this.criteria();
-      const compared = this.compareId();
+      const compared = this.points() ? this.compareId() : '';
       untracked(() => void this.load(criteria, compared));
     });
   }
 
+  /** Whether a filter narrows the game that is shown; a setting of another game does not. */
+  private applies(key: Remembered): boolean {
+    return GAME_FILTERS[key]?.includes(this.game()) ?? true;
+  }
+
   /** How a filter's picks read on a chip; null when none of them is known to this page. */
   private chipLabel(key: string, picks: readonly unknown[]): string | null {
+    if (!REMEMBERED.some((known) => known === key) || !this.applies(key as Remembered)) {
+      return null;
+    }
     const names = picks.flatMap((pick) => this.nameOf(key as Remembered, pick) ?? []);
     if (names.length === 0) {
       return null;
@@ -294,8 +412,14 @@ export class StatisticsComponent {
 
   private nameOf(key: Remembered, value: unknown): string | null {
     switch (key) {
-      case 'variant':
-        return GAME_VARIANTS.find((option) => option.value === value)?.label ?? null;
+      case 'clockZone':
+        return CLOCK_ZONES.find((option) => option.value === value)?.label ?? null;
+      case 'killerZone':
+        return KILLER_ZONES.find((option) => option.value === value)?.label ?? null;
+      case 'trainingGoal':
+        return TRAINING_GOALS.find((option) => option.value === value)?.label ?? null;
+      case 'trainingRing':
+        return TRAINING_RINGS.find((option) => option.value === value)?.label ?? null;
       case 'opponentId':
         return this.opponents().find((player) => player.id === value)?.name ?? null;
       case 'players':
@@ -340,7 +464,7 @@ export class StatisticsComponent {
   }
 
   protected reload(): void {
-    void this.load(this.criteria(), this.compareId());
+    void this.load(this.criteria(), this.points() ? this.compareId() : '');
   }
 
   /** Only the latest request may land, so a quick change of filters cannot be overtaken. */
@@ -349,13 +473,31 @@ export class StatisticsComponent {
     this.loading.set(true);
     this.failed.set(false);
     try {
-      const [totals, others] = await Promise.all([
-        this.statistics.load(criteria),
-        compared ? this.statistics.load(criteria, compared) : null,
-      ]);
-      if (request === this.requests) {
-        this.totals.set(totals);
-        this.others.set(others);
+      const game = this.game();
+      const kills =
+        game === 'elimination' || game === 'killer' ? this.statistics.kills(criteria) : null;
+      if (game === 'all') {
+        const overall = await this.statistics.overall(criteria);
+        if (request === this.requests) {
+          this.overall.set(overall);
+        }
+      } else if (this.points()) {
+        const [totals, others, killed] = await Promise.all([
+          this.statistics.load(criteria),
+          compared ? this.statistics.load(criteria, compared) : null,
+          kills,
+        ]);
+        if (request === this.requests) {
+          this.totals.set(totals);
+          this.others.set(others);
+          this.kills.set(killed);
+        }
+      } else {
+        const [targets, killed] = await Promise.all([this.statistics.targets(criteria), kills]);
+        if (request === this.requests) {
+          this.targets.set(targets);
+          this.kills.set(killed);
+        }
       }
     } catch {
       if (request === this.requests) {

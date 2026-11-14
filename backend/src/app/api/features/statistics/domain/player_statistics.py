@@ -61,6 +61,12 @@ class PlayerStatistics:
     legs: int = 0
     legs_won: int = 0
     won_leg_darts: int = 0  # darts the player threw in the legs they won
+    # Legs against someone else, and those of them the player won.
+    duel_legs: int = 0
+    duel_legs_won: int = 0
+    # The fewest darts a won leg took, and its finishing visit.
+    fewest_darts: int | None = None
+    fewest_darts_at: VisitRef | None = None
     darts: int = 0
     points: int = 0
     best_visit: int = 0
@@ -76,6 +82,9 @@ class PlayerStatistics:
     visits_60_plus: int = 0
     checkout_attempts: int = 0
     checkout_hits: int = 0
+    # Visits begun with a finish in reach, and those of them that busted.
+    finish_visits: int = 0
+    busts: int = 0
     first_nine_darts: int = 0
     first_nine_points: int = 0
     fields: Counter[str] = field(default_factory=Counter)
@@ -173,6 +182,7 @@ class PlayerStatistics:
         turns: list[Turn],
         refs: Sequence[VisitRef | None] | None = None,
         starts: Sequence[int] | None = None,
+        against_others: bool = False,
     ) -> None:
         """Counts one leg; `refs`, one per turn, say where each visit was thrown, and
         `starts` what the player still needed as it began, where others change that."""
@@ -188,6 +198,9 @@ class PlayerStatistics:
             # What the player faced at the oche decides whether the visit aimed to score.
             if remaining > _HIGHEST_FINISH and not turn.busted:
                 self._add_scoring_visit(turn)
+            if remaining <= _HIGHEST_FINISH and turn.darts:
+                self.finish_visits += 1
+                self.busts += turn.busted
 
             live = remaining
             for dart in turn.darts:
@@ -232,9 +245,16 @@ class PlayerStatistics:
             self._add_visit_band(turn.points)
 
         self.legs += 1
+        self.duel_legs += against_others
         if remaining == 0:
             self.legs_won += 1
+            self.duel_legs_won += against_others
             self.won_leg_darts += thrown
+            ref = None if refs is None or not refs else refs[-1]
+            if self.fewest_darts is None or thrown < self.fewest_darts or (
+                thrown == self.fewest_darts and _first(ref, self.fewest_darts_at)
+            ):
+                self.fewest_darts, self.fewest_darts_at = thrown, ref
 
     def _add_visit_band(self, points: int) -> None:
         """Counts a visit into every band it reaches: 60+, 100+ and 140+ include the 180s."""

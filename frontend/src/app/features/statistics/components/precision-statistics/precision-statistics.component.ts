@@ -61,7 +61,14 @@ export class PrecisionStatisticsComponent {
   /** The field picked on the heatmap, kept when the layer changes. */
   protected readonly pinnedField = signal<string | null>(null);
 
-  /** Legs won out of every leg played, in percent. */
+  /** Busted visits out of those begun with a finish in reach, in percent. */
+  protected readonly bustRate = computed(() => bustRate(this.statistics()));
+  protected readonly otherBustRate = computed(() => {
+    const other = this.comparison()?.statistics;
+    return other ? bustRate(other) : null;
+  });
+
+  /** Legs won out of the legs against someone else, in percent. */
   protected readonly wonRate = computed(() => wonRate(this.statistics()));
   protected readonly otherWonRate = computed(() => {
     const other = this.comparison()?.statistics;
@@ -156,8 +163,12 @@ function tipCounts({ locatedFields }: PlayerStatisticsDto): ReadonlyMap<string, 
   return new Map(Object.entries(locatedFields));
 }
 
-function wonRate({ legsWon, legs }: PlayerStatisticsDto): number | null {
-  return legs === 0 ? null : (legsWon / legs) * 100;
+function bustRate({ busts, finishVisits }: PlayerStatisticsDto): number | null {
+  return finishVisits === 0 ? null : (busts / finishVisits) * 100;
+}
+
+function wonRate({ duelLegsWon, duelLegs }: PlayerStatisticsDto): number | null {
+  return duelLegs === 0 ? null : (duelLegsWon / duelLegs) * 100;
 }
 
 /** The wider axis against the narrower one, and the direction of the wider one. */

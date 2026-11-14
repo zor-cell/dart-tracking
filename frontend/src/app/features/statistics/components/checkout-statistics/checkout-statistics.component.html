@@ -97,6 +97,71 @@
       }
     </div>
     <div class="stat">
+      <dt class="stat__label" i18n="@@stats.fewestDarts">Wenigste Darts</dt>
+      <dd class="stat__value">
+        @if (other ? null : totals.fewestDartsAt; as at) {
+          <a
+            class="stat__link"
+            [state]="returnState"
+            [routerLink]="['/account/games', at.gameId]"
+            [queryParams]="{ visit: at.visit }"
+          >
+            {{ totals.fewestDarts }}<span class="sr-only" i18n="@@stats.openReplay">, im Replay öffnen</span>
+            <i class="pi pi-angle-right stat__go" aria-hidden="true"></i>
+          </a>
+        } @else {
+          {{ totals.fewestDarts ?? '–' }}
+        }
+        @if (other) {
+          <app-delta-mark
+            [own]="totals.fewestDarts"
+            [other]="other.statistics.fewestDarts"
+            [name]="other.name"
+            [digits]="0"
+            [lowerIsBetter]="true"
+          />
+        }
+      </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="other.statistics.fewestDarts" [digits]="0" />
+        </dd>
+      } @else {
+        <dd class="stat__hint" i18n="@@stats.fewestDartsHint">in einem gewonnenen Leg</dd>
+      }
+    </div>
+    <div class="stat">
+      <dt class="stat__label">
+        <ng-container i18n="@@stats.dartsPerLeg">Ø Darts pro Leg</ng-container>
+        <app-info-hint class="stat__info" i18n="@@stats.dartsPerLegHint">
+          Darts vom ersten Wurf bis zum Finish. Nur Legs, die du selbst beendet hast.
+        </app-info-hint>
+      </dt>
+      <dd class="stat__value">
+        {{ (totals.dartsPerLeg | number: '1.1-1') ?? '–' }}
+        @if (other) {
+          <app-delta-mark
+            [own]="totals.dartsPerLeg"
+            [other]="other.statistics.dartsPerLeg"
+            [name]="other.name"
+            [digits]="1"
+            [lowerIsBetter]="true"
+          />
+        }
+      </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value
+            [name]="other.name"
+            [other]="other.statistics.dartsPerLeg"
+            [digits]="1"
+          />
+        </dd>
+      } @else {
+        <dd class="stat__hint" i18n="@@stats.fromLegsWon">aus {{ totals.legsWon }} gewonnenen Legs</dd>
+      }
+    </div>
+    <div class="stat">
       <dt class="stat__label">
         <ng-container i18n="@@stats.doubleDistance">Ø Abstand zum Checkout</ng-container>
         <app-info-hint class="stat__info">
@@ -143,37 +208,7 @@
         <dd class="stat__value">&ndash;</dd>
       }
     </div>
-    <div class="stat">
-      <dt class="stat__label">
-        <ng-container i18n="@@stats.dartsPerLeg">Ø Darts pro Leg</ng-container>
-        <app-info-hint class="stat__info" i18n="@@stats.dartsPerLegHint">
-          Darts vom ersten Wurf bis zum Finish. Nur Legs, die du selbst beendet hast.
-        </app-info-hint>
-      </dt>
-      <dd class="stat__value">
-        {{ (totals.dartsPerLeg | number: '1.1-1') ?? '–' }}
-        @if (other) {
-          <app-delta-mark
-            [own]="totals.dartsPerLeg"
-            [other]="other.statistics.dartsPerLeg"
-            [name]="other.name"
-            [digits]="1"
-            [lowerIsBetter]="true"
-          />
-        }
-      </dd>
-      @if (other) {
-        <dd class="stat__hint">
-          <app-compared-value
-            [name]="other.name"
-            [other]="other.statistics.dartsPerLeg"
-            [digits]="1"
-          />
-        </dd>
-      } @else {
-        <dd class="stat__hint" i18n="@@stats.fromLegsWon">aus {{ totals.legsWon }} gewonnenen Legs</dd>
-      }
-    </div>
+    <div class="stat" aria-hidden="true"></div>
   </dl>
 </section>
 

@@ -270,6 +270,14 @@ class Game:
             counts[turn.player_id] += len(reset)
         return counts
 
+    def times_reset(self) -> dict[int, int]:
+        """How often each player was sent back to zero by another."""
+        counts = {player.id: 0 for player in self.players}
+        for _, reset in self._resets():
+            for player_id in reset:
+                counts[player_id] += 1
+        return counts
+
     def _resets(self) -> Iterator[tuple[Turn, set[int]]]:
         """The players each turn sent back to zero, in turn order; none outside
         elimination. Only the thrower scores, so anyone else who drops to zero was reset."""

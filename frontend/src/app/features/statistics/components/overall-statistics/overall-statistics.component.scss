@@ -1,0 +1,104 @@
+/* Same compact toggle as the other heatmaps. */
+:host {
+  --p-togglebutton-sm-padding: 0.2rem;
+  --p-togglebutton-content-sm-padding: 0.2rem 0.5rem;
+  --p-togglebutton-sm-font-size: 0.75rem;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.heatmap__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.heatmap {
+  height: 22rem;
+
+  app-field-heatmap,
+  app-tip-heatmap {
+    height: 100%;
+  }
+}
+
+.rings__title {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.rival {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bars {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One row: its name, a bar for the count and the figure. */
+.bar {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr) 4.5rem 1rem;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0.375rem;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.bar--link {
+  cursor: pointer;
+
+  &:hover {
+    background: var(--p-content-hover-background);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 1px;
+  }
+}
+
+.bar__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar__track {
+  height: 0.6rem;
+  border-radius: 0.2rem;
+  background: var(--p-content-border-color);
+}
+
+.bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--p-text-muted-color);
+}
+
+.bar__figure {
+  text-align: right;
+}
+
+.bar__go {
+  color: var(--p-text-muted-color);
+  font-size: 0.8rem;
+}
