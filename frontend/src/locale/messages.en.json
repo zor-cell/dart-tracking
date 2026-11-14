@@ -399,6 +399,8 @@
     "game.scoreboard.eliminated": ", {$INTERPOLATION} eliminated",
     "game.scoreboard.lastVisit": "Last visit",
     "game.scoreboard.last": "last",
+    "game.scoreboard.closed": "closed",
+    "game.scoreboard.points": "points",
     "game.resumeTracking": "Resume tracking",
     "game.pauseTracking": "Pause tracking",
     "game.board.notCounted": "{$field}, not counted",

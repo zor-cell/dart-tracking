@@ -221,7 +221,7 @@
     <app-scoreboard
       [entries]="scoreboardEntries()"
       [activeIndex]="state.currentPlayerIndex"
-      [winnerId]="game.settledWinner()?.id ?? null"
+      [winnerId]="game.winner()?.id ?? null"
     />
 
     <div class="turn">

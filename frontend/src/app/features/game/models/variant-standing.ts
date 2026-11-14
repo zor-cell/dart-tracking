@@ -18,12 +18,15 @@ export interface Standing {
 export type NumberFormat = (value: number, digits: string) => string;
 
 const NONE = '–';
+const DONE = '✓';
 const MARKS_TO_CLOSE = 3;
 
 /** Every player's standing, in seat order. */
 export function standings(state: GameStateDto, format: NumberFormat): Standing[] {
   return state.players.map((player, seat) => {
-    const standing = standingOf(state, seat, format);
+    const read = standingOf(state, seat, format);
+    const done = player.id === state.winnerId || state.finisherIds.includes(player.id);
+    const standing = done ? { ...read, score: DONE } : read;
     if (player.id === state.winnerId) {
       return { ...standing, rank: Number.POSITIVE_INFINITY };
     }
@@ -57,7 +60,7 @@ function standingOf(state: GameStateDto, seat: number, format: NumberFormat): St
       },
       rank: total * 10_000 + points,
       marks: cricket.targets.map((target, index) => ({
-        label: target === 25 ? 'B' : `${target}`,
+        label: `${target}`,
         marks: player.marks[index],
         dead: cricket.players.every((other) => other.marks[index] >= MARKS_TO_CLOSE),
       })),
@@ -91,7 +94,7 @@ function standingOf(state: GameStateDto, seat: number, format: NumberFormat): St
     const player = clock.players[seat];
     return {
       ...plain,
-      score: player.target === null ? '✓' : player.target === 25 ? 'Bull' : `${player.target}`,
+      score: player.target === null ? DONE : zoneLabel(player.target, clock.zone),
       left: {
         value: player.darts === 0 ? NONE : `${format((100 * player.hits) / player.darts, '1.0-0')} %`,
         label: $localize`:@@game.scoreboard.hitRate:Quote`,
