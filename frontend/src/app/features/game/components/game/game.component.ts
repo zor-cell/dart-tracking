@@ -38,6 +38,7 @@ import {TrackingToggleComponent} from '../tracking-toggle/tracking-toggle.compon
 import {ScoreboardComponent} from '../scoreboard/scoreboard.component';
 import {VirtualBoardComponent} from '../virtual-board/virtual-board.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
+import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { backState } from '../../../../core/view/models/back-state';
 import { readStored, writeStored } from '../../../../core/storage/models/browser-storage';
 
@@ -98,6 +99,7 @@ const SIDE_KEYS: readonly FixedKey[] = [MISS, BULL, BULLSEYE];
     GameTopBarComponent,
     TrackingToggleComponent,
     EmptyStateComponent,
+    LoadingStateComponent,
     CdkDropList,
     CdkDrag,
   ],
@@ -165,6 +167,13 @@ export class GameComponent implements OnInit, OnDestroy {
    * for "no game", which is a different answer from "not yet known". Without a
    * persisted id there is nothing to fetch, so the answer is known at once. */
   protected readonly restoring = signal(this.game.peekGameId() !== null);
+
+  /** The setup left half done that the view hands over to, while there is no game. */
+  protected readonly keptSetup = computed(() =>
+    this.restoring() || this.game.state() !== null
+      ? null
+      : this.drafts.read(this.auth.user()?.id ?? null),
+  );
 
   /** Rematch and done: small text in a taller button. */
   protected readonly finishButtonTokens = { root: { sm: { paddingY: '0.625rem' } } };
@@ -286,9 +295,10 @@ export class GameComponent implements OnInit, OnDestroy {
 
     // Without a game, a setup left half done is where the game tab leads.
     effect(() => {
-      const account = this.auth.user()?.id ?? null;
-      if (!this.restoring() && this.game.state() === null && this.drafts.read(account) !== null) {
-        void this.router.navigate(['/game/new'], { replaceUrl: true });
+      const draft = this.keptSetup();
+      if (draft !== null) {
+        const queryParams = { game: draft.chosen };
+        void this.router.navigate(['/game/new'], { queryParams, replaceUrl: true });
       }
     });
 

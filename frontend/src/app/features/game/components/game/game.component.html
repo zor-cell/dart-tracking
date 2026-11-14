@@ -458,6 +458,10 @@
       </div>
     </div>
   </section>
+} @else if (keptSetup()) {
+  <section class="view">
+    <app-loading-state label="Neues Spiel wird geladen" i18n-label="@@game.new.loading" />
+  </section>
 } @else {
   <section class="view">
     <app-empty-state icon="pi-bullseye">
