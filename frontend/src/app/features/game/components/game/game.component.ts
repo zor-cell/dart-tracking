@@ -74,6 +74,9 @@ const PAD_ROWS: readonly number[][] = [
   [17, 18, 19, 20],
 ];
 
+/** When the camera picture is laid out again after its size changed, in ms. */
+const RELAYOUT_DELAYS: readonly number[] = [0, 300, 1200];
+
 /** The side column beside the number rows, top to bottom. */
 const SIDE_KEYS: readonly FixedKey[] = [MISS, BULL, BULLSEYE];
 
@@ -343,18 +346,22 @@ export class GameComponent implements OnInit, OnDestroy {
     return this.session.startCamera();
   }
 
-  /** Fills the screen with the camera below the top bar; browser fullscreen where
-   * supported, a fixed overlay otherwise (iPhone). */
   /** WebKit keeps painting the stream at its old size once the frame size changes;
-   * narrowing the element for one frame makes it lay the picture out again. */
+   * narrowing the element briefly, now and again later, lays the picture out anew. */
   protected relayoutVideo(video: HTMLVideoElement): void {
     if (video.videoWidth && video.videoHeight) {
       this.videoAspect.set(video.videoWidth / video.videoHeight);
     }
-    video.style.width = 'calc(100% - 1px)';
-    requestAnimationFrame(() => (video.style.width = ''));
+    for (const delay of RELAYOUT_DELAYS) {
+      setTimeout(() => {
+        video.style.width = 'calc(100% - 1px)';
+        requestAnimationFrame(() => requestAnimationFrame(() => (video.style.width = '')));
+      }, delay);
+    }
   }
 
+  /** Fills the screen with the camera below the top bar; browser fullscreen where
+   * supported, a fixed overlay otherwise (iPhone). */
   protected toggleCameraExpanded(): void {
     if (this.cameraExpanded()) {
       this.collapseCamera();

@@ -89,6 +89,7 @@
               [hidden]="cameraPhase() === 'idle'"
               muted
               playsinline
+              (loadedmetadata)="relayoutVideo(video)"
               (resize)="relayoutVideo(video)"
               (playing)="relayoutVideo(video)"
             ></video>
