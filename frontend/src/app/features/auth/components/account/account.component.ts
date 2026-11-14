@@ -12,7 +12,6 @@ interface PageLink {
   readonly link: string;
   readonly icon: string;
   readonly label: string;
-  readonly hint: string;
 }
 
 const OWN_PAGES: readonly PageLink[] = [
@@ -20,19 +19,16 @@ const OWN_PAGES: readonly PageLink[] = [
     link: '/account/stats',
     icon: 'pi-chart-bar',
     label: $localize`:@@auth.account.stats:Statistik`,
-    hint: $localize`:@@auth.account.statsHint:Average, Checkout, Trefferbild`,
   },
   {
     link: '/account/games',
     icon: 'pi-history',
     label: $localize`:@@auth.account.games:Spiele`,
-    hint: $localize`:@@auth.account.gamesHint:Verlauf und Replays`,
   },
   {
     link: '/account/players',
     icon: 'pi-users',
     label: $localize`:@@auth.account.players:Spieler`,
-    hint: $localize`:@@auth.account.playersHint:Für neue Spiele auswählbar`,
   },
 ];
 
@@ -41,7 +37,6 @@ const APP_PAGES: readonly PageLink[] = [
     link: '/account/settings',
     icon: 'pi-cog',
     label: $localize`:@@auth.account.settings:Einstellungen`,
-    hint: $localize`:@@auth.account.settingsHint:Sprache, Lieblingsdoppel, Ansage`,
   },
 ];
 
@@ -50,7 +45,6 @@ const ADMIN_PAGES: readonly PageLink[] = [
     link: '/account/evaluation',
     icon: 'pi-bullseye',
     label: $localize`:@@auth.account.evaluation:Auswertung`,
-    hint: $localize`:@@auth.account.evaluationHint:Genauigkeit der Erkennung`,
   },
 ];
 

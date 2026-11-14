@@ -1,5 +1,5 @@
 .setting {
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
   padding: 0.9rem 1rem;
@@ -54,6 +54,17 @@
   margin: 0;
   color: var(--p-text-muted-color);
   font-size: 0.85rem;
+}
+
+.setting__label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  // Overhangs the line instead of making it taller than a label without one.
+  app-info-hint {
+    margin-block: -0.1875rem;
+  }
 }
 
 /* What the device says about itself, next to the switch that tests it. */

@@ -75,17 +75,18 @@
       <div class="list-group__items">
         <div class="list-group__item setting">
           <div class="setting__text">
-            <label class="setting__label" for="advance-on-pull" i18n="@@settings.advanceOnPull">
-              Nach dem Ziehen weiter
-            </label>
-            <p class="setting__hint" id="advance-on-pull-hint" i18n="@@settings.advanceOnPullHint">
-              Die Kamera erkennt, wenn die Pfeile gezogen sind, und gibt an den nächsten Spieler
-              weiter. Sonst geht es erst weiter, wenn du bestätigst.
-            </p>
+            <div class="setting__label-row">
+              <label class="setting__label" for="advance-on-pull" i18n="@@settings.advanceOnPull">
+                Automatischer Wechsel
+              </label>
+              <app-info-hint i18n="@@settings.advanceOnPullHint">
+                Die Kamera erkennt, wenn die Pfeile gezogen sind, und gibt an den nächsten Spieler
+                weiter. Sonst geht es erst weiter, wenn du bestätigst.
+              </app-info-hint>
+            </div>
           </div>
           <p-toggleswitch
             inputId="advance-on-pull"
-            ariaLabelledBy="advance-on-pull-hint"
             [ngModel]="settings.advanceOnPull()"
             (ngModelChange)="settings.setAdvanceOnPull($event)"
           />
@@ -93,12 +94,14 @@
 
         <div class="list-group__item setting setting--stacked">
           <div class="setting__text">
-            <span class="setting__label" i18n="@@settings.favouriteDoubles">Lieblingsdoppel</span>
-            <p class="setting__hint" i18n="@@settings.favouriteDoublesHint">
-              Der Checkout-Vorschlag endet bevorzugt auf dem obersten Doppel, dann auf den
-              nächsten, solange das Setup dafür nicht schwerer wird. Ohne Auswahl gilt die
-              Standard-Reihenfolge.
-            </p>
+            <div class="setting__label-row">
+              <span class="setting__label" i18n="@@settings.favouriteDoubles">Lieblingsdoppel</span>
+              <app-info-hint i18n="@@settings.favouriteDoublesHint">
+                Der Checkout-Vorschlag endet bevorzugt auf dem obersten Doppel, dann auf den
+                nächsten, solange das Setup dafür nicht schwerer wird. Ohne Auswahl gilt die
+                Standard-Reihenfolge.
+              </app-info-hint>
+            </div>
           </div>
           <app-favourite-doubles
             [doubles]="settings.preferredDoubles()"
@@ -176,12 +179,14 @@
 
         <div class="list-group__item setting setting--stacked">
           <div class="setting__text">
-            <span class="setting__label" id="announcer-volume-label" i18n="@@settings.announcerVolume">
-              Ansage-Lautstärke
-            </span>
-            <p class="setting__hint" i18n="@@settings.announcerVolumeHint">
-              Gilt für dieses Gerät. Über 100 % wird die Ansage zusätzlich verstärkt.
-            </p>
+            <div class="setting__label-row">
+              <span class="setting__label" id="announcer-volume-label" i18n="@@settings.announcerVolume">
+                Ansage-Lautstärke
+              </span>
+              <app-info-hint i18n="@@settings.announcerVolumeHint">
+                Gilt für dieses Gerät. Über 100 % wird die Ansage zusätzlich verstärkt.
+              </app-info-hint>
+            </div>
           </div>
           <div class="volume">
             <p-slider
@@ -200,9 +205,6 @@
         <div class="list-group__item setting">
           <div class="setting__text">
             <span class="setting__label" i18n="@@settings.announcementTest">Ansage testen</span>
-            <p class="setting__hint" id="announcement-test-hint" i18n="@@settings.announcementTestHint">
-              Sagt einen Satz auf diesem Gerät an.
-            </p>
             @if (testResult() || isAdmin()) {
               <dl class="diagnostics">
                 @if (isAdmin()) {
@@ -252,7 +254,6 @@
             icon="pi pi-volume-up"
             ariaLabel="Ansage testen"
             i18n-ariaLabel="@@settings.announcementTest"
-            ariaLabelledBy="announcement-test-hint"
             [rounded]="true"
             [loading]="testing()"
             (onClick)="testAnnouncement()"
@@ -267,17 +268,18 @@
         <div class="list-group__items">
           <div class="list-group__item setting">
             <div class="setting__text">
-              <label class="setting__label" for="evaluation" i18n="@@settings.evaluation">
-                Testlauf aufzeichnen
-              </label>
-              <p class="setting__hint" id="evaluation-hint" i18n="@@settings.evaluationHint">
-                Speichert bei neuen Spielen und dem laufenden die Kamerabilder jeder korrigierten
-                Runde als Wurfserie, dazu jedes Bild einer fehlgeschlagenen Kalibrierung.
-              </p>
+              <div class="setting__label-row">
+                <label class="setting__label" for="evaluation" i18n="@@settings.evaluation">
+                  Testlauf aufzeichnen
+                </label>
+                <app-info-hint i18n="@@settings.evaluationHint">
+                  Speichert bei neuen Spielen und dem laufenden die Kamerabilder jeder korrigierten
+                  Runde als Wurfserie, dazu jedes Bild einer fehlgeschlagenen Kalibrierung.
+                </app-info-hint>
+              </div>
             </div>
             <p-toggleswitch
               inputId="evaluation"
-              ariaLabelledBy="evaluation-hint"
               [ngModel]="evaluationEnabled()"
               (ngModelChange)="setEvaluationEnabled($event)"
             />

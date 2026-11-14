@@ -19,6 +19,7 @@ import { SettingsService } from '../../services/settings.service';
 import { FavouriteDoublesComponent } from '../favourite-doubles/favourite-doubles.component';
 import { LanguageSelectComponent } from '../language-select/language-select.component';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
+import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { ThemeMode } from '../../../../core/theme/models/theme';
 import { ThemeService } from '../../../../core/theme/services/theme.service';
@@ -47,6 +48,7 @@ interface SettingChoice<T> {
     Button,
     FavouriteDoublesComponent,
     FormsModule,
+    InfoHintComponent,
     LanguageSelectComponent,
     NgOptimizedImage,
     NgTemplateOutlet,
