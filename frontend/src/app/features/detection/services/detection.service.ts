@@ -19,7 +19,7 @@ const FAILURE_HINTS: Record<DetectionFailureDto, string> = {
   alignment_failed: $localize`:@@detection.moved:Kamera hat sich bewegt`,
   no_change: $localize`:@@detection.noThrow:Kein Wurf erkannt`,
   implausible_shape: $localize`:@@detection.covered:Board verdeckt`,
-  darts_removed: $localize`:@@detection.removed:Pfeile entfernt`,
+  darts_removed: $localize`:@@detection.removed:Darts entfernt`,
 };
 
 /**

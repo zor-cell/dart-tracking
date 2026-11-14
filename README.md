@@ -5,7 +5,7 @@ teurer Multi-Kamera-Hardware. Bachelorarbeit an der TU Wien (Philippe Zorman,
 Matrikelnummer 12225143).
 
 Ein Handy wird auf das Dartboard gerichtet, weitere Geräte können als
-Scoreboard demselben Spiel beitreten. Das System erkennt geworfene Pfeile,
+Scoreboard demselben Spiel beitreten. Das System erkennt geworfene Darts,
 berechnet die Punkte und führt ein 501-Spiel ohne manuelles Mitzählen.
 
 ## Wie es funktioniert
@@ -17,10 +17,10 @@ Hybrid-Architektur, um kontinuierliches Video-Streaming zu vermeiden:
    Farbwechsel — und daraus eine Homographie von Bildpixeln nach
    Board-Millimetern berechnet.
 2. **Wurf-Erkennung (Client).** Der Browser rechnet per Canvas API eine
-   Frame-Differenz und erkennt, wann ein neuer Pfeil im Bild zur Ruhe kommt.
+   Frame-Differenz und erkennt, wann ein neuer Dart im Bild zur Ruhe kommt.
    Erst dann geht ein einzelnes JPEG über den WebSocket ans Backend.
-3. **Pfeil-Lokalisierung und Scoring (Server).** Der Frame wird auf den
-   Referenz-Frame registriert, die Differenz zu einem Pfeil zusammengesetzt, die
+3. **Dart-Lokalisierung und Scoring (Server).** Der Frame wird auf den
+   Referenz-Frame registriert, die Differenz zu einem Dart zusammengesetzt, die
    Spitze bestimmt und über die Homographie in ein Board-Segment übersetzt.
 4. **Spielstand (Server).** Der Punktestand ist server-autoritativ und wird per
    WebSocket an alle Geräte im Raum gepusht.

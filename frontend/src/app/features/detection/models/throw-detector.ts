@@ -73,7 +73,7 @@ interface Snapshot {
  * Frame-Differenz-Erkennung: idle -> motion -> settling -> (captured event).
  * Erwartet Graustufen-Frames gleicher Größe (heruntergerechnete ImageData.data).
  *
- * Ein feststeckender Pfeil ist in der *aufeinanderfolgenden* Differenz nur
+ * Ein feststeckender Dart ist in der *aufeinanderfolgenden* Differenz nur
  * während des Einschlags sichtbar — sobald er ruht, sind zwei Frames wieder
  * gleich. Der Auslöser fasst also diesen kurzen Moment: idle -> motion (ein neuer
  * lokalisierter Cluster erscheint) -> settling (Bild wieder ruhig) -> capture.
