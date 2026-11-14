@@ -12,7 +12,7 @@ from collections.abc import Callable
 from functools import cache
 from pathlib import Path
 
-from piper import PiperVoice
+from piper import PiperVoice, SynthesisConfig
 
 from app.api.core.domain.language import Language
 from app.api.features.announcement.domain.speaker import Speaker, Voice
@@ -28,6 +28,12 @@ VOICES = {
     Speaker(Language.EN, Voice.SECOND): "en_GB-jenny_dioco-medium",
 }
 
+# How much slower than its own pace a model speaks, as a factor.
+PACES = {"de_DE-thorsten-medium": 1.1}
+
+# Endings a model drops or blurs, with the phonemes that say them clearly.
+FINALS = {"de_DE-thorsten-medium": {"f": "fff", "bˈʊl": "bˈʊll"}}
+
 # Voices a phrase as one speaker, as WAV bytes.
 Synthesizer = Callable[[str, Speaker], bytes]
 
@@ -35,8 +41,21 @@ CLIP_ID = re.compile(r"[0-9a-f]{32}")
 
 
 def clip_id(text: str, speaker: Speaker) -> str:
-    """Named by voice and text, so a changed phrase or voice gets a clip of its own."""
-    return hashlib.sha256(f"{VOICES[speaker]}\n{text}".encode()).hexdigest()[:32]
+    """Named by voice, its tuning and text, so a change to any gets a clip of its own."""
+    model = VOICES[speaker]
+    tuning = [PACES.get(model), FINALS.get(model)] if model in PACES or model in FINALS else ""
+    return hashlib.sha256(f"{model}{tuning}\n{text}".encode()).hexdigest()[:32]
+
+
+def respelled(text: str, phonemes: list[list[str]], finals: dict[str, str]) -> str:
+    """`text` as Piper's raw phonemes when it ends in a sound of `finals`, else as it is."""
+    if len(phonemes) != 1:
+        return text
+    spoken = "".join(phonemes[0]).rstrip(" .!?,")
+    for ending, kept in finals.items():
+        if spoken.endswith(ending):
+            return f"[[ {spoken.removesuffix(ending)}{kept} ]]"
+    return text
 
 
 def clip_url(clip: str) -> str:
@@ -53,9 +72,14 @@ class PiperSynthesizer:
 
     def __call__(self, text: str, speaker: Speaker) -> bytes:
         buffer = io.BytesIO()
+        model = VOICES[speaker]
         with self._lock:
+            voice = self._voice(speaker)
+            if (finals := FINALS.get(model)) is not None:
+                text = respelled(text, voice.phonemize(text), finals)
             with wave.open(buffer, "wb") as wav:
-                self._voice(speaker).synthesize_wav(text, wav)
+                config = SynthesisConfig(length_scale=PACES.get(model))
+                voice.synthesize_wav(text, wav, syn_config=config)
         return buffer.getvalue()
 
     def load(self, speakers: list[Speaker]) -> None:

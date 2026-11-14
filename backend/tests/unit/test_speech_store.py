@@ -9,6 +9,7 @@ from app.api.features.announcement.services.speech import (
     SpeechStore,
     clip_id,
     clip_url,
+    respelled,
 )
 from tests.audio import silent_wav
 
@@ -93,3 +94,31 @@ def test_every_voice_is_loaded_at_startup(tmp_path, monkeypatch):
     asyncio.run(speech.warm_up())
 
     assert loaded == list(VOICES)
+
+
+def test_a_dropped_final_sound_is_respelled_in_phonemes():
+    finals = {"f": "fff"}
+
+    assert respelled("5", [["f", "ˈ", "ʏ", "n", "f"]], finals) == "[[ fˈʏnfff ]]"
+    assert respelled("Anna, 5.", [["ˈ", "a", "n", "a", ",", " ", "f", "ʏ", "n", "f", "."]], finals) == "[[ ˈana, fʏnfff ]]"
+
+
+def test_the_german_bull_is_respelled():
+    finals = speech.FINALS[VOICES[DE]]
+
+    assert respelled("Bull", [["b", "ˈ", "ʊ", "l"]], finals) == "[[ bˈʊll ]]"
+    assert respelled("Null", [["n", "ˈ", "ʊ", "l"]], finals) == "Null"
+
+
+def test_other_endings_and_several_sentences_stay_as_written():
+    finals = {"f": "fff"}
+
+    assert respelled("40", [["f", "ɪ", "ɾ", "t", "s", "ɪ", "ç"]], finals) == "40"
+    assert respelled("Elf. Fünf", [["ɛ", "l", "f"], ["f", "ʏ", "n", "f"]], finals) == "Elf. Fünf"
+
+
+def test_a_tuned_voice_names_its_clips_apart(monkeypatch):
+    before = clip_id("5", DE)
+    monkeypatch.setitem(speech.PACES, VOICES[DE], 1.3)
+
+    assert clip_id("5", DE) != before

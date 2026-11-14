@@ -61,11 +61,14 @@ export class SocketService {
   // the device had *before* the command, which must not overwrite the new one.
   private requestedRole: DeviceRole | null = null;
 
+  // Settles once the open connection has named its account; frames wait for it.
+  private identified: Promise<void> = Promise.resolve();
+
   constructor() {
-    // A signed-in connection names its account on every connect and on a sign-in while connected.
+    // A sign-in while connected names the account; every connect does so itself.
     effect(() => {
-      if (this.auth.isAuthenticated() && this.connectionStatus() === 'connected') {
-        untracked(() => void this.authenticate());
+      if (this.auth.isAuthenticated()) {
+        untracked(() => this.identify());
       }
     });
 
@@ -133,6 +136,7 @@ export class SocketService {
       }
       this.reconnectAttempts = 0;
       this.connectionStatus.set('connected');
+      this.identify();
       this.flush();
     });
     socket.addEventListener('error', () => {
@@ -224,20 +228,32 @@ export class SocketService {
     frame: Blob,
     details: Pick<DetectionFrameDto, 'trigger' | 'advanceOnPull'> = {},
   ): Promise<void> {
-    if (this.socket?.readyState !== WebSocket.OPEN) {
+    const socket = this.socket;
+    if (socket?.readyState !== WebSocket.OPEN) {
       console.warn('SocketService: frame dropped, WebSocket not connected');
       return;
     }
-    const image = await blobToBase64(frame);
+    const [image] = await Promise.all([blobToBase64(frame), this.identified]);
+    if (socket.readyState !== WebSocket.OPEN) {
+      return;
+    }
     const message: ClientFrame =
       type === 'detection_frame' ? { type, image, ...details } : { type, image };
-    this.socket.send(JSON.stringify(message));
+    socket.send(JSON.stringify(message));
+  }
+
+  /** Name the account on the open connection, if there is one of each. */
+  private identify(): void {
+    if (this.auth.isAuthenticated() && this.socket?.readyState === WebSocket.OPEN) {
+      this.identified = this.authenticate().catch(() => undefined);
+    }
   }
 
   /** A fresh token, since the one in memory may have expired while no request needed it. */
   private async authenticate(): Promise<void> {
+    const socket = this.socket;
     const accessToken = await this.auth.refresh();
-    if (accessToken) {
+    if (accessToken && socket === this.socket) {
       this.send({ type: 'authenticate', accessToken });
     }
   }

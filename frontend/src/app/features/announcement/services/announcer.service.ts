@@ -15,10 +15,6 @@ const VOLUME_KEY = 'dart-tracking.announcerVolume';
 /** Highest volume, as a factor: above 1 the calls are boosted. */
 export const MAX_VOLUME = 3;
 
-/** Level and length of the faint noise that keeps a Bluetooth speaker awake. */
-const KEEP_AWAKE_LEVEL = 0.0005;
-const KEEP_AWAKE_SECONDS = 2;
-
 /** Events that count as a user activation on touch and mouse alike. */
 const GESTURE_EVENTS = ['touchend', 'click'] as const;
 
@@ -52,7 +48,6 @@ export class AnnouncerService {
 
   private audio: AudioContext | null = null;
   private output: GainNode | null = null;
-  private keepAwake: AudioBufferSourceNode | null = null;
   private readonly clips = new Map<string, Promise<AudioBuffer>>();
   /** Bumped by every interruption, so the clips of an older announcement stop. */
   private generation = 0;
@@ -96,16 +91,6 @@ export class AnnouncerService {
     effect(() => {
       if (this.socket.connectionStatus() !== 'connected') {
         this.announcerId.set(null);
-      }
-    });
-
-    // Without sound, the phone lets the Bluetooth link sleep and the next call's
-    // first second is lost while it wakes.
-    effect(() => {
-      if (this.isAnnouncer() && !this._muted() && this._unlocked()) {
-        this.startKeepAwake();
-      } else {
-        this.stopKeepAwake();
       }
     });
 
@@ -257,29 +242,6 @@ export class AnnouncerService {
     const result = await Promise.race([played, timeout]);
     clearTimeout(timer);
     return result;
-  }
-
-  private startKeepAwake(): void {
-    const audio = this.audio;
-    if (audio === null || this.keepAwake !== null) {
-      return;
-    }
-    const buffer = audio.createBuffer(1, audio.sampleRate * KEEP_AWAKE_SECONDS, audio.sampleRate);
-    const samples = buffer.getChannelData(0);
-    for (let i = 0; i < samples.length; i++) {
-      samples[i] = (Math.random() * 2 - 1) * KEEP_AWAKE_LEVEL;
-    }
-    const source = audio.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
-    source.connect(audio.destination);
-    source.start();
-    this.keepAwake = source;
-  }
-
-  private stopKeepAwake(): void {
-    this.keepAwake?.stop();
-    this.keepAwake = null;
   }
 
   /** Browsers only allow sound after a user gesture, so every tap resumes the audio. */
