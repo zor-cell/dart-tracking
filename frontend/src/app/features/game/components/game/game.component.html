@@ -47,7 +47,7 @@
                 size="small"
                 ariaLabel="Kamerabild groß anzeigen"
                 i18n-ariaLabel="@@game.showCamera"
-                (onClick)="boardShown.set(false)"
+                (onClick)="showCamera()"
               />
             } @else {
               <p-button
@@ -116,7 +116,7 @@
                 class="game__inset-open"
                 aria-label="Kamerabild groß anzeigen"
                 i18n-aria-label="@@game.showCamera"
-                (click)="boardShown.set(false)"
+                (click)="showCamera()"
               ></button>
             } @else {
               @if (cameraPhase() === 'calibrating' || (cameraPhase() === 'tracking' && calibrationFailure())) {

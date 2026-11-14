@@ -38,6 +38,7 @@ import {ScoreboardComponent} from '../scoreboard/scoreboard.component';
 import {VirtualBoardComponent} from '../virtual-board/virtual-board.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { backState } from '../../../../core/view/models/back-state';
+import { readStored, writeStored } from '../../../../core/storage/models/browser-storage';
 
 /** A side-column key: a fixed field, booked as it stands whatever D or T is set to. */
 type FixedKey = {
@@ -73,6 +74,9 @@ const PAD_ROWS: readonly number[][] = [
   [13, 14, 15, 16],
   [17, 18, 19, 20],
 ];
+
+/** Whether this camera device shows the drawn board while it films. */
+const BOARD_SHOWN_KEY = 'dart-tracking.boardShown';
 
 /** When the camera picture is laid out again after its size changed, in ms. */
 const RELAYOUT_DELAYS: readonly number[] = [0, 300, 1200];
@@ -286,11 +290,17 @@ export class GameComponent implements OnInit, OnDestroy {
       }
     });
 
+    // The picture stays large until the board is calibrated, then the view of last time returns.
+    let tracking = false;
     effect(() => {
-      if (this.cameraPhase() === 'idle') {
+      const phase = this.cameraPhase();
+      if (phase === 'idle') {
         this.collapseCamera();
         this.boardShown.set(false);
+      } else if (phase === 'tracking' && !tracking && readStored(BOARD_SHOWN_KEY) === 'true') {
+        this.boardShown.set(true);
       }
+      tracking = phase === 'tracking';
     });
 
     // Leaving browser fullscreen by gesture or back button collapses the view too.
@@ -375,6 +385,13 @@ export class GameComponent implements OnInit, OnDestroy {
   protected showBoard(): void {
     this.collapseCamera();
     this.boardShown.set(true);
+    writeStored(BOARD_SHOWN_KEY, 'true');
+  }
+
+  /** The camera picture large again, in the board's place. */
+  protected showCamera(): void {
+    this.boardShown.set(false);
+    writeStored(BOARD_SHOWN_KEY, null);
   }
 
   protected switchRole(): void {

@@ -15,6 +15,9 @@ import { readStored, writeStored } from '../../../core/storage/models/browser-st
 // not to the device for good.
 const PHASE_KEY = 'dart-tracking.cameraPhase';
 
+// Whether this device filmed its last game, so the next one starts the camera itself.
+const CAMERA_USED_KEY = 'dart-tracking.cameraUsed';
+
 // Time a restarted camera gets to settle its auto exposure before a frame is used, in ms.
 const CAMERA_SETTLE_MS = 1500;
 
@@ -132,7 +135,18 @@ export class GameSessionService {
     this.pendingResumePhase = null;
     if (target === 'tracking' || target === 'calibrating') {
       void this.resume(target);
+    } else if (this.startsCamera()) {
+      void this.startCamera();
     }
+  }
+
+  /** Whether an open game on a camera device that filmed the last one films again unasked. */
+  private startsCamera(): boolean {
+    return (
+      this.role() === 'camera' &&
+      this.game.winner() === null &&
+      readStored(CAMERA_USED_KEY) === 'true'
+    );
   }
 
   /** Detach the game view on unmount: pause the loop only; keep camera + socket. */
@@ -162,6 +176,7 @@ export class GameSessionService {
     }
     this.socket.setRole(role);
     if (role === 'scoreboard') {
+      writeStored(CAMERA_USED_KEY, null);
       this.endSession();
     }
   }
@@ -209,6 +224,9 @@ export class GameSessionService {
 
   /** Leave the game on this device: the live session and the cached game go. */
   leave(): void {
+    if (this.phase() === 'idle') {
+      writeStored(CAMERA_USED_KEY, null);
+    }
     this.endSession();
     this.game.reset();
   }
@@ -263,8 +281,10 @@ export class GameSessionService {
     try {
       this.video.srcObject = await this.camera.start();
       await this.video.play();
+      writeStored(CAMERA_USED_KEY, 'true');
       return true;
     } catch {
+      writeStored(CAMERA_USED_KEY, null);
       this.phase.set('idle');
       return false;
     }
