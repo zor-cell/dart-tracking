@@ -1,0 +1,53 @@
+@if (fields().length === 0) {
+  <p class="picker__none" i18n="@@game.fields.none">Noch kein Feld gewählt.</p>
+} @else {
+  <ul class="picker__chosen" aria-label="Gewählte Felder" i18n-aria-label="@@game.fields.chosen">
+    @for (field of fields(); track $index) {
+      <li>
+        <p-button
+          type="button"
+          [label]="fieldLabel(field)"
+          icon="pi pi-times"
+          iconPos="right"
+          severity="secondary"
+          size="small"
+          [outlined]="true"
+          [ariaLabel]="removeLabel(field)"
+          (onClick)="remove($index)"
+        />
+      </li>
+    }
+  </ul>
+}
+<div class="picker__add">
+  <p-selectbutton
+    size="small"
+    [formControl]="ring"
+    [allowEmpty]="false"
+    [options]="rings"
+    optionLabel="label"
+    optionValue="value"
+    ariaLabel="Ring"
+  />
+  <p-select
+    class="picker__number"
+    size="small"
+    [formControl]="number"
+    [options]="numbers"
+    optionLabel="label"
+    optionValue="value"
+    appendTo="body"
+    ariaLabel="Zahl"
+    i18n-ariaLabel="@@game.fields.number"
+  />
+  <p-button
+    type="button"
+    icon="pi pi-plus"
+    severity="secondary"
+    size="small"
+    ariaLabel="Feld hinzufügen"
+    i18n-ariaLabel="@@game.fields.add"
+    [disabled]="!addable()"
+    (onClick)="add()"
+  />
+</div>

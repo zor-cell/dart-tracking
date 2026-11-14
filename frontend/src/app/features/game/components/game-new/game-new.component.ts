@@ -37,6 +37,7 @@ import {
   KILLER_ZONE_HINTS,
   KILL_HINTS,
   SCORING_HINTS,
+  TRAINING_GOAL_HINTS,
 } from '../../models/setting-hints';
 import { map } from 'rxjs';
 import { SocketService } from '../../../../core/socket/services/socket.service';
@@ -57,6 +58,11 @@ import {
   KILLER_LIVES,
   KILLER_ZONES,
   KillerZone,
+  TRAINING_GOALS,
+  TRAINING_REPEATS,
+  TRAINING_RINGS,
+  TrainingGoal,
+  TrainingRing,
 } from '../../models/variant-options';
 import { standings } from '../../models/variant-standing';
 import { GameConfigDto } from '../../dto/game-config.dto';
@@ -69,7 +75,10 @@ import { GameSessionService } from '../../services/game-session.service';
 import { GameDraftService } from '../../services/game-draft.service';
 import { GameDraft, Seat } from '../../models/game-draft';
 import { FieldErrorComponent } from '../../../../core/view/components/field-error/field-error.component';
+import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { GameRulesComponent } from '../game-rules/game-rules.component';
+import { FieldPickerComponent } from '../field-picker/field-picker.component';
+import { TrainingFieldDto } from '../../dto/training-options.dto';
 import {
   SortableListComponent,
   SortableMove,
@@ -89,6 +98,8 @@ import {
     InfoHintComponent,
     Popover,
     FieldErrorComponent,
+    FieldPickerComponent,
+    LoadingStateComponent,
     GameRulesComponent,
     SortableListComponent,
   ],
@@ -123,6 +134,11 @@ export class GameNewComponent {
   protected readonly scoringHints = SCORING_HINTS;
   protected readonly killerZoneHints = KILLER_ZONE_HINTS;
   protected readonly clockZoneHints = CLOCK_ZONE_HINTS;
+  protected readonly trainingGoalOptions = [...TRAINING_GOALS];
+  protected readonly trainingRingOptions = [...TRAINING_RINGS];
+  protected readonly trainingGoalHints = TRAINING_GOAL_HINTS;
+  protected readonly trainingRepeatsOptions = TRAINING_REPEATS.map((hits) => ({ label: `${hits}`, value: hits }));
+  protected readonly goalName = $localize`:@@game.new.goal:Ziel`;
   protected readonly scoringName = $localize`:@@game.new.scoring:Punkte`;
   protected readonly zoneName = $localize`:@@game.new.zone:Feld`;
   protected readonly hintLabel = (setting: string): string =>
@@ -153,10 +169,15 @@ export class GameNewComponent {
     clockZone: this.fb.nonNullable.control<ClockZone>('any'),
     clockSkip: this.fb.nonNullable.control(false),
     eliminationKill: this.fb.nonNullable.control<EliminationKill>('any'),
+    trainingGoal: this.fb.nonNullable.control<TrainingGoal>('free'),
+    trainingRing: this.fb.nonNullable.control<TrainingRing>('single'),
+    trainingFields: this.fb.nonNullable.control<readonly TrainingFieldDto[]>([]),
+    trainingRepeats: this.fb.nonNullable.control(1),
+    trainingShuffle: this.fb.nonNullable.control(false),
     catchUp: this.fb.nonNullable.control(false),
     playOn: this.fb.nonNullable.control(false),
     players: this.fb.array<FormControl<Seat>>([]),
-  }, { validators: groupSeats });
+  }, { validators: [groupSeats, trainingFields] });
 
   /** The finished game being replayed, once `restoreSeats` has confirmed it exists. */
   private rematchId: string | null = null;
@@ -214,6 +235,12 @@ export class GameNewComponent {
   protected readonly rulesVariant = signal<GameVariant>('x01');
   private readonly clockZone = toSignal(this.form.controls.clockZone.valueChanges, {
     initialValue: this.form.controls.clockZone.value,
+  });
+  protected readonly trainingGoal = toSignal(this.form.controls.trainingGoal.valueChanges, {
+    initialValue: this.form.controls.trainingGoal.value,
+  });
+  protected readonly pickedFields = toSignal(this.form.controls.trainingFields.valueChanges, {
+    initialValue: this.form.controls.trainingFields.value,
   });
   /** Skipping ahead needs singles to tell apart from doubles and triples. */
   protected readonly clockSkippable = computed(() => this.clockZone() === 'any');
@@ -357,6 +384,7 @@ export class GameNewComponent {
     const {
       mode, variant, checkoutMode, players, cricketScoring, killerLives, killerZone,
       clockZone, clockSkip, eliminationKill, catchUp, playOn,
+      trainingGoal, trainingRing, trainingFields, trainingRepeats, trainingShuffle,
     } = this.form.getRawValue();
     const racing = RACES.includes(variant);
     const seats = (players as Seat[]).map<PlayerSlotDto>((seat) =>
@@ -370,6 +398,16 @@ export class GameNewComponent {
       killer: { lives: killerLives, zone: killerZone },
       aroundTheClock: { zone: clockZone, skip: clockZone === 'any' && clockSkip },
       elimination: { kill: eliminationKill },
+      // Only a training carries its settings.
+      ...(variant === 'training' && {
+        training: {
+          goal: trainingGoal,
+          ring: trainingRing,
+          fields: trainingGoal === 'fields' ? trainingFields : [],
+          repeats: trainingGoal === 'free' ? 1 : trainingRepeats,
+          shuffle: trainingGoal === 'fields' && trainingShuffle,
+        },
+      }),
       catchUp: racing && seats.length > 1 && catchUp,
       playOn: racing && seats.length > 2 && playOn,
       players: seats,
@@ -394,6 +432,11 @@ export class GameNewComponent {
           void this.router.navigate(['/game']);
         },
       });
+  }
+
+  protected setTrainingFields(fields: readonly TrainingFieldDto[]): void {
+    this.form.controls.trainingFields.setValue(fields);
+    this.form.controls.trainingFields.markAsDirty();
   }
 
   /** Puts the seats in a random order, turning the icon and sliding the rows there. */
@@ -429,7 +472,7 @@ export class GameNewComponent {
     if (previous !== null) {
       this.form.patchValue(settingsOf(previous));
       if (this.chosen() === null) {
-        void this.showStep(previous.variant, true);
+        await this.showStep(previous.variant, true);
       }
       // Worst finish throws first, the winner last.
       const ranks = standings(previous, (value) => `${value}`).map((standing) => standing.rank);
@@ -453,7 +496,7 @@ export class GameNewComponent {
 
       const draft = this.drafts.read(this.account());
       if (draft !== null) {
-        this.resume(draft);
+        await this.resume(draft);
       } else {
         this.seats.push(self ? this.fb.nonNullable.control<Seat>(self) : this.createSeat(1));
       }
@@ -464,14 +507,14 @@ export class GameNewComponent {
   }
 
   /** Pick up the setup left here earlier; a game named in the URL wins over its pick. */
-  private resume(draft: GameDraft): void {
+  private async resume(draft: GameDraft): Promise<void> {
     const chosen = this.chosen();
     this.form.patchValue({ ...draft.settings, ...(chosen !== null && { variant: chosen }) });
     for (const seat of draft.seats) {
       this.seats.push(this.fb.nonNullable.control<Seat>(seat, Validators.required));
     }
     if (chosen === null && draft.chosen !== null) {
-      void this.showStep(draft.chosen, true);
+      await this.showStep(draft.chosen, true);
     }
   }
 
@@ -523,7 +566,7 @@ interface GameSection {
 
 const SECTIONS: readonly GameSection[] = [
   { kind: STANDARD, games: ['x01', 'cricket'] },
-  { kind: TRAINING, games: ['around_the_clock', null] },
+  { kind: TRAINING, games: ['around_the_clock', 'training', null] },
   { kind: GROUP, games: ['killer', 'elimination'] },
 ];
 
@@ -539,6 +582,16 @@ function groupSeats(form: AbstractControl): ValidationErrors | null {
   const variant = form.get('variant')?.value as GameVariant | undefined;
   const seats = (form.get('players') as FormArray | null)?.length ?? 0;
   return (variant === 'killer' || variant === 'elimination') && seats < 2 ? { groupSeats: true } : null;
+}
+
+/** A training on own fields needs at least one. */
+function trainingFields(form: AbstractControl): ValidationErrors | null {
+  const fields = form.get('trainingFields')?.value as readonly TrainingFieldDto[] | undefined;
+  const chosen =
+    form.get('variant')?.value !== 'training' ||
+    form.get('trainingGoal')?.value !== 'fields' ||
+    (fields?.length ?? 0) > 0;
+  return chosen ? null : { trainingFields: true };
 }
 
 /** A copy of the items in random order (Fisher–Yates). */
@@ -563,6 +616,13 @@ function settingsOf(game: GameStateDto) {
     ...(game.aroundTheClock !== null && {
       clockZone: game.aroundTheClock.zone,
       clockSkip: game.aroundTheClock.skip,
+    }),
+    ...(game.training !== null && {
+      trainingGoal: game.training.goal,
+      trainingRing: game.training.ring,
+      trainingFields: game.training.fields,
+      trainingRepeats: game.training.repeats,
+      trainingShuffle: game.training.shuffle,
     }),
     catchUp: game.catchUp,
     playOn: game.playOn,

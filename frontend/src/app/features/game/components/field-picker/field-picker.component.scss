@@ -1,0 +1,53 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+// One row however many fields: it scrolls sideways, like the filter chips.
+.picker__chosen {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  li {
+    flex: none;
+  }
+}
+
+// As tall as the row of chosen fields, so the first one moves nothing below.
+.picker__none {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  min-height: 2.0625rem;
+  color: var(--p-text-muted-color);
+}
+
+.picker__add {
+  // Narrower ring buttons leave the number list room on a phone.
+  --p-togglebutton-content-sm-padding: 0.25rem 0.5rem;
+
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  > * {
+    flex: none;
+  }
+}
+
+// Gives way first, so ring, number and the add button stay on one line.
+.picker__add .picker__number {
+  flex: 0 1 5.5rem;
+  min-width: 0;
+}

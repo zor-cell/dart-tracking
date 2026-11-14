@@ -1,6 +1,12 @@
 // Which game is played. x01 counts down from the mode to zero, elimination counts up to it;
 // the string values match the backend GameVariant enum sent over the wire.
-export type GameVariant = 'x01' | 'elimination' | 'cricket' | 'killer' | 'around_the_clock';
+export type GameVariant =
+  | 'x01'
+  | 'elimination'
+  | 'cricket'
+  | 'killer'
+  | 'around_the_clock'
+  | 'training';
 
 export const GAME_VARIANTS: readonly { label: string; value: GameVariant }[] = [
   { label: 'X01', value: 'x01' },
@@ -8,6 +14,7 @@ export const GAME_VARIANTS: readonly { label: string; value: GameVariant }[] = [
   { label: 'Cricket', value: 'cricket' },
   { label: 'Killer', value: 'killer' },
   { label: 'Around the Clock', value: 'around_the_clock' },
+  { label: $localize`:@@game.variant.training:Freies Training`, value: 'training' },
 ];
 
 /** The variants that run on a points total and have a mode and a checkout. */

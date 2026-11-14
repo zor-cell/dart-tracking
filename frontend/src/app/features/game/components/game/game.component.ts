@@ -27,7 +27,7 @@ import {DartDto} from '../../dto/dart.dto';
 import {GameStateDto} from '../../dto/game-state.dto';
 import {ScoreboardEntry} from '../../models/scoreboard-entry';
 import {standings} from '../../models/variant-standing';
-import {zoneLabel} from '../../models/variant-options';
+import {fieldLabel, zoneLabel} from '../../models/variant-options';
 import {DARTS_PER_TURN} from '../../models/visit';
 import {GameService} from '../../services/game.service';
 import {GameSessionService} from '../../services/game-session.service';
@@ -225,7 +225,7 @@ export class GameComponent implements OnInit, OnDestroy {
     const ranks = running.map((player) => seats[state.players.indexOf(player)].rank);
     const best = Math.max(...ranks);
     const alone = ranks.filter((rank) => rank === best).length === 1;
-    const open = state.winnerId === null && running.length > 1;
+    const open = state.winnerId === null && !state.ended && running.length > 1;
     return state.players.map((player, seat) => ({
       ...seats[seat],
       id: player.id,
@@ -242,7 +242,7 @@ export class GameComponent implements OnInit, OnDestroy {
   /** The fields the variant has the thrower aim at next, without a checkout to suggest. */
   private readonly targetRoute = computed<TargetRoute | null>(() => {
     const state = this.game.state();
-    if (state === null || state.winnerId !== null) {
+    if (state === null || state.winnerId !== null || state.ended) {
       return null;
     }
     return targetRoute(state);
@@ -435,6 +435,10 @@ export class GameComponent implements OnInit, OnDestroy {
    * take — that dart is not the last one — so it takes that dart instead,
    * which is how a phantom booking in the middle of a visit goes. */
   protected undoOrDelete(): void {
+    if (this.game.ended()) {
+      this.game.setEnded(false);
+      return;
+    }
     if (this.game.settledWinner() !== null) {
       this.game.reopenWin();
       return;
@@ -510,9 +514,15 @@ export class GameComponent implements OnInit, OnDestroy {
 }
 
 /** Around the Clock: the next targets in turn. Killer: the own field until it makes a
- * killer, then the strongest opponent's, which goes after a player like a reset. */
+ * killer, then the strongest opponent's. Training: the field to hit, in every slot. */
 function targetRoute(state: GameStateDto): TargetRoute | null {
   const seat = state.currentPlayerIndex;
+  const training = state.training?.players[seat];
+  if (training?.target) {
+    const field = fieldLabel(training.target);
+    const darts = Math.min(training.left, state.dartsRemaining);
+    return { darts: Array.from({ length: darts }, () => field), hostile: false };
+  }
   const clock = state.aroundTheClock;
   if (clock !== null) {
     const target = clock.players[seat].target;

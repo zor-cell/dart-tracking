@@ -67,7 +67,7 @@ export class GameTopBarComponent {
   /** Leaving a running game stops this device's part in it, so that asks first;
    * a finished one is left at once. */
   protected confirmLeaveGame(): void {
-    if (this.game.settledWinner() !== null) {
+    if (this.game.finished()) {
       this.leaveGame();
       return;
     }
@@ -76,6 +76,17 @@ export class GameTopBarComponent {
       $localize`:@@game.leaveText:Spiel auf diesem Gerät verlassen? Der bisherige Spielstand bleibt gespeichert.`,
       $localize`:@@game.leaveAction:Verlassen`,
       () => this.leaveGame(),
+    );
+  }
+
+  /** A training has no winner to end it, so this does, after asking. */
+  protected confirmEndTraining(): void {
+    this.confirm.ask(
+      $localize`:@@game.endTraining:Training beenden`,
+      $localize`:@@game.endTrainingText:Training beenden? Du kannst danach noch zurück ins Training.`,
+      $localize`:@@game.endTrainingAction:Beenden`,
+      () => this.game.setEnded(true),
+      true,
     );
   }
 

@@ -216,6 +216,8 @@
     <!-- The win is shown on the player card; this only voices it. -->
     @if (game.settledWinner(); as winner) {
       <p class="sr-only" role="status" i18n="@@game.wins">{{ winner.name }} gewinnt!</p>
+    } @else if (state.ended) {
+      <p class="sr-only" role="status" i18n="@@game.trainingEnded">Training beendet</p>
     }
 
     <app-scoreboard
@@ -234,7 +236,7 @@
             [rounded]="true"
             severity="secondary"
             [ariaLabel]="selectedDart() === null ? undoLabel : deleteDartLabel"
-            [disabled]="selectedDart() === null && !state.canUndo"
+            [disabled]="selectedDart() === null && !state.canUndo && !state.ended"
             (onClick)="undoOrDelete()"
           />
 
@@ -244,11 +246,11 @@
             i18n-aria-label="@@game.roundDarts"
             cdkDropList
             cdkDropListOrientation="horizontal"
-            [cdkDropListDisabled]="game.settledWinner() !== null"
+            [cdkDropListDisabled]="game.finished()"
             (cdkDropListDropped)="dropDart($event)"
           >
             @for (dart of turn.darts; track $index) {
-              @if (game.settledWinner()) {
+              @if (game.finished()) {
                 <li class="turn__dart" [class.turn__dart--busted]="turn.busted">{{ dart.label }}</li>
               } @else {
                 <li class="turn__slot" cdkDrag [cdkDragStartDelay]="{ touch: 150, mouse: 0 }">
@@ -288,7 +290,7 @@
             }
           </ul>
 
-          @if (game.settledWinner()) {
+          @if (game.finished()) {
             @if (signedIn()) {
               <p-button
                 class="turn__stats"
@@ -315,7 +317,7 @@
         </div>
       }
 
-      @if (!game.settledWinner()) {
+      @if (!game.finished()) {
         <div class="scorepad" role="group" aria-label="Punkte-Eingabe" i18n-aria-label="@@game.scorepad">
           @for (row of padRows; track $index) {
             @for (n of row; track n) {
@@ -367,7 +369,7 @@
         </div>
       }
 
-      @if (game.settledWinner()) {
+      @if (game.finished()) {
         <!-- Takes the keypad's slot, so the picture above keeps its height. -->
         <div class="finish">
           <p-button

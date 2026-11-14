@@ -10,7 +10,15 @@ import { GameDetailDto } from '../../dto/game-detail.dto';
 import { GAME_STATUS_LABELS, GAME_STATUS_SEVERITIES, isResumable } from '../../models/game-filter';
 import { CHECKOUT_MODES } from '../../models/checkout-mode';
 import { countsPoints, variantLabel } from '../../models/game-variant';
-import { CLOCK_ZONES, KILLER_ZONES, optionLabel, scoringLabel } from '../../models/variant-options';
+import {
+  CLOCK_ZONES,
+  KILLER_ZONES,
+  TRAINING_GOALS,
+  TRAINING_RINGS,
+  fieldLabel,
+  optionLabel,
+  scoringLabel,
+} from '../../models/variant-options';
 import { activeGameId } from '../../services/active-game';
 import { GameHistoryService } from '../../services/game-history.service';
 import { GameReplayComponent } from '../game-replay/game-replay.component';
@@ -124,6 +132,16 @@ export class GameDetailComponent {
       const lives = $localize`:@@game.detail.lives:${game.killer.lives}:count: Leben`;
       return `${lives}, ${optionLabel(KILLER_ZONES, game.killer.zone)}`;
     }
+    if (game.training !== null) {
+      const goal = optionLabel(TRAINING_GOALS, game.training.goal);
+      const detail = {
+        free: [],
+        random: [optionLabel(TRAINING_RINGS, game.training.ring)],
+        fields: [game.training.fields.map(fieldLabel).join(' ')],
+      }[game.training.goal];
+      const repeats = game.training.goal !== 'free' && game.training.repeats > 1 ? [`${game.training.repeats}×`] : [];
+      return [goal, ...detail, ...repeats].join(', ');
+    }
     const finish = [
       ...(game.catchUp ? [$localize`:@@game.new.catchUp:Mit Nachziehen`] : []),
       ...(game.playOn ? [$localize`:@@game.new.playOn:Plätze ausspielen`] : []),
@@ -154,6 +172,12 @@ export class GameDetailComponent {
       }
       if (game.killer !== null) {
         return { value: `${game.killer.players[seat].lives}`, unit: $localize`:@@game.scoreboard.lives:Leben` };
+      }
+      if (game.training !== null) {
+        const own = game.training.players[seat];
+        return game.training.goal === 'free'
+          ? { value: player.average === null ? '–' : formatNumber(player.average, this.locale, '1.1-1'), unit: 'Ø' }
+          : { value: `${own.hits}/${own.darts}`, unit: $localize`:@@game.detail.hits:Treffer` };
       }
       if (game.aroundTheClock !== null) {
         return { value: `${game.aroundTheClock.players[seat].done}/21`, unit: $localize`:@@game.detail.fields:Felder` };
@@ -197,6 +221,29 @@ export class GameDetailComponent {
         dartsRow,
         { label: $localize`:@@game.detail.livesLeft:Leben übrig`, values: players.map((p) => `${p.lives}`) },
         { label: $localize`:@@game.scoreboard.kills:Abschüsse`, values: players.map((p) => `${p.kills}`) },
+      ];
+    }
+    if (game.training !== null) {
+      const players = game.training.players;
+      if (game.training.goal === 'free') {
+        return [dartsRow, { label: 'Ø', values: game.players.map((player) => number(player.average, '1.1-1')) }];
+      }
+      const rate = (hits: number, thrown: number) =>
+        thrown === 0 ? '–' : `${hits}/${thrown} (${number((100 * hits) / thrown, '1.0-0')} %)`;
+      const fields = [...new Set(players.flatMap((player) => player.tallies.map(fieldLabel)))];
+      return [
+        dartsRow,
+        {
+          label: $localize`:@@game.scoreboard.hitRateLong:Trefferquote`,
+          values: players.map((player) => rate(player.hits, player.darts)),
+        },
+        ...fields.map((field) => ({
+          label: field,
+          values: players.map((player) => {
+            const tally = player.tallies.find((entry) => fieldLabel(entry) === field);
+            return tally === undefined ? '–' : rate(tally.hits, tally.darts);
+          }),
+        })),
       ];
     }
     if (game.aroundTheClock !== null) {

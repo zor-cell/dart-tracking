@@ -1,6 +1,6 @@
 import { GameStateDto } from '../dto/game-state.dto';
 import { CricketMark, ScoreboardFigure } from './scoreboard-entry';
-import { zoneLabel } from './variant-options';
+import { fieldLabel, zoneLabel } from './variant-options';
 
 /** How one player stands, read off the variant that is played. */
 export interface Standing {
@@ -86,6 +86,33 @@ function standingOf(state: GameStateDto, seat: number, format: NumberFormat): St
       rank: player.lives,
       killer: player.killer,
       out: player.lives === 0,
+    };
+  }
+
+  if (state.training !== null) {
+    const own = state.training.players[seat];
+    const player = state.players[seat];
+    const free = own.target === null;
+    const rate = own.darts === 0 ? NONE : `${format((100 * own.hits) / own.darts, '1.0-0')} %`;
+    const visit = free ? player.lastVisit : own.lastVisit;
+    return {
+      ...plain,
+      score: free ? (player.average === null ? NONE : format(player.average, '1.1-1')) : fieldLabel(own.target),
+      left: free
+        ? { value: `${own.darts}`, label: 'Darts', srLabel: 'Darts' }
+        : {
+            value: rate,
+            label: $localize`:@@game.scoreboard.hitRate:Quote`,
+            srLabel: $localize`:@@game.scoreboard.hitRateLong:Trefferquote`,
+          },
+      right: {
+        value: visit === null ? NONE : `${visit}`,
+        label: last,
+        srLabel: free
+          ? $localize`:@@game.scoreboard.lastVisit:Letzter Visit`
+          : $localize`:@@game.scoreboard.lastHits:Treffer im letzten Visit`,
+      },
+      rank: free ? (player.average ?? 0) : own.hits,
     };
   }
 

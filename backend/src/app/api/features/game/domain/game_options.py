@@ -5,9 +5,12 @@ from app.api.features.game.domain.cricket import CricketOptions, CricketProgress
 from app.api.features.game.domain.elimination import EliminationOptions
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.killer import KILLER_NUMBERS, KillerOptions, KillerProgress
+from app.api.features.game.domain.training import TrainingOptions, TrainingProgress
 
-type GameOptions = CricketOptions | KillerOptions | ClockOptions | EliminationOptions
-type GameProgress = CricketProgress | KillerProgress | ClockProgress
+type GameOptions = (
+    CricketOptions | KillerOptions | ClockOptions | EliminationOptions | TrainingOptions
+)
+type GameProgress = CricketProgress | KillerProgress | ClockProgress | TrainingProgress
 
 
 def default_options(variant: GameVariant, players: int) -> GameOptions | None:
@@ -21,4 +24,6 @@ def default_options(variant: GameVariant, players: int) -> GameOptions | None:
             return ClockOptions()
         case GameVariant.ELIMINATION:
             return EliminationOptions()
+        case GameVariant.TRAINING:
+            return TrainingOptions()
     return None

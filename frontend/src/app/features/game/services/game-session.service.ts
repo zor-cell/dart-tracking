@@ -145,6 +145,7 @@ export class GameSessionService {
     return (
       this.role() === 'camera' &&
       this.game.winner() === null &&
+      !this.game.ended() &&
       readStored(CAMERA_USED_KEY) === 'true'
     );
   }

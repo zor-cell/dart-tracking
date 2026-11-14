@@ -4,6 +4,8 @@ export type CricketScoring = 'standard' | 'cut_throat' | 'no_score';
 export type KillerZone = 'double' | 'triple' | 'any';
 export type ClockZone = 'any' | 'double' | 'triple';
 export type EliminationKill = 'any' | 'double';
+export type TrainingGoal = 'free' | 'random' | 'fields';
+export type TrainingRing = 'single' | 'double' | 'triple' | 'mixed';
 
 export const CRICKET_SCORINGS: readonly { label: string; value: CricketScoring }[] = [
   { label: 'Standard', value: 'standard' },
@@ -36,6 +38,30 @@ export const ELIMINATION_KILLS: readonly { label: string; value: EliminationKill
 ];
 
 export const KILLER_LIVES: readonly number[] = [3, 5];
+
+export const TRAINING_GOALS: readonly { label: string; value: TrainingGoal }[] = [
+  { label: $localize`:@@game.training.free:Frei`, value: 'free' },
+  { label: $localize`:@@game.training.random:Zufall`, value: 'random' },
+  { label: $localize`:@@game.training.fields:Eigene Felder`, value: 'fields' },
+];
+
+export const TRAINING_RINGS: readonly { label: string; value: TrainingRing }[] = [
+  { label: 'Single', value: 'single' },
+  { label: 'Double', value: 'double' },
+  { label: 'Triple', value: 'triple' },
+  { label: $localize`:@@game.training.mixed:Gemischt`, value: 'mixed' },
+];
+
+/** Hits a training target may take before the next one comes up. */
+export const TRAINING_REPEATS: readonly number[] = [1, 2, 3, 5];
+
+/** A field as it is called out: T19, D16, 19, 25, 50. */
+export function fieldLabel(field: { readonly value: number; readonly multiplier: number }): string {
+  if (field.value === 25) {
+    return field.multiplier === 2 ? '50' : '25';
+  }
+  return `${field.multiplier === 2 ? 'D' : field.multiplier === 3 ? 'T' : ''}${field.value}`;
+}
 
 /** A field as it is called out: the zone's prefix before the number, the bull as 25 or 50. */
 export function zoneLabel(value: number, zone: KillerZone | ClockZone): string {

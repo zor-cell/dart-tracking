@@ -93,6 +93,7 @@ from app.api.features.game.dto.command.register_dart import RegisterDartDto
 from app.api.features.game.dto.command.remove_dart import RemoveDartDto
 from app.api.features.game.dto.command.replace_dart import ReplaceDartDto
 from app.api.features.game.dto.command.undo import UndoDto
+from app.api.features.game.dto.command.set_ended import SetEndedDto
 from app.api.features.game.dto.command.set_win_confirmed import SetWinConfirmedDto
 from app.api.features.game.domain.dart import Dart as ScoredDart
 from app.api.features.game.domain.game import Game
@@ -270,6 +271,8 @@ async def _dispatch(
             await _handle_set_tracking_paused(game_id, message)
         case SetWinConfirmedDto():
             await _set_win_confirmed(game_id, message.confirmed)
+        case SetEndedDto():
+            await _set_ended(game_id, message.ended)
         case (
             RegisterDartDto()
             | ReplaceDartDto()
@@ -446,6 +449,13 @@ async def _set_win_confirmed(game_id: str, confirmed: bool) -> None:
         await _publish_state(applied[0])
 
 
+async def _set_ended(game_id: str, ended: bool) -> None:
+    """End a game nobody wins for the whole room, or go back into it."""
+    applied = await _apply(game_id, lambda game: game.set_ended(ended))
+    if applied is not None and applied[1]:
+        await _publish_state(applied[0])
+
+
 async def _publish_state(game: Game) -> None:
     """Push the authoritative state to every device in the game's room."""
     await hub.broadcast(game.id, GameStateDto.from_entity(game))
@@ -495,7 +505,7 @@ async def _announce_calibration(game_id: str, calibrated: bool) -> None:
 
 async def _call_turn(game: Game) -> None:
     """Have the room's announcer call the next player, while their visit is still empty."""
-    if game.winner is not None or game.current_turn.darts:
+    if game.over or game.current_turn.darts:
         return
     if (found := await _announcer(game.id)) is not None:
         announcer, speaker = found

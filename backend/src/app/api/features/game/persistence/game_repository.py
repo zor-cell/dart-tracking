@@ -41,6 +41,7 @@ from app.api.features.game.domain.quick_start import (
     favourite,
 )
 from app.api.features.game.domain.player import Player
+from app.api.features.game.domain.training import TrainingGoal, TrainingOptions, TrainingRing
 from app.api.features.game.domain.turn import Turn
 from app.api.features.game.persistence.dart import DartTable
 from app.api.features.game.persistence.game import GameTable
@@ -196,7 +197,7 @@ class GameRepository:
         roughly 25 turns and 70 darts, and the delete cascades, so the simple
         form costs a few milliseconds and has no edge cases around undo.
         """
-        finished = game.winner is not None
+        finished = game.over
         derived = (GameStatus.FINISHED if finished else GameStatus.ACTIVE).value
         game.updated_at = await session.scalar(
             update(GameTable)
@@ -655,6 +656,7 @@ class GameRepository:
             evaluation_enabled=row.evaluation_enabled,
             tracking_paused=row.tracking_paused,
             win_confirmed=row.win_confirmed,
+            ended=variant.open_ended and row.status == GameStatus.FINISHED.value,
             current_player_index=row.current_player_index,
             turns=[
                 Turn(
@@ -719,6 +721,15 @@ def _options_json(options: GameOptions | None) -> dict[str, Any] | None:
             return {"zone": options.zone.value, "skip": options.skip}
         case EliminationOptions():
             return {"kill": options.kill.value}
+        case TrainingOptions():
+            return {
+                "goal": options.goal.value,
+                "ring": options.ring.value,
+                "fields": [list(field) for field in options.fields],
+                "repeats": options.repeats,
+                "shuffle": options.shuffle,
+                "seed": options.seed,
+            }
     return None
 
 
@@ -737,6 +748,15 @@ def _options_from_json(variant: GameVariant, data: dict[str, Any] | None) -> Gam
             return ClockOptions(zone=ClockZone(data["zone"]), skip=data["skip"])
         case GameVariant.ELIMINATION:
             return EliminationOptions(kill=EliminationKill(data["kill"]))
+        case GameVariant.TRAINING:
+            return TrainingOptions(
+                goal=TrainingGoal(data["goal"]),
+                ring=TrainingRing(data["ring"]),
+                fields=tuple((value, multiplier) for value, multiplier in data["fields"]),
+                repeats=data.get("repeats", 1),
+                shuffle=data.get("shuffle", False),
+                seed=data["seed"],
+            )
     return None
 
 

@@ -13,6 +13,8 @@ from app.api.features.game.dto.around_the_clock import ClockOptionsDto
 from app.api.features.game.dto.cricket import CricketOptionsDto
 from app.api.features.game.dto.elimination import EliminationOptionsDto
 from app.api.features.game.dto.killer import KillerOptionsDto
+from app.api.features.game.domain.training import TrainingOptions
+from app.api.features.game.dto.training import TrainingOptionsDto
 
 
 class QuickStartSeatDto(CamelModel):
@@ -31,6 +33,7 @@ class QuickStartDto(CamelModel):
     killer: KillerOptionsDto | None
     around_the_clock: ClockOptionsDto | None
     elimination: EliminationOptionsDto | None
+    training: TrainingOptionsDto | None
     catch_up: bool
     play_on: bool
     players: list[QuickStartSeatDto]
@@ -62,6 +65,9 @@ class QuickStartDto(CamelModel):
                 EliminationOptionsDto(kill=options.kill)
                 if isinstance(options, EliminationOptions)
                 else None
+            ),
+            training=(
+                TrainingOptionsDto.of(options) if isinstance(options, TrainingOptions) else None
             ),
             catch_up=setup.finish.catch_up,
             play_on=setup.finish.play_on,

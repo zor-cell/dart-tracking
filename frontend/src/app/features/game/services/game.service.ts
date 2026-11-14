@@ -60,7 +60,7 @@ export class GameService {
     () =>
       this._state() !== null &&
       !this.trackingPaused() &&
-      this.settledWinner() === null &&
+      !this.finished() &&
       (this.currentTurn()?.darts.length ?? 0) + this.shadowDarts().length < DARTS_PER_TURN,
   );
 
@@ -69,7 +69,7 @@ export class GameService {
     () =>
       this._state() !== null &&
       !this.trackingPaused() &&
-      this.settledWinner() === null &&
+      !this.finished() &&
       this.settings.advanceOnPull(),
   );
 
@@ -77,7 +77,7 @@ export class GameService {
    * won but unconfirmed, as the server's `Game.add_dart` allows. */
   readonly acceptsManualDarts = computed(
     () =>
-      this.settledWinner() === null && (this.currentTurn()?.darts.length ?? 0) < DARTS_PER_TURN,
+      !this.finished() && (this.currentTurn()?.darts.length ?? 0) < DARTS_PER_TURN,
   );
 
   /** A win that still waits for the confirm tap, the same gate every other visit
@@ -89,6 +89,12 @@ export class GameService {
   readonly settledWinner = computed<PlayerDto | null>(() =>
     this.winPending() ? null : this.winner(),
   );
+
+  /** Whether a game nobody wins was ended by hand. */
+  readonly ended = computed(() => this._state()?.ended ?? false);
+
+  /** Whether the view shows the game as over: its win is settled, or it was ended. */
+  readonly finished = computed(() => this.settledWinner() !== null || this.ended());
 
   constructor() {
     // The only route by which a change reaches this cache: commands are sent
@@ -164,6 +170,11 @@ export class GameService {
   /** Back from the finished screen to the win that waits for its confirm tap, for the whole room. */
   reopenWin(): void {
     this.socket.send({ type: 'set_win_confirmed', confirmed: false });
+  }
+
+  /** End a game nobody wins for the whole room, or go back into it. */
+  setEnded(ended: boolean): void {
+    this.socket.send({ type: 'set_ended', ended });
   }
 
   /** Mark the running game as a tracking test run, or stop. Game-wide: it is

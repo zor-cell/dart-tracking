@@ -10,6 +10,7 @@ from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_options import GameOptions, default_options
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.killer import KillerOptions
+from app.api.features.game.domain.training import TrainingOptions
 
 # Days after which a played game weighs half, as for the filter suggestions.
 HALF_LIFE_DAYS = 30
@@ -32,11 +33,13 @@ class GameSetup:
         options: GameOptions | None,
         finish: FinishRules = FinishRules(),
     ) -> "GameSetup":
-        """Killer's dealt numbers are left out: a new game deals them afresh. Games
-        stored before their variant had settings count as its defaults."""
+        """Killer's dealt numbers and the training's seed are left out: a new game
+        draws them afresh. Games stored before their variant had settings count as its defaults."""
         options = options or default_options(variant, 0)
         if isinstance(options, KillerOptions):
             options = replace(options, numbers=())
+        if isinstance(options, TrainingOptions):
+            options = replace(options, seed=0)
         return cls(variant, mode, checkout_mode, options, finish if variant.races else FinishRules())
 
 

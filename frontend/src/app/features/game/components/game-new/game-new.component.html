@@ -103,6 +103,62 @@
             </div>
           }
         }
+        @case ('training') {
+          <div class="setup__field">
+            <div class="setup__label-row">
+              <label class="setup__label" for="trainingGoal" i18n="@@game.new.goal">Ziel</label>
+              <app-info-hint [label]="hintLabel(goalName)">
+                @for (hint of trainingGoalHints; track hint.label) {
+                  <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
+                }
+              </app-info-hint>
+            </div>
+            <p-selectbutton
+              inputId="trainingGoal"
+              formControlName="trainingGoal"
+              [allowEmpty]="false"
+              [options]="trainingGoalOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
+          </div>
+          @if (trainingGoal() === 'random') {
+            <div class="setup__field">
+              <label class="setup__label" for="trainingRing" i18n="@@game.new.zone">Feld</label>
+              <p-selectbutton
+                inputId="trainingRing"
+                formControlName="trainingRing"
+                [allowEmpty]="false"
+                [options]="trainingRingOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
+          }
+          @if (trainingGoal() === 'fields') {
+            <div class="setup__field">
+              <span class="setup__label" i18n="@@game.new.fields">Felder</span>
+              <app-field-picker [fields]="pickedFields()" (fieldsChange)="setTrainingFields($event)" />
+              <div class="setup__switch">
+                <p-toggleswitch inputId="trainingShuffle" formControlName="trainingShuffle" />
+                <label for="trainingShuffle" i18n="@@game.new.shuffleFields">Zufällige Reihenfolge</label>
+              </div>
+            </div>
+          }
+          @if (trainingGoal() !== 'free') {
+            <div class="setup__field">
+              <label class="setup__label" for="trainingRepeats" i18n="@@game.new.repeats">Treffer pro Feld</label>
+              <p-selectbutton
+                inputId="trainingRepeats"
+                formControlName="trainingRepeats"
+                [allowEmpty]="false"
+                [options]="trainingRepeatsOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
+          }
+        }
         @default {
           <div class="setup__field">
             <label class="setup__label" for="mode" i18n="@@game.new.mode">Modus</label>
@@ -253,7 +309,9 @@
               />
             </ng-template>
           </app-sortable-list>
-          <app-field-error [control]="form" [messages]="formMessages" />
+          @if (variant() !== 'training') {
+            <app-field-error [control]="form" [messages]="formMessages" />
+          }
           <div class="setup__actions">
             <p-button
               type="button"
@@ -306,6 +364,8 @@
         [disabled]="form.invalid"
       />
     </form>
+  } @else if (!sessionResolved()) {
+    <app-loading-state label="Neues Spiel wird geladen" i18n-label="@@game.new.loading" />
   } @else {
     <header class="view__header">
       <h1 #heading class="view__title" tabindex="-1" i18n="@@start.newGame">Neues Spiel</h1>

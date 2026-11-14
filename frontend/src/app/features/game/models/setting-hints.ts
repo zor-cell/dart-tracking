@@ -1,5 +1,12 @@
 import { CHECKOUT_MODES } from './checkout-mode';
-import { CLOCK_ZONES, CRICKET_SCORINGS, ELIMINATION_KILLS, KILLER_ZONES, optionLabel } from './variant-options';
+import {
+  CLOCK_ZONES,
+  CRICKET_SCORINGS,
+  ELIMINATION_KILLS,
+  KILLER_ZONES,
+  TRAINING_GOALS,
+  optionLabel,
+} from './variant-options';
 
 /** One option of a game setting, explained in the setting's info popover. */
 export interface SettingHint {
@@ -71,5 +78,20 @@ export const CLOCK_ZONE_HINTS: readonly SettingHint[] = [
   {
     label: optionLabel(CLOCK_ZONES, 'triple'),
     text: $localize`:@@game.hint.clockTriple:Nur das Triple zählt, am Ende nur das Bull.`,
+  },
+];
+
+export const TRAINING_GOAL_HINTS: readonly SettingHint[] = [
+  {
+    label: optionLabel(TRAINING_GOALS, 'free'),
+    text: $localize`:@@game.hint.trainingFree:Kein Ziel: einfach werfen, mit dem Schnitt pro Aufnahme.`,
+  },
+  {
+    label: optionLabel(TRAINING_GOALS, 'random'),
+    text: $localize`:@@game.hint.trainingRandom:Die App gibt ein zufälliges Feld vor. Ist es oft genug getroffen, kommt das nächste.`,
+  },
+  {
+    label: optionLabel(TRAINING_GOALS, 'fields'),
+    text: $localize`:@@game.hint.trainingFields:Du wählst die Felder. Jedes bleibt das Ziel, bis es oft genug getroffen ist.`,
   },
 ];

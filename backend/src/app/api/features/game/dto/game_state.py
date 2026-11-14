@@ -11,6 +11,8 @@ from app.api.features.game.dto.dart import DartDto
 from app.api.features.game.dto.killer import KillerStateDto
 from app.api.features.game.dto.player import PlayerDto
 from app.api.features.game.dto.setup import SetupDto
+from app.api.features.game.domain.training import TrainingOptions, TrainingProgress
+from app.api.features.game.dto.training import TrainingStateDto
 from app.api.features.game.dto.turn import TurnDto
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.game import Game
@@ -59,9 +61,12 @@ class GameStateDto(CamelModel):
     cricket: CricketStateDto | None
     killer: KillerStateDto | None
     around_the_clock: ClockStateDto | None
+    training: TrainingStateDto | None
     evaluation_enabled: bool
     tracking_paused: bool
     win_confirmed: bool
+    # Whether a game nobody wins was ended by hand.
+    ended: bool
     resumable: bool
 
     @classmethod
@@ -118,8 +123,14 @@ class GameStateDto(CamelModel):
                 if isinstance(options, ClockOptions) and isinstance(progress, ClockProgress)
                 else None
             ),
+            training=(
+                TrainingStateDto.from_entity(game, options, progress)
+                if isinstance(options, TrainingOptions) and isinstance(progress, TrainingProgress)
+                else None
+            ),
             evaluation_enabled=game.evaluation_enabled,
             tracking_paused=game.tracking_paused,
             win_confirmed=game.win_confirmed,
-            resumable=is_resumable(game.winner is not None, game.updated_at),
+            ended=game.ended,
+            resumable=is_resumable(game.over, game.updated_at),
         )

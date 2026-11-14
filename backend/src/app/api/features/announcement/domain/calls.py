@@ -8,6 +8,7 @@ from app.api.features.game.domain.cricket import CricketHit, CricketOptions, cri
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.game_variant import GameVariant
+from app.api.features.game.domain.training import TrainingProgress
 
 
 @dataclass(frozen=True)
@@ -49,7 +50,7 @@ class DartCall:
 class TurnCall:
     """The next visit is ready for `player`; `score` is what the scoreboard shows
     them, None outside the points variants. `target` is the field to hit next in
-    Around the Clock, as value and multiplier."""
+    Around the Clock and the training, as value and multiplier."""
 
     player: str
     score: int | None
@@ -63,6 +64,8 @@ class TurnCall:
             zone = game.options.zone
             ring = 1 if zone is ClockZone.ANY else 2 if value == 25 or zone is ClockZone.DOUBLE else 3
             return cls(player.name, None, None if value is None else (value, ring))
+        if isinstance(progress := game.progress, TrainingProgress):
+            return cls(player.name, None, progress.players[player.id].target)
         if not game.variant.counts_points or game.mode is None:
             return cls(player=player.name, score=None)
         remaining = game.remaining(player.id)

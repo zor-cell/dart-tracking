@@ -8,6 +8,7 @@ import { DartDto } from './dart.dto';
 import { KillerStateDto } from './killer-state.dto';
 import { PlayerDto } from './player.dto';
 import { SetupDto } from './setup.dto';
+import { TrainingStateDto } from './training-state.dto';
 import { TurnDto } from './turn.dto';
 
 /**
@@ -49,11 +50,14 @@ export interface GameStateDto {
   readonly cricket: CricketStateDto | null;
   readonly killer: KillerStateDto | null;
   readonly aroundTheClock: ClockStateDto | null;
+  readonly training: TrainingStateDto | null;
   readonly evaluationEnabled: boolean;
   /** Whether the camera books nothing for now; the keypad still does. */
   readonly trackingPaused: boolean;
   /** Whether the room has taken the win, which every device then shows as over. */
   readonly winConfirmed: boolean;
+  /** Whether a game nobody wins was ended by hand. */
+  readonly ended: boolean;
   /** Whether a device that left the game open should still be put back into it. */
   readonly resumable: boolean;
 }

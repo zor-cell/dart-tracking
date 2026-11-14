@@ -35,6 +35,12 @@ export const GAME_RULES: Readonly<Record<GameVariant, GameRules>> = {
       $localize`:@@game.rules.killer.4:Wer keine Leben mehr hat, scheidet aus. Wer zuletzt noch Leben hat, gewinnt.`,
     ],
   },
+  training: {
+    rules: [
+      $localize`:@@game.rules.training.1:Wirf, so lange du willst: ohne Ziel, auf zufällige Felder oder auf Felder, die du selbst wählst.`,
+      $localize`:@@game.rules.training.2:Niemand gewinnt. Das Training läuft, bis du es beendest.`,
+    ],
+  },
   around_the_clock: {
     rules: [
       $localize`:@@game.rules.clock.1:Triff 1 bis 20 der Reihe nach, dann das Bull. Wer zuerst durch ist, gewinnt.`,

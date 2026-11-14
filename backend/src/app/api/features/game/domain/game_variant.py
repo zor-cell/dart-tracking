@@ -10,6 +10,7 @@ class GameVariant(StrEnum):
     CRICKET = "cricket"
     KILLER = "killer"
     AROUND_THE_CLOCK = "around_the_clock"
+    TRAINING = "training"
 
     @property
     def counts_points(self) -> bool:
@@ -20,3 +21,8 @@ class GameVariant(StrEnum):
     def races(self) -> bool:
         """Whether everyone runs for the same goal, so places follow the finishing order."""
         return self in (GameVariant.X01, GameVariant.ELIMINATION, GameVariant.AROUND_THE_CLOCK)
+
+    @property
+    def open_ended(self) -> bool:
+        """Whether nobody wins and the game runs until it is ended by hand."""
+        return self is GameVariant.TRAINING

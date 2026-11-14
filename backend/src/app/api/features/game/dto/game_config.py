@@ -9,6 +9,7 @@ from app.api.features.game.dto.cricket import CricketOptionsDto
 from app.api.features.game.dto.elimination import EliminationOptionsDto
 from app.api.features.game.dto.killer import KillerOptionsDto
 from app.api.features.game.dto.player_slot import PlayerSlotDto
+from app.api.features.game.dto.training import TrainingOptionsDto
 
 
 class GameConfigDto(CamelModel):
@@ -23,6 +24,7 @@ class GameConfigDto(CamelModel):
     killer: KillerOptionsDto | None = None
     around_the_clock: ClockOptionsDto | None = None
     elimination: EliminationOptionsDto | None = None
+    training: TrainingOptionsDto | None = None
     # How a race ends; ignored outside the race variants.
     catch_up: bool = False
     play_on: bool = False
@@ -43,4 +45,6 @@ class GameConfigDto(CamelModel):
                 return (self.around_the_clock or ClockOptionsDto()).to_entity()
             case GameVariant.ELIMINATION:
                 return (self.elimination or EliminationOptionsDto()).to_entity()
+            case GameVariant.TRAINING:
+                return (self.training or TrainingOptionsDto()).to_entity()
         return None

@@ -1,6 +1,7 @@
 import { QuickStartDto } from '../dto/quick-start.dto';
 import { CHECKOUT_HINTS, CLOCK_ZONE_HINTS, KILL_HINTS, KILLER_ZONE_HINTS, SCORING_HINTS, SettingHint } from './setting-hints';
 import { variantLabel } from './game-variant';
+import { TRAINING_GOALS, TRAINING_RINGS, fieldLabel, optionLabel } from './variant-options';
 
 /** A setting that differs from its default, shown as a short mark beside a setup's name. */
 export interface SetupBadge {
@@ -55,6 +56,14 @@ export function setupBadges(quick: QuickStartDto): SetupBadge[] {
   }
   if (quick.aroundTheClock?.skip) {
     badges.push(iconed('pi-forward', SKIP, null));
+  }
+  if (quick.training?.goal === 'random') {
+    const ring = optionLabel(TRAINING_RINGS, quick.training.ring);
+    badges.push(iconed('pi-sync', `${optionLabel(TRAINING_GOALS, 'random')}, ${ring}`, null));
+  }
+  if (quick.training?.goal === 'fields') {
+    const fields = quick.training.fields.map(fieldLabel).join(' ');
+    badges.push({ label: fields, icon: null, title: optionLabel(TRAINING_GOALS, 'fields'), hint: null });
   }
   if (quick.catchUp) {
     badges.push(iconed('pi-replay', CATCH_UP, CATCH_UP_HINT));

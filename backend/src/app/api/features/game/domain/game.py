@@ -21,6 +21,7 @@ from app.api.features.game.domain.game_options import GameOptions, GameProgress,
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.killer import KillerOptions, KillerProgress, killer_progress
 from app.api.features.game.domain.player import Player
+from app.api.features.game.domain.training import TrainingOptions, training_progress
 from app.api.features.game.domain.turn import Turn
 
 DARTS_PER_TURN = 3
@@ -43,6 +44,8 @@ class Game:
     tracking_paused: bool = False
     # Whether the room has taken the win; holds only while there is a winner.
     win_confirmed: bool = False
+    # Whether a game nobody wins was ended by hand.
+    ended: bool = False
     current_player_index: int = 0
     turns: list[Turn] = field(default_factory=list)
     # Darts the camera located after a win or bust closed the open visit, in
@@ -73,6 +76,8 @@ class Game:
                 return killer_progress(ids, self.turns, self.options)
             case ClockOptions():
                 return clock_progress(ids, self.turns, self.options, self.race().voided)
+            case TrainingOptions():
+                return training_progress(ids, self.turns, self.options)
         return None
 
     def race(self) -> Finish:
@@ -92,7 +97,13 @@ class Game:
 
     @property
     def darts_remaining(self) -> int:
-        return 0 if self._visit_closed() else DARTS_PER_TURN - len(self.current_turn.darts)
+        closed = self.ended or self._visit_closed()
+        return 0 if closed else DARTS_PER_TURN - len(self.current_turn.darts)
+
+    @property
+    def over(self) -> bool:
+        """Whether the game is finished: won, or ended by hand."""
+        return self.ended or self.winner is not None
 
     @property
     def winner(self) -> Player | None:
@@ -251,7 +262,8 @@ class Game:
 
     def last_closed_turn(self, player_id: int) -> int | None:
         """Index of the player's last visit that was handed over or won."""
-        closed = len(self.turns) if self.winner is not None else len(self.turns) - 1
+        ended = self.ended and bool(self.current_turn.darts)
+        closed = len(self.turns) if ended or self.winner is not None else len(self.turns) - 1
         return next(
             (index for index in reversed(range(closed)) if self.turns[index].player_id == player_id),
             None,
@@ -321,7 +333,7 @@ class Game:
         """Book a tracked dart into the open visit; whether it was booked. After a
         win or bust it is kept as a shadow dart instead; past the third physical
         dart, or while tracking is paused, it is dropped."""
-        if self.tracking_paused:
+        if self.tracking_paused or self.ended:
             return False
         if self.winner is None and self.darts_remaining > 0:
             turn = self.current_turn
@@ -340,7 +352,7 @@ class Game:
         busted visit is closed by its last dart, so the new one goes before it."""
         turn = self.current_turn
         darts = list(turn.darts)
-        if len(darts) >= DARTS_PER_TURN:
+        if len(darts) >= DARTS_PER_TURN or self.ended:
             return
         closed = self._visit_closed() or self.winner is not None
         darts.insert(len(darts) - 1 if closed else len(darts), dart)
@@ -453,7 +465,7 @@ class Game:
         """Hand over to the next player, booking the darts the visit still lacks as
         misses; returns how many. A visit nobody has thrown in cannot be ended, so
         a second ask for the same handover finds the fresh turn and does nothing."""
-        if self.winner is not None or not self.current_turn.darts:
+        if self.over or not self.current_turn.darts:
             return 0
         filled = 0
         while self.darts_remaining > 0:
@@ -492,7 +504,7 @@ class Game:
             self.turns[-2].ended_at = now
         current = self.current_turn
         self._date(current, now)
-        if self.winner is None:
+        if not self.over:
             current.ended_at = None
         elif current.ended_at is None:
             current.ended_at = now
@@ -526,6 +538,14 @@ class Game:
         if self.winner is None or self.win_confirmed == confirmed:
             return
         self.win_confirmed = confirmed
+        self.revision += 1
+
+    def set_ended(self, ended: bool) -> None:
+        """End a game nobody wins, or go back into it. Bumps the revision so every
+        device shows the same screen; a no-op in the games that are won."""
+        if not self.variant.open_ended or self.ended == ended:
+            return
+        self.ended = ended
         self.revision += 1
 
     def _start_turn(self) -> None:

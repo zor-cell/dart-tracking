@@ -20,7 +20,7 @@ export class TrackingToggleComponent {
   protected readonly pauseLabel = $localize`:@@game.pauseTracking:Tracking pausieren`;
   protected readonly shown = computed(() => {
     const room = this.calibration.roomState();
-    return room !== null && room !== 'no_camera' && this.game.settledWinner() === null;
+    return room !== null && room !== 'no_camera' && !this.game.finished();
   });
 
   protected onClick(): void {
