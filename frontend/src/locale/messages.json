@@ -672,7 +672,7 @@
     "settings.theme": "Darstellung",
     "settings.themeHint": "Gilt für dieses Gerät.",
     "settings.game": "Spiel",
-    "settings.advanceOnPull": " Nach dem Ziehen weiter ",
+    "settings.advanceOnPull": " Automatischer Wechsel ",
     "settings.advanceOnPullHint": " Die Kamera erkennt, wenn die Darts gezogen sind, und gibt an den nächsten Spieler weiter. Sonst geht es erst weiter, wenn du bestätigst. ",
     "settings.favouriteDoubles": "Lieblingsdoppel",
     "settings.favouriteDoublesHint": " Der Checkout-Vorschlag endet bevorzugt auf dem obersten Doppel, dann auf den nächsten, solange das Setup dafür nicht schwerer wird. Ohne Auswahl gilt die Standard-Reihenfolge. ",
