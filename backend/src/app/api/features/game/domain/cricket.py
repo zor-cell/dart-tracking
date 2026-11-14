@@ -2,7 +2,7 @@
 score the number for as long as an opponent still has it open."""
 
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 
 from app.api.features.game.domain.dart import Dart
@@ -61,6 +61,34 @@ def cricket_progress(
             progress.winner_id = _winner(progress.players, turn.player_id, options.scoring)
         progress.turn_marks.append(marks)
     return progress
+
+
+@dataclass(frozen=True)
+class CricketHit:
+    """What a dart did to its number: the marks still missing to close it, whether
+    it closed it, and the points it scored for one player."""
+
+    left: int
+    closed: bool
+    points: int
+
+
+def cricket_hit(
+    player_ids: Sequence[int], turns: Sequence[Turn], options: CricketOptions, index: int
+) -> CricketHit | None:
+    """The dart at `index` of the last turn, replayed in its place; None off the targets."""
+    last = turns[-1]
+    dart = last.darts[index]
+    if dart.value not in CRICKET_TARGETS or dart.multiplier == 0:
+        return None
+    earlier = [*turns[:-1], replace(last, darts=last.darts[:index])]
+    players = cricket_progress(player_ids, earlier, options).players
+    before = players[last.player_id].marks[dart.value]
+    points = {player_id: player.points for player_id, player in players.items()}
+    _throw(players, last.player_id, dart, options.scoring)
+    left = MARKS_TO_CLOSE - players[last.player_id].marks[dart.value]
+    scored = max(player.points - points[player_id] for player_id, player in players.items())
+    return CricketHit(left, closed=left == 0 and before < MARKS_TO_CLOSE, points=scored)
 
 
 def _throw(

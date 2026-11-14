@@ -416,7 +416,8 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
 
     await _publish_state(game)
     if isinstance(command, RegisterDartDto | ReplaceDartDto):
-        await _announce(game, command.to_entity(), game.just_reset() - reset_before)
+        index = command.index if isinstance(command, ReplaceDartDto) else -1
+        await _announce(game, command.to_entity(), game.just_reset() - reset_before, index)
 
 
 async def _handle_set_evaluation(game_id: str, command: SetEvaluationDto) -> None:
@@ -468,11 +469,11 @@ async def _announcer(game_id: str) -> tuple[Connection, Speaker] | None:
     return connection, await speaker_for(connection.user_id, connection.language)
 
 
-async def _announce(game: Game, dart: ScoredDart, eliminated: set[int]) -> None:
-    """Have the room's announcer speak a dart just booked, with whoever it eliminated."""
+async def _announce(game: Game, dart: ScoredDart, eliminated: set[int], index: int = -1) -> None:
+    """Have the room's announcer speak the dart booked at `index` of the open visit."""
     if (found := await _announcer(game.id)) is not None:
         announcer, speaker = found
-        call = DartCall.of(dart, game, eliminated)
+        call = DartCall.of(dart, game, eliminated, index)
         clips = await speech_store().urls(dart_phrases(call, speaker.language), speaker)
         await hub.send_to_client(
             game.id, announcer.client.id, DartAnnouncementDto.from_entity(call, clips)
