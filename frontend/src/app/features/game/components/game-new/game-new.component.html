@@ -21,6 +21,15 @@
           [ariaLabel]="rulesLabel(picked)"
           (onClick)="openRules(picked)"
         />
+        <p-button
+          class="setup__start"
+          icon="pi pi-play"
+          [rounded]="true"
+          ariaLabel="Spiel starten"
+          i18n-ariaLabel="@@game.new.start"
+          [disabled]="form.invalid"
+          (onClick)="startGame()"
+        />
       </div>
     </header>
 
@@ -358,14 +367,7 @@
         }
       </div>
 
-      <p-button
-        type="submit"
-        fluid
-        label="Spiel starten"
-        i18n-label="@@game.new.start"
-        icon="pi pi-play"
-        [disabled]="form.invalid"
-      />
+      <button type="submit" hidden [disabled]="form.invalid"></button>
     </form>
   } @else if (!sessionResolved()) {
     <app-loading-state label="Neues Spiel wird geladen" i18n-label="@@game.new.loading" />

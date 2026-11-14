@@ -85,6 +85,10 @@
   gap: 0.25rem;
 }
 
+.setup__start {
+  margin-left: auto;
+}
+
 // Focused by code on a step change only, where a ring would be noise.
 .view__title:focus {
   outline: none;
