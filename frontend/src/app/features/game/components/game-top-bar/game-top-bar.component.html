@@ -11,7 +11,7 @@
           i18n-ariaLabel="@@game.leave"
           (onClick)="confirmLeaveGame()"
         />
-        @if (state.variant === 'training' && !state.ended) {
+        @if (state.settings.variant === 'training' && !state.ended) {
           <p-button
             icon="pi pi-flag"
             severity="secondary"

@@ -30,6 +30,7 @@ import {
 } from '../../models/game-filter';
 import { CHECKOUT_MODES, CheckoutMode } from '../../models/checkout-mode';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
+import { modeOf } from '../../models/game-settings';
 import { GAME_VARIANTS, GameVariant, variantLabel } from '../../models/game-variant';
 import { GameHistoryService } from '../../services/game-history.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
@@ -244,6 +245,7 @@ export class GameListComponent {
   }
 
   protected readonly variantName = variantLabel;
+  protected readonly modeOf = modeOf;
 
   protected openLabel(game: GameSummaryDto): string {
     const when = formatDate(game.createdAt, SHORT_DATE_TIME, this.locale);

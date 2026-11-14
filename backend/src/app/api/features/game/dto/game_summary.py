@@ -2,11 +2,9 @@ from datetime import datetime
 from typing import Self
 
 from app.api.core.dto.base import CamelModel
-from app.api.features.game.domain.checkout_mode import CheckoutMode
-from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_status import GameStatus
 from app.api.features.game.domain.game_summary import GameSummary, GameSummaryPlayer
-from app.api.features.game.domain.game_variant import GameVariant
+from app.api.features.game.dto.game_settings import GameSettingsDto, settings_dto
 
 
 class GameSummaryPlayerDto(CamelModel):
@@ -21,9 +19,7 @@ class GameSummaryPlayerDto(CamelModel):
 
 class GameSummaryDto(CamelModel):
     id: str
-    mode: GameMode | None
-    variant: GameVariant
-    checkout_mode: CheckoutMode | None
+    settings: GameSettingsDto
     status: GameStatus
     players: list[GameSummaryPlayerDto]
     winner_index: int | None
@@ -37,9 +33,7 @@ class GameSummaryDto(CamelModel):
     def from_entity(cls, summary: GameSummary) -> Self:
         return cls(
             id=summary.id,
-            mode=summary.mode,
-            variant=summary.variant,
-            checkout_mode=summary.checkout_mode,
+            settings=settings_dto(summary.setup),
             status=summary.status,
             players=[GameSummaryPlayerDto.from_entity(p) for p in summary.players],
             winner_index=summary.winner_index,

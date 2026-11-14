@@ -1,6 +1,7 @@
 import { KillerZone } from '../models/variant-options';
 
-export interface KillerOptionsDto {
+export interface KillerSettingsDto {
+  readonly variant: 'killer';
   readonly lives: number;
   readonly zone: KillerZone;
 }

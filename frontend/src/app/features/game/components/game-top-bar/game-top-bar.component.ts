@@ -43,11 +43,12 @@ export class GameTopBarComponent {
     if (state === null) {
       return '';
     }
-    if (state.variant === 'x01') {
-      return `${state.mode}`;
+    const settings = state.settings;
+    if (settings.variant === 'x01') {
+      return `${settings.mode}`;
     }
-    const name = variantLabel(state.variant);
-    return state.variant === 'elimination' ? `${name} ${state.mode}` : name;
+    const name = variantLabel(settings.variant);
+    return settings.variant === 'elimination' ? `${name} ${settings.mode}` : name;
   });
 
   /**

@@ -27,28 +27,29 @@ def test_an_account_that_has_not_played_gets_none(alice):
 def test_the_setup_played_most_comes_with_the_last_players(alice, session):
     me = alice.own_entry()["id"]
     bob = alice.add_player("Bob")
+    cricket = {"variant": "cricket", "scoring": "cut_throat"}
     for _ in range(2):
-        game = alice.new_game(me, bob, variant="cricket", cricket={"scoring": "cut_throat"})
+        game = alice.new_game(me, bob, settings=cricket)
         session.play(game["id"], [T20])
-    latest = alice.new_game(bob, me, {"name": "Cid"}, variant="cricket", cricket={"scoring": "cut_throat"})
+    latest = alice.new_game(bob, me, {"name": "Cid"}, settings=cricket)
     session.play(latest["id"], [T20])
     session.play(alice.new_game(me)["id"], [T20])
 
     found = quick_start(alice)
 
-    assert found["variant"] == "cricket"
-    assert found["cricket"] == {"scoring": "cut_throat"}
-    assert (found["mode"], found["killer"], found["aroundTheClock"], found["elimination"]) == (
-        None, None, None, None
-    )
+    assert found["settings"] == {"variant": "cricket", "scoring": "cut_throat"}
     assert [seat["name"] for seat in found["players"]] == ["Bob", "Alice", "Cid"]
     assert [seat["playerId"] for seat in found["players"]][:2] == [bob, me]
 
 
 def test_games_without_darts_or_hidden_ones_do_not_count(alice, session):
     me = alice.own_entry()["id"]
-    alice.new_game(me, variant="killer", killer={"lives": 5}, players=[{"playerId": me}, {"name": "Ben"}])
-    hidden = alice.new_game(me, variant="around_the_clock")["id"]
+    alice.new_game(
+        me,
+        settings={"variant": "killer", "lives": 5},
+        players=[{"playerId": me}, {"name": "Ben"}],
+    )
+    hidden = alice.new_game(me, settings={"variant": "around_the_clock"})["id"]
     session.play(hidden, [T20])
     alice.patch(f"/games/{hidden}", json={"status": "discarded"})
 
@@ -60,8 +61,7 @@ def test_killer_settings_come_without_the_dealt_numbers(alice, session):
     game = alice.post(
         "/games",
         json={
-            "variant": "killer",
-            "killer": {"lives": 5, "zone": "triple"},
+            "settings": {"variant": "killer", "lives": 5, "zone": "triple"},
             "players": [{"playerId": me}, {"name": "Ben"}],
         },
     ).json()
@@ -69,7 +69,7 @@ def test_killer_settings_come_without_the_dealt_numbers(alice, session):
 
     found = quick_start(alice)
 
-    assert found["killer"] == {"lives": 5, "zone": "triple"}
+    assert found["settings"] == {"variant": "killer", "lives": 5, "zone": "triple"}
     assert alice.post("/games", json={**found, "players": [
         {"playerId": seat["playerId"]} if seat["playerId"] else {"name": seat["name"]}
         for seat in found["players"]
@@ -88,26 +88,32 @@ def test_a_seat_in_someone_elses_game_maps_to_the_own_entry(alice, bob, session)
         {"playerId": None, "name": "Bob"},
         {"playerId": alice.own_entry()["id"], "name": "Alice"},
     ]
-    assert found["mode"] == 301
+    assert found["settings"]["mode"] == 301
 
 
 def test_elimination_settings_come_along(alice, session):
     me = alice.own_entry()["id"]
     game = alice.new_game(
-        me, alice.add_player("Ben"), variant="elimination", mode=501, elimination={"kill": "double"}
+        me,
+        alice.add_player("Ben"),
+        settings={"variant": "elimination", "mode": 501, "kill": "double"},
     )
     session.play(game["id"], [MISS])
 
     found = quick_start(alice)
 
-    assert (found["variant"], found["elimination"]) == ("elimination", {"kill": "double"})
+    assert (found["settings"]["variant"], found["settings"]["kill"]) == ("elimination", "double")
 
 
 def test_the_finish_rules_come_with_the_setup(alice, session):
     me = alice.own_entry()["id"]
-    game = alice.new_game(me, {"name": "Ben"}, mode=501, catchUp=True, playOn=True)
+    game = alice.new_game(
+        me,
+        {"name": "Ben"},
+        settings={"variant": "x01", "mode": 501, "catchUp": True, "playOn": True},
+    )
     session.play(game["id"], [T20])
 
     found = quick_start(alice)
 
-    assert (found["catchUp"], found["playOn"]) == (True, True)
+    assert (found["settings"]["catchUp"], found["settings"]["playOn"]) == (True, True)

@@ -9,6 +9,7 @@ import { TableModule } from 'primeng/table';
 import { GameDetailDto } from '../../dto/game-detail.dto';
 import { GAME_STATUS_LABELS, GAME_STATUS_SEVERITIES, isResumable } from '../../models/game-filter';
 import { CHECKOUT_MODES } from '../../models/checkout-mode';
+import { finishOf, modeOf, playOf } from '../../models/game-settings';
 import { countsPoints, variantLabel } from '../../models/game-variant';
 import {
   CLOCK_ZONES,
@@ -103,19 +104,25 @@ export class GameDetailComponent {
   /** What went wrong with the last resume or show/hide, under the heading. */
   protected readonly actionError = signal<string | null>(null);
 
-  protected readonly isElimination = computed(() => this.detail()?.game.variant === 'elimination');
+  protected readonly isElimination = computed(() => this.detail()?.game.settings.variant === 'elimination');
   protected readonly shortDateTime = SHORT_DATE_TIME;
   protected readonly showLabel = $localize`:@@game.detail.show:Wieder einblenden`;
   protected readonly hideLabel = $localize`:@@game.detail.hide:Für dich ausblenden`;
 
   protected readonly variantLabel = computed(() => {
-    const variant = this.detail()?.game.variant;
+    const variant = this.detail()?.game.settings.variant;
     return variant === undefined ? '' : variantLabel(variant);
+  });
+
+  /** The starting score of a points game; null for the other variants. */
+  protected readonly mode = computed(() => {
+    const game = this.detail()?.game;
+    return game === undefined ? null : modeOf(game.settings);
   });
 
   /** Whether the game ran on points, with the x01 figures; the other variants have their own. */
   protected readonly countsPoints = computed(() => {
-    const variant = this.detail()?.game.variant;
+    const variant = this.detail()?.game.settings.variant;
     return variant !== undefined && countsPoints(variant);
   });
 
@@ -125,34 +132,36 @@ export class GameDetailComponent {
     if (game === undefined) {
       return '';
     }
-    if (game.cricket !== null) {
-      return scoringLabel(game.cricket.scoring);
+    const settings = game.settings;
+    if (settings.variant === 'cricket') {
+      return scoringLabel(settings.scoring);
     }
-    if (game.killer !== null) {
-      const lives = $localize`:@@game.detail.lives:${game.killer.lives}:count: Leben`;
-      return `${lives}, ${optionLabel(KILLER_ZONES, game.killer.zone)}`;
+    if (settings.variant === 'killer') {
+      const lives = $localize`:@@game.detail.lives:${settings.lives}:count: Leben`;
+      return `${lives}, ${optionLabel(KILLER_ZONES, settings.zone)}`;
     }
-    if (game.training !== null) {
-      const goal = optionLabel(TRAINING_GOALS, game.training.goal);
+    if (settings.variant === 'training') {
+      const goal = optionLabel(TRAINING_GOALS, settings.goal);
       const detail = {
         free: [],
-        random: [optionLabel(TRAINING_RINGS, game.training.ring)],
-        fields: [game.training.fields.map(fieldLabel).join(' ')],
-      }[game.training.goal];
-      const repeats = game.training.goal !== 'free' && game.training.repeats > 1 ? [`${game.training.repeats}×`] : [];
+        random: [optionLabel(TRAINING_RINGS, settings.ring)],
+        fields: [settings.fields.map(fieldLabel).join(' ')],
+      }[settings.goal];
+      const repeats = settings.goal !== 'free' && settings.repeats > 1 ? [`${settings.repeats}×`] : [];
       return [goal, ...detail, ...repeats].join(', ');
     }
+    const { catchUp, playOn } = finishOf(settings);
     const finish = [
-      ...(game.catchUp ? [$localize`:@@game.new.catchUp:Mit Nachziehen`] : []),
-      ...(game.playOn ? [$localize`:@@game.new.playOn:Plätze ausspielen`] : []),
+      ...(catchUp ? [$localize`:@@game.new.catchUp:Mit Nachziehen`] : []),
+      ...(playOn ? [$localize`:@@game.new.playOn:Plätze ausspielen`] : []),
     ];
-    if (game.aroundTheClock !== null) {
-      const zone = optionLabel(CLOCK_ZONES, game.aroundTheClock.zone);
-      const skip = game.aroundTheClock.skip ? [$localize`:@@game.detail.skip:mit Springen`] : [];
+    if (settings.variant === 'around_the_clock') {
+      const zone = optionLabel(CLOCK_ZONES, settings.zone);
+      const skip = settings.skip ? [$localize`:@@game.detail.skip:mit Springen`] : [];
       return [zone, ...skip, ...finish].join(', ');
     }
-    const checkout = optionLabel(CHECKOUT_MODES, game.checkoutMode);
-    const kill = game.eliminationKill === 'double' ? ['Double Kill'] : [];
+    const checkout = optionLabel(CHECKOUT_MODES, settings.checkoutMode);
+    const kill = settings.variant === 'elimination' && settings.kill === 'double' ? ['Double Kill'] : [];
     return [checkout, ...kill, ...finish].join(', ');
   });
 
@@ -162,27 +171,28 @@ export class GameDetailComponent {
     if (game === undefined) {
       return [];
     }
+    const play = playOf(game);
     return game.players.map((player, seat) => {
-      if (game.cricket !== null) {
-        const own = game.cricket.players[seat];
+      if (play.variant === 'cricket') {
+        const own = play.standing.players[seat];
         const closed = own.marks.filter((marks) => marks >= 3).length;
-        return game.cricket.scoring === 'no_score'
+        return play.settings.scoring === 'no_score'
           ? { value: `${closed}/${own.marks.length}`, unit: $localize`:@@game.detail.closed:zu` }
           : { value: `${own.points}`, unit: $localize`:@@game.detail.points:Punkte` };
       }
-      if (game.killer !== null) {
-        return { value: `${game.killer.players[seat].lives}`, unit: $localize`:@@game.scoreboard.lives:Leben` };
+      if (play.variant === 'killer') {
+        return { value: `${play.standing.players[seat].lives}`, unit: $localize`:@@game.scoreboard.lives:Leben` };
       }
-      if (game.training !== null) {
-        const own = game.training.players[seat];
-        return game.training.goal === 'free'
+      if (play.variant === 'training') {
+        const own = play.standing.players[seat];
+        return play.settings.goal === 'free'
           ? { value: player.average === null ? '–' : formatNumber(player.average, this.locale, '1.1-1'), unit: 'Ø' }
           : { value: `${own.hits}/${own.darts}`, unit: $localize`:@@game.detail.hits:Treffer` };
       }
-      if (game.aroundTheClock !== null) {
-        return { value: `${game.aroundTheClock.players[seat].done}/21`, unit: $localize`:@@game.detail.fields:Felder` };
+      if (play.variant === 'around_the_clock') {
+        return { value: `${play.standing.players[seat].done}/21`, unit: $localize`:@@game.detail.fields:Felder` };
       }
-      return game.variant === 'elimination'
+      return play.variant === 'elimination'
         ? { value: `${player.remaining}`, unit: $localize`:@@game.detail.missingPoints:fehlen` }
         : { value: `${player.remaining}`, unit: $localize`:@@game.detail.remaining:Rest` };
     });
@@ -201,8 +211,9 @@ export class GameDetailComponent {
     const dartsRow = { label: 'Darts', values: darts.map((count) => `${count}`) };
     const number = (value: number | null, digits: string) =>
       value === null ? '–' : formatNumber(value, this.locale, digits);
-    if (game.cricket !== null) {
-      const players = game.cricket.players;
+    const play = playOf(game);
+    if (play.variant === 'cricket') {
+      const players = play.standing.players;
       const rows: VariantRow[] = [
         dartsRow,
         { label: 'MPR', values: players.map((player) => number(player.marksPerRound, '1.2-2')) },
@@ -211,21 +222,21 @@ export class GameDetailComponent {
           values: players.map((player) => `${player.marks.filter((marks) => marks >= 3).length}/7`),
         },
       ];
-      return game.cricket.scoring === 'no_score'
+      return play.settings.scoring === 'no_score'
         ? rows
         : [...rows, { label: $localize`:@@game.detail.points:Punkte`, values: players.map((p) => `${p.points}`) }];
     }
-    if (game.killer !== null) {
-      const players = game.killer.players;
+    if (play.variant === 'killer') {
+      const players = play.standing.players;
       return [
         dartsRow,
         { label: $localize`:@@game.detail.livesLeft:Leben übrig`, values: players.map((p) => `${p.lives}`) },
         { label: $localize`:@@game.scoreboard.kills:Abschüsse`, values: players.map((p) => `${p.kills}`) },
       ];
     }
-    if (game.training !== null) {
-      const players = game.training.players;
-      if (game.training.goal === 'free') {
+    if (play.variant === 'training') {
+      const players = play.standing.players;
+      if (play.settings.goal === 'free') {
         return [dartsRow, { label: 'Ø', values: game.players.map((player) => number(player.average, '1.1-1')) }];
       }
       const rate = (hits: number, thrown: number) =>
@@ -246,8 +257,8 @@ export class GameDetailComponent {
         })),
       ];
     }
-    if (game.aroundTheClock !== null) {
-      const players = game.aroundTheClock.players;
+    if (play.variant === 'around_the_clock') {
+      const players = play.standing.players;
       return [
         dartsRow,
         { label: $localize`:@@game.detail.hits:Treffer`, values: players.map((p) => `${p.hits}`) },

@@ -1,6 +1,4 @@
-import { CheckoutMode } from '../models/checkout-mode';
-import { GameMode } from '../models/game-mode';
-import { GameVariant } from '../models/game-variant';
+import { GameSettingsDto } from './game-settings.dto';
 
 /** Derived on the server: `abandoned` is what an untouched open game becomes. */
 export type GameStatus = 'active' | 'finished' | 'abandoned' | 'discarded';
@@ -13,9 +11,7 @@ export interface GameSummaryPlayerDto {
 
 export interface GameSummaryDto {
   readonly id: string;
-  readonly mode: GameMode | null;
-  readonly variant: GameVariant;
-  readonly checkoutMode: CheckoutMode | null;
+  readonly settings: GameSettingsDto;
   readonly status: GameStatus;
   readonly players: readonly GameSummaryPlayerDto[];
   readonly winnerIndex: number | null;

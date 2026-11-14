@@ -5,10 +5,8 @@ games beyond plain x01 are replayed, in one batch."""
 from dataclasses import dataclass
 from datetime import datetime
 
-from app.api.features.game.domain.checkout_mode import CheckoutMode
-from app.api.features.game.domain.game_mode import GameMode
+from app.api.features.game.domain.game_setup import GameSetup
 from app.api.features.game.domain.game_status import GameStatus, counts_in_statistics
-from app.api.features.game.domain.game_variant import GameVariant
 
 
 @dataclass(frozen=True)
@@ -22,9 +20,7 @@ class GameSummaryPlayer:
 @dataclass(frozen=True)
 class GameSummary:
     id: str
-    mode: GameMode | None
-    variant: GameVariant
-    checkout_mode: CheckoutMode | None
+    setup: GameSetup
     # Already derived (`effective_status`), so `abandoned` can appear here even
     # though no row ever holds it.
     status: GameStatus

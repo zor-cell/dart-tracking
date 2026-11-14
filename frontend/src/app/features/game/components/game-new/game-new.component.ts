@@ -66,7 +66,7 @@ import {
 } from '../../models/variant-options';
 import { standings } from '../../models/variant-standing';
 import { GameConfigDto } from '../../dto/game-config.dto';
-import { GameStateDto } from '../../dto/game-state.dto';
+import { GameSettingsDto } from '../../dto/game-settings.dto';
 import { QuickStartDto } from '../../dto/quick-start.dto';
 import { PlayerDto } from '../../dto/player.dto';
 import { PlayerSlotDto } from '../../dto/player-slot.dto';
@@ -78,7 +78,7 @@ import { FieldErrorComponent } from '../../../../core/view/components/field-erro
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { GameRulesComponent } from '../game-rules/game-rules.component';
 import { FieldPickerComponent } from '../field-picker/field-picker.component';
-import { TrainingFieldDto } from '../../dto/training-options.dto';
+import { TrainingFieldDto } from '../../dto/training-settings.dto';
 import {
   SortableListComponent,
   SortableMove,
@@ -210,12 +210,12 @@ export class GameNewComponent {
   protected readonly starting = signal(false);
   protected readonly quickTitle = computed(() => {
     const quick = this.quickStart();
-    return quick ? setupName(quick) : '';
+    return quick ? setupName(quick.settings) : '';
   });
   /** The quick start's settings that differ from the defaults. */
   protected readonly quickBadges = computed(() => {
     const quick = this.quickStart();
-    return quick ? setupBadges(quick) : [];
+    return quick ? setupBadges(quick.settings) : [];
   });
   /** The badge whose explanation the popover shows. */
   protected readonly shownBadge = signal<SetupBadge | null>(null);
@@ -386,30 +386,32 @@ export class GameNewComponent {
       clockZone, clockSkip, eliminationKill, catchUp, playOn,
       trainingGoal, trainingRing, trainingFields, trainingRepeats, trainingShuffle,
     } = this.form.getRawValue();
-    const racing = RACES.includes(variant);
     const seats = (players as Seat[]).map<PlayerSlotDto>((seat) =>
       typeof seat === 'string' ? { name: seat.trim() } : { playerId: seat.id },
     );
+    const finish = { catchUp: seats.length > 1 && catchUp, playOn: seats.length > 2 && playOn };
+    const chosen: Record<GameVariant, GameSettingsDto> = {
+      x01: { variant: 'x01', mode, checkoutMode, ...finish },
+      elimination: { variant: 'elimination', mode, checkoutMode, kill: eliminationKill, ...finish },
+      cricket: { variant: 'cricket', scoring: cricketScoring },
+      killer: { variant: 'killer', lives: killerLives, zone: killerZone },
+      around_the_clock: {
+        variant: 'around_the_clock',
+        zone: clockZone,
+        skip: clockZone === 'any' && clockSkip,
+        ...finish,
+      },
+      training: {
+        variant: 'training',
+        goal: trainingGoal,
+        ring: trainingRing,
+        fields: trainingGoal === 'fields' ? trainingFields : [],
+        repeats: trainingGoal === 'free' ? 1 : trainingRepeats,
+        shuffle: trainingGoal === 'fields' && trainingShuffle,
+      },
+    };
     this.create({
-      mode,
-      variant,
-      checkoutMode,
-      cricket: { scoring: cricketScoring },
-      killer: { lives: killerLives, zone: killerZone },
-      aroundTheClock: { zone: clockZone, skip: clockZone === 'any' && clockSkip },
-      elimination: { kill: eliminationKill },
-      // Only a training carries its settings.
-      ...(variant === 'training' && {
-        training: {
-          goal: trainingGoal,
-          ring: trainingRing,
-          fields: trainingGoal === 'fields' ? trainingFields : [],
-          repeats: trainingGoal === 'free' ? 1 : trainingRepeats,
-          shuffle: trainingGoal === 'fields' && trainingShuffle,
-        },
-      }),
-      catchUp: racing && seats.length > 1 && catchUp,
-      playOn: racing && seats.length > 2 && playOn,
+      settings: chosen[variant],
       players: seats,
       evaluationEnabled: this.settings.evaluationEnabled(),
       rematchOf: this.rematchId ?? undefined,
@@ -470,9 +472,9 @@ export class GameNewComponent {
     this.rematchId = previous?.id ?? null;
 
     if (previous !== null) {
-      this.form.patchValue(settingsOf(previous));
+      this.form.patchValue(formValues(previous.settings));
       if (this.chosen() === null) {
-        await this.showStep(previous.variant, true);
+        await this.showStep(previous.settings.variant, true);
       }
       // Worst finish throws first, the winner last.
       const ranks = standings(previous, (value) => `${value}`).map((standing) => standing.rank);
@@ -604,27 +606,34 @@ function shuffled<T>(items: readonly T[]): T[] {
   return copy;
 }
 
-/** The settings of a finished game, for its rematch; what it did not use stays as is. */
-function settingsOf(game: GameStateDto) {
-  return {
-    variant: game.variant,
-    ...(game.mode !== null && { mode: game.mode }),
-    ...(game.checkoutMode !== null && { checkoutMode: game.checkoutMode }),
-    ...(game.cricket !== null && { cricketScoring: game.cricket.scoring }),
-    ...(game.killer !== null && { killerLives: game.killer.lives, killerZone: game.killer.zone }),
-    ...(game.eliminationKill !== null && { eliminationKill: game.eliminationKill }),
-    ...(game.aroundTheClock !== null && {
-      clockZone: game.aroundTheClock.zone,
-      clockSkip: game.aroundTheClock.skip,
-    }),
-    ...(game.training !== null && {
-      trainingGoal: game.training.goal,
-      trainingRing: game.training.ring,
-      trainingFields: game.training.fields,
-      trainingRepeats: game.training.repeats,
-      trainingShuffle: game.training.shuffle,
-    }),
-    catchUp: game.catchUp,
-    playOn: game.playOn,
-  };
+/** A game's settings as values of the form; what the variant does not use stays as is. */
+function formValues(settings: GameSettingsDto) {
+  const finish = 'catchUp' in settings ? { catchUp: settings.catchUp, playOn: settings.playOn } : {};
+  switch (settings.variant) {
+    case 'x01':
+      return { variant: settings.variant, mode: settings.mode, checkoutMode: settings.checkoutMode, ...finish };
+    case 'elimination':
+      return {
+        variant: settings.variant,
+        mode: settings.mode,
+        checkoutMode: settings.checkoutMode,
+        eliminationKill: settings.kill,
+        ...finish,
+      };
+    case 'cricket':
+      return { variant: settings.variant, cricketScoring: settings.scoring };
+    case 'killer':
+      return { variant: settings.variant, killerLives: settings.lives, killerZone: settings.zone };
+    case 'around_the_clock':
+      return { variant: settings.variant, clockZone: settings.zone, clockSkip: settings.skip, ...finish };
+    case 'training':
+      return {
+        variant: settings.variant,
+        trainingGoal: settings.goal,
+        trainingRing: settings.ring,
+        trainingFields: settings.fields,
+        trainingRepeats: settings.repeats,
+        trainingShuffle: settings.shuffle,
+      };
+  }
 }

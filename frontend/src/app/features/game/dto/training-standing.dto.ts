@@ -1,4 +1,4 @@
-import { TrainingFieldDto, TrainingOptionsDto } from './training-options.dto';
+import { TrainingFieldDto } from './training-settings.dto';
 
 export interface TrainingTallyDto extends TrainingFieldDto {
   readonly darts: number;
@@ -18,7 +18,8 @@ export interface TrainingPlayerDto {
   readonly tallies: readonly TrainingTallyDto[];
 }
 
-export interface TrainingStateDto extends TrainingOptionsDto {
+export interface TrainingStandingDto {
+  readonly variant: 'training';
   /** One per player, in seat order. */
   readonly players: readonly TrainingPlayerDto[];
 }

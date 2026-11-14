@@ -1,5 +1,3 @@
-import { KillerOptionsDto } from './killer-options.dto';
-
 export interface KillerPlayerDto {
   readonly number: number;
   readonly lives: number;
@@ -8,7 +6,8 @@ export interface KillerPlayerDto {
   readonly kills: number;
 }
 
-export interface KillerStateDto extends KillerOptionsDto {
+export interface KillerStandingDto {
+  readonly variant: 'killer';
   /** One per player, in seat order. */
   readonly players: readonly KillerPlayerDto[];
 }

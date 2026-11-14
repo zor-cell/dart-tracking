@@ -13,6 +13,7 @@ from app.api.features.evaluation.domain.game_event import (
 from app.api.features.evaluation.persistence.game_event import GameEventTable
 from app.api.features.game.domain.game_status import GameStatus
 from app.api.features.game.persistence.game import GameTable
+from app.api.features.game.persistence.game_settings import start_score
 
 
 class EvaluationRepository:
@@ -87,7 +88,7 @@ class EvaluationRepository:
         statement = (
             select(
                 GameTable.id,
-                GameTable.mode,
+                start_score().label("mode"),
                 GameTable.created_at,
                 GameTable.evaluation_enabled,
                 versions.label("tracker_versions"),

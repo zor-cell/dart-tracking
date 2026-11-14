@@ -70,6 +70,8 @@ class TrainingProgress:
     players: dict[int, TrainingPlayer]
     # Hits of each replayed turn, in turn order.
     turn_hits: list[int] = field(default_factory=list)
+    # The field each dart of each turn went at; None without a target.
+    turn_targets: list[list[Field | None]] = field(default_factory=list)
     winner_id: int | None = None
 
 
@@ -130,8 +132,10 @@ def training_progress(
         player = progress.players[turn.player_id]
         own = targets[turn.player_id]
         hits = 0
+        aimed: list[Field | None] = []
         for dart in turn.darts:
             player.darts += 1
+            aimed.append(player.target)
             if own is None or player.target is None:
                 continue
             tally = player.tallies.setdefault(player.target, FieldTally())
@@ -147,6 +151,7 @@ def training_progress(
                 player.left = options.repeats
         player.hits += hits
         progress.turn_hits.append(hits)
+        progress.turn_targets.append(aimed)
     return progress
 
 

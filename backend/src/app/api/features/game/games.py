@@ -28,6 +28,7 @@ from app.api.features.game.domain.player_count import PlayerCount
 from app.api.features.game.dto.game_config import GameConfigDto
 from app.api.features.game.dto.game_detail import GameDetailDto
 from app.api.features.game.dto.game_page import GamePageDto
+from app.api.features.game.dto.game_settings import to_setup
 from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.dto.game_status_update import GameStatusUpdateDto
 from app.api.features.game.dto.game_summary import GameSummaryDto
@@ -95,12 +96,10 @@ async def _resolve_players(
 async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) -> GameStateDto:
     if not body.players:
         raise HTTPException(status_code=422, detail="at least one player is required")
-    points = body.variant.counts_points
-    if points and body.mode is None:
-        raise HTTPException(status_code=422, detail="mode is required")
-    if body.variant is GameVariant.KILLER and len(body.players) not in _KILLER_PLAYERS:
+    variant = body.settings.variant
+    if variant is GameVariant.KILLER and len(body.players) not in _KILLER_PLAYERS:
         raise HTTPException(status_code=422, detail="killer needs two to twenty players")
-    if body.variant is GameVariant.ELIMINATION and len(body.players) < 2:
+    if variant is GameVariant.ELIMINATION and len(body.players) < 2:
         raise HTTPException(status_code=422, detail="elimination needs at least two players")
     if user is None:
         await rate_limit.enforce(
@@ -130,14 +129,10 @@ async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) 
         )
         game = await repository.create(
             session,
-            body.mode if points else None,
             identities,
-            body.variant,
-            (body.checkout_mode or CheckoutMode.DOUBLE_OUT) if points else None,
+            to_setup(body.settings, len(body.players)),
             owner_user_id=owner_id,
             evaluation_enabled=body.evaluation_enabled and user is not None and user.is_admin,
-            options=body.options(),
-            finish=body.finish(),
         )
 
     if body.rematch_of:

@@ -2,6 +2,8 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from tests.api.support import X01
+
 T20, T19, T17, D20, D5, S1, MISS = (20, 3), (19, 3), (17, 3), (20, 2), (5, 2), (1, 1), (0, 0)
 # 301 in three visits, finished on D5.
 WINNING_LEG = ([T20, T20, T20], [T20, T17, D5])
@@ -41,25 +43,25 @@ def test_anonymous_game_with_guests(anon):
     ],
 )
 def test_seats_must_be_well_formed(anon, players):
-    assert anon.post("/games", json={"mode": 301, "players": players}).status_code == 422
+    assert anon.post("/games", json={"settings": X01, "players": players}).status_code == 422
 
 
 def test_address_book_seats_need_an_account(alice, anon):
     entry = alice.add_player("Bob")
-    assert anon.post("/games", json={"mode": 301, "players": [{"playerId": entry}]}).status_code == 401
+    assert anon.post("/games", json={"settings": X01, "players": [{"playerId": entry}]}).status_code == 401
 
 
 @pytest.mark.parametrize("seat", ["foreign", "not-a-uuid", "00000000-0000-0000-0000-000000000000"])
 def test_only_own_address_book_entries_take_a_seat(alice, bob, seat):
     player_id = bob.add_player("Carol") if seat == "foreign" else seat
-    response = alice.post("/games", json={"mode": 301, "players": [{"playerId": player_id}]})
+    response = alice.post("/games", json={"settings": X01, "players": [{"playerId": player_id}]})
     assert response.status_code == 422
 
 
 def test_one_seat_per_player_whether_chosen_or_typed(alice):
     bob_id = alice.add_player("Bob")
     for players in ([{"playerId": bob_id}, {"playerId": bob_id}], [{"playerId": bob_id}, guest("BOB")]):
-        response = alice.post("/games", json={"mode": 301, "players": players})
+        response = alice.post("/games", json={"settings": X01, "players": players})
         assert response.status_code == 422
 
 
@@ -82,7 +84,7 @@ def test_recent_rematch_keeps_the_seats_even_without_an_account(alice, anon):
 
     rematch = anon.post(
         "/games",
-        json={"mode": 301, "players": [{"playerId": s} for s in seats(first)], "rematchOf": first["id"]},
+        json={"settings": X01, "players": [{"playerId": s} for s in seats(first)], "rematchOf": first["id"]},
     )
 
     assert rematch.status_code == 201
@@ -105,7 +107,7 @@ def test_rematch_cannot_seat_identities_of_another_game(alice, bob):
     other = bob.new_game(bob.own_entry()["id"])
 
     response = alice.post(
-        "/games", json={"mode": 301, "players": [{"playerId": seats(other)[0]}], "rematchOf": first["id"]}
+        "/games", json={"settings": X01, "players": [{"playerId": seats(other)[0]}], "rematchOf": first["id"]}
     )
 
     assert response.status_code == 422
@@ -175,7 +177,7 @@ def test_history_filters_and_paging(alice, session):
     bob = alice.add_player("Bob")
     finished = alice.new_game(me, bob)["id"]
     session.play(finished, WINNING_LEG[0], [MISS], WINNING_LEG[1])
-    elimination = alice.new_game(me, alice.add_player("Dave"), variant="elimination", mode=501)["id"]
+    elimination = alice.new_game(me, alice.add_player("Dave"), settings={"variant": "elimination", "mode": 501})["id"]
     abandoned = alice.new_game(me, alice.add_player("Carol"), bob)["id"]
     session.play(abandoned, [S1, S1, S1], [S1, S1, S1], [S1, S1, S1])
     session.age_game(abandoned, hours=48)
@@ -296,14 +298,14 @@ def test_summary_scores_and_winner(alice, session):
 
 
 def test_elimination_summary_replays_the_resets(alice, session):
-    game_id = alice.new_game(alice.own_entry()["id"], alice.add_player("Bob"), variant="elimination")["id"]
+    game_id = alice.new_game(alice.own_entry()["id"], alice.add_player("Bob"), settings={"variant": "elimination"})["id"]
     session.play(game_id, [T20], [T20])
 
     assert [p["remaining"] for p in status_of(alice, game_id)["players"]] == [301, 241]
 
 
 def test_anonymous_games_are_limited_per_address(anon):
-    statuses = [anon.post("/games", json={"mode": 301, "players": [guest("Ann")]}).status_code for _ in range(31)]
+    statuses = [anon.post("/games", json={"settings": X01, "players": [guest("Ann")]}).status_code for _ in range(31)]
     assert statuses[-2:] == [201, 429]
 
 
@@ -314,5 +316,5 @@ def test_malformed_game_ids_are_not_found(alice):
 
 @pytest.mark.parametrize("rematch_of", ["not-a-uuid", "00000000-0000-0000-0000-000000000000"])
 def test_rematch_of_an_unknown_game_is_a_new_game(anon, rematch_of):
-    response = anon.post("/games", json={"mode": 301, "players": [guest("Ann")], "rematchOf": rematch_of})
+    response = anon.post("/games", json={"settings": X01, "players": [guest("Ann")], "rematchOf": rematch_of})
     assert response.status_code == 201

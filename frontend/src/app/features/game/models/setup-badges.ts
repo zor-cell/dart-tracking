@@ -1,4 +1,4 @@
-import { QuickStartDto } from '../dto/quick-start.dto';
+import { GameSettingsDto } from '../dto/game-settings.dto';
 import { CHECKOUT_HINTS, CLOCK_ZONE_HINTS, KILL_HINTS, KILLER_ZONE_HINTS, SCORING_HINTS, SettingHint } from './setting-hints';
 import { variantLabel } from './game-variant';
 import { TRAINING_GOALS, TRAINING_RINGS, fieldLabel, optionLabel } from './variant-options';
@@ -22,53 +22,65 @@ const PLAY_ON_HINT = $localize`:@@game.new.playOnHint:Nach dem Sieger wird weite
 const SKIP = $localize`:@@game.new.clockSkip:Double und Triple springen weiter`;
 
 /** A setup's name: the game, and the points it plays to where it has them. */
-export function setupName(quick: QuickStartDto): string {
-  const name = variantLabel(quick.variant);
-  return quick.mode === null ? name : `${name} ${quick.mode}`;
+export function setupName(settings: GameSettingsDto): string {
+  const name = variantLabel(settings.variant);
+  return 'mode' in settings ? `${name} ${settings.mode}` : name;
 }
 
 /** The setup's settings that differ from their defaults, in the order the form shows them. */
-export function setupBadges(quick: QuickStartDto): SetupBadge[] {
+export function setupBadges(settings: GameSettingsDto): SetupBadge[] {
   const badges: SetupBadge[] = [];
-  if (quick.checkoutMode === 'single_out') {
+  if ('checkoutMode' in settings && settings.checkoutMode === 'single_out') {
     badges.push(lettered('SO', CHECKOUT_HINTS[0]));
   }
-  if (quick.elimination?.kill === 'double') {
-    badges.push(lettered('DK', { ...KILL_HINTS[1], label: 'Double Kill' }));
+  switch (settings.variant) {
+    case 'elimination':
+      if (settings.kill === 'double') {
+        badges.push(lettered('DK', { ...KILL_HINTS[1], label: 'Double Kill' }));
+      }
+      break;
+    case 'cricket':
+      if (settings.scoring === 'cut_throat') {
+        badges.push(lettered('CT', SCORING_HINTS[1]));
+      }
+      if (settings.scoring === 'no_score') {
+        badges.push(iconed('pi-ban', $localize`:@@game.variant.noScore:Ohne Punkte`, SCORING_HINTS[2].text));
+      }
+      break;
+    case 'killer':
+      if (settings.lives !== 3) {
+        const lives = $localize`:@@game.detail.lives:${settings.lives}:count: Leben`;
+        badges.push({ label: `${settings.lives}`, icon: 'pi-heart', title: lives, hint: null });
+      }
+      if (settings.zone !== 'double') {
+        const hint = KILLER_ZONE_HINTS[settings.zone === 'any' ? 0 : 2];
+        badges.push(lettered(hint.label[0], hint));
+      }
+      break;
+    case 'around_the_clock':
+      if (settings.zone !== 'any') {
+        const hint = CLOCK_ZONE_HINTS[settings.zone === 'double' ? 1 : 2];
+        badges.push(lettered(hint.label[0], hint));
+      }
+      if (settings.skip) {
+        badges.push(iconed('pi-forward', SKIP, null));
+      }
+      break;
+    case 'training':
+      if (settings.goal === 'random') {
+        const ring = optionLabel(TRAINING_RINGS, settings.ring);
+        badges.push(iconed('pi-sync', `${optionLabel(TRAINING_GOALS, 'random')}, ${ring}`, null));
+      }
+      if (settings.goal === 'fields') {
+        const fields = settings.fields.map(fieldLabel).join(' ');
+        badges.push({ label: fields, icon: null, title: optionLabel(TRAINING_GOALS, 'fields'), hint: null });
+      }
+      break;
   }
-  if (quick.cricket?.scoring === 'cut_throat') {
-    badges.push(lettered('CT', SCORING_HINTS[1]));
-  }
-  if (quick.cricket?.scoring === 'no_score') {
-    badges.push(iconed('pi-ban', $localize`:@@game.variant.noScore:Ohne Punkte`, SCORING_HINTS[2].text));
-  }
-  if (quick.killer !== null && quick.killer.lives !== 3) {
-    const lives = $localize`:@@game.detail.lives:${quick.killer.lives}:count: Leben`;
-    badges.push({ label: `${quick.killer.lives}`, icon: 'pi-heart', title: lives, hint: null });
-  }
-  if (quick.killer !== null && quick.killer.zone !== 'double') {
-    const hint = KILLER_ZONE_HINTS[quick.killer.zone === 'any' ? 0 : 2];
-    badges.push(lettered(hint.label[0], hint));
-  }
-  if (quick.aroundTheClock !== null && quick.aroundTheClock.zone !== 'any') {
-    const hint = CLOCK_ZONE_HINTS[quick.aroundTheClock.zone === 'double' ? 1 : 2];
-    badges.push(lettered(hint.label[0], hint));
-  }
-  if (quick.aroundTheClock?.skip) {
-    badges.push(iconed('pi-forward', SKIP, null));
-  }
-  if (quick.training?.goal === 'random') {
-    const ring = optionLabel(TRAINING_RINGS, quick.training.ring);
-    badges.push(iconed('pi-sync', `${optionLabel(TRAINING_GOALS, 'random')}, ${ring}`, null));
-  }
-  if (quick.training?.goal === 'fields') {
-    const fields = quick.training.fields.map(fieldLabel).join(' ');
-    badges.push({ label: fields, icon: null, title: optionLabel(TRAINING_GOALS, 'fields'), hint: null });
-  }
-  if (quick.catchUp) {
+  if ('catchUp' in settings && settings.catchUp) {
     badges.push(iconed('pi-replay', CATCH_UP, CATCH_UP_HINT));
   }
-  if (quick.playOn) {
+  if ('playOn' in settings && settings.playOn) {
     badges.push(iconed('pi-sort-numeric-down', PLAY_ON, PLAY_ON_HINT));
   }
   return badges;

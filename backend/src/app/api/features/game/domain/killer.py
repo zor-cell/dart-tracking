@@ -48,6 +48,8 @@ class KillerProgress:
     players: dict[int, KillerPlayer]
     # Who each replayed turn knocked out, in turn order.
     knocked_out: list[set[int]] = field(default_factory=list)
+    # The own number each dart went at before its thrower was a killer; None after.
+    turn_targets: list[list[int | None]] = field(default_factory=list)
     winner_id: int | None = None
 
 
@@ -81,14 +83,19 @@ def killer_progress(
     )
     for turn in turns:
         knocked: set[int] = set()
+        aimed: list[int | None] = []
+        thrower = progress.players[turn.player_id]
         for dart in turn.darts:
+            seeking = progress.winner_id is None and not thrower.killer and not thrower.out
+            aimed.append(thrower.number if seeking else None)
             if progress.winner_id is not None:
-                break
+                continue
             knocked |= _throw(progress.players, turn.player_id, dart, options.zone)
             alive = [player_id for player_id, player in progress.players.items() if not player.out]
             if len(alive) == 1 and len(progress.players) > 1:
                 progress.winner_id = alive[0]
         progress.knocked_out.append(knocked)
+        progress.turn_targets.append(aimed)
     return progress
 
 

@@ -1,5 +1,3 @@
-import { ClockOptionsDto } from './clock-options.dto';
-
 export interface ClockPlayerDto {
   /** The number to hit next, 25 for the bull; null once through. */
   readonly target: number | null;
@@ -11,7 +9,8 @@ export interface ClockPlayerDto {
   readonly lastVisit: number | null;
 }
 
-export interface ClockStateDto extends ClockOptionsDto {
+export interface ClockStandingDto {
+  readonly variant: 'around_the_clock';
   /** One per player, in seat order. */
   readonly players: readonly ClockPlayerDto[];
 }

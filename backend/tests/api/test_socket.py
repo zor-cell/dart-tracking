@@ -14,6 +14,7 @@ from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.evaluation.domain.alignment import DartOutcome
 from app.api.features.evaluation.services import accuracy, frame_buffer
 from app.infrastructure import database
+from tests.api.support import X01
 from tests.cv.replay import dataset_root, manifest, replay_series, series_of
 
 SOME_ID = "00000000-0000-0000-0000-000000000000"
@@ -370,7 +371,7 @@ def test_the_call_names_the_score_on_every_handover(room, game_id):
 
 
 def test_the_elimination_call_names_the_score_counted_up(room, anon):
-    game_id = anon.new_game({"name": "Ann"}, {"name": "Ben"}, variant="elimination")["id"]
+    game_id = anon.new_game({"name": "Ann"}, {"name": "Ben"}, settings={"variant": "elimination"})["id"]
     with room(game_id) as announcer:
         for visit in ([(20, 3)], [(5, 1)]):
             for value, multiplier in visit:
@@ -409,7 +410,7 @@ def test_a_failed_recalibration_is_said_once_and_still_calls_the_turn(room, came
 
 
 def test_an_elimination_is_named_in_the_dart_call(room, anon):
-    game_id = anon.new_game({"name": "Ann"}, {"name": "Ben"}, variant="elimination")["id"]
+    game_id = anon.new_game({"name": "Ann"}, {"name": "Ben"}, settings={"variant": "elimination"})["id"]
     with room(game_id) as announcer:
         announcer.throw(20)
         announcer.send("next_player")
@@ -425,7 +426,7 @@ def test_rematch_calls_the_old_room_over(room, game_id, anon):
         rematch = anon.post(
             "/games",
             json={
-                "mode": 301,
+                "settings": X01,
                 "players": [{"playerId": p["identityId"]} for p in device.state["players"]],
                 "rematchOf": game_id,
             },

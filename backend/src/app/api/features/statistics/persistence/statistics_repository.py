@@ -11,7 +11,6 @@ from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.game_filter import GameFilter
-from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_status import GameStatus
 from app.api.features.game.domain.player import Player
 from app.api.features.game.domain.turn import Turn
@@ -19,6 +18,7 @@ from app.api.features.game.persistence.dart import DartTable
 from app.api.features.game.persistence.game import GameTable
 from app.api.features.game.persistence.game_player import GamePlayerTable
 from app.api.features.game.persistence.game_repository import game_filter_clauses, hidden_by
+from app.api.features.game.persistence.game_settings import load_setups
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.persistence.turn import TurnTable
 from app.api.features.player.domain.player_identity import PlayerIdentity
@@ -84,9 +84,7 @@ class StatisticsRepository:
             await session.execute(
                 select(
                     GameTable.id,
-                    GameTable.mode,
                     GameTable.variant,
-                    GameTable.checkout_mode,
                     GameTable.created_at,
                     GamePlayerTable.player_index,
                 )
@@ -106,6 +104,7 @@ class StatisticsRepository:
             return []
 
         ids = [seat.id for seat in seats]
+        setups = await load_setups(session, {seat.id: GameVariant(seat.variant) for seat in seats})
         turn_rows = (
             await session.execute(
                 select(TurnTable)
@@ -142,15 +141,17 @@ class StatisticsRepository:
             game_rows = [row for row in turn_rows if row.game_id == seat.id]
             if not game_rows:
                 continue
+            setup = setups[seat.id]
             game = Game(
                 id=seat.id,
-                mode=GameMode(seat.mode),
+                mode=setup.mode,
                 players=[
                     Player(id=index, name="", identity_id="")
                     for index in sorted({row.player_index for row in game_rows})
                 ],
-                variant=GameVariant(seat.variant),
-                checkout_mode=CheckoutMode(seat.checkout_mode),
+                variant=setup.variant,
+                checkout_mode=setup.checkout_mode,
+                options=setup.options,
                 turns=[
                     Turn(
                         player_id=row.player_index,
@@ -183,8 +184,8 @@ class StatisticsRepository:
                 _Leg(
                     game_id=seat.id,
                     played_at=seat.created_at,
-                    mode=seat.mode,
-                    checkout_mode=CheckoutMode(seat.checkout_mode),
+                    mode=int(game.mode or 0),
+                    checkout_mode=game.checkout_mode or CheckoutMode.DOUBLE_OUT,
                     turns=turns,
                     refs=refs,
                     starts=[start for _, _, start in own],

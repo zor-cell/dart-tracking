@@ -2,7 +2,7 @@ import { PlayerIdentityDto } from '../../player/dto/player-identity.dto';
 import { GameMode } from './game-mode';
 import { CheckoutMode } from './checkout-mode';
 import { GameVariant } from './game-variant';
-import { TrainingFieldDto } from '../dto/training-options.dto';
+import { TrainingFieldDto } from '../dto/training-settings.dto';
 import {
   ClockZone,
   CricketScoring,

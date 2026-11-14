@@ -1,4 +1,4 @@
-"""The game itself. Its turns and darts hang off it in their own tables."""
+"""The game itself. Its settings, turns and darts hang off it in their own tables."""
 
 from datetime import datetime
 
@@ -14,13 +14,8 @@ class GameTable(Base):
     __tablename__ = "games"
 
     id: Mapped[str] = uuid_primary_key()
-    # Null outside the points variants, which keep their settings in `options`.
-    mode: Mapped[int | None] = mapped_column(Integer)
+    # Names the table that holds the game's settings.
     variant: Mapped[str] = mapped_column(String(16))
-    checkout_mode: Mapped[str | None] = mapped_column(String(16))
-    options: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
-    catch_up: Mapped[bool] = mapped_column(Boolean, default=False)
-    play_on: Mapped[bool] = mapped_column(Boolean, default=False)
     status: Mapped[str] = mapped_column(String(16))
     current_player_index: Mapped[int] = mapped_column(Integer)
     revision: Mapped[int] = mapped_column(Integer)

@@ -44,6 +44,8 @@ class ClockProgress:
     players: dict[int, ClockPlayer]
     # Targets each replayed turn moved on, in turn order.
     turn_steps: list[int] = field(default_factory=list)
+    # The number each dart of each turn went at; None once its thrower was through.
+    turn_targets: list[list[int | None]] = field(default_factory=list)
     winner_id: int | None = None
 
 
@@ -73,21 +75,29 @@ def clock_progress(
         player = progress.players[turn.player_id]
         if index in voided:
             progress.turn_steps.append(0)
+            progress.turn_targets.append([player.target] * len(turn.darts))
             continue
-        progress.turn_steps.append(_advance(player, turn, options))
+        aimed: list[int | None] = []
+        progress.turn_steps.append(_advance(player, turn, options, aimed))
+        progress.turn_targets.append(aimed)
         if progress.winner_id is None and player.target is None:
             progress.winner_id = turn.player_id
     return progress
 
 
-def _advance(player: ClockPlayer, turn: Turn, options: ClockOptions) -> int:
-    """Book one visit for its thrower; returns the targets it moved on."""
+def _advance(
+    player: ClockPlayer, turn: Turn, options: ClockOptions, aimed: list[int | None] | None = None
+) -> int:
+    """Book one visit for its thrower; returns the targets it moved on. `aimed`
+    collects the number each dart went at."""
     start = player.position
     bull = len(CLOCK_TARGETS) - 1
     for dart in turn.darts:
         target = player.target
+        if aimed is not None:
+            aimed.append(target)
         if target is None:
-            break
+            continue
         player.darts += 1
         if not clock_hit(dart, target, options.zone):
             continue

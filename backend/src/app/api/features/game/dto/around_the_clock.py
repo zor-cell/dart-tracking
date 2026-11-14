@@ -1,16 +1,17 @@
-from typing import Self
+from typing import Literal, Self
 
 from app.api.core.dto.base import CamelModel
-from app.api.features.game.domain.around_the_clock import ClockOptions, ClockProgress, ClockZone
+from app.api.features.game.domain.around_the_clock import ClockProgress, ClockZone
 from app.api.features.game.domain.game import Game
+from app.api.features.game.domain.game_variant import GameVariant
 
 
-class ClockOptionsDto(CamelModel):
+class ClockSettingsDto(CamelModel):
+    variant: Literal[GameVariant.AROUND_THE_CLOCK] = GameVariant.AROUND_THE_CLOCK
     zone: ClockZone = ClockZone.ANY
     skip: bool = False
-
-    def to_entity(self) -> ClockOptions:
-        return ClockOptions(zone=self.zone, skip=self.skip)
+    catch_up: bool = False
+    play_on: bool = False
 
 
 class ClockPlayerDto(CamelModel):
@@ -24,12 +25,13 @@ class ClockPlayerDto(CamelModel):
     last_visit: int | None
 
 
-class ClockStateDto(ClockOptionsDto):
+class ClockStandingDto(CamelModel):
+    variant: Literal[GameVariant.AROUND_THE_CLOCK] = GameVariant.AROUND_THE_CLOCK
     # One per player, in seat order.
     players: list[ClockPlayerDto]
 
     @classmethod
-    def from_entity(cls, game: Game, options: ClockOptions, progress: ClockProgress) -> Self:
+    def from_entity(cls, game: Game, progress: ClockProgress) -> Self:
         players = []
         for player in game.players:
             standing = progress.players[player.id]
@@ -43,4 +45,4 @@ class ClockStateDto(ClockOptionsDto):
                     last_visit=None if last is None else progress.turn_steps[last],
                 )
             )
-        return cls(zone=options.zone, skip=options.skip, players=players)
+        return cls(players=players)

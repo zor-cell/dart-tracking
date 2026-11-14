@@ -380,7 +380,7 @@
             i18n-label="@@game.rematch"
             icon="pi pi-replay"
             routerLink="/game/new"
-            [queryParams]="{ rematch: state.id, game: state.variant }"
+            [queryParams]="{ rematch: state.id, game: state.settings.variant }"
           />
           <p-button
             fluid

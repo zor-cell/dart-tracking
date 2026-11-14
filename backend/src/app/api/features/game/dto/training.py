@@ -1,10 +1,10 @@
-from random import randrange
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import Field, model_validator
 
 from app.api.core.dto.base import CamelModel
 from app.api.features.game.domain.game import Game
+from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.training import (
     MAX_REPEATS,
     TrainingGoal,
@@ -27,7 +27,8 @@ class TrainingFieldDto(CamelModel):
         return self
 
 
-class TrainingOptionsDto(CamelModel):
+class TrainingSettingsDto(CamelModel):
+    variant: Literal[GameVariant.TRAINING] = GameVariant.TRAINING
     goal: TrainingGoal = TrainingGoal.FREE
     ring: TrainingRing = TrainingRing.SINGLE
     fields: list[TrainingFieldDto] = Field(default_factory=list)
@@ -44,17 +45,6 @@ class TrainingOptionsDto(CamelModel):
         if len(set(chosen)) != len(chosen):
             raise ValueError("a field can be chosen once")
         return self
-
-    def to_entity(self) -> TrainingOptions:
-        """Draws the seed the random targets follow from."""
-        return TrainingOptions(
-            goal=self.goal,
-            ring=self.ring,
-            fields=tuple((field.value, field.multiplier) for field in self.fields),
-            repeats=self.repeats,
-            shuffle=self.shuffle,
-            seed=randrange(2**31),
-        )
 
     @classmethod
     def of(cls, options: TrainingOptions) -> Self:
@@ -85,12 +75,13 @@ class TrainingPlayerDto(CamelModel):
     tallies: list[TrainingTallyDto]
 
 
-class TrainingStateDto(TrainingOptionsDto):
+class TrainingStandingDto(CamelModel):
+    variant: Literal[GameVariant.TRAINING] = GameVariant.TRAINING
     # One per player, in seat order.
     players: list[TrainingPlayerDto]
 
     @classmethod
-    def from_entity(cls, game: Game, options: TrainingOptions, progress: TrainingProgress) -> Self:
+    def from_entity(cls, game: Game, progress: TrainingProgress) -> Self:
         players = []
         for player in game.players:
             standing = progress.players[player.id]
@@ -111,7 +102,7 @@ class TrainingStateDto(TrainingOptionsDto):
                     ],
                 )
             )
-        return cls(**TrainingOptionsDto.of(options).model_dump(), players=players)
+        return cls(players=players)
 
 
 def _fields(fields: tuple[tuple[int, int], ...] | list[tuple[int, int]]) -> list[TrainingFieldDto]:

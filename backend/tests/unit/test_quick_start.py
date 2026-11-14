@@ -6,7 +6,8 @@ from app.api.features.game.domain.elimination import EliminationKill, Eliminatio
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.killer import KillerOptions, KillerZone
-from app.api.features.game.domain.quick_start import GameSetup, PlayedSetup, favourite
+from app.api.features.game.domain.game_setup import GameSetup
+from app.api.features.game.domain.quick_start import PlayedSetup, favourite
 
 NOW = datetime(2026, 11, 11, tzinfo=UTC)
 X01 = GameSetup.of(GameVariant.X01, GameMode.X01_501, CheckoutMode.DOUBLE_OUT, None)

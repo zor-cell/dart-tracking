@@ -6,7 +6,8 @@ export interface TrainingFieldDto {
   readonly multiplier: number;
 }
 
-export interface TrainingOptionsDto {
+export interface TrainingSettingsDto {
+  readonly variant: 'training';
   readonly goal: TrainingGoal;
   /** Which fields a random target is drawn from. */
   readonly ring: TrainingRing;

@@ -1,4 +1,5 @@
 import { GameStateDto } from '../dto/game-state.dto';
+import { playOf } from './game-settings';
 import { CricketMark, ScoreboardFigure } from './scoreboard-entry';
 import { fieldLabel, zoneLabel } from './variant-options';
 
@@ -39,15 +40,18 @@ function standingOf(state: GameStateDto, seat: number, format: NumberFormat): St
   const plain = { killer: false, out: false, marks: null };
   const last = $localize`:@@game.scoreboard.last:letzte`;
 
-  if (state.cricket !== null) {
-    const cricket = state.cricket;
+  const play = playOf(state);
+
+  if (play.variant === 'cricket') {
+    const cricket = play.standing;
+    const scoring = play.settings.scoring;
     const player = cricket.players[seat];
     const closed = player.marks.filter((marks) => marks >= MARKS_TO_CLOSE).length;
     const total = player.marks.reduce((sum, marks) => sum + marks, 0);
-    const points = { standard: player.points, cut_throat: -player.points, no_score: 0 }[cricket.scoring];
+    const points = { standard: player.points, cut_throat: -player.points, no_score: 0 }[scoring];
     return {
       ...plain,
-      score: cricket.scoring === 'no_score' ? `${closed}/${cricket.targets.length}` : `${player.points}`,
+      score: scoring === 'no_score' ? `${closed}/${cricket.targets.length}` : `${player.points}`,
       left: {
         value: player.marksPerRound === null ? NONE : format(player.marksPerRound, '1.1-1'),
         label: 'MPR',
@@ -67,12 +71,11 @@ function standingOf(state: GameStateDto, seat: number, format: NumberFormat): St
     };
   }
 
-  if (state.killer !== null) {
-    const killer = state.killer;
-    const player = killer.players[seat];
+  if (play.variant === 'killer') {
+    const player = play.standing.players[seat];
     return {
       ...plain,
-      score: zoneLabel(player.number, killer.zone),
+      score: zoneLabel(player.number, play.settings.zone),
       left: {
         value: `${player.lives}`,
         label: $localize`:@@game.scoreboard.lives:Leben`,
@@ -89,8 +92,8 @@ function standingOf(state: GameStateDto, seat: number, format: NumberFormat): St
     };
   }
 
-  if (state.training !== null) {
-    const own = state.training.players[seat];
+  if (play.variant === 'training') {
+    const own = play.standing.players[seat];
     const player = state.players[seat];
     const free = own.target === null;
     const rate = own.darts === 0 ? NONE : `${format((100 * own.hits) / own.darts, '1.0-0')} %`;
@@ -116,12 +119,11 @@ function standingOf(state: GameStateDto, seat: number, format: NumberFormat): St
     };
   }
 
-  if (state.aroundTheClock !== null) {
-    const clock = state.aroundTheClock;
-    const player = clock.players[seat];
+  if (play.variant === 'around_the_clock') {
+    const player = play.standing.players[seat];
     return {
       ...plain,
-      score: player.target === null ? DONE : zoneLabel(player.target, clock.zone),
+      score: player.target === null ? DONE : zoneLabel(player.target, play.settings.zone),
       left: {
         value: player.darts === 0 ? NONE : `${format((100 * player.hits) / player.darts, '1.0-0')} %`,
         label: $localize`:@@game.scoreboard.hitRate:Quote`,
@@ -138,11 +140,10 @@ function standingOf(state: GameStateDto, seat: number, format: NumberFormat): St
 
   const player = state.players[seat];
   const remaining = player.remaining ?? 0;
-  const mode = state.mode ?? 0;
   return {
     ...plain,
     // Points still needed in x01, points gathered in elimination: one value from opposite ends.
-    score: `${state.variant === 'elimination' ? mode - remaining : remaining}`,
+    score: `${play.variant === 'elimination' ? play.settings.mode - remaining : remaining}`,
     left: {
       value: player.average === null ? NONE : format(player.average, '1.1-1'),
       label: 'Ø',

@@ -1,24 +1,17 @@
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import Field
 
 from app.api.core.dto.base import CamelModel
 from app.api.features.game.domain.game import Game
-from app.api.features.game.domain.killer import (
-    KillerOptions,
-    KillerProgress,
-    KillerZone,
-    deal_numbers,
-)
+from app.api.features.game.domain.game_variant import GameVariant
+from app.api.features.game.domain.killer import KillerProgress, KillerZone
 
 
-class KillerOptionsDto(CamelModel):
+class KillerSettingsDto(CamelModel):
+    variant: Literal[GameVariant.KILLER] = GameVariant.KILLER
     lives: int = Field(3, ge=1, le=9)
     zone: KillerZone = KillerZone.DOUBLE
-
-    def to_entity(self, players: int) -> KillerOptions:
-        """Deals every seat its own number at random."""
-        return KillerOptions(numbers=deal_numbers(players), lives=self.lives, zone=self.zone)
 
 
 class KillerPlayerDto(CamelModel):
@@ -29,12 +22,13 @@ class KillerPlayerDto(CamelModel):
     kills: int
 
 
-class KillerStateDto(KillerOptionsDto):
+class KillerStandingDto(CamelModel):
+    variant: Literal[GameVariant.KILLER] = GameVariant.KILLER
     # One per player, in seat order.
     players: list[KillerPlayerDto]
 
     @classmethod
-    def from_entity(cls, game: Game, options: KillerOptions, progress: KillerProgress) -> Self:
+    def from_entity(cls, game: Game, progress: KillerProgress) -> Self:
         players = []
         for player in game.players:
             standing = progress.players[player.id]
@@ -46,4 +40,4 @@ class KillerStateDto(KillerOptionsDto):
                     kills=standing.kills,
                 )
             )
-        return cls(lives=options.lives, zone=options.zone, players=players)
+        return cls(players=players)

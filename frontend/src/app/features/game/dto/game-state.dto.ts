@@ -1,14 +1,8 @@
-import { GameMode } from '../models/game-mode';
-import { CheckoutMode } from '../models/checkout-mode';
-import { GameVariant } from '../models/game-variant';
-import { EliminationKill } from '../models/variant-options';
-import { ClockStateDto } from './clock-state.dto';
-import { CricketStateDto } from './cricket-state.dto';
 import { DartDto } from './dart.dto';
-import { KillerStateDto } from './killer-state.dto';
+import { GameSettingsDto } from './game-settings.dto';
+import { GameStandingDto } from './game-standing.dto';
 import { PlayerDto } from './player.dto';
 import { SetupDto } from './setup.dto';
-import { TrainingStateDto } from './training-state.dto';
 import { TurnDto } from './turn.dto';
 
 /**
@@ -20,15 +14,7 @@ export interface GameStateDto {
   readonly type: 'game_state';
   readonly id: string;
   readonly revision: number;
-  /** The points variants' starting score and finish; null for the others. */
-  readonly mode: GameMode | null;
-  readonly variant: GameVariant;
-  readonly checkoutMode: CheckoutMode | null;
-  /** Which darts reset in elimination; null for the other variants. */
-  readonly eliminationKill: EliminationKill | null;
-  /** How a race ends; both false outside the race variants. */
-  readonly catchUp: boolean;
-  readonly playOn: boolean;
+  readonly settings: GameSettingsDto;
   readonly players: readonly PlayerDto[];
   readonly currentPlayerIndex: number;
   readonly turns: readonly TurnDto[];
@@ -46,11 +32,8 @@ export interface GameStateDto {
   readonly checkout: readonly string[] | null;
   readonly setup: SetupDto | null;
   readonly elimination: readonly string[] | null;
-  /** The standing of the variant that is played; null for the others. */
-  readonly cricket: CricketStateDto | null;
-  readonly killer: KillerStateDto | null;
-  readonly aroundTheClock: ClockStateDto | null;
-  readonly training: TrainingStateDto | null;
+  /** Where everyone stands in a variant with own rules; null for the points variants. */
+  readonly standing: GameStandingDto | null;
   readonly evaluationEnabled: boolean;
   /** Whether the camera books nothing for now; the keypad still does. */
   readonly trackingPaused: boolean;

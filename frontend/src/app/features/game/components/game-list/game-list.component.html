@@ -157,16 +157,16 @@
             <span class="data-table__hint">{{ game.createdAt | date: 'HH:mm' }}</span>
           </td>
           <td>
-            @switch (game.variant) {
+            @switch (game.settings.variant) {
               @case ('x01') {
-                {{ game.mode }}
+                {{ modeOf(game.settings) }}
               }
               @case ('elimination') {
                 <span class="games__variant" i18n="@@game.list.elimShort">Elim.</span>
-                {{ game.mode }}
+                {{ modeOf(game.settings) }}
               }
               @default {
-                {{ variantName(game.variant) }}
+                {{ variantName(game.settings.variant) }}
               }
             }
           </td>

@@ -3,7 +3,7 @@
     <app-back-link label="Spiele" i18n-label="@@auth.account.games" link="/account/games" />
     @if (detail(); as detail) {
       <div class="heading">
-        <h1 class="view__title">{{ variantLabel() }} {{ detail.game.mode ?? '' }}</h1>
+        <h1 class="view__title">{{ variantLabel() }} {{ mode() ?? '' }}</h1>
         <p-tag [value]="statusLabels[detail.status]" [severity]="statusSeverities[detail.status]" />
         <div class="heading__actions">
           <p-button
@@ -241,8 +241,8 @@
         <app-game-replay
           [visits]="detail.visits"
           [players]="detail.game.players"
-          [mode]="detail.game.mode"
-          [variant]="detail.game.variant"
+          [mode]="mode()"
+          [variant]="detail.game.settings.variant"
           [startVisit]="startVisit"
         />
       </section>

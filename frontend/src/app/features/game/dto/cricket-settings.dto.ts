@@ -1,5 +1,6 @@
 import { CricketScoring } from '../models/variant-options';
 
-export interface CricketOptionsDto {
+export interface CricketSettingsDto {
+  readonly variant: 'cricket';
   readonly scoring: CricketScoring;
 }

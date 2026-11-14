@@ -20,6 +20,14 @@ from app.infrastructure import database, redis_client
 PASSWORD = "correct horse battery"
 ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
 _TOKEN = re.compile(r"token=([\w-]+)")
+X01 = {"variant": "x01", "mode": 301}
+
+
+def _with_default_mode(settings: dict[str, Any]) -> dict[str, Any]:
+    """Points variants get mode 301 unless the caller names one."""
+    if settings.get("variant") in ("x01", "elimination") and "mode" not in settings:
+        return {**settings, "mode": 301}
+    return settings
 
 
 class Api:
@@ -95,10 +103,13 @@ class Api:
     def accept(self, token: str, reciprocal: bool = False) -> httpx2.Response:
         return self.post(f"/players/invitations/{token}", json={"reciprocal": reciprocal})
 
-    def new_game(self, *seats: str | dict[str, str], **config: Any) -> dict[str, Any]:
+    def new_game(
+        self, *seats: str | dict[str, str], settings: dict[str, Any] | None = None, **config: Any
+    ) -> dict[str, Any]:
         """A game seating each entry: a player id from the address book, or a typed name."""
         players = [seat if isinstance(seat, dict) else {"playerId": seat} for seat in seats]
-        response = self.post("/games", json={"mode": 301, "players": players, **config})
+        chosen = _with_default_mode(settings or X01)
+        response = self.post("/games", json={"players": players, "settings": chosen, **config})
         assert response.status_code == 201, response.text
         return response.json()
 

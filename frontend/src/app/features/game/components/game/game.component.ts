@@ -28,6 +28,7 @@ import {GameStateDto} from '../../dto/game-state.dto';
 import {ScoreboardEntry} from '../../models/scoreboard-entry';
 import {standings} from '../../models/variant-standing';
 import {fieldLabel, zoneLabel} from '../../models/variant-options';
+import {finishOf, playOf} from '../../models/game-settings';
 import {DARTS_PER_TURN} from '../../models/visit';
 import {GameService} from '../../services/game.service';
 import {GameSessionService} from '../../services/game-session.service';
@@ -241,10 +242,10 @@ export class GameComponent implements OnInit, OnDestroy {
       name: player.name,
       leading: open && alone && running.includes(player) && seats[seat].rank === best,
       reset: player.justReset,
-      eliminations: state.variant === 'elimination' ? player.eliminations : null,
+      eliminations: state.settings.variant === 'elimination' ? player.eliminations : null,
       finished: finished(player.id),
       waiting: state.waitingIds.includes(player.id),
-      place: state.playOn && state.places.includes(player.id) ? state.places.indexOf(player.id) + 1 : null,
+      place: finishOf(state.settings).playOn && state.places.includes(player.id) ? state.places.indexOf(player.id) + 1 : null,
     }));
   });
 
@@ -527,30 +528,32 @@ export class GameComponent implements OnInit, OnDestroy {
  * killer, then the strongest opponent's. Training: the field to hit, in every slot. */
 function targetRoute(state: GameStateDto): TargetRoute | null {
   const seat = state.currentPlayerIndex;
-  const training = state.training?.players[seat];
+  const play = playOf(state);
+  const training = play.variant === 'training' ? play.standing.players[seat] : null;
   if (training?.target) {
     const field = fieldLabel(training.target);
     const darts = Math.min(training.left, state.dartsRemaining);
     return { darts: Array.from({ length: darts }, () => field), hostile: false };
   }
-  const clock = state.aroundTheClock;
-  if (clock !== null) {
-    const target = clock.players[seat].target;
+  if (play.variant === 'around_the_clock') {
+    const zone = play.settings.zone;
+    const target = play.standing.players[seat].target;
     if (target === null) {
       return null;
     }
     const ahead = [...Array.from({ length: 20 }, (_, index) => index + 1), 25].filter((n) =>
       target === 25 ? n === 25 : n >= target,
     );
-    return { darts: ahead.slice(0, state.dartsRemaining).map((n) => zoneLabel(n, clock.zone)), hostile: false };
+    return { darts: ahead.slice(0, state.dartsRemaining).map((n) => zoneLabel(n, zone)), hostile: false };
   }
-  const killer = state.killer;
-  if (killer === null) {
+  if (play.variant !== 'killer') {
     return null;
   }
+  const killer = play.standing;
+  const zone = play.settings.zone;
   const own = killer.players[seat];
   if (!own.killer) {
-    return { darts: [zoneLabel(own.number, killer.zone)], hostile: false };
+    return { darts: [zoneLabel(own.number, zone)], hostile: false };
   }
   const count = killer.players.length;
   const victim = killer.players
@@ -566,6 +569,6 @@ function targetRoute(state: GameStateDto): TargetRoute | null {
   if (victim === undefined) {
     return null;
   }
-  const field = zoneLabel(victim.number, killer.zone);
+  const field = zoneLabel(victim.number, zone);
   return { darts: Array.from({ length: state.dartsRemaining }, () => field), hostile: true };
 }

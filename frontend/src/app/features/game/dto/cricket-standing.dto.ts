@@ -1,5 +1,3 @@
-import { CricketOptionsDto } from './cricket-options.dto';
-
 export interface CricketPlayerDto {
   /** Marks per target, in the order of `targets`, three at most. */
   readonly marks: readonly number[];
@@ -10,7 +8,8 @@ export interface CricketPlayerDto {
   readonly lastVisit: number | null;
 }
 
-export interface CricketStateDto extends CricketOptionsDto {
+export interface CricketStandingDto {
+  readonly variant: 'cricket';
   /** 20 down to 15, then 25 for the bull. */
   readonly targets: readonly number[];
   /** One per player, in seat order. */

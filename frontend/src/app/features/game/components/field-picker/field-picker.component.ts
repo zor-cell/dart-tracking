@@ -4,7 +4,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
-import { TrainingFieldDto } from '../../dto/training-options.dto';
+import { TrainingFieldDto } from '../../dto/training-settings.dto';
 import { fieldLabel } from '../../models/variant-options';
 
 /** The 25 and the 50 as entries of the number list; they have no ring to pick. */

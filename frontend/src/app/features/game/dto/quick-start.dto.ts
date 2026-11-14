@@ -1,11 +1,4 @@
-import { CheckoutMode } from '../models/checkout-mode';
-import { GameMode } from '../models/game-mode';
-import { GameVariant } from '../models/game-variant';
-import { ClockOptionsDto } from './clock-options.dto';
-import { CricketOptionsDto } from './cricket-options.dto';
-import { KillerOptionsDto } from './killer-options.dto';
-import { EliminationOptionsDto } from './elimination-options.dto';
-import { TrainingOptionsDto } from './training-options.dto';
+import { GameSettingsDto } from './game-settings.dto';
 
 export interface QuickStartSeatDto {
   /** The identity to seat, or null to seat a guest by `name`. */
@@ -15,15 +8,6 @@ export interface QuickStartSeatDto {
 
 /** The setup the account plays most, with the players of its latest game. */
 export interface QuickStartDto {
-  readonly variant: GameVariant;
-  readonly mode: GameMode | null;
-  readonly checkoutMode: CheckoutMode | null;
-  readonly cricket: CricketOptionsDto | null;
-  readonly killer: KillerOptionsDto | null;
-  readonly aroundTheClock: ClockOptionsDto | null;
-  readonly elimination: EliminationOptionsDto | null;
-  readonly training: TrainingOptionsDto | null;
-  readonly catchUp: boolean;
-  readonly playOn: boolean;
+  readonly settings: GameSettingsDto;
   readonly players: readonly QuickStartSeatDto[];
 }

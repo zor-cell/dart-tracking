@@ -1,46 +1,13 @@
 """The setup a new game offers to start in one tap: the one the account plays most."""
 
 from collections.abc import Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import datetime
 
-from app.api.features.game.domain.checkout_mode import CheckoutMode
-from app.api.features.game.domain.finish import FinishRules
-from app.api.features.game.domain.game_mode import GameMode
-from app.api.features.game.domain.game_options import GameOptions, default_options
-from app.api.features.game.domain.game_variant import GameVariant
-from app.api.features.game.domain.killer import KillerOptions
-from app.api.features.game.domain.training import TrainingOptions
+from app.api.features.game.domain.game_setup import GameSetup
 
 # Days after which a played game weighs half, as for the filter suggestions.
 HALF_LIFE_DAYS = 30
-
-
-@dataclass(frozen=True)
-class GameSetup:
-    variant: GameVariant
-    mode: GameMode | None
-    checkout_mode: CheckoutMode | None
-    options: GameOptions | None
-    finish: FinishRules = FinishRules()
-
-    @classmethod
-    def of(
-        cls,
-        variant: GameVariant,
-        mode: GameMode | None,
-        checkout_mode: CheckoutMode | None,
-        options: GameOptions | None,
-        finish: FinishRules = FinishRules(),
-    ) -> "GameSetup":
-        """Killer's dealt numbers and the training's seed are left out: a new game
-        draws them afresh. Games stored before their variant had settings count as its defaults."""
-        options = options or default_options(variant, 0)
-        if isinstance(options, KillerOptions):
-            options = replace(options, numbers=())
-        if isinstance(options, TrainingOptions):
-            options = replace(options, seed=0)
-        return cls(variant, mode, checkout_mode, options, finish if variant.races else FinishRules())
 
 
 @dataclass(frozen=True)

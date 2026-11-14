@@ -148,7 +148,7 @@ def test_statistics_leave_out_what_does_not_count(alice, session, register):
 
 def test_elimination_counts_against_what_the_others_reset(alice, session):
     game_id = alice.new_game(
-        alice.own_entry()["id"], alice.add_player("Bob"), variant="elimination"
+        alice.own_entry()["id"], alice.add_player("Bob"), settings={"variant": "elimination"}
     )["id"]
     # Bob draws level at 180 and resets me, so my 121 after it finishes nothing; Bob wins.
     session.play(
@@ -193,7 +193,7 @@ def test_statistics_follow_the_link(alice, register, session):
 
 def test_statistics_filter_the_games(alice, session):
     session.play(own_game(alice), *WINNING_LEG)
-    single_out = own_game(alice, checkoutMode="single_out")
+    single_out = own_game(alice, settings={"variant": "x01", "mode": 301, "checkoutMode": "single_out"})
     session.play(single_out, *WINNING_LEG)
     session.age_game(single_out, hours=48)
     bob = alice.add_player("Bob")

@@ -1,24 +1,42 @@
-from typing import Literal, Self
+from typing import Annotated, Literal, Self
+
+from pydantic import Field
 
 from app.api.core.dto.base import CamelModel
-from app.api.features.game.domain.around_the_clock import ClockOptions, ClockProgress
-from app.api.features.game.domain.cricket import CricketOptions, CricketProgress
-from app.api.features.game.domain.elimination import EliminationKill, EliminationOptions
-from app.api.features.game.domain.killer import KillerOptions, KillerProgress
-from app.api.features.game.dto.around_the_clock import ClockStateDto
-from app.api.features.game.dto.cricket import CricketStateDto
+from app.api.features.game.domain.around_the_clock import ClockProgress
+from app.api.features.game.domain.cricket import CricketProgress
+from app.api.features.game.domain.game import Game
+from app.api.features.game.domain.game_options import GameProgress
+from app.api.features.game.domain.game_status import is_resumable
+from app.api.features.game.domain.killer import KillerProgress
+from app.api.features.game.domain.training import TrainingProgress
+from app.api.features.game.dto.around_the_clock import ClockStandingDto
+from app.api.features.game.dto.cricket import CricketStandingDto
 from app.api.features.game.dto.dart import DartDto
-from app.api.features.game.dto.killer import KillerStateDto
+from app.api.features.game.dto.game_settings import GameSettingsDto, settings_dto
+from app.api.features.game.dto.killer import KillerStandingDto
 from app.api.features.game.dto.player import PlayerDto
 from app.api.features.game.dto.setup import SetupDto
-from app.api.features.game.domain.training import TrainingOptions, TrainingProgress
-from app.api.features.game.dto.training import TrainingStateDto
+from app.api.features.game.dto.training import TrainingStandingDto
 from app.api.features.game.dto.turn import TurnDto
-from app.api.features.game.domain.checkout_mode import CheckoutMode
-from app.api.features.game.domain.game import Game
-from app.api.features.game.domain.game_mode import GameMode
-from app.api.features.game.domain.game_status import is_resumable
-from app.api.features.game.domain.game_variant import GameVariant
+
+type StandingDto = Annotated[
+    CricketStandingDto | KillerStandingDto | ClockStandingDto | TrainingStandingDto,
+    Field(discriminator="variant"),
+]
+
+
+def _standing(game: Game, progress: GameProgress | None) -> StandingDto | None:
+    match progress:
+        case CricketProgress():
+            return CricketStandingDto.from_entity(game, progress)
+        case KillerProgress():
+            return KillerStandingDto.from_entity(game, progress)
+        case ClockProgress():
+            return ClockStandingDto.from_entity(game, progress)
+        case TrainingProgress():
+            return TrainingStandingDto.from_entity(game, progress)
+    return None
 
 
 class GameStateDto(CamelModel):
@@ -32,15 +50,7 @@ class GameStateDto(CamelModel):
     type: Literal["game_state"] = "game_state"
     id: str
     revision: int
-    # The points variants' starting score and finish; null for the others.
-    mode: GameMode | None
-    variant: GameVariant
-    checkout_mode: CheckoutMode | None
-    # Which darts reset in elimination; null for the other variants.
-    elimination_kill: EliminationKill | None
-    # How a race ends; both false outside the race variants.
-    catch_up: bool
-    play_on: bool
+    settings: GameSettingsDto
     players: list[PlayerDto]
     current_player_index: int
     turns: list[TurnDto]
@@ -57,11 +67,8 @@ class GameStateDto(CamelModel):
     checkout: list[str] | None
     setup: SetupDto | None
     elimination: list[str] | None
-    # The standing of the variant that is played; null for the others.
-    cricket: CricketStateDto | None
-    killer: KillerStateDto | None
-    around_the_clock: ClockStateDto | None
-    training: TrainingStateDto | None
+    # Where everyone stands in a variant with own rules; null for the points variants.
+    standing: StandingDto | None
     evaluation_enabled: bool
     tracking_paused: bool
     win_confirmed: bool
@@ -73,18 +80,11 @@ class GameStateDto(CamelModel):
     def from_entity(cls, game: Game) -> Self:
         just_reset = game.just_reset()
         eliminations = game.eliminations()
-        progress = game.progress
-        options = game.options
         race = game.race() if game.variant.races else None
         return cls(
             id=game.id,
             revision=game.revision,
-            mode=game.mode,
-            variant=game.variant,
-            checkout_mode=game.checkout_mode,
-            elimination_kill=options.kill if isinstance(options, EliminationOptions) else None,
-            catch_up=game.finish.catch_up,
-            play_on=game.finish.play_on,
+            settings=settings_dto(game.settings),
             players=[
                 PlayerDto.from_entity(
                     player,
@@ -108,26 +108,7 @@ class GameStateDto(CamelModel):
             checkout=game.checkout,
             setup=SetupDto.from_entity(game.setup) if game.setup is not None else None,
             elimination=game.elimination,
-            cricket=(
-                CricketStateDto.from_entity(game, options, progress)
-                if isinstance(options, CricketOptions) and isinstance(progress, CricketProgress)
-                else None
-            ),
-            killer=(
-                KillerStateDto.from_entity(game, options, progress)
-                if isinstance(options, KillerOptions) and isinstance(progress, KillerProgress)
-                else None
-            ),
-            around_the_clock=(
-                ClockStateDto.from_entity(game, options, progress)
-                if isinstance(options, ClockOptions) and isinstance(progress, ClockProgress)
-                else None
-            ),
-            training=(
-                TrainingStateDto.from_entity(game, options, progress)
-                if isinstance(options, TrainingOptions) and isinstance(progress, TrainingProgress)
-                else None
-            ),
+            standing=_standing(game, game.progress),
             evaluation_enabled=game.evaluation_enabled,
             tracking_paused=game.tracking_paused,
             win_confirmed=game.win_confirmed,

@@ -17,114 +17,123 @@ def guests(*names):
     return [{"name": name} for name in names]
 
 
-def create(api, *names, **config):
-    return api.post("/games", json={"players": guests(*names), **config})
+def create(api, *names, settings, **config):
+    return api.post("/games", json={"players": guests(*names), "settings": settings, **config})
 
 
-@pytest.mark.parametrize(
-    ("variant", "block"),
-    [("cricket", "cricket"), ("killer", "killer"), ("around_the_clock", "aroundTheClock")],
-)
-def test_a_variant_game_keeps_no_points_and_carries_its_own_standing(anon, variant, block):
-    response = create(anon, "Ann", "Ben", variant=variant, mode=501, checkoutMode="single_out")
+@pytest.mark.parametrize("variant", ["cricket", "killer", "around_the_clock"])
+def test_a_variant_game_keeps_no_points_and_carries_its_own_standing(anon, variant):
+    settings = {"variant": variant, "mode": 501, "checkoutMode": "single_out"}
+    response = create(anon, "Ann", "Ben", settings=settings)
 
     assert response.status_code == 201, response.text
     game = response.json()
-    assert game["mode"] is None
-    assert game["checkoutMode"] is None
+    assert "mode" not in game["settings"]
+    assert "checkoutMode" not in game["settings"]
     assert game["checkout"] is None
     assert [player["remaining"] for player in game["players"]] == [None, None]
-    others = {"cricket", "killer", "aroundTheClock"} - {block}
-    assert game[block] is not None
-    assert all(game[other] is None for other in others)
+    assert game["standing"]["variant"] == variant
     assert anon.get(f"/games/{game['id']}").json() == game
 
 
 def test_a_points_game_needs_a_mode(anon):
-    assert create(anon, "Ann", variant="x01").status_code == 422
-    assert create(anon, "Ann", "Ben", variant="elimination").status_code == 422
+    assert create(anon, "Ann", settings={"variant": "x01"}).status_code == 422
+    assert create(anon, "Ann", "Ben", settings={"variant": "elimination"}).status_code == 422
 
 
 @pytest.mark.parametrize(
-    "config",
+    "settings",
     [
         {"variant": "killer"},
-        {"variant": "killer", "killer": {"lives": 0}},
-        {"variant": "cricket", "cricket": {"scoring": "golf"}},
-        {"variant": "around_the_clock", "aroundTheClock": {"zone": "outer"}},
+        {"variant": "killer", "lives": 0},
+        {"variant": "cricket", "scoring": "golf"},
+        {"variant": "around_the_clock", "zone": "outer"},
     ],
 )
-def test_impossible_settings_are_refused(anon, config):
-    players = ["Ann"] if config == {"variant": "killer"} else ["Ann", "Ben"]
+def test_impossible_settings_are_refused(anon, settings):
+    players = ["Ann"] if settings == {"variant": "killer"} else ["Ann", "Ben"]
 
-    assert create(anon, *players, **config).status_code == 422
+    assert create(anon, *players, settings=settings).status_code == 422
 
 
 def test_killer_needs_a_number_for_everyone(anon):
     names = [f"P{seat}" for seat in range(21)]
+    settings = {"variant": "killer"}
 
-    assert create(anon, *names, variant="killer").status_code == 422
-    assert create(anon, *names[:20], variant="killer").status_code == 201
+    assert create(anon, *names, settings=settings).status_code == 422
+    assert create(anon, *names[:20], settings=settings).status_code == 201
 
 
 def test_elimination_needs_someone_to_reset(anon):
-    assert create(anon, "Ann", variant="elimination", mode=501).status_code == 422
-    assert create(anon, "Ann", "Ben", variant="elimination", mode=501).status_code == 201
+    settings = {"variant": "elimination", "mode": 501}
+
+    assert create(anon, "Ann", settings=settings).status_code == 422
+    assert create(anon, "Ann", "Ben", settings=settings).status_code == 201
 
 
 def test_elimination_keeps_its_kill_rule(anon):
     double = create(
-        anon, "Ann", "Ben", variant="elimination", mode=501, elimination={"kill": "double"}
+        anon, "Ann", "Ben", settings={"variant": "elimination", "mode": 501, "kill": "double"}
     )
-    default = create(anon, "Ann", "Ben", variant="elimination", mode=501)
-    x01 = create(anon, "Ann", "Ben", mode=501)
+    default = create(anon, "Ann", "Ben", settings={"variant": "elimination", "mode": 501})
+    x01 = create(anon, "Ann", "Ben", settings={"variant": "x01", "mode": 501})
 
     assert double.status_code == 201, double.text
     game = double.json()
-    assert game["eliminationKill"] == "double"
+    assert game["settings"]["kill"] == "double"
     assert anon.get(f"/games/{game['id']}").json() == game
-    assert default.json()["eliminationKill"] == "any"
-    assert x01.json()["eliminationKill"] is None
-    triple = create(anon, "Ann", "Ben", variant="elimination", mode=501, elimination={"kill": "triple"})
+    assert default.json()["settings"]["kill"] == "any"
+    assert "kill" not in x01.json()["settings"]
+    triple = create(
+        anon, "Ann", "Ben", settings={"variant": "elimination", "mode": 501, "kill": "triple"}
+    )
     assert triple.status_code == 422
 
 
 def test_killer_deals_every_seat_its_own_number(anon):
     game = create(
-        anon, "Ann", "Ben", "Cid", variant="killer", killer={"lives": 5, "zone": "triple"}
+        anon,
+        "Ann",
+        "Ben",
+        "Cid",
+        settings={"variant": "killer", "lives": 5, "zone": "triple"},
     ).json()
 
-    killer = game["killer"]
-    numbers = [player["number"] for player in killer["players"]]
+    standing = game["standing"]
+    numbers = [player["number"] for player in standing["players"]]
     assert len(set(numbers)) == 3
     assert all(1 <= number <= 20 for number in numbers)
-    assert (killer["lives"], killer["zone"]) == (5, "triple")
-    assert [player["lives"] for player in killer["players"]] == [5, 5, 5]
-    assert anon.get(f"/games/{game['id']}").json()["killer"] == killer
+    assert (game["settings"]["lives"], game["settings"]["zone"]) == (5, "triple")
+    assert [player["lives"] for player in standing["players"]] == [5, 5, 5]
+    assert anon.get(f"/games/{game['id']}").json()["standing"] == standing
 
 
 def test_settings_are_kept(anon):
-    cricket = create(anon, "Ann", variant="cricket", cricket={"scoring": "cut_throat"}).json()
+    cricket = create(
+        anon, "Ann", settings={"variant": "cricket", "scoring": "cut_throat"}
+    ).json()
     clock = create(
-        anon, "Ann", variant="around_the_clock", aroundTheClock={"zone": "double", "skip": True}
+        anon,
+        "Ann",
+        settings={"variant": "around_the_clock", "zone": "double", "skip": True},
     ).json()
 
-    assert anon.get(f"/games/{cricket['id']}").json()["cricket"]["scoring"] == "cut_throat"
-    stored = anon.get(f"/games/{clock['id']}").json()["aroundTheClock"]
-    assert (stored["zone"], stored["skip"]) == ("double", True)
-    assert stored["players"][0]["target"] == 1
+    assert anon.get(f"/games/{cricket['id']}").json()["settings"]["scoring"] == "cut_throat"
+    stored = anon.get(f"/games/{clock['id']}").json()
+    assert (stored["settings"]["zone"], stored["settings"]["skip"]) == ("double", True)
+    assert stored["standing"]["players"][0]["target"] == 1
 
 
 def test_a_won_cricket_game_is_finished_and_named_in_the_history(alice, session):
     me = alice.own_entry()["id"]
-    game_id = alice.new_game(me, alice.add_player("Bob"), variant="cricket")["id"]
+    game_id = alice.new_game(me, alice.add_player("Bob"), settings={"variant": "cricket"})["id"]
     session.play(game_id, CLOSE_ALL[0], [MISS], CLOSE_ALL[1], [MISS], CLOSE_ALL[2], hand_over=False)
 
     listed = alice.get("/games", params={"variant": "cricket"}).json()["items"]
     assert [game["id"] for game in listed] == [game_id]
     assert listed[0]["status"] == "finished"
     assert listed[0]["winnerIndex"] == 0
-    assert listed[0]["mode"] is None
+    assert "mode" not in listed[0]["settings"]
     assert [player["remaining"] for player in listed[0]["players"]] == [None, None]
     assert alice.get("/games", params={"mode": 301}).json()["total"] == 0
 
@@ -132,13 +141,15 @@ def test_a_won_cricket_game_is_finished_and_named_in_the_history(alice, session)
     assert detail["statistics"] == []
     assert all(visit["standings"] == [] for visit in detail["visits"])
     assert detail["game"]["winnerId"] == 0
-    assert detail["game"]["cricket"]["players"][0]["marks"] == [3] * 7
+    assert detail["game"]["standing"]["players"][0]["marks"] == [3] * 7
 
     assert alice.get("/statistics").json()["legs"] == 0
 
 
 def test_an_unfinished_variant_game_has_no_winner_in_the_history(alice, session):
-    game_id = alice.new_game(alice.own_entry()["id"], variant="around_the_clock")["id"]
+    game_id = alice.new_game(
+        alice.own_entry()["id"], settings={"variant": "around_the_clock"}
+    )["id"]
     session.play(game_id, [(1, 1), (2, 1), (3, 1)])
 
     listed = alice.get("/games").json()["items"][0]
@@ -147,8 +158,10 @@ def test_an_unfinished_variant_game_has_no_winner_in_the_history(alice, session)
 
 
 def test_a_knock_out_is_called_and_passed_over(room, anon):  # noqa: F811
-    game = create(anon, "Ann", "Ben", "Cid", variant="killer", killer={"lives": 1}).json()
-    ann, ben, _ = (player["number"] for player in game["killer"]["players"])
+    game = create(
+        anon, "Ann", "Ben", "Cid", settings={"variant": "killer", "lives": 1}
+    ).json()
+    ann, ben, _ = (player["number"] for player in game["standing"]["players"])
     with room(game["id"]) as announcer:
         announcer.throw(ann, 2)
         announcer.throw(ben, 2)
@@ -163,13 +176,13 @@ def test_a_knock_out_is_called_and_passed_over(room, anon):  # noqa: F811
     assert all(call["visitPoints"] is None for call in calls)
     assert state["currentPlayerIndex"] == 2
     assert state["players"][1]["justReset"] is True
-    assert state["killer"]["players"][1]["lives"] == 0
+    assert state["standing"]["players"][1]["lives"] == 0
     assert (turn["player"], turn["score"]) == ("Cid", None)
 
 
 def test_the_last_one_standing_wins(room, anon):  # noqa: F811
-    game = create(anon, "Ann", "Ben", variant="killer", killer={"lives": 1}).json()
-    ann, ben = (player["number"] for player in game["killer"]["players"])
+    game = create(anon, "Ann", "Ben", settings={"variant": "killer", "lives": 1}).json()
+    ann, ben = (player["number"] for player in game["standing"]["players"])
     with room(game["id"]) as device:
         device.throw(ann, 2)
         device.throw(ben, 2)
@@ -184,35 +197,46 @@ def test_the_last_one_standing_wins(room, anon):  # noqa: F811
 
 
 def test_a_rematch_takes_the_settings_and_deals_again(anon):
-    first = create(anon, "Ann", "Ben", variant="killer", killer={"lives": 2}).json()
+    first = create(anon, "Ann", "Ben", settings={"variant": "killer", "lives": 2}).json()
     rematch = anon.post(
         "/games",
         json={
-            "variant": "killer",
-            "killer": {"lives": 2},
+            "settings": {"variant": "killer", "lives": 2},
             "players": [{"playerId": player["identityId"]} for player in first["players"]],
             "rematchOf": first["id"],
         },
     )
 
     assert rematch.status_code == 201, rematch.text
-    assert rematch.json()["killer"]["lives"] == 2
+    assert rematch.json()["settings"]["lives"] == 2
 
 
 def test_a_race_keeps_its_finish_rules_and_reports_places(anon):
-    response = create(anon, "Ann", "Ben", "Cid", mode=301, catchUp=True, playOn=True)
+    response = create(
+        anon,
+        "Ann",
+        "Ben",
+        "Cid",
+        settings={"variant": "x01", "mode": 301, "catchUp": True, "playOn": True},
+    )
 
     assert response.status_code == 201, response.text
     game = response.json()
-    assert (game["catchUp"], game["playOn"]) == (True, True)
+    assert (game["settings"]["catchUp"], game["settings"]["playOn"]) == (True, True)
     assert (game["places"], game["finisherIds"], game["waitingIds"]) == ([], [], [])
 
     state = anon.get(f"/games/{game['id']}").json()
-    assert (state["catchUp"], state["playOn"]) == (True, True)
+    assert (state["settings"]["catchUp"], state["settings"]["playOn"]) == (True, True)
 
 
 def test_a_shared_finish_takes_both_finishes_back_and_shows_who_waits(anon, session):
-    game = create(anon, "Ann", "Ben", "Cid", mode=301, catchUp=True).json()
+    game = create(
+        anon,
+        "Ann",
+        "Ben",
+        "Cid",
+        settings={"variant": "x01", "mode": 301, "catchUp": True},
+    ).json()
     to_sixteen = [(60, 1), (45, 1)]
     session.play(game["id"], [T20] * 3, [T20] * 3, [MISS], to_sixteen, to_sixteen, [MISS])
     session.play(game["id"], [(8, 2)], [(8, 2)], [MISS] * 3, hand_over=False)
@@ -231,7 +255,10 @@ def test_a_shared_finish_takes_both_finishes_back_and_shows_who_waits(anon, sess
 
 @pytest.mark.parametrize("variant", ["cricket", "killer"])
 def test_variants_without_a_race_drop_the_finish_rules(anon, variant):
-    game = create(anon, "Ann", "Ben", variant=variant, catchUp=True, playOn=True).json()
+    game = create(
+        anon, "Ann", "Ben", settings={"variant": variant, "catchUp": True, "playOn": True}
+    ).json()
 
-    assert (game["catchUp"], game["playOn"]) == (False, False)
+    assert "catchUp" not in game["settings"]
+    assert "playOn" not in game["settings"]
     assert game["places"] == []

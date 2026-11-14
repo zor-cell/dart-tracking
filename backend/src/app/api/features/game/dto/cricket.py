@@ -1,20 +1,18 @@
-from typing import Self
+from typing import Literal, Self
 
 from app.api.core.dto.base import CamelModel
 from app.api.features.game.domain.cricket import (
     CRICKET_TARGETS,
-    CricketOptions,
     CricketProgress,
     CricketScoring,
 )
 from app.api.features.game.domain.game import Game
+from app.api.features.game.domain.game_variant import GameVariant
 
 
-class CricketOptionsDto(CamelModel):
+class CricketSettingsDto(CamelModel):
+    variant: Literal[GameVariant.CRICKET] = GameVariant.CRICKET
     scoring: CricketScoring = CricketScoring.STANDARD
-
-    def to_entity(self) -> CricketOptions:
-        return CricketOptions(scoring=self.scoring)
 
 
 class CricketPlayerDto(CamelModel):
@@ -27,13 +25,14 @@ class CricketPlayerDto(CamelModel):
     last_visit: int | None
 
 
-class CricketStateDto(CricketOptionsDto):
+class CricketStandingDto(CamelModel):
+    variant: Literal[GameVariant.CRICKET] = GameVariant.CRICKET
     targets: list[int]
     # One per player, in seat order.
     players: list[CricketPlayerDto]
 
     @classmethod
-    def from_entity(cls, game: Game, options: CricketOptions, progress: CricketProgress) -> Self:
+    def from_entity(cls, game: Game, progress: CricketProgress) -> Self:
         players = []
         for player in game.players:
             standing = progress.players[player.id]
@@ -50,4 +49,4 @@ class CricketStateDto(CricketOptionsDto):
                     last_visit=None if last is None else progress.turn_marks[last],
                 )
             )
-        return cls(scoring=options.scoring, targets=list(CRICKET_TARGETS), players=players)
+        return cls(targets=list(CRICKET_TARGETS), players=players)

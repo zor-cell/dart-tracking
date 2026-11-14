@@ -4,7 +4,7 @@ import pytest
 import time_machine
 
 from app.api.features.auth.services import access_tokens
-from tests.api.support import PASSWORD, token_in
+from tests.api.support import PASSWORD, X01, token_in
 
 NEW_PASSWORD = "a much better password"
 
@@ -299,7 +299,7 @@ def test_a_bad_token_is_an_error_even_where_anonymous_is_allowed(anon, path):
         "GET" if path == "/settings" else "POST",
         path,
         headers={"Authorization": "Bearer not-a-token"},
-        json={"mode": 301, "players": [{"name": "Guest"}]},
+        json={"settings": X01, "players": [{"name": "Guest"}]},
     )
     assert response.status_code == 401
 

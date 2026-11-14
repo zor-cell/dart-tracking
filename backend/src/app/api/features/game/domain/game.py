@@ -9,7 +9,13 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field, replace
 from datetime import datetime
 
-from app.api.features.game.domain.around_the_clock import ClockBoard, ClockOptions, clock_progress
+from app.api.features.game.domain.around_the_clock import (
+    ClockBoard,
+    ClockOptions,
+    ClockProgress,
+    ClockZone,
+    clock_progress,
+)
 from app.api.features.game.domain.checkout import Setup, checkout_route, setup_route
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.cricket import CricketOptions, cricket_progress
@@ -18,10 +24,17 @@ from app.api.features.game.domain.elimination import EliminationKill, Eliminatio
 from app.api.features.game.domain.finish import Finish, FinishRules, race
 from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_options import GameOptions, GameProgress, default_options
+from app.api.features.game.domain.game_setup import GameSetup
 from app.api.features.game.domain.game_variant import GameVariant
-from app.api.features.game.domain.killer import KillerOptions, KillerProgress, killer_progress
+from app.api.features.game.domain.killer import (
+    KillerOptions,
+    KillerProgress,
+    KillerZone,
+    killer_progress,
+)
 from app.api.features.game.domain.player import Player
-from app.api.features.game.domain.training import TrainingOptions, training_progress
+from app.api.features.game.domain.target import Target, finishing_double
+from app.api.features.game.domain.training import TrainingOptions, TrainingProgress, training_progress
 from app.api.features.game.domain.turn import Turn
 
 DARTS_PER_TURN = 3
@@ -66,6 +79,10 @@ class Game:
             self._start_turn()
 
     @property
+    def settings(self) -> GameSetup:
+        return GameSetup(self.variant, self.mode, self.checkout_mode, self.options, self.finish)
+
+    @property
     def progress(self) -> GameProgress | None:
         """Where every player stands in a variant with own rules, replayed from the turns."""
         ids = [player.id for player in self.players]
@@ -79,6 +96,39 @@ class Game:
             case TrainingOptions():
                 return training_progress(ids, self.turns, self.options)
         return None
+
+    def targets(self) -> list[list[Target | None]]:
+        """The field every dart was thrown at, turn by turn; None where the game names
+        none. In the points variants that is the double a dart could finish on."""
+        progress, options = self.progress, self.options
+        match progress:
+            case ClockProgress() if isinstance(options, ClockOptions):
+                ring = {ClockZone.ANY: None, ClockZone.DOUBLE: 2, ClockZone.TRIPLE: 3}[options.zone]
+                return [
+                    [None if n is None else Target(n, 2 if n == 25 and ring else ring) for n in turn]
+                    for turn in progress.turn_targets
+                ]
+            case KillerProgress() if isinstance(options, KillerOptions):
+                ring = {KillerZone.ANY: None, KillerZone.DOUBLE: 2, KillerZone.TRIPLE: 3}[options.zone]
+                return [
+                    [None if n is None else Target(n, ring) for n in turn]
+                    for turn in progress.turn_targets
+                ]
+            case TrainingProgress():
+                return [
+                    [None if aimed is None else Target(*aimed) for aimed in turn]
+                    for turn in progress.turn_targets
+                ]
+        if not self.variant.counts_points or self.checkout_mode is not CheckoutMode.DOUBLE_OUT:
+            return [[None] * len(turn.darts) for turn in self.turns]
+        targets: list[list[Target | None]] = []
+        for turn, remaining in zip(self.turns, self.remaining_before_turns(), strict=True):
+            aimed: list[Target | None] = []
+            for dart in turn.darts:
+                aimed.append(finishing_double(remaining))
+                remaining -= dart.points
+            targets.append(aimed)
+        return targets
 
     def race(self) -> Finish:
         """Places, finishers and who throws next, replayed from the turns; race variants only."""

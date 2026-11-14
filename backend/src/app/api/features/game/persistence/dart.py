@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKeyConstraint, Integer
+from sqlalchemy import DateTime, Float, ForeignKeyConstraint, Integer, SmallInteger
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database import Base, UuidText
@@ -29,3 +29,7 @@ class DartTable(Base):
     pos_x: Mapped[float | None] = mapped_column(Float, default=None)
     pos_y: Mapped[float | None] = mapped_column(Float, default=None)
     thrown_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    # The field the dart was thrown at, where the game names one; a NULL multiplier
+    # with a value takes any ring of that number.
+    target_value: Mapped[int | None] = mapped_column(SmallInteger, default=None)
+    target_multiplier: Mapped[int | None] = mapped_column(SmallInteger, default=None)
