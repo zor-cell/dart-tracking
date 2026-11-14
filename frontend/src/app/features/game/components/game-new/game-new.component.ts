@@ -370,7 +370,7 @@ export class GameNewComponent {
       killer: { lives: killerLives, zone: killerZone },
       aroundTheClock: { zone: clockZone, skip: clockZone === 'any' && clockSkip },
       elimination: { kill: eliminationKill },
-      catchUp: racing && catchUp,
+      catchUp: racing && seats.length > 1 && catchUp,
       playOn: racing && seats.length > 2 && playOn,
       players: seats,
       evaluationEnabled: this.settings.evaluationEnabled(),

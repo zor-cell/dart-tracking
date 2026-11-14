@@ -22,7 +22,7 @@ export const GAME_RULES: Readonly<Record<GameVariant, GameRules>> = {
   },
   cricket: {
     rules: [
-      $localize`:@@game.rules.cricket.1:Gespielt wird auf 20 bis 15 und Bull. Single zählt 1 Mark, Double 2, Triple 3; die 25 zählt 1, das Bull 2.`,
+      $localize`:@@game.rules.cricket.1:Gespielt wird auf 20 bis 15 und Bull. Single zählt 1 Mark, Double 2, Triple 3.`,
       $localize`:@@game.rules.cricket.2:Mit 3 Marks ist eine Zahl zu. Weitere Marks bringen ihren Wert als Punkte, solange ein Gegner sie noch offen hat.`,
       $localize`:@@game.rules.cricket.3:Wer alles zu hat und bei den Punkten vorne liegt, gewinnt.`,
     ],

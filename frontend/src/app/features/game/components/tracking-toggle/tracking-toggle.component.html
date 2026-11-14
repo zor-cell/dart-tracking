@@ -2,7 +2,7 @@
   <p-button
     [icon]="paused() ? 'pi pi-play-circle' : 'pi pi-pause-circle'"
     [severity]="paused() ? 'primary' : 'secondary'"
-    [outlined]="!paused()"
+    [rounded]="true"
     size="small"
     [ariaLabel]="paused() ? resumeLabel : pauseLabel"
     [attr.aria-pressed]="paused()"

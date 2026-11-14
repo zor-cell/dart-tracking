@@ -229,10 +229,14 @@
 // button; a labelled one is wide enough to reach the sector numbers.
 // Sized like the camera box. The drawing caps itself at 20rem and stays centred
 // in whatever box that leaves.
+// Pause, then recalibrate at the very edge.
 .game__recalibrate {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
+  z-index: 2;
+  display: flex;
+  gap: 0.5rem;
 }
 
 .game__switch-role {

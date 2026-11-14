@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Button } from 'primeng/button';
 import { AnnouncerToggleComponent } from '../../../announcement/components/announcer-toggle/announcer-toggle.component';
 import { TorchToggleComponent } from '../../../camera/components/torch-toggle/torch-toggle.component';
-import { TrackingToggleComponent } from '../tracking-toggle/tracking-toggle.component';
 import { ShareDialogComponent } from '../../../../core/view/components/share-dialog/share-dialog.component';
 import { ConfirmService } from '../../../../core/view/services/confirm.service';
 import { variantLabel } from '../../models/game-variant';
@@ -20,7 +19,6 @@ import { GameSessionService } from '../../services/game-session.service';
   imports: [
     AnnouncerToggleComponent,
     TorchToggleComponent,
-    TrackingToggleComponent,
     Button,
     ShareDialogComponent,
   ],

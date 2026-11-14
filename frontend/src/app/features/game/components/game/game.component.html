@@ -62,17 +62,19 @@
               />
             }
             @if (roomCalibration() !== 'no_camera') {
-              <p-button
-                class="game__recalibrate"
-                [icon]="roomCalibration() === 'calibrating' ? 'pi pi-sync pi-spin' : 'pi pi-sync'"
-                [rounded]="true"
-                severity="primary"
-                size="small"
-                ariaLabel="Rekalibrieren"
-                i18n-ariaLabel="@@game.recalibrate"
-                [attr.aria-busy]="roomCalibration() === 'calibrating'"
-                (onClick)="requestCalibration()"
-              />
+              <div class="game__recalibrate">
+                <app-tracking-toggle />
+                <p-button
+                  [icon]="roomCalibration() === 'calibrating' ? 'pi pi-sync pi-spin' : 'pi pi-sync'"
+                  [rounded]="true"
+                  severity="primary"
+                  size="small"
+                  ariaLabel="Rekalibrieren"
+                  i18n-ariaLabel="@@game.recalibrate"
+                  [attr.aria-busy]="roomCalibration() === 'calibrating'"
+                  (onClick)="requestCalibration()"
+                />
+              </div>
             }
           </div>
         }
@@ -173,16 +175,18 @@
                   (onClick)="switchRole()"
                 />
               } @else {
-                <p-button
-                  class="game__recalibrate"
-                  [icon]="calibrationStatus() === 'pending' ? 'pi pi-sync pi-spin' : 'pi pi-sync'"
-                  [rounded]="true"
-                  severity="primary"
-                  size="small"
-                  [ariaLabel]="cameraPhase() === 'calibrating' ? calibrateLabel : recalibrateLabel"
-                  [attr.aria-busy]="calibrationStatus() === 'pending'"
-                  (onClick)="calibrateBoard()"
-                />
+                <div class="game__recalibrate">
+                  <app-tracking-toggle />
+                  <p-button
+                    [icon]="calibrationStatus() === 'pending' ? 'pi pi-sync pi-spin' : 'pi pi-sync'"
+                    [rounded]="true"
+                    severity="primary"
+                    size="small"
+                    [ariaLabel]="cameraPhase() === 'calibrating' ? calibrateLabel : recalibrateLabel"
+                    [attr.aria-busy]="calibrationStatus() === 'pending'"
+                    (onClick)="calibrateBoard()"
+                  />
+                </div>
                 <p-button
                   class="game__switch-role"
                   icon="pi pi-bullseye"

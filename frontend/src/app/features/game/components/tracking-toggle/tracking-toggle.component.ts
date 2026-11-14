@@ -3,7 +3,7 @@ import { Button } from 'primeng/button';
 import { CalibrationService } from '../../../calibration/services/calibration.service';
 import { GameService } from '../../services/game.service';
 
-/** Pause button: holds the camera's bookings on every device, while a camera is in the game. */
+/** Pause button beside the recalibrate button: holds the camera's bookings on every device. */
 @Component({
   selector: 'app-tracking-toggle',
   imports: [Button],

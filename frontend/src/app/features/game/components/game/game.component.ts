@@ -34,6 +34,7 @@ import {GameSessionService} from '../../services/game-session.service';
 import {GameDraftService} from '../../services/game-draft.service';
 import {ScreenWakeLockService} from '../../services/screen-wake-lock.service';
 import {GameTopBarComponent} from '../game-top-bar/game-top-bar.component';
+import {TrackingToggleComponent} from '../tracking-toggle/tracking-toggle.component';
 import {ScoreboardComponent} from '../scoreboard/scoreboard.component';
 import {VirtualBoardComponent} from '../virtual-board/virtual-board.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
@@ -95,6 +96,7 @@ const SIDE_KEYS: readonly FixedKey[] = [MISS, BULL, BULLSEYE];
     OverlayComponent,
     VirtualBoardComponent,
     GameTopBarComponent,
+    TrackingToggleComponent,
     EmptyStateComponent,
     CdkDropList,
     CdkDrag,
