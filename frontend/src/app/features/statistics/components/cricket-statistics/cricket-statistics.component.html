@@ -65,6 +65,12 @@
   </dl>
 </section>
 
+<app-hit-pattern
+  [fields]="totals.fields"
+  [locatedFields]="totals.locatedFields"
+  [heatmap]="totals.heatmap"
+/>
+
 <section class="panel">
   <h2 class="panel__title" i18n="@@stats.visits">Visits</h2>
   <dl class="stat-grid">
@@ -102,9 +108,3 @@
     </div>
   </dl>
 </section>
-
-<app-hit-pattern
-  [fields]="totals.fields"
-  [locatedFields]="totals.locatedFields"
-  [heatmap]="totals.heatmap"
-/>

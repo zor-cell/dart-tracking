@@ -152,70 +152,6 @@
   </dl>
 </section>
 
-<section class="panel">
-  <h2 class="panel__title" i18n="@@stats.visits">Visits</h2>
-  <dl class="stat-grid">
-    <div class="stat">
-      <dt class="stat__label" i18n="@@game.detail.bestVisit">Bester Visit</dt>
-      <dd class="stat__value">
-        @if (other ? null : totals.bestVisitAt; as at) {
-          <app-stat-link [link]="['/account/games', at.gameId]" [queryParams]="{ visit: at.visit }">{{ totals.bestVisit }}</app-stat-link>
-        } @else {
-          {{ totals.bestVisit }}
-        }
-        @if (other) {
-          <app-delta-mark
-            [own]="totals.bestVisit"
-            [other]="other.statistics.bestVisit"
-            [name]="other.name"
-            [digits]="0"
-          />
-        }
-      </dd>
-      @if (other) {
-        <dd class="stat__hint">
-          <app-compared-value
-            [name]="other.name"
-            [other]="other.statistics.bestVisit"
-            [digits]="0"
-          />
-        </dd>
-      }
-    </div>
-    <div class="stat" [class.stat--half]="!other" [class.stat--after]="other">
-      <dt class="stat__label">180</dt>
-      <ng-container *ngTemplateOutlet="visitBand; context: { band: 180 }" />
-    </div>
-    <div class="stat" [class.stat--half]="!other" [class.stat--after]="other">
-      <dt class="stat__label">140+</dt>
-      <ng-container *ngTemplateOutlet="visitBand; context: { band: 140 }" />
-    </div>
-    <div class="stat">
-      <dt class="stat__label" i18n="@@stats.favouriteVisit">Häufigster Visit</dt>
-      <dd class="stat__value">{{ totals.favouriteVisit ?? '–' }}</dd>
-      @if (other) {
-        <dd class="stat__hint">
-          <app-compared-value
-            [name]="other.name"
-            [other]="other.statistics.favouriteVisit"
-            [digits]="0"
-          />
-        </dd>
-      }
-    </div>
-    <div class="stat" [class.stat--half]="!other" [class.stat--after]="other">
-      <dt class="stat__label">100+</dt>
-      <ng-container *ngTemplateOutlet="visitBand; context: { band: 100 }" />
-    </div>
-    <div class="stat" [class.stat--half]="!other" [class.stat--after]="other">
-      <dt class="stat__label">60+</dt>
-      <ng-container *ngTemplateOutlet="visitBand; context: { band: 60 }" />
-    </div>
-  </dl>
-</section>
-
-<ng-content />
-
 <ng-template #layerSwitch>
   <p-selectbutton
     class="heatmap__layer"
@@ -286,6 +222,68 @@
       />
     </div>
   }
+</section>
+
+<section class="panel">
+  <h2 class="panel__title" i18n="@@stats.visits">Visits</h2>
+  <dl class="stat-grid">
+    <div class="stat">
+      <dt class="stat__label" i18n="@@game.detail.bestVisit">Bester Visit</dt>
+      <dd class="stat__value">
+        @if (other ? null : totals.bestVisitAt; as at) {
+          <app-stat-link [link]="['/account/games', at.gameId]" [queryParams]="{ visit: at.visit }">{{ totals.bestVisit }}</app-stat-link>
+        } @else {
+          {{ totals.bestVisit }}
+        }
+        @if (other) {
+          <app-delta-mark
+            [own]="totals.bestVisit"
+            [other]="other.statistics.bestVisit"
+            [name]="other.name"
+            [digits]="0"
+          />
+        }
+      </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value
+            [name]="other.name"
+            [other]="other.statistics.bestVisit"
+            [digits]="0"
+          />
+        </dd>
+      }
+    </div>
+    <div class="stat" [class.stat--half]="!other" [class.stat--after]="other">
+      <dt class="stat__label">180</dt>
+      <ng-container *ngTemplateOutlet="visitBand; context: { band: 180 }" />
+    </div>
+    <div class="stat" [class.stat--half]="!other" [class.stat--after]="other">
+      <dt class="stat__label">140+</dt>
+      <ng-container *ngTemplateOutlet="visitBand; context: { band: 140 }" />
+    </div>
+    <div class="stat">
+      <dt class="stat__label" i18n="@@stats.favouriteVisit">Häufigster Visit</dt>
+      <dd class="stat__value">{{ totals.favouriteVisit ?? '–' }}</dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value
+            [name]="other.name"
+            [other]="other.statistics.favouriteVisit"
+            [digits]="0"
+          />
+        </dd>
+      }
+    </div>
+    <div class="stat" [class.stat--half]="!other" [class.stat--after]="other">
+      <dt class="stat__label">100+</dt>
+      <ng-container *ngTemplateOutlet="visitBand; context: { band: 100 }" />
+    </div>
+    <div class="stat" [class.stat--half]="!other" [class.stat--after]="other">
+      <dt class="stat__label">60+</dt>
+      <ng-container *ngTemplateOutlet="visitBand; context: { band: 60 }" />
+    </div>
+  </dl>
 </section>
 
 <section class="panel">
@@ -464,3 +462,5 @@
     Ø Punkte pro Dart nach seinem Platz im Visit, auch nur ohne Finish&#8209;Chance.
   </p>
 </section>
+
+<ng-content />

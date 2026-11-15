@@ -2,7 +2,7 @@
 <section class="panel">
   <h2 class="panel__title">Kills</h2>
   <dl class="stat-grid">
-    <div class="stat stat--lead">
+    <div class="stat">
       <dt class="stat__label">
         <ng-container i18n="@@stats.kills.total">Kills</ng-container>
         <app-info-hint class="stat__info">
@@ -15,7 +15,7 @@
       </dt>
       <dd class="stat__value">{{ totals.kills | number }}</dd>
     </div>
-    <div class="stat stat--lead">
+    <div class="stat">
       <dt class="stat__label" i18n="@@stats.kills.livesLost">Leben verloren</dt>
       <dd class="stat__value">{{ totals.losses | number }}</dd>
     </div>
