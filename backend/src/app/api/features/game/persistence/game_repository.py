@@ -9,12 +9,25 @@ from datetime import UTC, datetime
 from typing import Any, Protocol
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, Row, Select, and_, case, delete, func, or_, select, update
+from sqlalchemy import (
+    ColumnElement,
+    Row,
+    Select,
+    and_,
+    case,
+    delete,
+    func,
+    or_,
+    select,
+    true,
+    update,
+)
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game import Game
+from app.api.features.game.domain.game_claim import ClaimOutcome
 from app.api.features.game.domain.game_filter import GameFilter
 from app.api.features.game.domain.game_record import GameRecord
 from app.api.features.game.domain.game_mode import GameMode
@@ -66,6 +79,7 @@ class GameRepository:
         setup: GameSetup,
         owner_user_id: str | None = None,
         evaluation_enabled: bool = False,
+        claim_token_hash: str | None = None,
     ) -> Game:
         """The identities are resolved by the router, which owns the rules about
         who may take a seat. Here they are only seated, in the order given."""
@@ -91,6 +105,7 @@ class GameRepository:
             revision=game.revision,
             evaluation_enabled=evaluation_enabled,
             owner_user_id=owner_user_id,
+            claim_token_hash=claim_token_hash,
         )
         session.add(row)
         # Flush before adding `game_players`: no relationships are declared, so
@@ -268,6 +283,132 @@ class GameRepository:
                 .offset(offset)
             )
         ).scalars().all()
+        return await self._summarize(session, rows, user_id)
+
+    async def claimable(
+        self, session: AsyncSession, token_hashes: dict[str, str], user_id: str
+    ) -> list[GameSummary]:
+        """The ownerless games among `token_hashes` (game id to hash) whose hash matches,
+        newest first."""
+        ids = [game_id for game_id in token_hashes if _is_uuid(game_id)]
+        if not ids:
+            return []
+        rows = (
+            await session.execute(
+                select(GameTable)
+                .where(GameTable.id.in_(ids), GameTable.owner_user_id.is_(None))
+                .order_by(GameTable.created_at.desc())
+            )
+        ).scalars().all()
+        matching = [row for row in rows if row.claim_token_hash == token_hashes[row.id]]
+        return await self._summarize(session, matching, user_id)
+
+    async def claim(
+        self,
+        session: AsyncSession,
+        game_id: str,
+        token_hash: str,
+        user_id: str,
+        seat: int | None,
+    ) -> ClaimOutcome:
+        """Hand an anonymous game to the account: `seat` becomes its own entry, the other
+        guests entries of its address book, reused by name where it has them."""
+        if not _is_uuid(game_id):
+            return ClaimOutcome.NOT_FOUND
+        row = (
+            await session.execute(
+                select(GameTable).where(GameTable.id == game_id).with_for_update()
+            )
+        ).scalar_one_or_none()
+        if (
+            row is None
+            or row.owner_user_id is not None
+            or row.claim_token_hash is None
+            or row.claim_token_hash != token_hash
+        ):
+            return ClaimOutcome.NOT_FOUND
+
+        seats = (
+            await session.execute(
+                select(GamePlayerTable.player_index, PlayerTable)
+                .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
+                .where(GamePlayerTable.game_id == game_id)
+                .order_by(GamePlayerTable.player_index)
+            )
+        ).all()
+        own = (
+            await session.execute(
+                select(PlayerTable).where(
+                    PlayerTable.owner_user_id == user_id, PlayerTable.user_id == user_id
+                )
+            )
+        ).scalar_one()
+        own_seat = next((index for index, entry in seats if entry.id == own.id), None)
+        if seat is not None and not 0 <= seat < len(seats):
+            return ClaimOutcome.BAD_SEAT
+        if own_seat is not None and seat not in (None, own_seat):
+            return ClaimOutcome.BAD_SEAT
+        if seat is not None and seat != own_seat and seats[seat][1].user_id is not None:
+            return ClaimOutcome.BAD_SEAT
+
+        taken = {entry.id for _, entry in seats if _keeps_seat(entry, user_id)}
+        if own_seat is None and seat is not None:
+            taken.add(own.id)
+        for index, entry in seats:
+            if index == seat:
+                chosen = own.id
+            elif _keeps_seat(entry, user_id):
+                continue
+            else:
+                chosen = await self._guest_entry(session, entry, user_id, taken)
+                taken.add(chosen)
+            if chosen != entry.id:
+                await session.execute(
+                    update(GamePlayerTable)
+                    .where(
+                        GamePlayerTable.game_id == game_id,
+                        GamePlayerTable.player_index == index,
+                    )
+                    .values(player_id=chosen)
+                )
+
+        row.owner_user_id = user_id
+        row.claim_token_hash = None
+        await session.flush()
+        return ClaimOutcome.CLAIMED
+
+    async def _guest_entry(
+        self, session: AsyncSession, guest: PlayerTable, user_id: str, taken: set[str]
+    ) -> str:
+        """The address book entry a claimed game's guest sits as: one of the same name,
+        else the guest itself when nobody owns it, else a new one."""
+        if guest.display_name is not None:
+            same_name = (
+                await session.execute(
+                    select(PlayerTable.id)
+                    .where(
+                        PlayerTable.owner_user_id == user_id,
+                        PlayerTable.user_id.is_distinct_from(user_id),
+                        func.lower(PlayerTable.display_name) == guest.display_name.lower(),
+                        PlayerTable.id.not_in(taken) if taken else true(),
+                    )
+                    .order_by(PlayerTable.created_at)
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
+            if same_name is not None:
+                return same_name
+        if guest.owner_user_id is None:
+            guest.owner_user_id = user_id
+            return guest.id
+        entry = PlayerTable(display_name=guest.display_name, owner_user_id=user_id)
+        session.add(entry)
+        await session.flush()
+        return entry.id
+
+    async def _summarize(
+        self, session: AsyncSession, rows: Sequence[GameTable], user_id: str
+    ) -> list[GameSummary]:
         if not rows:
             return []
 
@@ -835,6 +976,20 @@ def _involving(user_id: str) -> ColumnElement[bool]:
         .where(PlayerTable.user_id == user_id)
     )
     return or_(GameTable.owner_user_id == user_id, GameTable.id.in_(seated))
+
+
+def _is_uuid(value: str) -> bool:
+    try:
+        UUID(value)
+    except ValueError:
+        return False
+    return True
+
+
+def _keeps_seat(entry: PlayerTable, user_id: str) -> bool:
+    """Whether a claimed game's seat stays as it is: an account's player, or already
+    an entry of the claiming account's address book."""
+    return entry.user_id is not None or entry.owner_user_id == user_id
 
 
 def _status_clause(

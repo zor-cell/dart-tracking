@@ -31,7 +31,9 @@ import { CHECKOUT_MODES, CheckoutMode } from '../../models/checkout-mode';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { modeOf } from '../../models/game-settings';
 import { GAME_VARIANTS, GameVariant, variantLabel } from '../../models/game-variant';
+import { GameClaimService } from '../../services/game-claim.service';
 import { GameHistoryService } from '../../services/game-history.service';
+import { GameClaimDialogComponent } from '../game-claim-dialog/game-claim-dialog.component';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { ListToolbarComponent } from '../../../../core/view/components/list-toolbar/list-toolbar.component';
 import { FilterSelectComponent } from '../../../../core/view/components/filter-select/filter-select.component';
@@ -95,6 +97,7 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
     BackLinkComponent,
     DatePipe,
     EmptyStateComponent,
+    GameClaimDialogComponent,
     ListToolbarComponent,
     LoadErrorComponent,
     LoadingStateComponent,
@@ -112,6 +115,7 @@ export class GameListComponent {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly history = inject(GameHistoryService);
+  private readonly claims = inject(GameClaimService);
   private readonly players = inject(PlayerService);
   private readonly locale = inject(LOCALE_ID);
   private readonly memory = inject(FilterMemoryService);
@@ -130,6 +134,9 @@ export class GameListComponent {
   );
   protected readonly opponents = signal<PlayerIdentityDto[]>([]);
   protected readonly query = signal('');
+  /** Anonymous games of this device the account can take over. */
+  protected readonly claimable = signal<readonly GameSummaryDto[]>([]);
+  protected readonly claimOpen = signal(false);
 
   protected readonly period = signal<Period>('all');
   protected readonly range = signal<DayRange>(null);
@@ -197,6 +204,7 @@ export class GameListComponent {
     this.queryState.signal('visit', this.visit, oneOfParam<VisitBand>(VISIT_BANDS), null);
     this.queryState.form(this.filters, FILTER_PARAMS);
     void this.games.load();
+    void this.claims.claimable().then((games) => this.claimable.set(games), () => undefined);
     void this.players.list().then((all) => this.opponents.set(all.filter((p) => !p.isSelf)));
     void this.memory.load();
     this.memory.watch('games', this.filters, REMEMBERED, this.destroyRef);
@@ -246,6 +254,11 @@ export class GameListComponent {
 
   protected readonly variantName = variantLabel;
   protected readonly modeOf = modeOf;
+
+  protected claimed(): void {
+    this.claimable.set([]);
+    void this.games.load();
+  }
 
   protected openLabel(game: GameSummaryDto): string {
     const when = formatDate(game.createdAt, SHORT_DATE_TIME, this.locale);

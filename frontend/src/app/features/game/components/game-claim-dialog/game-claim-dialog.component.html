@@ -1,0 +1,58 @@
+<p-dialog
+  header="Spiel übernehmen"
+  i18n-header="@@game.claim.title"
+  [modal]="true"
+  [draggable]="false"
+  [(visible)]="visible"
+  [style]="dialogStyle"
+  appendTo="body"
+>
+  @if (current(); as game) {
+    <form class="auth-form" [formGroup]="form" (ngSubmit)="submit(game)">
+      <div class="claim__game">
+        <span class="claim__title">{{ title(game) }}</span>
+        <span class="claim__hint">
+          {{ game.createdAt | date: shortDateTime }}@if (progress()) {, {{ progress() }}}
+        </span>
+      </div>
+
+      <fieldset class="claim__seats">
+        <legend class="auth-form__label" i18n="@@game.claim.who">Wer warst du?</legend>
+        @for (player of game.players; track $index) {
+          <div class="claim__seat">
+            <p-radiobutton [inputId]="'claim-seat-' + $index" formControlName="seat" [value]="$index" />
+            <label [for]="'claim-seat-' + $index">{{ player.name }}</label>
+          </div>
+        }
+        <div class="claim__seat">
+          <p-radiobutton inputId="claim-seat-none" formControlName="seat" value="none" />
+          <label for="claim-seat-none" i18n="@@game.claim.none">Ich habe nicht mitgespielt</label>
+        </div>
+      </fieldset>
+
+      @if (error(); as message) {
+        <p-message severity="error" [text]="message" />
+      }
+
+      <div class="auth-form__actions">
+        <p-button
+          type="button"
+          label="Verwerfen"
+          i18n-label="@@game.claim.skip"
+          severity="secondary"
+          [text]="true"
+          [disabled]="busy()"
+          (onClick)="skip(game)"
+        />
+        <p-button
+          type="submit"
+          label="Übernehmen"
+          i18n-label="@@game.claim.submit"
+          icon="pi pi-check"
+          [loading]="busy()"
+          [disabled]="form.invalid"
+        />
+      </div>
+    </form>
+  }
+</p-dialog>

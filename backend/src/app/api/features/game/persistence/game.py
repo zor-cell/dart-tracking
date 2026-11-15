@@ -24,6 +24,8 @@ class GameTable(Base):
     win_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
     shadow_darts: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
     owner_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), default=None)
+    # SHA-256 of the token the creating device holds to hand an anonymous game to an account.
+    claim_token_hash: Mapped[str | None] = mapped_column(String(64), default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

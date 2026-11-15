@@ -24,6 +24,7 @@ def test_a_training_starts_free_and_carries_its_own_standing(anon):
     assert game["ended"] is False
     assert game["settings"]["goal"] == "free"
     assert game["standing"]["players"][0]["target"] is None
+    game.pop("claimToken")
     assert anon.get(f"/games/{game['id']}").json() == game
 
 

@@ -4,6 +4,24 @@
     <h1 class="view__title" i18n="@@auth.account.games">Spiele</h1>
   </header>
 
+  @let claims = claimable().length;
+  @if (claims > 0) {
+    <div class="list-group__items">
+      <button type="button" class="list-group__item" (click)="claimOpen.set(true)">
+        <i class="list-group__icon pi pi-download" aria-hidden="true"></i>
+        <span class="list-group__body">
+          <span class="list-group__name" i18n="@@game.list.claim">{claims, plural,
+            =1 {1 Spiel ohne Konto}
+            other {{{ claims }} Spiele ohne Konto}
+          }</span>
+          <span class="list-group__hint" i18n="@@game.list.claimHint">In dein Konto übernehmen</span>
+        </span>
+        <i class="list-group__chevron pi pi-chevron-right" aria-hidden="true"></i>
+      </button>
+    </div>
+    <app-game-claim-dialog [games]="claimable()" [(visible)]="claimOpen" (done)="claimed()" />
+  }
+
   <app-list-toolbar
     searchLabel="Spieler suchen"
     i18n-searchLabel="@@player.list.search"

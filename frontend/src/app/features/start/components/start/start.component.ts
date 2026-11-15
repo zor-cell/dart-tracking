@@ -14,8 +14,7 @@ import { Button } from 'primeng/button';
 import { UIChart } from 'primeng/chart';
 import { AuthService } from '../../../auth/services/auth.service';
 import { GameSummaryDto } from '../../../game/dto/game-summary.dto';
-import { modeOf } from '../../../game/models/game-settings';
-import { variantLabel } from '../../../game/models/game-variant';
+import { gameTitle } from '../../../game/models/game-settings';
 import { GameHistoryService } from '../../../game/services/game-history.service';
 import { DeltaMarkComponent } from '../../../statistics/components/delta-mark/delta-mark.component';
 import { StatLinkComponent } from '../../../statistics/components/stat-link/stat-link.component';
@@ -117,7 +116,7 @@ export class StartComponent {
 
   protected readonly lastGameName = computed(() => {
     const game = this.overview()?.lastGame;
-    return game ? `${variantLabel(game.settings.variant)} ${modeOf(game.settings) ?? ''}`.trim() : '';
+    return game ? gameTitle(game.settings) : '';
   });
 
   protected readonly lastGamePlayers = computed(() => {

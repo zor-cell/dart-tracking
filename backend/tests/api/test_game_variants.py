@@ -33,6 +33,7 @@ def test_a_variant_game_keeps_no_points_and_carries_its_own_standing(anon, varia
     assert game["checkout"] is None
     assert [player["remaining"] for player in game["players"]] == [None, None]
     assert game["standing"]["variant"] == variant
+    game.pop("claimToken")
     assert anon.get(f"/games/{game['id']}").json() == game
 
 
@@ -81,6 +82,7 @@ def test_elimination_keeps_its_kill_rule(anon):
     assert double.status_code == 201, double.text
     game = double.json()
     assert game["settings"]["kill"] == "double"
+    game.pop("claimToken")
     assert anon.get(f"/games/{game['id']}").json() == game
     assert default.json()["settings"]["kill"] == "any"
     assert "kill" not in x01.json()["settings"]

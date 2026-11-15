@@ -6,6 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
 import { SocketService } from '../../../core/socket/services/socket.service';
 import { GameCommandDto } from '../dto/game-command.dto';
+import { GameCreatedDto } from '../dto/game-created.dto';
 import { GameStateDto } from '../dto/game-state.dto';
 import { PlayerDto } from '../dto/player.dto';
 import { QuickStartDto } from '../dto/quick-start.dto';
@@ -15,6 +16,7 @@ import {GameConfigDto} from "../dto/game-config.dto";
 import {SettingsService} from "../../settings/services/settings.service";
 import { ACTIVE_GAME_KEY } from "./active-game";
 import { readStored, writeStored } from '../../../core/storage/models/browser-storage';
+import { GameClaimService } from './game-claim.service';
 
 
 /**
@@ -33,6 +35,7 @@ export class GameService {
   private readonly http = inject(HttpClient);
   private readonly socket = inject(SocketService);
   private readonly settings = inject(SettingsService);
+  private readonly claims = inject(GameClaimService);
   private readonly baseUrl = `${environment.httpApiUrl}/games`;
 
   private readonly _state = signal<GameStateDto | null>(null);
@@ -118,8 +121,11 @@ export class GameService {
   /** Create a game on the server; the caller navigates once it resolves. */
   createGame(config: GameConfigDto): Observable<GameStateDto> {
     return this.http
-      .post<GameStateDto>(this.baseUrl, config)
-      .pipe(tap((state) => {
+      .post<GameCreatedDto>(this.baseUrl, config)
+      .pipe(tap(({ claimToken, ...state }) => {
+        if (claimToken) {
+          this.claims.remember(state.id, claimToken);
+        }
         this.setState(state);
         this.connect();
       }));

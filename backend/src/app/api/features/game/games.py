@@ -25,7 +25,14 @@ from app.api.features.game.domain.game_status import GameStatus
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.killer import KILLER_NUMBERS
 from app.api.features.game.domain.player_count import PlayerCount
+from app.api.features.game.domain.game_claim import (
+    ClaimOutcome,
+    claim_token_hash,
+    new_claim_token,
+)
+from app.api.features.game.dto.game_claim import ClaimableGamesQueryDto, GameClaimDto
 from app.api.features.game.dto.game_config import GameConfigDto
+from app.api.features.game.dto.game_created import GameCreatedDto
 from app.api.features.game.dto.game_detail import GameDetailDto
 from app.api.features.game.dto.game_page import GamePageDto
 from app.api.features.game.dto.game_settings import to_setup
@@ -92,8 +99,8 @@ async def _resolve_players(
     return resolved
 
 
-@router.post("", response_model=GameStateDto, status_code=201)
-async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) -> GameStateDto:
+@router.post("", response_model=GameCreatedDto, status_code=201)
+async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) -> GameCreatedDto:
     if not body.players:
         raise HTTPException(status_code=422, detail="at least one player is required")
     variant = body.settings.variant
@@ -112,6 +119,7 @@ async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) 
     # Without an account the game has no owner, and every seat a rematch does not
     # carry over is a fresh guest.
     owner_id = user.id if user else None
+    claim_token = None if user else new_claim_token()
 
     async with database.session_scope() as session:
         seated: dict[str, PlayerIdentity] = {}
@@ -133,12 +141,42 @@ async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) 
             to_setup(body.settings, len(body.players)),
             owner_user_id=owner_id,
             evaluation_enabled=body.evaluation_enabled and user is not None and user.is_admin,
+            claim_token_hash=claim_token and claim_token_hash(claim_token),
         )
 
     if body.rematch_of:
         await hub.broadcast(body.rematch_of, RematchStartedDto(game_id=game.id))
 
-    return GameStateDto.from_entity(game)
+    return GameCreatedDto.from_entity(game).model_copy(update={"claim_token": claim_token})
+
+
+@router.post("/claimable", response_model=list[GameSummaryDto])
+async def claimable_games(
+    body: ClaimableGamesQueryDto, user: AuthenticatedUser
+) -> list[GameSummaryDto]:
+    """Which of the anonymous games a device set up the account can still take over."""
+    hashes = {claim.game_id: claim_token_hash(claim.token) for claim in body.claims}
+    async with database.session_scope() as session:
+        summaries = await repository.claimable(session, hashes, user.id)
+    return [GameSummaryDto.from_entity(summary) for summary in summaries]
+
+
+@router.post("/{game_id}/claim", status_code=204)
+async def claim_game(game_id: str, body: GameClaimDto, user: AuthenticatedUser) -> None:
+    """Take over an anonymous game this device set up, seating the account on `seat`."""
+    async with database.session_scope() as session:
+        outcome = await repository.claim(
+            session, game_id, claim_token_hash(body.token), user.id, body.seat
+        )
+        game = await repository.get(session, game_id) if outcome is ClaimOutcome.CLAIMED else None
+
+    match outcome:
+        case ClaimOutcome.NOT_FOUND:
+            raise HTTPException(status_code=404, detail="game not found")
+        case ClaimOutcome.BAD_SEAT:
+            raise HTTPException(status_code=422, detail="seat cannot be claimed")
+    if game is not None:
+        await hub.broadcast(game_id, GameStateDto.from_entity(game))
 
 
 @router.get("", response_model=GamePageDto)

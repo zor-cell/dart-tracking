@@ -11,6 +11,7 @@ import { TrainingSettingsDto } from '../dto/training-settings.dto';
 import { TrainingStandingDto } from '../dto/training-standing.dto';
 import { X01SettingsDto } from '../dto/x01-settings.dto';
 import { GameMode } from './game-mode';
+import { variantLabel } from './game-variant';
 
 /** The settings of a variant with the standing that belongs to them. */
 export type VariantPlay =
@@ -43,4 +44,9 @@ export function finishOf(settings: GameSettingsDto): { readonly catchUp: boolean
   return 'catchUp' in settings
     ? { catchUp: settings.catchUp, playOn: settings.playOn }
     : { catchUp: false, playOn: false };
+}
+
+/** A game named as its detail page heads it: "X01 501", "Cricket". */
+export function gameTitle(settings: GameSettingsDto): string {
+  return `${variantLabel(settings.variant)} ${modeOf(settings) ?? ''}`.trim();
 }

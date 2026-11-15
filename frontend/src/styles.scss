@@ -198,8 +198,9 @@ html .p-datatable-mask.p-overlay-mask-leave-active {
   white-space: nowrap;
 }
 
-/* A popover's host stays out of the layout; its panel renders into the body. */
-p-popover {
+/* Overlay hosts stay out of the layout; their panels render into the body. */
+p-popover,
+p-dialog {
   display: contents;
 }
 

@@ -1,0 +1,33 @@
+:host {
+  display: contents;
+}
+
+.claim__game {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.claim__title {
+  font-weight: 600;
+}
+
+.claim__hint {
+  color: var(--p-text-muted-color);
+  font-size: 0.85rem;
+}
+
+.claim__seats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.claim__seat {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
