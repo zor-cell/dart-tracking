@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
 import { environment } from '../../../../environments/environment';
+import { CricketStatisticsDto } from '../dto/cricket-statistics.dto';
 import { KillStatisticsDto } from '../dto/kill-statistics.dto';
 import { OverallStatisticsDto } from '../dto/overall-statistics.dto';
 import { StatisticsOverviewDto } from '../dto/statistics-overview.dto';
@@ -55,12 +56,23 @@ export class StatisticsService {
     );
   }
 
+  /** Marks, distances, visits and the hit picture of the Cricket games the filter selects. */
+  cricket(filter: StatisticsFilter): Promise<CricketStatisticsDto> {
+    return firstValueFrom(
+      this.http.get<CricketStatisticsDto>(`${this.baseUrl}/cricket`, {
+        params: this.params(filter, null),
+        context: SILENT_ERROR_CONTEXT,
+      }),
+    );
+  }
+
   private params(filter: StatisticsFilter, player: string | null): HttpParams {
     const lists: Record<string, readonly (string | number)[]> = {
       variant: filter.variants,
       mode: filter.modes,
       checkoutMode: filter.checkoutModes,
       killerZone: filter.killerZones,
+      scoring: filter.cricketScorings,
       clockZone: filter.clockZones,
       trainingGoal: filter.trainingGoals,
       trainingRing: filter.trainingRings,

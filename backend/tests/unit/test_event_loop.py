@@ -9,7 +9,11 @@ from app.api.features.auth.services import passwords
 from app.api.features.evaluation.domain.accuracy import LoggedGame
 from app.api.features.evaluation.services import accuracy, frame_buffer
 from app.api.features.evaluation.services.frame_buffer import FrameBuffer, FrameKind
-from app.api.features.statistics.persistence import overall_repository, statistics_repository
+from app.api.features.statistics.persistence import (
+    cricket_repository,
+    overall_repository,
+    statistics_repository,
+)
 
 
 def beside_the_loop(owner, name, start, monkeypatch, result="done"):
@@ -122,3 +126,19 @@ def test_checking_for_pulled_darts_leaves_the_event_loop_free(monkeypatch):
     )
 
     assert pulled is True
+
+
+def test_the_cricket_tally_leaves_the_event_loop_free(monkeypatch):
+    async def played(*_args):
+        return []
+
+    monkeypatch.setattr(cricket_repository, "played_games", played)
+
+    found = beside_the_loop(
+        cricket_repository,
+        "_tally",
+        lambda: cricket_repository.repository.overview(None, "user"),
+        monkeypatch,
+    )
+
+    assert found == "done"

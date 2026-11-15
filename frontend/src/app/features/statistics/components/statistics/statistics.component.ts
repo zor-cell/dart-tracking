@@ -17,6 +17,7 @@ import { Button } from 'primeng/button';
 import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
+import { CricketStatisticsDto } from '../../dto/cricket-statistics.dto';
 import { StatisticsOverviewDto } from '../../dto/statistics-overview.dto';
 import { TargetStatisticsDto } from '../../dto/target-statistics.dto';
 import { COMPARE_COLOR, Comparison, OWN_COLOR } from '../../models/comparison';
@@ -25,7 +26,7 @@ import { GamePillsComponent } from '../game-pills/game-pills.component';
 import { KillStatisticsComponent } from '../kill-statistics/kill-statistics.component';
 import { KillStatisticsDto } from '../../dto/kill-statistics.dto';
 import { STATISTICS_VIEWS, StatisticsGame, StatisticsView, showsPoints } from '../../models/statistics-game';
-import { POINTS_FIGURES, TARGET_FIGURES } from '../../models/trend-metric';
+import { CRICKET_FIGURES, POINTS_FIGURES, TARGET_FIGURES } from '../../models/trend-metric';
 import { OverallStatisticsComponent } from '../overall-statistics/overall-statistics.component';
 import { OverallStatisticsDto } from '../../dto/overall-statistics.dto';
 import { StatisticsService } from '../../services/statistics.service';
@@ -34,13 +35,16 @@ import { PLAYER_COUNT_LABELS, PlayerCount } from '../../../game/models/game-filt
 import { GAME_MODES, GameMode } from '../../../game/models/game-mode';
 import {
   CLOCK_ZONES,
+  CRICKET_SCORINGS,
   ClockZone,
+  CricketScoring,
   KILLER_ZONES,
   KillerZone,
   TRAINING_GOALS,
   TRAINING_RINGS,
   TrainingGoal,
   TrainingRing,
+  scoringLabel,
 } from '../../../game/models/variant-options';
 import { PlayerIdentityDto } from '../../../player/dto/player-identity.dto';
 import { PlayerService } from '../../../player/services/player.service';
@@ -80,6 +84,7 @@ import {
   listParam,
   oneOfParam,
 } from '../../../../core/view/models/query-state';
+import { CricketStatisticsComponent } from '../cricket-statistics/cricket-statistics.component';
 import { CheckoutStatisticsComponent } from '../checkout-statistics/checkout-statistics.component';
 import { PrecisionStatisticsComponent } from '../precision-statistics/precision-statistics.component';
 import { TargetStatisticsComponent } from '../target-statistics/target-statistics.component';
@@ -94,6 +99,7 @@ const REMEMBERED = [
   'checkoutMode',
   'clockZone',
   'killerZone',
+  'scoring',
   'trainingGoal',
   'trainingRing',
 ] as const;
@@ -106,6 +112,7 @@ const GAME_FILTERS: Partial<Record<Remembered, readonly StatisticsView[]>> = {
   checkoutMode: ['x01', 'elimination'],
   clockZone: ['around_the_clock'],
   killerZone: ['killer'],
+  scoring: ['cricket'],
   trainingGoal: ['training'],
   trainingRing: ['training'],
 };
@@ -128,6 +135,7 @@ const FILTER_PARAMS = {
   checkoutMode: listParam(oneOfParam(CHECKOUT_MODES.map((mode) => mode.value))),
   clockZone: listParam(oneOfParam(CLOCK_ZONES.map((zone) => zone.value))),
   killerZone: listParam(oneOfParam(KILLER_ZONES.map((zone) => zone.value))),
+  scoring: listParam(oneOfParam(CRICKET_SCORINGS.map((scoring) => scoring.value))),
   trainingGoal: listParam(oneOfParam(TRAINING_GOALS.map((goal) => goal.value))),
   trainingRing: listParam(oneOfParam(TRAINING_RINGS.map((ring) => ring.value))),
 };
@@ -148,6 +156,7 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
     BackLinkComponent,
     Button,
     CheckoutStatisticsComponent,
+    CricketStatisticsComponent,
     LoadingStateComponent,
     EmptyStateComponent,
     ListToolbarComponent,
@@ -189,6 +198,8 @@ export class StatisticsComponent {
   protected readonly others = signal<StatisticsOverviewDto | null>(null);
   /** The darts at targets, for the games whose figures are not points. */
   protected readonly targets = signal<TargetStatisticsDto | null>(null);
+  /** Marks, visits and darts of Cricket; null for the other games. */
+  protected readonly cricket = signal<CricketStatisticsDto | null>(null);
   /** Kills, for Elimination and Killer; null for the other games. */
   protected readonly kills = signal<KillStatisticsDto | null>(null);
   protected readonly loading = signal(true);
@@ -204,6 +215,7 @@ export class StatisticsComponent {
   });
   protected readonly pointsFigures = POINTS_FIGURES;
   protected readonly targetFigures = TARGET_FIGURES;
+  protected readonly cricketFigures = CRICKET_FIGURES;
 
   /** The tab of a game at targets, which has no checkout tab: that one opens its precision. */
   protected readonly targetTab = computed(() => (this.tab() === 'trend' ? 'trend' : 'precision'));
@@ -224,7 +236,12 @@ export class StatisticsComponent {
     }
     const points = this.points() ? this.totals() : null;
     const overall = this.game() === 'all' ? this.overall() : null;
-    const other = this.game() === 'all' ? null : (this.kills() ?? this.targets());
+    const other =
+      this.game() === 'all'
+        ? null
+        : this.game() === 'cricket'
+          ? this.cricket()
+          : (this.kills() ?? this.targets());
     const tally = points
       ? { games: points.legs, darts: points.darts }
       : overall
@@ -243,6 +260,10 @@ export class StatisticsComponent {
 
   protected readonly clockZoneOptions = [...CLOCK_ZONES];
   protected readonly killerZoneOptions = [...KILLER_ZONES];
+  protected readonly scoringOptions = CRICKET_SCORINGS.map((option) => ({
+    label: scoringLabel(option.value),
+    value: option.value,
+  }));
   protected readonly trainingGoalOptions = [...TRAINING_GOALS];
   protected readonly trainingRingOptions = [...TRAINING_RINGS];
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
@@ -273,6 +294,7 @@ export class StatisticsComponent {
     checkoutMode: this.fb.control<CheckoutMode[]>([], { nonNullable: true }),
     clockZone: this.fb.control<ClockZone[]>([], { nonNullable: true }),
     killerZone: this.fb.control<KillerZone[]>([], { nonNullable: true }),
+    scoring: this.fb.control<CricketScoring[]>([], { nonNullable: true }),
     trainingGoal: this.fb.control<TrainingGoal[]>([], { nonNullable: true }),
     trainingRing: this.fb.control<TrainingRing[]>([], { nonNullable: true }),
   });
@@ -317,7 +339,9 @@ export class StatisticsComponent {
       ? this.totals()?.legs
       : this.game() === 'all'
         ? this.overall()?.games
-        : this.targets()?.darts;
+        : this.game() === 'cricket'
+          ? this.cricket()?.darts
+          : this.targets()?.darts;
     if (this.loading() && count === undefined) {
       return 'loading';
     }
@@ -343,6 +367,7 @@ export class StatisticsComponent {
       checkoutModes: picks('checkoutMode') as CheckoutMode[],
       clockZones: picks('clockZone') as ClockZone[],
       killerZones: picks('killerZone') as KillerZone[],
+      cricketScorings: picks('scoring') as CricketScoring[],
       trainingGoals: picks('trainingGoal') as TrainingGoal[],
       trainingRings: picks('trainingRing') as TrainingRing[],
       opponentIds: opponentId ?? [],
@@ -432,6 +457,8 @@ export class StatisticsComponent {
         return CLOCK_ZONES.find((option) => option.value === value)?.label ?? null;
       case 'killerZone':
         return KILLER_ZONES.find((option) => option.value === value)?.label ?? null;
+      case 'scoring':
+        return this.scoringOptions.find((option) => option.value === value)?.label ?? null;
       case 'trainingGoal':
         return TRAINING_GOALS.find((option) => option.value === value)?.label ?? null;
       case 'trainingRing':
@@ -496,6 +523,11 @@ export class StatisticsComponent {
         const overall = await this.statistics.overall(criteria);
         if (request === this.requests) {
           this.overall.set(overall);
+        }
+      } else if (game === 'cricket') {
+        const cricket = await this.statistics.cricket(criteria);
+        if (request === this.requests) {
+          this.cricket.set(cricket);
         }
       } else if (this.points()) {
         const [totals, others, killed] = await Promise.all([

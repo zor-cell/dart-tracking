@@ -1,28 +1,7 @@
-/* Same compact toggle as the other heatmaps. */
 :host {
-  --p-togglebutton-sm-padding: 0.2rem;
-  --p-togglebutton-content-sm-padding: 0.2rem 0.5rem;
-  --p-togglebutton-sm-font-size: 0.75rem;
-
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-}
-
-.heatmap__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.heatmap {
-  height: 22rem;
-
-  app-field-heatmap,
-  app-tip-heatmap {
-    height: 100%;
-  }
 }
 
 .rings__title {

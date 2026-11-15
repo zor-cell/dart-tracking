@@ -1,0 +1,24 @@
+<section class="panel">
+  <header class="heatmap__header">
+    <h2 class="panel__title" i18n="@@stats.hitPattern">Trefferbild</h2>
+    <p-selectbutton
+      [options]="layerOptions"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+      [ngModel]="layer()"
+      (ngModelChange)="selectLayer($event)"
+      ariaLabel="Darstellung der Heatmap"
+      i18n-ariaLabel="@@game.replay.layer"
+      size="small"
+    />
+  </header>
+  <div class="heatmap">
+    @if (layer() === 'fields') {
+      <app-field-heatmap [counts]="fieldCounts()" [(pinned)]="pinnedField" />
+    } @else {
+      <app-tip-heatmap [points]="heatmap()" mode="cloud" [counts]="tipCounts()" [(pinned)]="pinnedField" />
+    }
+  </div>
+  <ng-content />
+</section>

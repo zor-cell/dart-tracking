@@ -1,3 +1,4 @@
+import { CricketGameDto } from '../dto/cricket-game.dto';
 import { GameTallyDto } from '../dto/game-tally.dto';
 import { TrendPointDto } from '../dto/trend-point.dto';
 
@@ -58,6 +59,18 @@ export const TARGET_FIGURES: readonly TrendFigure<GameTallyDto>[] = [
     value: 'distance',
     unit: ' mm',
     axis: $localize`:@@stats.trend.axis.distance:Abstand zum Ziel in mm`,
+    of: (game) => game.distance,
+  },
+];
+
+/** The figures of Cricket. */
+export const CRICKET_FIGURES: readonly TrendFigure<CricketGameDto>[] = [
+  { label: 'MPR', value: 'mpr', unit: '', axis: $localize`:@@stats.cricket.axis.mpr:Marks pro Runde`, of: (game) => game.mpr },
+  {
+    label: $localize`:@@stats.targets.distanceShort:Abstand`,
+    value: 'distance',
+    unit: ' mm',
+    axis: $localize`:@@stats.cricket.axis.distance:Abstand zur offenen Zahl in mm`,
     of: (game) => game.distance,
   },
 ];

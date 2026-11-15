@@ -1,0 +1,110 @@
+@let totals = statistics();
+<section class="panel">
+  <h2 class="panel__title" i18n="@@settings.general">Allgemein</h2>
+  <dl class="stat-grid">
+    <div class="stat stat--lead">
+      <dt class="stat__label">
+        MPR
+        <app-info-hint class="stat__info" i18n="@@stats.cricket.mprHint">
+          Marks pro drei Darts. Es zählen nur Marks, die eine Zahl schließen oder punkten.
+        </app-info-hint>
+      </dt>
+      <dd class="stat__value">{{ (totals.mpr | number: '1.2-2') ?? '–' }}</dd>
+    </div>
+    <div class="stat stat--lead">
+      <dt class="stat__label">
+        <ng-container i18n="@@stats.winRate">Siegquote</ng-container>
+        <app-info-hint class="stat__info" i18n="@@stats.winRateGamesHint">Nur Spiele mit Gegner.</app-info-hint>
+      </dt>
+      <dd class="stat__value">
+        @if (winRate() !== null) {
+          {{ winRate() | number: '1.0-0' }} %
+        } @else {
+          &ndash;
+        }
+      </dd>
+      @if (totals.gamesWithOpponent > 0) {
+        <dd class="stat__hint" i18n="@@stats.kills.wins">{{ totals.wins }} von {{ totals.gamesWithOpponent }} gewonnen</dd>
+      }
+    </div>
+    <div class="stat">
+      <dt class="stat__label">
+        <ng-container i18n="@@stats.cricket.distance">Ø Abstand zur offenen Zahl</ng-container>
+        <app-info-hint class="stat__info">
+          <app-stat-sketch kind="treble" />
+          <ng-container i18n="@@stats.cricket.distanceHint"
+            >Kürzester Weg vom erkannten Dart zur nächsten Zahl, die er noch markieren konnte. Ein
+            Dart darauf zählt 0 mm.</ng-container
+          >
+        </app-info-hint>
+      </dt>
+      @if (totals.distance !== null) {
+        <dd class="stat__value">{{ totals.distance | number: '1.0-0' }} mm</dd>
+        <dd class="stat__scale">
+          <app-distance-scale [distance]="totals.distance" kind="treble" />
+        </dd>
+      } @else {
+        <dd class="stat__value">&ndash;</dd>
+      }
+    </div>
+    <div class="stat">
+      <dt class="stat__label">
+        <ng-container i18n="@@stats.cricket.empty">Leere Darts</ng-container>
+        <app-info-hint class="stat__info" i18n="@@stats.cricket.emptyHint">
+          Darts ohne Mark: daneben, auf anderen Zahlen oder auf Zahlen, die nichts mehr bringen.
+        </app-info-hint>
+      </dt>
+      <dd class="stat__value">
+        @if (emptyRate() !== null) {
+          {{ emptyRate() | number: '1.0-0' }} %
+        } @else {
+          &ndash;
+        }
+      </dd>
+    </div>
+  </dl>
+</section>
+
+<section class="panel">
+  <h2 class="panel__title" i18n="@@stats.visits">Visits</h2>
+  <dl class="stat-grid">
+    <div class="stat">
+      <dt class="stat__label" i18n="@@game.detail.bestVisit">Bester Visit</dt>
+      <dd class="stat__value">
+        @if (totals.bestVisitAt; as at) {
+          <app-stat-link [link]="['/account/games', at.gameId]" [queryParams]="{ visit: at.visit }">{{
+            totals.bestVisit
+          }}</app-stat-link>
+        } @else {
+          {{ totals.bestVisit }}
+        }
+      </dd>
+    </div>
+    <div class="stat stat--half">
+      <dt class="stat__label">9 Marks</dt>
+      <dd class="stat__value">{{ bands()[9] }}</dd>
+    </div>
+    <div class="stat stat--half">
+      <dt class="stat__label">7+</dt>
+      <dd class="stat__value">{{ bands()[7] }}</dd>
+    </div>
+    <div class="stat">
+      <dt class="stat__label" i18n="@@stats.favouriteVisit">Häufigster Visit</dt>
+      <dd class="stat__value">{{ totals.favouriteVisit ?? '–' }}</dd>
+    </div>
+    <div class="stat stat--half">
+      <dt class="stat__label">5+</dt>
+      <dd class="stat__value">{{ bands()[5] }}</dd>
+    </div>
+    <div class="stat stat--half">
+      <dt class="stat__label">3+</dt>
+      <dd class="stat__value">{{ bands()[3] }}</dd>
+    </div>
+  </dl>
+</section>
+
+<app-hit-pattern
+  [fields]="totals.fields"
+  [locatedFields]="totals.locatedFields"
+  [heatmap]="totals.heatmap"
+/>

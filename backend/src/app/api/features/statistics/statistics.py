@@ -22,10 +22,12 @@ from app.api.features.game.domain.target import Target
 from app.api.features.game.domain.training import TrainingGoal, TrainingRing
 from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.persistence.player_repository import repository as players
+from app.api.features.statistics.dto.cricket_statistics import CricketStatisticsDto
 from app.api.features.statistics.dto.kill_statistics import KillStatisticsDto
 from app.api.features.statistics.dto.overall_statistics import OverallStatisticsDto
 from app.api.features.statistics.dto.statistics_overview import StatisticsOverviewDto
 from app.api.features.statistics.dto.target_statistics import TargetStatisticsDto
+from app.api.features.statistics.persistence.cricket_repository import repository as cricket
 from app.api.features.statistics.persistence.kill_repository import repository as kills
 from app.api.features.statistics.persistence.overall_repository import repository as overall
 from app.api.features.statistics.persistence.statistics_repository import repository
@@ -127,6 +129,19 @@ async def kill_statistics(
         statistics = await kills.overview(session, user.id, criteria, last, compared)
 
     return KillStatisticsDto.from_entity(statistics)
+
+
+@router.get("/cricket", response_model=CricketStatisticsDto)
+async def cricket_statistics(
+    user: AuthenticatedUser, selection: Selection, player: Compared = None
+) -> CricketStatisticsDto:
+    """The selected Cricket games: marks per round, distances, visits and the hit picture."""
+    criteria, last = selection
+    async with database.session_scope() as session:
+        compared = await _compared(session, user.id, player)
+        statistics = await cricket.overview(session, user.id, criteria, last, compared)
+
+    return await asyncio.to_thread(CricketStatisticsDto.from_entity, statistics)
 
 
 @router.get("/all", response_model=OverallStatisticsDto)

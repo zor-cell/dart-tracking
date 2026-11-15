@@ -6,10 +6,17 @@ import { GAME_VARIANTS, GameVariant, countsPoints } from '../../game/models/game
 /** The games the statistics page shows figures for, one at a time. */
 export type StatisticsGame = Extract<
   GameVariant,
-  'x01' | 'elimination' | 'around_the_clock' | 'training' | 'killer'
+  'x01' | 'elimination' | 'around_the_clock' | 'training' | 'killer' | 'cricket'
 >;
 
-const ORDER: readonly StatisticsGame[] = ['x01', 'around_the_clock', 'training', 'elimination', 'killer'];
+const ORDER: readonly StatisticsGame[] = [
+  'x01',
+  'around_the_clock',
+  'training',
+  'elimination',
+  'killer',
+  'cricket',
+];
 
 export const STATISTICS_GAMES: readonly { label: string; value: StatisticsGame }[] = ORDER.map(
   (value) => ({

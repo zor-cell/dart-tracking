@@ -2,7 +2,7 @@ import { CheckoutMode } from '../../game/models/checkout-mode';
 import { PlayerCount } from '../../game/models/game-filter';
 import { GameMode } from '../../game/models/game-mode';
 import { GameVariant } from '../../game/models/game-variant';
-import { ClockZone, KillerZone, TrainingGoal, TrainingRing } from '../../game/models/variant-options';
+import { ClockZone, CricketScoring, KillerZone, TrainingGoal, TrainingRing } from '../../game/models/variant-options';
 
 /** Narrows the statistics to any of each list's values; an empty list or null leaves them
  * open. `until` is exclusive. */
@@ -11,6 +11,7 @@ export interface StatisticsFilter {
   readonly modes: readonly GameMode[];
   readonly checkoutModes: readonly CheckoutMode[];
   readonly killerZones: readonly KillerZone[];
+  readonly cricketScorings: readonly CricketScoring[];
   readonly clockZones: readonly ClockZone[];
   readonly trainingGoals: readonly TrainingGoal[];
   readonly trainingRings: readonly TrainingRing[];

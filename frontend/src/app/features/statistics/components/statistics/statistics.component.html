@@ -65,6 +65,15 @@
               [options]="clockZoneOptions"
             />
           }
+          @case ('cricket') {
+            <app-filter-select
+              label="Punkte"
+              i18n-label="@@game.new.scoring"
+              inputId="filter-scoring"
+              [control]="filters.controls.scoring"
+              [options]="scoringOptions"
+            />
+          }
           @case ('killer') {
             <app-filter-select
               label="Feld"
@@ -253,6 +262,25 @@
         (pick)="game.set($event)"
       />
     }
+  } @else if (game() === 'cricket') {
+    <p-tabs [value]="targetTab()" (valueChange)="tab.set($any($event))" [showNavigators]="false">
+      <p-tablist>
+        <p-tab value="precision" i18n="@@stats.tab.precision">Präzision</p-tab>
+        <p-tab value="trend" i18n="@@stats.tab.trend">Trend</p-tab>
+      </p-tablist>
+      @if (status()) {
+        <ng-container *ngTemplateOutlet="statusView; context: { $implicit: true }" />
+      } @else if (cricket(); as cricket) {
+        <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
+          <p-tabpanel value="precision">
+            <app-cricket-statistics [statistics]="cricket" />
+          </p-tabpanel>
+          <p-tabpanel value="trend">
+            <app-trend-statistics [figures]="cricketFigures" [points]="cricket.games" />
+          </p-tabpanel>
+        </p-tabpanels>
+      }
+    </p-tabs>
   } @else {
     <p-tabs [value]="targetTab()" (valueChange)="tab.set($any($event))" [showNavigators]="false">
       <p-tablist>

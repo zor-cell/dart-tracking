@@ -14,27 +14,17 @@ import {
   inject,
   input,
   output,
-  signal,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import type { ChartData, ChartOptions } from 'chart.js';
 import { UIChart } from 'primeng/chart';
-import { SelectButton } from 'primeng/selectbutton';
 import { chartTheme } from '../../../../core/charts/models/chart-plugins';
 import { axisTicks, tooltipStyle } from '../../../../core/charts/models/chart-styles';
 import { SHORT_DATE } from '../../../../core/i18n/models/date-format';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
-import { FieldHeatmapComponent } from '../../../game/components/field-heatmap/field-heatmap.component';
-import { TipHeatmapComponent } from '../../../game/components/tip-heatmap/tip-heatmap.component';
 import { GameVariant } from '../../../game/models/game-variant';
-import {
-  HEATMAP_LAYERS,
-  HeatmapLayer,
-  storeHeatmapLayer,
-  storedHeatmapLayer,
-} from '../../../game/models/heatmap-layer';
 import { OverallStatisticsDto } from '../../dto/overall-statistics.dto';
 import { OWN_COLOR } from '../../models/comparison';
+import { HitPatternComponent } from '../hit-pattern/hit-pattern.component';
 import { STATISTICS_GAMES, StatisticsGame, variantLabel } from '../../models/statistics-game';
 
 /** One bar of a list: its name, its count and its length against the longest. */
@@ -62,12 +52,9 @@ const RINGS: readonly { key: string; label: string }[] = [
   imports: [
     DatePipe,
     DecimalPipe,
-    FieldHeatmapComponent,
-    FormsModule,
+    HitPatternComponent,
     InfoHintComponent,
     NgTemplateOutlet,
-    SelectButton,
-    TipHeatmapComponent,
     UIChart,
   ],
   templateUrl: './overall-statistics.component.html',
@@ -83,9 +70,6 @@ export class OverallStatisticsComponent {
   readonly pick = output<StatisticsGame>();
 
   protected readonly shortDate = SHORT_DATE;
-  protected readonly layerOptions = [...HEATMAP_LAYERS];
-  protected readonly layer = signal(storedHeatmapLayer());
-  protected readonly pinnedField = signal<string | null>(null);
 
   /** The time played, in hours from one hour up, else in minutes. */
   protected readonly playTime = computed(() => duration(this.statistics().seconds, this.locale));
@@ -136,11 +120,6 @@ export class OverallStatisticsComponent {
     });
   });
 
-  protected readonly fieldCounts = computed(() => new Map(Object.entries(this.statistics().fields)));
-  protected readonly tipCounts = computed(
-    () => new Map(Object.entries(this.statistics().locatedFields)),
-  );
-
   protected readonly weeksData = computed<ChartData<'bar'>>(() => ({
     labels: this.statistics().weeks.map((week) => formatDate(week.week, SHORT_DATE, this.locale)),
     datasets: [
@@ -174,11 +153,6 @@ export class OverallStatisticsComponent {
       },
     };
   });
-
-  protected selectLayer(layer: HeatmapLayer): void {
-    this.layer.set(layer);
-    storeHeatmapLayer(layer);
-  }
 }
 
 /** `part` of `whole` in percent; null without a whole. */

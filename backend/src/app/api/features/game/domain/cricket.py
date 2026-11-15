@@ -1,7 +1,7 @@
 """Cricket: close 20 down to 15 and the bull with three marks each; marks beyond that
 score the number for as long as an opponent still has it open."""
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field, replace
 from enum import StrEnum
 
@@ -61,6 +61,55 @@ def cricket_progress(
             progress.winner_id = _winner(progress.players, turn.player_id, options.scoring)
         progress.turn_marks.append(marks)
     return progress
+
+
+@dataclass(frozen=True)
+class CricketThrow:
+    """A replayed dart: its thrower, the numbers it could still count on, and its marks."""
+
+    turn: int
+    player_id: int
+    dart: Dart
+    open: frozenset[int]
+    marks: int
+
+
+def cricket_throws(
+    player_ids: Sequence[int], turns: Sequence[Turn], options: CricketOptions
+) -> Iterator[CricketThrow]:
+    """Each dart in throwing order, as `cricket_progress` replays it, up to the win."""
+    players = {player_id: CricketPlayer() for player_id in player_ids}
+    winner_id: int | None = None
+    for index, turn in enumerate(turns):
+        for dart in turn.darts:
+            if winner_id is not None:
+                return
+            useful = _useful(players, turn.player_id, options.scoring)
+            marks = _throw(players, turn.player_id, dart, options.scoring)
+            yield CricketThrow(index, turn.player_id, dart, useful, marks)
+            winner_id = _winner(players, turn.player_id, options.scoring)
+
+
+def _useful(
+    players: dict[int, CricketPlayer], thrower_id: int, scoring: CricketScoring
+) -> frozenset[int]:
+    """The numbers a dart of the thrower still marks: its own open ones, and those it
+    has closed but an opponent has not, while points count."""
+    thrower = players[thrower_id]
+    scores = scoring is not CricketScoring.NO_SCORE
+    return frozenset(
+        target
+        for target, marks in thrower.marks.items()
+        if marks < MARKS_TO_CLOSE
+        or (
+            scores
+            and any(
+                player.marks[target] < MARKS_TO_CLOSE
+                for player_id, player in players.items()
+                if player_id != thrower_id
+            )
+        )
+    )
 
 
 @dataclass(frozen=True)

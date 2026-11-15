@@ -73,28 +73,11 @@
   <span class="bar__figure">{{ row.figure }}</span>
 </ng-template>
 
-<section class="panel">
-  <header class="heatmap__header">
-    <h2 class="panel__title" i18n="@@stats.hitPattern">Trefferbild</h2>
-    <p-selectbutton
-      [options]="layerOptions"
-      optionLabel="label"
-      optionValue="value"
-      [allowEmpty]="false"
-      [ngModel]="layer()"
-      (ngModelChange)="selectLayer($event)"
-      ariaLabel="Darstellung der Heatmap"
-      i18n-ariaLabel="@@game.replay.layer"
-      size="small"
-    />
-  </header>
-  <div class="heatmap">
-    @if (layer() === 'fields') {
-      <app-field-heatmap [counts]="fieldCounts()" [(pinned)]="pinnedField" />
-    } @else {
-      <app-tip-heatmap [points]="totals.heatmap" mode="cloud" [counts]="tipCounts()" [(pinned)]="pinnedField" />
-    }
-  </div>
+<app-hit-pattern
+  [fields]="totals.fields"
+  [locatedFields]="totals.locatedFields"
+  [heatmap]="totals.heatmap"
+>
   <h3 class="rings__title" i18n="@@stats.all.rings">Ringe</h3>
   <ul class="bars">
     @for (row of rings(); track row.key) {
@@ -106,7 +89,7 @@
       </li>
     }
   </ul>
-</section>
+</app-hit-pattern>
 
 <section class="panel">
   <h2 class="panel__title" i18n="@@stats.all.activity">Aktivität</h2>
