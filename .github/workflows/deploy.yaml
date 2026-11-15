@@ -125,6 +125,8 @@ jobs:
         backend/src/app/api/features/calibration/services
         backend/src/app/api/features/detection/domain
         backend/src/app/api/features/detection/services
+      # Commits with this in their message leave the tracker's behaviour alone and are not counted.
+      TRACKER_NEUTRAL: "[tracker-neutral]"
       POSTGRES_USER: ${{ vars.POSTGRES_USER }}
       POSTGRES_DB: ${{ vars.POSTGRES_DB }}
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
@@ -146,14 +148,14 @@ jobs:
       - name: Check whether the push touches the tracker
         id: changes
         run: |
-          if git diff --quiet ${{ github.event.before }} HEAD -- $TRACKER_PATHS backend/tests/cv backend/uv.lock; then
+          if [ "$(git rev-list --count -F --invert-grep --grep="$TRACKER_NEUTRAL" ${{ github.event.before }}..HEAD -- $TRACKER_PATHS backend/tests/cv backend/uv.lock)" = 0 ]; then
             echo "tracker=false" >> "$GITHUB_OUTPUT"
           else
             echo "tracker=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Build and start the stack
         run: |
-          export TRACKER_VERSION=$(git rev-list --count HEAD -- $TRACKER_PATHS)
+          export TRACKER_VERSION=$(git rev-list --count -F --invert-grep --grep="$TRACKER_NEUTRAL" HEAD -- $TRACKER_PATHS)
           export BUILD_NUMBER=$((GITHUB_RUN_NUMBER + 1000))
           docker compose up -d --build --wait
 

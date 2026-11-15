@@ -68,6 +68,10 @@ fertig sind — auch Migrationen, Doku und Testskripte.
 **Nur `git add`.** Kein `git commit`, kein `git push`, kein Branch- oder
 Stash-Kommando — wann und was committet wird, entscheide ich.
 
+**Tracker-Version:** Jeder Commit in `calibration/` oder `detection/`
+(`domain`, `services`) erhöht sie beim Deploy. Ändert er das Verhalten nicht
+(nur Kommentare, Umbenennungen), endet der Betreff auf `[tracker-neutral]`.
+
 ## Commands
 - `npm run start` — Frontend starten, nur Deutsch (Port 4200)
 - `npm run start:en` — Frontend starten, nur Englisch (Port 4201, unter `/en/`)
