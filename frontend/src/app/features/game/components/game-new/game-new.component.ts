@@ -149,9 +149,7 @@ export class GameNewComponent {
   protected readonly skeletonSeats = [0];
   /** Rendered height of a seat's input and buttons, so the placeholders take the same space. */
   protected readonly seatRowHeight = '2.4375rem';
-  /** Whether the session is known yet. The seats depend on it, so they are only
-   * rendered once it is — otherwise they fill with the wrong default and
-   * visibly change under the user. */
+  /** Whether the session is known yet; the seats render only once it is. */
   protected readonly sessionResolved = signal(false);
   protected readonly suggestions = signal<PlayerIdentityDto[]>([]);
   protected readonly seatMessages = { required: $localize`:@@game.new.nameRequired:Bitte einen Namen eingeben.` };

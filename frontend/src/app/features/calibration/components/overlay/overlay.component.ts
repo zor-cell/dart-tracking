@@ -18,11 +18,8 @@ const OUTLINE_EXTRA_WIDTH = 2;
 const LABEL_OUTLINE_WIDTH = 2;
 
 /**
- * Draws normalized polylines over the camera preview. Used for the detected
- * board (so the user can check the calibration — the lines should sit on the
- * real rings and sector wires) and, in a different colour, the located dart.
- *
- * Expects to sit over a video rendered with `object-fit: contain`.
+ * Draws normalized polylines over a camera preview shown with `object-fit: contain`:
+ * the detected board and, in its own colour, the located dart.
  */
 @Component({
   selector: 'app-overlay',
@@ -69,12 +66,8 @@ export class OverlayComponent implements OnDestroy {
       this.resizeObserver.observe(this.canvasRef().nativeElement);
     });
 
-    // `video.videoWidth`/`videoHeight` drive the contain mapping but are not
-    // reactive: when the polylines arrive before the stream has reported its
-    // intrinsic size, the first draw finds 0x0, no-ops, and nothing re-runs it —
-    // so the outline stays blank until the next calibration happens to redraw it.
-    // Redraw when the video reports or changes its dimensions, so it appears as
-    // soon as it can be mapped.
+    // Redraw when the video reports or changes its intrinsic size, which the contain
+    // mapping needs but does not signal.
     effect((onCleanup) => {
       const video = this.video();
       const redraw = () => this.draw();

@@ -16,11 +16,8 @@ import { SetWinConfirmedDto } from '../../../features/game/dto/set-win-confirmed
 import { UndoDto } from '../../../features/game/dto/undo.dto';
 
 /**
- * Everything this client sends, discriminated by `type`.
- *
- * Named after the sender, so the term means the same here as in the backend's
- * `client_message.py`. The union is the only place that knows the full set;
- * each message is defined by the feature it belongs to.
+ * Everything this client sends, discriminated by `type`; each message is defined
+ * by the feature it belongs to.
  */
 export type ClientMessage =
   | CalibrationFrameDto

@@ -12,12 +12,8 @@ import { DEFAULT_SETTINGS } from '../models/app-settings';
 import { writeStored } from '../../../core/storage/models/browser-storage';
 
 /**
- * How this account wants the app to behave. Kept on the server rather than in
- * the browser, so the choices follow the account onto the second phone that
- * joins the same game.
- *
- * Without an account there is nowhere to keep an answer, so the session runs on
- * the defaults and never sees the settings page at all (its route is guarded).
+ * How this account wants the app to behave, stored on the server; without an
+ * account the defaults apply.
  */
 @Injectable({ providedIn: 'root' })
 export class SettingsService {

@@ -9,10 +9,7 @@ import { CameraPhase } from '../models/camera-phase';
 import { GameService } from './game.service';
 import { readStored, writeStored } from '../../../core/storage/models/browser-storage';
 
-// Kept across a refresh — which wipes the stream, socket and every signal — so
-// the session can tell that a live camera was in progress and resume it. In
-// sessionStorage, not localStorage: a running camera belongs to this sitting,
-// not to the device for good.
+// Session storage key of the camera phase, so a refresh can resume it.
 const PHASE_KEY = 'dart-tracking.cameraPhase';
 
 // Whether this device filmed its last game, so the next one starts the camera itself.
@@ -22,21 +19,9 @@ const CAMERA_USED_KEY = 'dart-tracking.cameraUsed';
 const CAMERA_SETTLE_MS = 1500;
 
 /**
- * Owns the live camera session (phase + the wiring of camera and the detection
- * loop). It is a singleton, so the session survives route changes: the game view
- * hands it its `<video>`/canvas elements on mount (`attachView`) and merely
- * pauses the loop on unmount (`detachView`) — the stream stays up, so returning
- * to the game screen is instant. Full teardown happens only on `endSession`
- * ("Spiel verlassen").
- *
- * The socket is deliberately not its business: it belongs to the game, not to
- * the camera, since a device that only keeps score holds one too (`GameService`).
- * This service is what turns *this* device into the one that films the board —
- * which is also why the device's role lives here.
- *
- * A page refresh is the other case: everything client-side is gone, but the
- * server keeps the game, calibration and reference frame keyed by game id, so the
- * session restarts the camera and resumes tracking.
+ * Owns this device's camera session: its phase and the detection loop. Survives
+ * route changes (`attachView`, `detachView`), ends on `endSession`, and resumes
+ * after a refresh.
  */
 @Injectable({ providedIn: 'root' })
 export class GameSessionService {
@@ -85,10 +70,7 @@ export class GameSessionService {
       }
     });
 
-    // A recalibration asked for elsewhere: the scoreboard's button, the end of
-    // a visit, or joining a game the server holds no calibration for. The server
-    // sends it to camera devices only; the phase is what says whether this one
-    // has a running picture to answer it with.
+    // A recalibration asked for elsewhere, answered if this device's camera runs.
     this.socket
       .on('calibration_requested')
       .pipe(takeUntilDestroyed())
@@ -205,14 +187,12 @@ export class GameSessionService {
     this.phase.set('idle');
   }
 
-  /** Refetch the game when the game view initialises (called from its ngOnInit),
-   * independent of the DOM, so a full reload restores the state even before the
-   * camera elements exist. Stash the phase to resume the camera into; the resume
-   * itself happens on the following view attach. Cleared if there is no game. */
+  /**
+   * Refetch the game when the game view initialises and stash the camera phase
+   * to resume on the next view attach; cleared if there is no game.
+   */
   async restore(): Promise<boolean> {
-    // No role check: a stored phase can only come from a device that was
-    // filming, and the resume waits for the camera elements — which exist only
-    // in the camera view.
+    // Only a filming device stores a phase, so no role check.
     this.pendingResumePhase = this.persistedPhase;
     this.persistedPhase = null;
 

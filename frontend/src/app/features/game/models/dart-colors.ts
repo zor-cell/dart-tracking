@@ -1,15 +1,6 @@
 /**
- * The colour a dart of the current visit is drawn in, by its position in that
- * visit.
- *
- * Shared between the two views of one throw: the outline over the camera
- * picture and the marker on the scoreboard's drawn board. The same dart has to
- * be the same colour on both, since that is what lets someone holding the
- * scoreboard say which of the outlines on the camera phone they mean.
- *
- * Lives with the game rather than with either view because the visit is what it
- * indexes — colour 1 means "first dart of this visit", not "first thing the
- * detector found".
+ * The colour a dart of the current visit is drawn in, by its position in the
+ * visit, the same on the camera outline and the scoreboard's board.
  */
 const DART_COLORS = [
   '#648fff', // dart 1 — blue

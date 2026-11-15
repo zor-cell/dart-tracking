@@ -164,9 +164,7 @@ export class GameComponent implements OnInit, OnDestroy {
   /** The stream's width over its height, which the inset takes on. */
   protected readonly videoAspect = signal(4 / 3);
 
-  /** Whether the game is still being fetched — the placeholder below the view is
-   * for "no game", which is a different answer from "not yet known". Without a
-   * persisted id there is nothing to fetch, so the answer is known at once. */
+  /** Whether the game is still being fetched, true only with a persisted id. */
   protected readonly restoring = signal(this.game.peekGameId() !== null);
 
   /** The setup left half done that the view hands over to, while there is no game. */
@@ -197,9 +195,10 @@ export class GameComponent implements OnInit, OnDestroy {
   // The picked dart together with the visit it was picked in.
   private readonly pickedDart = signal<{ turn: number; index: number } | null>(null);
 
-  /** The dart a keypad tap corrects instead of appending, or null to append.
-   * Read back against the open visit, so a pick cannot outlive it and reattach
-   * to whatever stands in that place in the next one. */
+  /**
+   * The dart a keypad tap corrects instead of appending, or null to append; only
+   * a dart of the open visit.
+   */
   protected readonly selectedDart = computed(() => {
     const picked = this.pickedDart();
     const turns = this.game.state()?.turns;
@@ -259,11 +258,8 @@ export class GameComponent implements OnInit, OnDestroy {
   });
 
   /**
-   * The slots after the darts already thrown, carrying the suggested route where
-   * there is one. Sized off the darts thrown rather than `dartsRemaining`: a
-   * busted visit has none remaining, which would drop the boxes from the row.
-   * A winning finish outranks a reset or a setup; the reset route then runs
-   * beneath it. Shadow darts take the first free slots.
+   * The slots after the darts already thrown, with the suggested route: a winning
+   * finish over a reset or setup route, shadow darts in the first free slots.
    */
   protected readonly checkoutSlots = computed<readonly CheckoutSlot[]>(() => {
     const thrown = this.game.currentTurn()?.darts.length ?? 0;
@@ -339,10 +335,8 @@ export class GameComponent implements OnInit, OnDestroy {
       this.document.removeEventListener('pointerdown', onDocumentPointerDown);
     });
 
-    // Hand the session this view's camera elements once they exist. They live
-    // behind the "game active" gate, so after a full reload — where the state is
-    // refetched first — they appear a few ticks after init, not at view init.
-    // The session then resumes an ongoing session or the phase from before.
+    // Hand the session this view's camera elements once they exist, so it resumes
+    // the session or the phase from before.
     effect(() => {
       const video = this.videoRef()?.nativeElement;
       const diffCanvas = this.diffCanvasRef()?.nativeElement;

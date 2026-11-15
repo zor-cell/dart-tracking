@@ -1,6 +1,5 @@
-// How a leg may be finished. Double-out requires the finishing dart to land in a
-// double (the bullseye counts); single-out finishes on any field. The string
-// values match the backend CheckoutMode enum sent over the wire.
+// How a leg may be finished: on any field or on a double, Bull included; the
+// values match the backend's CheckoutMode.
 export type CheckoutMode = 'single_out' | 'double_out';
 
 export const CHECKOUT_MODES: readonly { label: string; value: CheckoutMode }[] = [

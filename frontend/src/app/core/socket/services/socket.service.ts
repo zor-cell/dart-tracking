@@ -12,9 +12,7 @@ import { readStored, writeStored } from '../../storage/models/browser-storage';
 
 export type SocketConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
-// What this device is called. The server mints it on the first ever connect and
-// this is the only thing that has to outlive the tab — everything the server
-// knows about the device hangs off it, so nothing else needs storing here.
+// Local storage key of the id the server gave this device on its first connect.
 const CLIENT_ID_KEY = 'dart-tracking.clientId';
 
 // Wait before the first reconnect attempt, doubled per failed attempt up to the cap, in ms.
@@ -22,10 +20,8 @@ const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 30_000;
 
 /**
- * The connection to the game's room on the server. Every device playing the
- * same game holds one, and it carries everything that is not the session
- * lifecycle: the camera frames of whichever device films the board, and the
- * commands any device issues.
+ * The connection to the game's room on the server: camera frames and the commands
+ * any device issues, plus the messages the server pushes.
  */
 @Injectable({ providedIn: 'root' })
 export class SocketService {
@@ -35,9 +31,8 @@ export class SocketService {
   readonly connectionStatus = signal<SocketConnectionStatus>('disconnected');
 
   /**
-   * What this device does in the game. Owned by the server: `null` until the
-   * first `client_state` answers, which is only visible on a cold start —
-   * picking a role sets it right away, and the confirmation follows.
+   * What this device does in the game, as the server holds it; `null` until the first
+   * `client_state` arrives.
    */
   readonly role = signal<DeviceRole | null>(null);
 
@@ -52,9 +47,7 @@ export class SocketService {
   private readonly _clientId = signal<string | null>(readStored(CLIENT_ID_KEY));
   readonly clientId = this._clientId.asReadonly();
 
-  // Commands issued while no socket is open, flushed on connect.
-  // Only commands are held back: a queued frame would describe a board the game
-  // has long moved past, so those are dropped instead (see `sendFrame`).
+  // Commands issued while no socket is open, flushed on connect; frames are dropped.
   private pending: ClientMessage[] = [];
 
   // A role asked for but not yet confirmed. The handshake answers with the role
@@ -83,12 +76,8 @@ export class SocketService {
   }
 
   /**
-   * Tell the server what this device does in the game. Requires a socket, so it
-   * is issued on the way into a game, right after `connect()` — queued like any
-   * other command if the handshake is still in flight.
-   *
-   * Applied locally straight away so the view has something to render, and held
-   * against the handshake's answer until the server confirms it (see `adopt`).
+   * Tell the server what this device does in the game, applied locally at once and
+   * held against the handshake's answer until the server confirms it (`adopt`).
    */
   setRole(role: DeviceRole): void {
     this.requestedRole = role;
@@ -200,13 +189,8 @@ export class SocketService {
   }
 
   /**
-   * Ask the server to change the game. There is no reply to await — the new
-   * state arrives as the `game_state` push that goes to the whole room.
-   *
-   * A command sent while the socket is opening or reconnecting is queued rather
-   * than dropped: the game view is on screen as soon as the state is loaded, so a
-   * quick tap can easily beat the handshake, and a silently swallowed dart is
-   * indistinguishable from a dead button.
+   * Send a command to the server, queued while the socket is opening or reconnecting;
+   * the new state arrives as the `game_state` push to the whole room.
    */
   send(message: ClientMessage): void {
     if (this.socket?.readyState === WebSocket.OPEN) {

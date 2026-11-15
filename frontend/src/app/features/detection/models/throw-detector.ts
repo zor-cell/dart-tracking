@@ -96,8 +96,8 @@ export class ThrowDetector {
   }
 
   /**
-   * Verarbeitet einen neuen Graustufen-Frame.
-   * @returns true genau in dem Frame, in dem sich der Wurf als abgeschlossen erwiesen hat.
+   * Processes a new greyscale frame.
+   * @returns true exactly on the frame in which the throw turned out to be complete.
    */
   processFrame(frame: Uint8ClampedArray): boolean {
     if (!this.previousFrame) {

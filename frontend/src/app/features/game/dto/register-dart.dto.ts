@@ -1,12 +1,8 @@
 import { GameCommandDto } from './game-command.dto';
 
 /**
- * Client -> server: book one dart, as the field it landed in rather than as
- * points — the server derives its points and the called-out label from that.
- *
- * Sent by any device in the game's room: the camera phone correcting a misread,
- * a scoreboard phone entering the visit by hand. There is no reply of its own —
- * the server applies the change and pushes the new state to the whole room.
+ * Client -> server: book one dart as the field it landed in, from any device in
+ * the room; the new state arrives as the `game_state` push.
  */
 export interface RegisterDartDto extends GameCommandDto {
   readonly type: 'register_dart';

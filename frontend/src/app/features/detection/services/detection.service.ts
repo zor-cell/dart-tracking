@@ -24,14 +24,7 @@ const FAILURE_HINTS: Record<DetectionFailureDto, string> = {
 
 /**
  * The client half of dart detection: sends the triggered throw frame and tracks
- * the `detection_result` that comes back over the shared socket. Board detection
- * is server-side; this only forwards the frame and surfaces the outcome.
- *
- * The counterpart to `CalibrationService` — but the feedback lands in the
- * tracking badge rather than a toast, because detection runs continuously: a
- * toast on every false trigger would drown the screen. The score is never
- * touched here either; the server registers the hit and pushes an authoritative
- * `game_state` that `GameService` mirrors.
+ * the `detection_result`, shown in the tracking badge.
  */
 @Injectable({ providedIn: 'root' })
 export class DetectionService {
@@ -40,14 +33,8 @@ export class DetectionService {
   private readonly settings = inject(SettingsService);
 
   /**
-   * The darts located in the current round, in throw order, each tagged with the
-   * fixed colour for its index (dart 1 / 2 / 3). All darts of the round stay on
-   * screen so the player sees the whole visit; the list is cleared when the round
-   * turns over (see the `game_state` reconciliation below).
-   *
-   * Only *successful* detections are appended — a frame the server rejects
-   * (`no_change`, an over-eager client trigger) must not leave a ghost outline
-   * over a dart nobody landed.
+   * The darts located in the current round in throw order, each with the colour of
+   * its index; only successful detections, cleared when the round turns over.
    */
   readonly roundDarts = signal<readonly RoundDartOverlay[]>([]);
 
@@ -72,12 +59,7 @@ export class DetectionService {
       .pipe(takeUntilDestroyed())
       .subscribe((result) => this.handleDetectionResult(result));
 
-    // Round boundaries are reconciled off the game state itself, not the socket:
-    // confirming a visit (the camera-mode "next player" tap) is an HTTP call that
-    // updates the state without a socket push, so watching the socket alone would
-    // miss it and leave the finished visit's outlines on the board. GameService
-    // mirrors both the socket pushes and the HTTP responses, so this catches every
-    // boundary.
+    // Reconcile the round's darts with every game state.
     effect(() => {
       const state = this.game.state();
       if (state) {

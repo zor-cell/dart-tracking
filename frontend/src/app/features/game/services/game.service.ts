@@ -20,15 +20,8 @@ import { GameClaimService } from './game-claim.service';
 
 
 /**
- * Client-side cache of the server-authoritative game state. The server owns the
- * scoring rules (scores originate from the vision pipeline), so this service only
- * mirrors the fetched state — it never derives scores itself. Views read `state`
- * directly; the computed signals below are id/index lookups that would otherwise
- * clutter the templates.
- *
- * It also owns the socket's lifetime, because the connection follows the game
- * and not the camera: a device that only keeps score joins the same room and
- * must see every change.
+ * Client-side cache of the server-authoritative game state, with lookups for the
+ * templates; it also owns the socket, which follows the game.
  */
 @Injectable({ providedIn: 'root' })
 export class GameService {
@@ -201,13 +194,8 @@ export class GameService {
   }
 
   /**
-   * Adopt a game's state without joining its room yet. Resolves to false when
-   * the server does not know the id — a shared link whose game has since ended,
-   * or a stale one from before a restart.
-   *
-   * Separate from `connect()` for the join screen, which shows the game before
-   * asking what this device will be — and only enters the room once that is
-   * answered, so a device that turns back was never in it.
+   * Adopt a game's state without joining its room; false when the server does not
+   * know the id.
    */
   async load(gameId: string): Promise<boolean> {
     const state = await this.fetch(gameId);
@@ -303,12 +291,7 @@ export class GameService {
     return { turnIndex: state.turns.length - 1, dartIndex: state.turns.at(-1)?.darts.length ?? 0 };
   }
 
-  /**
-   * Adopt a snapshot unless it is one the cache has already moved past.
-   *
-   * Returns whether the state was taken, so a caller can skip follow-up work on
-   * a snapshot it has already acted upon.
-   */
+  /** Adopt a snapshot unless the cache has moved past it; returns whether it did. */
   private setState(state: GameStateDto): boolean {
     const current = this._state();
     if (current?.id === state.id && state.revision <= current.revision) {

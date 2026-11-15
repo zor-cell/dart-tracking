@@ -7,10 +7,8 @@ import { tooManyRequestsMessage } from '../models/too-many-requests';
 const DEFAULT_TOAST_LIFE = 3000;
 
 /**
- * User-facing feedback. All texts are localized: the HTTP status is the protocol,
- * the message is presentation. Backend `detail` payloads are deliberately not
- * shown — they are English developer diagnostics (pydantic and Starlette emit
- * them too, and those cannot be translated), and they leak internals.
+ * User-facing feedback as toasts, always with localized texts; backend `detail`
+ * payloads are never shown.
  */
 @Injectable({
   providedIn: 'root',
@@ -30,12 +28,7 @@ export class NotificationService {
     });
   }
 
-  /**
-   * For failures whose text is already user-facing, unlike `showError`, which
-   * has to translate a transport-level error first. `life` is explicit because
-   * a message telling the user what to change needs longer on screen than a
-   * bare confirmation.
-   */
+  /** Show an error whose text is already user-facing, for `life` milliseconds. */
   showErrorMessage(
     message: string,
     title = $localize`:@@common.error:Fehler`,

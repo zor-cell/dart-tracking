@@ -5,9 +5,7 @@
   flex: 0 0 auto;
 }
 
-// A horizontal row rather than a stacked list: the players cost one card's
-// height whatever their number, which is what keeps the board, the darts and
-// the keypad on one phone screen.
+// The players in one horizontal row, one card high whatever their number.
 .scoreboard {
   --gap: 0.5rem;
   --visible-cards: 3;
@@ -63,10 +61,8 @@
 }
 
 .scoreboard__row--active {
-  // Tint the content background towards the primary color instead of using
-  // --p-highlight-background: that token is a *strong* fill meant to be paired
-  // with --p-highlight-color, which would make the row solid black in light
-  // mode. Mixing keeps the default text color readable in both schemes.
+  // Primary colour mixed into the content background, keeping the default text
+  // colour readable in both schemes.
   border-color: var(--p-primary-color);
   background: color-mix(in srgb, var(--p-primary-color) 8%, var(--p-content-background));
   box-shadow: inset 0 3px 0 0 var(--p-primary-color);

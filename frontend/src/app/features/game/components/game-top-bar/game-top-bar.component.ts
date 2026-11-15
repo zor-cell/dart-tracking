@@ -51,11 +51,7 @@ export class GameTopBarComponent {
     return settings.variant === 'elimination' ? `${name} ${settings.mode}` : name;
   });
 
-  /**
-   * The link a second device follows to join. Built from the origin this device
-   * loaded the app from, which is what makes it reachable for the other phone:
-   * on a LAN that is the host's address, not `localhost`.
-   */
+  /** The link a second device follows to join, built from this page's origin. */
   protected readonly shareUrl = computed(() => {
     const id = this.game.state()?.id;
     return id ? `${this.document.location.origin}/game/join/${id}` : '';

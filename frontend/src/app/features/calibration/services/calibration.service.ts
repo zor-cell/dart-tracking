@@ -21,15 +21,8 @@ const UNKNOWN_FAILURE_MESSAGE = $localize`:@@calibration.unknown:Bitte erneut ve
 const REMOTE_FAILURE_MESSAGE = $localize`:@@calibration.remote:Die Kamera konnte das Board nicht erkennen.`;
 
 /**
- * Board calibration: capture the current video frame, send it as a
- * `calibration_frame` and track the `calibration_result` that comes back over
- * the shared socket. Board detection itself is server-side (see
- * backend/src/app/api/features/calibration/services/board_detector.py).
- *
- * Can be run again at any time — the server replaces the stored calibration —
- * which is how the user recovers after the board or camera is knocked out of
- * place. It need not be this device that decides so: `requestCalibration` asks
- * the game's cameras, and the end of a visit does the same server-side.
+ * Board calibration: sends the current video frame as a `calibration_frame` and
+ * tracks the `calibration_result`; `requestCalibration` asks the game's cameras.
  */
 @Injectable({ providedIn: 'root' })
 export class CalibrationService {
@@ -38,11 +31,8 @@ export class CalibrationService {
   readonly status = signal<CalibrationStatus>('idle');
 
   /**
-   * The detected board as polylines in normalized image coordinates, or null
-   * whenever there is nothing freshly confirmed to draw. Cleared the moment an
-   * attempt starts and left cleared if it fails: an outline that outlives the
-   * measurement it came from is drawn over a board nobody just verified, so it
-   * reads as a confirmation it no longer is.
+   * The detected board as normalized polylines, or null while an attempt runs or
+   * after it failed.
    */
   readonly overlay = signal<number[][][] | null>(null);
 

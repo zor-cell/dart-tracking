@@ -62,10 +62,7 @@ export class AuthService {
     this.adopt(await this.post<SessionDto>('register', registration));
   }
 
-  /** Rename the account. The answer is what the server stored, so the cached
-   * user adopts its reading rather than the optimistic one. Unlike the calls
-   * around it this is an ordinary authenticated request: a 401 here is an
-   * expired token and should be retried, not an answer. */
+  /** Rename the account and cache the user as the server stored it. */
   async updateProfile(profile: ProfileDto): Promise<void> {
     this._user.set(
       await firstValueFrom(

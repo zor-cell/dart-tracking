@@ -11,10 +11,8 @@ import { GameStateDto } from '../../../features/game/dto/game-state.dto';
 import { RematchStartedDto } from '../../../features/game/dto/rematch-started.dto';
 
 /**
- * Everything the server sends, discriminated by `type`.
- *
- * Named after the sender, like `ClientMessage`. The union is the only place that
- * knows the full set; each message is defined by the feature that reads it.
+ * Everything the server sends, discriminated by `type`; each message is defined
+ * by the feature that reads it.
  */
 export type ServerMessage =
   | ClientStateDto
