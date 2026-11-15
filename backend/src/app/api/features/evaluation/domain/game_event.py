@@ -1,7 +1,5 @@
-"""One recorded step of a game, exactly as it happened.
-
-Append-only: an undone dart keeps what the tracker originally claimed, which the
-game's own turn list no longer holds.
+"""One recorded step of a game, append-only, so an undone dart keeps what the
+tracker claimed.
 """
 
 from dataclasses import dataclass
@@ -37,11 +35,7 @@ class VisitPosition:
 
 @dataclass(frozen=True)
 class GameEvent:
-    """What happened, and to which visit.
-
-    `turn_index` is the slot of the open visit, not an id: undo can drop a visit
-    and a later handover reopens that same slot for the same throws.
-    """
+    """What happened, and to which visit; `turn_index` is the slot of the open visit."""
 
     kind: GameEventKind
     turn_index: int
@@ -49,9 +43,8 @@ class GameEvent:
     # Whether the game took the action. A dart past the third is absorbed, and
     # an undo with nothing left to take back changes nothing.
     accepted: bool
-    # Whether a scoring camera was in the room. Carried by the handover that
-    # opens the next visit, so a visit that never triggered is still known to
-    # have been filmed.
+    # Whether a scoring camera was in the room, carried by the handover that opens
+    # the next visit.
     camera_armed: bool = False
     client_id: str | None = None
     value: int | None = None

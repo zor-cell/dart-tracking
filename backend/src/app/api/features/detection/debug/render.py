@@ -1,22 +1,6 @@
-"""Render every stage of a `detect_dart` run as separate images.
-
-Same idea as calibration's `render.py`: a wrong score is almost never wrong at
-the last step, so the useful question is which stage lost the dart. The stages
-are ordered so that reading them top to bottom narrows that down —
-
-    01_region        where the pipeline is even allowed to look
-    02_alignment     did the two frames line up
-    03_difference    is the dart in the raw difference at all
-    04_threshold     did it survive the threshold
-    05_cleanup       did a cleanup step throw it away
-    06_mask          what fragment fusion actually receives
-    07_components    which fragments were fused, and along which line
-    08_axis          which end was taken for the flight
-    09_result        the tip that was scored
-
-— and each one is drawn against the frame it applies to, so a stage can be held
-against its neighbours directly. Used by scripts/detection/run_debug.py and,
-later, by the detection websocket path.
+"""Render every stage of a `detect_dart` run as a numbered image, from the search
+region (01) through alignment, difference, threshold, cleanup, mask, fused
+components and flight axis to the scored tip (09).
 """
 
 from pathlib import Path
@@ -72,12 +56,7 @@ def write_debug_images(trace: DetectionTrace, dart: Dart | None, out_dir: Path) 
 
 
 def _caption(canvas: np.ndarray, lines: list[str]) -> np.ndarray:
-    """Stamp a few lines of context into the top-left corner.
-
-    The numbers that decide a stage — an area floor of four pixels, a fragment
-    count of one — are invisible in the picture itself, and recomputing them by
-    hand from the px/mm figure is exactly the step that gets skipped.
-    """
+    """Stamp a few lines of figures into the top-left corner."""
     for index, line in enumerate(lines):
         origin = (8, 20 + index * 18)
         # Drawn twice: a dark stroke under the light text keeps it readable over
@@ -88,26 +67,15 @@ def _caption(canvas: np.ndarray, lines: list[str]) -> np.ndarray:
 
 
 def _outline(canvas: np.ndarray, curve: np.ndarray | None, colour: tuple[int, int, int]) -> None:
-    """Draw a boundary curve onto the canvas.
-
-    The curve itself, not the contour of its rasterised mask: the mask boundary
-    is a staircase to within a pixel and reads as a sloppy ellipse, which is the
-    one thing this outline must not suggest about the homography.
-    """
+    """Draw a boundary curve onto the canvas as a polyline."""
     if curve is None:
         return
     cv2.polylines(canvas, [curve.astype(np.int32)], True, colour, 1, cv2.LINE_AA)
 
 
 def _draw_region(trace: DetectionTrace) -> np.ndarray | None:
-    """The two radii every later stage is judged against.
-
-    Yellow is the seed radius: a change has to reach inside it to be believed at
-    all. Orange is how far a change may then extend — the flight of a dart high
-    on the board lives in the band between them. Everything dimmed is outside
-    both and is never looked at, so a dart that is not fully inside the orange
-    outline is one this pipeline cannot see whole, and that is a camera framing
-    problem rather than an algorithm one.
+    """The search region: yellow is the seed radius a change must reach into, orange
+    how far it may extend; everything dimmed is never looked at.
     """
     if trace.reference is None or trace.region is None:
         return None
@@ -141,11 +109,7 @@ def _draw_region(trace: DetectionTrace) -> np.ndarray | None:
 
 
 def _draw_alignment(trace: DetectionTrace) -> np.ndarray | None:
-    """Reference in red, aligned frame in cyan — grey means they agree.
-
-    Coloured fringes along the wires mean the registration is off, which is the
-    one failure that mimics a dart everywhere at once.
-    """
+    """Reference in red, aligned frame in cyan: grey where they agree."""
     if trace.reference is None or trace.aligned is None:
         return None
     reference = cv2.cvtColor(trace.reference, cv2.COLOR_BGR2GRAY)
@@ -161,11 +125,7 @@ def _draw_alignment(trace: DetectionTrace) -> np.ndarray | None:
 
 
 def _draw_difference(trace: DetectionTrace) -> np.ndarray | None:
-    """The raw per-pixel difference, stretched so faint traces are visible.
-
-    Held against 04_threshold.jpg this answers the question the mask alone cannot:
-    was the dart never in the difference, or was it thresholded away?
-    """
+    """The raw per-pixel difference, stretched so faint traces are visible."""
     if trace.difference is None:
         return None
     canvas = cv2.applyColorMap(
@@ -177,12 +137,7 @@ def _draw_difference(trace: DetectionTrace) -> np.ndarray | None:
 
 
 def _draw_threshold(trace: DetectionTrace) -> np.ndarray | None:
-    """Everything over the difference threshold, before any cleanup at all.
-
-    This is the pipeline's raw material. If the dart is a solid streak here and
-    a handful of crumbs by 06_mask.jpg, the cleanup is at fault; if it is
-    already crumbs here, the threshold is.
-    """
+    """Everything over the difference threshold, before any cleanup."""
     if trace.raw_mask is None or trace.aligned is None:
         return None
     canvas = trace.aligned.copy()
@@ -202,12 +157,8 @@ def _draw_threshold(trace: DetectionTrace) -> np.ndarray | None:
 
 
 def _draw_cleanup(trace: DetectionTrace) -> np.ndarray | None:
-    """What the two cleanup steps threw away, and why.
-
-    Red went as speckle — below the area floor, which on a distant setup is only
-    a few pixels and is exactly what the fusion used to draw its line to. Pale
-    blue went for never reaching the seed radius. Green survived. A dart in red
-    means the floor is too high; noise left in green means it is too low.
+    """What the two cleanup steps removed: red as speckle below the area floor, pale
+    blue for never reaching the seed radius; green survived.
     """
     if trace.aligned is None or trace.speckle_removed is None:
         return None
@@ -231,12 +182,7 @@ def _draw_cleanup(trace: DetectionTrace) -> np.ndarray | None:
 
 
 def _draw_mask(trace: DetectionTrace) -> np.ndarray | None:
-    """The cleaned change mask on its own — what fragment fusion is handed.
-
-    The plain black-on-white view rather than an overlay: this is the only thing
-    the rest of the pipeline gets to see, so it is worth looking at without the
-    board underneath suggesting shapes that are not in it.
-    """
+    """The cleaned change mask on its own, black on white, as fragment fusion gets it."""
     if trace.change_mask is None:
         return None
     canvas = cv2.cvtColor(trace.change_mask, cv2.COLOR_GRAY2BGR)
@@ -246,14 +192,8 @@ def _draw_mask(trace: DetectionTrace) -> np.ndarray | None:
 
 
 def _draw_components(trace: DetectionTrace) -> np.ndarray | None:
-    """The fragment fusion: what was out of reach, what was rejected, what was fused.
-
-    Dark grey is out of the flight's reach — too far away to be the same dart.
-    Light grey is in reach but off the winning line. Green is the fused dart,
-    orange the flight that anchored it, and the cyan line is what they were fused
-    along. Held against 03_difference.jpg this is the key view: it shows whether
-    the dark dart's scattered fragments were correctly strung back onto one line,
-    or whether the fit locked onto whichever patch the light board revealed.
+    """The fragment fusion: dark grey out of the flight's reach, light grey off the
+    line, green the fused dart, orange its flight and cyan the fitted line.
     """
     if trace.labels is None or trace.aligned is None:
         return None
@@ -301,13 +241,7 @@ def _draw_components(trace: DetectionTrace) -> np.ndarray | None:
 
 
 def _draw_axis(trace: DetectionTrace) -> np.ndarray | None:
-    """Which end of the fused blob was taken for the flight, and how narrowly.
-
-    The tip is simply the end opposite the flight, and the flight is whichever
-    end measures wider — so a blob that is fused perfectly can still be scored
-    off its flight if those two widths come out close. The numbers are printed
-    because that is the only way to see a decision that was nearly a coin toss.
-    """
+    """Which end of the fused blob was taken for the flight, with both end widths."""
     if trace.axis_ends is None or trace.end_widths is None or trace.aligned is None:
         return None
     canvas = trace.aligned.copy()

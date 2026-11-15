@@ -8,24 +8,9 @@ from app.api.features.detection.services.dart_overlay import build_overlay
 
 
 class DetectionResultDto(CamelModel):
-    """Server -> client: outcome of locating a dart in a throw frame.
-
-    Mirrors `CalibrationResultMessage`: on success it carries where the dart
-    landed and what it scored, plus an `overlay` (the dart drawn back onto the
-    camera picture, as normalized polylines) so the client can show it the same
-    way it shows the board outline; on failure it names the stage that gave up so
-    the client can advise what to change instead of only reporting that nothing
-    was found.
-
-    The authoritative score still arrives separately as `game_state` — this
-    message is the per-throw feedback, not the source of truth for the tally.
-
-    Everything here is in **this camera's image space**, and deliberately only
-    that. Where the dart landed on the board travels in board millimetres on
-    `DartDto.position` instead: that is camera-independent, so every device in
-    the room can draw it. Carrying both here
-    would put two coordinate systems in one message, whose numbers look alike
-    and may never be mixed.
+    """Server -> client: outcome of locating a dart in a throw frame, in this camera's
+    image space: the dart, its score and an `overlay` of normalized polylines, or the
+    stage that gave up.
     """
 
     type: Literal["detection_result"] = "detection_result"

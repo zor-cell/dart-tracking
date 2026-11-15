@@ -1,16 +1,5 @@
-"""Per-game WebSocket rooms.
-
-A game is played across devices: the phone aimed at the board runs the camera,
-further phones join as scoreboards. Their
-connections are held together in a room per game so every state change reaches
-all of them.
-
-Not everything is broadcast. A reply that belongs to one camera's picture —
-`calibration_result` and `detection_result`, whose overlays live in that
-camera's pixel grid — goes to its sender alone; only the shared game state is
-pushed to the whole room.
-
-Process-local, like the game store: a room spans one worker process.
+"""Per-game WebSocket rooms: the connections of every device in one game, so state
+changes reach all of them. Process-local, like the game store.
 """
 
 from dataclasses import dataclass
@@ -25,12 +14,7 @@ from app.api.core.socket.dto.server_message import ServerMessage
 
 @dataclass
 class Connection:
-    """One device in a room: its socket, and which device it is.
-
-    The client outlives the connection and carries the role; the room only says
-    who is currently reachable. That split is what makes a reload cheap — the
-    socket goes and comes back, the device stays the same.
-    """
+    """One device in a room: its socket, and the client it belongs to."""
 
     websocket: WebSocket
     client: Client
@@ -72,13 +56,7 @@ class GameHub:
     async def send_to_client(
         self, game_id: str, client_id: str, message: ServerMessage
     ) -> None:
-        """Reach one device by name rather than by the connection in hand.
-
-        For a message whose recipient is not the sender: the device that asked
-        for a recalibration is not the one that carries it out. A device that
-        has since left the room is simply not reached — what it was waiting on
-        stopped mattering when it left.
-        """
+        """Send to one device of the room by client id; a device that left is skipped."""
         connection = next(
             (c for c in self.connections(game_id) if c.client.id == client_id), None
         )
@@ -88,11 +66,7 @@ class GameHub:
     async def broadcast(
         self, game_id: str, message: ServerMessage, *, role: DeviceRole | None = None
     ) -> None:
-        """Push a message to every device in the game's room.
-
-        `role` narrows it to the devices doing one job — a recalibration request
-        concerns the cameras and nobody else.
-        """
+        """Push a message to every device in the game's room, or only those with `role`."""
         payload = message.model_dump_json(by_alias=True)
         for connection in self.connections(game_id):
             if role is not None and connection.client.role is not role:
@@ -100,12 +74,7 @@ class GameHub:
             await self._deliver(game_id, connection, payload)
 
     async def _deliver(self, game_id: str, connection: Connection, payload: str) -> None:
-        """Send to a device that is not the one being answered right now.
-
-        A device that dropped without a clean close is only noticed here, when
-        the send fails; it is removed from the room so one dead phone cannot
-        block the others.
-        """
+        """Send to a connection, removing it from the room if the send fails."""
         try:
             await connection.websocket.send_text(payload)
         except (WebSocketDisconnect, RuntimeError, ConnectionError):

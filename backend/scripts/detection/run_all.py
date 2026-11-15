@@ -1,45 +1,6 @@
-"""Run dart detection over folders of throw series and report what happened.
-
-Expects `<series>_base.JPG`, `<series>_dart1.JPG`, ... - every consecutive pair is
-one detection (`base -> dart1`, `dart1 -> dart2`, ...), as live, where each throw
-is differenced against the previous frame and not against an empty board.
-Subfolders are walked recursively and series keyed by their relative path, so
-`setup1/throw1` and `setup2/throw1` stay separate; `_results` mirrors that
-structure and holds an annotated copy per dart: the change mask, the fitted axis
-and tip, and — in cyan — the board model the calibration's homography implies.
-The model is what makes the picture readable: a tip a segment away from the truth
-is a calibration bug if the cyan rings sit beside the real rings, and a detection
-bug if they sit on them. Each copy is captioned with how far the camera moved
-between the two frames, which is the other thing that cannot be seen by looking.
-
-Usage:
-    uv run python scripts/detection/run_all.py
-    uv run python scripts/detection/run_all.py path/to/images --out results
-    uv run python scripts/detection/run_all.py --only-mismatches
-    uv run python scripts/detection/run_all.py --truth-template
-
-`--only-mismatches` keeps the run and the report exactly as they are but writes
-an image only where the detection disagrees with ground truth, so `_results`
-becomes a folder of just the failures instead of 165 mostly-correct overlays.
-
-A `NO_CHANGE` failure is correct only against the label `NO_CHANGE`, which means
-the frame shows no new dart at all — it bounced out or never stuck. `MISS` is a
-dart sitting in the surround, which the pipeline is expected to find.
-
-Ground truth (optional): a `ground_truth.txt` in a folder scores segment accuracy
-and writes `_results/accuracy.md` with every mismatch, each with how far in
-millimetres the scored tip landed from the segment it should have been in — a
-couple of millimetres is a wire's-width miss, tens of millimetres is a different
-kind of error. One `<frame stem> <segment>`
-per line, labels exactly as the detector reports them; blank lines and `#` comments
-are ignored. A trailing `?` marks a label you were unsure of - still scored as
-given, only flagged. `--truth-template` bootstraps these files from the current
-detections.
-
-    throw1_dart1 S5
-    throw1_dart2 T20
-    throw1_dart3 D16?
-    throw1_dart4 NO_CHANGE
+"""Run dart detection over folders of throw series (`<series>_base.JPG`, `_dart1`, ...),
+each frame against the one before, and write annotated copies; a `ground_truth.txt`
+of `<frame stem> <segment>` lines (`?` marks a guess) adds `_results/accuracy.md`.
 """
 
 import argparse
@@ -127,14 +88,7 @@ class Result:
 
     @property
     def read_empty(self) -> bool:
-        """Whether finding nothing was the right answer here.
-
-        Only against the label `NO_CHANGE`, which says the frame holds no new
-        dart. A `MISS` is a dart in the surround and has to be found: scoring it
-        the same would credit a failed detection for landing on zero points.
-        `ALIGNMENT_FAILED` never qualifies — that is the pipeline unable to look,
-        not a reading of the board.
-        """
+        """Whether finding nothing was right: only against the label `NO_CHANGE`."""
         return (
             self.failure in (DetectionFailure.NO_CHANGE, DetectionFailure.DARTS_REMOVED)
             and self.expected == NO_CHANGE_LABEL
@@ -151,14 +105,8 @@ class Result:
 
     @property
     def off_by_mm(self) -> float | None:
-        """How far the scored tip landed from the expected segment, in millimetres.
-
-        Zero on a correct call. What it buys on a mismatch is the difference
-        between a tip a wire's width off the right segment — plausible, the
-        pipeline was essentially right — and one tens of millimetres away, which
-        means something upstream (calibration, alignment, the wrong blob) is
-        wrong rather than imprecise. None when there is nothing to measure: no
-        tip, no truth label, or a label that does not parse.
+        """Millimetres from the scored tip to the expected segment, zero when correct and
+        None without a tip or a parseable truth label.
         """
         if self.tip_board is None or self.expected is None:
             return None
@@ -174,10 +122,8 @@ def frame_order(name: str) -> tuple[int, int]:
 
 
 def collect_series(root: Path, out_dir: Path) -> dict[str, list[tuple[str, Path]]]:
-    """Group the photos under `root` (recursively) into throw series.
-
-    Keyed by the path relative to `root`, so identically named throws in
-    different subfolders stay separate. `out_dir` is skipped.
+    """Group the photos under `root` into throw series keyed by their relative path,
+    skipping `out_dir`.
     """
     series: dict[str, list[tuple[str, Path]]] = defaultdict(list)
     for path in collect_images(root, out_dir):
@@ -192,10 +138,8 @@ def collect_series(root: Path, out_dir: Path) -> dict[str, list[tuple[str, Path]
 
 
 def load_ground_truth(folder: Path) -> dict[str, tuple[str, bool]]:
-    """Read `<folder>/ground_truth.txt` into {frame stem: (expected label, uncertain)}.
-
-    Labels are upper-cased so `t20` and `T20` both work; a trailing `?` is
-    stripped and returned as the uncertainty flag. Returns {} if the file is absent.
+    """Read `<folder>/ground_truth.txt` into {frame stem: (upper-cased label, uncertain)},
+    a trailing `?` setting the flag; {} if the file is absent.
     """
     path = folder / GROUND_TRUTH_NAME
     if not path.is_file():
@@ -222,15 +166,8 @@ def expected_for(truth: dict[str, tuple[str, bool]], stem: str) -> tuple[str | N
 
 
 def draw_board_model(canvas: np.ndarray, calibration: Calibration) -> None:
-    """Draw the board the homography implies: ring circles and sector wires.
-
-    The scored millimetres are only ever as good as this mapping, so a tip that
-    sits a segment away is two different bugs depending on whether these lines
-    sit on the real wires or beside them. Without the model in the picture, a
-    calibration error and a detection error look exactly alike.
-
-    Drawn on the aligned frame, which shares the reference's pixel grid — the
-    grid the calibration belongs to.
+    """Draw the board the homography implies, ring circles and sector wires, on the
+    aligned frame.
     """
     height, width = canvas.shape[:2]
     for polyline in build_overlay(calibration):
@@ -239,11 +176,7 @@ def draw_board_model(canvas: np.ndarray, calibration: Calibration) -> None:
 
 
 def annotate(dart, calibration: Calibration) -> np.ndarray:
-    """Draw the located dart onto the aligned frame it was found in.
-
-    Not the reference: the dart is only visible in the newer frame, and drawing on
-    the older one would show a marker floating over bare board.
-    """
+    """Draw the located dart onto the aligned frame it was found in."""
     canvas = dart_detector.trace.aligned.copy()
     if dart_detector.trace.change_mask is not None:
         canvas[dart_detector.trace.change_mask > 0] = COLOUR_MASK
@@ -295,12 +228,7 @@ def caption(canvas: np.ndarray, lines: list[str]) -> np.ndarray:
 
 
 def annotate_failure(failure: DetectionFailure, calibration: Calibration) -> np.ndarray | None:
-    """Draw what a dart that was never located left behind, if anything.
-
-    A failure has no axis and no tip to mark, so the useful content is the change
-    mask and the name of the stage that gave up. Without this, the darts that
-    went most wrong would be the only ones with no picture at all.
-    """
+    """Draw the change mask and failure stage of a dart that was never located."""
     canvas = dart_detector.trace.aligned
     if canvas is None:
         canvas = dart_detector.trace.frame
@@ -325,12 +253,8 @@ def run_series(
     raw: bool,
     only_mismatches: bool = False,
 ) -> list[Result]:
-    """Detect every consecutive pair in one series. Returns one Result per dart.
-
-    Annotated copies land under `out_dir`, mirroring the input tree. With a
-    `ground_truth.txt` present, each console line ends in `gt=<label> OK|MISMATCH`;
-    `only_mismatches` then narrows the copies to just those, so the output folder
-    holds exactly the darts worth looking at.
+    """Detect every consecutive pair in one series and return one Result per dart,
+    writing annotated copies (only mismatches with `only_mismatches`) under `out_dir`.
     """
     if len(frames) < 2:
         print(f"{name}: only {len(frames)} frame(s), nothing to compare")
@@ -346,9 +270,7 @@ def run_series(
     calibration = board_detector.detect_board(reference)
     if isinstance(calibration, CalibrationFailure):
         print(f"{name}: reference calibration failed ({calibration.value})")
-        # Still report the darts as attempted-but-unlocated, so a series whose
-        # reference will not calibrate counts against accuracy rather than
-        # silently vanishing from the denominator.
+        # Count the darts as attempted but unlocated.
         unlocated = []
         for label, path in frames[1:]:
             expected, uncertain = expected_for(truth, path.stem)
@@ -401,9 +323,7 @@ def run_series(
         print(line)
         results.append(result)
 
-        # An unlabelled dart cannot be called a mismatch, so --only-mismatches
-        # drops it rather than guessing: the point of the flag is a folder where
-        # everything in it is known to be wrong.
+        # Unlabelled darts are skipped by --only-mismatches.
         if only_mismatches and (expected is None or result.correct):
             pass
         else:
@@ -417,9 +337,7 @@ def run_series(
                 target_dir = mirrored_dir(path, root, out_dir)
                 cv2.imwrite(str(target_dir / f"{path.stem}{suffix}"), image)
 
-        # Each dart is differenced against the frame before it, so the aligned
-        # copy of this frame becomes the reference for the next one. Aligned,
-        # not raw, or the reference drifts out of the calibration's frame.
+        # The aligned copy of this frame becomes the reference for the next dart.
         if dart_detector.trace.aligned is not None:
             reference = dart_detector.trace.aligned
 
@@ -430,13 +348,7 @@ SHAKE_BUCKETS = ((2.0, "< 2 px (still)"), (5.0, "2 - 5 px"), (10.0, "5 - 10 px")
 
 
 def shake_table(labelled: list[Result]) -> list[str]:
-    """Accuracy against how far the camera moved between the two frames.
-
-    Registration is supposed to make this irrelevant, so a rate that falls off
-    with movement says the sub-pixel remainder is costing segments — which is a
-    different fix from a better fit, and worth being able to see rather than
-    argue about.
-    """
+    """Accuracy by how far the camera moved between the two frames."""
     rows = ["| camera movement | correct | total | rate | mean off by |", "|---|---|---|---|---|"]
     for limit, label in SHAKE_BUCKETS:
         lower = max((l for l, _ in SHAKE_BUCKETS if l < limit), default=0.0)
@@ -463,12 +375,7 @@ def median(values: Iterable[float]) -> float:
 
 
 def cohesion_table(labelled: list[Result]) -> list[str]:
-    """Accuracy against how many components the scored dart was fused from.
-
-    The goal is one component per dart, and
-    the segment rate alone cannot say whether a change moved towards it. This
-    can: it counts the fusing itself, and shows what each extra piece costs.
-    """
+    """Accuracy by how many components the scored dart was fused from."""
     located = [r for r in labelled if r.located]
     if not located:
         return []

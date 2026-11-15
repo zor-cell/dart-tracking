@@ -1,11 +1,5 @@
-"""The single WebSocket endpoint: dispatches incoming frames to whichever
-feature's pipeline handles that message type.
-
-This is core rather than a feature because it does not own any domain logic
-itself — it only decodes the wire message and calls into calibration/game/
-detection services. Pulling in feature-specific DTOs and services here is the
-one deliberate exception to core not depending on features (mirrors the
-frontend's core/socket/dto/client-message.ts).
+"""The single WebSocket endpoint: decodes each frame and dispatches it to the
+feature (calibration, detection, game) that handles its message type.
 """
 
 import asyncio
@@ -127,15 +121,9 @@ async def websocket_endpoint(
     game_id: str,
     client_id: str | None = Query(default=None, alias="clientId")
 ) -> None:
-    """Join a game's room as a known device.
+    """Join a game's room as the device named by `clientId`, answering with its role.
 
-    `clientId` is the whole handshake, and is missing only on a device's first
-    ever connect. Everything else the server knows about the device hangs off
-    that id — the role included, which is why the connect answers it instead of
-    asking for it (`client_state`). Changing it is a `set_role` command.
-
-    A device that has never said otherwise counts as a scoreboard, so a
-    forgotten role costs a picture, never a wrong one.
+    A device that never chose a role counts as a scoreboard.
     """
     if not _origin_allowed(websocket):
         await websocket.close(code=1008)
@@ -219,17 +207,7 @@ async def _dispatch(
 ) -> None:
     """Route one parsed client message to its feature.
 
-    The game itself is not carried along: every handler that changes it reads it
-    fresh under a row lock (`_apply`), because a game now outlives the process
-    and is shared across connections.
-
-    Frames come from the camera device only; the game commands come from any
-    device in the room — the camera phone correcting a misread, a scoreboard
-    phone entering the visit by hand. `set_role` is what decides which of the
-    two a device is, and so is the one message that changes that answer.
-
-    `request_calibration` is likewise open to any device: it is what a phone
-    without a picture of its own has instead of the calibrate button.
+    Frames are taken from the camera device only; commands from any device.
     """
     logger.info(
         "[socket] %s from %s (%s)",
@@ -296,15 +274,8 @@ async def _account(access_token: str) -> User | None:
 async def _handle_client_command(
     connection: Connection, game_id: str, command: ClientCommand
 ) -> None:
-    """Record what this device does in the game, and confirm it.
-
-    The confirmation is not redundant with the device having applied the role
-    locally: the command is issued on the way into a game, so it reaches the
-    server after the handshake already answered with the *previous* role. This
-    reply is what settles the two, and it is ordered behind that answer.
-
-    The connection's own copy is updated as well as the store: the room filters
-    broadcasts by role off that object (`hub.broadcast(role=...)`).
+    """Record what this device does in the game, in the store and on the connection,
+    and confirm it.
     """
     match command:
         case SetRoleDto():
@@ -326,17 +297,8 @@ async def _apply(
     mutate: Callable[[Game], None],
     record: recorder.Recording | None = None,
 ) -> tuple[Game, bool] | None:
-    """Run one mutation on the game under a row lock: the state afterwards and
-    whether anything changed, or None if the game is gone.
-
-    `record` describes what just happened for the evaluation, appended in the
-    same transaction so its log cannot drift from the state it records.
-
-    The lock is what makes a visit safe to end twice. The domain relies on
-    read-modify-write being uninterrupted — two devices ending the same visit,
-    the second finding a fresh empty turn and doing nothing — and that used to
-    come free from the event loop holding one shared object. Across
-    transactions it does not, so `SELECT … FOR UPDATE` restores it.
+    """Run one mutation on the game under a row lock and append `record` in the same
+    transaction; returns the state and whether it changed, or None if the game is gone.
     """
     async with database.session_scope() as session:
         game = await game_repository.lock(session, game_id)
@@ -364,16 +326,9 @@ async def _apply(
 
 
 async def _handle_game_command(game_id: str, command: GameCommand) -> None:
-    """Apply one command and push the result to the room.
+    """Apply one command and, once committed, push the result to the room.
 
-    A command that changes nothing is not broadcast — a fourth dart in a visit,
-    an undo with nothing left to take back, or the second `next_player` when two
-    devices ended the same visit at once. The revision is what says whether
-    anything happened, and a room full of devices should not be woken for a
-    state they already hold.
-
-    Broadcasting happens after the transaction commits, so no device is ever
-    shown a state that is not yet durable.
+    A command that leaves the revision unchanged is not broadcast.
     """
     armed = await recorder.camera_armed(game_id)
     filled = 0
@@ -542,18 +497,9 @@ async def _start_calibrating(game_id: str) -> None:
 
 
 async def _request_calibration(game_id: str) -> bool:
-    """Ask every camera in the room to calibrate again from a fresh frame; whether there was one.
+    """Ask every camera in the room to calibrate again from a fresh frame.
 
-    Two things ask for this: a device without a camera of its own, and the end
-    of a visit. The visit is the interesting one — it is when the darts come out
-    of the board, so it is both the moment a fresh empty-board reference frame
-    can be taken and the moment the board is most likely to have been knocked.
-    Without it the reference still holds the three darts that were pulled, and
-    their absence reads as change on the next throw.
-
-    Only the trigger fans out. A `calibration_result` cannot: its overlay lives
-    in the pixel grid of the camera that produced it, so every camera answers
-    its own.
+    Returns whether the room has a camera to ask.
     """
     if not any(c.client.role is DeviceRole.CAMERA for c in hub.connections(game_id)):
         return False
@@ -565,24 +511,9 @@ async def _request_calibration(game_id: str) -> bool:
 async def _handle_calibration_frame(
     connection: Connection, game_id: str, frame: CalibrationFrameDto
 ) -> None:
-    """Detect the board in a calibration frame, store the result, and reply.
+    """Detect the board in a calibration frame, store it for this camera, and reply.
 
-    On success: store the homography for this camera, seed its detection
-    reference with this frame — it is the empty board every later throw is first
-    differenced against, and it already sits in the pixel grid the homography
-    belongs to — and reply with the recognised board. On failure: reply naming
-    the stage that gave up; in a test run its shot is kept for replaying.
-
-    Both are kept per camera, not per game: a second camera films the same board
-    through a different homography, so it needs its own of each.
-
-    A successful calibration is also where a camera claims the scoring role, it
-    being the first point at which it could detect anything. Only the first
-    claim takes (see `scoring_camera`).
-
-    Only an attempt of the scoring camera — or of any, while none scores — moves
-    the room's `calibration_state`; another camera's says nothing about the
-    darts that are booked.
+    A success seeds the camera's reference frame and claims the scoring role.
     """
     client_id = connection.client.id
     holder = await scoring_camera_store.holder(game_id)
@@ -642,28 +573,7 @@ async def _handle_throw_frame(
 ) -> None:
     """Locate the dart in a throw frame, score it, and push the result.
 
-    On a hit: roll this camera's reference frame forward to the aligned copy —
-    so its next throw is differenced against this one rather than the empty
-    board, and darts already in the board cancel out — send the per-throw
-    `dart_detected` feedback, and, if this is the game's scoring camera,
-    register the dart and push the authoritative `game_state`. On a failure:
-    send `dart_detected` naming the stage that gave up and leave the game
-    untouched.
-
-    The feedback goes to this camera alone (its overlay is in this camera's
-    pixel grid), the game state to every device in the room.
-
-    **Only one camera books.** Every camera that saw the throw would otherwise
-    register it, and the visit would fill at twice the rate without anything
-    reporting an error (see `scoring_camera`). The others still detect in full:
-    that is what produces two independent readings of one throw, and what a
-    later fusion would be built on. Rolling the reference forward is likewise
-    every camera's own business — skipping it for an observer would leave it
-    differencing against a board that has since gained darts.
-
-    Detection needs both this camera's calibration and its frame to difference
-    against; absent either (not calibrated yet, or an undecodable image) it
-    reports the matching failure instead of attempting a fit.
+    Every camera rolls its reference forward; only the scoring camera books the dart.
     """
     client_id = connection.client.id
     decoded = await asyncio.to_thread(_decode_jpeg, frame.image)
@@ -724,9 +634,7 @@ async def _handle_throw_frame(
     if not scoring:
         return
 
-    # The detected segment carries the field, not just the points, so a tracked
-    # dart reaches the scoreboard in the same form as a manually entered one.
-    # The tip comes along so devices without a camera can draw where it landed.
+    # The dart carries its field and tip, the same form as a manually entered one.
     dart = ScoredDart(
         value=outcome.segment.value,
         multiplier=outcome.segment.multiplier,

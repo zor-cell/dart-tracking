@@ -1,7 +1,5 @@
-"""Holds the scoring camera's frames of the open visit.
-
-In a test run every visit is written out as a throw series, otherwise thrown
-away. Process-local, about a megabyte per game.
+"""Holds the scoring camera's frames of the open visit, written out as a throw
+series in a test run. Process-local.
 """
 
 import asyncio
@@ -13,9 +11,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# A tree of its own beside the recorded test data: these series are captured,
-# not curated, and `scripts/detection/run_all.py` takes the folder to walk as an
-# argument. One subfolder per game, which is what a setup is here.
+# Recorded evaluation frames, one subfolder per game.
 _EVALUATION_ROOT = Path(__file__).resolve().parents[6] / "testdata" / "evaluation"
 
 
@@ -75,11 +71,7 @@ class FrameBuffer:
         self._previous[game_id] = jpeg
 
     def add(self, game_id: str, jpeg: bytes, kind: FrameKind, trigger: bytes | None = None) -> None:
-        """Add a frame that moved the camera's reference forward.
-
-        A detection that left the reference where it was stays out, so the
-        series chains offline exactly as it did live.
-        """
+        """Add a frame that moved the camera's reference forward."""
         visit = self._visits.setdefault(game_id, _Visit())
         if visit.base is None:
             visit.base = self._previous.get(game_id)
@@ -95,10 +87,9 @@ class FrameBuffer:
         self.discard(game_id)
 
     async def flush(self, game_id: str, turn_index: int, *, keep: bool = False) -> Path | None:
-        """Write the open visit as `throwN_base.jpg` + `throwN_dartK.jpg` plus
-        its manifest and each dart's trigger episode. Returns the folder, or None when there was nothing to write.
-
-        `keep` leaves the visit open, for one that may still grow after an undo.
+        """Write the open visit as `throwN_base.jpg` and `throwN_dartK.jpg` with its
+        manifest and trigger episodes; returns the folder, or None if empty.
+        `keep` leaves the visit open.
         """
         visit = self._visits.get(game_id) if keep else self._visits.pop(game_id, None)
         if visit is None or visit.base is None or not visit.frames:

@@ -1,21 +1,6 @@
-"""Measure tracking accuracy over the games played, from their event logs.
-
-Compares what the camera booked against what the players signed off on, per
-visit, by sequence alignment - so one missed dart reads as one missed dart and
-not as the two or three corrections it cost.
-
-Usage:
-    uv run python scripts/evaluation/report.py                       # finished games, as the page
-    uv run python scripts/evaluation/report.py --test-runs-only
-    uv run python scripts/evaluation/report.py --include-unfinished
-    uv run python scripts/evaluation/report.py --min-version 42
-    uv run python scripts/evaluation/report.py --version 42
-    uv run python scripts/evaluation/report.py <game-id> ...
-    uv run python scripts/evaluation/report.py --out results/evening-1
-
-Writes `accuracy_<timestamp>.md` to `testdata/_reports` and, into each game's frame
-folder, the `ground_truth.txt` the offline runner reads - so a corrected visit
-becomes a test case without being labelled by hand.
+"""Measure tracking accuracy over the played games by aligning what the camera booked
+with what the players accepted, per visit; writes `accuracy_<timestamp>.md` to
+`testdata/_reports` and a `ground_truth.txt` into each game's frame folder.
 """
 
 import argparse

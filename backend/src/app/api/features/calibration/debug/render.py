@@ -1,10 +1,5 @@
-"""Render every stage of a `detect_board` run as separate images.
-
-Turns a `CalibrationTrace` into pictures, one per stage, so a bad fit can be
-traced back to the stage that actually caused it instead of just the final
-overlay being off. Used both by scripts/calibration/run_debug.py (a photo on disk) and,
-when a calibration attempt asks for it, by the calibration websocket endpoint
-(a frame sent live over the socket) — the trace looks the same either way.
+"""Render every stage of a `detect_board` run as separate images, from a
+`CalibrationTrace` of a photo on disk or a live frame.
 """
 
 from pathlib import Path
@@ -90,14 +85,8 @@ def _draw_masks(trace: CalibrationTrace) -> np.ndarray:
 
 
 def _draw_components(trace: CalibrationTrace) -> np.ndarray:
-    """Which mask components reached the ellipse fit, and what cut the others.
-
-    Red and green are what survived; those pixels alone decide the fit. Grey
-    did not vote for the winning board hypothesis — it lies at no plausible
-    ring radius, so it is clutter, branding, or lettering. Steel blue did vote
-    but was then trimmed for sitting outside the double ring. Comparing this
-    against 01_masks.jpg says whether a skewed ellipse came from bad
-    segmentation or from bad filtering.
+    """The mask components that reached the ellipse fit: red and green survived, grey
+    voted for no board hypothesis, steel blue was trimmed outside the double ring.
     """
     canvas = np.zeros_like(trace.image)
 
@@ -115,12 +104,7 @@ def _draw_components(trace: CalibrationTrace) -> np.ndarray:
 
 
 def _draw_hull_ellipse(trace: CalibrationTrace) -> np.ndarray:
-    """The convex hull feeding fitEllipse, and what came out of it.
-
-    A hull bulging out towards clutter outside the board (backboard text,
-    stray coloured pixels) is the most common way the ellipse — and therefore
-    everything downstream — comes out skewed.
-    """
+    """The convex hull feeding fitEllipse, and the ellipse that came out of it."""
     canvas = trace.image.copy()
     if trace.hull is not None:
         cv2.polylines(canvas, [trace.hull.astype(np.int32)], True, _COLOUR_HULL, 2, cv2.LINE_AA)
@@ -132,12 +116,8 @@ def _draw_hull_ellipse(trace: CalibrationTrace) -> np.ndarray:
 
 
 def _draw_pass(trace: CalibrationTrace, index: int, label_projection: bool = True) -> np.ndarray:
-    """One refinement pass: rays from the centre estimate, coloured by vote.
-
-    The dot colour is what the ring walk decided at that angle (red/green/grey
-    for "unclear"); the blue ticks are where a colour transition was placed.
-    Comparing this against the real photo shows whether the wires the pipeline
-    thinks it found actually sit on the true sector boundaries.
+    """One refinement pass: rays from the centre estimate, dots coloured by the ring
+    walk's vote (red, green, grey for unclear), blue ticks at colour transitions.
     """
     current = trace.passes[index]
     canvas = trace.image.copy()

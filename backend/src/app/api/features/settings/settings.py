@@ -1,9 +1,5 @@
-"""How this account wants the app to behave.
-
-Reading is open to anyone — an anonymous session is told the defaults, which is
-what it runs on. Writing needs an account: there is nowhere to put the answer
-otherwise. The debug and recording switches are an admin's and are masked off
-both ways for everyone else. The remembered filter picks are an account's only.
+"""The account's app settings: anyone reads (anonymous gets the defaults), only
+accounts write; the debug and recording switches are admin only.
 """
 
 from fastapi import APIRouter

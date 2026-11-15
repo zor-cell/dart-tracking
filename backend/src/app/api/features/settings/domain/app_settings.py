@@ -1,7 +1,5 @@
-"""How a signed-in account wants the app to behave.
-
-Server-owned so the choices follow the account across devices; an anonymous
-session gets `DEFAULTS` and cannot change them.
+"""How a signed-in account wants the app to behave; anonymous sessions get
+`DEFAULTS`.
 """
 
 from dataclasses import dataclass, replace

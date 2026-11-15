@@ -1,9 +1,4 @@
-"""Everything the server sends, discriminated by `type`.
-
-Named after the sender, like `ClientMessage`. It carries no discriminator —
-nothing on this side parses these. What it types is what may leave through the
-hub, so a schema outside the protocol cannot be pushed to a device.
-"""
+"""Everything the server sends, as a union of the messages the hub may push."""
 
 from app.api.core.socket.dto.client_state import ClientStateDto
 from app.api.features.announcement.dto.announcer_state import AnnouncerStateDto

@@ -40,11 +40,8 @@ def _standing(game: Game, progress: GameProgress | None) -> StandingDto | None:
 
 
 class GameStateDto(CamelModel):
-    """The authoritative game state: both the answer to an HTTP call and the
-    message pushed over the socket, so it looks the same however it arrived.
-
-    Pushed right after connecting (a joining or reconnecting device is then in
-    sync) and after every change any device makes.
+    """The authoritative game state, returned over HTTP and pushed over the socket
+    after connecting and after every change.
     """
 
     type: Literal["game_state"] = "game_state"

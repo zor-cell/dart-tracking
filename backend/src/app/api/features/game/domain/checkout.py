@@ -1,16 +1,6 @@
-"""Checkout route suggestion for x01.
-
-Given the points a player has left and how many darts still remain in the current
-turn, find a short dart sequence that finishes the leg. Under double-out the
-final dart must land in a double (the bullseye counts as the double bull); under
-single-out any field finishes. Returns None when no finish fits into the
-available darts — precisely the case `setup_route` then fills.
-
-Among the valid routes the search prefers, in order: fewer darts, not finishing on
-the bullseye, darts on singles before doubles before trebles, a more conventional
-finishing double, then concentrating the setup into high-value darts (so 100 comes
-back as "T20 D20"). It is a suggestion aid, not a claim to reproduce any specific
-professional checkout table.
+"""Checkout route suggestion for x01: the shortest dart sequence that finishes the
+points left, preferring not to end on Bull, singles before doubles before trebles,
+conventional doubles, then high setup darts. None when nothing fits.
 """
 
 from collections.abc import Callable
@@ -80,9 +70,7 @@ def checkout_route(
 ) -> tuple[str, ...] | None:
     """A dart sequence finishing `remaining` points within `darts` darts, or None.
     `preferred` lists the doubles (by sector, 25 for bull) to finish on first.
-
-    The returned labels are ordered as thrown: setup darts (highest value first)
-    then the finishing dart.
+    Labels are ordered as thrown, the setup darts highest first.
     """
     if remaining <= 0 or darts <= 0:
         return None

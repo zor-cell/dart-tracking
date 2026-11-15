@@ -1,12 +1,5 @@
-"""Everything a client sends, discriminated by `type`.
-
-Named after the sender, so the term means the same here as in the frontend's
-`client-message.ts`. The union is the only place that knows the full set; each
-message is defined by the feature that handles it.
-
-`Field(discriminator="type")` lets pydantic pick the member by that field, so
-the socket parses once at the boundary and dispatches on the concrete type. An
-unknown tag fails here and never reaches a handler.
+"""Everything a client sends, as a union discriminated by `type`; each message is
+defined by the feature that handles it.
 """
 
 from typing import Annotated

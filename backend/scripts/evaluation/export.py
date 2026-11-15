@@ -1,14 +1,5 @@
-"""Pack logged games into a zip: their table rows as CSV and their recorded frames.
-
-Usage:
-    uv run python scripts/evaluation/export.py --list              # selected games
-    uv run python scripts/evaluation/export.py                     # finished games, one zip
-    uv run python scripts/evaluation/export.py <game-id> ...       # just these
-    uv run python scripts/evaluation/export.py --per-game          # one zip per game
-    uv run python scripts/evaluation/export.py --include-unfinished --out /tmp
-
-Selects games as `report.py` does. Writes to `testdata/_exports`. Inside the zip:
-`games.csv`, `game_events.csv`, and `testdata/evaluation/game_<id>/`.
+"""Pack logged games, selected as `report.py` does, into a zip in `testdata/_exports`:
+`games.csv`, `game_events.csv` and their frames under `testdata/evaluation/game_<id>/`.
 """
 
 import argparse

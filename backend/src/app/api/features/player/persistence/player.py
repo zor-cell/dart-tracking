@@ -1,9 +1,5 @@
-"""Player identities, independent of accounts.
-
-The two user columns answer different questions and only coincide for the
-account holder: `user_id` says this player *is* that account and drives the
-history, `owner_user_id` says who created the identity and drives the
-autocomplete. Both stay NULL until M4.
+"""Player identities, independent of accounts: `user_id` is the account this player
+is, `owner_user_id` the account whose address book holds it.
 """
 
 from datetime import datetime

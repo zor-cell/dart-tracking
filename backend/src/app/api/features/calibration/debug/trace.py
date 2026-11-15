@@ -1,8 +1,5 @@
-"""What board detection saw at each stage, so a run can be judged by eye.
-
-`detect_board` replaces the module-level `board_detector.trace` on every call,
-keeping only references to values it computes anyway. Data only — rendering is
-`render.py`.
+"""What board detection saw at each stage; `detect_board` replaces the module-level
+`board_detector.trace` on every call. Data only, rendered by `render.py`.
 """
 
 from dataclasses import dataclass, field
@@ -14,10 +11,8 @@ from app.api.features.calibration.domain.calibration_failure import CalibrationF
 
 @dataclass
 class CalibrationPass:
-    """One refinement pass: the wire search from a given centre estimate.
-
-    Everything after `transitions` stays None if the pass gave up before
-    getting there, which is precisely the case worth looking at.
+    """One refinement pass: the wire search from a given centre estimate; the fields
+    after `transitions` stay None if the pass gave up before them.
     """
 
     centre: tuple[float, float]

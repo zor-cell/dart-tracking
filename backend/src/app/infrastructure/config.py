@@ -1,7 +1,5 @@
-"""Runtime configuration, read from the environment or the repository's `.env`.
-
-Credentials have no defaults on purpose: nothing reaches the repository, and a
-missing `.env` fails loudly instead of silently using a guessable account.
+"""Runtime configuration, read from the environment or the repository's `.env`;
+credentials have no defaults.
 """
 
 from enum import StrEnum

@@ -1,26 +1,6 @@
-"""Render every stage of dart detection as images, one folder per dart.
-
-    01_region        where the pipeline is even allowed to look
-    02_alignment     did the two frames line up
-    03_difference    is the dart in the raw difference at all
-    04_threshold     did it survive the threshold (yellow: saturation alone)
-    05_cleanup       did a cleanup step throw it away
-    06_mask          what fragment fusion actually receives
-    07_components    which fragments were fused, and along which line
-    08_axis          which end was taken for the flight
-    09_result        the tip that was scored
-
-A whole visit is chained like the live pipeline (`base -> dart1 -> dart2 ->
-dart3`), each dart differenced against the frame before it. Two paths instead
-run that single reference->frame pair.
-
-Usage:
-    uv run python scripts/detection/run_debug.py pz_setup1/throw1
-    uv run python scripts/detection/run_debug.py throw1              # if unambiguous
-    uv run python scripts/detection/run_debug.py REF.JPG FRAME.JPG   # single pair
-
-The series may also be named by any of its frames (`pz_setup1/throw1_dart2.jpg`).
-Images land in `_results_debug/<setup>/<series>/dartN/` unless --out says otherwise.
+"""Render every stage of dart detection (01_region to 09_result) for a throw series,
+one folder per dart chained like the live pipeline, or for a single REF FRAME pair;
+images land in `_results_debug/<setup>/<series>/dartN/` unless --out says otherwise.
 """
 
 import argparse
@@ -46,9 +26,7 @@ from app.api.features.detection.debug.trace import DetectionTrace  # noqa: E402
 
 from scripts.common import IMAGE_SUFFIXES, clear_results, debug_dir, load_image  # noqa: E402
 
-# The frame naming (`<series>_base` / `<series>_dartN`) is the batch script's
-# convention; sharing it keeps the two scripts from drifting apart on what counts
-# as a series.
+# Frame naming shared with the batch script.
 from scripts.detection.run_all import FRAME_PATTERN, frame_order  # noqa: E402
 
 _TESTDATA = _BACKEND / "testdata" / "detection"
@@ -76,12 +54,8 @@ def find_series_folders(series: str) -> list[Path]:
 
 
 def resolve_series(target: Path) -> tuple[Path, str] | None:
-    """Turn the positional argument into (folder, series name), printing why if not.
-
-    A folder part is resolved against the working directory first, the test tree
-    second. A bare name is searched for and, if several setups have one by that
-    name, listed rather than guessed at — running the wrong setup's throw1 looks
-    like a perfectly normal result.
+    """Resolve the positional argument to (folder, series name), printing why if it
+    cannot; an ambiguous bare name lists its candidates.
     """
     series = series_of(target.name)
     parent = target.parent
@@ -147,11 +121,7 @@ def describe(outcome: Dart | DetectionFailure) -> str:
 
 
 def fusion_summary(trace: DetectionTrace) -> str:
-    """How the dart came together, the goal being one component.
-
-    In the console because it is the number a run is judged on now, and reading
-    it off 07_components.jpg means opening an image to count grey patches.
-    """
+    """Print how many components the dart was fused from."""
     components = int(trace.labels.max()) if trace.labels is not None else 0
     if not trace.fragment_count:
         return f"no blob fused ({components} components)"
@@ -216,9 +186,7 @@ def run_series(folder: Path, series: str, out_dir: Path, raw: bool) -> int:
         debug_one(reference, frame, calibration, out_dir / label, empty_board)
         print()
 
-        # Each dart is differenced against the frame before it, so the aligned
-        # copy of this frame becomes the reference for the next one. Aligned, not
-        # raw, or the reference drifts out of the calibration's frame.
+        # The aligned copy of this frame becomes the reference for the next dart.
         if dart_detector.trace.aligned is not None:
             reference = dart_detector.trace.aligned
 

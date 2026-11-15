@@ -28,10 +28,8 @@ async def judged_games(
     version: int | None = None,
     criteria: EvaluationFilter = EvaluationFilter(),
 ) -> list[JudgedGame]:
-    """The games the page, the report and the export all read, oldest first.
-
-    Finished games by default; explicit ids skip both filters. A game without a
-    single judged dart is left out, filmed or not.
+    """The games the page, the report and the export read, oldest first: finished ones
+    by default, explicit ids unfiltered, none without a judged dart.
     """
     games = await repository.logged_games(
         session,

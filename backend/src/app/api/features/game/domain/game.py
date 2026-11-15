@@ -1,8 +1,5 @@
-"""Domain model and scoring rules for the game feature.
-
-The turn list is the single source of truth: every score (remaining points,
-winner, darts left) is derived from it. Nothing is stored twice, and the full
-throw history stays available for the statistics planned in the roadmap.
+"""Domain model and scoring rules for the game feature; every score is derived from
+the turn list.
 """
 
 from collections.abc import Iterator
@@ -417,11 +414,8 @@ class Game:
         self._rescore(darts)
 
     def _busts(self, dart: Dart) -> bool:
-        """Whether the dart just thrown spoils the visit, scoring it as nothing.
-
-        Overshooting always does. Under double-out two more cases do: reaching
-        zero with anything but a double — the bullseye is the double bull, so it
-        finishes — and leaving exactly one point, which no double can finish.
+        """Whether the dart just thrown busts the visit: an overshoot, or under double-out
+        reaching zero without a double or leaving one point.
         """
         if not self.variant.counts_points:
             return False

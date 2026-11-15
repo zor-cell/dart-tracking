@@ -1,14 +1,6 @@
-"""Run board detection over a folder of photos and report what happened.
-
-For tuning detection against real footage, without a browser or a dartboard in
-front of you. Prints how far the pipeline got per image and writes an annotated
-copy with the board drawn on, plus `_results/results.md`: detection rate per
-board, the stage failures gave up at, and the colour signal the HSV bounds get
-tuned against.
-
-Usage:
-    uv run python scripts/calibration/run_all.py
-    uv run python scripts/calibration/run_all.py path/to/images --out results
+"""Run board detection over a folder of photos: print how far each got, write an
+annotated copy per photo and `_results/results.md` with the detection rate per
+board, the failure stages and the colour signal.
 """
 
 import argparse
@@ -61,12 +53,7 @@ class Result:
 
 
 def measure(image: np.ndarray) -> str:
-    """Numbers behind the verdict, for tuning the thresholds against.
-
-    Read off the trace of the run that just happened, never recomputed: deriving
-    them separately drifts out of step with the pipeline — and did, once the
-    component filters landed.
-    """
+    """Numbers behind the verdict, read off the trace of the run that just happened."""
     height, width = image.shape[:2]
     trace = detector.trace
 
@@ -74,9 +61,7 @@ def measure(image: np.ndarray) -> str:
     ratio = int(np.count_nonzero(combined)) / (width * height)
     parts = [f"red/green {ratio:.2%} of frame"]
 
-    # How much of that colour the two filters threw away before the fit. A high
-    # share here is normal (clutter, branding); a high share with a bad fit
-    # means the filters ate the ring itself.
+    # Share of the coloured pixels each filter dropped before the fit.
     coloured = max(int(np.count_nonzero(combined)), 1)
     for label, dropped in (
         ("off board", trace.dropped_off_board),
@@ -138,12 +123,7 @@ def annotate(image: np.ndarray, calibration) -> np.ndarray:
 
 
 def write_report(results: list[Result], out_dir: Path) -> Path:
-    """Write a Markdown summary: detection rate per board, failures, signal.
-
-    No ground-truth camera pose exists to score the homography against, so unlike
-    detection this reports how often the board was found and where it broke, not
-    accuracy.
-    """
+    """Write a Markdown summary: detection rate per board, failure stages and signal."""
     detected = [r for r in results if r.detected]
     lines = [
         "# Calibration results",

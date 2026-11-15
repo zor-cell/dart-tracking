@@ -1,7 +1,5 @@
-"""Loads and stores the game aggregate.
-
-The server is the source of truth for every score, so a game is read fresh for
-each command and written back inside the same transaction.
+"""Loads and stores the game aggregate, read fresh for each command and written
+back in the same transaction.
 """
 
 from collections.abc import Callable, Sequence
@@ -108,9 +106,7 @@ class GameRepository:
             claim_token_hash=claim_token_hash,
         )
         session.add(row)
-        # Flush before adding `game_players`: no relationships are declared, so
-        # the unit of work does not order the inserts by foreign key on its own.
-        # It is also where the server-side id arrives.
+        # Flush before adding `game_players`, which also assigns the server-side id.
         await session.flush()
 
         session.add(settings_row(row.id, game.settings))
@@ -197,12 +193,7 @@ class GameRepository:
         return await self._load(session, game_id, lock=True)
 
     async def save(self, session: AsyncSession, game: Game) -> None:
-        """Write the game back.
-
-        Turns and darts are rewritten wholesale rather than diffed: a game holds
-        roughly 25 turns and 70 darts, and the delete cascades, so the simple
-        form costs a few milliseconds and has no edge cases around undo.
-        """
+        """Write the game back, rewriting its turns and darts wholesale."""
         finished = game.over
         derived = (GameStatus.FINISHED if finished else GameStatus.ACTIVE).value
         game.updated_at = await session.scalar(
@@ -269,11 +260,7 @@ class GameRepository:
         offset: int,
         criteria: GameFilter = GameFilter(),
     ) -> list[GameSummary]:
-        """The games this account took part in or wrote down, newest first.
-
-        Both branches are needed: a game set up by a fellow player belongs in my
-        history too, and one I only kept score for has no seat for me at all.
-        """
+        """The games this account played in or kept score for, newest first."""
         rows = (
             await session.execute(
                 select(GameTable)

@@ -1,10 +1,5 @@
-"""Shared plumbing for the calibration and detection scripts.
-
-The folder walking, the client replay (downscale + JPEG, so the pipeline sees what
-it would receive live) and the report rendering — everything the `run_all` and
-`run_debug` scripts have in common; only the pipeline they run differs. Batch runs
-write to `_results`, debug runs to a separate `_results_debug`, kept apart so a
-batch run's wipe does not take the debug dumps with it.
+"""Shared plumbing for the calibration and detection scripts: folder walking, the
+client replay (downscale and JPEG) and the report tables.
 """
 
 import shutil
@@ -19,9 +14,7 @@ T = TypeVar("T")
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 
-# Folders under a test tree that hold outputs, not inputs — never walked, or a
-# run would re-ingest its own annotated copies, the per-stage debug dumps, or the
-# socket's debug dumps.
+# Output folders under a test tree, never walked for inputs.
 _EXCLUDED_DIRS = frozenset({"_results", "_results_debug", "_socket_debug"})
 
 # The browser captures at most this edge length and re-encodes as JPEG; replaying
@@ -31,10 +24,8 @@ CAPTURE_JPEG_QUALITY = 85
 
 
 def as_client_would_send(image: np.ndarray) -> np.ndarray:
-    """Downscale and re-encode a photo the way the browser would.
-
-    One already within the capture size is handed back untouched: it is what the
-    client sends, and a second q85 pass is loss the pipeline never sees live.
+    """Downscale and re-encode a photo the way the browser would; one already within
+    the capture size is returned untouched.
     """
     height, width = image.shape[:2]
     scale = CAPTURE_MAX_EDGE / max(height, width)
@@ -61,10 +52,8 @@ def load_image(path: Path, raw: bool) -> np.ndarray | None:
 
 
 def collect_images(root: Path, out_dir: Path) -> list[Path]:
-    """Every input photo under `root`, recursively, in sorted order.
-
-    Skips `out_dir` and the results/debug folders, so a run never re-ingests its
-    own annotated copies.
+    """Every input photo under `root`, recursively and sorted, skipping `out_dir` and
+    the results folders.
     """
     images = []
     for path in sorted(root.rglob("*")):
@@ -86,11 +75,8 @@ def mirrored_dir(path: Path, root: Path, out_dir: Path) -> Path:
 
 
 def clear_results(out_dir: Path, root: Path) -> None:
-    """Wipe the entire results tree before a run, then leave it recreated empty.
-
-    Whole tree, not files of one suffix: otherwise a renamed throw keeps its old
-    overlay and the folder no longer shows *this* run alone. Refuses if `out_dir`
-    is the input root or an ancestor of it, which would take the photos with it.
+    """Wipe the whole results tree and recreate it empty; refuses if `out_dir` is the
+    input root or one of its ancestors.
     """
     out_dir = out_dir.resolve()
     root = root.resolve()
@@ -105,11 +91,8 @@ def clear_results(out_dir: Path, root: Path) -> None:
 
 
 def debug_dir(input_path: Path, test_root: Path, out_override: Path | None) -> Path:
-    """Where a `run_debug` run writes its per-stage images for `input_path`.
-
-    Mirrors the input's setup subfolder under `_results_debug`, so `pz_setup/center.jpg`
-    becomes `_results_debug/pz_setup/center`. An explicit `--out` wins; an input
-    outside the test tree falls back to a `_results_debug` beside it.
+    """Where a `run_debug` run writes its images for `input_path`: the input's setup
+    subfolder under `_results_debug`, `--out` if given, else beside the input.
     """
     if out_override is not None:
         return out_override
@@ -123,20 +106,13 @@ def debug_dir(input_path: Path, test_root: Path, out_override: Path | None) -> P
 
 
 def setup_of(key: str) -> str:
-    """The capture setup a series/image belongs to: its top-level folder.
-
-    Keys are paths relative to the test root, so the first component is the setup.
-    A key with no folder is ".".
-    """
+    """The capture setup of a series or image: the first folder of its key, or "."."""
     return key.split("/")[0] if "/" in key else "."
 
 
 def location_of(key: str) -> str:
-    """The physical board a series/image belongs to.
-
-    A setup folder is named `<board>_setup<n>` — board first, so the part before
-    the first underscore is the board (`pz` across `pz_setup1`..`pz_setup4`).
-    `setup1_pz` would group by setup number instead, hence the naming order.
+    """The physical board of a series or image: the part of its `<board>_setup<n>`
+    folder before the first underscore.
     """
     return setup_of(key).split("_")[0]
 
@@ -148,11 +124,8 @@ def rate_table(
     header: str,
     hit_label: str = "ok",
 ) -> list[str]:
-    """A `| header | hit_label | total | rate |` table, grouped by `key`.
-
-    One row per group: how many of its items satisfy `hit`, as a percentage.
-    Best rate first, so the groups that need work sit at the bottom where the
-    eye lands last; name breaks ties to keep the order stable between runs.
+    """A `| header | hit_label | total | rate |` table, one row per `key` group, best
+    rate first and ties by name.
     """
     groups: dict[str, list[T]] = defaultdict(list)
     for item in items:

@@ -1,8 +1,5 @@
-"""Everything the socket does for the evaluation, behind one door.
-
-Cross-feature by nature — measuring the tracker means reading the game's
-commands and the detector's trace — which is exactly why it lives here and not
-in the socket.
+"""Everything the socket does for the evaluation: reading the game's commands and
+the detector's trace into the event log and frame buffer.
 """
 
 import asyncio
@@ -189,9 +186,7 @@ def metrics_of(trace: DetectionTrace) -> dict[str, float]:
         "region_clipped": round(trace.region_clipped, 4),
         "pixels_per_mm": round(trace.pixels_per_mm, 4),
     }
-    # Coerced because these ride into JSONB in the same transaction as the
-    # throw: a numpy scalar slipping in would not fail the log, it would roll
-    # the dart back.
+    # Plain floats, since the figures go into JSONB with the throw.
     return {name: float(value) for name, value in figures.items()}
 
 
@@ -227,11 +222,7 @@ async def camera_armed(game_id: str) -> bool:
 async def note_failure(
     game_id: str, client_id: str, failure: DetectionFailure, metrics: dict[str, float]
 ) -> None:
-    """Note that the scoring camera looked and came back empty-handed.
-
-    Its own transaction: nothing changed about the game, so there is none to
-    join, and a lost measurement must not cost a throw.
-    """
+    """Log that the scoring camera found no dart, in a transaction of its own."""
     if failure not in _FIT_FAILURES:
         return
 

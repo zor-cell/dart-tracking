@@ -35,8 +35,7 @@ class ClientStore:
         return client
 
     async def save(self, client: Client) -> None:
-        """Write the device's role back. Needed because the store no longer
-        hands out the object it holds, so mutating it changes nothing."""
+        """Write the device's role back to Redis; a loaded client is a copy."""
         await redis_client.client().set(_key(client.id), client.role, ex=_TTL_SECONDS)
 
 

@@ -7,12 +7,8 @@ from app.api.features.game.dto.command.game_command_base import GameCommandBase
 
 
 class RegisterDartDto(GameCommandBase):
-    """Client -> server: book one dart, as the field it landed in rather than as
-    points — T20 and three single 20s score the same but are not the same throw,
-    and the scoreboard shows which one it was.
-
-    Sent by any device in the game's room: the camera phone when the user
-    corrects a misread, a scoreboard phone entering the visit by hand.
+    """Client -> server: book one dart as the field it landed in, from any device in
+    the room.
     """
 
     type: Literal["register_dart"]

@@ -1,12 +1,5 @@
-"""Session lifecycle over HTTP.
-
-Only the two calls a device makes *around* the socket live here: creating a game
-(there is no game id yet to connect to) and reading its state (initial load,
-restore after a refresh, and the check that a shared link still points at a live
-game — a 404 says it plainly).
-
-Everything that *changes* a game runs over the WebSocket instead, so one
-mutation reaches every device in the room on one path (core/socket/socket.py).
+"""Game endpoints a device calls around the socket: creating a game and reading its
+state. Every change runs over the WebSocket (`core/socket/socket.py`).
 """
 
 from datetime import datetime

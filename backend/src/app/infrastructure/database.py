@@ -1,7 +1,5 @@
-"""Async SQLAlchemy engine, session factory and declarative base.
-
-Opened on startup and disposed on shutdown (`main.lifespan`), so the engine is
-held in a module global like the other stores here.
+"""Async SQLAlchemy engine, session factory and declarative base, opened and
+disposed by `main.lifespan`.
 """
 
 from collections.abc import AsyncIterator

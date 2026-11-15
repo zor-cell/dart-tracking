@@ -1,7 +1,5 @@
-"""Rebuilds the visits of a game from its event log.
-
-Replays every booking and correction exactly as `Game` applies them, but keeps
-a second list per visit that undo never touches: what the camera claimed.
+"""Rebuilds the visits of a game from its event log, as `Game` applies them, plus
+per visit what the camera claimed.
 """
 
 from collections import defaultdict
@@ -36,11 +34,7 @@ class Visit:
 
 
 def replay(events: Iterable[GameEvent]) -> list[Visit]:
-    """The visits of one game, in order.
-
-    Addressed by slot, not identity: undoing across a handover drops the open
-    visit, and the next handover reopens that slot for the same throws.
-    """
+    """The visits of one game in order, addressed by slot."""
     claimed: dict[int, list[GameEvent]] = defaultdict(list)
     accepted: dict[int, list[GameEvent]] = defaultdict(list)
     attempts: dict[int, int] = defaultdict(int)

@@ -1,15 +1,5 @@
-"""Render every stage of board detection for one photo as separate images.
-
-One picture per pipeline stage, plus one per refinement pass, so a bad fit can be
-traced to the stage that caused it instead of just the final overlay being off.
-One photo at a time, on purpose - a whole folder would bury the run that actually
-needs looking at.
-
-Usage:
-    uv run python scripts/calibration/run_debug.py testdata/calibration/center-near.jpeg
-    uv run python scripts/calibration/run_debug.py path/to/photo.jpg --out debug
-
-Images land in `_results_debug/<setup>/<image>/` unless --out says otherwise.
+"""Render every stage of board detection for one photo, plus one image per
+refinement pass, into `_results_debug/<setup>/<image>/` unless --out says otherwise.
 """
 
 import argparse

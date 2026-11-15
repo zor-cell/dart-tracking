@@ -224,12 +224,7 @@ class PlayerRepository:
     async def owned(
         self, session: AsyncSession, ids: list[str], owner_user_id: str
     ) -> dict[str, PlayerIdentity]:
-        """The requested identities that this account may use, keyed by id.
-
-        Scoping the lookup to the owner is the whole point: without it any
-        caller could hang a game on someone else's identity and move their
-        statistics.
-        """
+        """The requested identities this account owns, keyed by id."""
         # Ids come straight from the request body; one that is not a uuid at all
         # would fail at bind time, so it is dropped and simply never matches.
         candidates = [id for id in ids if _is_uuid(id)]

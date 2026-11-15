@@ -5,11 +5,9 @@ from app.api.features.announcement.domain.calls import DartCall
 
 
 class DartAnnouncementDto(CamelModel):
-    """Server -> announcer: a dart just booked, tracked or entered by hand, with
-    the clips that call it in the announcer's language.
+    """Server -> announcer: a booked dart with the clips that call it.
 
-    `visit_points` is set once the visit is full, busted or won; `eliminated`
-    names whoever the dart sent back to zero.
+    `visit_points` is set once the visit ends; `eliminated` names whom it sent to zero.
     """
 
     type: Literal["dart_announcement"] = "dart_announcement"

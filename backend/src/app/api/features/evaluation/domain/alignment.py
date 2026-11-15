@@ -1,15 +1,12 @@
-"""Pairs up what the tracker claimed with what the players accepted.
-
-Counting corrections overstates the error: one missed dart shifts the whole
-visit and costs several undos.
+"""Pairs up what the tracker claimed with what the players accepted, by sequence
+alignment.
 """
 
 from collections.abc import Sequence
 from enum import StrEnum
 
-# A shifted sequence has to read as one missed and one spurious dart rather than
-# as two mis-scored ones, so a substitution costs exactly as much as that pair.
-# On a tie the diagonal wins, which keeps a plain mis-score a substitution.
+# A substitution costs as much as one missed plus one spurious dart; ties take the
+# diagonal.
 _SUBSTITUTION_COST = 2
 _GAP_COST = 1
 
@@ -24,10 +21,8 @@ class DartOutcome(StrEnum):
 def align(
     tracked: Sequence[str], expected: Sequence[str]
 ) -> list[tuple[int | None, int | None]]:
-    """Cheapest pairing of the two label sequences, in throw order.
-
-    Each pair is `(index into tracked, index into expected)`; `None` on a side
-    is a gap — a dart the camera never booked, or one it booked alone.
+    """Cheapest pairing of the two label sequences in throw order, as `(tracked index,
+    expected index)` pairs; `None` on a side is a gap.
     """
     rows, columns = len(tracked), len(expected)
     cost = [[0] * (columns + 1) for _ in range(rows + 1)]
