@@ -23,6 +23,7 @@ import {
 import {
   axisTicks,
   axisTitle,
+  chartBase,
   seriesColor,
   tooltipStyle,
 } from '../../../../core/charts/models/chart-styles';
@@ -200,10 +201,7 @@ export class ScoreRaceComponent {
     const { text, grid, font } = this.theme;
     const elimination = this.elimination();
     return {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      font: { family: font },
+      ...chartBase(this.theme),
       interaction: { mode: 'index', intersect: false },
       layout: { padding: { right: 72 } },
       scales: {

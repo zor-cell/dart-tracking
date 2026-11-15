@@ -8,14 +8,13 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { DistanceScaleComponent } from '../../../game/components/distance-scale/distance-scale.component';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { TargetStatisticsDto } from '../../dto/target-statistics.dto';
 import { StatisticsView, targetKey, targetLabel } from '../../models/statistics-game';
 import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
 import { TargetBoardComponent } from '../target-board/target-board.component';
-import { backState } from '../../../../core/view/models/back-state';
+import { StatLinkComponent } from '../stat-link/stat-link.component';
 
 /** Darts a target needs before it can be the strongest. */
 const STRONGEST_MIN_DARTS = 5;
@@ -27,7 +26,7 @@ const STRONGEST_MIN_DARTS = 5;
     DecimalPipe,
     DistanceScaleComponent,
     InfoHintComponent,
-    RouterLink,
+    StatLinkComponent,
     StatSketchComponent,
     TargetBoardComponent,
   ],
@@ -43,7 +42,6 @@ export class TargetStatisticsComponent {
 
   protected readonly clock = computed(() => this.game() === 'around_the_clock');
 
-  protected readonly returnState = backState($localize`:@@auth.account.stats:Statistik`);
 
   /** Key of the target picked on the board. */
   protected readonly selected = signal<string | null>(null);

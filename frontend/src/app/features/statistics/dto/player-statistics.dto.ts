@@ -1,4 +1,4 @@
-import { DoubleStatisticsDto } from './double-statistics.dto';
+import { FieldTallyDto } from './field-tally.dto';
 import { ScatterDto } from './scatter.dto';
 import { VisitRefDto } from './visit-ref.dto';
 
@@ -47,7 +47,7 @@ export interface PlayerStatisticsDto {
   readonly locatedFields: Readonly<Record<string, number>>;
   readonly heatmap: readonly HeatmapCell[];
   /** Doubles thrown at for a finish, most attempted first. */
-  readonly doubles: readonly DoubleStatisticsDto[];
+  readonly doubles: readonly FieldTallyDto[];
   readonly doubleDistance: number | null;
   /** Mean distance (mm) between two located darts of a scoring visit. */
   readonly grouping: number | null;

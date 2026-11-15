@@ -10,23 +10,34 @@ import {
   HeatmapPick,
   TipHeatmapComponent,
 } from '../../../game/components/tip-heatmap/tip-heatmap.component';
+import { SECTOR_ORDER } from '../../../game/models/board-geometry';
 import { fieldName, parseField } from '../../../game/models/field-label';
-import { dartCount } from '../../../game/models/dart-count';
 import {
   HEATMAP_LAYERS,
   HeatmapLayer,
   storeHeatmapLayer,
   storedHeatmapLayer,
 } from '../../../game/models/heatmap-layer';
+import { MISS, heatFields, mostOnBoard } from '../../../game/models/heat-fields';
 import { TipPoint } from '../../../game/models/tip-density';
 import { FieldTallyDto } from '../../dto/field-tally.dto';
 import { targetAt, targetKey, targetLabel, targetOutline } from '../../models/statistics-game';
 
-/** Label of a dart that hit no field. */
-const MISS = '0';
+/** The aims a board shows: targets of a game, or the doubles a checkout went for. */
+export type TargetBoardKind = 'targets' | 'doubles';
 
-/** Half the drawn area, in board millimetres, with a margin for the misses. */
-const VIEW_EXTENT = 230;
+/** Half the drawn area in board mm, with a margin for the misses; wider at the doubles. */
+const VIEW_EXTENT: Record<TargetBoardKind, number> = { targets: 230, doubles: 260 };
+
+const LAYER_LABELS: Record<TargetBoardKind, string> = {
+  targets: $localize`:@@stats.targets.layer:Darstellung der Ziele`,
+  doubles: $localize`:@@stats.doublesLayer:Darstellung der Doppel`,
+};
+
+const BOARD_LABELS: Record<TargetBoardKind, string> = {
+  targets: $localize`:@@stats.targets.boardLabel:Darts auf Ziele nach getroffenem Feld`,
+  doubles: $localize`:@@stats.doubles.label:Checkout-Darts nach getroffenem Feld`,
+};
 
 /** The darts thrown at targets, as a tip cloud or as the fields they hit. A tap on a field
  * picks the target aimed at there and narrows both to the darts at it. */
@@ -39,23 +50,36 @@ const VIEW_EXTENT = 230;
 })
 export class TargetBoardComponent {
   readonly targets = input.required<readonly FieldTallyDto[]>();
+  readonly kind = input<TargetBoardKind>('targets');
   /** Key of the picked target, see `targetKey`. */
   readonly selected = model<string | null>(null);
+  readonly layer = model<HeatmapLayer>(storedHeatmapLayer());
+  /** Whether the board offers its own layer switch; two side by side share one above them. */
+  readonly layerSwitch = input(true);
 
-  protected readonly layer = signal<HeatmapLayer>(storedHeatmapLayer());
   protected readonly hovered = signal<string | null>(null);
   protected readonly layerOptions = [...HEATMAP_LAYERS];
-  protected readonly extent = VIEW_EXTENT;
+  protected readonly extent = computed(() => VIEW_EXTENT[this.kind()]);
+  protected readonly layerLabel = computed(() => LAYER_LABELS[this.kind()]);
+  protected readonly boardLabel = computed(() => BOARD_LABELS[this.kind()]);
   protected readonly outlineOf = targetOutline;
 
   private readonly keyed = computed(
     () => new Map(this.targets().map((target) => [targetKey(target), target])),
   );
 
-  /** The target a tap on the field `label` picks, the field itself where nothing was aimed
-   * at it; null off the board. */
-  protected readonly resolve = (label: string): string | null =>
-    parseField(label) === null ? null : (targetAt(label, new Set(this.keyed().keys())) ?? label);
+  /** The target a tap on the field `label` picks: its sector's double on a doubles board,
+   * else the target aimed there or the field itself; null off the board. */
+  protected readonly resolve = (label: string): string | null => {
+    const field = parseField(label);
+    if (field === null) {
+      return null;
+    }
+    if (this.kind() === 'doubles') {
+      return 'index' in field ? `D${SECTOR_ORDER[field.index]}` : '50';
+    }
+    return targetAt(label, new Set(this.keyed().keys())) ?? label;
+  };
 
   private readonly picked = computed(() => {
     const key = this.selected();
@@ -85,19 +109,9 @@ export class TargetBoardComponent {
 
   protected readonly misses = computed(() => this.scored().get(MISS) ?? 0);
 
-  private readonly most = computed(() =>
-    Math.max(1, ...[...this.scored()].filter(([label]) => label !== MISS).map(([, n]) => n)),
-  );
+  private readonly most = computed(() => mostOnBoard(this.scored()));
 
-  protected readonly fields = computed<HeatField[]>(() =>
-    [...this.scored()]
-      .filter(([label]) => label !== MISS)
-      .map(([label, count]) => ({
-        label,
-        share: count / this.most(),
-        ariaLabel: `${fieldName(label)}: ${dartCount(count)}`,
-      })),
-  );
+  protected readonly fields = computed<HeatField[]>(() => heatFields(this.scored(), this.most()));
 
   protected readonly legendMax = computed(() => `${this.most()}`);
 
@@ -112,7 +126,10 @@ export class TargetBoardComponent {
       .map(([key, target]) => ({
         key,
         d: targetOutline(key) ?? '',
-        ariaLabel: $localize`:@@stats.targets.hitRate:${targetLabel(target)}:field:: ${target.hits}:hits: von ${target.darts}:darts: getroffen`,
+        ariaLabel:
+          this.kind() === 'doubles'
+            ? $localize`:@@stats.doubles.hitRate:${targetLabel(target)}:field:: ${target.hits}:hits: von ${target.darts}:attempts: getroffen`
+            : $localize`:@@stats.targets.hitRate:${targetLabel(target)}:field:: ${target.hits}:hits: von ${target.darts}:darts: getroffen`,
       })),
   );
 

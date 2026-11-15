@@ -1,22 +1,23 @@
 <div class="board">
-  <p-selectbutton
-    class="layer"
-    [options]="layerOptions"
-    optionLabel="label"
-    optionValue="value"
-    [allowEmpty]="false"
-    [ngModel]="layer()"
-    (ngModelChange)="selectLayer($event)"
-    ariaLabel="Darstellung der Ziele"
-    i18n-ariaLabel="@@stats.targets.layer"
-    size="small"
-  />
+  @if (layerSwitch()) {
+    <p-selectbutton
+      class="layer"
+      [options]="layerOptions"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+      [ngModel]="layer()"
+      (ngModelChange)="selectLayer($event)"
+      [ariaLabel]="layerLabel()"
+      size="small"
+    />
+  }
 
   @if (layer() === 'tips') {
     <app-tip-heatmap
       [points]="tips()"
       mode="cloud"
-      [extent]="extent"
+      [extent]="extent()"
       [picked]="tipPick()"
       (click)="pickSegment($event)"
     >
@@ -45,12 +46,11 @@
   } @else {
     <app-heat-board
       [fields]="fields()"
-      ariaLabel="Darts auf Ziele nach getroffenem Feld"
-      i18n-ariaLabel="@@stats.targets.boardLabel"
+      [ariaLabel]="boardLabel()"
       [resolve]="resolve"
       [outlineOf]="outlineOf"
       [legendMax]="legendMax()"
-      [extent]="extent"
+      [extent]="extent()"
       [(selected)]="selected"
       [(hovered)]="hovered"
     >
@@ -63,7 +63,11 @@
             {{ target.hits }}&nbsp;/&nbsp;{{ target.darts }} &middot; {{ target.rate * 100 | number: '1.0-0' }}&nbsp;%
           }
         } @else {
-          <span class="caption__summary" i18n="@@stats.targets.darts">{{ darts() }} Darts auf Ziele</span>
+          @if (kind() === 'doubles') {
+            <span class="caption__summary" i18n="@@stats.doubles.attempts">{{ darts() }} Checkout-Darts</span>
+          } @else {
+            <span class="caption__summary" i18n="@@stats.targets.darts">{{ darts() }} Darts auf Ziele</span>
+          }
         }
       </span>
       @if (misses() > 0) {

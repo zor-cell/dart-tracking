@@ -9,10 +9,10 @@
   gap: 0.75rem;
 }
 
-/* The board keeps its height across layers. */
+/* A board of a pair side by side is set lower through `--target-board-height`. */
 .board {
   position: relative;
-  height: 22rem;
+  height: var(--target-board-height, 22rem);
 }
 
 app-tip-heatmap,

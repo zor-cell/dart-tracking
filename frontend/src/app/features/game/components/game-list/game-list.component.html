@@ -17,84 +17,52 @@
     (reset)="resetFilters()"
   >
     <form class="list-filters" [formGroup]="filters">
-      <label class="list-filters__label" for="filter-variant" i18n="@@game.new.variant">Variante</label>
-      <p-multiselect
+      <app-filter-select
+        label="Variante"
+        i18n-label="@@game.new.variant"
         inputId="filter-variant"
-        formControlName="variant"
+        [control]="filters.controls.variant"
         [options]="variantOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Alle"
-        i18n-placeholder="@@player.list.all"
-        [showHeader]="false"
-        [showClear]="true"
-        fluid
       />
-      <label class="list-filters__label" for="filter-mode" i18n="@@game.new.mode">Modus</label>
-      <p-multiselect
+      <app-filter-select
+        label="Modus"
+        i18n-label="@@game.new.mode"
         inputId="filter-mode"
-        formControlName="mode"
+        [control]="filters.controls.mode"
         [options]="modeOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Alle"
-        i18n-placeholder="@@player.list.all"
-        [showHeader]="false"
-        [showClear]="true"
-        fluid
       />
-      <label class="list-filters__label" for="filter-checkout">Checkout</label>
-      <p-multiselect
+      <app-filter-select
+        label="Checkout"
         inputId="filter-checkout"
-        formControlName="checkoutMode"
+        [control]="filters.controls.checkoutMode"
         [options]="checkoutOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Alle"
-        i18n-placeholder="@@player.list.all"
-        [showHeader]="false"
-        [showClear]="true"
-        fluid
       />
-      <label class="list-filters__label" for="filter-status" i18n="@@game.list.status">Status</label>
-      <p-multiselect
+      <app-filter-select
+        label="Status"
+        i18n-label="@@game.list.status"
         inputId="filter-status"
-        formControlName="status"
+        [control]="filters.controls.status"
         [options]="statusOptions"
-        optionLabel="label"
-        optionValue="value"
         placeholder="Ohne ausgeblendete"
         i18n-placeholder="@@game.list.notHidden"
-        [showHeader]="false"
-        [showClear]="true"
-        fluid
       />
-      <label class="list-filters__label" for="filter-opponent" i18n="@@game.list.opponent">Mitspieler</label>
-      <p-multiselect
+      <app-filter-select
+        label="Mitspieler"
+        i18n-label="@@game.list.opponent"
         inputId="filter-opponent"
-        formControlName="opponentId"
+        [control]="filters.controls.opponentId"
         [options]="opponents()"
         optionLabel="name"
         optionValue="id"
-        placeholder="Alle"
-        i18n-placeholder="@@player.list.all"
-        filterPlaceHolder="Spieler suchen"
-        i18n-filterPlaceHolder="@@player.list.search"
-        [showClear]="true"
-        fluid
+        searchLabel="Spieler suchen"
+        i18n-searchLabel="@@player.list.search"
       />
-      <label class="list-filters__label" for="filter-players" i18n="@@game.list.playerCount">Spieleranzahl</label>
-      <p-multiselect
+      <app-filter-select
+        label="Spieleranzahl"
+        i18n-label="@@game.list.playerCount"
         inputId="filter-players"
-        formControlName="players"
+        [control]="filters.controls.players"
         [options]="playerCountOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Alle"
-        i18n-placeholder="@@player.list.all"
-        [showHeader]="false"
-        [showClear]="true"
-        fluid
       />
     </form>
   </app-list-toolbar>

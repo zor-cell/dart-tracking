@@ -6,6 +6,7 @@ import { chartTheme, countLabelsPlugin } from '../../../../core/charts/models/ch
 import {
   axisTicks,
   axisTitle,
+  chartBase,
   seriesColor,
   tooltipStyle,
 } from '../../../../core/charts/models/chart-styles';
@@ -140,10 +141,7 @@ export class ScoreDistributionComponent {
     const middle = (names.length - 1) / 2;
     const half = Math.max(names.length, MIN_ROWS) / 2 + 0.1;
     return {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      font: { family: font },
+      ...chartBase(this.theme),
       layout: { padding: { right: 8 } },
       scales: {
         x: {

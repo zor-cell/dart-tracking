@@ -11,7 +11,6 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { MultiSelect } from 'primeng/multiselect';
 import { TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
 import { PlayerIdentityDto } from '../../../player/dto/player-identity.dto';
@@ -35,6 +34,7 @@ import { GAME_VARIANTS, GameVariant, variantLabel } from '../../models/game-vari
 import { GameHistoryService } from '../../services/game-history.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { ListToolbarComponent } from '../../../../core/view/components/list-toolbar/list-toolbar.component';
+import { FilterSelectComponent } from '../../../../core/view/components/filter-select/filter-select.component';
 import { PeriodPickerComponent } from '../../../../core/view/components/period-picker/period-picker.component';
 import { DayRange, dayRangeLabel } from '../../../../core/view/models/day-range';
 import { backState } from '../../../../core/view/models/back-state';
@@ -98,7 +98,7 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
     ListToolbarComponent,
     LoadErrorComponent,
     LoadingStateComponent,
-    MultiSelect,
+    FilterSelectComponent,
     PeriodPickerComponent,
     ReactiveFormsModule,
     TableModule,

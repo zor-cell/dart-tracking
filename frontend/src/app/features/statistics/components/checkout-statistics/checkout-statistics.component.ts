@@ -9,7 +9,6 @@ import {
   untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { SelectButton } from 'primeng/selectbutton';
 import { DistanceScaleComponent } from '../../../game/components/distance-scale/distance-scale.component';
 import {
@@ -19,30 +18,31 @@ import {
   storedHeatmapLayer,
 } from '../../../game/models/heatmap-layer';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
-import { backState } from '../../../../core/view/models/back-state';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
 import { COMPARE_COLOR, Comparison, OWN_COLOR } from '../../models/comparison';
-import { DoubleBoardComponent } from '../double-board/double-board.component';
+import { targetKey } from '../../models/statistics-game';
 import { ComparedValueComponent } from '../compared-value/compared-value.component';
 import { DeltaMarkComponent } from '../delta-mark/delta-mark.component';
 import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
+import { TargetBoardComponent } from '../target-board/target-board.component';
+import { StatLinkComponent } from '../stat-link/stat-link.component';
 
 /** Checkout figures: the rates, how far off the doubles went and each double on the board. */
 @Component({
   selector: 'app-checkout-statistics',
   imports: [
     ComparedValueComponent,
-    DeltaMarkComponent,
     DecimalPipe,
+    DeltaMarkComponent,
     DistanceScaleComponent,
-    DoubleBoardComponent,
     EmptyStateComponent,
     FormsModule,
     InfoHintComponent,
-    RouterLink,
     SelectButton,
+    StatLinkComponent,
     StatSketchComponent,
+    TargetBoardComponent,
   ],
   templateUrl: './checkout-statistics.component.html',
   styleUrl: './checkout-statistics.component.scss',
@@ -53,8 +53,6 @@ export class CheckoutStatisticsComponent {
   /** Another player's figures set beside one's own; the doubles board is left out meanwhile. */
   readonly comparison = input<Comparison | null>(null);
   protected readonly pairColors = [OWN_COLOR, COMPARE_COLOR] as const;
-  /** Brings the views the cards open back here. */
-  protected readonly returnState = backState($localize`:@@auth.account.stats:Statistik`);
 
   protected readonly selected = signal<string | null>(null);
   protected readonly layerOptions = [...HEATMAP_LAYERS];
@@ -72,7 +70,7 @@ export class CheckoutStatisticsComponent {
     effect(() => {
       const doubles = this.statistics().doubles;
       untracked(() => {
-        if (!doubles.some((double) => double.label === this.selected())) {
+        if (!doubles.some((double) => targetKey(double) === this.selected())) {
           this.selected.set(null);
         }
       });

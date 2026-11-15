@@ -3,7 +3,8 @@ from typing import Self
 
 from app.api.core.dto.base import CamelModel
 from app.api.features.game.domain.target import Target
-from app.api.features.statistics.domain.heatmap import HEATMAP_CELL
+from app.api.features.statistics.domain.double_statistics import DoubleStatistics
+from app.api.features.statistics.domain.heatmap import cell_centres
 from app.api.features.statistics.domain.target_statistics import (
     FieldTally,
     GameTally,
@@ -52,11 +53,23 @@ class FieldTallyDto(TargetTallyDto):
             multiplier=target.multiplier,
             located_hits=tally.located_hits,
             fields=dict(tally.landed),
-            cells=[
-                (column * HEATMAP_CELL, row * HEATMAP_CELL, n)
-                for (column, row), n in tally.cells.items()
-            ],
+            cells=cell_centres(tally.cells),
             **cls.of(tally),
+        )
+
+    @classmethod
+    def from_double(cls, double: DoubleStatistics) -> Self:
+        located = double.located
+        return cls(
+            value=double.value,
+            multiplier=2,
+            darts=double.attempts,
+            hits=double.hits,
+            located=located,
+            distance=_rounded(double.distance / located if located else None),
+            located_hits=double.located_hits,
+            fields=dict(double.fields),
+            cells=cell_centres(double.cells),
         )
 
 

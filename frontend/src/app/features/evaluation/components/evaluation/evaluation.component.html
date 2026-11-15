@@ -62,18 +62,12 @@
           fluid
         />
       </div>
-      <label class="list-filters__label" for="filter-mode" i18n="@@game.new.mode">Modus</label>
-      <p-multiselect
+      <app-filter-select
+        label="Modus"
+        i18n-label="@@game.new.mode"
         inputId="filter-mode"
-        formControlName="mode"
+        [control]="filters.controls.mode"
         [options]="modeOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Alle"
-        i18n-placeholder="@@player.list.all"
-        [showHeader]="false"
-        [showClear]="true"
-        fluid
       />
       <label class="list-filters__label" for="filter-run" i18n="@@eval.run">Art</label>
       <p-select

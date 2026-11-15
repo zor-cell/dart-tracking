@@ -1,0 +1,13 @@
+<label class="list-filters__label" [for]="inputId()">{{ label() }}</label>
+<p-multiselect
+  [inputId]="inputId()"
+  [formControl]="control()"
+  [options]="options()"
+  [optionLabel]="optionLabel()"
+  [optionValue]="optionValue()"
+  [placeholder]="placeholder()"
+  [showHeader]="searchLabel() !== null"
+  [filterPlaceHolder]="searchLabel() ?? ''"
+  [showClear]="true"
+  fluid
+/>

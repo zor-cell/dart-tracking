@@ -15,7 +15,6 @@ import { Router } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { Button } from 'primeng/button';
 import { Menu } from 'primeng/menu';
-import { MultiSelect } from 'primeng/multiselect';
 import { Select } from 'primeng/select';
 import { Slider } from 'primeng/slider';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
@@ -49,6 +48,7 @@ import { EvaluationService } from '../../services/evaluation.service';
 import { GAME_MODES, GameMode } from '../../../game/models/game-mode';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { ListToolbarComponent } from '../../../../core/view/components/list-toolbar/list-toolbar.component';
+import { FilterSelectComponent } from '../../../../core/view/components/filter-select/filter-select.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
@@ -152,7 +152,7 @@ type EvaluationTab = (typeof TABS)[number];
     LoadErrorComponent,
     LoadingStateComponent,
     Menu,
-    MultiSelect,
+    FilterSelectComponent,
     EmptyStateComponent,
     PeriodPickerComponent,
     ReactiveFormsModule,

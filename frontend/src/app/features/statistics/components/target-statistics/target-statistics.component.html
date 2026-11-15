@@ -69,10 +69,7 @@
         <dt class="stat__label" i18n="@@stats.fewestDarts">Wenigste Darts</dt>
         <dd class="stat__value">
           @if (totals.best; as best) {
-            <a class="stat__link" [state]="returnState" [routerLink]="['/account/games', best.gameId]">
-              {{ best.darts }}<span class="sr-only" i18n="@@stats.targets.openGame">, Spiel öffnen</span>
-              <i class="pi pi-angle-right stat__go" aria-hidden="true"></i>
-            </a>
+            <app-stat-link [link]="['/account/games', best.gameId]" action="game">{{ best.darts }}</app-stat-link>
           } @else {
             &ndash;
           }

@@ -9,11 +9,9 @@
   (onHide)="reset()"
 >
   <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
-    @if (viaGoogle()) {
-      <app-google-confirm [(credential)]="googleCredential" />
-    }
+    <app-identity-proof [check]="identity" inputId="email-current-password" />
 
-    @if (!unconfirmed()) {
+    @if (!identity.unconfirmed()) {
       <div class="auth-form__field">
         <label class="auth-form__label" for="new-email" i18n="@@auth.changeEmail.newEmail">
           Neue E-Mail-Adresse
@@ -23,7 +21,7 @@
           id="new-email"
           type="email"
           formControlName="newEmail"
-          [pAutoFocus]="viaGoogle()"
+          [pAutoFocus]="identity.viaGoogle()"
           autocomplete="email"
           aria-describedby="new-email-hint new-email-error"
           fluid
@@ -33,46 +31,6 @@
         </small>
         <app-field-error id="new-email-error" [control]="form.controls.newEmail" />
       </div>
-    }
-
-    @if (!viaGoogle()) {
-      @if (useGoogle()) {
-        <app-google-confirm
-          [(credential)]="googleCredential"
-          [alternative]="true"
-          (back)="usePassword()"
-        />
-      } @else {
-        <div class="auth-form__field">
-          <label class="auth-form__label" for="email-current-password" i18n="@@auth.currentPassword">
-            Aktuelles Passwort
-          </label>
-          <input
-            pInputText
-            id="email-current-password"
-            type="password"
-            formControlName="currentPassword"
-            aria-describedby="email-current-password-error"
-            autocomplete="current-password"
-            fluid
-          />
-          <app-field-error
-            id="email-current-password-error"
-            [control]="form.controls.currentPassword"
-          />
-          @if (googleLinked()) {
-            <button
-              type="button"
-              class="auth-form__switch"
-              i18n="@@auth.google.useGoogle"
-              (mousedown)="$event.preventDefault()"
-              (click)="useGoogleInstead()"
-            >
-              Stattdessen mit Google bestätigen
-            </button>
-          }
-        </div>
-      }
     }
 
     @if (error(); as message) {
@@ -89,7 +47,7 @@
         [disabled]="busy()"
         (onClick)="visible.set(false)"
       />
-      @if (!unconfirmed()) {
+      @if (!identity.unconfirmed()) {
         <p-button
           type="submit"
           label="Link senden"

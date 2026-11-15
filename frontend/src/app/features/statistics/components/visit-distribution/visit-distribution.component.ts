@@ -15,7 +15,7 @@ import { UIChart } from 'primeng/chart';
 import { COMPARE_COLOR, Comparison, OWN_COLOR } from '../../models/comparison';
 import { MAX_VISIT, topVisits, visitCounts, visitShares } from '../../models/visit-scores';
 import { chartTheme, indexMarkerPlugin } from '../../../../core/charts/models/chart-plugins';
-import { axisTicks } from '../../../../core/charts/models/chart-styles';
+import { axisTicks, chartBase } from '../../../../core/charts/models/chart-styles';
 import { RepeatPressDirective } from '../../../../core/view/directives/repeat-press.directive';
 
 /** How many of the most frequent visits are offered under the bars. */
@@ -85,10 +85,7 @@ export class VisitDistributionComponent {
     const others = this.otherShares();
     const reach = others ? Math.ceil(Math.max(1, ...this.shares(), ...others)) : undefined;
     return {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      font: { family: this.theme.font },
+      ...chartBase(this.theme),
       // The column under the pointer counts, not just the bar itself.
       interaction: { mode: 'index', intersect: false },
       events: ['mousemove', 'click', 'touchstart', 'touchmove'],

@@ -50,15 +50,7 @@
       <dt class="stat__label" i18n="@@stats.highestFinish">Höchstes Finish</dt>
       <dd class="stat__value">
         @if (other ? null : totals.highestFinishAt; as at) {
-          <a
-            class="stat__link"
-            [state]="returnState"
-            [routerLink]="['/account/games', at.gameId]"
-            [queryParams]="{ visit: at.visit }"
-          >
-            {{ totals.highestFinish }}<span class="sr-only" i18n="@@stats.openReplay">, im Replay öffnen</span>
-            <i class="pi pi-angle-right stat__go" aria-hidden="true"></i>
-          </a>
+          <app-stat-link [link]="['/account/games', at.gameId]" [queryParams]="{ visit: at.visit }">{{ totals.highestFinish }}</app-stat-link>
         } @else if (totals.highestFinish > 0) {
           {{ totals.highestFinish }}
         } @else {
@@ -100,15 +92,7 @@
       <dt class="stat__label" i18n="@@stats.fewestDarts">Wenigste Darts</dt>
       <dd class="stat__value">
         @if (other ? null : totals.fewestDartsAt; as at) {
-          <a
-            class="stat__link"
-            [state]="returnState"
-            [routerLink]="['/account/games', at.gameId]"
-            [queryParams]="{ visit: at.visit }"
-          >
-            {{ totals.fewestDarts }}<span class="sr-only" i18n="@@stats.openReplay">, im Replay öffnen</span>
-            <i class="pi pi-angle-right stat__go" aria-hidden="true"></i>
-          </a>
+          <app-stat-link [link]="['/account/games', at.gameId]" [queryParams]="{ visit: at.visit }">{{ totals.fewestDarts }}</app-stat-link>
         } @else {
           {{ totals.fewestDarts ?? '–' }}
         }
@@ -232,8 +216,9 @@
     <div class="doubles-pair">
       <figure class="doubles-pair__side">
         <figcaption class="doubles-pair__name" i18n="@@player.list.self">Du</figcaption>
-        <app-double-board
-          [doubles]="totals.doubles"
+        <app-target-board
+          [targets]="totals.doubles"
+          kind="doubles"
           [layerSwitch]="false"
           [(layer)]="layer"
           [(selected)]="selected"
@@ -243,8 +228,9 @@
         <figcaption class="doubles-pair__name">
           {{ other.name }}
         </figcaption>
-        <app-double-board
-          [doubles]="other.statistics.doubles"
+        <app-target-board
+          [targets]="other.statistics.doubles"
+          kind="doubles"
           [layerSwitch]="false"
           [(layer)]="layer"
           [(selected)]="selected"
@@ -258,7 +244,12 @@
         <p i18n="@@stats.noDoubles">Noch keine Darts auf ein Doppel, das checken konnte.</p>
       </app-empty-state>
     } @else {
-      <app-double-board [doubles]="totals.doubles" [(layer)]="layer" [(selected)]="selected" />
+      <app-target-board
+        [targets]="totals.doubles"
+        kind="doubles"
+        [(layer)]="layer"
+        [(selected)]="selected"
+      />
     }
   }
 </section>

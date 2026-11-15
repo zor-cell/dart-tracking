@@ -1,7 +1,7 @@
 import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Params, RouterLink } from '@angular/router';
+import { Params } from '@angular/router';
 import { SelectButton } from 'primeng/selectbutton';
 import { DistanceScaleComponent } from '../../../game/components/distance-scale/distance-scale.component';
 import { FieldHeatmapComponent } from '../../../game/components/field-heatmap/field-heatmap.component';
@@ -13,7 +13,6 @@ import {
   storeHeatmapLayer,
   storedHeatmapLayer,
 } from '../../../game/models/heatmap-layer';
-import { backState } from '../../../../core/view/models/back-state';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
 import { ScatterDto } from '../../dto/scatter.dto';
@@ -21,6 +20,7 @@ import { COMPARE_COLOR, Comparison, OWN_COLOR } from '../../models/comparison';
 import { visitTotal } from '../../models/visit-scores';
 import { ComparedValueComponent } from '../compared-value/compared-value.component';
 import { DeltaMarkComponent } from '../delta-mark/delta-mark.component';
+import { StatLinkComponent } from '../stat-link/stat-link.component';
 import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
 
 /** The general figures, the hit picture and how the darts group: spread, each dart's place. */
@@ -35,8 +35,8 @@ import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
     FormsModule,
     InfoHintComponent,
     NgTemplateOutlet,
-    RouterLink,
     SelectButton,
+    StatLinkComponent,
     StatSketchComponent,
     TipHeatmapComponent,
   ],
@@ -51,8 +51,6 @@ export class PrecisionStatisticsComponent {
   protected readonly ownColor = OWN_COLOR;
   protected readonly compareColor = COMPARE_COLOR;
   protected readonly pairColors = [OWN_COLOR, COMPARE_COLOR] as const;
-  /** Brings the views the cards open back here. */
-  protected readonly returnState = backState($localize`:@@auth.account.stats:Statistik`);
   /** The page's filters as the game list reads them, carried into its links. */
   readonly listParams = input<Params>({});
 

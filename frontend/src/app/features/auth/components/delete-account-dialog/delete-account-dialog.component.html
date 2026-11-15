@@ -15,44 +15,13 @@
       erhalten, du stehst darin nur noch als „Gelöschter Spieler“.
     </p>
 
-    @if (viaGoogle()) {
-      <app-google-confirm [(credential)]="googleCredential" />
-    } @else {
-      @if (useGoogle()) {
-        <app-google-confirm
-          [(credential)]="googleCredential"
-          [alternative]="true"
-          (back)="usePassword()"
-        />
-      } @else {
-        <div class="auth-form__field">
-          <label class="auth-form__label" for="delete-password" i18n="@@auth.deleteAccount.password">
-            Passwort zur Bestätigung
-          </label>
-          <input
-            pInputText
-            id="delete-password"
-            type="password"
-            formControlName="currentPassword"
-            aria-describedby="delete-account-hint delete-password-error"
-            autocomplete="current-password"
-            fluid
-          />
-          <app-field-error id="delete-password-error" [control]="form.controls.currentPassword" />
-          @if (googleLinked()) {
-            <button
-              type="button"
-              class="auth-form__switch"
-              i18n="@@auth.google.useGoogle"
-              (mousedown)="$event.preventDefault()"
-              (click)="useGoogleInstead()"
-            >
-              Stattdessen mit Google bestätigen
-            </button>
-          }
-        </div>
-      }
-    }
+    <app-identity-proof
+      [check]="identity"
+      inputId="delete-password"
+      label="Passwort zur Bestätigung"
+      i18n-label="@@auth.deleteAccount.password"
+      describedBy="delete-account-hint"
+    />
 
     @if (error(); as message) {
       <p-message severity="error" [text]="message" />
@@ -75,7 +44,7 @@
         icon="pi pi-trash"
         severity="danger"
         [loading]="busy()"
-        [disabled]="form.invalid || unconfirmed()"
+        [disabled]="form.invalid || identity.unconfirmed()"
       />
     </div>
   </form>

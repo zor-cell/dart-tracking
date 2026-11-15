@@ -3,7 +3,12 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, model } fr
 import type { ChartData, ChartOptions, Plugin, ScriptableContext } from 'chart.js';
 import { UIChart } from 'primeng/chart';
 import { chartTheme } from '../../../../core/charts/models/chart-plugins';
-import { axisTicks, axisTitle, tooltipStyle } from '../../../../core/charts/models/chart-styles';
+import {
+  axisTicks,
+  axisTitle,
+  chartBase,
+  tooltipStyle,
+} from '../../../../core/charts/models/chart-styles';
 import { SERIES_COLORS } from '../../../../core/charts/models/series-colors';
 
 /** One stacked part of every bar, named in the legend. */
@@ -226,10 +231,7 @@ export class BarChartComponent {
       percent && this.hiddenSeries().size === 0 ? { max: 100, step: 25 } : countAxis(longestBar);
     return {
       indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      font: { family: this.theme.font },
+      ...chartBase(this.theme),
       layout: { padding: { right: longestTip * TIP_CHAR_PX + TIP_GAP_PX + 4 } },
       interaction: { mode: 'index', axis: 'y', intersect: false },
       scales: {

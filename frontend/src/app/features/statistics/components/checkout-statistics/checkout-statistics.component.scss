@@ -18,7 +18,7 @@
 
 /* Two boards in a row, each with whose darts it shows above it. */
 .doubles-pair {
-  --double-board-height: 15.5rem;
+  --target-board-height: 15.5rem;
 
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

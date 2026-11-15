@@ -2,7 +2,7 @@ from datetime import date
 from typing import Self
 
 from app.api.core.dto.base import CamelModel
-from app.api.features.statistics.domain.heatmap import HEATMAP_CELL
+from app.api.features.statistics.domain.heatmap import cell_centres
 from app.api.features.statistics.domain.overall_statistics import OverallStatistics
 
 
@@ -66,10 +66,7 @@ class OverallStatisticsDto(CamelModel):
             variants=dict(statistics.variants),
             fields=dict(statistics.fields),
             located_fields=dict(statistics.located_fields),
-            heatmap=[
-                (column * HEATMAP_CELL, row * HEATMAP_CELL, n)
-                for (column, row), n in statistics.cells.items()
-            ],
+            heatmap=cell_centres(statistics.cells),
             rings=dict(statistics.rings),
             weeks=[WeekDto(week=week, darts=darts) for week, darts in statistics.weeks],
             longest_streak=statistics.longest_streak,

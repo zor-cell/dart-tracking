@@ -1,0 +1,34 @@
+@let identity = check();
+@if (identity.viaGoogle() || identity.useGoogle()) {
+  <app-google-confirm
+    [credential]="identity.credential()"
+    (credentialChange)="identity.credential.set($event)"
+    [alternative]="!identity.viaGoogle()"
+    (back)="identity.usePassword()"
+  />
+} @else {
+  <div class="auth-form__field">
+    <label class="auth-form__label" [for]="inputId()">{{ label() }}</label>
+    <input
+      pInputText
+      [id]="inputId()"
+      type="password"
+      [formControl]="identity.password"
+      [attr.aria-describedby]="describedBy() + ' ' + inputId() + '-error'"
+      autocomplete="current-password"
+      fluid
+    />
+    <app-field-error [id]="inputId() + '-error'" [control]="identity.password" />
+    @if (identity.googleLinked()) {
+      <button
+        type="button"
+        class="auth-form__switch"
+        i18n="@@auth.google.useGoogle"
+        (mousedown)="$event.preventDefault()"
+        (click)="identity.useGoogleInstead()"
+      >
+        Stattdessen mit Google bestätigen
+      </button>
+    }
+  </div>
+}

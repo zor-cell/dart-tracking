@@ -22,118 +22,72 @@
       (reset)="resetFilters()"
     >
       <form class="list-filters" [formGroup]="filters">
-        <label class="list-filters__label" for="filter-opponent" i18n="@@stats.opponent">Gegner</label>
-        <p-multiselect
+        <app-filter-select
+          label="Gegner"
+          i18n-label="@@stats.opponent"
           inputId="filter-opponent"
-          formControlName="opponentId"
+          [control]="filters.controls.opponentId"
           [options]="opponents()"
           optionLabel="name"
           optionValue="id"
-          placeholder="Alle"
-          i18n-placeholder="@@player.list.all"
-          filterPlaceHolder="Spieler suchen"
-          i18n-filterPlaceHolder="@@player.list.search"
-          [showClear]="true"
-          fluid
+          searchLabel="Spieler suchen"
+          i18n-searchLabel="@@player.list.search"
         />
-        <label class="list-filters__label" for="filter-players" i18n="@@game.list.playerCount">Spieleranzahl</label>
-        <p-multiselect
+        <app-filter-select
+          label="Spieleranzahl"
+          i18n-label="@@game.list.playerCount"
           inputId="filter-players"
-          formControlName="players"
+          [control]="filters.controls.players"
           [options]="playerCountOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Alle"
-          i18n-placeholder="@@player.list.all"
-          [showHeader]="false"
-          [showClear]="true"
-          fluid
         />
         @if (points()) {
-          <label class="list-filters__label" for="filter-mode" i18n="@@game.new.mode">Modus</label>
-          <p-multiselect
+          <app-filter-select
+            label="Modus"
+            i18n-label="@@game.new.mode"
             inputId="filter-mode"
-            formControlName="mode"
+            [control]="filters.controls.mode"
             [options]="modeOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Alle"
-            i18n-placeholder="@@player.list.all"
-            [showHeader]="false"
-            [showClear]="true"
-            fluid
           />
-          <label class="list-filters__label" for="filter-checkout">Checkout</label>
-          <p-multiselect
+          <app-filter-select
+            label="Checkout"
             inputId="filter-checkout"
-            formControlName="checkoutMode"
+            [control]="filters.controls.checkoutMode"
             [options]="checkoutOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Alle"
-            i18n-placeholder="@@player.list.all"
-            [showHeader]="false"
-            [showClear]="true"
-            fluid
           />
         }
         @switch (game()) {
           @case ('around_the_clock') {
-            <label class="list-filters__label" for="filter-clockZone" i18n="@@game.new.zone">Feld</label>
-            <p-multiselect
+            <app-filter-select
+              label="Feld"
+              i18n-label="@@game.new.zone"
               inputId="filter-clockZone"
-              formControlName="clockZone"
+              [control]="filters.controls.clockZone"
               [options]="clockZoneOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Alle"
-              i18n-placeholder="@@player.list.all"
-              [showHeader]="false"
-              [showClear]="true"
-              fluid
             />
           }
           @case ('killer') {
-            <label class="list-filters__label" for="filter-killerZone" i18n="@@game.new.zone">Feld</label>
-            <p-multiselect
+            <app-filter-select
+              label="Feld"
+              i18n-label="@@game.new.zone"
               inputId="filter-killerZone"
-              formControlName="killerZone"
+              [control]="filters.controls.killerZone"
               [options]="killerZoneOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Alle"
-              i18n-placeholder="@@player.list.all"
-              [showHeader]="false"
-              [showClear]="true"
-              fluid
             />
           }
           @case ('training') {
-            <label class="list-filters__label" for="filter-trainingGoal" i18n="@@game.new.goal">Ziel</label>
-            <p-multiselect
+            <app-filter-select
+              label="Ziel"
+              i18n-label="@@game.new.goal"
               inputId="filter-trainingGoal"
-              formControlName="trainingGoal"
+              [control]="filters.controls.trainingGoal"
               [options]="trainingGoalOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Alle"
-              i18n-placeholder="@@player.list.all"
-              [showHeader]="false"
-              [showClear]="true"
-              fluid
             />
-            <label class="list-filters__label" for="filter-trainingRing" i18n="@@game.new.zone">Feld</label>
-            <p-multiselect
+            <app-filter-select
+              label="Feld"
+              i18n-label="@@game.new.zone"
               inputId="filter-trainingRing"
-              formControlName="trainingRing"
+              [control]="filters.controls.trainingRing"
               [options]="trainingRingOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Alle"
-              i18n-placeholder="@@player.list.all"
-              [showHeader]="false"
-              [showClear]="true"
-              fluid
             />
           }
         }
@@ -217,6 +171,30 @@
     [(range)]="range"
   />
 
+  <ng-template #statusView let-inTabs>
+    @switch (status()) {
+      @case ('loading') {
+        <app-loading-state [class.status]="inTabs" label="Statistik wird geladen" i18n-label="@@stats.loading" />
+      }
+      @case ('failed') {
+        <app-load-error
+          [class.status]="inTabs"
+          message="Die Statistik konnte nicht geladen werden."
+          i18n-message="@@stats.loadFailed"
+          (retry)="reload()"
+        />
+      }
+      @case ('empty') {
+        <app-empty-state [class.status]="inTabs" [icon]="filtered() ? 'pi-filter-slash' : 'pi-chart-bar'">
+          @if (filtered()) {
+            <p i18n="@@stats.noMatch">Keine gewerteten Spiele für diese Auswahl.</p>
+          } @else {
+            <p i18n="@@stats.empty">Noch keine gewerteten Spiele.</p>
+          }
+        </app-empty-state>
+      }
+    }
+  </ng-template>
   <ng-template #killPanel>
     @if (kills(); as kills) {
       @if (kills.games.length > 0) {
@@ -231,82 +209,49 @@
         <p-tab value="checkout">Checkout</p-tab>
         <p-tab value="trend" i18n="@@stats.tab.trend">Trend</p-tab>
       </p-tablist>
-      @if (loading() && !totals()) {
-        <app-loading-state class="status" label="Statistik wird geladen" i18n-label="@@stats.loading" />
-      } @else if (failed()) {
-        <app-load-error
-          class="status"
-          message="Die Statistik konnte nicht geladen werden."
-          i18n-message="@@stats.loadFailed"
-          (retry)="reload()"
-        />
+      @if (status()) {
+        <ng-container *ngTemplateOutlet="statusView; context: { $implicit: true }" />
       } @else if (totals(); as totals) {
-        @if (totals.legs === 0) {
-          <app-empty-state class="status" [icon]="filtered() ? 'pi-filter-slash' : 'pi-chart-bar'">
-            @if (filtered()) {
-              <p i18n="@@stats.noMatch">Keine gewerteten Spiele für diese Auswahl.</p>
-            } @else {
-              <p i18n="@@stats.empty">Noch keine gewerteten Spiele.</p>
-            }
-          </app-empty-state>
-        } @else {
-          <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
-            <p-tabpanel value="precision">
-              <app-precision-statistics
-                [statistics]="totals"
+        <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
+          <p-tabpanel value="precision">
+            <app-precision-statistics
+              [statistics]="totals"
+              [comparison]="comparison()"
+              [listParams]="gameListParams()"
+            >
+              <ng-container *ngTemplateOutlet="killPanel" />
+            </app-precision-statistics>
+          </p-tabpanel>
+          <p-tabpanel value="checkout">
+            <app-checkout-statistics [statistics]="totals" [comparison]="comparison()" />
+          </p-tabpanel>
+          <p-tabpanel value="trend">
+            <div class="trend">
+              <app-trend-statistics
+                [figures]="pointsFigures"
+                [points]="totals.trend"
+                [otherPoints]="comparison() ? (others()?.trend ?? null) : null"
+                [compareName]="comparison()?.name ?? null"
+              />
+              <app-visit-distribution
+                [visitScores]="totals.visitScores"
                 [comparison]="comparison()"
-                [listParams]="gameListParams()"
-              >
-                <ng-container *ngTemplateOutlet="killPanel" />
-              </app-precision-statistics>
-            </p-tabpanel>
-            <p-tabpanel value="checkout">
-              <app-checkout-statistics [statistics]="totals" [comparison]="comparison()" />
-            </p-tabpanel>
-            <p-tabpanel value="trend">
-              <div class="trend">
-                <app-trend-statistics
-                  [figures]="pointsFigures"
-                  [points]="totals.trend"
-                  [otherPoints]="comparison() ? (others()?.trend ?? null) : null"
-                  [compareName]="comparison()?.name ?? null"
-                />
-                <app-visit-distribution
-                  [visitScores]="totals.visitScores"
-                  [comparison]="comparison()"
-                />
-              </div>
-            </p-tabpanel>
-          </p-tabpanels>
-        }
+              />
+            </div>
+          </p-tabpanel>
+        </p-tabpanels>
       }
     </p-tabs>
   } @else if (game() === 'all') {
-    @if (loading() && !overall()) {
-      <app-loading-state label="Statistik wird geladen" i18n-label="@@stats.loading" />
-    } @else if (failed()) {
-      <app-load-error
-        message="Die Statistik konnte nicht geladen werden."
-        i18n-message="@@stats.loadFailed"
-        (retry)="reload()"
-      />
+    @if (status()) {
+      <ng-container *ngTemplateOutlet="statusView; context: { $implicit: false }" />
     } @else if (overall(); as overall) {
-      @if (overall.games === 0) {
-        <app-empty-state [icon]="filtered() ? 'pi-filter-slash' : 'pi-chart-bar'">
-          @if (filtered()) {
-            <p i18n="@@stats.noMatch">Keine gewerteten Spiele für diese Auswahl.</p>
-          } @else {
-            <p i18n="@@stats.empty">Noch keine gewerteten Spiele.</p>
-          }
-        </app-empty-state>
-      } @else {
-        <app-overall-statistics
-          [class.reloading]="loading()"
-          [attr.aria-busy]="loading()"
-          [statistics]="overall"
-          (pick)="game.set($event)"
-        />
-      }
+      <app-overall-statistics
+        [class.reloading]="loading()"
+        [attr.aria-busy]="loading()"
+        [statistics]="overall"
+        (pick)="game.set($event)"
+      />
     }
   } @else {
     <p-tabs [value]="targetTab()" (valueChange)="tab.set($any($event))" [showNavigators]="false">
@@ -314,36 +259,19 @@
         <p-tab value="precision" i18n="@@stats.tab.precision">Präzision</p-tab>
         <p-tab value="trend" i18n="@@stats.tab.trend">Trend</p-tab>
       </p-tablist>
-      @if (loading() && !targets()) {
-        <app-loading-state class="status" label="Statistik wird geladen" i18n-label="@@stats.loading" />
-      } @else if (failed()) {
-        <app-load-error
-          class="status"
-          message="Die Statistik konnte nicht geladen werden."
-          i18n-message="@@stats.loadFailed"
-          (retry)="reload()"
-        />
+      @if (status()) {
+        <ng-container *ngTemplateOutlet="statusView; context: { $implicit: true }" />
       } @else if (targets(); as targets) {
-        @if (targets.darts === 0) {
-          <app-empty-state class="status" [icon]="filtered() ? 'pi-filter-slash' : 'pi-chart-bar'">
-            @if (filtered()) {
-              <p i18n="@@stats.noMatch">Keine gewerteten Spiele für diese Auswahl.</p>
-            } @else {
-              <p i18n="@@stats.empty">Noch keine gewerteten Spiele.</p>
-            }
-          </app-empty-state>
-        } @else {
-          <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
-            <p-tabpanel value="precision">
-              <app-target-statistics [statistics]="targets" [game]="game()" [wins]="killerWins()">
-                <ng-container *ngTemplateOutlet="killPanel" />
-              </app-target-statistics>
-            </p-tabpanel>
-            <p-tabpanel value="trend">
-              <app-trend-statistics [figures]="targetFigures" [points]="targets.games" />
-            </p-tabpanel>
-          </p-tabpanels>
-        }
+        <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
+          <p-tabpanel value="precision">
+            <app-target-statistics [statistics]="targets" [game]="game()" [wins]="killerWins()">
+              <ng-container *ngTemplateOutlet="killPanel" />
+            </app-target-statistics>
+          </p-tabpanel>
+          <p-tabpanel value="trend">
+            <app-trend-statistics [figures]="targetFigures" [points]="targets.games" />
+          </p-tabpanel>
+        </p-tabpanels>
       }
     </p-tabs>
   }

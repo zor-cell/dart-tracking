@@ -22,7 +22,7 @@ import {
   rollingAverage,
 } from '../../models/trend-metric';
 import { chartTheme } from '../../../../core/charts/models/chart-plugins';
-import { axisTicks, axisTitle, tooltipStyle } from '../../../../core/charts/models/chart-styles';
+import { axisTicks, axisTitle, chartBase, tooltipStyle } from '../../../../core/charts/models/chart-styles';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { TrendLegendComponent, TrendLegendEntry } from '../trend-legend/trend-legend.component';
 
@@ -142,10 +142,7 @@ export class TrendStatisticsComponent<T extends TrendGame> {
     const { unit, axis } = this.picked();
     const format = (value: number) => `${formatNumber(value, this.locale, '1.1-1')}${unit}`;
     return {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      font: { family: this.theme.font },
+      ...chartBase(this.theme),
       interaction: { mode: 'index', intersect: false },
       scales: {
         x: {

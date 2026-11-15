@@ -7,13 +7,11 @@ import { fieldName } from '../../models/field-label';
 import { dartCount } from '../../models/dart-count';
 import { FieldFramesComponent } from '../field-frames/field-frames.component';
 import { HeatBoardComponent, HeatField } from '../heat-board/heat-board.component';
+import { MISS, heatFields, mostOnBoard } from '../../models/heat-fields';
 
 /** Fill opacity of the miss tile at the least and the most darts, as on the board. */
 const MIN_OPACITY = 0.2;
 const MAX_OPACITY = 0.9;
-
-/** Label of a dart that hit no field. */
-const MISS = '0';
 
 /** Every dart counted into the field it hit, tinted by how often; a tap or hover names the count. */
 @Component({
@@ -40,23 +38,9 @@ export class FieldHeatmapComponent {
     [...this.counts().values()].reduce((sum, count) => sum + count, 0),
   );
 
-  /** The highest count on a board field, the dark end of the scale; misses stay out. */
-  protected readonly most = computed(() =>
-    Math.max(
-      1,
-      ...[...this.counts()].filter(([label]) => label !== MISS).map(([, count]) => count),
-    ),
-  );
+  protected readonly most = computed(() => mostOnBoard(this.counts()));
 
-  protected readonly fields = computed<HeatField[]>(() =>
-    [...this.counts()]
-      .filter(([label]) => label !== MISS)
-      .map(([label, count]) => ({
-        label,
-        share: count / this.most(),
-        ariaLabel: `${fieldName(label)}: ${dartCount(count)}`,
-      })),
-  );
+  protected readonly fields = computed<HeatField[]>(() => heatFields(this.counts(), this.most()));
 
   protected readonly misses = computed(() => this.counts().get(MISS) ?? 0);
   protected readonly missLabel = computed(

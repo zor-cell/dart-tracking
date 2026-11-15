@@ -92,15 +92,19 @@ heatmaps.
   at most two still open as `FilterSuggestion`s beside them, ranked by
   `FilterMemoryService` from the account's own picks, and the search opens from the
   toolbar's icon.
-  - A filter with more than two values is a `p-multiselect` kept as a list
-    (`listParam`); its chip names the picks with `orList()` ("301 oder 501", past two
-    "Anna, Ben +3").
+  - A filter with more than two values is an `app-filter-select` (label and
+    `p-multiselect`) kept as a list (`listParam`); its chip names the picks with
+    `orList()` ("301 oder 501", past two "Anna, Ben +3").
   - A period is `app-period-picker` behind a fixed chip that opens it.
 - **Step buttons:** a button that moves one step, such as a dart in the replay, takes
   `appRepeatPress` (`core/view/directives/`), so holding it keeps stepping.
 - **Dialogs:** destructive actions ask through `ConfirmService.ask()`, other actions worth
   a confirmation through `ask(…, safe = true)`; the one `p-confirmdialog` lives in the
-  app shell. Other dialogs use `DIALOG_STYLE`.
+  app shell. Other dialogs use `DIALOG_STYLE`. A change that needs the account proven
+  again takes an `IdentityCheck` and `app-identity-proof` (password, or Google instead).
+- **Statistics:** a figure that opens where it was thrown is an `app-stat-link`; darts
+  at targets or checkout doubles go on `app-target-board`; every chart spreads
+  `chartBase()` into its options.
 - **Joining labels:** a space, a comma or brackets ("501 Double Out", "Runde 3, Dart 2",
   "T20 (60)"), never a middle dot.
 - **Colours:** theme tokens (`var(--p-…)`) without hex fallbacks. Hardcoded colours

@@ -14,7 +14,6 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Params } from '@angular/router';
 import { Button } from 'primeng/button';
-import { MultiSelect } from 'primeng/multiselect';
 import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
@@ -47,6 +46,7 @@ import { PlayerIdentityDto } from '../../../player/dto/player-identity.dto';
 import { PlayerService } from '../../../player/services/player.service';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
 import { ListToolbarComponent } from '../../../../core/view/components/list-toolbar/list-toolbar.component';
+import { FilterSelectComponent } from '../../../../core/view/components/filter-select/filter-select.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
@@ -157,7 +157,7 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
     KillStatisticsComponent,
     OverallStatisticsComponent,
     InfoHintComponent,
-    MultiSelect,
+    FilterSelectComponent,
     PeriodPickerComponent,
     Popover,
     PrecisionStatisticsComponent,
@@ -309,6 +309,22 @@ export class StatisticsComponent {
       (key, picked) => this.chipLabel(key, [picked]),
       (key, picked) => !(value[key] ?? []).includes(picked),
     );
+  });
+
+  /** Loading, failed or nothing to show in the view's figures; null once they are there. */
+  protected readonly status = computed<'loading' | 'failed' | 'empty' | null>(() => {
+    const count = this.points()
+      ? this.totals()?.legs
+      : this.game() === 'all'
+        ? this.overall()?.games
+        : this.targets()?.darts;
+    if (this.loading() && count === undefined) {
+      return 'loading';
+    }
+    if (this.failed()) {
+      return 'failed';
+    }
+    return count === 0 ? 'empty' : null;
   });
 
   /** Whether anything narrows the statistics below the whole history. */

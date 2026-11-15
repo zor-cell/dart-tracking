@@ -37,3 +37,13 @@ export function seriesColor(
   const base = SERIES_COLORS[playerId % SERIES_COLORS.length];
   return `${base}${highlightId === null || highlightId === playerId ? alpha.shown : alpha.faded}`;
 }
+
+/** What every chart shares: it fills its box, draws at once and writes in the theme font. */
+export function chartBase({ font }: ChartTheme) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false as const,
+    font: { family: font },
+  };
+}

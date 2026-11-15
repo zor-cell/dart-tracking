@@ -131,6 +131,19 @@ def test_statistics_count_finished_legs(alice, session):
     tally = statistics(alice)
 
     assert (tally["legs"], tally["legsWon"], tally["darts"]) == (1, 1, 6)
+    assert tally["doubles"] == [
+        {
+            "value": 5,
+            "multiplier": 2,
+            "darts": 1,
+            "hits": 1,
+            "located": 0,
+            "distance": None,
+            "locatedHits": 0,
+            "fields": {"D5": 1},
+            "cells": [],
+        }
+    ]
 
 
 def test_statistics_leave_out_what_does_not_count(alice, session, register):

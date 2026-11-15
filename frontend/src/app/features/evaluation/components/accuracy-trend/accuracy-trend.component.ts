@@ -12,7 +12,7 @@ import type { ChartData, ChartOptions } from 'chart.js';
 import { UIChart } from 'primeng/chart';
 import { GameAccuracyDto } from '../../dto/accuracy.dto';
 import { chartTheme } from '../../../../core/charts/models/chart-plugins';
-import { axisTicks, axisTitle, tooltipStyle } from '../../../../core/charts/models/chart-styles';
+import { axisTicks, axisTitle, chartBase, tooltipStyle } from '../../../../core/charts/models/chart-styles';
 import { SERIES_COLORS } from '../../../../core/charts/models/series-colors';
 import { SHORT_DATE } from '../../../../core/i18n/models/date-format';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
@@ -86,10 +86,7 @@ export class AccuracyTrendComponent {
   protected readonly options = computed<ChartOptions<'line'>>(() => {
     const games = this.played();
     return {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      font: { family: this.theme.font },
+      ...chartBase(this.theme),
       interaction: { mode: 'index', intersect: false },
       scales: {
         x: {
