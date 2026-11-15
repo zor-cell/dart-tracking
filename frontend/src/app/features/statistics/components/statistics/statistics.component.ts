@@ -14,6 +14,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Params } from '@angular/router';
 import { Button } from 'primeng/button';
+import { Listbox } from 'primeng/listbox';
 import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
@@ -22,10 +23,15 @@ import { StatisticsOverviewDto } from '../../dto/statistics-overview.dto';
 import { TargetStatisticsDto } from '../../dto/target-statistics.dto';
 import { COMPARE_COLOR, Comparison, OWN_COLOR } from '../../models/comparison';
 import { StatisticsFilter } from '../../models/statistics-filter';
-import { GamePillsComponent } from '../game-pills/game-pills.component';
 import { KillStatisticsComponent } from '../kill-statistics/kill-statistics.component';
 import { KillStatisticsDto } from '../../dto/kill-statistics.dto';
-import { STATISTICS_VIEWS, StatisticsGame, StatisticsView, showsPoints } from '../../models/statistics-game';
+import {
+  STATISTICS_SECTIONS,
+  STATISTICS_VIEWS,
+  StatisticsGame,
+  StatisticsView,
+  showsPoints,
+} from '../../models/statistics-game';
 import { CRICKET_FIGURES, POINTS_FIGURES, TARGET_FIGURES } from '../../models/trend-metric';
 import { OverallStatisticsComponent } from '../overall-statistics/overall-statistics.component';
 import { OverallStatisticsDto } from '../../dto/overall-statistics.dto';
@@ -162,8 +168,8 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
     ListToolbarComponent,
     LoadErrorComponent,
     FormsModule,
-    GamePillsComponent,
     KillStatisticsComponent,
+    Listbox,
     OverallStatisticsComponent,
     InfoHintComponent,
     FilterSelectComponent,
@@ -208,7 +214,13 @@ export class StatisticsComponent {
 
   /** The game whose figures are shown. */
   protected readonly game = signal<StatisticsView>('all');
-  protected readonly gameOptions = [...STATISTICS_VIEWS];
+  /** Rebuilt on every opening, so a tap on the shown game cannot leave it unmarked. */
+  protected readonly gamePickerOpen = signal(false);
+  /** Every game together first, then the games under their kinds. */
+  protected readonly gameSections = [
+    { kind: '', games: [STATISTICS_VIEWS[0]] },
+    ...STATISTICS_SECTIONS,
+  ];
   protected readonly points = computed(() => {
     const game = this.game();
     return game !== 'all' && showsPoints(game);
@@ -303,12 +315,19 @@ export class StatisticsComponent {
   });
   private readonly queryState = new QueryState();
 
-  /** The filters in use, as chips under the toolbar; the period shows in its own buttons. */
+  /** The game and the period as fixed chips that open their pickers, then the filters in use. */
   protected readonly chips = computed<FilterChip[]>(() => {
     const value = this.filterValue();
     const period = this.period();
     const range = period === 'custom' ? dayRangeLabel(this.range(), this.locale) : null;
+    const game = STATISTICS_VIEWS.find((option) => option.value === this.game());
     return [
+      {
+        key: 'game',
+        label: this.game() === 'all' ? $localize`:@@stats.allGames:Alle Spiele` : (game?.label ?? ''),
+        removable: false,
+        opens: true,
+      },
       {
         key: 'period',
         label: range ?? PERIOD_CHIP_LABELS[period],
@@ -476,11 +495,20 @@ export class StatisticsComponent {
     }
   }
 
-  /** The period chip opens the period picker under it. */
-  protected openPicker(open: FilterChipOpen, picker: PeriodPickerComponent): void {
-    if (open.key === 'period') {
+  /** The game and period chips open their pickers under them. */
+  protected openPicker(open: FilterChipOpen, games: Popover, picker: PeriodPickerComponent): void {
+    if (open.key === 'game') {
+      games.toggle(open.event);
+    } else if (open.key === 'period') {
       picker.toggle(open.event);
     }
+  }
+
+  protected pickGame(game: StatisticsView | null, picker: Popover): void {
+    if (game !== null) {
+      this.game.set(game);
+    }
+    picker.hide();
   }
 
   protected pickSuggestion(suggestion: FilterSuggestion): void {

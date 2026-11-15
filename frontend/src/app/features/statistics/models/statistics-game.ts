@@ -1,32 +1,23 @@
 import { fieldOutline } from '../../game/models/board-face';
 import { parseField } from '../../game/models/field-label';
 import { SECTOR_ORDER } from '../../game/models/board-geometry';
-import { GAME_VARIANTS, GameVariant, countsPoints } from '../../game/models/game-variant';
+import { GAME_SECTIONS, GameVariant, countsPoints, variantLabel } from '../../game/models/game-variant';
 
 /** The games the statistics page shows figures for, one at a time. */
-export type StatisticsGame = Extract<
-  GameVariant,
-  'x01' | 'elimination' | 'around_the_clock' | 'training' | 'killer' | 'cricket'
->;
+export type StatisticsGame = GameVariant;
 
-const ORDER: readonly StatisticsGame[] = [
-  'x01',
-  'around_the_clock',
-  'training',
-  'elimination',
-  'killer',
-  'cricket',
-];
+/** The games under the kinds of the new game page, the coming ones left out. */
+export const STATISTICS_SECTIONS: readonly {
+  kind: string;
+  games: readonly { label: string; value: StatisticsGame }[];
+}[] = GAME_SECTIONS.map((section) => ({
+  kind: section.kind,
+  games: section.games
+    .filter((game) => game !== null)
+    .map((value) => ({ label: variantLabel(value), value })),
+}));
 
-export const STATISTICS_GAMES: readonly { label: string; value: StatisticsGame }[] = ORDER.map(
-  (value) => ({
-    label:
-      value === 'training'
-        ? $localize`:@@game.category.training:Training`
-        : (GAME_VARIANTS.find((option) => option.value === value)?.label ?? ''),
-    value,
-  }),
-);
+export const STATISTICS_GAMES = STATISTICS_SECTIONS.flatMap((section) => section.games);
 
 /** What the statistics page shows: one game, or every game together. */
 export type StatisticsView = StatisticsGame | 'all';
@@ -35,15 +26,6 @@ export const STATISTICS_VIEWS: readonly { label: string; value: StatisticsView }
   { label: $localize`:@@stats.all:Alle`, value: 'all' },
   ...STATISTICS_GAMES,
 ];
-
-/** The name of a variant on the statistics page, its own training label included. */
-export function variantLabel(variant: GameVariant): string {
-  return (
-    STATISTICS_GAMES.find((option) => option.value === variant)?.label ??
-    GAME_VARIANTS.find((option) => option.value === variant)?.label ??
-    variant
-  );
-}
 
 /** Whether the figures of a game are points and checkouts rather than darts at targets. */
 export function showsPoints(game: StatisticsGame): boolean {

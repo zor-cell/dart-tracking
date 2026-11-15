@@ -17,6 +17,19 @@ export const GAME_VARIANTS: readonly { label: string; value: GameVariant }[] = [
   { label: $localize`:@@game.variant.training:Freies Training`, value: 'training' },
 ];
 
+/** The games under their kind, as the new game page and the statistics list them; null is
+ * the weakness training still to come. */
+export interface GameSection {
+  readonly kind: string;
+  readonly games: readonly (GameVariant | null)[];
+}
+
+export const GAME_SECTIONS: readonly GameSection[] = [
+  { kind: $localize`:@@game.category.standard:Standard`, games: ['x01', 'cricket'] },
+  { kind: $localize`:@@game.category.training:Training`, games: ['around_the_clock', 'training', null] },
+  { kind: $localize`:@@game.category.group:Gruppe`, games: ['killer', 'elimination'] },
+];
+
 /** The variants that run on a points total and have a mode and a checkout. */
 export const POINTS_VARIANTS = GAME_VARIANTS.filter((option) => countsPoints(option.value));
 

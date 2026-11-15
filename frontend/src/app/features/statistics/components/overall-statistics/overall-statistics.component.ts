@@ -21,11 +21,11 @@ import { chartTheme } from '../../../../core/charts/models/chart-plugins';
 import { axisTicks, tooltipStyle } from '../../../../core/charts/models/chart-styles';
 import { SHORT_DATE } from '../../../../core/i18n/models/date-format';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
-import { GameVariant } from '../../../game/models/game-variant';
+import { GameVariant, variantLabel } from '../../../game/models/game-variant';
 import { OverallStatisticsDto } from '../../dto/overall-statistics.dto';
 import { OWN_COLOR } from '../../models/comparison';
 import { HitPatternComponent } from '../hit-pattern/hit-pattern.component';
-import { STATISTICS_GAMES, StatisticsGame, variantLabel } from '../../models/statistics-game';
+import { STATISTICS_GAMES, StatisticsGame } from '../../models/statistics-game';
 
 /** One bar of a list: its name, its count and its length against the longest. */
 interface BarRow {

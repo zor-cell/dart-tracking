@@ -26,6 +26,32 @@ p-tab {
   gap: 1.25rem;
 }
 
+/* The games in the popover of the game chip, without a box of their own. */
+.game-picker {
+  --p-listbox-border-color: transparent;
+  --p-listbox-shadow: none;
+  --p-listbox-padding: 0;
+  --p-listbox-list-padding: 0;
+  --p-listbox-background: transparent;
+  --p-listbox-option-group-padding: 0;
+
+  display: block;
+  width: min(15rem, calc(100vw - 4rem));
+}
+
+/* A kind's heading, set off from the games by a rule, case and spacing. */
+.game-picker__kind {
+  display: block;
+  margin-top: 0.375rem;
+  padding: 0.625rem 0.75rem 0.25rem;
+  border-top: 1px solid var(--p-content-border-color);
+  color: var(--p-text-muted-color);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 /* The picker the compare button opens, as wide as the filter popover. */
 .compare-picker {
   width: min(18rem, calc(100vw - 4rem));

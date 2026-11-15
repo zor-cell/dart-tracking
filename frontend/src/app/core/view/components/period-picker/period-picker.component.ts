@@ -12,6 +12,7 @@ import { Popover } from 'primeng/popover';
 import { SelectButton } from 'primeng/selectbutton';
 import { DayRange } from '../../models/day-range';
 import { DEFAULT_PERIODS, PERIOD_UNITS, PERIODS, Period, PeriodUnit } from '../../models/period';
+import { centrePopoverArrow } from '../../models/popover-arrow';
 
 /** A popover with the period's quick picks and a calendar for a range of its own; with
  * `units`, the picks can also count back in games. */
@@ -36,6 +37,10 @@ export class PeriodPickerComponent {
   /** Opens the picker under the tap, or closes it. */
   toggle(event: Event): void {
     this.popover().toggle(event);
+  }
+
+  protected centreArrow(): void {
+    centrePopoverArrow(this.popover());
   }
 
   /** Switch what the quick picks count; "all" stays, any other pick starts over. */

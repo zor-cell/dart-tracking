@@ -96,6 +96,8 @@ heatmaps.
     `p-multiselect`) kept as a list (`listParam`); its chip names the picks with
     `orList()` ("301 oder 501", past two "Anna, Ben +3").
   - A period is `app-period-picker` behind a fixed chip that opens it.
+  - A choice of game is a fixed chip that opens the games under the kinds of
+    `GAME_SECTIONS` (`game-variant.ts`), the same ones the new game page lists.
 - **Step buttons:** a button that moves one step, such as a dart in the replay, takes
   `appRepeatPress` (`core/view/directives/`), so holding it keeps stepping.
 - **Dialogs:** destructive actions ask through `ConfirmService.ask()`, other actions worth

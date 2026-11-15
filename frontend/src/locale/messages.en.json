@@ -797,6 +797,7 @@
     "stats.kills.most": "Most kills",
     "stats.darts": "{VAR_PLURAL, plural, =1 {1 dart} other {{INTERPOLATION} darts}}",
     "stats.all": "All",
+    "stats.allGames": "All games",
     "stats.all.oneGame": "1 game",
     "stats.all.games": "{$count} games",
     "stats.all.weekOf": "Week of {$date}",

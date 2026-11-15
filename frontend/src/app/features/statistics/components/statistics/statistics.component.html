@@ -5,19 +5,12 @@
   </header>
 
   <div class="selection">
-    <app-game-pills
-      [options]="gameOptions"
-      [(game)]="game"
-      ariaLabel="Spielart"
-      i18n-ariaLabel="@@stats.game"
-    />
-
     <app-list-toolbar
       [filterable]="true"
       [chips]="chips()"
       [suggestions]="suggestions()"
       (chipRemove)="clearFilter($event)"
-      (chipOpen)="openPicker($event, periodPicker)"
+      (chipOpen)="openPicker($event, gamePicker, periodPicker)"
       (suggestionPick)="pickSuggestion($event)"
       (reset)="resetFilters()"
     >
@@ -119,9 +112,10 @@
           <strong i18n="@@player.list.self">Du</strong>
           @if (totals(); as own) {
             <span class="compare-note__games">
-              <ng-container i18n="@@stats.games"
-                >{own.legs, plural, =1 {1 Spiel} other {{{ own.legs }} Spiele}}</ng-container
-              >
+              <ng-container i18n="@@stats.games">{own.legs, plural,
+                =1 {1 Spiel}
+                other {{{ own.legs }} Spiele}
+              }</ng-container>
             </span>
           }
         </span>
@@ -130,9 +124,10 @@
           <strong>{{ player.name }}</strong>
           @if (others(); as loaded) {
             <span class="compare-note__games">
-              <ng-container i18n="@@stats.games"
-                >{loaded.legs, plural, =1 {1 Spiel} other {{{ loaded.legs }} Spiele}}</ng-container
-              >
+              <ng-container i18n="@@stats.games">{loaded.legs, plural,
+                =1 {1 Spiel}
+                other {{{ loaded.legs }} Spiele}
+              }</ng-container>
             </span>
           }
         </span>
@@ -144,15 +139,53 @@
     } @else if (counted(); as counted) {
       <div class="compare-note">
         <span>
-          <strong i18n="@@stats.games">{counted.games, plural, =1 {1 Spiel} other {{{ counted.games }} Spiele}}</strong>,
-          <span class="compare-note__games" i18n="@@stats.darts">{counted.darts, plural, =1 {1 Dart} other {{{ counted.darts | number }} Darts}}</span>
+          <strong i18n="@@stats.games">{counted.games, plural,
+            =1 {1 Spiel}
+            other {{{ counted.games }} Spiele}
+          }</strong
+          >,
+          <span class="compare-note__games" i18n="@@stats.darts">{counted.darts, plural,
+            =1 {1 Dart}
+            other {{{ counted.darts | number }} Darts}
+          }</span>
         </span>
       </div>
     }
   </div>
+  <p-popover
+    #gamePicker
+    (onShow)="centreArrow(gamePicker); gamePickerOpen.set(true)"
+    (onHide)="gamePickerOpen.set(false)"
+  >
+    @if (gamePickerOpen()) {
+      <p-listbox
+        class="game-picker"
+        [options]="gameSections"
+        [group]="true"
+        optionGroupLabel="kind"
+        optionGroupChildren="games"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="game()"
+        (ngModelChange)="pickGame($event, gamePicker)"
+        scrollHeight="none"
+        [metaKeySelection]="true"
+        ariaLabel="Spielart"
+        i18n-ariaLabel="@@stats.game"
+      >
+        <ng-template #group let-section>
+          @if (section.kind) {
+            <span class="game-picker__kind">{{ section.kind }}</span>
+          }
+        </ng-template>
+      </p-listbox>
+    }
+  </p-popover>
   <p-popover #comparePicker (onShow)="centreArrow(comparePicker)">
     <div class="compare-picker list-filters">
-      <label class="list-filters__label" for="compare-player" i18n="@@stats.compareWith">Vergleichen mit</label>
+      <label class="list-filters__label" for="compare-player" i18n="@@stats.compareWith"
+        >Vergleichen mit</label
+      >
       <p-select
         inputId="compare-player"
         [options]="opponents()"
@@ -183,7 +216,11 @@
   <ng-template #statusView let-inTabs>
     @switch (status()) {
       @case ('loading') {
-        <app-loading-state [class.status]="inTabs" label="Statistik wird geladen" i18n-label="@@stats.loading" />
+        <app-loading-state
+          [class.status]="inTabs"
+          label="Statistik wird geladen"
+          i18n-label="@@stats.loading"
+        />
       }
       @case ('failed') {
         <app-load-error
@@ -194,7 +231,10 @@
         />
       }
       @case ('empty') {
-        <app-empty-state [class.status]="inTabs" [icon]="filtered() ? 'pi-filter-slash' : 'pi-chart-bar'">
+        <app-empty-state
+          [class.status]="inTabs"
+          [icon]="filtered() ? 'pi-filter-slash' : 'pi-chart-bar'"
+        >
           @if (filtered()) {
             <p i18n="@@stats.noMatch">Keine gewerteten Spiele für diese Auswahl.</p>
           } @else {

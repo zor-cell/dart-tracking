@@ -1,4 +1,4 @@
-<p-popover>
+<p-popover (onShow)="centreArrow()">
   <div class="period">
     @if (units()) {
       <span id="period-unit" class="sr-only" i18n="@@common.period.unit">Zeitraum zählen in</span>

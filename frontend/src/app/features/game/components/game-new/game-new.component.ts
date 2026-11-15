@@ -47,7 +47,7 @@ import { PlayerService } from '../../../player/services/player.service';
 import { SettingsService } from '../../../settings/services/settings.service';
 import { GAME_MODES, GameMode } from '../../models/game-mode';
 import { CHECKOUT_MODES, CheckoutMode } from '../../models/checkout-mode';
-import { GAME_VARIANTS, GameVariant, variantLabel } from '../../models/game-variant';
+import { GAME_SECTIONS, GAME_VARIANTS, GameVariant, variantLabel } from '../../models/game-variant';
 import {
   CLOCK_ZONES,
   ELIMINATION_KILLS,
@@ -121,7 +121,7 @@ export class GameNewComponent {
   private readonly drafts = inject(GameDraftService);
 
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
-  protected readonly sections = SECTIONS;
+  protected readonly sections = GAME_SECTIONS;
   protected readonly variantName = variantLabel;
   protected readonly checkoutModeOptions = [...CHECKOUT_MODES];
   protected readonly cricketScoringOptions = [...CRICKET_SCORINGS];
@@ -543,22 +543,6 @@ export class GameNewComponent {
     );
   }
 }
-
-const STANDARD = $localize`:@@game.category.standard:Standard`;
-const GROUP = $localize`:@@game.category.group:Gruppe`;
-const TRAINING = $localize`:@@game.category.training:Training`;
-
-/** The games of the first step under their kind; null is the coming weakness training. */
-interface GameSection {
-  kind: string;
-  games: readonly (GameVariant | null)[];
-}
-
-const SECTIONS: readonly GameSection[] = [
-  { kind: STANDARD, games: ['x01', 'cricket'] },
-  { kind: TRAINING, games: ['around_the_clock', 'training', null] },
-  { kind: GROUP, games: ['killer', 'elimination'] },
-];
 
 /** The games where everyone runs for the same goal. */
 const RACES: readonly GameVariant[] = ['x01', 'elimination', 'around_the_clock'];
