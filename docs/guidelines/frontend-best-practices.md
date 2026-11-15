@@ -49,6 +49,26 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 ## Styling
 - PrimeNG is used for styling components
 
+## Library and framework lookups
+The `primeng` and `angular-cli` MCP servers hold the docs for the versions in use;
+look things up there instead of relying on memory.
+
+- Before building UI, `search` the PrimeNG server for a component that covers it; hand-
+  written markup and CSS only where none does.
+- Before using a PrimeNG component, read its API with `get_component` (and
+  `get_example` if needed); afterwards check the template with `validate_usage`.
+- Theming and design tokens follow `get_guide`, not overrides of PrimeNG internals.
+- For Angular questions use `get_best_practices` and `search_documentation`.
+
+The `angular-developer` skill (copied from `angular/skills`) applies, except where
+this project decides otherwise:
+
+- Check code with `npx ngc -p tsconfig.app.json --noEmit` (in `frontend/`), not
+  `ng build`: a build wipes the running dev server's cache.
+- Files keep their role suffix (`*.component.ts`, `*.service.ts`).
+- PrimeNG before Angular Aria or other headless components.
+- No frontend tests.
+
 ## Style Guide
 - Components should always be created with 3 different files for .ts, .html and .scss
 - A feature should be structured with the following folders in src/app/features:
