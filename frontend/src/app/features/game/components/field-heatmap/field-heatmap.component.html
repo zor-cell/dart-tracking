@@ -9,14 +9,14 @@
 
   <p caption class="caption">
     @if (selected(); as field) {
-      <strong>{{ field.name }}</strong> &middot;
+      <strong>{{ field.name }}</strong>,
       @if (field.count === 0 && field.label === miss) {
         <ng-container i18n="@@game.heatmap.noDarts">keine Darts</ng-container>
       } @else if (field.count === 0) {
         <ng-container i18n="@@game.heatmap.noHits">keine Treffer</ng-container>
       } @else {
-        {{ dartCount(field.count) }} &middot;
-        {{ field.share | number: '1.0-0' }}&nbsp;%
+        {{ dartCount(field.count) }}
+        ({{ field.share | number: '1.0-0' }}&nbsp;%)
       }
     } @else {
       <span class="caption__summary">{{ dartCount(total()) }}</span>

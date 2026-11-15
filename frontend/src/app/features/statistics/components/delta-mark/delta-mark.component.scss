@@ -16,6 +16,17 @@
   line-height: 1;
   cursor: pointer;
 
+  // Touch target of at least 24 px around the small glyph.
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 1.5rem);
+    height: max(100%, 1.5rem);
+    transform: translate(-50%, -50%);
+  }
+
   &:focus-visible {
     outline: 2px solid var(--p-primary-color);
   }

@@ -56,11 +56,11 @@
     >
       <span caption>
         @if (shown(); as target) {
-          <strong>{{ target.name }}</strong> &middot;
+          <strong>{{ target.name }}</strong>,
           @if (target.rate === null) {
             <ng-container i18n="@@game.heatmap.noHits">keine Treffer</ng-container>
           } @else {
-            {{ target.hits }}&nbsp;/&nbsp;{{ target.darts }} &middot; {{ target.rate * 100 | number: '1.0-0' }}&nbsp;%
+            {{ target.hits }}&nbsp;/&nbsp;{{ target.darts }} ({{ target.rate * 100 | number: '1.0-0' }}&nbsp;%)
           }
         } @else {
           @if (kind() === 'doubles') {

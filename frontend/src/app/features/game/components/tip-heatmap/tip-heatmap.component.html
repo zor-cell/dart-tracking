@@ -58,7 +58,7 @@
 
 <p class="caption" aria-live="polite">
   @if (pick(); as pick) {
-    <strong>{{ pick.name }}</strong> &middot; {{ pick.detail }}
+    <strong>{{ pick.name }}</strong>, {{ pick.detail }}
   } @else {
     <span class="caption__summary">{{ caption() }}</span>
   }
