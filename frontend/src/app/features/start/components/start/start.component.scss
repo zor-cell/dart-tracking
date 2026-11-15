@@ -1,0 +1,27 @@
+.start__trend {
+  margin: 0.5rem 0 0;
+}
+
+.start__more {
+  align-self: flex-end;
+}
+
+.start__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.start__step {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
+  font-size: 0.8rem;
+  font-weight: 600;
+}

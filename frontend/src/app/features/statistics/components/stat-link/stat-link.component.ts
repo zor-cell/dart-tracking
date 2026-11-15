@@ -23,8 +23,9 @@ export class StatLinkComponent {
   readonly link = input.required<string | readonly unknown[]>();
   readonly queryParams = input<Params | null>(null);
   readonly action = input<StatLinkAction>('replay');
+  /** How the opened view's back link names this page. */
+  readonly back = input($localize`:@@auth.account.stats:Statistik`);
 
-  /** Brings the opened view back here. */
-  protected readonly returnState = backState($localize`:@@auth.account.stats:Statistik`);
+  protected readonly returnState = computed(() => backState(this.back()));
   protected readonly actionLabel = computed(() => ACTION_LABELS[this.action()]);
 }

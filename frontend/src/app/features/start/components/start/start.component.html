@@ -1,16 +1,201 @@
 <section class="view">
-  <header class="view__header">
-    <h1 class="view__title">Dart Tracking</h1>
-    <p class="view__subtitle" i18n="@@start.subtitle">Automatisches Scoring per Smartphone-Kamera</p>
-  </header>
+  @if (restoring()) {
+    <app-loading-state label="Startseite wird geladen" i18n-label="@@start.loading" />
+  } @else if (user(); as account) {
+    <header class="view__header">
+      <h1 class="view__title" i18n="@@start.greeting">Hallo {{ account.displayName }}</h1>
+      @if (overview() && !fresh()) {
+        <p class="view__subtitle" i18n="@@start.period">Deine X01-Spiele der letzten 30 Tage</p>
+      }
+    </header>
 
-  <div class="view__actions">
-    <p-button
-      fluid
-      label="Neues Spiel"
-      i18n-label="@@start.newGame"
-      icon="pi pi-play-circle"
-      routerLink="/game/new"
-    />
-  </div>
+    @if (failed()) {
+      <app-load-error
+        message="Die Startseite konnte nicht geladen werden."
+        i18n-message="@@start.loadFailed"
+        (retry)="load()"
+      />
+    } @else if (overview(); as data) {
+      @if (fresh()) {
+        <ng-container *ngTemplateOutlet="steps" />
+      } @else {
+        <section class="panel">
+          @if (data.recent.legs > 0) {
+            <dl class="stat-grid">
+              <div class="stat stat--wide stat--lead">
+                <dt class="stat__label">3-Dart-<span aria-hidden="true">Ø</span><span class="sr-only">Average</span></dt>
+                <dd class="stat__value">
+                  {{ data.recent.average | number: '1.1-1' }}
+                  @if (data.previous.legs > 0) {
+                    <app-delta-mark
+                      [own]="data.recent.average"
+                      [other]="data.previous.average"
+                      [name]="before"
+                    />
+                  }
+                </dd>
+                @if (data.recent.trend.length > 1) {
+                  <dd class="start__trend" aria-hidden="true">
+                    <p-chart type="line" height="3.5rem" [data]="chartData()" [options]="chartOptions" />
+                  </dd>
+                }
+              </div>
+              <div class="stat">
+                <dt class="stat__label" i18n="@@stats.checkoutRate">Checkout-Quote</dt>
+                <dd class="stat__value">
+                  @let rate = checkout()?.recent ?? null;
+                  @if (rate !== null) {
+                    {{ rate | number: '1.0-0' }} %
+                  } @else {
+                    &ndash;
+                  }
+                  @if (data.previous.legs > 0) {
+                    <app-delta-mark
+                      [own]="checkout()?.recent ?? null"
+                      [other]="checkout()?.previous ?? null"
+                      [name]="before"
+                      [digits]="0"
+                      unit=" %"
+                    />
+                  }
+                </dd>
+              </div>
+              <div class="stat stat--half">
+                <dt class="stat__label" i18n="@@start.games">Spiele</dt>
+                <dd class="stat__value">{{ data.recent.trend.length }}</dd>
+              </div>
+              <div class="stat stat--half">
+                <dt class="stat__label">180</dt>
+                <dd class="stat__value">{{ data.recent.visits180 }}</dd>
+              </div>
+            </dl>
+          } @else {
+            <app-empty-state icon="pi-chart-line">
+              <p i18n="@@start.noRecent">In den letzten 30 Tagen kein X01-Spiel.</p>
+            </app-empty-state>
+          }
+          <p-button
+            class="start__more"
+            label="Zur Statistik"
+            i18n-label="@@start.toStats"
+            icon="pi pi-chart-line"
+            severity="secondary"
+            size="small"
+            [text]="true"
+            routerLink="/account/stats"
+            [queryParams]="statsParams"
+          />
+        </section>
+
+        @if (data.lastGame; as game) {
+          <section class="panel">
+            <h2 class="panel__title" i18n="@@start.lastGame">Letztes Spiel</h2>
+            <dl class="stat-grid">
+              <div class="stat stat--wide">
+                <dt class="stat__label">{{ game.createdAt | date: shortDate }}</dt>
+                <dd class="stat__value">
+                  <app-stat-link [link]="['/account/games', game.id]" action="game" [back]="back">{{ lastGameName() }}</app-stat-link>
+                </dd>
+                <dd class="stat__hint">{{ lastGamePlayers() }}</dd>
+              </div>
+            </dl>
+          </section>
+        }
+      }
+
+      <div class="view__actions">
+        <p-button
+          fluid
+          label="Neues Spiel"
+          i18n-label="@@start.newGame"
+          icon="pi pi-play-circle"
+          routerLink="/game/new"
+        />
+      </div>
+    } @else {
+      <app-loading-state label="Startseite wird geladen" i18n-label="@@start.loading" />
+    }
+  } @else {
+    <header class="view__header">
+      <h1 class="view__title">Dart Tracking</h1>
+      <p class="view__subtitle" i18n="@@start.subtitle">Automatisches Scoring per Smartphone-Kamera</p>
+    </header>
+
+    <ng-container *ngTemplateOutlet="steps" />
+
+    <section class="list-group">
+      <h2 class="list-group__title" i18n="@@start.withAccount">Mit Konto</h2>
+      <ul class="list-group__items start__list">
+        <li class="list-group__item">
+          <i class="list-group__icon pi pi-chart-line" aria-hidden="true"></i>
+          <span class="list-group__body">
+            <span class="list-group__name" i18n="@@start.perk.stats">Statistik und Verlauf</span>
+            <span class="list-group__hint" i18n="@@start.perk.statsHint">Average, Checkouts, Trefferbild</span>
+          </span>
+        </li>
+        <li class="list-group__item">
+          <i class="list-group__icon pi pi-history" aria-hidden="true"></i>
+          <span class="list-group__body">
+            <span class="list-group__name" i18n="@@start.perk.replay">Spiele nachschauen</span>
+            <span class="list-group__hint" i18n="@@start.perk.replayHint">Jeder Dart im Replay</span>
+          </span>
+        </li>
+        <li class="list-group__item">
+          <i class="list-group__icon pi pi-users" aria-hidden="true"></i>
+          <span class="list-group__body">
+            <span class="list-group__name" i18n="@@start.perk.players">Mitspieler verknüpfen</span>
+            <span class="list-group__hint" i18n="@@start.perk.playersHint">Gemeinsame Spiele zählen bei beiden</span>
+          </span>
+        </li>
+      </ul>
+    </section>
+
+    <div class="view__actions">
+      <p-button
+        fluid
+        label="Neues Spiel"
+        i18n-label="@@start.newGame"
+        icon="pi pi-play-circle"
+        routerLink="/game/new"
+      />
+      <p-button
+        fluid
+        label="Registrieren"
+        i18n-label="@@auth.register"
+        icon="pi pi-user-plus"
+        severity="secondary"
+        [outlined]="true"
+        routerLink="/register"
+      />
+    </div>
+  }
 </section>
+
+<ng-template #steps>
+  <section class="list-group">
+    <h2 class="list-group__title" i18n="@@start.howTo">So geht's</h2>
+    <ol class="list-group__items start__list">
+      <li class="list-group__item">
+        <span class="list-group__icon start__step" aria-hidden="true">1</span>
+        <span class="list-group__body">
+          <span class="list-group__name" i18n="@@start.step.place">Handy vor das Board stellen</span>
+          <span class="list-group__hint" i18n="@@start.step.placeHint">Die Kamera sieht das ganze Board</span>
+        </span>
+      </li>
+      <li class="list-group__item">
+        <span class="list-group__icon start__step" aria-hidden="true">2</span>
+        <span class="list-group__body">
+          <span class="list-group__name" i18n="@@start.step.calibrate">Board kalibrieren</span>
+          <span class="list-group__hint" i18n="@@start.step.calibrateHint">Einmal vor dem ersten Wurf</span>
+        </span>
+      </li>
+      <li class="list-group__item">
+        <span class="list-group__icon start__step" aria-hidden="true">3</span>
+        <span class="list-group__body">
+          <span class="list-group__name" i18n="@@start.step.throw">Werfen</span>
+          <span class="list-group__hint" i18n="@@start.step.throwHint">Die Punkte zählen sich von allein</span>
+        </span>
+      </li>
+    </ol>
+  </section>
+</ng-template>
