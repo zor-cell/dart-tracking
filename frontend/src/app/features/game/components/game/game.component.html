@@ -460,10 +460,16 @@
   </section>
 } @else if (keptSetup()) {
   <section class="view">
+    <header class="view__header">
+      <h1 class="view__title" i18n="@@start.newGame">Neues Spiel</h1>
+    </header>
     <app-loading-state label="Neues Spiel wird geladen" i18n-label="@@game.new.loading" />
   </section>
 } @else {
   <section class="view">
+    <header class="view__header">
+      <h1 class="view__title" i18n="@@start.newGame">Neues Spiel</h1>
+    </header>
     <app-empty-state icon="pi-bullseye">
       <p i18n="@@game.none">Kein aktives Spiel.</p>
       <p-button

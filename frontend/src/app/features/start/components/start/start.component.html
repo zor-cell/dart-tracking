@@ -1,5 +1,8 @@
 <section class="view">
   @if (restoring()) {
+    <header class="view__header">
+      <h1 class="view__title" i18n="@@common.nav.start">Start</h1>
+    </header>
     <app-loading-state label="Startseite wird geladen" i18n-label="@@start.loading" />
   } @else if (user(); as account) {
     <header class="view__header">

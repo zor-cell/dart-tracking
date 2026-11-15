@@ -370,6 +370,9 @@
       <button type="submit" hidden [disabled]="form.invalid"></button>
     </form>
   } @else if (!sessionResolved()) {
+    <header class="view__header">
+      <h1 class="view__title" i18n="@@start.newGame">Neues Spiel</h1>
+    </header>
     <app-loading-state label="Neues Spiel wird geladen" i18n-label="@@game.new.loading" />
   } @else {
     <header class="view__header">
