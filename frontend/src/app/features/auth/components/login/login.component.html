@@ -36,7 +36,7 @@
     </div>
 
     @if (error(); as message) {
-      <p-message severity="error" [text]="message" />
+      <p-message severity="error">{{ message }}</p-message>
     }
 
     <p-button

@@ -33,6 +33,6 @@
   </div>
   <app-field-error [attr.id]="errorId" [control]="control()" [messages]="messages()" />
   @if (error(); as message) {
-    <p-message severity="error" size="small" [text]="message" />
+    <p-message severity="error" size="small">{{ message }}</p-message>
   }
 </form>

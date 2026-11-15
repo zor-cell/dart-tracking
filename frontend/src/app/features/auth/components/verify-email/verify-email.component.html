@@ -8,7 +8,7 @@
       <app-loading-state label="Adresse wird bestätigt" i18n-label="@@auth.verifyEmail.pending" />
     }
     @case ('verified') {
-      <p-message severity="success" [text]="verifiedText" />
+      <p-message severity="success">{{ verifiedText }}</p-message>
       <div class="view__actions">
         @if (isAuthenticated()) {
           <p-button
@@ -30,11 +30,9 @@
       </div>
     }
     @case ('resent') {
-      <p-message
-        severity="success"
-        text="Ein neuer Bestätigungslink ist unterwegs."
-        i18n-text="@@auth.verifyEmail.resent"
-      />
+      <p-message severity="success" i18n="@@auth.verifyEmail.resent">
+        Ein neuer Bestätigungslink ist unterwegs.
+      </p-message>
       <div class="view__actions">
         <p-button
             fluid
@@ -73,7 +71,7 @@
             (onClick)="resend()"
           />
           @if (resendError(); as message) {
-            <p-message severity="error" [text]="message" />
+            <p-message severity="error">{{ message }}</p-message>
           }
         } @else if (isAuthenticated()) {
           <p-button

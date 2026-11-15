@@ -40,9 +40,6 @@
     </div>
   </header>
 
-  <!-- The QR encoder is a chunk of its own, and this dialog is opened once a
-       game at most — so it is kept out of the initial bundle and fetched while
-       the app is idle, which makes the tap itself instant anyway. -->
   @defer (when shareDialogVisible(); prefetch on idle) {
     <app-share-dialog
       header="Spiel teilen"

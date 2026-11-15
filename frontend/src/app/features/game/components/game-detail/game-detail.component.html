@@ -75,7 +75,7 @@
     />
   } @else if (detail(); as detail) {
     @if (actionError(); as message) {
-      <p-message severity="error" [text]="message" />
+      <p-message severity="error">{{ message }}</p-message>
     }
     <section class="panel">
       <h2 class="panel__title" i18n="@@game.new.players">Spieler</h2>

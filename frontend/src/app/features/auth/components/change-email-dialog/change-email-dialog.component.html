@@ -34,7 +34,7 @@
     }
 
     @if (error(); as message) {
-      <p-message severity="error" [text]="message" />
+      <p-message severity="error">{{ message }}</p-message>
     }
 
     <div class="auth-form__actions">

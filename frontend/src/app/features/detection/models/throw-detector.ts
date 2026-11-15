@@ -4,40 +4,11 @@ import { TriggerMoment, TriggerSnapshotDto } from '../dto/trigger-snapshot.dto';
 
 export type ThrowDetectorState = 'idle' | 'motion' | 'settling';
 
-// Per-pixel difference counting as changed, in grey levels. Sensor noise sits
-// around 2-4, so this is far above it while still catching a dark dart against a
-// dark segment. After this threshold a quiet scene has ~0 changed pixels.
+// Grey-level difference above which a pixel counts as changed.
 const PIXEL_DELTA = 20;
 
-// --- Recall-first arming ----------------------------------------------------
-//
-// The one rule that matters: a thrown dart must *always* produce a sent frame. A
-// false send is cheap — the backend re-checks every frame and rejects a non-dart
-// — but a missed throw is unrecoverable. So the trigger errs heavily toward
-// firing.
-//
-// Key insight (confirmed in the field): a dart adds *very few* changed pixels,
-// concentrated in one spot (dark, thin, on a dark board). A person walking
-// through changes *many* pixels across the whole frame. The old trigger keyed on
-// the pixel *count* crossing ~0.15 % (~22 px) — tuned for motion, but a faint
-// dart falls *below* it and was silently dropped. Wrong way round.
-//
-// So arming keys on *localized clusters*, not on the pixel fraction:
-//
-// 1. *Block grid.* The frame is split into cells; a cell is "active" when it
-//    holds at least BLOCK_MIN_CHANGED changed pixels — i.e. a concentrated
-//    cluster, not scattered noise. A dart lights one or two cells; a person or a
-//    whole-board wobble lights many.
-// 2. *Ambient block baseline.* A wobbling tripod shifts every edge and lights
-//    cells continuously; that steady level is tracked as a baseline and
-//    subtracted. Arming needs cells *above* the steady level — a *new* cluster.
-//    So the dart's spike still fires even while the board shimmers.
-// 3. *Arm on the smallest new cluster.* ARM_BLOCK_EXCESS cells over the baseline
-//    is enough — deliberately tiny, so a faint dart is caught. Anything larger
-//    than MAX_THROW_BLOCKS is a global disturbance (person, lighting, wobble
-//    surge): folded into the baseline instead of fired, so it does not flood.
-// 4. *Timeout.* If a fired throw does not settle within MAX_MOTION_FRAMES, the
-//    baseline starts following the motion, so the capture waits for a calm frame.
+// A throw arms on a new localized cluster of active grid cells above the steady
+// baseline; a change spanning too many cells is a global disturbance instead.
 const BLOCK_SIZE = 10; // cell edge in diff pixels → 16×9 grid at 160×90
 const BLOCK_MIN_CHANGED = 5; // changed pixels for a cell to count as a cluster
 const MAX_THROW_BLOCKS = 48; // above this the change is global, not a dart
@@ -70,16 +41,8 @@ interface Snapshot {
 }
 
 /**
- * Frame-Differenz-Erkennung: idle -> motion -> settling -> (captured event).
- * Erwartet Graustufen-Frames gleicher Größe (heruntergerechnete ImageData.data).
- *
- * Ein feststeckender Dart ist in der *aufeinanderfolgenden* Differenz nur
- * während des Einschlags sichtbar — sobald er ruht, sind zwei Frames wieder
- * gleich. Der Auslöser fasst also diesen kurzen Moment: idle -> motion (ein neuer
- * lokalisierter Cluster erscheint) -> settling (Bild wieder ruhig) -> capture.
- *
- * Ausgelegt auf *Recall*: jeder Wurf muss einen Frame erzeugen; ein Fehlauslöser
- * ist billig (der Server filtert), ein verpasster Wurf nicht. Siehe Konstanten.
+ * Frame-diff throw trigger over equally sized greyscale frames:
+ * idle -> motion -> settling -> capture, tuned to never miss a throw.
  */
 export class ThrowDetector {
   private previousFrame: Uint8ClampedArray | null = null;
@@ -112,7 +75,7 @@ export class ThrowDetector {
   private readonly rows: number;
   private readonly blockCounts: Int32Array;
 
-  /** @param width @param height Abmessungen der Diff-Frames (z.B. 160×90). */
+  /** @param width @param height Size of the diff frames in pixels (e.g. 160×90). */
   constructor(
     private readonly width: number,
     private readonly height: number,
@@ -146,8 +109,7 @@ export class ThrowDetector {
     this.analyseFrame(this.previousFrame, frame);
     this.previousFrame = frame;
 
-    // Erste echte Messung als Baseline setzen, damit ein anfängliches Wackeln
-    // nicht sofort als Ausschlag zählt.
+    // The first measurement primes the baseline, so early wobble does not arm.
     if (!this.ambientPrimed) {
       this.ambientBlocks = this.activeBlocks;
       this.ambientPrimed = true;
@@ -163,8 +125,7 @@ export class ThrowDetector {
   }
 
   private step(): boolean {
-    // Während des Cooldowns nichts auswerten, aber Referenz und Baseline aktuell
-    // halten, damit der Vergleich nach der Pause auf dem neuen Ruhezustand aufsetzt.
+    // During the cooldown only reference and baseline follow the scene.
     if (this.cooldownFrames > 0) {
       this.cooldownFrames--;
       this.updateAmbient();
@@ -193,9 +154,8 @@ export class ThrowDetector {
   }
 
   private stepIdle(): boolean {
-    // A *new localized cluster* over the steady level is a throw candidate. A
-    // global disturbance (person, lighting, wobble surge — too many cells) or a
-    // quiet frame instead feeds the baseline, so continuous wobble never floods.
+    // A new localized cluster arms a throw; a global change or a quiet frame
+    // feeds the baseline instead.
     const excess = this.activeBlocks - this.ambientBlocks;
     const localizedThrow = excess >= ARM_BLOCK_EXCESS && this.activeBlocks <= MAX_THROW_BLOCKS;
     if (localizedThrow) {
@@ -229,8 +189,7 @@ export class ThrowDetector {
       }
       return false;
     }
-    // Neue Bewegung während der Stabilisierung -> zurück auf motion, aber das
-    // Timeout läuft weiter (motionFrames wird nicht zurückgesetzt).
+    // New motion while settling returns to motion; the timeout keeps running.
     this.state = 'motion';
     this.stableFrameCount = 0;
     return false;
@@ -328,12 +287,12 @@ export class ThrowDetector {
     }));
   }
 
-  /** Baseline träge in Richtung der aktuellen Block-Zahl nachziehen. */
+  /** Moves the baseline slowly towards the current active-cell count. */
   private updateAmbient(): void {
     this.ambientBlocks += AMBIENT_ALPHA * (this.activeBlocks - this.ambientBlocks);
   }
 
-  /** Zurück in den Ruhezustand, ohne Referenz, Baseline oder Cooldown zu berühren. */
+  /** Back to idle, keeping reference, baseline and cooldown. */
   private resetCycle(): void {
     this.state = 'idle';
     this.stableFrameCount = 0;
@@ -345,11 +304,7 @@ export class ThrowDetector {
     this.snapshots.clear();
   }
 
-  /**
-   * Vergleicht zwei Frames: füllt `activeBlocks` (Rasterzellen mit mindestens
-   * BLOCK_MIN_CHANGED Pixeln, deren Graustufe sich um mehr als PIXEL_DELTA
-   * geändert hat).
-   */
+  /** Compares two frames and counts the active grid cells into `activeBlocks`. */
   private analyseFrame(a: Uint8ClampedArray, b: Uint8ClampedArray): void {
     this.blockCounts.fill(0);
     let index = 0;

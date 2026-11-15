@@ -27,7 +27,7 @@
         </div>
 
         @if (acceptError(); as message) {
-          <p-message severity="error" [text]="message" />
+          <p-message severity="error">{{ message }}</p-message>
         }
 
         <div class="view__actions">
@@ -52,7 +52,7 @@
       }
     }
     @case ('accepted') {
-      <p-message severity="success" [text]="acceptedText()" />
+      <p-message severity="success">{{ acceptedText() }}</p-message>
       <div class="view__actions">
         <p-button
           fluid

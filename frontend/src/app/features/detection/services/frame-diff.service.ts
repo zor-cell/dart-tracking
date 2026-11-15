@@ -1,9 +1,9 @@
-import { Injectable, inject, NgZone, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { ThrowDetector } from '../models/throw-detector';
 import { captureFrameAsJpeg } from '../../camera/models/frame-capture';
 import { DetectionService } from './detection.service';
 import { ThrowTriggerDto } from '../dto/throw-trigger.dto';
-import {DisplayStatus} from "../models/frame-diff-status";
+import { DisplayStatus } from '../models/frame-diff-status';
 
 const DIFF_WIDTH = 160;
 const DIFF_HEIGHT = 90;
@@ -12,7 +12,7 @@ const DIFF_HEIGHT = 90;
 const PROCESS_INTERVAL_MS = 60;
 const SENT_DISPLAY_DURATION_MS = 800;
 
-// ITU-R BT.601 Luma-Gewichte (wahrgenommene Helligkeit pro Farbkanal)
+// ITU-R BT.601 luma weights (perceived brightness per colour channel).
 const RED_LUMA_WEIGHT = 0.299;
 const GREEN_LUMA_WEIGHT = 0.587;
 const BLUE_LUMA_WEIGHT = 0.114;
@@ -27,18 +27,12 @@ const STATUS_LABELS: Record<DisplayStatus, string> = {
 };
 
 /**
- * Continuous frame-diff detection loop: reads an already-active video preview,
- * checks per frame via ThrowDetector for motion/settling, and hands the captured
- * JPEG to DetectionService once a throw is judged complete.
- *
- * Assumes the camera and socket are already up (see CameraService /
- * SocketService) — those outlive this loop, since they're also used for the
- * calibration step that precedes it.
+ * Frame-diff loop over the running camera preview: hands a JPEG to DetectionService
+ * once ThrowDetector judges a throw complete. Camera and socket must already be up.
  */
 @Injectable({ providedIn: 'root' })
 export class FrameDiffService {
   private readonly detection = inject(DetectionService);
-  private readonly zone = inject(NgZone);
 
   readonly displayStatus = signal<DisplayStatus>('idle');
   readonly statusLabel = signal(STATUS_LABELS.idle);
@@ -63,7 +57,7 @@ export class FrameDiffService {
 
     this.detector.reset();
     this.setDisplayStatus('idle');
-    this.zone.runOutsideAngular(() => this.scheduleNextFrame());
+    this.scheduleNextFrame();
   }
 
   stopDetectionLoop(): void {
