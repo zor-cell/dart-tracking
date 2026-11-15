@@ -1,10 +1,6 @@
 <section class="view">
-  <header class="view__header header">
+  <header class="view__header">
     <h1 class="view__title" i18n="@@auth.account.title">Konto</h1>
-    @if (!restoring() && !user()) {
-      <span class="sr-only" id="language-label" i18n="@@auth.account.language">Sprache</span>
-      <app-language-select labelledBy="language-label" size="small" />
-    }
   </header>
 
   @if (restoring()) {

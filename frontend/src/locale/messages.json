@@ -80,7 +80,6 @@
     "announcer.unmute": "Ansage einschalten",
     "announcer.mute": "Ansage stummschalten",
     "auth.account.title": "Konto",
-    "auth.account.language": "Sprache",
     "auth.account.restoring": "Sitzung wird geprüft",
     "auth.signIn": "Anmelden",
     "auth.register": "Registrieren",

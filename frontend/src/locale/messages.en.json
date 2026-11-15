@@ -72,7 +72,6 @@
     "auth.sendFailed": "Sending failed. Please try again later.",
     "auth.emailVerified": "Your email address is confirmed.",
     "auth.account.title": "Account",
-    "auth.account.language": "Language",
     "auth.account.restoring": "Checking session",
     "auth.account.legal": "Legal",
     "auth.account.imprint": "Imprint",

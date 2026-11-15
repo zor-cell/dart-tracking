@@ -5,7 +5,6 @@ import { Button } from 'primeng/button';
 import { APP_VERSION } from '../../../../../environments/version';
 import { AuthService } from '../../services/auth.service';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
-import { LanguageSelectComponent } from '../../../settings/components/language-select/language-select.component';
 
 /** A row that opens another page of the account area. */
 interface PageLink {
@@ -50,7 +49,7 @@ const ADMIN_PAGES: readonly PageLink[] = [
 
 @Component({
   selector: 'app-account',
-  imports: [Avatar, Button, LanguageSelectComponent, LoadingStateComponent, RouterLink],
+  imports: [Avatar, Button, LoadingStateComponent, RouterLink],
   templateUrl: './account.component.html',
   styleUrl: './account.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

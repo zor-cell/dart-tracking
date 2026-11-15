@@ -128,8 +128,10 @@ These differ from the rules above on purpose; a refactor must keep them.
 ## Translations
 The app uses Angular's built-in i18n: German is the source language, English
 (`en-GB`) the translation, and each language is its own build under `/de/` and
-`/en/`. nginx sends a path without language on by the `lang` cookie, else by the
-browser's first language, so shared links, QR codes and mail links stay neutral.
+`/en/`. nginx sends a path without language on by the `lang` cookie, else to German
+when the browser's first language is German and to English otherwise, so shared
+links, QR codes and mail links stay neutral. Only signed-in accounts pick a language,
+in the settings.
 
 - Every text gets a custom id, `feature.component.key` (the component part is left
   out for the feature's main view): `i18n="@@settings.title"`, `i18n-label`,
