@@ -1,14 +1,4 @@
-"""Redis-backed calibration store, keyed by game and camera.
-
-Kept alongside the game rather than on the WebSocket connection: a calibration
-outlives any single socket (a reconnecting client must not have to re-aim the
-camera). It is per **camera in a position**, though, not per game — two phones
-filming the same board from two angles have nothing in common to share, so the
-client id is part of the key.
-
-Stored as JSON rather than pickled: readable in `redis-cli`, and a shared store
-must never be a source of arbitrary objects to unpickle.
-"""
+"""Redis-backed calibration store, keyed by game and camera client, stored as JSON."""
 
 import json
 from dataclasses import asdict

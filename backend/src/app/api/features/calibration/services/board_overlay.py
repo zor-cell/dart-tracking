@@ -1,10 +1,5 @@
-"""Projects the canonical board model back onto the camera picture.
-
-Lets the user confirm what the server actually recognised: if the rings sit on
-the real rings and the sector wires line up, the calibration is good.
-
-Coordinates come out normalized to 0..1 of the image width/height so the client
-can draw them at whatever size the video is displayed at.
+"""Projects the canonical board model back onto the camera picture, as polylines
+normalized to 0..1 of the image size.
 """
 
 import math

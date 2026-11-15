@@ -1,9 +1,5 @@
-"""Canonical dartboard geometry.
-
-All radii are in millimetres from the board centre, per the WDF/BDO standard
-setup. This is the "board plane" that the homography maps image pixels into:
-origin at the bullseye, x to the right, y up, angles measured counter-clockwise
-from +x.
+"""Canonical dartboard geometry in the board plane: millimetres from the centre,
+x right, y up, angles counter-clockwise from +x.
 """
 
 import math
@@ -56,19 +52,15 @@ def sector_boundary_angles() -> list[float]:
 
 
 def is_red_sector(index: int) -> bool:
-    """Whether the double/triple ring of sector `index` is red rather than green.
-
-    Colours strictly alternate around the board, and sector 20 (index 0) is red.
-    Detection relies on this to recover the board's rotation.
+    """Whether the double and triple ring of sector `index` is red; sector 20 (index 0)
+    is red and colours alternate.
     """
     return index % 2 == 0
 
 
 def single_bed_centres() -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
-    """Mid-bed points of every single, split into the black beds and the cream ones.
-
-    Beds alternate with the sectors, the black ones being those whose double and
-    triple are red. Two per sector: inside the triple ring and outside it.
+    """Mid-bed points of every single, two per sector (inside and outside the triple
+    ring), split into the black beds and the cream ones.
     """
     radii = (
         (BULL_RADIUS + TRIPLE_INNER_RADIUS) / 2,
@@ -85,13 +77,7 @@ def single_bed_centres() -> tuple[list[tuple[float, float]], list[tuple[float, f
 
 @dataclass(frozen=True)
 class Segment:
-    """What a point on the board is worth.
-
-    The bull is modelled as sector value 25 at double, which is how darts
-    scoring treats it — a checkout on the bullseye is a double. That keeps
-    `points` a plain `value * multiplier` everywhere instead of needing a
-    special case per ring.
-    """
+    """What a point on the board is worth; the bull is sector value 25, Bull its double."""
 
     value: int  # sector value, 25 for the bull, 0 for a miss
     multiplier: int  # 0 miss, 1 single, 2 double, 3 triple
@@ -114,11 +100,7 @@ MISS = Segment(value=0, multiplier=0)
 
 
 def segment_at(x: float, y: float, rings: RingRadii = STANDARD_RINGS) -> Segment:
-    """Which segment the board coordinate (mm) falls in.
-
-    This is the last step of scoring: the homography has already turned a pixel
-    into millimetres, and from here it is pure geometry against the board's rings.
-    """
+    """Which segment the board coordinate (mm) falls in."""
     radius = math.hypot(x, y)
 
     if radius <= BULLSEYE_RADIUS:
@@ -141,11 +123,7 @@ def segment_at(x: float, y: float, rings: RingRadii = STANDARD_RINGS) -> Segment
 
 
 def segment_from_label(label: str) -> Segment | None:
-    """Parse a label back into a Segment, or None if it is not one.
-
-    The inverse of `Segment.label`, so a written-down segment (ground truth) can
-    be compared geometrically and not just as a string.
-    """
+    """Parse a label back into a Segment, or None if it is not one."""
     label = label.strip().upper()
     if label == "MISS":
         return MISS
@@ -162,10 +140,8 @@ def segment_from_label(label: str) -> Segment | None:
 
 
 def _ring_bounds(multiplier: int) -> list[tuple[float, float]]:
-    """The radius ranges (mm) a sector segment of this multiplier occupies.
-
-    A single is two disjoint rings — inside the triple and outside it — hence a
-    list rather than one pair.
+    """The radius ranges (mm) a sector segment of this multiplier occupies; a single
+    has two.
     """
     if multiplier == 3:
         return [(TRIPLE_INNER_RADIUS, TRIPLE_OUTER_RADIUS)]
@@ -198,10 +174,8 @@ def _distance_to_annular_sector(
 
 
 def distance_to_segment(x: float, y: float, segment: Segment) -> float:
-    """Shortest distance (mm) from a board coordinate to where `segment` scores.
-
-    Zero if the point already lies in it. This separates a tip that missed by a
-    wire's width from one that landed in a different part of the board entirely.
+    """Shortest distance (mm) from a board coordinate to where `segment` scores, zero
+    inside it.
     """
     radius = math.hypot(x, y)
 

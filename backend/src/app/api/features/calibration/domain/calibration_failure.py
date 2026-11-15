@@ -1,9 +1,5 @@
-"""Why a calibration attempt failed.
-
-Each value names the stage that gave up, which is what makes it actionable:
-the client turns it into advice ("get closer", "avoid shadows") instead of a
-bare "not recognised", and an evaluation can count how
-often each cause occurs rather than just the failure rate.
+"""Why a calibration attempt failed: the stage that gave up, which the client turns
+into advice.
 """
 
 from enum import StrEnum
@@ -17,9 +13,8 @@ class CalibrationFailure(StrEnum):
     #: found is not board-shaped.
     ELLIPSE_FIT_FAILED = "ellipse_fit_failed"
 
-    #: The ring was traced but did not yield exactly 20 colour transitions, so
-    #: the sector wires cannot be matched up. Usually part of the board is
-    #: occluded, cropped, or lost in shadow.
+    #: The ring did not yield exactly 20 colour transitions, so the sector wires
+    #: cannot be matched up.
     SECTOR_WIRES_UNCLEAR = "sector_wires_unclear"
 
     #: Wires were matched but the homography solve did not converge.

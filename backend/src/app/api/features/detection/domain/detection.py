@@ -7,18 +7,13 @@ from app.api.features.calibration.domain.board_geometry import Segment
 
 @dataclass(frozen=True)
 class Dart:
-    """Where the dart was found and what it is worth.
-
-    Image coordinates are in the **reference frame's** pixel grid, not the
-    frame the dart arrived in: detection aligns the incoming frame onto the
-    reference before comparing, so that is the grid everything downstream —
-    overlay included — shares with the calibration.
+    """Where the dart was found and what it is worth; image coordinates are in the
+    reference frame's pixel grid.
     """
 
     tip_image: tuple[float, float]
-    # Both ends of the dart's principal axis, tip end first. The far end is the
-    # flight, which sticks out of the board plane and is therefore only
-    # meaningful for drawing, never for scoring.
+    # Both ends of the dart's principal axis, tip first; the flight end is for
+    # drawing only.
     axis_image: tuple[tuple[float, float], tuple[float, float]]
     tip_board: tuple[float, float]  # millimetres
     segment: Segment

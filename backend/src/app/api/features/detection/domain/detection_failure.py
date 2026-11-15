@@ -1,8 +1,4 @@
-"""Why locating a dart gave up.
-
-Mirrors `CalibrationFailure`: the stage that failed is more useful to the
-client than a bare None, because each one suggests a different fix.
-"""
+"""Why locating a dart gave up: the stage that failed, like `CalibrationFailure`."""
 
 from enum import StrEnum
 

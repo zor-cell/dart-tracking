@@ -1,42 +1,6 @@
-"""Locate the dart that appeared between two frames, and score it.
-
-Pipeline:
-
-1. Register the incoming frame onto the reference frame, using ORB features
-   restricted to the board. Handheld cameras drift, and a drift of even a few
-   pixels swamps a dart: measured on the test set, an unregistered difference
-   across a 25 px camera shift lights up ~117 000 pixels where the dart itself
-   is worth a few hundred. Masking the features to the board matters as much as
-   the registration does — board and wall sit at different depths, so once the
-   camera translates no single homography fits both, and an unmasked fit
-   happily locks onto the wall and leaves the board misaligned.
-   The warp only covers part of the reference once the camera has moved; the
-   rest is fill, not board, and is excluded before anything is differenced.
-2. Difference the two, threshold, and clean up. Whatever is left is what the
-   throw added, which is a far stronger signal than the dart's own appearance:
-   a dart is dark, thin and lands on a board that is mostly dark and thin. A
-   white flight over a cream bed is the one thing intensity cannot see, so on the
-   light beds a change in saturation counts too.
-3. Fuse the surviving fragments into one dart. A dark dart only shows in the
-   difference where it crosses light board, so it arrives as several fragments
-   strung along one line rather than a single blob. Anchoring on the flight (the
-   widest fragment) and keeping the line the most fragments agree on gathers them
-   back into one set of pixels.
-4. Check the blob is dart-sized before believing it. Nothing up to here has an
-   upper bound, and the fit lays an axis through whatever it is given —
-   including a player standing in front of the board to pull their darts, which
-   the client's trigger sends and cannot itself rule out.
-5. Fit the dart's principal axis and take the tip as the end opposite the
-   flight: the end sticking out towards the camera, or the wider one where the
-   view is too frontal. Orienting by the dart itself rather than by "nearest the
-   board centre" keeps a dart high on the board — flight leaning back over the
-   bull — from being scored off its flight. Only the tip touches the board plane,
-   which is the only part the homography is valid for.
-6. Map the tip through the homography and read off the segment.
-
-Because differencing is against the previous frame rather than an empty board,
-darts already in the board cancel out. Occlusion only matters when a new dart
-hides an old one, not merely when three of them sit side by side.
+"""Locate the dart that appeared between two frames and score it: register the frame
+onto the reference from board features, difference and clean up, fuse the fragments
+into one dart, check its size, take the tip opposite the flight and map it to a segment.
 """
 
 import math
@@ -72,10 +36,8 @@ _RANSAC_REPROJECTION_PX = 2.0
 # Per-pixel difference counting as changed, in grey levels.
 _DIFFERENCE_THRESHOLD = 40
 
-# The same for a change in saturation, which is read only where the board is
-# bright enough for a hue to mean anything — `S = (max-min)/max` is mostly noise
-# over a black bed. The level is the fraction of the way from the black beds to
-# the cream ones a pixel must sit.
+# Saturation change counted where the board is at least this fraction of the way
+# from the black beds to the cream ones.
 _SATURATION_THRESHOLD = 30
 _SATURATION_BED_LEVEL = 0.6
 
@@ -105,11 +67,8 @@ _MIN_CANDIDATE_AREA_PX = 15.0
 # stands out of the board plane, so the homography magnifies it.
 _MAX_DART_LENGTH_MM = 110.0
 
-# Size past which the fused blob is not a dart but something in the way: a player
-# fetching their darts, a hand reaching in. Both are far above anything a real
-# dart produced across the 214 correct detections of the test set (longest
-# 177 mm, largest 3726 mm²) and far below what an object covering the board does,
-# the change mask being clipped to a disc of 315 mm radius.
+# Size past which the fused blob is an obstruction, such as a player fetching
+# their darts, rather than a dart.
 _MAX_BLOB_LENGTH_MM = 250.0
 _MAX_BLOB_AREA_MM2 = 8000.0
 
@@ -121,9 +80,7 @@ _MIN_CHANGED_FROM_EMPTY = 0.25
 # area is taken for a registration residual on the surround, not a dart.
 _MIN_MISS_AREA_MM2 = 400.0
 
-# Smallest component kept at all; anything below is noise. Two floors because
-# board-relative area is the meaningful limit but sensor noise is a fixed number
-# of pixels, and on a distant setup the millimetre figure falls below it.
+# Smallest component kept, as a board area and as a pixel floor.
 _MIN_SPECKLE_AREA_MM2 = 3.0
 _MIN_SPECKLE_AREA_PX = 4.0
 
@@ -140,9 +97,7 @@ _FLIGHT_SPAN_MM = 12.0
 _MIN_HEIGHT_VISIBILITY = 0.3
 _MIN_AXIS_ALIGNMENT = 0.5
 
-# How far the warp's valid area is pulled in from its own edge. Bilinear
-# interpolation blends the fill value into the last row of real pixels, so the
-# boundary itself is neither wholly valid nor wholly fill.
+# How far the warp's valid area is pulled in from its own edge, in pixels.
 _WARP_MARGIN_PX = 3
 
 trace = DetectionTrace()
@@ -154,10 +109,8 @@ def detect_dart(
     calibration: Calibration,
     empty_board: np.ndarray | None = None,
 ) -> Dart | DetectionFailure:
-    """Find the dart added in `frame` relative to `reference`.
-
-    `calibration` belongs to `reference`, and `empty_board` (the calibration
-    frame) tells an added dart from a pulled one; without it that check is skipped.
+    """Find the dart added in `frame` relative to `reference`, whose calibration it is;
+    `empty_board` tells an added dart from a pulled one, if given.
     """
     global trace
     trace = DetectionTrace(reference=reference, frame=frame)
@@ -181,9 +134,7 @@ def detect_dart(
     trace.region_outline, trace.search_outline = region_outline, search_outline
     trace.region_clipped = _outside_image(region_outline, reference.shape)
 
-    # Registration uses the board proper, not the search area: the surround and
-    # the wall sit at a different depth, and features there pull the homography
-    # off the plane that actually matters.
+    # Registration uses the board region only.
     alignment, inliers = _align(frame, reference, region)
     trace.alignment, trace.alignment_inliers = alignment, inliers
     if alignment is None:
@@ -283,10 +234,8 @@ def _to_image(homography: np.ndarray, x: float, y: float) -> tuple[float, float]
 
 
 def _pixels_per_mm(homography: np.ndarray) -> float:
-    """Image scale at the board, averaged around the double ring.
-
-    Perspective makes this vary across the board, so it is only ever used to
-    size kernels and area limits — never to convert a measurement.
+    """Image scale at the board in px/mm, averaged around the double ring; used only
+    to size kernels and area limits.
     """
     centre = np.array(_to_image(homography, 0.0, 0.0))
     distances = [
@@ -304,11 +253,7 @@ def _pixels_per_mm(homography: np.ndarray) -> float:
 
 
 def _board_outline(homography: np.ndarray, radius_mm: float) -> np.ndarray:
-    """The circle of `radius_mm` on the board, mapped into image space.
-
-    A circle through a homography is a conic, so the mapped points lie on a true
-    ellipse; 360 of them approximate it to well under a pixel.
-    """
+    """The circle of `radius_mm` on the board, mapped into image space as 360 points."""
     return np.array(
         [
             _to_image(homography, radius_mm * math.cos(angle), radius_mm * math.sin(angle))
@@ -325,11 +270,7 @@ def _board_region(outline: np.ndarray, shape: tuple[int, ...]) -> np.ndarray:
 
 
 def _outside_image(outline: np.ndarray, shape: tuple[int, ...]) -> float:
-    """Fraction of an outline's points that fall outside the frame.
-
-    Non-zero means the board is not fully in shot, which no amount of processing
-    can fix — worth telling apart from a detection that merely went wrong.
-    """
+    """Fraction of an outline's points that fall outside the frame."""
     height, width = shape[:2]
     inside = (
         (outline[:, 0] >= 0)
@@ -341,14 +282,7 @@ def _outside_image(outline: np.ndarray, shape: tuple[int, ...]) -> float:
 
 
 def _alignment_shift(alignment: np.ndarray, outline: np.ndarray) -> float:
-    """How far the camera moved, in pixels, averaged over the board outline.
-
-    Not a failure on its own — registration is there precisely to absorb it. It
-    is a diagnostic: the leftover after warping scales with this times the local
-    image gradient, so a large shift is what turns wires and printed numbers
-    into apparent change, and it is the quantity a re-calibration prompt would
-    have to trigger on.
-    """
+    """How far the camera moved, in pixels, averaged over the board outline."""
     points = np.hstack([outline, np.ones((len(outline), 1))]).T
     mapped = alignment @ points
     w = np.where(np.abs(mapped[2]) < 1e-9, 1e-9, mapped[2])
@@ -359,17 +293,8 @@ def _alignment_shift(alignment: np.ndarray, outline: np.ndarray) -> float:
 def _warp_coverage(
     frame_shape: tuple[int, ...], alignment: np.ndarray, reference_shape: tuple[int, ...]
 ) -> np.ndarray:
-    """Which reference pixels the warped frame actually observed.
-
-    `warpPerspective` fills everything the source does not cover with black, and
-    against a reference that is not black there, the difference reads 200+ grey
-    levels — five times the threshold, in a long wide streak along the frame
-    edge. Fragment fusion then takes that streak for the flight, because it
-    anchors on the widest fragment, and the fit leaves the board entirely.
-
-    So the same warp is applied to a white image: what comes back white is real,
-    the rest is fill. Eroded by `_WARP_MARGIN_PX`, since the boundary pixels are
-    interpolated between the two and belong to neither.
+    """Which reference pixels the warped frame actually observed: a white image warped
+    the same way, eroded by `_WARP_MARGIN_PX`.
     """
     covered = cv2.warpPerspective(
         np.full(frame_shape[:2], 255, dtype=np.uint8), alignment, reference_shape[1::-1]
@@ -383,11 +308,8 @@ def _warp_coverage(
 def _align(
     frame: np.ndarray, reference: np.ndarray, region: np.ndarray
 ) -> tuple[np.ndarray | None, int]:
-    """Homography warping `frame` onto `reference`, from board features alone.
-
-    The darts already in the board are outliers here — they are genuinely in
-    different places in the two frames — but they are a handful of features
-    against several hundred on the board itself, so RANSAC discards them.
+    """Homography warping `frame` onto `reference`, from ORB features on the board
+    with RANSAC.
     """
     orb = cv2.ORB_create(_ORB_FEATURES)
     frame_keypoints, frame_descriptors = orb.detectAndCompute(
@@ -432,10 +354,8 @@ def _bed_level(
 def _saturation_thresholds(
     reference: np.ndarray, homography: np.ndarray, pixels_per_mm: float
 ) -> np.ndarray:
-    """Per-pixel threshold on the saturation difference: finite only on light beds.
-
-    Where the bed sits between black and cream is read off this frame's own board
-    through the homography.
+    """Per-pixel threshold on the saturation difference, finite only on light beds
+    read off the board through the homography.
     """
     size = _odd_size(_BED_BLUR_MM, pixels_per_mm)
     brightness = cv2.GaussianBlur(reference.max(axis=2).astype(np.float32), (size, size), 0)
@@ -472,13 +392,8 @@ def _change_mask(
     search: np.ndarray,
     pixels_per_mm: float,
 ) -> np.ndarray:
-    """Binary mask of what the throw added, in and around the board region.
-
-    Differenced per channel and maxed rather than converted to grey first: a
-    dart barrel against a black segment can be nearly identical in luminance
-    while still differing in colour, and collapsing to grey throws that away.
-    A white flight over a cream bed defeats even that, differing by about 14 grey
-    levels but some 29 in saturation, so that channel is read alongside it.
+    """Binary mask of what the throw added, in and around the board region, from the
+    per-channel maximum difference plus saturation on light beds.
     """
     difference = cv2.absdiff(reference, aligned).max(axis=2)
     trace.difference = difference
@@ -491,10 +406,7 @@ def _change_mask(
     trace.raw_mask = mask
     trace.saturation_only = cv2.subtract(mask, intensity)
 
-    # Speckle first, then bridging. The order matters: closing first would join
-    # scattered noise into blobs big enough to pass the area limit, and a dart
-    # is dark on a dark board, so its own silhouette arrives in pieces that only
-    # the closing puts back together.
+    # Speckle removal first, then the closing that joins the dart's pieces.
     despeckled = _drop_speckle(mask, pixels_per_mm)
     trace.speckle_removed = cv2.subtract(mask, despeckled)
 
@@ -502,9 +414,7 @@ def _change_mask(
         despeckled, cv2.MORPH_CLOSE, _kernel(_CLOSE_KERNEL_MM, pixels_per_mm)
     )
 
-    # Only now, with each component whole, ask whether it belongs to the board.
-    # Doing it before the closing would judge the dart on its fragments rather
-    # than on its silhouette.
+    # Anchor to the board only once each component is whole.
     anchored = _drop_unanchored(closed, region, pixels_per_mm)
     trace.outside_removed = cv2.subtract(closed, anchored)
     return anchored
@@ -528,13 +438,8 @@ def _drop_speckle(mask: np.ndarray, pixels_per_mm: float) -> np.ndarray:
 
 
 def _drop_unanchored(mask: np.ndarray, region: np.ndarray, pixels_per_mm: float) -> np.ndarray:
-    """Keep only components tied to the board, but keep those whole.
-
-    A component is anchored if it reaches into `region`, or if it lies within a
-    dart's length of one that does — the second case being a flight out over the
-    surround, separated from its shaft by a gap the difference cannot see
-    through. Anchored components are kept in full, including the part outside
-    `region`: that part is the flight, and the flight is what orients the dart.
+    """Keep, whole, the components that reach into `region` or lie within a dart's
+    length of one that does.
     """
     count, labels, _, _ = cv2.connectedComponentsWithStats(mask, 8)
     if count <= 1:
@@ -577,11 +482,8 @@ def _kernel(size_mm: float, pixels_per_mm: float) -> np.ndarray:
 def _fragment_geometry(
     pixels: np.ndarray, difference: np.ndarray
 ) -> tuple[np.ndarray, float, float]:
-    """A fragment's centroid, perpendicular width and mean difference brightness.
-
-    Width is the spread across the fragment's own principal axis: the flight's
-    feathers make it wide, the barrel and shaft stay thin, so width is what tells
-    the flight from the rest.
+    """A fragment's centroid, width across its own principal axis and mean difference
+    brightness.
     """
     centre = pixels.mean(axis=0)
     centred = pixels - centre
@@ -600,21 +502,9 @@ def _fragment_geometry(
 def _fuse_dart_fragments(
     mask: np.ndarray, difference: np.ndarray, pixels_per_mm: float
 ) -> np.ndarray | None:
-    """Gather the dart's colour-gated fragments into one set of pixels.
-
-    A dark dart shows only where it crosses light board, so it breaks into
-    several fragments along one line. Taking the single largest throws the rest
-    away and biases the tip toward whichever fragment the light board revealed.
-    Instead: anchor on the flight (the widest fragment), then keep the line
-    through it that the most fragments agree on — the same hypothesise-and-count
-    idea as the calibration's board RANSAC, one vote per fragment so a fat flight
-    cannot outvote the thin shaft. Anchoring on the flight makes it deterministic,
-    with no random sampling to seed.
-
-    Only fragments above the candidate area may anchor the fit or propose and
-    vote for a direction; every fragment on the winning line contributes its
-    pixels. A speck should not get to say where the dart points, but the dart's
-    tip is itself a small fragment and dropping it shortens the axis.
+    """Gather the dart's fragments into one set of pixels: anchor on the widest (the
+    flight) and keep the line through it most candidate fragments vote for, with
+    every fragment on that line contributing its pixels.
     """
     count, labels, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
     trace.labels = labels
@@ -653,12 +543,7 @@ def _fuse_dart_fragments(
     candidate_set = set(candidates)
 
     def collinear_support(direction: np.ndarray) -> tuple[list[int], list[int], float]:
-        """Who lies on the line: the voters, everyone, and the length they cover.
-
-        The length is measured over the voters alone. It is the tie-breaker
-        between directions, and letting a speck extend it is exactly the failure
-        the candidate floor exists to prevent.
-        """
+        """Who lies on the line: the voters, everyone, and the length the voters cover."""
         normal = np.array([-direction[1], direction[0]])
         supporters = [
             label
@@ -687,10 +572,7 @@ def _fuse_dart_fragments(
             inliers, best_length, best_direction = supporters, length, direction
 
     if best_direction is None and len(pixels[flight]) >= 2:
-        # No second candidate agreed with the flight on anything. Fall back to
-        # the flight's own axis rather than to the flight alone: the fragments
-        # too small to vote are still strung along it, and they are usually the
-        # thin end of the dart — the end that is about to be scored.
+        # No other candidate agreed, so fall back to the flight's own axis.
         _, eigenvectors = cv2.PCACompute(pixels[flight], mean=None, maxComponents=1)
         best_direction = eigenvectors[0]
         _, inliers, _ = collinear_support(best_direction)
@@ -709,13 +591,7 @@ def _fuse_dart_fragments(
 
 
 def _measure_blob(points: np.ndarray, pixels_per_mm: float) -> None:
-    """Record the fused blob's size in board millimetres.
-
-    Length is its extent along its own principal axis, width the spread across
-    that axis, area its pixel count. All three are what a dart is small in and
-    an obstruction is not, which is what makes them worth measuring separately
-    from the fit that follows.
-    """
+    """Record the fused blob's length, width and area in board millimetres."""
     mean, eigenvectors = cv2.PCACompute(points, mean=None, maxComponents=1)
     axis = eigenvectors[0]
     centred = points - mean
@@ -744,12 +620,7 @@ def _tip_and_far_end(
     end_widths = []
     for extreme in (projections.min(), projections.max()):
         near = np.abs(projections - extreme) <= _TIP_SPAN_MM * pixels_per_mm
-        # Averaging the end band's *positions* would pull the end inward by half
-        # the band, because every pixel in it lies on the inward side of the
-        # extreme. So the two directions are taken from different things: along
-        # the axis the extreme itself, across it the band's mean offset. That
-        # keeps the smoothing where it helps — the tip's sideways position,
-        # which decides the sector — without shortening the dart.
+        # The end is the extreme along the axis plus the band's mean offset across it.
         offsets = centred[near] - np.outer(projections[near], axis)
         ends.append(mean[0] + axis * extreme + offsets.mean(axis=0))
         # Gauge the end's width over a wider band, robust to a few stray pixels.

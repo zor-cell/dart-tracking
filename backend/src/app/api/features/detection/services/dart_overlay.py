@@ -1,15 +1,5 @@
-"""Draws the located dart back onto the camera picture.
-
-The counterpart to `calibration/services/board_overlay.py`: it lets the user see
-what the server actually found — the dart's axis and, marked apart, the scored
-tip. If the line lies along the real dart and the cross sits on the tip, the
-detection is good.
-
-Unlike the board overlay, no projection is needed: a `Dart` already carries its
-axis and tip in **reference-frame pixels** (detection aligns the incoming frame
-onto the reference before measuring), so this only normalizes them to 0..1 of the
-image size — the same wire contract the board overlay uses, so the client draws
-both the same way.
+"""Draws the located dart back onto the camera picture: its axis and the scored tip
+in reference-frame pixels, normalized to 0..1 of the image size.
 """
 
 from app.api.features.calibration.domain.calibration import Calibration

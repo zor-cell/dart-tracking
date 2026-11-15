@@ -1,33 +1,6 @@
-"""Automatic dartboard detection.
-
-Pipeline:
-
-1. Segment the red and green double/triple segments in HSV. They are by far the
-   most distinctive feature of a board and survive poor lighting better than
-   edges do.
-2. Work out which of those blobs are actually the board, by hypothesising one
-   and seeing how many of them agree, then fit an ellipse to the convex hull of
-   the winners. This step exists because fitting alone cannot be trusted: a
-   hull is an outer envelope, so one stray blob drags the whole fit, and
-   red-ish clutter is the norm rather than the exception (furniture, warm
-   light, the numbers and branding printed around the board itself). Under
-   perspective a circle projects to an ellipse, and the outermost coloured ring
-   is the outer edge of the double ring — a known 170 mm radius. Every point on
-   the fitted ellipse is therefore the image of a board point at exactly that
-   radius; only *which* angle each one corresponds to is still unknown.
-3. Recover those angles by walking around the ring and finding the red/green
-   transitions. Colours change exactly at the sector wires, whose board angles
-   are known, so each transition is a true point correspondence rather than an
-   assumed one. This matters: mapping the ellipse parameter straight onto the
-   board angle is only valid for parallel projection, and at the steep viewing
-   angles this system is built for it puts the board centre tens of millimetres
-   off — far more than the 8 mm width of a triple ring.
-4. Fit the homography from those correspondences.
-
-Colour alternates every sector, so it fixes the rotation only to within two
-sectors; the remaining ambiguity is resolved by the convention that sector 20
-hangs on top, asked of each candidate's own homography so that a steep viewing
-angle does not tilt the answer onto the neighbouring rotation.
+"""Automatic dartboard detection: segment the red and green rings in HSV, keep the
+components that agree on one board and fit the double ring's ellipse, match its
+colour transitions to the sector wires, and fit the homography with 20 on top.
 """
 
 import math
@@ -65,14 +38,12 @@ _MORPH_KERNEL = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
 # below the 18 degrees between sectors, so each transition is placed precisely.
 _RING_WALK_STEPS = 720
 
-# Where colour is sampled along the ray from the board centre out to the ring,
-# as a fraction of that ray. Spans both the triple and the double ring; samples
-# landing on the black/white singles return no colour and are ignored.
+# Where colour is sampled along the ray from the centre to the ring, as fractions
+# of the ray across the triple and double ring.
 _SAMPLE_FRACTIONS = tuple(np.linspace(0.5, 0.98, 20))
 
-# Wire angles are re-sampled from an improved centre estimate until the centre
-# stops moving. The pass cap only bounds a frame that oscillates instead of
-# settling.
+# Wire angles are re-sampled from each better centre estimate until it moves less
+# than this (px), at most this many passes.
 _CENTRE_CONVERGENCE_PX = 0.5
 _MAX_REFINEMENT_PASSES = 6
 
@@ -90,9 +61,7 @@ _RANSAC_ITERATIONS = 800
 _MAX_AXIS_RATIO = 4.0
 _MAX_FRAME_SHARE = 1.2
 
-# Structure a candidate must show before its votes count. The minority share is
-# what separates a board from the surround it hangs in, whose branding arcs form
-# a convincing but single-coloured ring.
+# Structure a candidate board must show before its votes count.
 _ANGULAR_SECTORS = 12  # bins the ring is divided into to check it is populated
 _MIN_ANGULAR_SECTORS = 8  # how many of those bins must be occupied
 _MIN_BAND_MEMBERS = 6  # centroids needed per ring band
@@ -111,12 +80,8 @@ trace = CalibrationTrace()
 
 
 def detect_board(image: np.ndarray) -> Calibration | CalibrationFailure:
-    """Locate the board and derive the image -> board homography.
-
-    On failure returns the stage that gave up rather than a bare None, so the
-    client can tell the user what to change instead of just that it did not
-    work. Every intermediate stage is recorded onto the module-level `trace`
-    for inspection.
+    """Locate the board and derive the image -> board homography, or the failure
+    stage; every stage is recorded onto the module-level `trace`.
     """
     global trace
     trace = CalibrationTrace()
@@ -143,10 +108,8 @@ def detect_board(image: np.ndarray) -> Calibration | CalibrationFailure:
     trace.kept_red, trace.kept_green = red_mask, green_mask
     trace.ellipse = ellipse
 
-    # The first pass casts its rays from the ellipse centre, which perspective
-    # offsets from the real board centre, so the wire angles come out skewed.
-    # Each homography locates the centre better than the last, so re-sampling
-    # from it straightens the rays out until the estimate stops moving.
+    # Re-sample the wire angles from each homography's board centre until the
+    # estimate stops moving.
     homography = None
     centre = ellipse[0]
 
@@ -221,11 +184,8 @@ def _colour_masks(image: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 def _fit_outer_ellipse(
     mask: np.ndarray,
 ) -> tuple[tuple[float, float], tuple[float, float], float] | None:
-    """Fit an ellipse to the outer boundary of the coloured region.
-
-    The convex hull of all coloured pixels traces the outer edge of the double
-    ring: the ring is interrupted by the black/white segments between the
-    coloured ones, but the hull bridges those gaps.
+    """Fit an ellipse to the convex hull of the coloured region, the outer edge of the
+    double ring.
     """
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
@@ -270,27 +230,9 @@ def _keep_labels(labels: np.ndarray, kept: set[int]) -> np.ndarray:
 def _select_board_components(
     red: np.ndarray, green: np.ndarray, frame: int
 ) -> tuple[np.ndarray, np.ndarray] | None:
-    """Keep only the components that agree on one board.
-
-    Fitting cannot be trusted here: an ellipse fitted through everything is
-    dragged by whatever coloured clutter happens to be in shot, because in a
-    least-squares fit every point pulls and none can be ignored. So the board is
-    *hypothesised* instead draw five component centroids, fit an ellipse
-    through them, and count how many of the remaining centroids that ellipse
-    explains. Outliers never have to be identified up front; they simply fail to
-    vote. Whatever backed the best hypothesis is the board.
-
-    What makes this work where plain ellipse RANSAC does not is the strength of
-    the model being tested. "Points lie on this ellipse" is far too weak the
-    triple ring offers nearly as many points as the double ring, so degenerate
-    slivers grazing both outscore the truth. A candidate here has to explain a
-    whole *board*: two concentric rings at the ratio the standard fixes, each
-    running the full way round, each alternating red and green. Voting per
-    component rather than per pixel matters too, or the fatter triple segments
-    would outweigh the double ring they are supposed to corroborate.
-
-    Returns None when nothing convincing was found, which is a better answer
-    than a confident fit to a chair.
+    """Keep the components of the candidate board that explains the most of them, from
+    ellipses through five random centroids and checked as two concentric alternating
+    rings; None when nothing convincing was found.
     """
     red_labels, red_found = _components(red)
     green_labels, green_found = _components(green)
@@ -338,11 +280,7 @@ def _trim_band_strays(
     entries: list[tuple[tuple[float, float], int, int, int]],
     votes: list[int],
 ) -> list[int]:
-    """Cut each band down to the twenty segments a ring actually has.
-
-    Branding just outside the double ring votes like a segment, and a hull fitted
-    over it is anchored on it; the count gives it away while the fit still can.
-    """
+    """Cut each band down to the twenty segments a ring has."""
     members: dict[float, list[int]] = {_DOUBLE_BAND: [], _TRIPLE_BAND: []}
     for index in votes:
         radius = _normalised_radius(ellipse, entries[index][0])
@@ -369,14 +307,8 @@ def _settle_hypothesis(
     frame: int,
     votes: list[int],
 ) -> list[int]:
-    """Refit the winning hypothesis on its own voters and collect them again.
-
-    The winner came out of five randomly drawn points, so it is only as good as
-    that draw: close enough to out-vote every rival, but off by enough that
-    segments near the edge of the tolerance miss out. Those gaps matter later
-    a missing double segment is a missing colour transition, and the wire
-    matching insists on all twenty. Refitting on the double-ring voters and
-    re-collecting recovers them.
+    """Refit the winning hypothesis on its double-ring voters and collect the voters
+    again.
     """
     votes = _trim_band_strays(ellipse, entries, votes)
 
@@ -419,10 +351,8 @@ def _board_votes(
     entries: list[tuple[tuple[float, float], int, int, int]],
     frame: int,
 ) -> list[int]:
-    """Indices of the components this candidate board explains, or none at all.
-
-    Returns an empty list the moment the candidate fails a structural test, so
-    an implausible board scores zero rather than a plausible-looking count.
+    """Indices of the components this candidate board explains, or none if it fails a
+    structural test.
     """
     (_, _), (axis_a, axis_b), _ = ellipse
     if (
@@ -469,11 +399,7 @@ def _unit_circle_point(
     ellipse: tuple[tuple[float, float], tuple[float, float], float],
     point: tuple[float, float],
 ) -> tuple[float, float]:
-    """Point in the ellipse's own frame, scaled so the ellipse is the unit circle.
-
-    Distance from the origin is then directly comparable to the band radii, and
-    the angle is the board angle up to the perspective skew.
-    """
+    """Point in the ellipse's own frame, scaled so the ellipse is the unit circle."""
     (centre_x, centre_y), (axis_a, axis_b), angle_degrees = ellipse
     rotation = math.radians(angle_degrees)
     offset_x, offset_y = point[0] - centre_x, point[1] - centre_y
@@ -490,18 +416,8 @@ def _fit_ring_ellipse(
 ) -> tuple[
     tuple[tuple[float, float], tuple[float, float], float], np.ndarray, np.ndarray
 ] | None:
-    """Fit the double ring, discarding whatever still lies outside it.
-
-    Clutter close to the board survives the neighbour test — the numbers around
-    the ring and the branding on a surround do have coloured segments nearby —
-    but it always sits further out than the double ring does. So: fit, drop
-    every component whose centroid falls outside that boundary, refit. The
-    first fit is too generous precisely because the strays inflate it, which is
-    why one pass is not enough; each round shrinks the ellipse and pushes the
-    remainder further out, so the loop converges on the ring.
-
-    Returns the ellipse together with the masks it was fitted to, since
-    everything downstream should be reading the cleaned ones.
+    """Fit the double ring, dropping components outside it and refitting until none
+    remain; returns the ellipse with the cleaned masks.
     """
     ellipse = _fit_outer_ellipse(cv2.bitwise_or(red, green))
     if ellipse is None:
@@ -537,12 +453,7 @@ def _normalised_radius(
     ellipse: tuple[tuple[float, float], tuple[float, float], float],
     point: tuple[float, float],
 ) -> float:
-    """Where a point sits relative to the ellipse — 1.0 is exactly on it.
-
-    Rotating the ellipse back onto the axes and dividing by the matching
-    semi-axis turns it into the unit circle, which makes the value comparable
-    all the way around regardless of how squashed the ellipse is.
-    """
+    """Where a point sits relative to the ellipse, 1.0 exactly on it."""
     return math.hypot(*_unit_circle_point(ellipse, point))
 
 
@@ -573,13 +484,8 @@ def _walk_ring_colours(
     red_mask: np.ndarray,
     green_mask: np.ndarray,
 ) -> list[int]:
-    """Dominant colour at each step around the ring: +1 red, -1 green, 0 unclear.
-
-    Samples along the straight line from `centre` out to the ring. A homography
-    maps lines to lines, so if `centre` is the image of the board centre then
-    every point on that line shares one board angle — which is what makes the
-    colour transitions land on the true sector wires. Each step votes across
-    several distances so a stray sample cannot flip the result.
+    """Dominant colour at each step around the ring (+1 red, -1 green, 0 unclear),
+    sampled along the line from `centre` out to the ring.
     """
     height, width = red_mask.shape[:2]
     colours = []
@@ -612,11 +518,8 @@ def _walk_ring_colours(
 
 
 def _find_colour_transitions(colours: list[int]) -> list[tuple[float, bool]]:
-    """Parameter angles where the ring changes colour.
-
-    Returns (parameter, becomes_red) pairs. Runs of "unclear" between two
-    colours are bridged by placing the transition at their midpoint, which is
-    where the sector wire that caused them actually sits.
+    """Parameter angles where the ring changes colour, as (parameter, becomes_red)
+    pairs; an unclear run between two colours puts the transition at its midpoint.
     """
     transitions = []
 
@@ -647,12 +550,8 @@ def _find_colour_transitions(colours: list[int]) -> list[tuple[float, bool]]:
 def _drop_spurious_transitions(
     transitions: list[tuple[float, bool]],
 ) -> list[tuple[float, bool]]:
-    """Remove transition pairs too close together to be real sector wires.
-
-    Wires are a whole sector apart, so anything much nearer is a speck of
-    misclassified colour — a highlight, a shadow edge — which always shows up
-    as a pair (in and straight back out again). Dropping both members keeps the
-    remaining sequence aligned with the real wires.
+    """Remove transition pairs closer than half a sector, which are specks of
+    misclassified colour rather than wires.
     """
     survivors = list(transitions)
     minimum_separation = SECTOR_ANGLE / 2
@@ -680,10 +579,8 @@ def _match_sector_wires(
     red_mask: np.ndarray,
     green_mask: np.ndarray,
 ) -> list[tuple[float, float]] | None:
-    """Pair each detected colour transition with the board angle of its wire.
-
-    Returns (ellipse_parameter, board_angle) pairs, or None if too few
-    transitions were found to trust the result.
+    """Pair each colour transition with the board angle of its wire, as
+    (ellipse_parameter, board_angle), or None if too few were found.
     """
     colours = _walk_ring_colours(ellipse, centre, red_mask, green_mask)
     transitions = _find_colour_transitions(colours)
@@ -697,9 +594,8 @@ def _match_sector_wires(
 
     boundaries = sector_boundary_angles()
 
-    # Transitions come out ordered by ellipse parameter. Board angles at the
-    # wires decrease as the parameter grows (the two run opposite), so the
-    # candidate assignments are the cyclic rotations of that reversed order.
+    # Board angles run opposite to the ellipse parameter, so the candidates are the
+    # cyclic rotations of the reversed wire order.
     candidates: list[tuple[int, list[tuple[float, float]]]] = []
 
     for offset in range(SECTOR_COUNT):
@@ -711,9 +607,7 @@ def _match_sector_wires(
             board_angle = boundaries[wire]
             pairs.append((parameter, board_angle))
 
-            # Wire `w` separates sector `w-1` (at the higher board angle) from
-            # sector `w`. The parameter runs opposite to the board angle, so
-            # crossing it moves into sector `w` itself.
+            # Crossing wire `w` against the board angle moves into sector `w`.
             if is_red_sector(wire) == becomes_red:
                 agreement += 1
 
@@ -730,19 +624,8 @@ def _upright_penalty(
     ellipse: tuple[tuple[float, float], tuple[float, float], float],
     pairs: list[tuple[float, float]],
 ) -> float:
-    """How far this assignment tilts the board away from 20 on top.
-
-    Colour alternation repeats every two sectors and so leaves ten equally good
-    rotations; this is what picks between them.
-
-    Measured through the assignment's own homography, not off the ellipse
-    directly: where a ring point *appears* in the image is not the direction it
-    has on the board. Seen from the side the projection swings that apparent
-    angle by tens of degrees, while the ten candidates sit only 36 degrees
-    apart — enough for the neighbouring rotation to look more upright than the
-    right one, which is a whole two sectors of scoring error. The homography is
-    what already knows the perspective, so asking it removes the bias instead of
-    bounding it.
+    """How far this assignment tilts the board away from 20 on top, measured through
+    the assignment's own homography.
     """
     homography = _fit_homography(ellipse, pairs)
     if homography is None:
@@ -768,11 +651,7 @@ def _fit_homography(
     ellipse: tuple[tuple[float, float], tuple[float, float], float],
     correspondences: list[tuple[float, float]],
 ) -> np.ndarray | None:
-    """Homography taking image pixels to board millimetres.
-
-    Every correspondence sits on the outer edge of the double ring, whose
-    radius is known, so the pairs are exact rather than approximated.
-    """
+    """Homography taking image pixels to board millimetres."""
     image_points = []
     board_points = []
 
