@@ -1,6 +1,8 @@
 """The address book: the people this account has played with. Scoped to the
 caller on purpose — a global player search would be a user-enumeration endpoint."""
 
+from uuid import UUID
+
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -68,9 +70,15 @@ async def search_players(
     user: AuthenticatedUser,
     q: str = Query("", max_length=64),
     limit: int = Query(20, ge=1, le=500),
+    id: list[UUID] = Query([], max_length=500),
 ) -> list[PlayerIdentityDto]:
+    """Names starting with `q`, or, given `id`s, those of them in this address book."""
     async with database.session_scope() as session:
-        identities = await repository.search(session, user.id, q.strip(), limit)
+        if id:
+            owned = await repository.owned(session, [str(each) for each in id], user.id)
+            identities = list(owned.values())
+        else:
+            identities = await repository.search(session, user.id, q.strip(), limit)
 
     return [PlayerIdentityDto.from_entity(identity, user.id) for identity in identities]
 

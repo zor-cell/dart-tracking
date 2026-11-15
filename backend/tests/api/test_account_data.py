@@ -4,6 +4,7 @@ import pytest
 
 from app.api.features.evaluation.domain.game_event import GameEvent, GameEventKind
 from app.api.features.evaluation.persistence.evaluation_repository import repository
+from app.api.features.evaluation.services import accuracy
 from app.infrastructure import database
 
 T20, T17, D5, S1, MISS = (20, 3), (17, 3), (5, 2), (1, 1), (0, 0)
@@ -341,6 +342,25 @@ def detected(field, **fields):
         kind=kind, turn_index=0, player_index=0, accepted=True,
         value=value, multiplier=multiplier, **fields,
     )
+
+
+def test_each_judged_game_keeps_its_own_events(alice, session):
+    K = GameEventKind
+    one, two = own_game(alice), own_game(alice)
+    log_events(session, one, detected((20, 1)), detected(None, kind=K.NEXT_PLAYER))
+    log_events(
+        session, two, detected((5, 1)), detected((1, 1)), detected(None, kind=K.NEXT_PLAYER)
+    )
+
+    async def judged():
+        async with database.session_scope() as db:
+            return await accuracy.judged_games(
+                db, game_ids=[two, one, "not-a-uuid"], include_unfinished=True
+            )
+
+    games = {game.game.id: len(game.judgements) for game in session.run(judged)}
+
+    assert games == {one: 1, two: 2}
 
 
 def test_game_report_shows_one_game_and_its_mismatches(alice, session):

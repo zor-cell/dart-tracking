@@ -12,8 +12,8 @@ from app.api.features.evaluation.domain.accuracy import (
     judge,
     summarise,
 )
-from app.api.features.evaluation.domain.game_event import GameEvent
 from app.api.features.evaluation.domain.evaluation_filter import EvaluationFilter
+from app.api.features.evaluation.domain.game_event import GameEvent
 from app.api.features.evaluation.domain.visit_replay import replay
 from app.api.features.evaluation.persistence.evaluation_repository import repository
 
@@ -37,10 +37,8 @@ async def judged_games(
         session,
         evaluation_only=test_runs_only and not game_ids,
         finished_only=not include_unfinished and not game_ids,
+        game_ids=game_ids or None,
     )
-    if game_ids:
-        wanted = set(game_ids)
-        games = [game for game in games if game.id in wanted]
     if min_version is not None:
         games = [
             game
@@ -51,7 +49,8 @@ async def judged_games(
         games = [game for game in games if game.tracker_versions == (version,)]
     games = [game for game in games if criteria.selects(game)]
 
-    logs = [(game, await repository.events(session, game.id)) for game in games]
+    events = await repository.events(session, [game.id for game in games])
+    logs = [(game, events.get(game.id, [])) for game in games]
     return await asyncio.to_thread(_judged, logs, criteria)
 
 

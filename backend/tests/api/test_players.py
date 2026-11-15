@@ -345,6 +345,16 @@ def test_linked_players_come_before_the_rest(alice, bob):
     assert [entry["name"] for entry in alice.get("/players").json()] == ["Alice", "Zed", "Carol"]
 
 
+def test_search_by_id_returns_only_own_entries(alice, bob):
+    albert = alice.add_player("Albert")
+    carol = alice.add_player("Carol")
+    foreign = bob.add_player("Dora")
+
+    found = alice.get("/players", params={"id": [carol, foreign, albert]}).json()
+
+    assert sorted(entry["name"] for entry in found) == ["Albert", "Carol"]
+
+
 def test_search_matches_the_start_of_names_own_entry_first(alice):
     for name in ("Albert", "Bob", "alex"):
         alice.add_player(name)

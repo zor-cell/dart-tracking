@@ -482,9 +482,11 @@ export class GameNewComponent {
         .map((player, seat) => ({ player, rank: ranks[seat] }))
         .sort((a, b) => a.rank - b.rank)
         .map(({ player }) => player);
-      const seats = await Promise.all(order.map((player) => this.reseat(player)));
-      for (const seat of seats) {
-        this.seats.push(this.fb.nonNullable.control<Seat>(seat, Validators.required));
+      const own = this.signedIn()
+        ? await this.players.owned(order.map((player) => player.identityId))
+        : [];
+      for (const player of order) {
+        this.seats.push(this.fb.nonNullable.control<Seat>(reseat(player, own), Validators.required));
       }
     } else {
       if (this.signedIn()) {
@@ -530,20 +532,6 @@ export class GameNewComponent {
 
   private account(): string | null {
     return this.auth.user()?.id ?? null;
-  }
-
-  /** The identity behind a previous seat: this account's address-book entry if
-   * it has one, otherwise the seat itself, which the server accepts for a rematch. */
-  private async reseat(player: PlayerDto): Promise<Seat> {
-    const found = this.signedIn() ? await this.players.search(player.name) : [];
-    return (
-      found.find((identity) => identity.id === player.identityId) ?? {
-        id: player.identityId,
-        name: player.name,
-        isSelf: false,
-        linked: false,
-      }
-    );
   }
 
   /** Signed out there is no address book, so a placeholder name saves typing;
@@ -636,4 +624,17 @@ function formValues(settings: GameSettingsDto) {
         trainingShuffle: settings.shuffle,
       };
   }
+}
+
+/** The identity behind a previous seat: this account's address-book entry if
+ * it has one, otherwise the seat itself, which the server accepts for a rematch. */
+function reseat(player: PlayerDto, own: readonly PlayerIdentityDto[]): Seat {
+  return (
+    own.find((identity) => identity.id === player.identityId) ?? {
+      id: player.identityId,
+      name: player.name,
+      isSelf: false,
+      linked: false,
+    }
+  );
 }

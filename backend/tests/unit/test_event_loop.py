@@ -88,7 +88,7 @@ def test_judging_the_logged_games_leaves_the_event_loop_free(monkeypatch):
         return [game]
 
     async def events(*_args):
-        return []
+        return {}
 
     monkeypatch.setattr(accuracy.repository, "logged_games", logged)
     monkeypatch.setattr(accuracy.repository, "events", events)

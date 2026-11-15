@@ -39,6 +39,23 @@ export class PlayerService {
     }
   }
 
+  /** Those of `ids` that are in this address book; an empty list when the lookup fails. */
+  async owned(ids: readonly string[]): Promise<PlayerIdentityDto[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    try {
+      return await firstValueFrom(
+        this.http.get<PlayerIdentityDto[]>(this.baseUrl, {
+          params: new HttpParams({ fromObject: { id: [...ids] } }),
+          context: SILENT_ERROR_CONTEXT,
+        }),
+      );
+    } catch {
+      return [];
+    }
+  }
+
   /** The whole address book, own entry first. */
   list(): Promise<PlayerIdentityDto[]> {
     return firstValueFrom(
