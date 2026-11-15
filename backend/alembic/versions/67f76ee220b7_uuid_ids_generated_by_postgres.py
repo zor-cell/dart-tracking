@@ -4,12 +4,7 @@ Revision ID: 67f76ee220b7
 Revises: c87b465d9538
 Create Date: 2026-09-04 15:20:00.000000
 
-The ids were 32-char hex strings built in Python. They become native `uuid`
-columns filled by Postgres 18's `uuidv7()`. Existing values survive: a 32-digit
-hex string casts to uuid unchanged, only its text form gains dashes.
-
-Foreign keys have to be dropped before the referenced type changes and rebuilt
-afterwards — Postgres refuses to alter a column a constraint depends on.
+Turns the hex string ids into native uuid columns filled by Postgres' `uuidv7()`.
 """
 from typing import Sequence, Union
 

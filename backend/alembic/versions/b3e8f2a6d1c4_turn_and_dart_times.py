@@ -4,8 +4,7 @@ Revision ID: b3e8f2a6d1c4
 Revises: a7c3e5f1b920
 Create Date: 2026-11-01 21:00:00.000000
 
-When each dart was booked and each visit closed, filled in from the event log for
-the games that have one.
+Adds when each dart was booked and each visit closed, filled from the event log.
 """
 from collections import defaultdict
 from itertools import groupby

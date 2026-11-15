@@ -4,9 +4,7 @@ Revision ID: d883252c5886
 Revises: 67f76ee220b7
 Create Date: 2026-09-04 16:05:00.000000
 
-From M4 on, registering also creates the account's own entry in its address
-book. Accounts that existed before have none, and nothing would ever create it —
-so they get one here, named after the username.
+Creates the own address book entry for accounts that have none, named after the username.
 """
 from typing import Sequence, Union
 

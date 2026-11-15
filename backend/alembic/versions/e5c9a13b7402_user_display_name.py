@@ -4,9 +4,7 @@ Revision ID: e5c9a13b7402
 Revises: f4a1c7d2e903
 Create Date: 2026-09-12 10:00:00.000000
 
-The name the player list shows is now its own column, so it can be chosen freely
-and need not be unique. Accounts that existed before keep what they had: their
-username.
+Adds the display name, filled with the username for existing accounts.
 """
 from typing import Sequence, Union
 

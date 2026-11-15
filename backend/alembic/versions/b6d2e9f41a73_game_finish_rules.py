@@ -4,8 +4,7 @@ Revision ID: b6d2e9f41a73
 Revises: a3e8f1c57d20
 Create Date: 2026-11-13 12:00:00.000000
 
-How a race ends: whether the round catches up after a finish, and whether play
-goes on for the places after the winner.
+Adds whether a race finishes the round and whether play goes on for the places.
 """
 from typing import Sequence, Union
 

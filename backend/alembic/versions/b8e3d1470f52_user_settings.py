@@ -4,9 +4,7 @@ Revision ID: b8e3d1470f52
 Revises: a41c7b902e18
 Create Date: 2026-09-07 10:00:00.000000
 
-Moves the app's switches off the browser and onto the account, so they follow
-the user across devices. An account without a row runs on the defaults, which
-is also what an anonymous session gets.
+Adds the per-account settings table; accounts without a row use the defaults.
 """
 from typing import Sequence, Union
 

@@ -4,9 +4,7 @@ Revision ID: f4a1c7d2e903
 Revises: c2a4f8b31d90
 Create Date: 2026-09-08 10:00:00.000000
 
-Adds the role that gates the evaluation page. Existing accounts become plain
-users; the address below is seeded as the admin, since the page is only useful
-to whoever runs the test games.
+Adds the account role and seeds the admin address below.
 """
 from typing import Sequence, Union
 

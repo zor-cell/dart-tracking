@@ -4,8 +4,7 @@ Revision ID: 9a2d6e4b7c31
 Revises: f2b6d8a40c17
 Create Date: 2026-10-25 23:00:00.000000
 
-The score pad is always shown and the client detection overlay is gone, so
-their two switches go.
+Drops the score pad and client detection overlay switches.
 """
 from typing import Sequence, Union
 

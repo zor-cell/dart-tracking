@@ -4,9 +4,7 @@ Revision ID: 0e1fed00a0de
 Revises: d883252c5886
 Create Date: 2026-09-04 16:40:00.000000
 
-Tells a game nobody came back to from one still being played, which is what
-`abandoned` rests on. Existing rows start at their creation time — that is the
-truth for a finished game and the safe assumption for an old open one.
+Adds when a game last changed; existing rows start at their creation time.
 """
 from typing import Sequence, Union
 

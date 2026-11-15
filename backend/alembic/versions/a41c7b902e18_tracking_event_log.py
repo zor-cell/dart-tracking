@@ -4,9 +4,7 @@ Revision ID: a41c7b902e18
 Revises: 0e1fed00a0de
 Create Date: 2026-09-06 12:00:00.000000
 
-Append-only record of what the tracker claimed and what the players accepted,
-which the game's own turn list cannot hold: undo deletes the darts it takes
-back. The flag on `games` marks a game as a test run.
+Adds the append-only tracking event log and the test run flag on `games`.
 """
 from typing import Sequence, Union
 

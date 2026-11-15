@@ -4,8 +4,7 @@ Revision ID: b17d4e9c05a2
 Revises: e5c9a13b7402
 Create Date: 2026-09-12 12:00:00.000000
 
-A game now carries which direction its score runs. Every game that existed
-before is x01, the only variant there was.
+Adds the game variant; existing games become x01.
 """
 from typing import Sequence, Union
 
