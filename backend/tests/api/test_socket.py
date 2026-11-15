@@ -284,7 +284,11 @@ def test_a_calibrated_camera_gets_its_outline_back_on_rejoining(room, camera, ga
 def test_pulling_the_winning_darts_confirms_the_win_in_the_room(room, camera, game_id, monkeypatch):
     monkeypatch.setattr(socket.board_detector, "detect_board", lambda image: Calibration(np.eye(3), 64, 48))
     monkeypatch.setattr(socket.dart_detector, "detect_dart", lambda *args: DetectionFailure.DARTS_REMOVED)
-    monkeypatch.setattr(socket, "_darts_pulled", lambda *args: True)
+
+    async def pulled(*_args):
+        return True
+
+    monkeypatch.setattr(socket, "_darts_pulled", pulled)
     with camera() as phone, room(game_id) as scoreboard:
         phone.send("calibration_frame", image=jpeg(64, 48))
         phone.next("calibration_result")

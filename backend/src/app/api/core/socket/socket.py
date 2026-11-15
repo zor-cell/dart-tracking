@@ -415,7 +415,7 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
     if isinstance(command, NextPlayerDto):
         await _end_visit(game)
         return
-    recorder.settle_win(game)
+    await recorder.settle_win(game)
 
     await _publish_state(game)
     if isinstance(command, RegisterDartDto | ReplaceDartDto):
@@ -591,7 +591,7 @@ async def _handle_calibration_frame(
     failed_before = decides and await calibration_failure_store.failed(game_id)
     if decides:
         await _start_calibrating(game_id)
-    decoded = _decode_jpeg(frame.image)
+    decoded = await asyncio.to_thread(_decode_jpeg, frame.image)
 
     if decoded is None:
         outcome: Calibration | CalibrationFailure = CalibrationFailure.INVALID_IMAGE
@@ -666,7 +666,7 @@ async def _handle_throw_frame(
     reports the matching failure instead of attempting a fit.
     """
     client_id = connection.client.id
-    decoded = _decode_jpeg(frame.image)
+    decoded = await asyncio.to_thread(_decode_jpeg, frame.image)
     calibration = await calibration_store.get(game_id, client_id)
     reference = detection_store.get(game_id, client_id)
     empty_board = detection_store.empty_board(game_id, client_id)
@@ -708,7 +708,9 @@ async def _handle_throw_frame(
         await hub.send(connection, DetectionResultDto.failed(outcome))
         if scoring:
             await recorder.note_failure(game_id, client_id, outcome, metrics)
-        if scoring and frame.advance_on_pull and _darts_pulled(game_id, client_id, aligned, empty_board):
+        if scoring and frame.advance_on_pull and (
+            await _darts_pulled(game_id, client_id, aligned, empty_board)
+        ):
             await _clear_board(game_id, client_id)
         return
 
@@ -748,21 +750,21 @@ async def _handle_throw_frame(
     # visit): the camera trims its drawn outlines against this state.
     game, _ = applied
     recorder.note_throw(game_id, raw, frame.trigger, booked=booked)
-    recorder.settle_win(game)
+    await recorder.settle_win(game)
     await _publish_state(game)
 
     if booked:
         await _announce(game, dart, game.just_reset() - reset_before)
 
 
-def _darts_pulled(
+async def _darts_pulled(
     game_id: str, client_id: str, aligned: np.ndarray | None, empty_board: np.ndarray | None
 ) -> bool:
     """Whether every dart this camera located in the visit is out of the board again."""
     if aligned is None or empty_board is None:
         return False
-    return dart_detector.darts_pulled(
-        detection_store.darts(game_id, client_id), aligned, empty_board
+    return await asyncio.to_thread(
+        dart_detector.darts_pulled, detection_store.darts(game_id, client_id), aligned, empty_board
     )
 
 
@@ -790,7 +792,7 @@ async def _clear_board(game_id: str, client_id: str) -> None:
 
 async def _end_visit(game: Game) -> None:
     """Push a handover to the room and start the next visit from a fresh empty board."""
-    recorder.settle_visit(game)
+    await recorder.settle_visit(game)
     detection_store.end_visit(game.id)
     await _publish_state(game)
     if await _request_calibration(game.id):

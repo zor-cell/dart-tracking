@@ -5,6 +5,7 @@ commands and the detector's trace — which is exactly why it lives here and not
 in the socket.
 """
 
+import asyncio
 import logging
 from collections.abc import Callable
 from dataclasses import replace
@@ -294,7 +295,7 @@ async def keep_failed_calibration(game_id: str, jpeg: bytes, failure: Calibratio
         logger.exception("[evaluation] could not look up %s", game_id)
         return
     if game is not None and game.evaluation_enabled:
-        write_failed_calibration(game_id, jpeg, failure.value)
+        await asyncio.to_thread(write_failed_calibration, game_id, jpeg, failure.value)
 
 
 def remember_frame(game_id: str, jpeg: bytes) -> None:
@@ -321,23 +322,23 @@ def _trigger_json(trigger: ThrowTriggerDto | None) -> bytes | None:
     return None if trigger is None else trigger.model_dump_json(by_alias=True, indent=1).encode()
 
 
-def settle_visit(game: Game) -> None:
+async def settle_visit(game: Game) -> None:
     """Close the visit that just ended, keeping its frames if the game is a test run."""
     # The handover has already opened the next visit, so the one that ended is
     # the slot before it.
     ended = len(game.turns) - 2
     if game.evaluation_enabled:
-        frames.flush(game.id, ended)
+        await frames.flush(game.id, ended)
     else:
         frames.discard(game.id)
 
 
-def settle_win(game: Game) -> None:
+async def settle_win(game: Game) -> None:
     """Write the visit that won the game, which no handover will close. Kept
     open, since an undo can take the winning dart back."""
     if game.winner is None:
         return
     if game.evaluation_enabled:
-        frames.flush(game.id, len(game.turns) - 1, keep=True)
+        await frames.flush(game.id, len(game.turns) - 1, keep=True)
     else:
         frames.discard(game.id)

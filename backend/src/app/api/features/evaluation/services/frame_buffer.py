@@ -4,6 +4,7 @@ In a test run every visit is written out as a throw series, otherwise thrown
 away. Process-local, about a megabyte per game.
 """
 
+import asyncio
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -65,6 +66,8 @@ class FrameBuffer:
         # The camera's last frame, which is the base image of the next visit.
         self._previous: dict[str, bytes] = {}
         self._visits: dict[str, _Visit] = {}
+        # One write at a time, in the order they were asked for.
+        self._writing = asyncio.Lock()
 
     def remember(self, game_id: str, jpeg: bytes) -> None:
         """Note a frame that opens a visit rather than belonging to one — the
@@ -91,7 +94,7 @@ class FrameBuffer:
         self._previous.pop(game_id, None)
         self.discard(game_id)
 
-    def flush(self, game_id: str, turn_index: int, *, keep: bool = False) -> Path | None:
+    async def flush(self, game_id: str, turn_index: int, *, keep: bool = False) -> Path | None:
         """Write the open visit as `throwN_base.jpg` + `throwN_dartK.jpg` plus
         its manifest and each dart's trigger episode. Returns the folder, or None when there was nothing to write.
 
@@ -101,33 +104,45 @@ class FrameBuffer:
         if visit is None or visit.base is None or not visit.frames:
             return None
 
-        folder = folder_of(game_id)
-        series = series_name(turn_index)
-        try:
-            folder.mkdir(parents=True, exist_ok=True)
-            # A rewritten series may hold fewer frames than an earlier write.
-            for pattern in (f"{series}_dart*.jpg", f"{series}_dart*_trigger.json"):
-                for stale in folder.glob(pattern):
-                    stale.unlink()
-            (folder / f"{series}_base.jpg").write_bytes(visit.base)
-            lines = []
-            for index, (jpeg, kind, trigger) in enumerate(visit.frames, start=1):
-                (folder / f"{series}_dart{index}.jpg").write_bytes(jpeg)
-                if trigger is not None:
-                    (folder / f"{series}_dart{index}_trigger.json").write_bytes(trigger)
-                lines.append(f"dart{index} {kind}")
-            manifest_of(folder, series).write_text("\n".join(lines) + "\n")
-        except OSError:
-            logger.exception("[evaluation] could not write frames for %s", game_id)
-            return None
+        async with self._writing:
+            return await asyncio.to_thread(
+                _write_series, game_id, turn_index, visit.base, list(visit.frames)
+            )
 
-        logger.info(
-            "[evaluation] wrote %d frame(s) of turn %d to %s",
-            len(visit.frames) + 1,
-            turn_index,
-            folder,
-        )
-        return folder
+
+def _write_series(
+    game_id: str,
+    turn_index: int,
+    base: bytes,
+    frames: list[tuple[bytes, FrameKind, bytes | None]],
+) -> Path | None:
+    folder = folder_of(game_id)
+    series = series_name(turn_index)
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+        # A rewritten series may hold fewer frames than an earlier write.
+        for pattern in (f"{series}_dart*.jpg", f"{series}_dart*_trigger.json"):
+            for stale in folder.glob(pattern):
+                stale.unlink()
+        (folder / f"{series}_base.jpg").write_bytes(base)
+        lines = []
+        for index, (jpeg, kind, trigger) in enumerate(frames, start=1):
+            (folder / f"{series}_dart{index}.jpg").write_bytes(jpeg)
+            if trigger is not None:
+                (folder / f"{series}_dart{index}_trigger.json").write_bytes(trigger)
+            lines.append(f"dart{index} {kind}")
+        manifest_of(folder, series).write_text("\n".join(lines) + "\n")
+    except OSError:
+        logger.exception("[evaluation] could not write frames for %s", game_id)
+        return None
+
+    logger.info(
+        "[evaluation] wrote %d frame(s) of turn %d to %s",
+        len(frames) + 1,
+        turn_index,
+        folder,
+    )
+    return folder
 
 
 def write_failed_calibration(game_id: str, jpeg: bytes, failure: str) -> Path | None:

@@ -3,6 +3,7 @@
 Admin-only: it reports on every account's games, not on the caller's own.
 """
 
+import asyncio
 from datetime import datetime
 from typing import Annotated
 
@@ -10,7 +11,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import PlainTextResponse
 
 from app.api.features.auth.services.current_user import AdminUser
-from app.api.features.evaluation.domain.breakdown import breakdowns_of
+from app.api.features.evaluation.domain.accuracy import AccuracyOverview, JudgedGame
+from app.api.features.evaluation.domain.breakdown import Breakdowns, breakdowns_of
 from app.api.features.evaluation.domain.evaluation_filter import EvaluationFilter
 from app.api.features.evaluation.dto.accuracy import AccuracyReportDto, GameReportDto
 from app.api.features.evaluation.services import accuracy
@@ -46,12 +48,16 @@ def evaluation_filter(
 Criteria = Annotated[EvaluationFilter, Depends(evaluation_filter)]
 
 
+def _figures(games: list[JudgedGame]) -> tuple[AccuracyOverview, Breakdowns]:
+    return accuracy.overview_of(games), breakdowns_of(games)
+
+
 @router.get("/accuracy", response_model=AccuracyReportDto)
 async def accuracy_report(user: AdminUser, criteria: Criteria) -> AccuracyReportDto:
     async with database.session_scope() as session:
         games = await accuracy.judged_games(session, criteria=criteria)
 
-    return AccuracyReportDto.from_entity(accuracy.overview_of(games), breakdowns_of(games))
+    return AccuracyReportDto.from_entity(*await asyncio.to_thread(_figures, games))
 
 
 @router.get("/report", response_class=PlainTextResponse)
@@ -61,8 +67,9 @@ async def markdown_report(user: AdminUser, criteria: Criteria) -> PlainTextRespo
         games = await accuracy.judged_games(session, criteria=criteria)
 
     now = datetime.now()
+    lines = await asyncio.to_thread(build_report, games, criteria, created_at=now)
     return PlainTextResponse(
-        "\n".join(build_report(games, criteria, created_at=now)) + "\n",
+        "\n".join(lines) + "\n",
         media_type="text/markdown; charset=utf-8",
         headers={
             "Content-Disposition": f'attachment; filename="accuracy_{now:%Y%m%d-%H%M%S}.md"'
@@ -78,7 +85,8 @@ async def game_report(user: AdminUser, game_id: str) -> GameReportDto:
     if not games:
         raise HTTPException(status_code=404, detail="game has no judged darts")
 
-    return GameReportDto.from_entity(accuracy.overview_of(games).games[0], breakdowns_of(games))
+    overview, breakdowns = await asyncio.to_thread(_figures, games)
+    return GameReportDto.from_entity(overview.games[0], breakdowns)
 
 
 @router.get("/versions", response_model=list[int])

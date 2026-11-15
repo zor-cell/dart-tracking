@@ -1,14 +1,18 @@
 """Turns the stored event logs into the numbers the evaluation page shows."""
 
+import asyncio
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.evaluation.domain.accuracy import (
     AccuracyOverview,
     GameAccuracy,
     JudgedGame,
+    LoggedGame,
     judge,
     summarise,
 )
+from app.api.features.evaluation.domain.game_event import GameEvent
 from app.api.features.evaluation.domain.evaluation_filter import EvaluationFilter
 from app.api.features.evaluation.domain.visit_replay import replay
 from app.api.features.evaluation.persistence.evaluation_repository import repository
@@ -47,9 +51,16 @@ async def judged_games(
         games = [game for game in games if game.tracker_versions == (version,)]
     games = [game for game in games if criteria.selects(game)]
 
+    logs = [(game, await repository.events(session, game.id)) for game in games]
+    return await asyncio.to_thread(_judged, logs, criteria)
+
+
+def _judged(
+    logs: list[tuple[LoggedGame, list[GameEvent]]], criteria: EvaluationFilter
+) -> list[JudgedGame]:
+    """The logged games with at least one judged dart the filter's camera selects."""
     judged: list[JudgedGame] = []
-    for game in games:
-        events = await repository.events(session, game.id)
+    for game, events in logs:
         visits = [visit for visit in replay(events) if visit.tracked]
         judgements = [j for visit in visits for j in judge(game.id, visit)]
         if judgements:

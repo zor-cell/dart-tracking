@@ -1,5 +1,6 @@
 """What the persistence was for: the numbers behind a player's throws."""
 
+import asyncio
 from datetime import datetime
 from typing import Annotated
 from uuid import UUID
@@ -98,7 +99,7 @@ async def own_statistics(
         compared = await _compared(session, user.id, player)
         overview = await repository.overview(session, user.id, criteria, last, compared)
 
-    return StatisticsOverviewDto.from_overview(overview)
+    return await asyncio.to_thread(StatisticsOverviewDto.from_overview, overview)
 
 
 @router.get("/targets", response_model=TargetStatisticsDto)
@@ -112,7 +113,7 @@ async def target_statistics(
         compared = await _compared(session, user.id, player)
         statistics = await targets.overview(session, user.id, criteria, last, compared)
 
-    return TargetStatisticsDto.from_entity(statistics)
+    return await asyncio.to_thread(TargetStatisticsDto.from_entity, statistics)
 
 
 @router.get("/kills", response_model=KillStatisticsDto)
@@ -138,4 +139,4 @@ async def overall_statistics(
         compared = await _compared(session, user.id, player)
         statistics = await overall.overview(session, user.id, criteria, last, compared)
 
-    return OverallStatisticsDto.from_entity(statistics)
+    return await asyncio.to_thread(OverallStatisticsDto.from_entity, statistics)

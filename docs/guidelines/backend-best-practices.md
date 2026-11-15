@@ -120,6 +120,20 @@ src/app/
 - The CLI runners in `backend/scripts/` keep `print()`: there the output *is*
   the program's result, not a diagnostic.
 
+## Event Loop
+The whole app runs on one event loop: anything that holds it up stalls every
+request and every running game's socket.
+- Database, Redis and mail are awaited through their async clients.
+- Work that takes more than a few milliseconds or grows with the account's data
+  runs through `asyncio.to_thread`: password hashing, decoding camera frames, the
+  CV pipeline, voicing clips, writing test-run frames, tallying statistics,
+  judging the evaluation and mapping large statistics DTOs.
+- Load on the loop first, then hand the loaded rows to one plain function in the
+  thread (`_overview(rows)`, `_judged(logs, criteria)`), so the thread never
+  touches the session.
+- Each such hand-off gets a case in `tests/unit/test_event_loop.py`, where the
+  replaced work only finishes once the loop has run on.
+
 ## Texts and Languages
 - Text meant for people (mails, names the server fills in, the announcer's calls) lives in
   `api/core/locale/<language>.json` with flat keys (`mail.reset.title`) and

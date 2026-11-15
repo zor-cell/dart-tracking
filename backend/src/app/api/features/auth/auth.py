@@ -113,7 +113,7 @@ async def _confirm_identity(user: User, proof: IdentityConfirmationDto) -> None:
     if (
         password_hash is None
         or proof.current_password is None
-        or not passwords.verify_password(proof.current_password, password_hash)
+        or not await passwords.verify_password(proof.current_password, password_hash)
     ):
         await rate_limit.count("login-failures", user.email, _LOGIN_FAILURE_WINDOW)
         raise HTTPException(status_code=403, detail="current password is wrong")
@@ -143,6 +143,7 @@ async def register(
     email = body.email.strip().lower()
     username = body.username.strip()
     display_name = body.display_name
+    password_hash = await passwords.hash_password(body.password)
 
     async with database.session_scope() as session:
         taken = await repository.taken(session, email, username)
@@ -153,7 +154,7 @@ async def register(
             email,
             username,
             display_name,
-            passwords.hash_password(body.password),
+            password_hash,
         )
         # The account's own entry in its address book, so the first game can be
         # set up without typing one's own name (§4.1).
@@ -178,7 +179,7 @@ async def login(body: LoginDto, response: Response) -> SessionDto:
 
     # One message for both failures, so the endpoint does not reveal which
     # accounts exist.
-    if found is None or found[1] is None or not passwords.verify_password(body.password, found[1]):
+    if found is None or found[1] is None or not await passwords.verify_password(body.password, found[1]):
         await rate_limit.count("login-failures", limit_key, _LOGIN_FAILURE_WINDOW)
         raise HTTPException(status_code=401, detail="invalid credentials")
 
@@ -331,12 +332,10 @@ async def reset_password(body: PasswordResetDto) -> None:
     if redeemed is None:
         raise _invalid_link()
 
+    password_hash = await passwords.hash_password(body.password)
     async with database.session_scope() as session:
         changed = await repository.set_password(
-            session,
-            redeemed.subject,
-            passwords.hash_password(body.password),
-            confirms_email=True,
+            session, redeemed.subject, password_hash, confirms_email=True
         )
 
     if not changed:
@@ -395,10 +394,9 @@ async def change_password(
     """Replace or set the password and sign out every device; the caller gets a fresh session."""
     await _confirm_identity(user, body)
 
+    password_hash = await passwords.hash_password(body.new_password)
     async with database.session_scope() as session:
-        await repository.set_password(
-            session, user.id, passwords.hash_password(body.new_password)
-        )
+        await repository.set_password(session, user.id, password_hash)
         updated = await repository.get(session, user.id)
 
     if updated is None:
