@@ -53,6 +53,22 @@ def test_elimination_counts_the_resets_either_way(alice, session):
     assert (found["kills"], found["losses"], found["wins"], found["darts"]) == (1, 1, 0, 6)
 
 
+def test_the_last_games_keep_the_newest(alice, session):
+    games = []
+    for hours in (48, 0):
+        game = alice.new_game(
+            alice.own_entry()["id"], {"name": "Ben"}, settings={"variant": "killer", "lives": 1}
+        )
+        own, ben = (player["number"] for player in game["standing"]["players"])
+        session.play(game["id"], [(own, 2), (ben, 2)])
+        finish(session, game["id"])
+        session.age_game(game["id"], hours=hours)
+        games.append(game["id"])
+
+    assert [entry["gameId"] for entry in kills(alice)["games"]] == games
+    assert [entry["gameId"] for entry in kills(alice, last=1)["games"]] == games[1:]
+
+
 def test_only_finished_games_of_the_own_seat_count(alice, session):
     game = alice.new_game(
         alice.own_entry()["id"], {"name": "Ben"}, settings={"variant": "killer", "lives": 1}

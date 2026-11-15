@@ -1,8 +1,11 @@
 """Loads the darts a player threw at a named field, for the tally in `domain/`."""
 
+import asyncio
+from collections.abc import Sequence
 from itertools import groupby
+from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import Row, exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.game.domain.dart import Dart
@@ -21,7 +24,10 @@ from app.api.features.statistics.domain.target_statistics import (
     AimedDart,
     TargetStatistics,
 )
-from app.api.features.statistics.persistence.statistics_repository import seat_clauses
+from app.api.features.statistics.persistence.statistics_repository import (
+    latest_games,
+    seat_clauses,
+)
 
 _BULL = 25
 
@@ -37,27 +43,23 @@ class TargetRepository:
     ) -> TargetStatistics:
         """The aimed darts of the finished games `criteria` selects; `last` keeps the
         most recent games with any, `player` reads that one instead of the account."""
-        statistics = TargetStatistics()
-        await self._fill(session, statistics, user_id, criteria, last, player, None)
-        return statistics
-
-    async def _fill(
-        self,
-        session: AsyncSession,
-        statistics: TargetStatistics,
-        user_id: str,
-        criteria: GameFilter,
-        last: int | None,
-        player: PlayerIdentity | None,
-        target: Target | None,
-    ) -> None:
-        aimed_at = [DartTable.target_value.is_not(None)]
-        if target is not None:
-            ring = DartTable.target_multiplier
-            aimed_at = [
-                DartTable.target_value == target.value,
-                ring.is_(None) if target.multiplier is None else ring == target.multiplier,
-            ]
+        seats = [
+            *seat_clauses(user_id, player),
+            GameTable.id.not_in(hidden_by(user_id)),
+            GameTable.status == GameStatus.FINISHED.value,
+            *game_filter_clauses(criteria),
+        ]
+        aimed_by_seat = (
+            exists()
+            .where(
+                DartTable.game_id == GameTable.id,
+                DartTable.target_value.is_not(None),
+                TurnTable.game_id == DartTable.game_id,
+                TurnTable.turn_index == DartTable.turn_index,
+                TurnTable.player_index == GamePlayerTable.player_index,
+            )
+            .correlate(GameTable, GamePlayerTable)
+        )
         rows = (
             await session.execute(
                 select(GameTable.id, GameTable.created_at, GameTable.variant, DartTable)
@@ -74,11 +76,9 @@ class TargetRepository:
                 )
                 .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
                 .where(
-                    *seat_clauses(user_id, player),
-                    GameTable.id.not_in(hidden_by(user_id)),
-                    GameTable.status == GameStatus.FINISHED.value,
-                    *aimed_at,
-                    *game_filter_clauses(criteria),
+                    *seats,
+                    DartTable.target_value.is_not(None),
+                    *latest_games([*seats, aimed_by_seat], last),
                 )
                 .order_by(
                     GameTable.created_at.desc(),
@@ -89,13 +89,20 @@ class TargetRepository:
             )
         ).all()
 
-        games = [list(darts) for _, darts in groupby(rows, key=lambda row: row.id)]
-        for darts in reversed(games[:last]):
-            aimed = [_aimed(row.DartTable) for row in darts]
-            through = darts[0].variant == GameVariant.AROUND_THE_CLOCK.value and any(
-                dart.target.value == _BULL and dart.hit for dart in aimed
-            )
-            statistics.add_game(darts[0].id, darts[0].created_at, aimed, through)
+        return await asyncio.to_thread(_tally, rows)
+
+
+def _tally(rows: Sequence[Row[Any]]) -> TargetStatistics:
+    """The rows' aimed darts game by game, oldest first."""
+    statistics = TargetStatistics()
+    games = [list(darts) for _, darts in groupby(rows, key=lambda row: row.id)]
+    for darts in reversed(games):
+        aimed = [_aimed(row.DartTable) for row in darts]
+        through = darts[0].variant == GameVariant.AROUND_THE_CLOCK.value and any(
+            dart.target.value == _BULL and dart.hit for dart in aimed
+        )
+        statistics.add_game(darts[0].id, darts[0].created_at, aimed, through)
+    return statistics
 
 
 def _aimed(row: DartTable) -> AimedDart:

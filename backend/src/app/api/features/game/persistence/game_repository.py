@@ -6,7 +6,7 @@ each command and written back inside the same transaction.
 
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Protocol
 from uuid import UUID
 
 from sqlalchemy import ColumnElement, Row, Select, and_, case, delete, func, or_, select, update
@@ -333,9 +333,10 @@ class GameRepository:
         setups = await load_setups(session, {row.id: GameVariant(row.variant) for row in rows})
         replayed = await self._replayed(session, setups, seats)
 
+        seats_of = by_game(seats)
         summaries: list[GameSummary] = []
         for row in rows:
-            entries = [seat for seat in seats if seat.game_id == row.id]
+            entries = seats_of.get(row.id, [])
             game = replayed.get(row.id)
             players = [
                 GameSummaryPlayer(
@@ -406,6 +407,7 @@ class GameRepository:
                 Dart(value=dart.value, multiplier=dart.multiplier)
             )
 
+        seats_of, turns_of = by_game(seats), by_game(turn_rows)
         games: dict[str, Game] = {}
         for game_id in ids:
             setup = setups[game_id]
@@ -420,8 +422,7 @@ class GameRepository:
                         name=shown_name(seat.display_name),
                         identity_id=seat.player_id,
                     )
-                    for seat in seats
-                    if seat.game_id == game_id
+                    for seat in seats_of.get(game_id, [])
                 ],
                 turns=[
                     Turn(
@@ -429,8 +430,7 @@ class GameRepository:
                         darts=darts.get((turn.game_id, turn.turn_index), []),
                         busted=turn.busted,
                     )
-                    for turn in turn_rows
-                    if turn.game_id == game_id
+                    for turn in turns_of.get(game_id, [])
                 ],
             )
         return games
@@ -653,13 +653,14 @@ class GameRepository:
             )
         ).scalars().all()
         setups = await load_setups(session, {row.id: GameVariant(row.variant) for row in rows})
+        seats_of, turns_of, darts_of = by_game(seats), by_game(turns), by_game(darts)
         return {
             row.id: _assemble(
                 row,
                 setups[row.id],
-                [(seat[1], seat[2], seat[3]) for seat in seats if seat[0] == row.id],
-                [turn for turn in turns if turn.game_id == row.id],
-                [dart for dart in darts if dart.game_id == row.id],
+                [(seat[1], seat[2], seat[3]) for seat in seats_of.get(row.id, [])],
+                turns_of.get(row.id, []),
+                darts_of.get(row.id, []),
                 {},
             )
             for row in rows
@@ -678,6 +679,18 @@ class GameRepository:
             )
         ).all()
         return {row.id: tuple(row.preferred_doubles) for row in rows}
+
+
+class _OfGame(Protocol):
+    game_id: str
+
+
+def by_game[R: _OfGame](rows: Sequence[R]) -> dict[str, list[R]]:
+    """`rows` split by their `game_id`, each game's in the order they came."""
+    grouped: dict[str, list[R]] = {}
+    for row in rows:
+        grouped.setdefault(row.game_id, []).append(row)
+    return grouped
 
 
 def _assemble(

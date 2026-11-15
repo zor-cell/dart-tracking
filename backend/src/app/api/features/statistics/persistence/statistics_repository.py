@@ -1,23 +1,31 @@
 """Loads the legs a player actually threw, for the tally in `domain/`."""
 
+import asyncio
 from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
-from sqlalchemy import ColumnElement, or_, select
+from sqlalchemy import ColumnElement, Row, exists, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.game_filter import GameFilter
+from app.api.features.game.domain.game_setup import GameSetup
 from app.api.features.game.domain.game_status import GameStatus
 from app.api.features.game.domain.player import Player
 from app.api.features.game.domain.turn import Turn
 from app.api.features.game.persistence.dart import DartTable
 from app.api.features.game.persistence.game import GameTable
 from app.api.features.game.persistence.game_player import GamePlayerTable
-from app.api.features.game.persistence.game_repository import game_filter_clauses, hidden_by
+from app.api.features.game.persistence.game_repository import (
+    by_game,
+    game_filter_clauses,
+    hidden_by,
+)
 from app.api.features.game.persistence.game_settings import load_setups
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.persistence.turn import TurnTable
@@ -52,6 +60,14 @@ class _Leg:
         )
 
 
+@dataclass(frozen=True)
+class _Rows:
+    seats: Sequence[Row[Any]]
+    setups: dict[str, GameSetup]
+    turns: Sequence[TurnTable]
+    darts: Sequence[DartTable]
+
+
 class StatisticsRepository:
     async def overview(
         self,
@@ -64,26 +80,25 @@ class StatisticsRepository:
         """Every counted leg of the games `criteria` selects, in one tally and game by game;
         `last` keeps only the most recent games that count, `player` reads that one instead."""
         seats = [*seat_clauses(user_id, player), GameTable.id.not_in(hidden_by(user_id))]
-        legs = await self._legs(session, seats, criteria, last)
-        totals = PlayerStatistics()
-        games: dict[str, TrendPoint] = {}
-        for leg in reversed(legs):
-            leg.add_to(totals)
-            point = games.setdefault(
-                leg.game_id, TrendPoint(leg.game_id, leg.played_at, PlayerStatistics())
-            )
-            leg.add_to(point.statistics)
-        return StatisticsOverview(totals, list(games.values()))
+        rows = await self._rows(session, seats, criteria, last)
+        return await asyncio.to_thread(_overview, rows)
 
-    async def _legs(
+    async def _rows(
         self,
         session: AsyncSession,
         seats_of: list[ColumnElement[bool]],
         criteria: GameFilter,
         last: int | None,
-    ) -> list[_Leg]:
-        """Three queries for the games `criteria` selects, not four per game: the
-        seats, their turns, their darts — then the rules run in Python. Newest first."""
+    ) -> _Rows:
+        """The seats of the games `criteria` selects, newest first, with their setups,
+        turns and darts, in a few queries for any number of games."""
+        counted = [
+            *seats_of,
+            GameTable.status == GameStatus.FINISHED.value,
+            GameTable.variant.in_(_POINTS_VARIANTS),
+            exists().where(TurnTable.game_id == GameTable.id),
+            *game_filter_clauses(criteria),
+        ]
         seats = (
             await session.execute(
                 select(
@@ -94,20 +109,14 @@ class StatisticsRepository:
                 )
                 .join(GamePlayerTable, GamePlayerTable.game_id == GameTable.id)
                 .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
-                .where(
-                    *seats_of,
-                    GameTable.status == GameStatus.FINISHED.value,
-                    GameTable.variant.in_(_POINTS_VARIANTS),
-                    *game_filter_clauses(criteria),
-                )
+                .where(*counted, *latest_games(counted, last))
                 .order_by(GameTable.created_at.desc(), GameTable.id)
             )
         ).all()
 
-        if not seats:
-            return []
-
-        ids = [seat.id for seat in seats]
+        ids = list(dict.fromkeys(seat.id for seat in seats))
+        if not ids:
+            return _Rows([], {}, [], [])
         setups = await load_setups(session, {seat.id: GameVariant(seat.variant) for seat in seats})
         turn_rows = (
             await session.execute(
@@ -124,80 +133,113 @@ class StatisticsRepository:
             )
         ).scalars().all()
 
-        darts: dict[tuple[str, int], list[Dart]] = {}
-        for row in dart_rows:
-            position = None if row.pos_x is None else (row.pos_x, row.pos_y)
-            darts.setdefault((row.game_id, row.turn_index), []).append(
-                Dart(value=row.value, multiplier=row.multiplier, position=position)
-            )
+        return _Rows(seats, setups, turn_rows, dart_rows)
 
-        # Each turn with darts by its place among its game's visits, as the replay counts them.
-        visit_of: dict[tuple[str, int], int] = {}
-        visits_so_far: Counter[str] = Counter()
-        for row in turn_rows:
-            if (row.game_id, row.turn_index) in darts:
-                visit_of[row.game_id, row.turn_index] = visits_so_far[row.game_id]
-                visits_so_far[row.game_id] += 1
 
-        legs: list[_Leg] = []
-        counted: set[str] = set()
-        for seat in seats:
-            game_rows = [row for row in turn_rows if row.game_id == seat.id]
-            if not game_rows:
-                continue
-            setup = setups[seat.id]
-            game = Game(
-                id=seat.id,
-                mode=setup.mode,
-                players=[
-                    Player(id=index, name="", identity_id="")
-                    for index in sorted({row.player_index for row in game_rows})
-                ],
-                variant=setup.variant,
-                checkout_mode=setup.checkout_mode,
-                options=setup.options,
-                turns=[
-                    Turn(
-                        player_id=row.player_index,
-                        darts=darts.get((row.game_id, row.turn_index), []),
-                        busted=row.busted,
-                    )
-                    for row in game_rows
-                ],
-            )
-            # The whole game is replayed, since in elimination the others reset your score.
-            own = [
-                (row, turn, start)
-                for row, turn, start in zip(
-                    game_rows, game.turns, game.remaining_before_turns(), strict=True
+def _overview(rows: _Rows) -> StatisticsOverview:
+    """Every counted leg in one tally and game by game, oldest first."""
+    totals = PlayerStatistics()
+    games: dict[str, TrendPoint] = {}
+    for leg in reversed(_legs(rows)):
+        leg.add_to(totals)
+        point = games.setdefault(
+            leg.game_id, TrendPoint(leg.game_id, leg.played_at, PlayerStatistics())
+        )
+        leg.add_to(point.statistics)
+    return StatisticsOverview(totals, list(games.values()))
+
+
+def _legs(rows: _Rows) -> list[_Leg]:
+    """Each seat's own turns, with the whole game replayed for where each began."""
+    seats, setups, turn_rows, dart_rows = rows.seats, rows.setups, rows.turns, rows.darts
+    darts: dict[tuple[str, int], list[Dart]] = {}
+    for row in dart_rows:
+        position = None if row.pos_x is None else (row.pos_x, row.pos_y)
+        darts.setdefault((row.game_id, row.turn_index), []).append(
+            Dart(value=row.value, multiplier=row.multiplier, position=position)
+        )
+
+    # Each turn with darts by its place among its game's visits, as the replay counts them.
+    visit_of: dict[tuple[str, int], int] = {}
+    visits_so_far: Counter[str] = Counter()
+    for row in turn_rows:
+        if (row.game_id, row.turn_index) in darts:
+            visit_of[row.game_id, row.turn_index] = visits_so_far[row.game_id]
+            visits_so_far[row.game_id] += 1
+
+    turns_of = by_game(turn_rows)
+    legs: list[_Leg] = []
+    for seat in seats:
+        game_rows = turns_of.get(seat.id)
+        if not game_rows:
+            continue
+        setup = setups[seat.id]
+        game = Game(
+            id=seat.id,
+            mode=setup.mode,
+            players=[
+                Player(id=index, name="", identity_id="")
+                for index in sorted({row.player_index for row in game_rows})
+            ],
+            variant=setup.variant,
+            checkout_mode=setup.checkout_mode,
+            options=setup.options,
+            turns=[
+                Turn(
+                    player_id=row.player_index,
+                    darts=darts.get((row.game_id, row.turn_index), []),
+                    busted=row.busted,
                 )
-                if row.player_index == seat.player_index
-            ]
-            turns = [turn for _, turn, _ in own]
-            if last is not None and seat.id not in counted and len(counted) == last:
-                break
-            counted.add(seat.id)
-
-            refs = [
-                None
-                if (visit := visit_of.get((row.game_id, row.turn_index))) is None
-                else VisitRef(seat.id, visit, seat.created_at)
-                for row, _, _ in own
-            ]
-            legs.append(
-                _Leg(
-                    game_id=seat.id,
-                    played_at=seat.created_at,
-                    mode=int(game.mode or 0),
-                    checkout_mode=game.checkout_mode or CheckoutMode.DOUBLE_OUT,
-                    turns=turns,
-                    refs=refs,
-                    starts=[start for _, _, start in own],
-                    against_others=len(game.players) > 1,
-                )
+                for row in game_rows
+            ],
+        )
+        # The whole game is replayed, since in elimination the others reset your score.
+        own = [
+            (row, turn, start)
+            for row, turn, start in zip(
+                game_rows, game.turns, game.remaining_before_turns(), strict=True
             )
+            if row.player_index == seat.player_index
+        ]
+        turns = [turn for _, turn, _ in own]
+        refs = [
+            None
+            if (visit := visit_of.get((row.game_id, row.turn_index))) is None
+            else VisitRef(seat.id, visit, seat.created_at)
+            for row, _, _ in own
+        ]
+        legs.append(
+            _Leg(
+                game_id=seat.id,
+                played_at=seat.created_at,
+                mode=int(game.mode or 0),
+                checkout_mode=game.checkout_mode or CheckoutMode.DOUBLE_OUT,
+                turns=turns,
+                refs=refs,
+                starts=[start for _, _, start in own],
+                against_others=len(game.players) > 1,
+            )
+        )
 
-        return legs
+    return legs
+
+
+def latest_games(
+    clauses: list[ColumnElement[bool]], last: int | None
+) -> list[ColumnElement[bool]]:
+    """Narrows a seat query to the `last` most recent games its `clauses` select."""
+    if last is None:
+        return []
+    latest = (
+        select(GameTable.id)
+        .join(GamePlayerTable, GamePlayerTable.game_id == GameTable.id)
+        .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
+        .where(*clauses)
+        .group_by(GameTable.id, GameTable.created_at)
+        .order_by(GameTable.created_at.desc(), GameTable.id)
+        .limit(last)
+    )
+    return [GameTable.id.in_(latest)]
 
 
 def seat_clauses(user_id: str, player: PlayerIdentity | None) -> list[ColumnElement[bool]]:

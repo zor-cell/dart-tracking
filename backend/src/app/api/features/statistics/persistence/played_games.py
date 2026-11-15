@@ -17,7 +17,10 @@ from app.api.features.game.persistence.game_repository import game_filter_clause
 from app.api.features.game.persistence.game_repository import repository as games
 from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.persistence.player import PlayerTable
-from app.api.features.statistics.persistence.statistics_repository import seat_clauses
+from app.api.features.statistics.persistence.statistics_repository import (
+    latest_games,
+    seat_clauses,
+)
 
 
 @dataclass(frozen=True)
@@ -39,6 +42,13 @@ async def played_games(
     """The finished games `criteria` selects, oldest first; `last` keeps the most recent,
     `player` reads that one's seats instead of the account's."""
     narrowed = [GameTable.variant.in_([variant.value for variant in variants])] if variants else []
+    played = [
+        *seat_clauses(user_id, player),
+        *narrowed,
+        GameTable.id.not_in(hidden_by(user_id)),
+        GameTable.status == GameStatus.FINISHED.value,
+        *game_filter_clauses(criteria),
+    ]
     rows = (
         await session.execute(
             select(
@@ -49,15 +59,8 @@ async def played_games(
             )
             .join(GamePlayerTable, GamePlayerTable.game_id == GameTable.id)
             .join(PlayerTable, PlayerTable.id == GamePlayerTable.player_id)
-            .where(
-                *seat_clauses(user_id, player),
-                *narrowed,
-                GameTable.id.not_in(hidden_by(user_id)),
-                GameTable.status == GameStatus.FINISHED.value,
-                *game_filter_clauses(criteria),
-            )
+            .where(*played, *latest_games(played, last))
             .order_by(GameTable.created_at.desc(), GameTable.id)
-            .limit(last)
         )
     ).all()
     loaded = await games.many(session, [row.id for row in rows])

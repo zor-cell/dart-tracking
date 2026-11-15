@@ -79,6 +79,24 @@ def test_a_won_duel_and_the_weeks_between(alice, session):
     assert found["longestStreak"] == 1
 
 
+def test_the_last_games_are_the_newest_the_filters_let_through(alice, session):
+    clock = {"variant": "around_the_clock"}
+    for day, settings, visits in (
+        ("2026-11-02 10:00", clock, 1),
+        ("2026-11-03 10:00", clock, 2),
+        ("2026-11-04 10:00", X01, 3),
+    ):
+        game_id = alice.new_game(alice.own_entry()["id"], settings=settings)["id"]
+        session.play(game_id, *[[MISS] * 3] * visits)
+        finish(session, game_id, day)
+
+    assert overall(alice, last=2)["darts"] == 15
+    assert overall(alice, last=2, variant="around_the_clock")["darts"] == 9
+    assert overall(alice, last=1, variant="around_the_clock")["weeks"] == [
+        {"week": "2026-11-02", "darts": 6}
+    ]
+
+
 def test_unfinished_games_and_other_seats_stay_out(alice, session):
     game_id = alice.new_game(alice.own_entry()["id"], {"name": "Ben"}, settings=X01)["id"]
     session.play(game_id, [(20, 1)], [(19, 1), (19, 1), (19, 1)])
