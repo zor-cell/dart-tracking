@@ -1,14 +1,16 @@
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 COPY . .
 
 # the build number passed from the deploy
 ARG BUILD_NUMBER
+ARG PRIMEUI_LICENSE_KEY
 ENV BUILD_NUMBER=$BUILD_NUMBER
+ENV PRIMEUI_LICENSE_KEY=$PRIMEUI_LICENSE_KEY
 
 RUN npm run build
 

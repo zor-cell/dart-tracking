@@ -61,6 +61,7 @@ services:
       dockerfile: Dockerfile
       args:
         BUILD_NUMBER: ${BUILD_NUMBER:-}
+        PRIMEUI_LICENSE_KEY: ${PRIMEUI_LICENSE_KEY:-}
     restart: unless-stopped
     logging: *logging
     ports:

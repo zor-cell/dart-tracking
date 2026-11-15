@@ -25,7 +25,7 @@ Hybrid-Architektur, um kontinuierliches Video-Streaming zu vermeiden:
 4. **Spielstand (Server).** Der Punktestand ist server-autoritativ und wird per
    WebSocket an alle Geräte im Raum gepusht.
 
-**Stack:** Angular 21 + PrimeNG 21 (Frontend), FastAPI + OpenCV + NumPy
+**Stack:** Angular 22 + PrimeNG 22 (Frontend), FastAPI + OpenCV + NumPy
 (Backend), Docker Compose, nginx als Reverse Proxy.
 
 ## Dokumentation

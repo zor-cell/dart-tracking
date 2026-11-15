@@ -1,12 +1,19 @@
-import { ApplicationConfig, inject, LOCALE_ID, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  inject,
+  LOCALE_ID,
+  provideAppInitializer,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { PrimeNG, providePrimeNG } from 'primeng/config';
 
 import { routes } from './app.routes';
-import {provideHttpClient, withInterceptors} from "@angular/common/http";
-import { Noir } from "../app-theme";
-import {ConfirmationService, MessageService} from "primeng/api";
-import {authInterceptor, errorInterceptor} from "./core/interceptors";
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { PRIMEUI_LICENSE } from '../environments/license';
+import { Noir } from '../app-theme';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { authInterceptor, errorInterceptor } from './core/interceptors';
 import { AnnouncerService } from './features/announcement/services/announcer.service';
 import { CalibrationService } from './features/calibration/services/calibration.service';
 import { primeNgTranslation } from './core/config/primeng-translation';
@@ -19,6 +26,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withInterceptors([errorInterceptor, authInterceptor])),
     providePrimeNG({
+      license: PRIMEUI_LICENSE,
       theme: {
         preset: Noir,
         options: { darkModeSelector: '.app-dark' },
@@ -35,5 +43,5 @@ export const appConfig: ApplicationConfig = {
     // Loads the account's settings from app start, so its language is followed after sign-in too.
     provideAppInitializer(() => void inject(SettingsService)),
     provideAppInitializer(() => void inject(ThemeService)),
-  ]
+  ],
 };

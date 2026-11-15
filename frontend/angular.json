@@ -54,14 +54,15 @@
             ],
             "styles": ["src/styles.scss"],
             "polyfills": ["@angular/localize/init"],
-            "i18nMissingTranslation": "error"
+            "i18nMissingTranslation": "error",
+            "allowedCommonJsDependencies": ["qrcode"]
           },
           "configurations": {
             "production": {
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "800kB",
+                  "maximumWarning": "900kB",
                   "maximumError": "1MB"
                 },
                 {

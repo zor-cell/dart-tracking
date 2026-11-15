@@ -140,6 +140,7 @@ jobs:
       SMTP_SECURITY: ${{ vars.SMTP_SECURITY }}
       MAIL_FROM: ${{ vars.MAIL_FROM }}
       APP_URL: https://darts.zorphy.net
+      PRIMEUI_LICENSE_KEY: ${{ secrets.PRIMEUI_LICENSE_KEY }}
     steps:
       - name: Check out the full history
         uses: actions/checkout@v5

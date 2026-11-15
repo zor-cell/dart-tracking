@@ -314,7 +314,7 @@ export class GameNewComponent {
 
   /** Opens the explanation of a quick start badge, or closes it on a second tap. */
   protected explainBadge(event: MouseEvent, badge: SetupBadge, popover: Popover): void {
-    if (popover.overlayVisible && this.shownBadge() === badge) {
+    if (popover.overlayVisible() && this.shownBadge() === badge) {
       popover.hide();
       return;
     }

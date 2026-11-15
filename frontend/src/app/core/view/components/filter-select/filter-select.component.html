@@ -1,13 +1,17 @@
 <label class="list-filters__label" [for]="inputId()">{{ label() }}</label>
-<p-multiselect
+<p-select
   [inputId]="inputId()"
   [formControl]="control()"
   [options]="options()"
   [optionLabel]="optionLabel()"
   [optionValue]="optionValue()"
   [placeholder]="placeholder()"
-  [showHeader]="searchLabel() !== null"
-  [filterPlaceHolder]="searchLabel() ?? ''"
+  [filter]="searchLabel() !== null"
+  [filterPlaceholder]="searchLabel() ?? ''"
   [showClear]="true"
+  [multiple]="true"
+  [checkmark]="true"
   fluid
-/>
+>
+  <ng-template #selectedItem>{{ pickedLabel() }}</ng-template>
+</p-select>

@@ -63,7 +63,7 @@ look things up there instead of relying on memory.
 The `angular-developer` skill (copied from `angular/skills`) applies, except where
 this project decides otherwise:
 
-- Check code with `npx ngc -p tsconfig.app.json --noEmit` (in `frontend/`), not
+- Check code with `npm run typecheck` (in `frontend/`), not
   `ng build`: a build wipes the running dev server's cache.
 - Files keep their role suffix (`*.component.ts`, `*.service.ts`).
 - PrimeNG before Angular Aria or other headless components.
