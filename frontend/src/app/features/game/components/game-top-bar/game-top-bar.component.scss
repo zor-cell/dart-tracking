@@ -20,21 +20,22 @@
 }
 
 .top-bar__heading {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
+// A long name is cut with an ellipsis rather than pushing the buttons off.
 .top-bar__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--p-text-color);
-}
-
-.top-bar__limit {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  color: var(--p-text-muted-color);
 }
 
 .top-bar__actions {

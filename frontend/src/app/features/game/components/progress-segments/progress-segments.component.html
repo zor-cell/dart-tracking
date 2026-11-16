@@ -7,3 +7,6 @@
     [attr.aria-label]="segment.label"
   />
 }
+@if (label(); as text) {
+  <span class="progress-segments__label">{{ text }}</span>
+}

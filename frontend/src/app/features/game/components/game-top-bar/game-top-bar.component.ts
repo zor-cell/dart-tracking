@@ -85,17 +85,24 @@ export class GameTopBarComponent {
     return { thrown: own?.darts ?? 0, limit: state.settings.darts };
   });
 
-  /** The time a timed training has left, "12:34", or the last round. */
-  protected readonly limit = computed(() => {
+  /** What stands under the strip: the time left, "12:34", or the darts thrown, "37 / 90". */
+  protected readonly progressLabel = computed(() => {
     const seconds = this.secondsLeft();
-    if (seconds === null) {
+    if (seconds !== null) {
+      const whole = Math.ceil(Math.max(seconds, 0));
+      return `${Math.floor(whole / 60)}:${`${whole % 60}`.padStart(2, '0')}`;
+    }
+    const darts = this.dartsLimit();
+    if (darts !== null) {
+      return `${darts.thrown} / ${darts.limit}`;
+    }
+    const state = this.game.state();
+    const play = state === null ? null : playOf(state);
+    if (play?.variant !== 'personal' || state === null || state.ended) {
       return null;
     }
-    if (seconds <= 0) {
-      return $localize`:@@game.training.lastRound:Letzte Runde`;
-    }
-    const whole = Math.ceil(seconds);
-    return `${Math.floor(whole / 60)}:${`${whole % 60}`.padStart(2, '0')}`;
+    const planned = play.standing.blocks.reduce((sum, block) => sum + block.darts, 0);
+    return `${play.standing.players[state.currentPlayerIndex]?.darts ?? 0} / ${planned}`;
   });
 
   /** The strip under the bar: a personal plan's blocks, or a training's darts or time used. */

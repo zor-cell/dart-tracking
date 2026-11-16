@@ -12,9 +12,6 @@
         />
       </div>
       <span class="top-bar__title">{{ title() }}</span>
-      @if (limit(); as limit) {
-        <span class="top-bar__limit" role="timer">{{ limit }}</span>
-      }
     </div>
 
     <div class="top-bar__actions">
@@ -31,7 +28,7 @@
     </div>
   </header>
   @if (progress(); as segments) {
-    <app-progress-segments class="top-bar__progress" [segments]="segments" />
+    <app-progress-segments class="top-bar__progress" [segments]="segments" [label]="progressLabel()" />
   }
 
   @defer (when shareDialogVisible(); prefetch on idle) {

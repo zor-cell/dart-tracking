@@ -431,7 +431,6 @@
     "game.training.random": "Random",
     "game.training.fields": "Own fields",
     "game.training.mixed": "Mixed",
-    "game.training.lastRound": "Last round",
     "game.progress.block": "Block {$index} of {$count}",
     "game.progress.training": "Training progress",
     "game.training.time": "Time",
