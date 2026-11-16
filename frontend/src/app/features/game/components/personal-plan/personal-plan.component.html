@@ -9,27 +9,26 @@
     <div class="plan__heading">
       <h2 class="list-group__title" id="personal-blocks" i18n="@@game.personal.plan">Dein Plan</h2>
       @if (plan()) {
-        <app-info-hint [label]="weaknessesLabel">
-          <div class="plan__heading">
-            <strong>{{ weaknessesLabel }}</strong>
-            <span class="plan__aside" i18n="@@game.personal.rateAndAverage">Quote (dein Schnitt)</span>
-          </div>
+        <app-info-hint [label]="weaknessesLabel" [wide]="true">
+          <strong>{{ weaknessesLabel }}</strong>
           <span class="plan__aside">{{ source() }}</span>
+          <span class="plan__aside" i18n="@@game.personal.explain">Rechts deine Trefferquote auf dem Feld, über dem Strich dein Schnitt auf allen Feldern derselben Art.</span>
           <ul class="plan__fields">
             @for (field of fields(); track field.label) {
               <li class="plan__field">
                 <span class="plan__label">{{ field.label }}</span>
                 <span class="plan__body">
-                  <span class="plan__bar" aria-hidden="true">
-                    <p-progressbar [value]="field.bar" [showValue]="false" />
-                    <span class="plan__mark" [style.left.%]="field.mark"></span>
+                  <span class="plan__bar">
+                    <span class="plan__average" [style.left.%]="field.mark">
+                      <span class="sr-only" i18n="@@game.personal.average">dein Schnitt</span>
+                      {{ field.average }}
+                    </span>
+                    <p-progressbar [value]="field.bar" [showValue]="false" aria-hidden="true" />
+                    <span class="plan__mark" [style.left.%]="field.mark" aria-hidden="true"></span>
                   </span>
                   <span class="plan__aside">{{ field.hint }}</span>
                 </span>
-                <span class="plan__rate">
-                  {{ field.rate }}
-                  <span class="plan__average">({{ field.average }})</span>
-                </span>
+                <span class="plan__rate">{{ field.rate }}</span>
               </li>
             }
           </ul>

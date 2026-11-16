@@ -9,7 +9,7 @@
   (onClick)="popover.toggle($event, $any($event).currentTarget)"
 />
 <p-popover #popover (onShow)="place(popover)">
-  <div class="info">
+  <div class="info" [class.info--wide]="wide()">
     <ng-content />
   </div>
 </p-popover>

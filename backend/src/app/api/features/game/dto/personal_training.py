@@ -55,8 +55,6 @@ class PlannedFieldDto(FieldRecordDto):
     ring_hits: int
     # Whether enough darts tell the rate; a thin field is in the plan to learn it.
     telling: bool
-    # Where most missing darts landed, as called out.
-    missed_to: str | None
 
 
 class LengthPlanDto(CamelModel):
@@ -174,7 +172,6 @@ def _planned(weak: Weakness) -> PlannedFieldDto:
         ring_darts=weak.ring_darts,
         ring_hits=weak.ring_hits,
         telling=weak.telling,
-        missed_to=weak.missed_to,
     )
 
 

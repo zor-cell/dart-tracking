@@ -8,8 +8,6 @@ export interface PlannedFieldDto extends FieldRecordDto {
   readonly ringHits: number;
   /** Whether enough darts tell the rate; a thin field is in the plan to learn it. */
   readonly telling: boolean;
-  /** Where most missing darts landed, as called out. */
-  readonly missedTo: string | null;
 }
 
 export interface LengthPlanDto {

@@ -15,7 +15,7 @@ interface FieldRow {
   readonly rate: string;
   readonly average: string;
   readonly hint: string;
-  /** Bar length and the average's mark, in percent of the bar. */
+  /** Bar length and the average's mark, in percent; the full bar is 100 %. */
   readonly bar: number;
   readonly mark: number;
 }
@@ -79,19 +79,17 @@ export class PersonalPlanComponent {
   private row(field: PlannedFieldDto): FieldRow {
     const rate = hitRate(field.hits, field.darts);
     const average = hitRate(field.ringHits, field.ringDarts);
-    const scale = Math.max(2 * (average ?? 0), rate ?? 0, 1);
     const percent = (value: number | null) => (value === null ? '–' : `${formatNumber(value, this.locale, '1.0-0')} %`);
-    const missed = field.missedTo === null ? '' : $localize`:@@game.personal.missedTo:, daneben meist ${field.missedTo}:field:`;
     const hint = field.telling
-      ? $localize`:@@game.personal.darts:${field.darts}:count: Darts` + missed
-      : $localize`:@@game.personal.thin:Noch wenig Darts (${field.darts}:count:)`;
+      ? $localize`:@@game.personal.darts:${field.darts}:count: Darts`
+      :$localize`:@@game.personal.thin:Noch wenig Darts (${field.darts}:count:)`;
     return {
       label: fieldLabel(field),
       rate: percent(rate),
       average: percent(average),
       hint,
-      bar: (100 * (rate ?? 0)) / scale,
-      mark: (100 * (average ?? 0)) / scale,
+      bar: rate ?? 0,
+      mark: average ?? 0,
     };
   }
 }

@@ -3,7 +3,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.target import Target
 from app.api.features.statistics.domain.target_statistics import FieldTally, TargetStatistics
 
@@ -21,8 +20,6 @@ class Weakness:
     # The ring's darts and hits over every field, the player's average there.
     ring_darts: int
     ring_hits: int
-    # The field most of the missing darts landed in, as called out; None without one.
-    missed_to: str | None
 
     @property
     def telling(self) -> bool:
@@ -49,7 +46,6 @@ def weaknesses(
         merged = tallies.setdefault(_ringed(target), FieldTally())
         merged.darts += tally.darts
         merged.hits += tally.hits
-        merged.landed.update(tally.landed)
     pools = {ring: [0, 0] for ring in rings}
     for target, tally in tallies.items():
         if target.multiplier in pools:
@@ -62,7 +58,6 @@ def weaknesses(
             hits=tally.hits,
             ring_darts=pools[target.multiplier][0],
             ring_hits=pools[target.multiplier][1],
-            missed_to=_missed_to(target, tally),
         )
         for target, tally in tallies.items()
         if target.multiplier in pools
@@ -72,10 +67,3 @@ def weaknesses(
 
 def _ringed(target: Target) -> Target:
     return Target(target.value, None) if target.multiplier == 1 else target
-
-
-def _missed_to(target: Target, tally: FieldTally) -> str | None:
-    rings = (1, 2, 3) if target.multiplier is None else (target.multiplier,)
-    own = {Dart(value=target.value, multiplier=ring).label for ring in rings}
-    missed = [(count, label) for label, count in tally.landed.items() if label not in own | {"0"}]
-    return max(missed, default=(0, None))[1]

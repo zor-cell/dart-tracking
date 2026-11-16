@@ -133,15 +133,6 @@ def test_a_double_focus_leaves_the_triples_out():
     assert [weak.target for weak in weaknesses(statistics, (2,))] == [Target(16, 2)]
 
 
-def test_the_field_missed_to_is_where_most_misses_landed():
-    statistics = TargetStatistics()
-    labels = [(16, 2), (8, 2), (8, 2), (8, 1), (16, 1), (0, 0), (0, 0), (0, 0)]
-    darts = [AimedDart(Target(16, 2), Dart(value, multiplier)) for value, multiplier in labels]
-    statistics.add_game("game", datetime(2026, 11, 1), darts, False)
-
-    assert weaknesses(statistics, (2,))[0].missed_to == "D8"
-
-
 def test_the_plan_trains_the_three_weakest_and_keeps_their_records():
     statistics = record((D20, 40, 10), (D16, 40, 2), (D8, 20, 2), (T20, 40, 4), (T19, 30, 0))
 
@@ -191,7 +182,6 @@ def test_the_single_pools_its_own_ring_and_every_ring_of_the_number():
     (single,) = weaknesses(statistics, (None,))
 
     assert (single.target, single.darts, single.hits) == (Target(20, None), 5, 2)
-    assert single.missed_to == "1"
 
 
 def test_a_single_focus_probes_the_singles_and_mixed_takes_them_too():
