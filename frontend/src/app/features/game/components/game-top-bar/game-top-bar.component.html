@@ -7,21 +7,9 @@
           severity="secondary"
           [outlined]="true"
           size="small"
-          ariaLabel="Spiel verlassen"
-          i18n-ariaLabel="@@game.leave"
+          [ariaLabel]="endsTraining() ? endTrainingLabel : leaveLabel"
           (onClick)="confirmLeaveGame()"
         />
-        @if (state.settings.variant === 'training' && !state.ended) {
-          <p-button
-            icon="pi pi-flag"
-            severity="secondary"
-            [outlined]="true"
-            size="small"
-            ariaLabel="Training beenden"
-            i18n-ariaLabel="@@game.endTraining"
-            (onClick)="confirmEndTraining()"
-          />
-        }
       </div>
       <span class="top-bar__title">{{ title() }}</span>
       @if (limit(); as limit) {

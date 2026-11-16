@@ -39,6 +39,14 @@ export class GameTopBarComponent {
   private readonly confirm = inject(ConfirmService);
 
   protected readonly shareDialogVisible = signal(false);
+  protected readonly leaveLabel = $localize`:@@game.leave:Spiel verlassen`;
+  protected readonly endTrainingLabel = $localize`:@@game.endTraining:Training beenden`;
+
+  /** A running free training has no winner, so closing it ends it rather than leaving. */
+  protected readonly endsTraining = computed(() => {
+    const state = this.game.state();
+    return state !== null && state.settings.variant === 'training' && !this.game.finished();
+  });
 
   /** Milliseconds since the epoch, ticking each second while a timed training runs. */
   private readonly now = signal(Date.now());
@@ -157,24 +165,27 @@ export class GameTopBarComponent {
   }
 
   /** Leaving a running game stops this device's part in it, so that asks first;
-   * a finished one is left at once. */
+   * a finished one is left at once, and a running training is ended instead. */
   protected confirmLeaveGame(): void {
     if (this.game.finished()) {
       this.leaveGame();
       return;
     }
+    if (this.endsTraining()) {
+      this.confirmEndTraining();
+      return;
+    }
     this.confirm.ask(
-      $localize`:@@game.leave:Spiel verlassen`,
+      this.leaveLabel,
       $localize`:@@game.leaveText:Spiel auf diesem Gerät verlassen? Der bisherige Spielstand bleibt gespeichert.`,
       $localize`:@@game.leaveAction:Verlassen`,
       () => this.leaveGame(),
     );
   }
 
-  /** A training has no winner to end it, so this does, after asking. */
-  protected confirmEndTraining(): void {
+  private confirmEndTraining(): void {
     this.confirm.ask(
-      $localize`:@@game.endTraining:Training beenden`,
+      this.endTrainingLabel,
       $localize`:@@game.endTrainingText:Training beenden? Du kannst danach noch zurück ins Training.`,
       $localize`:@@game.endTrainingAction:Beenden`,
       () => this.game.setEnded(true),
