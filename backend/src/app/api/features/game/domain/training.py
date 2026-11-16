@@ -207,7 +207,9 @@ def limit_reached(
         return False
     if darts is not None and len(thrown) // players * DARTS_PER_TURN >= darts:
         return True
-    end, last = deadline(minutes, turns), thrown[-1].darts[-1].thrown_at
+    # Misses booked at the hand-over are not dated yet; the visit's latest dart decides.
+    end = deadline(minutes, turns)
+    last = max((dart.thrown_at for dart in thrown[-1].darts if dart.thrown_at), default=None)
     return end is not None and last is not None and last >= end
 
 

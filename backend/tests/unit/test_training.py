@@ -272,23 +272,56 @@ def test_a_timed_training_ends_with_the_round_thrown_after_the_time():
     assert game.ended
 
 
-def test_a_training_taken_back_into_runs_until_the_next_round():
-    game = training(darts=TrainingLength.SHORT)
-    throw(game, ["20 20 20"] * 15)
-    assert game.ended
-
-    game.set_ended(False)
-    game.stamp(START)
-    game.next_player()
-    game.stamp(START)
-    assert not game.over
-    throw(game, ["20 20 20"])
-    assert game.ended
-
-
 def test_the_time_runs_from_the_first_dart():
     game = training(minutes=TrainingMinutes.FIFTEEN)
     assert deadline(TrainingMinutes.FIFTEEN, game.turns) is None
 
     throw(game, ["20"])
     assert deadline(TrainingMinutes.FIFTEEN, game.turns) == START + timedelta(minutes=15)
+
+
+def test_ending_by_hand_after_a_hand_over_ends_on_the_last_visit():
+    game = training(players=2)
+    throw(game, ["20 20 20", "19 19 19"])
+    assert game.current_turn.darts == []
+
+    game.set_ended(True)
+
+    assert [d.value for d in game.current_turn.darts] == [19, 19, 19]
+    assert (game.current_player.id, len(game.turns)) == (1, 2)
+
+
+def test_a_hand_over_that_reaches_the_darts_ends_without_a_new_visit():
+    game = training(darts=TrainingLength.SHORT)
+    throw(game, ["20 20 20"] * 14)
+    game.register_dart(dart("20"))
+    game.stamp(START)
+
+    assert game.next_player() == 2
+    assert game.ended is True
+    assert len(game.turns) == 15
+    assert len(game.current_turn.darts) == 3
+
+
+def test_going_back_at_the_darts_limit_allows_no_further_visit():
+    game = training(darts=TrainingLength.SHORT)
+    throw(game, ["20 20 20"] * 15)
+    assert game.ended is True
+
+    game.set_ended(False)
+    game.next_player()
+
+    assert game.ended is True
+    assert sum(len(turn.darts) for turn in game.turns) == 45
+
+
+def test_going_back_after_the_time_allows_no_further_visit():
+    game = training(minutes=TrainingMinutes.TEN)
+    throw(game, ["20 20 20", "20 20 20"], minutes_apart=11)
+    assert game.ended is True
+
+    game.set_ended(False)
+    game.next_player()
+
+    assert game.ended is True
+    assert len(game.turns) == 2

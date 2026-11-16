@@ -569,6 +569,10 @@ class Game:
             self.revision += 1
             filled += 1
         self.revision += 1
+        if self._limit_reached():
+            # The round that reached a training's limit is its last: no visit follows.
+            self.ended = True
+            return filled
         self.current_player_index = self._next_seat()
         self.shadow_darts = []
         self._start_turn()
@@ -656,7 +660,19 @@ class Game:
         if not self.variant.open_ended or self.ended == ended:
             return
         self.ended = ended
+        if ended:
+            self._drop_empty_visit()
         self.revision += 1
+
+    def _drop_empty_visit(self) -> None:
+        """End on the last visit thrown rather than on one just handed to, which holds nothing."""
+        if len(self.turns) > 1 and not self.current_turn.darts:
+            self.turns.pop()
+            self.current_player_index = next(
+                index
+                for index, player in enumerate(self.players)
+                if player.id == self.current_turn.player_id
+            )
 
     def _start_turn(self) -> None:
         self.turns.append(Turn(player_id=self.current_player.id))
