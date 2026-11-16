@@ -37,4 +37,6 @@ export interface ScoreboardEntry {
   readonly place: number | null;
   /** Cricket: the marks per target; null in the other variants. */
   readonly marks: readonly CricketMark[] | null;
+  /** How far through a fixed course, in percent; null without one. */
+  readonly progress: number | null;
 }

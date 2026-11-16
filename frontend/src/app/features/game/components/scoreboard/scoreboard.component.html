@@ -15,6 +15,7 @@
         [class.scoreboard__row--out]="entry.out || entry.waiting"
         [class.scoreboard__row--finished]="entry.finished"
         [class.scoreboard__row--winner]="entry.id === winnerId()"
+        [class.scoreboard__row--progress]="entry.progress !== null"
         [attr.aria-current]="$index === activeIndex() ? 'true' : null"
       >
         <span class="scoreboard__name">
@@ -71,6 +72,12 @@
             <span class="scoreboard__label" aria-hidden="true">{{ entry.right.label }}</span>
           </span>
         </span>
+        @if (entry.progress !== null) {
+          <app-progress-segments
+            class="scoreboard__progress"
+            [segments]="[{ value: entry.progress, weight: 1, label: progressLabel }]"
+          />
+        }
       </li>
     }
   </ul>

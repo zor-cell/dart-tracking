@@ -9,11 +9,12 @@ import {
 } from '@angular/core';
 import { Skeleton } from 'primeng/skeleton';
 import { ScoreboardEntry } from '../../models/scoreboard-entry';
+import { ProgressSegmentsComponent } from '../progress-segments/progress-segments.component';
 
 /** A row of player cards that keeps the active one centred; null entries draw placeholders. */
 @Component({
   selector: 'app-scoreboard',
-  imports: [Skeleton],
+  imports: [Skeleton, ProgressSegmentsComponent],
   templateUrl: './scoreboard.component.html',
   styleUrl: './scoreboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,6 +28,8 @@ export class ScoreboardComponent {
 
   /** A Cricket target's marks as drawn on a chalk board: none, slash, cross, circled cross. */
   protected readonly glyphs = ['', '/', '✕', 'ⓧ'];
+
+  protected readonly progressLabel = $localize`:@@game.scoreboard.progress:Fortschritt`;
 
   /** Placeholder cards while the state is on its way: two, the smallest game. */
   protected readonly skeletonEntries = [0, 1];

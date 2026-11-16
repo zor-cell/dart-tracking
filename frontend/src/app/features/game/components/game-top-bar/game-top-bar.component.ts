@@ -6,9 +6,11 @@ import { TorchToggleComponent } from '../../../camera/components/torch-toggle/to
 import { ShareDialogComponent } from '../../../../core/view/components/share-dialog/share-dialog.component';
 import { ConfirmService } from '../../../../core/view/services/confirm.service';
 import { playOf } from '../../models/game-settings';
+import { ProgressSegment } from '../../models/progress-segment';
 import { variantLabel } from '../../models/game-variant';
 import { GameService } from '../../services/game.service';
 import { GameSessionService } from '../../services/game-session.service';
+import { ProgressSegmentsComponent } from '../progress-segments/progress-segments.component';
 
 /**
  * Header of the game view, holding the game-scoped actions that do not belong to
@@ -22,6 +24,7 @@ import { GameSessionService } from '../../services/game-session.service';
     TorchToggleComponent,
     Button,
     ShareDialogComponent,
+    ProgressSegmentsComponent,
   ],
   templateUrl: './game-top-bar.component.html',
   styleUrl: './game-top-bar.component.scss',
@@ -51,28 +54,71 @@ export class GameTopBarComponent {
     return { minutes: state.settings.minutes, left, receivedAt: Date.now() };
   });
 
-  /** How far a training set to darts or minutes is: "37 / 90", "12:34", or the last round. */
-  protected readonly limit = computed(() => {
-    const state = this.game.state();
-    if (state === null || state.ended || state.settings.variant !== 'training') {
-      return null;
-    }
-    if (state.settings.darts !== null) {
-      const play = playOf(state);
-      const own = play.variant === 'training' ? play.standing.players[state.currentPlayerIndex] : undefined;
-      return `${own?.darts ?? 0} / ${state.settings.darts}`;
-    }
+  /** Seconds a timed training has left, counting down between states; null without a time. */
+  private readonly secondsLeft = computed(() => {
     const timer = this.timer();
     if (timer === null) {
       return null;
     }
-    const seconds =
-      timer.left === null ? timer.minutes * 60 : timer.left - (this.now() - timer.receivedAt) / 1000;
+    return timer.left === null ? timer.minutes * 60 : timer.left - (this.now() - timer.receivedAt) / 1000;
+  });
+
+  /** Darts the current player threw in a training set to darts, with the limit. */
+  private readonly dartsLimit = computed(() => {
+    const state = this.game.state();
+    if (state === null || state.ended || state.settings.variant !== 'training' || state.settings.darts === null) {
+      return null;
+    }
+    const play = playOf(state);
+    const own = play.variant === 'training' ? play.standing.players[state.currentPlayerIndex] : undefined;
+    return { thrown: own?.darts ?? 0, limit: state.settings.darts };
+  });
+
+  /** The time a timed training has left, "12:34", or the last round. */
+  protected readonly limit = computed(() => {
+    const seconds = this.secondsLeft();
+    if (seconds === null) {
+      return null;
+    }
     if (seconds <= 0) {
       return $localize`:@@game.training.lastRound:Letzte Runde`;
     }
     const whole = Math.ceil(seconds);
     return `${Math.floor(whole / 60)}:${`${whole % 60}`.padStart(2, '0')}`;
+  });
+
+  /** The strip under the bar: a personal plan's blocks, or a training's darts or time used. */
+  protected readonly progress = computed<readonly ProgressSegment[] | null>(() => {
+    const state = this.game.state();
+    if (state === null) {
+      return null;
+    }
+    const play = playOf(state);
+    if (play.variant === 'personal') {
+      const own = play.standing.players[state.currentPlayerIndex];
+      const blocks = play.standing.blocks;
+      let before = 0;
+      return blocks.map((block, index) => {
+        const thrown = Math.min(Math.max((own?.darts ?? 0) - before, 0), block.darts);
+        before += block.darts;
+        return {
+          value: (100 * thrown) / block.darts,
+          weight: block.darts,
+          label: $localize`:@@game.progress.block:Block ${index + 1}:index: von ${blocks.length}:count:`,
+        };
+      });
+    }
+    const label = $localize`:@@game.progress.training:Fortschritt des Trainings`;
+    const darts = this.dartsLimit();
+    if (darts !== null) {
+      return [{ value: Math.min((100 * darts.thrown) / darts.limit, 100), weight: 1, label }];
+    }
+    const seconds = this.secondsLeft();
+    const minutes = this.timer()?.minutes;
+    if (seconds === null || minutes === undefined) {
+      return null;
+    }
+    return [{ value: Math.min(Math.max(100 - seconds / (minutes * 0.6), 0), 100), weight: 1, label }];
   });
 
   constructor() {

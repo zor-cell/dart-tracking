@@ -42,6 +42,9 @@
       />
     </div>
   </header>
+  @if (progress(); as segments) {
+    <app-progress-segments class="top-bar__progress" [segments]="segments" />
+  }
 
   @defer (when shareDialogVisible(); prefetch on idle) {
     <app-share-dialog

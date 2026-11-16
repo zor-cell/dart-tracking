@@ -13,6 +13,8 @@ export interface Standing {
   readonly killer: boolean;
   readonly out: boolean;
   readonly marks: readonly CricketMark[] | null;
+  /** How far through a race with a fixed course, in percent; null without one. */
+  readonly progress: number | null;
 }
 
 /** Formats a number the way the view's locale writes it, e.g. `1.1-1` digits. */
@@ -21,6 +23,8 @@ export type NumberFormat = (value: number, digits: string) => string;
 const NONE = '–';
 const DONE = '✓';
 const MARKS_TO_CLOSE = 3;
+// Around the clock: 1 to 20, then the bull.
+const CLOCK_TARGETS = 21;
 
 /** Every player's standing, in seat order. */
 export function standings(state: GameStateDto, format: NumberFormat): Standing[] {
@@ -37,7 +41,7 @@ export function standings(state: GameStateDto, format: NumberFormat): Standing[]
 }
 
 function standingOf(state: GameStateDto, seat: number, format: NumberFormat): Standing {
-  const plain = { killer: false, out: false, marks: null };
+  const plain = { killer: false, out: false, marks: null, progress: null };
   const last = $localize`:@@game.scoreboard.last:letzte`;
 
   const play = playOf(state);
@@ -157,6 +161,7 @@ function standingOf(state: GameStateDto, seat: number, format: NumberFormat): St
         srLabel: $localize`:@@game.scoreboard.lastSteps:Felder im letzten Visit`,
       },
       rank: player.done,
+      progress: (100 * player.done) / CLOCK_TARGETS,
     };
   }
 

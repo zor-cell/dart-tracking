@@ -1,0 +1,9 @@
+@for (segment of segments(); track $index) {
+  <p-progressbar
+    [value]="segment.value"
+    [showValue]="false"
+    [dt]="tokens"
+    [style.flex-grow]="segment.weight"
+    [attr.aria-label]="segment.label"
+  />
+}

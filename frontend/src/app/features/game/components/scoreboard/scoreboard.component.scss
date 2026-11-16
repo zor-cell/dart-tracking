@@ -224,3 +224,14 @@
   opacity: 0.35;
   text-decoration: line-through;
 }
+
+// A fixed course runs along the card's bottom edge.
+.scoreboard__row--progress {
+  position: relative;
+  overflow: hidden;
+}
+
+.scoreboard__progress {
+  position: absolute;
+  inset: auto 0 0;
+}

@@ -42,3 +42,11 @@
   align-items: center;
   gap: 0.25rem;
 }
+
+.top-bar:has(+ .top-bar__progress) {
+  border-bottom: 0;
+}
+
+.top-bar__progress {
+  background: var(--p-content-background);
+}
