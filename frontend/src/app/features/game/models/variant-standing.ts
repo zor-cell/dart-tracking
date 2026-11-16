@@ -104,7 +104,14 @@ function standingOf(state: GameStateDto, seat: number, format: NumberFormat): St
     const visit = free ? player.lastVisit : own.lastVisit;
     return {
       ...plain,
-      score: free ? (player.average === null ? NONE : format(player.average, '1.1-1')) : fieldLabel(own.target),
+      // A free training keeps its average as the result; a training at targets is done.
+      score: free
+        ? player.average === null
+          ? NONE
+          : format(player.average, '1.1-1')
+        : state.ended
+          ? DONE
+          : fieldLabel(own.target),
       left: free
         ? { value: `${own.darts}`, label: 'Darts', srLabel: 'Darts' }
         : {
@@ -130,7 +137,7 @@ function standingOf(state: GameStateDto, seat: number, format: NumberFormat): St
     const rate = tally === undefined || tally.darts === 0 ? NONE : `${format((100 * tally.hits) / tally.darts, '1.0-0')} %`;
     return {
       ...plain,
-      score: own.target === null ? DONE : fieldLabel(own.target),
+      score: own.target === null || state.ended ? DONE : fieldLabel(own.target),
       left: {
         value: rate,
         label: $localize`:@@game.scoreboard.hitRate:Quote`,
