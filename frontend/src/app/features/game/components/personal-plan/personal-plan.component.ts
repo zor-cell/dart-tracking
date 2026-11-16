@@ -5,7 +5,7 @@ import { Skeleton } from 'primeng/skeleton';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 import { PersonalPlanDto, PlannedFieldDto } from '../../dto/personal-plan.dto';
-import { blockLabel, hitRate } from '../../models/personal-blocks';
+import { blockLabel, blockSeconds, durationLabel, hitRate } from '../../models/personal-blocks';
 import { PersonalFocus, PersonalLength, fieldLabel } from '../../models/variant-options';
 import { GameService } from '../../services/game.service';
 
@@ -34,6 +34,8 @@ export class PersonalPlanComponent {
 
   readonly focus = input.required<PersonalFocus>();
   readonly length = input.required<PersonalLength>();
+  /** Minutes a timed plan runs; null when it is played by darts. */
+  readonly minutes = input<number | null>(null);
 
   protected readonly plan = signal<PersonalPlanDto | null>(null);
   protected readonly failed = signal(false);
@@ -56,12 +58,21 @@ export class PersonalPlanComponent {
 
   protected readonly fields = computed(() => (this.picked()?.fields ?? []).map((field) => this.row(field)));
 
-  protected readonly blocks = computed(() =>
-    (this.picked()?.lengths.find((entry) => entry.length === this.length())?.blocks ?? []).map((block) => ({
+  /** The plan's size beside its title: "90 Darts", or "15 min" when timed. */
+  protected readonly size = computed(() => {
+    const minutes = this.minutes();
+    return minutes === null ? `${this.length()} Darts` : `${minutes} min`;
+  });
+
+  protected readonly blocks = computed(() => {
+    const blocks = this.picked()?.lengths.find((entry) => entry.length === this.length())?.blocks ?? [];
+    const minutes = this.minutes();
+    const seconds = minutes === null ? null : blockSeconds(blocks, minutes);
+    return blocks.map((block, index) => ({
       label: blockLabel(block),
-      darts: block.darts,
-    })),
-  );
+      size: seconds === null ? `${block.darts} Darts` : durationLabel(seconds[index]),
+    }));
+  });
 
   constructor() {
     this.load();

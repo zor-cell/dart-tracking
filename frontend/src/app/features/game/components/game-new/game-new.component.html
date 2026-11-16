@@ -242,15 +242,37 @@
               }
             </div>
             <div class="setup__field">
-              <label class="setup__label" for="personalLength" i18n="@@game.new.length">Dauer</label>
+              <label class="setup__label" for="personalEnd" i18n="@@game.training.end">Ende</label>
               <p-selectbutton
-                inputId="personalLength"
-                formControlName="personalLength"
+                inputId="personalEnd"
+                formControlName="personalEnd"
                 [allowEmpty]="false"
-                [options]="personalLengthOptions"
+                [options]="personalEndOptions"
                 optionLabel="label"
                 optionValue="value"
               />
+            </div>
+            <div class="setup__field">
+              <label class="setup__label" for="personalLength" i18n="@@game.new.length">Dauer</label>
+              @if (personalEnd() === 'darts') {
+                <p-selectbutton
+                  inputId="personalLength"
+                  formControlName="personalLength"
+                  [allowEmpty]="false"
+                  [options]="trainingDartsOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                />
+              } @else {
+                <p-selectbutton
+                  inputId="personalLength"
+                  formControlName="personalMinutes"
+                  [allowEmpty]="false"
+                  [options]="trainingMinutesOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                />
+              }
             </div>
           }
           @default {
@@ -335,7 +357,11 @@
         }
 
         @if (variant() === 'personal') {
-          <app-personal-plan [focus]="personalFocus()" [length]="personalLength()" />
+          <app-personal-plan
+            [focus]="personalFocus()"
+            [length]="personalEnd() === 'time' ? 90 : personalLength()"
+            [minutes]="personalEnd() === 'time' ? personalMinutes() : null"
+          />
         } @else {
         <div class="setup__field">
           <span class="setup__label" i18n="@@game.new.players">Spieler</span>

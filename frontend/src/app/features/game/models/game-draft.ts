@@ -8,6 +8,7 @@ import {
   CricketScoring,
   EliminationKill,
   KillerZone,
+  PersonalEnd,
   PersonalFocus,
   PersonalLength,
   TrainingEnd,
@@ -47,6 +48,8 @@ export interface GameDraft {
     readonly personalFocus: PersonalFocus;
     readonly personalLength: PersonalLength;
     readonly personalAnyRing: boolean;
+    readonly personalEnd: PersonalEnd;
+    readonly personalMinutes: TrainingMinutes;
     readonly catchUp: boolean;
     readonly playOn: boolean;
   };

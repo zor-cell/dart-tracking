@@ -34,7 +34,7 @@
           </ul>
         </app-info-hint>
       }
-      <span class="plan__aside plan__length">{{ length() }} Darts</span>
+      <span class="plan__aside plan__length">{{ size() }}</span>
     </div>
     @if (plan()) {
       <ol class="list-group__items">
@@ -44,7 +44,7 @@
             <span class="list-group__body">
               <span class="list-group__name">{{ block.label }}</span>
             </span>
-            <span class="list-group__hint">{{ block.darts }} Darts</span>
+            <span class="list-group__hint">{{ block.size }}</span>
           </li>
         }
       </ol>

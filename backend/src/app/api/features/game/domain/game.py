@@ -618,9 +618,13 @@ class Game:
     def _limit_reached(self) -> bool:
         """Whether a training set to darts or minutes has thrown its last round."""
         options = self.options
-        if not isinstance(options, TrainingOptions) or self.ended:
+        if self.ended:
             return False
-        return limit_reached(options, len(self.players), self.turns)
+        if isinstance(options, TrainingOptions):
+            return limit_reached(options.darts, options.minutes, len(self.players), self.turns)
+        if isinstance(options, PersonalOptions) and options.minutes is not None:
+            return limit_reached(None, options.minutes, len(self.players), self.turns)
+        return False
 
     def set_evaluation(self, enabled: bool) -> None:
         """Turn the test run on or off. Bumps the revision so the room is told,

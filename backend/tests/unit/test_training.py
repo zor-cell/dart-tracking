@@ -287,9 +287,8 @@ def test_a_training_taken_back_into_runs_until_the_next_round():
 
 
 def test_the_time_runs_from_the_first_dart():
-    options = TrainingOptions(minutes=TrainingMinutes.FIFTEEN)
     game = training(minutes=TrainingMinutes.FIFTEEN)
-    assert deadline(options, game.turns) is None
+    assert deadline(TrainingMinutes.FIFTEEN, game.turns) is None
 
     throw(game, ["20"])
-    assert deadline(options, game.turns) == START + timedelta(minutes=15)
+    assert deadline(TrainingMinutes.FIFTEEN, game.turns) == START + timedelta(minutes=15)

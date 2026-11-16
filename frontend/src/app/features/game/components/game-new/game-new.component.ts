@@ -58,9 +58,10 @@ import {
   KILLER_LIVES,
   KILLER_ZONES,
   KillerZone,
+  PERSONAL_ENDS,
   PERSONAL_FOCI,
-  PERSONAL_LENGTHS,
   personalHasSingles,
+  PersonalEnd,
   PersonalFocus,
   PersonalLength,
   TRAINING_GOALS,
@@ -156,7 +157,7 @@ export class GameNewComponent {
   protected readonly trainingGoalHints = TRAINING_GOAL_HINTS;
   protected readonly trainingRepeatsOptions = TRAINING_REPEATS.map((hits) => ({ label: `${hits}`, value: hits }));
   protected readonly personalFocusOptions = [...PERSONAL_FOCI];
-  protected readonly personalLengthOptions = [...PERSONAL_LENGTHS];
+  protected readonly personalEndOptions = [...PERSONAL_ENDS];
   protected readonly trainingEndOptions = [...TRAINING_ENDS];
   protected readonly trainingDartsOptions = [...TRAINING_DARTS];
   protected readonly trainingMinutesOptions = [...TRAINING_MINUTES];
@@ -200,6 +201,8 @@ export class GameNewComponent {
     trainingMinutes: this.fb.nonNullable.control<TrainingMinutes>(15),
     personalFocus: this.fb.nonNullable.control<PersonalFocus>('all'),
     personalLength: this.fb.nonNullable.control<PersonalLength>(90),
+    personalEnd: this.fb.nonNullable.control<PersonalEnd>('darts'),
+    personalMinutes: this.fb.nonNullable.control<TrainingMinutes>(15),
     personalAnyRing: this.fb.nonNullable.control(true),
     catchUp: this.fb.nonNullable.control(false),
     playOn: this.fb.nonNullable.control(false),
@@ -281,6 +284,12 @@ export class GameNewComponent {
   });
   protected readonly personalLength = toSignal(this.form.controls.personalLength.valueChanges, {
     initialValue: this.form.controls.personalLength.value,
+  });
+  protected readonly personalEnd = toSignal(this.form.controls.personalEnd.valueChanges, {
+    initialValue: this.form.controls.personalEnd.value,
+  });
+  protected readonly personalMinutes = toSignal(this.form.controls.personalMinutes.valueChanges, {
+    initialValue: this.form.controls.personalMinutes.value,
   });
   protected readonly personalSingles = computed(() => personalHasSingles(this.personalFocus()));
   /** The personal training seats the account's own entry alone, so it needs one. */
@@ -434,7 +443,7 @@ export class GameNewComponent {
       clockZone, clockSkip, eliminationKill, catchUp, playOn,
       trainingGoal, trainingRing, trainingFields, trainingRepeats, trainingShuffle,
       trainingAnyRing, trainingEnd, trainingDarts, trainingMinutes,
-      personalFocus, personalLength, personalAnyRing,
+      personalFocus, personalLength, personalAnyRing, personalEnd, personalMinutes,
     } = this.form.getRawValue();
     const seats = (players as Seat[]).map<PlayerSlotDto>((seat) =>
       typeof seat === 'string' ? { name: seat.trim() } : { playerId: seat.id },
@@ -465,8 +474,9 @@ export class GameNewComponent {
       personal: {
         variant: 'personal',
         focus: personalFocus,
-        length: personalLength,
+        length: personalEnd === 'time' ? 90 : personalLength,
         anyRing: !personalHasSingles(personalFocus) || personalAnyRing,
+        minutes: personalEnd === 'time' ? personalMinutes : null,
       },
     };
     const self = this.selfId();
@@ -678,6 +688,8 @@ function formValues(settings: GameSettingsDto) {
         personalFocus: settings.focus,
         personalLength: settings.length,
         personalAnyRing: settings.anyRing,
+        personalEnd: settings.minutes === null ? ('darts' as const) : ('time' as const),
+        ...(settings.minutes !== null ? { personalMinutes: settings.minutes } : {}),
       };
   }
 }

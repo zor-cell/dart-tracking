@@ -24,6 +24,19 @@ export function blockLabel(block: PlanBlockDto): string {
     : $localize`:@@game.personal.mixed:Gemischt (${fields.join(', ')}:fields:)`;
 }
 
+/** How long each block of a plan run for `minutes` lasts, by its share of the darts, in seconds. */
+export function blockSeconds(blocks: readonly PlanBlockDto[], minutes: number): number[] {
+  const total = blocks.reduce((sum, block) => sum + block.darts, 0);
+  return blocks.map((block) => (minutes * 60 * block.darts) / total);
+}
+
+/** A duration as a block shows it: "4 min", "2:40 min". */
+export function durationLabel(seconds: number): string {
+  const whole = Math.round(seconds);
+  const rest = whole % 60;
+  return rest === 0 ? `${whole / 60} min` : `${Math.floor(whole / 60)}:${`${rest}`.padStart(2, '0')} min`;
+}
+
 export function hitRate(hits: number, darts: number): number | null {
   return darts === 0 ? null : (100 * hits) / darts;
 }

@@ -57,7 +57,7 @@ def test_the_training_is_the_own_entry_alone(alice):
 def test_a_training_starts_on_the_plan_and_keeps_it(alice):
     game = alice.new_game(alice.own_entry()["id"], settings=DOUBLES)
 
-    assert game["settings"] == {**DOUBLES, "anyRing": True}
+    assert game["settings"] == {**DOUBLES, "anyRing": True, "minutes": None}
     standing = game["standing"]
     assert [block["fields"] for block in standing["blocks"]] == [[D20], [D16], [D8], [D20, D16, D8]]
     assert standing["baselines"] == [{**field, "darts": 0, "hits": 0} for field in (D20, D16, D8)]
@@ -95,3 +95,23 @@ def test_the_switch_for_a_single_is_kept_only_where_the_focus_has_singles(alice)
 
     assert alice.get(f"/games/{singles['id']}").json()["settings"]["anyRing"] is False
     assert doubles["settings"]["anyRing"] is True
+
+
+def test_a_timed_training_shares_its_minutes_and_counts_down(alice, session):
+    settings = {**DOUBLES, "minutes": 10}
+    game = alice.new_game(alice.own_entry()["id"], settings=settings)
+
+    assert game["settings"] == {**DOUBLES, "length": 90, "anyRing": True, "minutes": 10}
+    assert [block["darts"] for block in game["standing"]["blocks"]] == [24, 24, 24, 18]
+    assert game["standing"]["secondsLeft"] is None
+
+    session.play(game["id"], [(20, 2)], hand_over=False)
+    session.sql("UPDATE game_darts SET thrown_at = now() - interval '1 minute'")
+    left = alice.get(f"/games/{game['id']}").json()["standing"]["secondsLeft"]
+    assert 8 * 60 < left <= 9 * 60
+
+
+def test_a_timed_training_takes_only_the_offered_minutes(alice):
+    own = {"playerId": alice.own_entry()["id"]}
+    response = alice.post("/games", json={"players": [own], "settings": {**DOUBLES, "minutes": 5}})
+    assert response.status_code == 422

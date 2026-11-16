@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Literal, Self
 
@@ -16,6 +17,7 @@ from app.api.features.game.domain.training import (
     TrainingRing,
     deadline,
 )
+from app.api.features.game.domain.turn import Turn
 
 
 class TrainingFieldDto(CamelModel):
@@ -118,9 +120,14 @@ class TrainingStandingDto(CamelModel):
                     ],
                 )
             )
-        end = deadline(game.options, game.turns) if isinstance(game.options, TrainingOptions) else None
-        left = None if end is None else max((end - datetime.now(UTC)).total_seconds(), 0.0)
-        return cls(players=players, seconds_left=left)
+        minutes = game.options.minutes if isinstance(game.options, TrainingOptions) else None
+        return cls(players=players, seconds_left=seconds_left(minutes, game.turns))
+
+
+def seconds_left(minutes: int | None, turns: Sequence[Turn]) -> float | None:
+    """Seconds a timed training has left now; None without a time or before its first dart."""
+    end = deadline(minutes, turns)
+    return None if end is None else max((end - datetime.now(UTC)).total_seconds(), 0.0)
 
 
 def _fields(fields: tuple[tuple[int, int], ...] | list[tuple[int, int]]) -> list[TrainingFieldDto]:

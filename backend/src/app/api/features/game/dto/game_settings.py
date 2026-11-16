@@ -95,7 +95,8 @@ def to_setup(
                 raise ValueError("a personal training needs its plan")
             # Without a single in the focus the switch changes nothing, so it stays on.
             any_ring = settings.any_ring or None not in settings.focus.rings
-            return GameSetup(GameVariant.PERSONAL, None, None, replace(plan, any_ring=any_ring))
+            personal = replace(plan, any_ring=any_ring, minutes=settings.minutes)
+            return GameSetup(GameVariant.PERSONAL, None, None, personal)
 
 
 def settings_dto(setup: GameSetup) -> GameSettingsDto:

@@ -4,7 +4,6 @@ import { variantLabel } from './game-variant';
 import {
   ANY_RING,
   PERSONAL_FOCI,
-  PERSONAL_LENGTHS,
   personalHasSingles,
   TRAINING_GOALS,
   TRAINING_RINGS,
@@ -98,9 +97,10 @@ export function setupBadges(settings: GameSettingsDto): SetupBadge[] {
         const title = [focus, ...(settings.anyRing && personalHasSingles(settings.focus) ? [ANY_RING] : [])];
         badges.push({ label: focus[0], icon: null, title: title.join(', '), hint: null });
       }
-      if (settings.length !== 90) {
-        const length = optionLabel(PERSONAL_LENGTHS, settings.length);
-        badges.push({ label: `${settings.length}`, icon: null, title: length, hint: null });
+      if (settings.minutes !== null) {
+        badges.push(iconed('pi-stopwatch', `${settings.minutes} min`, null));
+      } else if (settings.length !== 90) {
+        badges.push({ label: `${settings.length}`, icon: null, title: `${settings.length} Darts`, hint: null });
       }
       break;
   }

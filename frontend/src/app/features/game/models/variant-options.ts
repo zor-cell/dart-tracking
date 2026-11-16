@@ -110,11 +110,12 @@ export function personalHasSingles(focus: PersonalFocus): boolean {
   return focus === 'singles' || focus === 'all';
 }
 
-export const PERSONAL_LENGTHS: readonly { label: string; value: PersonalLength }[] = [
-  { label: $localize`:@@game.personal.short:Kurz`, value: 45 },
-  { label: $localize`:@@game.personal.medium:Mittel`, value: 90 },
-  { label: $localize`:@@game.personal.long:Lang`, value: 150 },
-];
+/** A personal training ends with its plan's darts or its minutes; it is never endless. */
+export type PersonalEnd = Exclude<TrainingEnd, 'endless'>;
+
+export const PERSONAL_ENDS = TRAINING_ENDS.filter(
+  (end): end is { label: string; value: PersonalEnd } => end.value !== 'endless',
+);
 
 /** Hits a training target may take before the next one comes up. */
 export const TRAINING_REPEATS: readonly number[] = [1, 2, 3, 5];

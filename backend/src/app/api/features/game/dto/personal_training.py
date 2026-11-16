@@ -11,8 +11,8 @@ from app.api.features.game.domain.personal_training import (
     PersonalProgress,
     PlanBlock,
 )
-from app.api.features.game.domain.training import Field
-from app.api.features.game.dto.training import TrainingFieldDto
+from app.api.features.game.domain.training import Field, TrainingMinutes
+from app.api.features.game.dto.training import TrainingFieldDto, seconds_left
 from app.api.features.game.services.personal_plan import PersonalPlan
 from app.api.features.statistics.domain.weakness import Weakness
 
@@ -23,10 +23,17 @@ class PersonalSettingsDto(CamelModel):
     length: PersonalLength = PersonalLength.MEDIUM
     # Whether a single is hit by its double and triple too.
     any_ring: bool = True
+    # Minutes the plan runs from its first dart; None plays it by darts.
+    minutes: TrainingMinutes | None = None
 
     @classmethod
     def of(cls, options: PersonalOptions) -> Self:
-        return cls(focus=options.focus, length=options.length, any_ring=options.any_ring)
+        return cls(
+            focus=options.focus,
+            length=options.length,
+            any_ring=options.any_ring,
+            minutes=options.minutes,
+        )
 
 
 class PlanBlockDto(CamelModel):
@@ -125,6 +132,8 @@ class PersonalStandingDto(CamelModel):
     baselines: list[FieldRecordDto]
     # One per player, in seat order.
     players: list[PersonalPlayerDto]
+    # Seconds of a timed plan left when this was sent; None by darts or before the first dart.
+    seconds_left: float | None = None
 
     @classmethod
     def from_entity(cls, game: Game, progress: PersonalProgress) -> Self:
@@ -160,6 +169,7 @@ class PersonalStandingDto(CamelModel):
                 for baseline in options.baselines
             ],
             players=players,
+            seconds_left=seconds_left(options.minutes, game.turns),
         )
 
 

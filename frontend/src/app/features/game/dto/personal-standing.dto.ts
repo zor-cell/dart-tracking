@@ -26,4 +26,6 @@ export interface PersonalStandingDto {
   readonly baselines: readonly FieldRecordDto[];
   /** One per player, in seat order. */
   readonly players: readonly PersonalPlayerDto[];
+  /** Seconds of a timed plan left when the state was sent; null by darts or before the first dart. */
+  readonly secondsLeft: number | null;
 }

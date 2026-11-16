@@ -1,12 +1,13 @@
 """Personal training: a fixed plan of blocks at the account's weakest fields, each a
-set number of darts; the game is done once every planned dart is thrown."""
+set number of darts or a share of the minutes; done once the plan or its time is through."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import StrEnum
 
 from app.api.features.game.domain.target import Target
-from app.api.features.game.domain.training import Field, TrainingLength
+from app.api.features.game.domain.training import Field, TrainingLength, TrainingMinutes, first_dart
 from app.api.features.game.domain.turn import Turn
 
 # Weak fields a plan trains, each in a block of its own.
@@ -65,6 +66,8 @@ class PersonalOptions:
     baselines: tuple[Baseline, ...] = ()
     # Whether a planned single is hit by its double and triple too.
     any_ring: bool = True
+    # Minutes from the first dart, shared by the blocks as their darts are; None plays by darts.
+    minutes: TrainingMinutes | None = None
 
 
 def plan_blocks(fields: Sequence[Field], length: PersonalLength) -> tuple[PlanBlock, ...]:
@@ -120,20 +123,29 @@ def aimed_at(blocks: Sequence[PlanBlock], dart: int) -> tuple[int, Field] | None
     return None
 
 
+def block_seconds(blocks: Sequence[PlanBlock], minutes: int) -> list[float]:
+    """How long each block of a timed plan runs, its share of the minutes by its darts."""
+    total = sum(block.darts for block in blocks)
+    return [minutes * 60 * block.darts / total for block in blocks]
+
+
+def timed_block(blocks: Sequence[PlanBlock], minutes: int, elapsed: float) -> int:
+    """The block a timed plan is in `elapsed` seconds after its first dart; the last once over."""
+    for index, seconds in enumerate(block_seconds(blocks, minutes)):
+        if elapsed < seconds:
+            return index
+        elapsed -= seconds
+    return len(blocks) - 1
+
+
 def personal_progress(
     player_ids: Sequence[int], turns: Sequence[Turn], options: PersonalOptions
 ) -> PersonalProgress:
     """Replay the darts in throwing order against the plan; the first player through it wins."""
+    if options.minutes is not None and options.blocks:
+        return _timed_progress(player_ids, turns, options, options.minutes)
     blocks = options.blocks
-    progress = PersonalProgress(
-        {
-            player_id: PersonalPlayer(
-                blocks=[BlockTally() for _ in blocks],
-                fields={target: BlockTally() for target in _planned(blocks)},
-            )
-            for player_id in player_ids
-        }
-    )
+    progress = _empty_progress(player_ids, blocks)
     for turn in turns:
         player = progress.players[turn.player_id]
         hits = 0
@@ -163,6 +175,75 @@ def personal_progress(
         if at is None and progress.winner_id is None and player.darts >= planned:
             progress.winner_id = player_id
     return progress
+
+
+def _timed_progress(
+    player_ids: Sequence[int], turns: Sequence[Turn], options: PersonalOptions, minutes: int
+) -> PersonalProgress:
+    """Replay a timed plan: each visit goes at the block its start falls in, and the
+    block's fields take turns dart by dart."""
+    blocks = options.blocks
+    progress = _empty_progress(player_ids, blocks)
+    counts = {player_id: [0] * len(blocks) for player_id in player_ids}
+    start = first_dart(turns)
+    upcoming = dict.fromkeys(player_ids, 0)
+    for index, turn in enumerate(turns):
+        player = progress.players[turn.player_id]
+        block = _visit_block(turns, index, start, blocks, minutes)
+        upcoming[turn.player_id] = block
+        hits = 0
+        aimed: list[Field | None] = []
+        for dart in turn.darts:
+            fields = blocks[block].fields
+            target = fields[counts[turn.player_id][block] % len(fields)]
+            counts[turn.player_id][block] += 1
+            player.darts += 1
+            aimed.append(target)
+            hit = planned_target(target, options.any_ring).hit_by(dart.value, dart.multiplier)
+            for tally in (player.blocks[block], player.fields[target]):
+                tally.darts += 1
+                tally.hits += hit
+            hits += hit
+        player.hits += hits
+        progress.turn_hits.append(hits)
+        progress.turn_targets.append(aimed)
+
+    for player_id, player in progress.players.items():
+        player.block = upcoming[player_id]
+        fields = blocks[player.block].fields
+        player.target = fields[counts[player_id][player.block] % len(fields)]
+    return progress
+
+
+def _visit_block(
+    turns: Sequence[Turn],
+    index: int,
+    start: datetime | None,
+    blocks: Sequence[PlanBlock],
+    minutes: int,
+) -> int:
+    """The block of visit `index`: where the hand-over before it falls, the first dart's
+    time standing in for a hand-over not dated."""
+    if index == 0 or start is None:
+        return 0
+    began = turns[index - 1].ended_at or next(
+        (dart.thrown_at for dart in turns[index].darts if dart.thrown_at), None
+    )
+    if began is None:
+        return 0
+    return timed_block(blocks, minutes, (began - start).total_seconds())
+
+
+def _empty_progress(player_ids: Sequence[int], blocks: Sequence[PlanBlock]) -> PersonalProgress:
+    return PersonalProgress(
+        {
+            player_id: PersonalPlayer(
+                blocks=[BlockTally() for _ in blocks],
+                fields={target: BlockTally() for target in _planned(blocks)},
+            )
+            for player_id in player_ids
+        }
+    )
 
 
 def planned_target(field: Field, any_ring: bool = True) -> Target:

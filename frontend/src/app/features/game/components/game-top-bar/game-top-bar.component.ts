@@ -6,6 +6,7 @@ import { TorchToggleComponent } from '../../../camera/components/torch-toggle/to
 import { ShareDialogComponent } from '../../../../core/view/components/share-dialog/share-dialog.component';
 import { ConfirmService } from '../../../../core/view/services/confirm.service';
 import { playOf } from '../../models/game-settings';
+import { blockSeconds } from '../../models/personal-blocks';
 import { ProgressSegment } from '../../models/progress-segment';
 import { variantLabel } from '../../models/game-variant';
 import { GameService } from '../../services/game.service';
@@ -51,15 +52,17 @@ export class GameTopBarComponent {
   /** Milliseconds since the epoch, ticking each second while a timed training runs. */
   private readonly now = signal(Date.now());
 
-  /** The time a timed training has left, from the last state and when it came in. */
+  /** The time a timed training or personal plan has left, from the last state and when it came in. */
   private readonly timer = computed(() => {
     const state = this.game.state();
-    if (state === null || state.ended || state.settings.variant !== 'training' || state.settings.minutes === null) {
+    if (state === null || state.ended) {
       return null;
     }
     const play = playOf(state);
-    const left = play.variant === 'training' ? play.standing.secondsLeft : null;
-    return { minutes: state.settings.minutes, left, receivedAt: Date.now() };
+    if ((play.variant !== 'training' && play.variant !== 'personal') || play.settings.minutes === null) {
+      return null;
+    }
+    return { minutes: play.settings.minutes, left: play.standing.secondsLeft, receivedAt: Date.now() };
   });
 
   /** Seconds a timed training has left, counting down between states; null without a time. */
@@ -103,15 +106,23 @@ export class GameTopBarComponent {
     }
     const play = playOf(state);
     if (play.variant === 'personal') {
-      const own = play.standing.players[state.currentPlayerIndex];
       const blocks = play.standing.blocks;
-      let before = 0;
-      return blocks.map((block, index) => {
-        const thrown = Math.min(Math.max((own?.darts ?? 0) - before, 0), block.darts);
-        before += block.darts;
+      const minutes = play.settings.minutes;
+      // Each block fills by its darts, or by its share of the time when the plan is timed.
+      const sizes = minutes === null ? blocks.map((block) => block.darts) : blockSeconds(blocks, minutes);
+      const seconds = this.secondsLeft();
+      let done =
+        minutes === null
+          ? (play.standing.players[state.currentPlayerIndex]?.darts ?? 0)
+          : state.ended
+            ? minutes * 60
+            : minutes * 60 - (seconds ?? minutes * 60);
+      return sizes.map((size, index) => {
+        const value = (100 * Math.min(Math.max(done, 0), size)) / size;
+        done -= size;
         return {
-          value: (100 * thrown) / block.darts,
-          weight: block.darts,
+          value,
+          weight: size,
           label: $localize`:@@game.progress.block:Block ${index + 1}:index: von ${blocks.length}:count:`,
         };
       });

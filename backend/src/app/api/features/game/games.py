@@ -17,6 +17,7 @@ from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_status import GameStatus
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.killer import KILLER_NUMBERS
+from app.api.features.game.domain.personal_training import PersonalLength
 from app.api.features.game.domain.player_count import PlayerCount
 from app.api.features.game.domain.game_claim import (
     ClaimOutcome,
@@ -139,6 +140,9 @@ async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) 
             if identities[0].user_id != user.id:
                 raise HTTPException(status_code=422, detail="a personal training is your own")
             focus, length = body.settings.focus, body.settings.length
+            if body.settings.minutes is not None:
+                # A timed plan shares its minutes the way the middle length shares its darts.
+                length = PersonalLength.MEDIUM
             plan = (await personal_plan(session, user.id, focus, length)).options
         game = await repository.create(
             session,

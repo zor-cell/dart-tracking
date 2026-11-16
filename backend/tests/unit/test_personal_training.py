@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -13,13 +13,16 @@ from app.api.features.game.domain.personal_training import (
     PersonalOptions,
     PlanBlock,
     aimed_at,
+    block_seconds,
     plan_blocks,
+    timed_block,
 )
+from app.api.features.game.domain.training import TrainingMinutes
 from app.api.features.game.domain.target import Target
 from app.api.features.game.services.personal_plan import build_plan
 from app.api.features.statistics.domain.target_statistics import AimedDart, TargetStatistics
 from app.api.features.statistics.domain.weakness import weaknesses
-from tests.unit.darts import new_game, play
+from tests.unit.darts import dart, new_game, play
 
 D16, D8, T19, D20, T20 = (16, 2), (8, 2), (19, 3), (20, 2), (20, 3)
 
@@ -204,3 +207,60 @@ def test_without_any_ring_only_the_single_hits_a_planned_single():
 
     assert game.progress.players[0].hits == 1
     assert game.targets()[0][0] == Target(20, 1)
+
+
+START = datetime(2026, 11, 16, 20, 0, tzinfo=UTC)
+D16_BLOCK, D8_BLOCK, MIXED_BLOCK = PlanBlock((D16,), 30), PlanBlock((D8,), 30), PlanBlock((D16, D8), 30)
+
+
+def timed(minutes=TrainingMinutes.TEN):
+    options = PersonalOptions(blocks=(D16_BLOCK, D8_BLOCK, MIXED_BLOCK), minutes=minutes)
+    return new_game(1, variant=GameVariant.PERSONAL, options=options)
+
+
+def throw(game, visits, seconds_apart):
+    """Throw each visit, stamping as the server does, then hand over `seconds_apart` later."""
+    for number, visit in enumerate(visits):
+        at = START + timedelta(seconds=number * seconds_apart)
+        for label in visit.split():
+            game.register_dart(dart(label))
+            game.stamp(at)
+        if not game.over:
+            game.next_player()
+            game.stamp(at + timedelta(seconds=seconds_apart))
+
+
+def test_a_timed_plan_shares_its_minutes_by_the_blocks_darts():
+    assert block_seconds((D16_BLOCK, D8_BLOCK, PlanBlock((D16, D8), 15)), 10) == [240, 240, 120]
+    assert [timed_block((D16_BLOCK, D8_BLOCK, MIXED_BLOCK), 10, s) for s in (0, 199, 200, 599, 900)] == [0, 0, 1, 2, 2]
+
+
+def test_a_visit_goes_at_the_block_its_hand_over_falls_in():
+    game = timed()
+    throw(game, ["D16 D16 D16", "16 D8 D8", "D8 D16 D8", "D16 D8 D16"], seconds_apart=150)
+
+    progress = game.progress
+    assert progress.turn_targets[:4] == [[D16] * 3, [D16] * 3, [D8] * 3, [D16, D8, D16]]
+    assert progress.turn_hits[:4] == [3, 0, 2, 3]
+    assert progress.players[0].blocks[0].darts == 6
+
+
+def test_the_next_target_follows_the_block_the_open_visit_started_in():
+    game = timed()
+    throw(game, ["D16 D16 D16", "D16 D16 D16"], seconds_apart=210)
+
+    player = game.progress.players[0]
+    assert (player.block, player.target) == (2, D16)
+
+
+def test_a_timed_plan_ends_with_the_visit_after_its_time():
+    game = timed()
+    throw(game, ["D16 D16 D16"] * 3, seconds_apart=290)
+    assert game.ended is False
+    throw_more = START + timedelta(minutes=11)
+    for label in ("D8", "D8", "D8"):
+        game.register_dart(dart(label))
+        game.stamp(throw_more)
+
+    assert game.ended is True
+    assert game.progress.winner_id is None

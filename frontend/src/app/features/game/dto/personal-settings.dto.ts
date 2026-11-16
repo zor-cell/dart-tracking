@@ -1,4 +1,4 @@
-import { PersonalFocus, PersonalLength } from '../models/variant-options';
+import { PersonalFocus, PersonalLength, TrainingMinutes } from '../models/variant-options';
 
 export interface PersonalSettingsDto {
   readonly variant: 'personal';
@@ -7,4 +7,6 @@ export interface PersonalSettingsDto {
   readonly length: PersonalLength;
   /** Whether a single is hit by its double and triple too. */
   readonly anyRing: boolean;
+  /** Minutes the plan runs from its first dart; null plays it by darts. */
+  readonly minutes: TrainingMinutes | null;
 }

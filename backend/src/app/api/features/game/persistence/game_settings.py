@@ -94,6 +94,7 @@ def settings_row(game_id: str, setup: GameSetup) -> SettingsRow:
                 focus=personal.focus.value,
                 length=int(personal.length),
                 any_ring=personal.any_ring,
+                minutes=personal.minutes,
                 blocks=[
                     {"fields": [list(target) for target in block.fields], "darts": block.darts}
                     for block in personal.blocks
@@ -177,6 +178,7 @@ def setup_of(row: SettingsRow) -> GameSetup:
                     focus=PersonalFocus(row.focus),
                     length=PersonalLength(row.length),
                     any_ring=row.any_ring,
+                    minutes=None if row.minutes is None else TrainingMinutes(row.minutes),
                     blocks=tuple(
                         PlanBlock(tuple((v, m) for v, m in block["fields"]), block["darts"])
                         for block in row.blocks

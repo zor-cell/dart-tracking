@@ -185,22 +185,29 @@ def aimed_target(field: Field, any_ring: bool) -> Target:
     return Target(value, None if any_ring and multiplier == 1 else multiplier)
 
 
-def deadline(options: TrainingOptions, turns: Sequence[Turn]) -> datetime | None:
+def first_dart(turns: Sequence[Turn]) -> datetime | None:
+    """When the first dart of the game was thrown; None before one."""
+    return next((dart.thrown_at for turn in turns for dart in turn.darts), None)
+
+
+def deadline(minutes: int | None, turns: Sequence[Turn]) -> datetime | None:
     """When the time runs out: the minutes from the first dart; None without a time or a dart."""
-    first = next((dart.thrown_at for turn in turns for dart in turn.darts), None)
-    if options.minutes is None or first is None:
+    first = first_dart(turns)
+    if minutes is None or first is None:
         return None
-    return first + timedelta(minutes=options.minutes)
+    return first + timedelta(minutes=minutes)
 
 
-def limit_reached(options: TrainingOptions, players: int, turns: Sequence[Turn]) -> bool:
+def limit_reached(
+    darts: int | None, minutes: int | None, players: int, turns: Sequence[Turn]
+) -> bool:
     """Whether the last full round reached the darts, or was thrown after the time ran out."""
     thrown = [turn for turn in turns if turn.darts]
     if not thrown or len(thrown) % players or len(thrown[-1].darts) < DARTS_PER_TURN:
         return False
-    if options.darts is not None and len(thrown) // players * DARTS_PER_TURN >= options.darts:
+    if darts is not None and len(thrown) // players * DARTS_PER_TURN >= darts:
         return True
-    end, last = deadline(options, turns), thrown[-1].darts[-1].thrown_at
+    end, last = deadline(minutes, turns), thrown[-1].darts[-1].thrown_at
     return end is not None and last is not None and last >= end
 
 
