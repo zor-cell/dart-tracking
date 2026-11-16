@@ -1,0 +1,49 @@
+<p-dialog
+  header="Daten exportieren"
+  i18n-header="@@export.title"
+  [modal]="true"
+  [draggable]="false"
+  [(visible)]="visible"
+  [style]="dialogStyle"
+  appendTo="body"
+  (onHide)="reset()"
+>
+  <div class="auth-form">
+    <p class="export__hint" i18n="@@export.hint">
+      Du bekommst eine ZIP-Datei mit deinem Konto, deinen Einstellungen, deiner Spielerliste und
+      allen Spielen, an denen du beteiligt warst, samt jedem Wurf. Bei vielen Spielen kann das einen
+      Moment dauern.
+    </p>
+
+    @if (isAdmin()) {
+      <div class="export__option">
+        <p-checkbox inputId="export-frames" [binary]="true" [formControl]="frames" />
+        <label for="export-frames" i18n="@@export.frames">Kamerabilder deiner Testläufe mitnehmen</label>
+      </div>
+    }
+
+    @if (error(); as message) {
+      <p-message severity="error">{{ message }}</p-message>
+    }
+
+    <div class="auth-form__actions">
+      <p-button
+        type="button"
+        label="Abbrechen"
+        i18n-label="@@common.cancel"
+        severity="secondary"
+        [text]="true"
+        [disabled]="busy()"
+        (onClick)="visible.set(false)"
+      />
+      <p-button
+        type="button"
+        label="Exportieren"
+        i18n-label="@@export.submit"
+        icon="pi pi-download"
+        [loading]="busy()"
+        (onClick)="submit()"
+      />
+    </div>
+  </div>
+</p-dialog>

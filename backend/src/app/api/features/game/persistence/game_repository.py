@@ -572,7 +572,7 @@ class GameRepository:
         rows = (
             await session.execute(
                 select(GameTable)
-                .where(_involving(user_id), GameTable.id.not_in(hidden_by(user_id)), darts)
+                .where(involving(user_id), GameTable.id.not_in(hidden_by(user_id)), darts)
                 .order_by(GameTable.created_at.desc())
                 .limit(_QUICK_START_GAMES)
             )
@@ -688,7 +688,7 @@ class GameRepository:
         )
         await session.execute(
             delete(GameTable).where(
-                _involving(user_id),
+                involving(user_id),
                 ~owned_by_others,
                 GameTable.id.not_in(others_seated),
             )
@@ -913,7 +913,7 @@ def _dart_from_json(data: dict[str, Any]) -> Dart:
 
 def _history_clauses(user_id: str, criteria: GameFilter) -> list[ColumnElement[bool]]:
     """The account's games narrowed by `criteria`, with the status derived as `_status` does."""
-    clauses: list[ColumnElement[bool]] = [_involving(user_id)]
+    clauses: list[ColumnElement[bool]] = [involving(user_id)]
     cutoff = datetime.now(UTC) - ABANDON_AFTER
     hidden = GameTable.id.in_(hidden_by(user_id))
     if criteria.statuses:
@@ -955,7 +955,7 @@ def _history_clauses(user_id: str, criteria: GameFilter) -> list[ColumnElement[b
     return clauses + game_filter_clauses(criteria)
 
 
-def _involving(user_id: str) -> ColumnElement[bool]:
+def involving(user_id: str) -> ColumnElement[bool]:
     """The games this account set up or holds a seat in."""
     seated = (
         select(GamePlayerTable.game_id)

@@ -25,7 +25,7 @@ from app.api import tables  # noqa: E402, F401
 from app.api.features.evaluation.domain.accuracy import LoggedGame  # noqa: E402
 from app.api.features.evaluation.persistence.game_event import GameEventTable  # noqa: E402
 from app.api.features.evaluation.services.accuracy import judged_games  # noqa: E402
-from app.api.features.evaluation.services.frame_buffer import folder_of  # noqa: E402
+from app.api.features.evaluation.services.frame_buffer import folder_of, recorded_files  # noqa: E402
 from app.api.features.game.persistence.game import GameTable  # noqa: E402
 from app.infrastructure import database  # noqa: E402
 from app.infrastructure.config import get_settings  # noqa: E402
@@ -116,16 +116,8 @@ def write_zip(path: Path, game_ids: list[str]) -> tuple[int, int]:
         archive.writestr("games.csv", games_csv)
         archive.writestr("game_events.csv", events_csv)
         for game_id in game_ids:
-            folder = folder_of(game_id)
-            if not folder.is_dir():
-                continue
-            for file in sorted(folder.rglob("*")):
-                relative = file.relative_to(folder)
-                # `_results*` folders are local runner output, not recorded frames.
-                if not file.is_file() or any(part.startswith("_") for part in relative.parts):
-                    continue
-                arcname = Path("testdata") / "evaluation" / folder.name / relative
-                archive.write(file, arcname.as_posix())
+            for file, arcname in recorded_files(game_id):
+                archive.write(file, arcname)
                 files += 1
     return len(game_ids), files
 

@@ -30,6 +30,20 @@ def folder_of(game_id: str) -> Path:
     return _EVALUATION_ROOT / f"game_{game_id}"
 
 
+def recorded_files(game_id: str) -> list[tuple[Path, str]]:
+    """A game's recorded files with their archive path, `testdata/evaluation/game_<id>/…`,
+    leaving out the runners' `_results` folders."""
+    folder = folder_of(game_id)
+    if not folder.is_dir():
+        return []
+    files = []
+    for file in sorted(folder.rglob("*")):
+        relative = file.relative_to(folder)
+        if file.is_file() and not any(part.startswith("_") for part in relative.parts):
+            files.append((file, (Path("testdata") / "evaluation" / folder.name / relative).as_posix()))
+    return files
+
+
 def series_name(turn_index: int) -> str:
     """What one visit's frames are called. Shared with the report, which has to
     label the very same files."""

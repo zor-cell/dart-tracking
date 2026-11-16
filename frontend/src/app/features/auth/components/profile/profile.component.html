@@ -109,6 +109,12 @@
     <section class="list-group">
       <h2 class="list-group__title" i18n="@@auth.account.title">Konto</h2>
       <div class="list-group__items">
+        <button type="button" class="list-group__item" (click)="exportDialogOpen.set(true)">
+          <i class="list-group__icon pi pi-download" aria-hidden="true"></i>
+          <span class="list-group__body">
+            <span class="list-group__name" i18n="@@export.title">Daten exportieren</span>
+          </span>
+        </button>
         <button
           type="button"
           class="list-group__item list-group__item--danger"
@@ -146,3 +152,4 @@
 <app-change-email-dialog [(visible)]="emailDialogOpen" />
 <app-change-password-dialog [(visible)]="passwordDialogOpen" />
 <app-delete-account-dialog [(visible)]="deleteDialogOpen" />
+<app-export-dialog [(visible)]="exportDialogOpen" />

@@ -1,5 +1,6 @@
 import asyncio
 import threading
+from contextlib import asynccontextmanager
 from datetime import datetime
 
 import numpy as np
@@ -9,6 +10,7 @@ from app.api.features.auth.services import passwords
 from app.api.features.evaluation.domain.accuracy import LoggedGame
 from app.api.features.evaluation.services import accuracy, frame_buffer
 from app.api.features.evaluation.services.frame_buffer import FrameBuffer, FrameKind
+from app.api.features.export.services import archive
 from app.api.features.statistics.persistence import (
     cricket_repository,
     overall_repository,
@@ -139,6 +141,24 @@ def test_the_cricket_tally_leaves_the_event_loop_free(monkeypatch):
         "_tally",
         lambda: cricket_repository.repository.overview(None, "user"),
         monkeypatch,
+    )
+
+    assert found == "done"
+
+
+def test_packing_the_data_export_leaves_the_event_loop_free(monkeypatch):
+    @asynccontextmanager
+    async def no_session():
+        yield None
+
+    async def load(*_args):
+        return None
+
+    monkeypatch.setattr(archive.database, "session_scope", no_session)
+    monkeypatch.setattr(archive.repository, "load", load)
+
+    found = beside_the_loop(
+        archive, "_write", lambda: archive.write_export(None, frames=True), monkeypatch
     )
 
     assert found == "done"

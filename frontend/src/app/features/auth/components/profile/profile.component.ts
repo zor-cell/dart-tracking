@@ -12,6 +12,7 @@ import {
   USERNAME_PATTERN,
 } from '../../models/profile-rules';
 import { AuthService } from '../../services/auth.service';
+import { ExportDialogComponent } from '../../../export/components/export-dialog/export-dialog.component';
 import { ChangeEmailDialogComponent } from '../change-email-dialog/change-email-dialog.component';
 import { ChangePasswordDialogComponent } from '../change-password-dialog/change-password-dialog.component';
 import { DeleteAccountDialogComponent } from '../delete-account-dialog/delete-account-dialog.component';
@@ -40,6 +41,7 @@ interface EditableRow {
     ChangeEmailDialogComponent,
     ChangePasswordDialogComponent,
     DeleteAccountDialogComponent,
+    ExportDialogComponent,
     InlineEditorComponent,
     Popover,
   ],
@@ -68,6 +70,7 @@ export class ProfileComponent {
   protected readonly emailDialogOpen = signal(false);
   protected readonly passwordDialogOpen = signal(false);
   protected readonly deleteDialogOpen = signal(false);
+  protected readonly exportDialogOpen = signal(false);
   protected readonly changePasswordLabel = $localize`:@@auth.changePassword:Passwort ändern`;
   protected readonly setPasswordLabel = $localize`:@@auth.setPassword:Passwort festlegen`;
   protected readonly emailStatus = computed(() =>

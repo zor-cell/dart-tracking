@@ -3,6 +3,7 @@ import { DOCUMENT } from '@angular/common';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
+import { saveDownload } from '../../../core/storage/models/save-download';
 import { environment } from '../../../../environments/environment';
 import { AccuracyReportDto, GameReportDto } from '../dto/accuracy.dto';
 import { EvaluationFilter } from '../models/evaluation-filter';
@@ -44,14 +45,7 @@ export class EvaluationService {
         responseType: 'blob',
       }),
     );
-    const disposition = response.headers.get('Content-Disposition') ?? '';
-    const name = /filename="([^"]+)"/.exec(disposition)?.[1] ?? REPORT_FILE;
-    const url = URL.createObjectURL(response.body ?? new Blob());
-    const link = this.document.createElement('a');
-    link.href = url;
-    link.download = name;
-    link.click();
-    URL.revokeObjectURL(url);
+    saveDownload(this.document, response, REPORT_FILE);
   }
 
   /** The tracker versions there are logged games of, newest first. */

@@ -13,6 +13,7 @@ from app.api.features.announcement import announcements
 from app.api.features.announcement.services import speech
 from app.api.features.auth import auth
 from app.api.features.evaluation import evaluation
+from app.api.features.export import exports
 from app.api.features.game import games
 from app.api.features.player import players
 # Aliased: `settings` is already the process configuration below.
@@ -68,5 +69,6 @@ api_router.include_router(evaluation.router)
 api_router.include_router(statistics.router)
 api_router.include_router(user_settings.router)
 api_router.include_router(announcements.router)
+api_router.include_router(exports.router)
 
 app.include_router(api_router)
