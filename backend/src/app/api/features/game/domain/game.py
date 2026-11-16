@@ -422,15 +422,37 @@ class Game:
         return False
 
     def add_dart(self, dart: Dart) -> None:
-        """Book a manually entered dart into any visit with room left. A won or
-        busted visit is closed by its last dart, so the new one goes before it."""
+        """Book a manually entered dart into any visit with room left. A won or busted
+        visit is closed by its last dart, so the new one goes before it; with a field
+        per dart it goes where the visit hits the most."""
         turn = self.current_turn
         darts = list(turn.darts)
         if len(darts) >= DARTS_PER_TURN or self.ended:
             return
         closed = self._visit_closed() or self.winner is not None
-        darts.insert(len(darts) - 1 if closed else len(darts), dart)
+        at = len(darts) - 1 if closed else self._aimed_place(darts, dart)
+        if at < len(darts):
+            dart = replace(dart, thrown_at=darts[at].thrown_at)
+        darts.insert(at, dart)
         self._rescore(darts)
+
+    def _aimed_place(self, darts: list[Dart], dart: Dart) -> int:
+        """Where a hand-entered dart goes in a game that names a field per dart: the place
+        whose order hits the most targets, the last one on a tie."""
+        if not isinstance(self.options, ClockOptions | TrainingOptions | PersonalOptions):
+            return len(darts)
+        turn, kept = self.current_turn, self.current_turn.darts
+        best, most = len(darts), -1
+        for at in range(len(darts), -1, -1):
+            turn.darts = [*darts[:at], dart, *darts[at:]]
+            hits = sum(
+                target is not None and target.hit_by(thrown.value, thrown.multiplier)
+                for thrown, target in zip(turn.darts, self.targets()[-1], strict=True)
+            )
+            if hits > most:
+                best, most = at, hits
+        turn.darts = kept
+        return best
 
     def _busts(self, dart: Dart) -> bool:
         """Whether the dart just thrown busts the visit: an overshoot, or under double-out
