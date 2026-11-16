@@ -6,15 +6,13 @@ import { GAME_SECTIONS, GameVariant, countsPoints, variantLabel } from '../../ga
 /** The games the statistics page shows figures for, one at a time. */
 export type StatisticsGame = GameVariant;
 
-/** The games under the kinds of the new game page, the coming ones left out. */
+/** The games under the kinds of the new game page. */
 export const STATISTICS_SECTIONS: readonly {
   kind: string;
   games: readonly { label: string; value: StatisticsGame }[];
 }[] = GAME_SECTIONS.map((section) => ({
   kind: section.kind,
-  games: section.games
-    .filter((game) => game !== null)
-    .map((value) => ({ label: variantLabel(value), value })),
+  games: section.games.map((value) => ({ label: variantLabel(value), value })),
 }));
 
 export const STATISTICS_GAMES = STATISTICS_SECTIONS.flatMap((section) => section.games);

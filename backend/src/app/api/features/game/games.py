@@ -32,10 +32,12 @@ from app.api.features.game.dto.game_settings import to_setup
 from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.dto.game_status_update import GameStatusUpdateDto
 from app.api.features.game.dto.game_summary import GameSummaryDto
+from app.api.features.game.dto.personal_training import PersonalPlanDto, PersonalSettingsDto
 from app.api.features.game.dto.player_slot import PlayerSlotDto
 from app.api.features.game.dto.quick_start import QuickStartDto
 from app.api.features.game.dto.rematch_started import RematchStartedDto
 from app.api.features.game.persistence.game_repository import repository
+from app.api.features.game.services.personal_plan import personal_plan, personal_plans
 from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.persistence.player_repository import repository as players
 from app.api.features.statistics.domain.player_statistics import PlayerStatistics
@@ -101,6 +103,10 @@ async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) 
         raise HTTPException(status_code=422, detail="killer needs two to twenty players")
     if variant is GameVariant.ELIMINATION and len(body.players) < 2:
         raise HTTPException(status_code=422, detail="elimination needs at least two players")
+    if variant is GameVariant.PERSONAL and user is None:
+        raise HTTPException(status_code=401, detail="authentication required")
+    if variant is GameVariant.PERSONAL and len(body.players) != 1:
+        raise HTTPException(status_code=422, detail="a personal training has one player")
     if user is None:
         await rate_limit.enforce(
             "anonymous-game",
@@ -128,10 +134,16 @@ async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) 
             seated=seated,
             recent=recent,
         )
+        plan = None
+        if isinstance(body.settings, PersonalSettingsDto) and user is not None:
+            if identities[0].user_id != user.id:
+                raise HTTPException(status_code=422, detail="a personal training is your own")
+            focus, length = body.settings.focus, body.settings.length
+            plan = (await personal_plan(session, user.id, focus, length)).options
         game = await repository.create(
             session,
             identities,
-            to_setup(body.settings, len(body.players)),
+            to_setup(body.settings, len(body.players), plan),
             owner_user_id=owner_id,
             evaluation_enabled=body.evaluation_enabled and user is not None and user.is_admin,
             claim_token_hash=claim_token and claim_token_hash(claim_token),
@@ -245,6 +257,14 @@ async def get_quick_start(user: AuthenticatedUser) -> QuickStartDto | None:
         found = await repository.quick_start(session, user.id)
 
     return None if found is None else QuickStartDto.from_entity(*found)
+
+
+@router.get("/personal-plan", response_model=PersonalPlanDto)
+async def get_personal_plan(user: AuthenticatedUser) -> PersonalPlanDto:
+    """The plans a personal training would start on now, with what they are drawn from."""
+    async with database.session_scope() as session:
+        plans = await personal_plans(session, user.id)
+    return PersonalPlanDto.from_entity(plans)
 
 
 @router.get("/{game_id}", response_model=GameStateDto)

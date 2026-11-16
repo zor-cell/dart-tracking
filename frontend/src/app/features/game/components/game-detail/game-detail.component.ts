@@ -14,6 +14,8 @@ import { countsPoints, variantLabel } from '../../models/game-variant';
 import {
   CLOCK_ZONES,
   KILLER_ZONES,
+  PERSONAL_FOCI,
+  personalHasSingles,
   TRAINING_GOALS,
   TRAINING_RINGS,
   fieldLabel,
@@ -21,6 +23,8 @@ import {
   scoringLabel,
 } from '../../models/variant-options';
 import { activeGameId } from '../../services/active-game';
+import { personalBlocks } from '../../models/personal-blocks';
+import { DeltaMarkComponent } from '../../../statistics/components/delta-mark/delta-mark.component';
 import { GameHistoryService } from '../../services/game-history.service';
 import { GameReplayComponent } from '../game-replay/game-replay.component';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
@@ -63,6 +67,7 @@ function visitParam(raw: string | null): number | null {
   imports: [
     BackLinkComponent,
     Button,
+    DeltaMarkComponent,
     DatePipe,
     DecimalPipe,
     GameReplayComponent,
@@ -140,6 +145,10 @@ export class GameDetailComponent {
       const lives = $localize`:@@game.detail.lives:${settings.lives}:count: Leben`;
       return `${lives}, ${optionLabel(KILLER_ZONES, settings.zone)}`;
     }
+    if (settings.variant === 'personal') {
+      const anyRing = settings.anyRing && personalHasSingles(settings.focus) ? [ANY_RING] : [];
+      return [optionLabel(PERSONAL_FOCI, settings.focus), ...anyRing, `${settings.length} Darts`].join(', ');
+    }
     if (settings.variant === 'training') {
       const goal = optionLabel(TRAINING_GOALS, settings.goal);
       const detail = {
@@ -188,6 +197,10 @@ export class GameDetailComponent {
         return play.settings.goal === 'free'
           ? { value: player.average === null ? '–' : formatNumber(player.average, this.locale, '1.1-1'), unit: 'Ø' }
           : { value: `${own.hits}/${own.darts}`, unit: $localize`:@@game.detail.hits:Treffer` };
+      }
+      if (play.variant === 'personal') {
+        const own = play.standing.players[seat];
+        return { value: `${own.hits}/${own.darts}`, unit: $localize`:@@game.detail.hits:Treffer` };
       }
       if (play.variant === 'around_the_clock') {
         return { value: `${play.standing.players[seat].done}/21`, unit: $localize`:@@game.detail.fields:Felder` };
@@ -257,6 +270,16 @@ export class GameDetailComponent {
         })),
       ];
     }
+    if (play.variant === 'personal') {
+      const players = play.standing.players;
+      return [
+        dartsRow,
+        {
+          label: $localize`:@@game.scoreboard.hitRateLong:Trefferquote`,
+          values: players.map((p) => (p.darts === 0 ? '–' : `${number((100 * p.hits) / p.darts, '1.0-0')} %`)),
+        },
+      ];
+    }
     if (play.variant === 'around_the_clock') {
       const players = play.standing.players;
       return [
@@ -270,6 +293,18 @@ export class GameDetailComponent {
     }
     return [];
   });
+
+  /** A personal training's blocks with today's rate beside the one before. */
+  protected readonly personalRows = computed(() => {
+    const game = this.detail()?.game;
+    if (game === undefined) {
+      return null;
+    }
+    const play = playOf(game);
+    return play.variant === 'personal' ? personalBlocks(play.standing, 0) : null;
+  });
+
+  protected readonly beforeName = $localize`:@@game.personal.before:vorher`;
 
   /** Minutes of actual play, while that is known. */
   protected readonly durationMinutes = computed(() => {

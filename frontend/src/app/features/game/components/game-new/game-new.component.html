@@ -27,7 +27,7 @@
           [rounded]="true"
           ariaLabel="Spiel starten"
           i18n-ariaLabel="@@game.new.start"
-          [disabled]="form.invalid"
+          [disabled]="form.invalid || !startable()"
           (onClick)="startGame()"
         />
       </div>
@@ -168,6 +168,36 @@
             </div>
           }
         }
+        @case ('personal') {
+          <div class="setup__field">
+            <label class="setup__label" for="personalFocus" i18n="@@game.personal.focus">Fokus</label>
+            <p-selectbutton
+              inputId="personalFocus"
+              formControlName="personalFocus"
+              [allowEmpty]="false"
+              [options]="personalFocusOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
+            @if (personalSingles()) {
+              <div class="setup__switch">
+                <p-toggleswitch inputId="personalAnyRing" formControlName="personalAnyRing" />
+                <label for="personalAnyRing" i18n="@@game.new.anyRing">Double und Triple zählen auch</label>
+              </div>
+            }
+          </div>
+          <div class="setup__field">
+            <label class="setup__label" for="personalLength" i18n="@@game.personal.length">Dauer</label>
+            <p-selectbutton
+              inputId="personalLength"
+              formControlName="personalLength"
+              [allowEmpty]="false"
+              [options]="personalLengthOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
+          </div>
+        }
         @default {
           <div class="setup__field">
             <label class="setup__label" for="mode" i18n="@@game.new.mode">Modus</label>
@@ -249,6 +279,22 @@
         </div>
       }
 
+      @if (variant() === 'personal') {
+        @if (signedIn()) {
+          <app-personal-plan [focus]="personalFocus()" [length]="personalLength()" />
+        } @else {
+          <app-empty-state icon="pi-user">
+            <p i18n="@@game.personal.signIn">Das Training baut auf deinen eigenen Darts auf. Melde dich dafür an.</p>
+            <p-button
+              label="Anmelden"
+              i18n-label="@@auth.signIn"
+              icon="pi pi-sign-in"
+              routerLink="/login"
+              [queryParams]="{ redirect: loginRedirect() }"
+            />
+          </app-empty-state>
+        }
+      } @else {
       <div class="setup__field">
         <span class="setup__label" i18n="@@game.new.players">Spieler</span>
         @if (sessionResolved()) {
@@ -366,8 +412,9 @@
           </div>
         }
       </div>
+      }
 
-      <button type="submit" hidden [disabled]="form.invalid"></button>
+      <button type="submit" hidden [disabled]="form.invalid || !startable()"></button>
     </form>
   } @else if (!sessionResolved()) {
     <header class="view__header">
@@ -436,8 +483,7 @@
         <h2 class="list-group__title" [id]="'games-' + index">{{ section.kind }}</h2>
         <ul class="list-group__items games">
           @for (variant of section.games; track variant) {
-            @if (variant) {
-              <li class="list-group__item game">
+            <li class="list-group__item game">
                 <p-button
                   class="game__info"
                   icon="pi pi-info-circle"
@@ -453,18 +499,6 @@
                 </button>
                 <i class="list-group__chevron game__chevron pi pi-chevron-right" aria-hidden="true"></i>
               </li>
-            } @else {
-              <li class="list-group__item game game--soon">
-                <app-info-hint
-                  class="game__info"
-                  label="Was ist Persönliches Training?"
-                  i18n-label="@@game.new.weaknessTrainingInfo"
-                  i18n="@@game.new.weaknessTrainingHint"
-                >Ein Training, das aus deinen Spielen deine Schwächen erkennt und sie gezielt übt. Kommt bald.</app-info-hint>
-                <span class="list-group__name game__pick" i18n="@@game.new.weaknessTraining">Persönliches Training</span>
-                <p-tag value="bald" i18n-value="@@game.new.soon" severity="secondary" />
-              </li>
-            }
           }
         </ul>
       </section>

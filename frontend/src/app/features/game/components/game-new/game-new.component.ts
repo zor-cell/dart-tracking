@@ -19,7 +19,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
@@ -58,6 +58,11 @@ import {
   KILLER_LIVES,
   KILLER_ZONES,
   KillerZone,
+  PERSONAL_FOCI,
+  PERSONAL_LENGTHS,
+  personalHasSingles,
+  PersonalFocus,
+  PersonalLength,
   TRAINING_GOALS,
   TRAINING_REPEATS,
   TRAINING_RINGS,
@@ -78,6 +83,8 @@ import { FieldErrorComponent } from '../../../../core/view/components/field-erro
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { GameRulesComponent } from '../game-rules/game-rules.component';
 import { FieldPickerComponent } from '../field-picker/field-picker.component';
+import { PersonalPlanComponent } from '../personal-plan/personal-plan.component';
+import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { TrainingFieldDto } from '../../dto/training-settings.dto';
 import {
   SortableListComponent,
@@ -102,6 +109,9 @@ import {
     LoadingStateComponent,
     GameRulesComponent,
     SortableListComponent,
+    PersonalPlanComponent,
+    EmptyStateComponent,
+    RouterLink,
   ],
   templateUrl: './game-new.component.html',
   styleUrl: './game-new.component.scss',
@@ -138,6 +148,8 @@ export class GameNewComponent {
   protected readonly trainingRingOptions = [...TRAINING_RINGS];
   protected readonly trainingGoalHints = TRAINING_GOAL_HINTS;
   protected readonly trainingRepeatsOptions = TRAINING_REPEATS.map((hits) => ({ label: `${hits}`, value: hits }));
+  protected readonly personalFocusOptions = [...PERSONAL_FOCI];
+  protected readonly personalLengthOptions = [...PERSONAL_LENGTHS];
   protected readonly goalName = $localize`:@@game.new.goal:Ziel`;
   protected readonly scoringName = $localize`:@@game.new.scoring:Punkte`;
   protected readonly zoneName = $localize`:@@game.new.zone:Feld`;
@@ -172,6 +184,9 @@ export class GameNewComponent {
     trainingFields: this.fb.nonNullable.control<readonly TrainingFieldDto[]>([]),
     trainingRepeats: this.fb.nonNullable.control(1),
     trainingShuffle: this.fb.nonNullable.control(false),
+    personalFocus: this.fb.nonNullable.control<PersonalFocus>('all'),
+    personalLength: this.fb.nonNullable.control<PersonalLength>(90),
+    personalAnyRing: this.fb.nonNullable.control(true),
     catchUp: this.fb.nonNullable.control(false),
     playOn: this.fb.nonNullable.control(false),
     players: this.fb.array<FormControl<Seat>>([]),
@@ -240,6 +255,18 @@ export class GameNewComponent {
   protected readonly pickedFields = toSignal(this.form.controls.trainingFields.valueChanges, {
     initialValue: this.form.controls.trainingFields.value,
   });
+  protected readonly personalFocus = toSignal(this.form.controls.personalFocus.valueChanges, {
+    initialValue: this.form.controls.personalFocus.value,
+  });
+  protected readonly personalLength = toSignal(this.form.controls.personalLength.valueChanges, {
+    initialValue: this.form.controls.personalLength.value,
+  });
+  protected readonly personalSingles = computed(() => personalHasSingles(this.personalFocus()));
+  /** The personal training seats the account's own entry alone, so it needs one. */
+  protected readonly startable = computed(
+    () => this.variant() !== 'personal' || (this.signedIn() && this.selfId() !== null),
+  );
+  protected readonly loginRedirect = computed(() => `/game/new?game=${this.chosen() ?? ''}`);
   /** Skipping ahead needs singles to tell apart from doubles and triples. */
   protected readonly clockSkippable = computed(() => this.clockZone() === 'any');
   /** Whether everyone runs for the same goal, so a round can catch up and places follow. */
@@ -376,13 +403,14 @@ export class GameNewComponent {
   }
 
   protected startGame(): void {
-    if (this.form.invalid) {
+    if (this.form.invalid || !this.startable()) {
       return;
     }
     const {
       mode, variant, checkoutMode, players, cricketScoring, killerLives, killerZone,
       clockZone, clockSkip, eliminationKill, catchUp, playOn,
       trainingGoal, trainingRing, trainingFields, trainingRepeats, trainingShuffle,
+      personalFocus, personalLength, personalAnyRing,
     } = this.form.getRawValue();
     const seats = (players as Seat[]).map<PlayerSlotDto>((seat) =>
       typeof seat === 'string' ? { name: seat.trim() } : { playerId: seat.id },
@@ -407,10 +435,17 @@ export class GameNewComponent {
         repeats: trainingGoal === 'free' ? 1 : trainingRepeats,
         shuffle: trainingGoal === 'fields' && trainingShuffle,
       },
+      personal: {
+        variant: 'personal',
+        focus: personalFocus,
+        length: personalLength,
+        anyRing: !personalHasSingles(personalFocus) || personalAnyRing,
+      },
     };
+    const self = this.selfId();
     this.create({
       settings: chosen[variant],
-      players: seats,
+      players: variant === 'personal' && self !== null ? [{ playerId: self }] : seats,
       evaluationEnabled: this.settings.evaluationEnabled(),
       rematchOf: this.rematchId ?? undefined,
     });
@@ -483,6 +518,7 @@ export class GameNewComponent {
       const own = this.signedIn()
         ? await this.players.owned(order.map((player) => player.identityId))
         : [];
+      this.selfId.set(own.find((identity) => identity.isSelf)?.id ?? null);
       for (const player of order) {
         this.seats.push(this.fb.nonNullable.control<Seat>(reseat(player, own), Validators.required));
       }
@@ -604,6 +640,13 @@ function formValues(settings: GameSettingsDto) {
         trainingFields: settings.fields,
         trainingRepeats: settings.repeats,
         trainingShuffle: settings.shuffle,
+      };
+    case 'personal':
+      return {
+        variant: settings.variant,
+        personalFocus: settings.focus,
+        personalLength: settings.length,
+        personalAnyRing: settings.anyRing,
       };
   }
 }

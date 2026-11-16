@@ -1,7 +1,15 @@
 import { GameSettingsDto } from '../dto/game-settings.dto';
 import { CHECKOUT_HINTS, CLOCK_ZONE_HINTS, KILL_HINTS, KILLER_ZONE_HINTS, SCORING_HINTS, SettingHint } from './setting-hints';
 import { variantLabel } from './game-variant';
-import { TRAINING_GOALS, TRAINING_RINGS, fieldLabel, optionLabel } from './variant-options';
+import {
+  PERSONAL_FOCI,
+  PERSONAL_LENGTHS,
+  personalHasSingles,
+  TRAINING_GOALS,
+  TRAINING_RINGS,
+  fieldLabel,
+  optionLabel,
+} from './variant-options';
 
 /** A setting that differs from its default, shown as a short mark beside a setup's name. */
 export interface SetupBadge {
@@ -74,6 +82,17 @@ export function setupBadges(settings: GameSettingsDto): SetupBadge[] {
       if (settings.goal === 'fields') {
         const fields = settings.fields.map(fieldLabel).join(' ');
         badges.push({ label: fields, icon: null, title: optionLabel(TRAINING_GOALS, 'fields'), hint: null });
+      }
+      break;
+    case 'personal':
+      if (settings.focus !== 'all') {
+        const focus = optionLabel(PERSONAL_FOCI, settings.focus);
+        const title = [focus, ...(settings.anyRing && personalHasSingles(settings.focus) ? [ANY_RING] : [])];
+        badges.push({ label: focus[0], icon: null, title: title.join(', '), hint: null });
+      }
+      if (settings.length !== 90) {
+        const length = optionLabel(PERSONAL_LENGTHS, settings.length);
+        badges.push({ label: `${settings.length}`, icon: null, title: length, hint: null });
       }
       break;
   }

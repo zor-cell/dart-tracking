@@ -2,6 +2,7 @@ import { ClockSettingsDto } from './clock-settings.dto';
 import { CricketSettingsDto } from './cricket-settings.dto';
 import { EliminationSettingsDto } from './elimination-settings.dto';
 import { KillerSettingsDto } from './killer-settings.dto';
+import { PersonalSettingsDto } from './personal-settings.dto';
 import { TrainingSettingsDto } from './training-settings.dto';
 import { X01SettingsDto } from './x01-settings.dto';
 
@@ -12,4 +13,5 @@ export type GameSettingsDto =
   | CricketSettingsDto
   | KillerSettingsDto
   | ClockSettingsDto
-  | TrainingSettingsDto;
+  | TrainingSettingsDto
+  | PersonalSettingsDto;

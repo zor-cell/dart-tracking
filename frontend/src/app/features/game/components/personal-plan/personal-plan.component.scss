@@ -1,0 +1,102 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.plan__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+}
+
+.plan__aside {
+  color: var(--p-text-muted-color);
+  font-size: 0.75rem;
+}
+
+.plan__length {
+  margin-left: auto;
+}
+
+.plan__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan__field {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.plan__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.plan__label {
+  min-width: 2.5rem;
+  font-weight: 600;
+}
+
+.plan__bar {
+  position: relative;
+  display: block;
+  margin-block: 0.25rem 0.2rem;
+
+  p-progressbar {
+    --p-progressbar-height: 0.375rem;
+    --p-progressbar-value-background: var(--p-red-400);
+  }
+}
+
+// The player's average over the ring, across the bar.
+.plan__mark {
+  position: absolute;
+  top: -0.125rem;
+  width: 2px;
+  height: 0.625rem;
+  background: var(--p-text-muted-color);
+}
+
+.plan__rate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.plan__average {
+  color: var(--p-text-muted-color);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.plan__step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--p-content-hover-background);
+  color: var(--p-text-muted-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.list-group__items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

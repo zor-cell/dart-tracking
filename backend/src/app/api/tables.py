@@ -13,6 +13,7 @@ from app.api.features.game.persistence import (  # noqa: F401
     game_hide,
     game_player,
     killer_settings,
+    personal_settings,
     training_settings,
     turn,
     x01_settings,

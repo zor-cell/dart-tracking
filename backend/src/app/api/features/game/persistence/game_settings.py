@@ -14,12 +14,20 @@ from app.api.features.game.domain.game_mode import GameMode
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.killer import KillerOptions, KillerZone
 from app.api.features.game.domain.game_setup import GameSetup
+from app.api.features.game.domain.personal_training import (
+    Baseline,
+    PersonalFocus,
+    PersonalLength,
+    PersonalOptions,
+    PlanBlock,
+)
 from app.api.features.game.domain.training import TrainingGoal, TrainingOptions, TrainingRing
 from app.api.features.game.persistence.clock_settings import ClockSettingsTable
 from app.api.features.game.persistence.cricket_settings import CricketSettingsTable
 from app.api.features.game.persistence.elimination_settings import EliminationSettingsTable
 from app.api.features.game.persistence.game import GameTable
 from app.api.features.game.persistence.killer_settings import KillerSettingsTable
+from app.api.features.game.persistence.personal_settings import PersonalSettingsTable
 from app.api.features.game.persistence.training_settings import TrainingSettingsTable
 from app.api.features.game.persistence.x01_settings import X01SettingsTable
 from app.infrastructure.database import Base
@@ -31,6 +39,7 @@ type SettingsRow = (
     | KillerSettingsTable
     | ClockSettingsTable
     | TrainingSettingsTable
+    | PersonalSettingsTable
 )
 
 SETTINGS_TABLES: dict[GameVariant, type[Base]] = {
@@ -40,6 +49,7 @@ SETTINGS_TABLES: dict[GameVariant, type[Base]] = {
     GameVariant.KILLER: KillerSettingsTable,
     GameVariant.AROUND_THE_CLOCK: ClockSettingsTable,
     GameVariant.TRAINING: TrainingSettingsTable,
+    GameVariant.PERSONAL: PersonalSettingsTable,
 }
 
 
@@ -68,6 +78,21 @@ def settings_row(game_id: str, setup: GameSetup) -> SettingsRow:
                 repeats=training.repeats,
                 shuffle=training.shuffle,
                 seed=training.seed,
+            )
+        case PersonalOptions() as personal:
+            return PersonalSettingsTable(
+                game_id=game_id,
+                focus=personal.focus.value,
+                length=int(personal.length),
+                any_ring=personal.any_ring,
+                blocks=[
+                    {"fields": [list(target) for target in block.fields], "darts": block.darts}
+                    for block in personal.blocks
+                ],
+                baselines=[
+                    {"field": list(baseline.field), "darts": baseline.darts, "hits": baseline.hits}
+                    for baseline in personal.baselines
+                ],
             )
     return X01SettingsTable(game_id=game_id, **_points(setup), **finish)
 
@@ -129,6 +154,29 @@ def setup_of(row: SettingsRow) -> GameSetup:
                     repeats=row.repeats,
                     shuffle=row.shuffle,
                     seed=row.seed,
+                ),
+            )
+        case PersonalSettingsTable():
+            return GameSetup(
+                GameVariant.PERSONAL,
+                None,
+                None,
+                PersonalOptions(
+                    focus=PersonalFocus(row.focus),
+                    length=PersonalLength(row.length),
+                    any_ring=row.any_ring,
+                    blocks=tuple(
+                        PlanBlock(tuple((v, m) for v, m in block["fields"]), block["darts"])
+                        for block in row.blocks
+                    ),
+                    baselines=tuple(
+                        Baseline(
+                            (baseline["field"][0], baseline["field"][1]),
+                            baseline["darts"],
+                            baseline["hits"],
+                        )
+                        for baseline in row.baselines
+                    ),
                 ),
             )
 

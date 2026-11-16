@@ -29,6 +29,12 @@ from app.api.features.game.domain.killer import (
     KillerZone,
     killer_progress,
 )
+from app.api.features.game.domain.personal_training import (
+    PersonalOptions,
+    PersonalProgress,
+    personal_progress,
+    planned_target,
+)
 from app.api.features.game.domain.player import Player
 from app.api.features.game.domain.target import Target, finishing_double
 from app.api.features.game.domain.training import TrainingOptions, TrainingProgress, training_progress
@@ -92,6 +98,8 @@ class Game:
                 return clock_progress(ids, self.turns, self.options, self.race().voided)
             case TrainingOptions():
                 return training_progress(ids, self.turns, self.options)
+            case PersonalOptions():
+                return personal_progress(ids, self.turns, self.options)
         return None
 
     def targets(self) -> list[list[Target | None]]:
@@ -114,6 +122,11 @@ class Game:
             case TrainingProgress():
                 return [
                     [None if aimed is None else Target(*aimed) for aimed in turn]
+                    for turn in progress.turn_targets
+                ]
+            case PersonalProgress() if isinstance(options, PersonalOptions):
+                return [
+                    [None if aimed is None else planned_target(aimed, options.any_ring) for aimed in turn]
                     for turn in progress.turn_targets
                 ]
         if not self.variant.counts_points or self.checkout_mode is not CheckoutMode.DOUBLE_OUT:

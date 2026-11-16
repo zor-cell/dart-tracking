@@ -7,6 +7,8 @@ import { GameSettingsDto } from '../dto/game-settings.dto';
 import { GameStandingDto } from '../dto/game-standing.dto';
 import { KillerSettingsDto } from '../dto/killer-settings.dto';
 import { KillerStandingDto } from '../dto/killer-standing.dto';
+import { PersonalSettingsDto } from '../dto/personal-settings.dto';
+import { PersonalStandingDto } from '../dto/personal-standing.dto';
 import { TrainingSettingsDto } from '../dto/training-settings.dto';
 import { TrainingStandingDto } from '../dto/training-standing.dto';
 import { X01SettingsDto } from '../dto/x01-settings.dto';
@@ -24,7 +26,8 @@ export type VariantPlay =
       readonly settings: ClockSettingsDto;
       readonly standing: ClockStandingDto;
     }
-  | { readonly variant: 'training'; readonly settings: TrainingSettingsDto; readonly standing: TrainingStandingDto };
+  | { readonly variant: 'training'; readonly settings: TrainingSettingsDto; readonly standing: TrainingStandingDto }
+  | { readonly variant: 'personal'; readonly settings: PersonalSettingsDto; readonly standing: PersonalStandingDto };
 
 /** A game state read by its variant, so one check narrows settings and standing together. */
 export function playOf(game: {

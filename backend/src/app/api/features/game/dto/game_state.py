@@ -9,19 +9,25 @@ from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.game_options import GameProgress
 from app.api.features.game.domain.game_status import is_resumable
 from app.api.features.game.domain.killer import KillerProgress
+from app.api.features.game.domain.personal_training import PersonalProgress
 from app.api.features.game.domain.training import TrainingProgress
 from app.api.features.game.dto.around_the_clock import ClockStandingDto
 from app.api.features.game.dto.cricket import CricketStandingDto
 from app.api.features.game.dto.dart import DartDto
 from app.api.features.game.dto.game_settings import GameSettingsDto, settings_dto
 from app.api.features.game.dto.killer import KillerStandingDto
+from app.api.features.game.dto.personal_training import PersonalStandingDto
 from app.api.features.game.dto.player import PlayerDto
 from app.api.features.game.dto.setup import SetupDto
 from app.api.features.game.dto.training import TrainingStandingDto
 from app.api.features.game.dto.turn import TurnDto
 
 type StandingDto = Annotated[
-    CricketStandingDto | KillerStandingDto | ClockStandingDto | TrainingStandingDto,
+    CricketStandingDto
+    | KillerStandingDto
+    | ClockStandingDto
+    | TrainingStandingDto
+    | PersonalStandingDto,
     Field(discriminator="variant"),
 ]
 
@@ -36,6 +42,8 @@ def _standing(game: Game, progress: GameProgress | None) -> StandingDto | None:
             return ClockStandingDto.from_entity(game, progress)
         case TrainingProgress():
             return TrainingStandingDto.from_entity(game, progress)
+        case PersonalProgress():
+            return PersonalStandingDto.from_entity(game, progress)
     return None
 
 

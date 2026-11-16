@@ -11,6 +11,7 @@ class GameVariant(StrEnum):
     KILLER = "killer"
     AROUND_THE_CLOCK = "around_the_clock"
     TRAINING = "training"
+    PERSONAL = "personal"
 
     @property
     def counts_points(self) -> bool:

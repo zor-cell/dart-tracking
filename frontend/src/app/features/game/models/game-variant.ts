@@ -6,7 +6,8 @@ export type GameVariant =
   | 'cricket'
   | 'killer'
   | 'around_the_clock'
-  | 'training';
+  | 'training'
+  | 'personal';
 
 export const GAME_VARIANTS: readonly { label: string; value: GameVariant }[] = [
   { label: 'X01', value: 'x01' },
@@ -15,18 +16,18 @@ export const GAME_VARIANTS: readonly { label: string; value: GameVariant }[] = [
   { label: 'Killer', value: 'killer' },
   { label: 'Around the Clock', value: 'around_the_clock' },
   { label: $localize`:@@game.variant.training:Freies Training`, value: 'training' },
+  { label: $localize`:@@game.new.weaknessTraining:Persönliches Training`, value: 'personal' },
 ];
 
-/** The games under their kind, as the new game page and the statistics list them; null is
- * the weakness training still to come. */
+/** The games under their kind, as the new game page and the statistics list them. */
 export interface GameSection {
   readonly kind: string;
-  readonly games: readonly (GameVariant | null)[];
+  readonly games: readonly GameVariant[];
 }
 
 export const GAME_SECTIONS: readonly GameSection[] = [
   { kind: $localize`:@@game.category.standard:Standard`, games: ['x01', 'cricket'] },
-  { kind: $localize`:@@game.category.training:Training`, games: ['around_the_clock', 'training', null] },
+  { kind: $localize`:@@game.category.training:Training`, games: ['around_the_clock', 'training', 'personal'] },
   { kind: $localize`:@@game.category.group:Gruppe`, games: ['killer', 'elimination'] },
 ];
 

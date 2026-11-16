@@ -1,0 +1,56 @@
+@if (failed()) {
+  <app-load-error
+    message="Dein Plan konnte nicht geladen werden."
+    i18n-message="@@game.personal.loadFailed"
+    (retry)="load()"
+  />
+} @else {
+  <section class="list-group" aria-labelledby="personal-blocks">
+    <div class="plan__heading">
+      <h2 class="list-group__title" id="personal-blocks" i18n="@@game.personal.plan">Dein Plan</h2>
+      @if (plan()) {
+        <app-info-hint [label]="weaknessesLabel">
+          <div class="plan__heading">
+            <strong>{{ weaknessesLabel }}</strong>
+            <span class="plan__aside" i18n="@@game.personal.rateAndAverage">Quote (dein Schnitt)</span>
+          </div>
+          <span class="plan__aside">{{ source() }}</span>
+          <ul class="plan__fields">
+            @for (field of fields(); track field.label) {
+              <li class="plan__field">
+                <span class="plan__label">{{ field.label }}</span>
+                <span class="plan__body">
+                  <span class="plan__bar" aria-hidden="true">
+                    <p-progressbar [value]="field.bar" [showValue]="false" />
+                    <span class="plan__mark" [style.left.%]="field.mark"></span>
+                  </span>
+                  <span class="plan__aside">{{ field.hint }}</span>
+                </span>
+                <span class="plan__rate">
+                  {{ field.rate }}
+                  <span class="plan__average">({{ field.average }})</span>
+                </span>
+              </li>
+            }
+          </ul>
+        </app-info-hint>
+      }
+      <span class="plan__aside plan__length">{{ length() }} Darts</span>
+    </div>
+    @if (plan()) {
+      <ol class="list-group__items">
+        @for (block of blocks(); track $index) {
+          <li class="list-group__item">
+            <span class="plan__step" aria-hidden="true">{{ $index + 1 }}</span>
+            <span class="list-group__body">
+              <span class="list-group__name">{{ block.label }}</span>
+            </span>
+            <span class="list-group__hint">{{ block.darts }} Darts</span>
+          </li>
+        }
+      </ol>
+    } @else {
+      <p-skeleton height="11rem" borderRadius="0.75rem" />
+    }
+  </section>
+}

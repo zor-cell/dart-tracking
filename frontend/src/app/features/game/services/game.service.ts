@@ -10,6 +10,7 @@ import { GameCreatedDto } from '../dto/game-created.dto';
 import { GameStateDto } from '../dto/game-state.dto';
 import { PlayerDto } from '../dto/player.dto';
 import { QuickStartDto } from '../dto/quick-start.dto';
+import { PersonalPlanDto } from '../dto/personal-plan.dto';
 import { TurnDto } from '../dto/turn.dto';
 import { DARTS_PER_TURN } from '../models/visit';
 import {GameConfigDto} from "../dto/game-config.dto";
@@ -204,6 +205,11 @@ export class GameService {
     }
     this.setState(state);
     return true;
+  }
+
+  /** The plans a personal training would start on now; the view shows a failure itself. */
+  personalPlan(): Observable<PersonalPlanDto> {
+    return this.http.get<PersonalPlanDto>(`${this.baseUrl}/personal-plan`, { context: SILENT_ERROR_CONTEXT });
   }
 
   /** The setup the signed-in account plays most; null before it has played or on a failure. */

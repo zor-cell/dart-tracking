@@ -28,6 +28,7 @@ import {GameStateDto} from '../../dto/game-state.dto';
 import {ScoreboardEntry} from '../../models/scoreboard-entry';
 import {standings} from '../../models/variant-standing';
 import {fieldLabel, zoneLabel} from '../../models/variant-options';
+import { plannedField } from '../../models/personal-blocks';
 import {finishOf, playOf} from '../../models/game-settings';
 import {DARTS_PER_TURN} from '../../models/visit';
 import {GameService} from '../../services/game.service';
@@ -528,6 +529,14 @@ function targetRoute(state: GameStateDto): TargetRoute | null {
     const field = fieldLabel(training.target);
     const darts = Math.min(training.left, state.dartsRemaining);
     return { darts: Array.from({ length: darts }, () => field), hostile: false };
+  }
+  if (play.variant === 'personal') {
+    const own = play.standing.players[seat];
+    const ahead = Array.from({ length: state.dartsRemaining }, (_, index) => {
+      const at = plannedField(play.standing.blocks, own.darts + index);
+      return at === null ? null : fieldLabel(at);
+    }).filter((label) => label !== null);
+    return { darts: ahead, hostile: false };
   }
   if (play.variant === 'around_the_clock') {
     const zone = play.settings.zone;

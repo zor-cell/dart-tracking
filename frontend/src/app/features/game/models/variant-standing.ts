@@ -119,6 +119,28 @@ function standingOf(state: GameStateDto, seat: number, format: NumberFormat): St
     };
   }
 
+  if (play.variant === 'personal') {
+    const own = play.standing.players[seat];
+    const blocks = play.standing.blocks;
+    const tally = own.blocks[Math.min(own.block, blocks.length - 1)];
+    const rate = tally === undefined || tally.darts === 0 ? NONE : `${format((100 * tally.hits) / tally.darts, '1.0-0')} %`;
+    return {
+      ...plain,
+      score: own.target === null ? DONE : fieldLabel(own.target),
+      left: {
+        value: rate,
+        label: $localize`:@@game.scoreboard.hitRate:Quote`,
+        srLabel: $localize`:@@game.scoreboard.blockHitRate:Trefferquote im Block`,
+      },
+      right: {
+        value: `${Math.min(own.block + 1, blocks.length)}/${blocks.length}`,
+        label: 'Block',
+        srLabel: 'Block',
+      },
+      rank: own.darts,
+    };
+  }
+
   if (play.variant === 'around_the_clock') {
     const player = play.standing.players[seat];
     return {

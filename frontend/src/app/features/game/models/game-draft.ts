@@ -8,6 +8,8 @@ import {
   CricketScoring,
   EliminationKill,
   KillerZone,
+  PersonalFocus,
+  PersonalLength,
   TrainingGoal,
   TrainingRing,
 } from './variant-options';
@@ -36,6 +38,9 @@ export interface GameDraft {
     readonly trainingFields: readonly TrainingFieldDto[];
     readonly trainingRepeats: number;
     readonly trainingShuffle: boolean;
+    readonly personalFocus: PersonalFocus;
+    readonly personalLength: PersonalLength;
+    readonly personalAnyRing: boolean;
     readonly catchUp: boolean;
     readonly playOn: boolean;
   };

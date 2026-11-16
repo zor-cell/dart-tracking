@@ -1,5 +1,6 @@
 """The settings of a game on the wire: one schema per variant, told apart by `variant`."""
 
+from dataclasses import replace
 from random import randrange
 from typing import Annotated
 
@@ -13,11 +14,13 @@ from app.api.features.game.domain.finish import FinishRules
 from app.api.features.game.domain.game_setup import GameSetup
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.killer import KillerOptions, deal_numbers
+from app.api.features.game.domain.personal_training import PersonalOptions
 from app.api.features.game.domain.training import TrainingOptions
 from app.api.features.game.dto.around_the_clock import ClockSettingsDto
 from app.api.features.game.dto.cricket import CricketSettingsDto
 from app.api.features.game.dto.elimination import EliminationSettingsDto
 from app.api.features.game.dto.killer import KillerSettingsDto
+from app.api.features.game.dto.personal_training import PersonalSettingsDto
 from app.api.features.game.dto.training import TrainingSettingsDto
 from app.api.features.game.dto.x01 import X01SettingsDto
 
@@ -27,13 +30,17 @@ type GameSettingsDto = Annotated[
     | CricketSettingsDto
     | KillerSettingsDto
     | ClockSettingsDto
-    | TrainingSettingsDto,
+    | TrainingSettingsDto
+    | PersonalSettingsDto,
     Field(discriminator="variant"),
 ]
 
 
-def to_setup(settings: GameSettingsDto, players: int) -> GameSetup:
-    """The domain settings of a new game: deals Killer's numbers, draws the training's seed."""
+def to_setup(
+    settings: GameSettingsDto, players: int, plan: PersonalOptions | None = None
+) -> GameSetup:
+    """The domain settings of a new game: deals Killer's numbers, draws the training's
+    seed, takes the personal training's `plan`."""
     match settings:
         case X01SettingsDto():
             finish = FinishRules(catch_up=settings.catch_up, play_on=settings.play_on)
@@ -80,6 +87,12 @@ def to_setup(settings: GameSettingsDto, players: int) -> GameSetup:
                     seed=randrange(2**31),
                 ),
             )
+        case PersonalSettingsDto():
+            if plan is None:
+                raise ValueError("a personal training needs its plan")
+            # Without a single in the focus the switch changes nothing, so it stays on.
+            any_ring = settings.any_ring or None not in settings.focus.rings
+            return GameSetup(GameVariant.PERSONAL, None, None, replace(plan, any_ring=any_ring))
 
 
 def settings_dto(setup: GameSetup) -> GameSettingsDto:
@@ -95,6 +108,8 @@ def settings_dto(setup: GameSetup) -> GameSettingsDto:
             return ClockSettingsDto(zone=zone, skip=skip, **finish)
         case TrainingOptions() as training:
             return TrainingSettingsDto.of(training)
+        case PersonalOptions() as personal:
+            return PersonalSettingsDto.of(personal)
     return X01SettingsDto(**_points(setup), **finish)
 
 

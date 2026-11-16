@@ -6,6 +6,8 @@ export type ClockZone = 'any' | 'double' | 'triple';
 export type EliminationKill = 'any' | 'double';
 export type TrainingGoal = 'free' | 'random' | 'fields';
 export type TrainingRing = 'single' | 'double' | 'triple' | 'mixed';
+export type PersonalFocus = 'singles' | 'doubles' | 'triples' | 'all';
+export type PersonalLength = 45 | 90 | 150;
 
 export const CRICKET_SCORINGS: readonly { label: string; value: CricketScoring }[] = [
   { label: 'Standard', value: 'standard' },
@@ -50,6 +52,24 @@ export const TRAINING_RINGS: readonly { label: string; value: TrainingRing }[] =
   { label: 'Double', value: 'double' },
   { label: 'Triple', value: 'triple' },
   { label: $localize`:@@game.training.mixed:Gemischt`, value: 'mixed' },
+];
+
+export const PERSONAL_FOCI: readonly { label: string; value: PersonalFocus }[] = [
+  { label: 'Single', value: 'singles' },
+  { label: 'Double', value: 'doubles' },
+  { label: 'Triple', value: 'triples' },
+  { label: $localize`:@@game.training.mixed:Gemischt`, value: 'all' },
+];
+
+/** Whether a personal training's focus takes singles, where double and triple may count too. */
+export function personalHasSingles(focus: PersonalFocus): boolean {
+  return focus === 'singles' || focus === 'all';
+}
+
+export const PERSONAL_LENGTHS: readonly { label: string; value: PersonalLength }[] = [
+  { label: $localize`:@@game.personal.short:Kurz`, value: 45 },
+  { label: $localize`:@@game.personal.medium:Mittel`, value: 90 },
+  { label: $localize`:@@game.personal.long:Lang`, value: 150 },
 ];
 
 /** Hits a training target may take before the next one comes up. */

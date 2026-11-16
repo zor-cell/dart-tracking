@@ -41,6 +41,13 @@ export const GAME_RULES: Readonly<Record<GameVariant, GameRules>> = {
       $localize`:@@game.rules.training.2:Niemand gewinnt. Das Training läuft, bis du es beendest.`,
     ],
   },
+  personal: {
+    rules: [
+      $localize`:@@game.rules.personal.1:Aus deinen letzten Spielen werden die Doubles und Triples gesucht, die du schlechter triffst als deinen Schnitt.`,
+      $localize`:@@game.rules.personal.2:Auf jedes dieser Felder wirfst du einen Block mit fester Zahl an Darts, zum Schluss auf alle im Wechsel.`,
+      $localize`:@@game.rules.personal.3:Nach dem letzten Dart siehst du je Feld deine Quote neben der von vorher. Das Training braucht ein Konto.`,
+    ],
+  },
   around_the_clock: {
     rules: [
       $localize`:@@game.rules.clock.1:Triff 1 bis 20 der Reihe nach, dann das Bull. Wer zuerst durch ist, gewinnt.`,
