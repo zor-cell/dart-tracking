@@ -71,7 +71,9 @@ export class GameTopBarComponent {
     if (timer === null) {
       return null;
     }
-    return timer.left === null ? timer.minutes * 60 : timer.left - (this.now() - timer.receivedAt) / 1000;
+    // The clock may still read a time before the state came in; that counts as no time passed.
+    const elapsed = Math.max(this.now() - timer.receivedAt, 0) / 1000;
+    return timer.left === null ? timer.minutes * 60 : timer.left - elapsed;
   });
 
   /** Darts the current player threw in a training set to darts, with the limit. */
@@ -152,6 +154,7 @@ export class GameTopBarComponent {
       if (this.timer()?.left == null) {
         return;
       }
+      this.now.set(Date.now());
       const id = setInterval(() => this.now.set(Date.now()), 1000);
       onCleanup(() => clearInterval(id));
     });
