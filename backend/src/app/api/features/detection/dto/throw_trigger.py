@@ -3,6 +3,8 @@
 from pydantic import NonNegativeFloat, NonNegativeInt
 
 from app.api.core.dto.base import CamelModel
+from app.api.features.detection.domain.change_region import ChangeRegion
+from app.api.features.detection.dto.trigger_change import TriggerChangeDto
 from app.api.features.detection.dto.trigger_sample import TriggerSampleDto
 from app.api.features.detection.dto.trigger_snapshot import TriggerSnapshotDto
 
@@ -20,5 +22,14 @@ class ThrowTriggerDto(CamelModel):
     timed_out: bool  # captured by the motion timeout instead of settling
     grid_cols: NonNegativeInt  # grid the counts and spans are relative to
     grid_rows: NonNegativeInt
+    change: TriggerChangeDto | None = None  # where the picture differs from before the throw
     timeline: list[TriggerSampleDto] = []  # the frames leading up to the capture
     snapshots: list[TriggerSnapshotDto] = []  # sent in test runs only
+
+    def change_region(self) -> ChangeRegion | None:
+        change = self.change
+        if change is None or self.grid_cols == 0 or self.grid_rows == 0:
+            return None
+        return ChangeRegion(
+            change.col, change.row, change.cols, change.rows, self.grid_cols, self.grid_rows
+        )

@@ -1,4 +1,5 @@
 import { ThrowTriggerDto } from '../dto/throw-trigger.dto';
+import { TriggerChangeDto } from '../dto/trigger-change.dto';
 import { TriggerSampleDto } from '../dto/trigger-sample.dto';
 import { TriggerMoment, TriggerSnapshotDto } from '../dto/trigger-snapshot.dto';
 
@@ -46,6 +47,9 @@ interface Snapshot {
  */
 export class ThrowDetector {
   private previousFrame: Uint8ClampedArray | null = null;
+  // The frame before `previousFrame`, and the one just before the running throw armed.
+  private priorFrame: Uint8ClampedArray | null = null;
+  private beforeThrow: Uint8ClampedArray | null = null;
   private state: ThrowDetectorState = 'idle';
   private stableFrameCount = 0;
   private motionFrames = 0;
@@ -107,6 +111,7 @@ export class ThrowDetector {
     }
 
     this.analyseFrame(this.previousFrame, frame);
+    this.priorFrame = this.previousFrame;
     this.previousFrame = frame;
 
     // The first measurement primes the baseline, so early wobble does not arm.
@@ -144,6 +149,7 @@ export class ThrowDetector {
 
   reset(): void {
     this.previousFrame = null;
+    this.priorFrame = null;
     this.cooldownFrames = 0;
     this.activeBlocks = 0;
     this.ambientBlocks = 0;
@@ -160,6 +166,7 @@ export class ThrowDetector {
     const localizedThrow = excess >= ARM_BLOCK_EXCESS && this.activeBlocks <= MAX_THROW_BLOCKS;
     if (localizedThrow) {
       this.takeSnapshot('arm');
+      this.beforeThrow = this.priorFrame;
       this.state = 'motion';
       this.motionFrames = 0;
       this.trackEpisode();
@@ -226,6 +233,7 @@ export class ThrowDetector {
       timedOut: this.motionFrames >= MAX_MOTION_FRAMES,
       gridCols: this.columns,
       gridRows: this.rows,
+      change: this.changeSinceThrow(),
       timeline: [],
       snapshots: this.encodedSnapshots(),
     };
@@ -301,48 +309,78 @@ export class ThrowDetector {
     this.peakExcess = 0;
     this.peakSpanCols = 0;
     this.peakSpanRows = 0;
+    this.beforeThrow = null;
     this.snapshots.clear();
   }
 
   /** Compares two frames and counts the active grid cells into `activeBlocks`. */
   private analyseFrame(a: Uint8ClampedArray, b: Uint8ClampedArray): void {
-    this.blockCounts.fill(0);
+    this.countChanges(a, b, this.blockCounts, this.changed);
+    const { cells, box } = activeCells(this.blockCounts, this.columns);
+    this.activeBlocks = cells.length;
+    this.activeCells = cells;
+    this.spanCols = box?.cols ?? 0;
+    this.spanRows = box?.rows ?? 0;
+  }
+
+  /** Where the picture settled differently from just before the throw; null for none or a global change. */
+  private changeSinceThrow(): TriggerChangeDto | null {
+    if (!this.beforeThrow || !this.previousFrame) {
+      return null;
+    }
+    const counts = new Int32Array(this.blockCounts.length);
+    this.countChanges(this.beforeThrow, this.previousFrame, counts);
+    const { cells, box } = activeCells(counts, this.columns);
+    return cells.length <= MAX_THROW_BLOCKS ? box : null;
+  }
+
+  /** Counts the changed pixels of each grid cell into `counts`, marking them in `changed` if given. */
+  private countChanges(
+    a: Uint8ClampedArray,
+    b: Uint8ClampedArray,
+    counts: Int32Array,
+    changed?: Uint8Array,
+  ): void {
+    counts.fill(0);
     let index = 0;
     for (let y = 0; y < this.height; y++) {
       const blockRow = Math.floor(y / BLOCK_SIZE) * this.columns;
       for (let x = 0; x < this.width; x++, index++) {
         const isChanged = Math.abs(a[index] - b[index]) > PIXEL_DELTA;
-        this.changed[index] = isChanged ? 1 : 0;
+        if (changed) {
+          changed[index] = isChanged ? 1 : 0;
+        }
         if (isChanged) {
-          this.blockCounts[blockRow + Math.floor(x / BLOCK_SIZE)]++;
+          counts[blockRow + Math.floor(x / BLOCK_SIZE)]++;
         }
       }
     }
-
-    let active = 0;
-    const cells: number[] = [];
-    let minCol = this.columns;
-    let maxCol = -1;
-    let minRow = this.rows;
-    let maxRow = -1;
-    for (let i = 0; i < this.blockCounts.length; i++) {
-      if (this.blockCounts[i] >= BLOCK_MIN_CHANGED) {
-        active++;
-        cells.push(i);
-        const col = i % this.columns;
-        const row = Math.floor(i / this.columns);
-        minCol = Math.min(minCol, col);
-        maxCol = Math.max(maxCol, col);
-        minRow = Math.min(minRow, row);
-        maxRow = Math.max(maxRow, row);
-      }
-    }
-
-    this.activeBlocks = active;
-    this.activeCells = cells;
-    this.spanCols = Math.max(0, maxCol - minCol + 1);
-    this.spanRows = Math.max(0, maxRow - minRow + 1);
   }
+}
+
+/** The cells with enough changed pixels to count, and their bounding box. */
+function activeCells(counts: Int32Array, columns: number): { cells: number[]; box: TriggerChangeDto | null } {
+  const cells: number[] = [];
+  let minCol = Infinity;
+  let maxCol = -1;
+  let minRow = Infinity;
+  let maxRow = -1;
+  for (let i = 0; i < counts.length; i++) {
+    if (counts[i] >= BLOCK_MIN_CHANGED) {
+      cells.push(i);
+      const col = i % columns;
+      const row = Math.floor(i / columns);
+      minCol = Math.min(minCol, col);
+      maxCol = Math.max(maxCol, col);
+      minRow = Math.min(minRow, row);
+      maxRow = Math.max(maxRow, row);
+    }
+  }
+  const box =
+    cells.length > 0
+      ? { col: minCol, row: minRow, cols: maxCol - minCol + 1, rows: maxRow - minRow + 1 }
+      : null;
+  return { cells, box };
 }
 
 /** One bit per entry, most significant bit first; a partial last byte is zero-padded. */

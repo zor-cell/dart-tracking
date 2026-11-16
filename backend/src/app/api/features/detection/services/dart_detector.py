@@ -16,6 +16,7 @@ from app.api.features.calibration.domain.board_geometry import (
 )
 from app.api.features.calibration.domain.calibration import Calibration
 from app.api.features.calibration.domain.camera_angle import outward_direction
+from app.api.features.detection.domain.change_region import ChangeRegion
 from app.api.features.detection.domain.detection import Dart
 from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.detection.debug.trace import DetectionTrace
@@ -100,6 +101,9 @@ _MIN_AXIS_ALIGNMENT = 0.5
 # How far the warp's valid area is pulled in from its own edge, in pixels.
 _WARP_MARGIN_PX = 3
 
+# How far a fragment may lie outside the trigger's change box and still count, in mm.
+_CHANGE_MARGIN_MM = 15.0
+
 trace = DetectionTrace()
 
 
@@ -108,9 +112,10 @@ def detect_dart(
     frame: np.ndarray,
     calibration: Calibration,
     empty_board: np.ndarray | None = None,
+    change: ChangeRegion | None = None,
 ) -> Dart | DetectionFailure:
     """Find the dart added in `frame` relative to `reference`, whose calibration it is;
-    `empty_board` tells an added dart from a pulled one, if given.
+    `empty_board` tells an added dart from a pulled one, `change` where the trigger saw it land.
     """
     global trace
     trace = DetectionTrace(reference=reference, frame=frame)
@@ -155,7 +160,9 @@ def detect_dart(
     )
     trace.change_mask = mask
 
-    blob = _fuse_dart_fragments(mask, trace.difference, pixels_per_mm)
+    if change is not None:
+        trace.change_box = _change_box(change, frame.shape, alignment, pixels_per_mm)
+    blob = _fuse_dart_fragments(mask, trace.difference, pixels_per_mm, trace.change_box)
     if blob is None:
         return _record_failure(DetectionFailure.NO_CHANGE)
 
@@ -499,14 +506,31 @@ def _fragment_geometry(
     return centre, width, brightness
 
 
+def _change_box(
+    change: ChangeRegion,
+    frame_shape: tuple[int, ...],
+    alignment: np.ndarray,
+    pixels_per_mm: float,
+) -> tuple[float, float, float, float]:
+    """The trigger's change box carried onto the reference and widened by the margin."""
+    corners = cv2.perspectiveTransform(change.corners(frame_shape[1], frame_shape[0]), alignment)
+    margin = _CHANGE_MARGIN_MM * pixels_per_mm
+    (left, top), (right, bottom) = corners.reshape(-1, 2).min(axis=0), corners.reshape(-1, 2).max(axis=0)
+    return (left - margin, top - margin, right + margin, bottom + margin)
+
+
 def _fuse_dart_fragments(
-    mask: np.ndarray, difference: np.ndarray, pixels_per_mm: float
+    mask: np.ndarray,
+    difference: np.ndarray,
+    pixels_per_mm: float,
+    change_box: tuple[float, float, float, float] | None = None,
 ) -> np.ndarray | None:
     """Gather the dart's fragments into one set of pixels: anchor on the widest (the
     flight) and keep the line through it most candidate fragments vote for, with
-    every fragment on that line contributing its pixels.
+    every fragment on that line contributing its pixels. Only fragments inside
+    `change_box` count, unless no candidate lies inside it.
     """
-    count, labels, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
+    count, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, 8)
     trace.labels = labels
     fragments = list(range(1, count))
     if not fragments:
@@ -520,6 +544,18 @@ def _fuse_dart_fragments(
     ]
     if not candidates:
         return None
+
+    if change_box is not None:
+        left, top, right, bottom = change_box
+        inside = {
+            label
+            for label in fragments
+            if left <= centroids[label][0] <= right and top <= centroids[label][1] <= bottom
+        }
+        if inside & set(candidates):
+            trace.outside_change_fragments = sum(label not in inside for label in candidates)
+            fragments = [label for label in fragments if label in inside]
+            candidates = [label for label in candidates if label in inside]
 
     pixels = {
         label: np.column_stack(np.where(labels == label)[::-1]).astype(np.float64)

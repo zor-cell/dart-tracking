@@ -10,3 +10,9 @@ class DetectionFailure(StrEnum):
     NO_CHANGE = "no_change"
     IMPLAUSIBLE_SHAPE = "implausible_shape"
     DARTS_REMOVED = "darts_removed"
+
+    @property
+    def moves_reference(self) -> bool:
+        """Whether the frame still becomes the next throw's reference: it shows no dart-sized
+        change that a later throw must be told apart from."""
+        return self in (DetectionFailure.NO_CHANGE, DetectionFailure.DARTS_REMOVED)

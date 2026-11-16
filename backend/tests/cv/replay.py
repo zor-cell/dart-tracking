@@ -75,9 +75,7 @@ def replay_series(frames: list[tuple[str, Path]]) -> tuple[dict[str, Any], dict[
         outcome = dart_detector.detect_dart(reference, load_image(path, raw=False), calibration, empty_board)
         failed = isinstance(outcome, DetectionFailure)
         results[label] = outcome.value if failed else outcome.segment.label
-        # The socket keeps a failed frame as the next reference only when the change was absorbed.
-        absorbed = dart_detector.trace.rejected_miss or outcome is DetectionFailure.DARTS_REMOVED
-        if dart_detector.trace.aligned is not None and (not failed or absorbed):
+        if dart_detector.trace.aligned is not None and (not failed or outcome.moves_reference):
             reference = dart_detector.trace.aligned
     return {"failure": None, "points": _image_points(calibration)}, results
 

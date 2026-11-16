@@ -19,7 +19,7 @@ class FrameKind(StrEnum):
     """Why a frame is part of a series. Every kind moved the reference forward."""
 
     BOOKED = "booked"  # a located dart the game took
-    ABSORBED = "absorbed"  # a rejected miss or pulled darts: nothing new in it
+    ABSORBED = "absorbed"  # no dart found, or the darts pulled: nothing new in it
     UNBOOKED = "unbooked"  # a located dart the game did not take (visit full)
 
 

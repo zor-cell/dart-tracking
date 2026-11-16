@@ -583,7 +583,6 @@ async def _handle_throw_frame(
 
     aligned: np.ndarray | None = None
     blob: np.ndarray | None = None
-    rejected_miss = False
     metrics: dict[str, float] = {}
     raw = b""
 
@@ -595,23 +594,24 @@ async def _handle_throw_frame(
         image, raw = decoded
         async with _detector_lock:
             outcome = await asyncio.to_thread(
-                dart_detector.detect_dart, reference, image, calibration, empty_board
+                dart_detector.detect_dart,
+                reference,
+                image,
+                calibration,
+                empty_board,
+                frame.trigger.change_region() if frame.trigger else None,
             )
             # Both read under the lock: the trace is a module global that the
             # next run replaces.
             aligned = dart_detector.trace.aligned
             blob = dart_detector.trace.blob
-            rejected_miss = dart_detector.trace.rejected_miss
             metrics = recorder.metrics_of(dart_detector.trace)
     metrics |= recorder.trigger_metrics_of(frame.trigger)
 
     scoring = await scoring_camera_store.is_scoring(game_id, client_id)
 
     if isinstance(outcome, DetectionFailure):
-        # A rejected miss or a pulled dart is still a change in the picture; left
-        # out of the reference, it would be found again on every later throw.
-        absorbed = rejected_miss or outcome is DetectionFailure.DARTS_REMOVED
-        if absorbed and aligned is not None:
+        if outcome.moves_reference and aligned is not None:
             detection_store.set(game_id, client_id, aligned)
             if scoring:
                 recorder.note_absorbed(game_id, raw, frame.trigger)
