@@ -1,4 +1,4 @@
-import { TrainingGoal, TrainingRing } from '../models/variant-options';
+import { PersonalLength, TrainingGoal, TrainingMinutes, TrainingRing } from '../models/variant-options';
 
 /** A board field: 1 to 20 in any ring, 25 as single (25) or double (50). */
 export interface TrainingFieldDto {
@@ -19,4 +19,7 @@ export interface TrainingSettingsDto {
   readonly shuffle: boolean;
   /** Whether any ring of a single field's number hits it. */
   readonly anyRing: boolean;
+  /** Darts per player or minutes from the first dart; endless with both null. */
+  readonly darts: PersonalLength | null;
+  readonly minutes: TrainingMinutes | null;
 }

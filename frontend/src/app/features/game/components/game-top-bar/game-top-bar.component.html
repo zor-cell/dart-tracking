@@ -24,6 +24,9 @@
         }
       </div>
       <span class="top-bar__title">{{ title() }}</span>
+      @if (limit(); as limit) {
+        <span class="top-bar__limit" role="timer">{{ limit }}</span>
+      }
     </div>
 
     <div class="top-bar__actions">

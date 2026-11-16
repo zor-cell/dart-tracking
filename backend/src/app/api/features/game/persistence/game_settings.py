@@ -21,7 +21,13 @@ from app.api.features.game.domain.personal_training import (
     PersonalOptions,
     PlanBlock,
 )
-from app.api.features.game.domain.training import TrainingGoal, TrainingOptions, TrainingRing
+from app.api.features.game.domain.training import (
+    TrainingGoal,
+    TrainingLength,
+    TrainingMinutes,
+    TrainingOptions,
+    TrainingRing,
+)
 from app.api.features.game.persistence.clock_settings import ClockSettingsTable
 from app.api.features.game.persistence.cricket_settings import CricketSettingsTable
 from app.api.features.game.persistence.elimination_settings import EliminationSettingsTable
@@ -78,6 +84,8 @@ def settings_row(game_id: str, setup: GameSetup) -> SettingsRow:
                 repeats=training.repeats,
                 shuffle=training.shuffle,
                 any_ring=training.any_ring,
+                darts=training.darts,
+                minutes=training.minutes,
                 seed=training.seed,
             )
         case PersonalOptions() as personal:
@@ -155,6 +163,8 @@ def setup_of(row: SettingsRow) -> GameSetup:
                     repeats=row.repeats,
                     shuffle=row.shuffle,
                     any_ring=row.any_ring,
+                    darts=None if row.darts is None else TrainingLength(row.darts),
+                    minutes=None if row.minutes is None else TrainingMinutes(row.minutes),
                     seed=row.seed,
                 ),
             )

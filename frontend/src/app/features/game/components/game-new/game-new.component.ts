@@ -65,9 +65,16 @@ import {
   PersonalLength,
   TRAINING_GOALS,
   TRAINING_REPEATS,
+  TRAINING_ENDS,
+  TRAINING_DARTS,
+  TRAINING_MINUTES,
   TRAINING_RINGS,
   TrainingGoal,
+  TrainingEnd,
+  TrainingMinutes,
   TrainingRing,
+  trainingEndOf,
+  trainingHasSingles,
 } from '../../models/variant-options';
 import { standings } from '../../models/variant-standing';
 import { GameConfigDto } from '../../dto/game-config.dto';
@@ -150,6 +157,9 @@ export class GameNewComponent {
   protected readonly trainingRepeatsOptions = TRAINING_REPEATS.map((hits) => ({ label: `${hits}`, value: hits }));
   protected readonly personalFocusOptions = [...PERSONAL_FOCI];
   protected readonly personalLengthOptions = [...PERSONAL_LENGTHS];
+  protected readonly trainingEndOptions = [...TRAINING_ENDS];
+  protected readonly trainingDartsOptions = [...TRAINING_DARTS];
+  protected readonly trainingMinutesOptions = [...TRAINING_MINUTES];
   protected readonly goalName = $localize`:@@game.new.goal:Ziel`;
   protected readonly scoringName = $localize`:@@game.new.scoring:Punkte`;
   protected readonly zoneName = $localize`:@@game.new.zone:Feld`;
@@ -185,6 +195,9 @@ export class GameNewComponent {
     trainingRepeats: this.fb.nonNullable.control(1),
     trainingShuffle: this.fb.nonNullable.control(false),
     trainingAnyRing: this.fb.nonNullable.control(true),
+    trainingEnd: this.fb.nonNullable.control<TrainingEnd>('endless'),
+    trainingDarts: this.fb.nonNullable.control<PersonalLength>(90),
+    trainingMinutes: this.fb.nonNullable.control<TrainingMinutes>(15),
     personalFocus: this.fb.nonNullable.control<PersonalFocus>('all'),
     personalLength: this.fb.nonNullable.control<PersonalLength>(90),
     personalAnyRing: this.fb.nonNullable.control(true),
@@ -253,8 +266,12 @@ export class GameNewComponent {
   protected readonly trainingGoal = toSignal(this.form.controls.trainingGoal.valueChanges, {
     initialValue: this.form.controls.trainingGoal.value,
   });
-  protected readonly trainingRing = toSignal(this.form.controls.trainingRing.valueChanges, {
+  private readonly trainingRing = toSignal(this.form.controls.trainingRing.valueChanges, {
     initialValue: this.form.controls.trainingRing.value,
+  });
+  protected readonly trainingSingles = computed(() => trainingHasSingles(this.trainingRing()));
+  protected readonly trainingEnd = toSignal(this.form.controls.trainingEnd.valueChanges, {
+    initialValue: this.form.controls.trainingEnd.value,
   });
   protected readonly pickedFields = toSignal(this.form.controls.trainingFields.valueChanges, {
     initialValue: this.form.controls.trainingFields.value,
@@ -414,7 +431,7 @@ export class GameNewComponent {
       mode, variant, checkoutMode, players, cricketScoring, killerLives, killerZone,
       clockZone, clockSkip, eliminationKill, catchUp, playOn,
       trainingGoal, trainingRing, trainingFields, trainingRepeats, trainingShuffle,
-      trainingAnyRing,
+      trainingAnyRing, trainingEnd, trainingDarts, trainingMinutes,
       personalFocus, personalLength, personalAnyRing,
     } = this.form.getRawValue();
     const seats = (players as Seat[]).map<PlayerSlotDto>((seat) =>
@@ -439,7 +456,9 @@ export class GameNewComponent {
         fields: trainingGoal === 'fields' ? trainingFields : [],
         repeats: trainingGoal === 'free' ? 1 : trainingRepeats,
         shuffle: trainingGoal === 'fields' && trainingShuffle,
-        anyRing: trainingGoal === 'random' && trainingRing === 'single' && trainingAnyRing,
+        anyRing: trainingGoal === 'random' && trainingHasSingles(trainingRing) && trainingAnyRing,
+        darts: trainingEnd === 'darts' ? trainingDarts : null,
+        minutes: trainingEnd === 'time' ? trainingMinutes : null,
       },
       personal: {
         variant: 'personal',
@@ -647,6 +666,9 @@ function formValues(settings: GameSettingsDto) {
         trainingRepeats: settings.repeats,
         trainingShuffle: settings.shuffle,
         trainingAnyRing: settings.anyRing,
+        trainingEnd: trainingEndOf(settings),
+        ...(settings.darts !== null ? { trainingDarts: settings.darts } : {}),
+        ...(settings.minutes !== null ? { trainingMinutes: settings.minutes } : {}),
       };
     case 'personal':
       return {

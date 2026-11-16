@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 import pytest
 
 from app.api.features.announcement.domain.calls import TurnCall
@@ -5,8 +7,11 @@ from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.quick_start import GameSetup
 from app.api.features.game.domain.training import (
     TrainingGoal,
+    TrainingLength,
+    TrainingMinutes,
     TrainingOptions,
     TrainingRing,
+    deadline,
     random_fields,
 )
 from tests.unit.darts import dart, new_game, play
@@ -216,3 +221,75 @@ def test_any_ring_keeps_doubles_and_triples_exact():
     play(game, "19 D19 T19")
 
     assert standing(game).hits == 1
+
+
+START = datetime(2026, 11, 16, 18, 0, tzinfo=UTC)
+
+
+def throw(game, visits, minutes_apart=0):
+    """Throw each visit dart by dart, stamping as the server does, then hand over."""
+    for number, visit in enumerate(visits):
+        at = START + timedelta(minutes=number * minutes_apart)
+        for label in visit.split():
+            game.register_dart(dart(label))
+            game.stamp(at)
+        if not game.over:
+            game.next_player()
+            game.stamp(at)
+
+
+def test_an_endless_training_never_ends_by_itself():
+    game = training()
+    throw(game, ["20 20 20"] * 60)
+
+    assert not game.over
+
+
+def test_a_training_by_darts_ends_with_the_round_that_reaches_them():
+    game = training(2, darts=TrainingLength.SHORT)
+    throw(game, ["20 20 20"] * 29)
+    assert not game.over
+
+    throw(game, ["20 20 20"])
+    assert game.ended
+    assert [standing(game, seat).darts for seat in (0, 1)] == [45, 45]
+
+
+def test_a_timed_training_ends_with_the_round_thrown_after_the_time():
+    game = training(2, minutes=TrainingMinutes.TEN)
+    throw(game, ["20 20 20"] * 10, minutes_apart=1)
+    assert not game.over
+
+    late = START + timedelta(minutes=10)
+    for _ in range(3):
+        game.register_dart(dart("20"))
+        game.stamp(late)
+    assert not game.over
+    game.next_player()
+    for _ in range(3):
+        game.register_dart(dart("20"))
+        game.stamp(late)
+    assert game.ended
+
+
+def test_a_training_taken_back_into_runs_until_the_next_round():
+    game = training(darts=TrainingLength.SHORT)
+    throw(game, ["20 20 20"] * 15)
+    assert game.ended
+
+    game.set_ended(False)
+    game.stamp(START)
+    game.next_player()
+    game.stamp(START)
+    assert not game.over
+    throw(game, ["20 20 20"])
+    assert game.ended
+
+
+def test_the_time_runs_from_the_first_dart():
+    options = TrainingOptions(minutes=TrainingMinutes.FIFTEEN)
+    game = training(minutes=TrainingMinutes.FIFTEEN)
+    assert deadline(options, game.turns) is None
+
+    throw(game, ["20"])
+    assert deadline(options, game.turns) == START + timedelta(minutes=15)

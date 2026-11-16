@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from typing import Literal, Self
 
 from pydantic import Field, model_validator
@@ -8,9 +9,12 @@ from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.training import (
     MAX_REPEATS,
     TrainingGoal,
+    TrainingLength,
+    TrainingMinutes,
     TrainingOptions,
     TrainingProgress,
     TrainingRing,
+    deadline,
 )
 
 
@@ -38,6 +42,9 @@ class TrainingSettingsDto(CamelModel):
     shuffle: bool = False
     # Whether any ring of a single field's number hits it.
     any_ring: bool = False
+    # Darts per player or minutes the training runs; endless without both.
+    darts: TrainingLength | None = None
+    minutes: TrainingMinutes | None = None
 
     @model_validator(mode="after")
     def _fields_chosen(self) -> Self:
@@ -46,6 +53,8 @@ class TrainingSettingsDto(CamelModel):
             raise ValueError("own fields need at least one field")
         if len(set(chosen)) != len(chosen):
             raise ValueError("a field can be chosen once")
+        if self.darts is not None and self.minutes is not None:
+            raise ValueError("a training ends by darts or by time")
         return self
 
     @classmethod
@@ -57,6 +66,8 @@ class TrainingSettingsDto(CamelModel):
             repeats=options.repeats,
             shuffle=options.shuffle,
             any_ring=options.any_ring,
+            darts=options.darts,
+            minutes=options.minutes,
         )
 
 
@@ -82,6 +93,8 @@ class TrainingStandingDto(CamelModel):
     variant: Literal[GameVariant.TRAINING] = GameVariant.TRAINING
     # One per player, in seat order.
     players: list[TrainingPlayerDto]
+    # Seconds of a timed training left when this was sent; None before its first dart.
+    seconds_left: float | None
 
     @classmethod
     def from_entity(cls, game: Game, progress: TrainingProgress) -> Self:
@@ -105,7 +118,9 @@ class TrainingStandingDto(CamelModel):
                     ],
                 )
             )
-        return cls(players=players)
+        end = deadline(game.options, game.turns) if isinstance(game.options, TrainingOptions) else None
+        left = None if end is None else max((end - datetime.now(UTC)).total_seconds(), 0.0)
+        return cls(players=players, seconds_left=left)
 
 
 def _fields(fields: tuple[tuple[int, int], ...] | list[tuple[int, int]]) -> list[TrainingFieldDto]:

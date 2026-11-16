@@ -31,6 +31,12 @@
   color: var(--p-text-color);
 }
 
+.top-bar__limit {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--p-text-muted-color);
+}
+
 .top-bar__actions {
   display: flex;
   align-items: center;

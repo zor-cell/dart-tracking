@@ -10,7 +10,9 @@ import {
   KillerZone,
   PersonalFocus,
   PersonalLength,
+  TrainingEnd,
   TrainingGoal,
+  TrainingMinutes,
   TrainingRing,
 } from './variant-options';
 
@@ -39,6 +41,9 @@ export interface GameDraft {
     readonly trainingRepeats: number;
     readonly trainingShuffle: boolean;
     readonly trainingAnyRing: boolean;
+    readonly trainingEnd: TrainingEnd;
+    readonly trainingDarts: PersonalLength;
+    readonly trainingMinutes: TrainingMinutes;
     readonly personalFocus: PersonalFocus;
     readonly personalLength: PersonalLength;
     readonly personalAnyRing: boolean;

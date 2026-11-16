@@ -22,4 +22,6 @@ export interface TrainingStandingDto {
   readonly variant: 'training';
   /** One per player, in seat order. */
   readonly players: readonly TrainingPlayerDto[];
+  /** Seconds of a timed training left when the state was sent; null before its first dart. */
+  readonly secondsLeft: number | null;
 }

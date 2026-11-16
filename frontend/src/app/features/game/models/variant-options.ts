@@ -8,6 +8,9 @@ export type TrainingGoal = 'free' | 'random' | 'fields';
 export type TrainingRing = 'single' | 'double' | 'triple' | 'mixed';
 export type PersonalFocus = 'singles' | 'doubles' | 'triples' | 'all';
 export type PersonalLength = 45 | 90 | 150;
+export type TrainingMinutes = 10 | 15 | 30;
+/** How a free training ends; not sent, the server reads it from `darts` and `minutes`. */
+export type TrainingEnd = 'endless' | 'darts' | 'time';
 
 export const CRICKET_SCORINGS: readonly { label: string; value: CricketScoring }[] = [
   { label: 'Standard', value: 'standard' },
@@ -47,8 +50,46 @@ export const TRAINING_GOALS: readonly { label: string; value: TrainingGoal }[] =
   { label: $localize`:@@game.training.fields:Eigene Felder`, value: 'fields' },
 ];
 
-/** A random single target also taken by its double and triple. */
-export const ANY_RING = $localize`:@@game.new.anyRing:Double und Triple zählen auch`;
+/** A single target also taken by its double and triple. */
+export const ANY_RING = $localize`:@@game.new.anyRing:Double und Triple zählen für Single`;
+
+/** Whether a random training's ring brings up singles, where double and triple may count too. */
+export function trainingHasSingles(ring: TrainingRing): boolean {
+  return ring === 'single' || ring === 'mixed';
+}
+
+export const TRAINING_ENDS: readonly { label: string; value: TrainingEnd }[] = [
+  { label: $localize`:@@game.training.endless:Endlos`, value: 'endless' },
+  { label: 'Darts', value: 'darts' },
+  { label: $localize`:@@game.training.time:Zeit`, value: 'time' },
+];
+
+export const TRAINING_DARTS: readonly { label: string; value: PersonalLength }[] = [
+  { label: '45 Darts', value: 45 },
+  { label: '90 Darts', value: 90 },
+  { label: '150 Darts', value: 150 },
+];
+
+export const TRAINING_MINUTES: readonly { label: string; value: TrainingMinutes }[] = [
+  { label: '10 min', value: 10 },
+  { label: '15 min', value: 15 },
+  { label: '30 min', value: 30 },
+];
+
+export function trainingEndOf(settings: { readonly darts: number | null; readonly minutes: number | null }): TrainingEnd {
+  return settings.darts !== null ? 'darts' : settings.minutes !== null ? 'time' : 'endless';
+}
+
+/** How long a training runs, as its badge and the game detail name it: "90 Darts", "15 min". */
+export function trainingLimitLabel(settings: {
+  readonly darts: number | null;
+  readonly minutes: number | null;
+}): string | null {
+  if (settings.darts !== null) {
+    return `${settings.darts} Darts`;
+  }
+  return settings.minutes === null ? null : `${settings.minutes} min`;
+}
 
 export const TRAINING_RINGS: readonly { label: string; value: TrainingRing }[] = [
   { label: 'Single', value: 'single' },

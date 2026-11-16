@@ -41,6 +41,7 @@ from app.api.features.game.domain.training import (
     TrainingOptions,
     TrainingProgress,
     aimed_target,
+    limit_reached,
     training_progress,
 )
 from app.api.features.game.domain.turn import Turn
@@ -568,23 +569,36 @@ class Game:
 
     def stamp(self, now: datetime) -> None:
         """Date what the last change booked or closed: new darts, the visit just
-        handed over, and the open one once it won. A reopened visit is open again."""
+        handed over, and the open one once it won or ended. A reopened visit is open again."""
+        booked = False
         if len(self.turns) > 1 and self.turns[-2].ended_at is None:
-            self._date(self.turns[-2], now)
+            booked = self._date(self.turns[-2], now)
             self.turns[-2].ended_at = now
         current = self.current_turn
-        self._date(current, now)
+        booked = self._date(current, now) or booked
+        if booked and self._limit_reached():
+            self.ended = True
         if not self.over:
             current.ended_at = None
         elif current.ended_at is None:
             current.ended_at = now
 
     @staticmethod
-    def _date(turn: Turn, now: datetime) -> None:
+    def _date(turn: Turn, now: datetime) -> bool:
+        """Date the turn's new darts; whether it had any."""
+        new = any(dart.thrown_at is None for dart in turn.darts)
         turn.darts = [
             dart if dart.thrown_at is not None else replace(dart, thrown_at=now)
             for dart in turn.darts
         ]
+        return new
+
+    def _limit_reached(self) -> bool:
+        """Whether a training set to darts or minutes has thrown its last round."""
+        options = self.options
+        if not isinstance(options, TrainingOptions) or self.ended:
+            return False
+        return limit_reached(options, len(self.players), self.turns)
 
     def set_evaluation(self, enabled: bool) -> None:
         """Turn the test run on or off. Bumps the revision so the room is told,

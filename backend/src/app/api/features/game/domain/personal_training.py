@@ -3,10 +3,10 @@ set number of darts; the game is done once every planned dart is thrown."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from enum import IntEnum, StrEnum
+from enum import StrEnum
 
 from app.api.features.game.domain.target import Target
-from app.api.features.game.domain.training import Field
+from app.api.features.game.domain.training import Field, TrainingLength
 from app.api.features.game.domain.turn import Turn
 
 # Weak fields a plan trains, each in a block of its own.
@@ -28,12 +28,8 @@ class PersonalFocus(StrEnum):
         return {"singles": (None,), "doubles": (2,), "triples": (3,), "all": (None, 2, 3)}[self.value]
 
 
-class PersonalLength(IntEnum):
-    """Darts in a plan; multiples of a visit, so a block never splits one."""
-
-    SHORT = 45
-    MEDIUM = 90
-    LONG = 150
+# The plan's darts come in the same lengths as a free training's.
+PersonalLength = TrainingLength
 
 
 # Fields a plan fills up with while too few darts tell the weak ones, most played first.

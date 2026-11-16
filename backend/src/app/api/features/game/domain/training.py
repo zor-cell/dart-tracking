@@ -1,12 +1,14 @@
-"""Free training: throw for as long as you like, at nothing, at a random field or
-at fields of your own; nobody wins, the game is ended by hand."""
+"""Free training: throw at nothing, at a random field or at fields of your own,
+endlessly or for a set number of darts or minutes; nobody wins."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from enum import StrEnum
+from datetime import datetime, timedelta
+from enum import IntEnum, StrEnum
 from random import Random
 
 from app.api.features.game.domain.dart import Dart
+from app.api.features.game.domain.finish import DARTS_PER_TURN
 from app.api.features.game.domain.target import Target
 from app.api.features.game.domain.turn import Turn
 
@@ -35,6 +37,22 @@ class TrainingRing(StrEnum):
     MIXED = "mixed"
 
 
+class TrainingLength(IntEnum):
+    """Darts per player; multiples of a visit, so a round or block never splits one."""
+
+    SHORT = 45
+    MEDIUM = 90
+    LONG = 150
+
+
+class TrainingMinutes(IntEnum):
+    """Minutes a training runs from its first dart."""
+
+    TEN = 10
+    FIFTEEN = 15
+    THIRTY = 30
+
+
 @dataclass(frozen=True)
 class TrainingOptions:
     goal: TrainingGoal = TrainingGoal.FREE
@@ -46,6 +64,9 @@ class TrainingOptions:
     shuffle: bool = False
     # Whether any ring of a single field's number hits it.
     any_ring: bool = False
+    # The training ends after the round that reaches either; endless without both.
+    darts: TrainingLength | None = None
+    minutes: TrainingMinutes | None = None
     # What the random targets are drawn from, so a replay names the same ones.
     seed: int = 0
 
@@ -162,6 +183,25 @@ def aimed_target(field: Field, any_ring: bool) -> Target:
     """The field as a target; a single takes any ring of its number when `any_ring`."""
     value, multiplier = field
     return Target(value, None if any_ring and multiplier == 1 else multiplier)
+
+
+def deadline(options: TrainingOptions, turns: Sequence[Turn]) -> datetime | None:
+    """When the time runs out: the minutes from the first dart; None without a time or a dart."""
+    first = next((dart.thrown_at for turn in turns for dart in turn.darts), None)
+    if options.minutes is None or first is None:
+        return None
+    return first + timedelta(minutes=options.minutes)
+
+
+def limit_reached(options: TrainingOptions, players: int, turns: Sequence[Turn]) -> bool:
+    """Whether the last full round reached the darts, or was thrown after the time ran out."""
+    thrown = [turn for turn in turns if turn.darts]
+    if not thrown or len(thrown) % players or len(thrown[-1].darts) < DARTS_PER_TURN:
+        return False
+    if options.darts is not None and len(thrown) // players * DARTS_PER_TURN >= options.darts:
+        return True
+    end, last = deadline(options, turns), thrown[-1].darts[-1].thrown_at
+    return end is not None and last is not None and last >= end
 
 
 def _hits(dart: Dart, field: Field, any_ring: bool) -> bool:

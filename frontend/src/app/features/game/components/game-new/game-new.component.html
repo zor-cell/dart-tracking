@@ -104,13 +104,13 @@
               optionLabel="label"
               optionValue="value"
             />
+            @if (clockSkippable()) {
+              <div class="setup__switch">
+                <p-toggleswitch inputId="clockSkip" formControlName="clockSkip" />
+                <label for="clockSkip" i18n="@@game.new.clockSkip">Double und Triple springen weiter</label>
+              </div>
+            }
           </div>
-          @if (clockSkippable()) {
-            <div class="setup__switch">
-              <p-toggleswitch inputId="clockSkip" formControlName="clockSkip" />
-              <label for="clockSkip" i18n="@@game.new.clockSkip">Double und Triple springen weiter</label>
-            </div>
-          }
         }
         @case ('training') {
           <div class="setup__field">
@@ -142,10 +142,10 @@
                 optionLabel="label"
                 optionValue="value"
               />
-              @if (trainingRing() === 'single') {
+              @if (trainingSingles()) {
                 <div class="setup__switch">
                   <p-toggleswitch inputId="trainingAnyRing" formControlName="trainingAnyRing" />
-                  <label for="trainingAnyRing" i18n="@@game.new.anyRing">Double und Triple zählen auch</label>
+                  <label for="trainingAnyRing" i18n="@@game.new.anyRing">Double und Triple zählen für Single</label>
                 </div>
               }
             </div>
@@ -173,6 +173,37 @@
               />
             </div>
           }
+          <div class="setup__field">
+            <label class="setup__label" for="trainingEnd" i18n="@@game.training.end">Ende</label>
+            <p-selectbutton
+              inputId="trainingEnd"
+              formControlName="trainingEnd"
+              [allowEmpty]="false"
+              [options]="trainingEndOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
+            @if (trainingEnd() === 'darts') {
+              <p-selectbutton
+                ariaLabel="Darts"
+                formControlName="trainingDarts"
+                [allowEmpty]="false"
+                [options]="trainingDartsOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            } @else if (trainingEnd() === 'time') {
+              <p-selectbutton
+                ariaLabel="Zeit"
+                i18n-ariaLabel="@@game.training.time"
+                formControlName="trainingMinutes"
+                [allowEmpty]="false"
+                [options]="trainingMinutesOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            }
+          </div>
         }
         @case ('personal') {
           <div class="setup__field">
@@ -188,7 +219,7 @@
             @if (personalSingles()) {
               <div class="setup__switch">
                 <p-toggleswitch inputId="personalAnyRing" formControlName="personalAnyRing" />
-                <label for="personalAnyRing" i18n="@@game.new.anyRing">Double und Triple zählen auch</label>
+                <label for="personalAnyRing" i18n="@@game.new.anyRing">Double und Triple zählen für Single</label>
               </div>
             }
           </div>

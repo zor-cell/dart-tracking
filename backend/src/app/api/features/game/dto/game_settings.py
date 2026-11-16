@@ -85,6 +85,8 @@ def to_setup(
                     repeats=settings.repeats,
                     shuffle=settings.shuffle,
                     any_ring=settings.any_ring,
+                    darts=settings.darts,
+                    minutes=settings.minutes,
                     seed=randrange(2**31),
                 ),
             )

@@ -1,6 +1,6 @@
 """The settings of a free training."""
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String
+from sqlalchemy import Boolean, ForeignKey, Integer, SmallInteger, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -20,4 +20,7 @@ class TrainingSettingsTable(Base):
     repeats: Mapped[int] = mapped_column(Integer, default=1)
     shuffle: Mapped[bool] = mapped_column(Boolean, default=False)
     any_ring: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Darts per player or minutes the training runs; both NULL when endless.
+    darts: Mapped[int | None] = mapped_column(SmallInteger, default=None)
+    minutes: Mapped[int | None] = mapped_column(SmallInteger, default=None)
     seed: Mapped[int] = mapped_column(Integer, default=0)

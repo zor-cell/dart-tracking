@@ -22,6 +22,7 @@ import {
   fieldLabel,
   optionLabel,
   scoringLabel,
+  trainingLimitLabel,
 } from '../../models/variant-options';
 import { activeGameId } from '../../services/active-game';
 import { personalBlocks } from '../../models/personal-blocks';
@@ -159,7 +160,8 @@ export class GameDetailComponent {
       }[settings.goal];
       const anyRing = settings.anyRing ? [ANY_RING] : [];
       const repeats = settings.goal !== 'free' && settings.repeats > 1 ? [`${settings.repeats}×`] : [];
-      return [goal, ...detail, ...anyRing, ...repeats].join(', ');
+      const limit = trainingLimitLabel(settings);
+      return [goal, ...detail, ...anyRing, ...repeats, ...(limit === null ? [] : [limit])].join(', ');
     }
     const { catchUp, playOn } = finishOf(settings);
     const finish = [

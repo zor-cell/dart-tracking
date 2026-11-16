@@ -85,6 +85,12 @@ export function setupBadges(settings: GameSettingsDto): SetupBadge[] {
         const fields = settings.fields.map(fieldLabel).join(' ');
         badges.push({ label: fields, icon: null, title: optionLabel(TRAINING_GOALS, 'fields'), hint: null });
       }
+      if (settings.darts !== null) {
+        badges.push({ label: `${settings.darts}`, icon: null, title: `${settings.darts} Darts`, hint: null });
+      }
+      if (settings.minutes !== null) {
+        badges.push(iconed('pi-stopwatch', `${settings.minutes} min`, null));
+      }
       break;
     case 'personal':
       if (settings.focus !== 'all') {

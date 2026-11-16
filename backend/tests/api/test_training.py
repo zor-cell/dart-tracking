@@ -28,6 +28,21 @@ def test_a_training_starts_free_and_carries_its_own_standing(anon):
     assert anon.get(f"/games/{game['id']}").json() == game
 
 
+@pytest.mark.parametrize("limit", [{"darts": 90, "minutes": 15}, {"darts": 60}, {"minutes": 5}])
+def test_a_training_ends_by_one_of_the_offered_limits(anon, limit):
+    assert create(anon, "Ann", **limit).status_code == 422
+
+
+def test_a_timed_training_counts_down_from_its_first_dart(anon, session):
+    game = create(anon, "Ann", minutes=15).json()
+    assert game["standing"]["secondsLeft"] is None
+
+    session.play(game["id"], [(20, 1)], hand_over=False)
+    session.sql("UPDATE game_darts SET thrown_at = now() - interval '1 minute'")
+    left = anon.get(f"/games/{game['id']}").json()["standing"]["secondsLeft"]
+    assert 13 * 60 < left <= 14 * 60
+
+
 def test_own_fields_are_kept_and_come_back_with_the_game(anon):
     game = create(anon, "Ann", goal="fields", fields=[T19, D16]).json()
 
@@ -122,6 +137,8 @@ def test_the_most_played_training_is_offered_as_quick_start(alice, session):
         "repeats": 1,
         "shuffle": False,
         "anyRing": False,
+        "darts": None,
+        "minutes": None,
     }
 
 
