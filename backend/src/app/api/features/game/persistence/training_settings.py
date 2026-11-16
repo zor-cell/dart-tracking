@@ -8,7 +8,7 @@ from app.infrastructure.database import Base
 
 
 class TrainingSettingsTable(Base):
-    __tablename__ = "game_training"
+    __tablename__ = "variant_training"
 
     game_id: Mapped[str] = mapped_column(
         ForeignKey("games.id", ondelete="CASCADE"), primary_key=True

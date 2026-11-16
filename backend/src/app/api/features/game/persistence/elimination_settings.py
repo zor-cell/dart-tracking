@@ -7,7 +7,7 @@ from app.infrastructure.database import Base
 
 
 class EliminationSettingsTable(Base):
-    __tablename__ = "game_elimination"
+    __tablename__ = "variant_elimination"
 
     game_id: Mapped[str] = mapped_column(
         ForeignKey("games.id", ondelete="CASCADE"), primary_key=True

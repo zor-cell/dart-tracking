@@ -7,7 +7,7 @@ from app.infrastructure.database import Base
 
 
 class ClockSettingsTable(Base):
-    __tablename__ = "game_around_the_clock"
+    __tablename__ = "variant_around_the_clock"
 
     game_id: Mapped[str] = mapped_column(
         ForeignKey("games.id", ondelete="CASCADE"), primary_key=True

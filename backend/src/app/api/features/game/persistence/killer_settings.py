@@ -8,7 +8,7 @@ from app.infrastructure.database import Base
 
 
 class KillerSettingsTable(Base):
-    __tablename__ = "game_killer"
+    __tablename__ = "variant_killer"
 
     game_id: Mapped[str] = mapped_column(
         ForeignKey("games.id", ondelete="CASCADE"), primary_key=True

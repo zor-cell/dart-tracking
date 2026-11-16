@@ -10,7 +10,7 @@ from app.infrastructure.database import Base
 
 
 class PersonalSettingsTable(Base):
-    __tablename__ = "game_personal"
+    __tablename__ = "variant_personal"
 
     game_id: Mapped[str] = mapped_column(
         ForeignKey("games.id", ondelete="CASCADE"), primary_key=True

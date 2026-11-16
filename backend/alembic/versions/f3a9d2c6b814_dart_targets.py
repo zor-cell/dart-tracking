@@ -47,12 +47,14 @@ def _backfill(session: Session) -> None:
     inspector = sa.inspect(session.connection())
     existing = set(inspector.get_table_names())
     for table in SETTINGS_TABLES.values():
-        if table.__tablename__ not in existing:
+        # The tables were still called game_<variant> at this revision.
+        name = "game_" + table.__tablename__.removeprefix("variant_")
+        if name not in existing:
             continue
         # Columns added by later revisions are left at their model default.
-        present = {column["name"] for column in inspector.get_columns(table.__tablename__)}
+        present = {column["name"] for column in inspector.get_columns(name)}
         columns = [column.name for column in table.__table__.columns if column.name in present]
-        rows = session.execute(sa.text(f"SELECT {', '.join(columns)} FROM {table.__tablename__}"))
+        rows = session.execute(sa.text(f"SELECT {', '.join(columns)} FROM {name}"))
         for row in rows.mappings():
             setups[str(row["game_id"])] = setup_of(table(**row))
 

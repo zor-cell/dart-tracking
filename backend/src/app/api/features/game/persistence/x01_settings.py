@@ -7,7 +7,7 @@ from app.infrastructure.database import Base
 
 
 class X01SettingsTable(Base):
-    __tablename__ = "game_x01"
+    __tablename__ = "variant_x01"
 
     game_id: Mapped[str] = mapped_column(
         ForeignKey("games.id", ondelete="CASCADE"), primary_key=True

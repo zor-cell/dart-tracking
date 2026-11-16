@@ -4,12 +4,12 @@ from alembic import command
 from tests.api.support import alembic_config
 
 TABLES = {
-    "x01": "game_x01",
-    "elimination": "game_elimination",
-    "cricket": "game_cricket",
-    "killer": "game_killer",
-    "around_the_clock": "game_around_the_clock",
-    "training": "game_training",
+    "x01": "variant_x01",
+    "elimination": "variant_elimination",
+    "cricket": "variant_cricket",
+    "killer": "variant_killer",
+    "around_the_clock": "variant_around_the_clock",
+    "training": "variant_training",
 }
 SETTINGS = [
     {"variant": "x01", "mode": 501, "checkoutMode": "single_out", "catchUp": True},
@@ -43,7 +43,7 @@ def test_settings_are_stored_in_the_table_of_their_variant_alone(anon, session, 
 def test_killer_keeps_the_dealt_numbers_by_seat(anon, session):
     game = anon.new_game(*GUESTS, settings={"variant": "killer"})
 
-    (numbers,) = session.sql("SELECT numbers FROM game_killer")[0]
+    (numbers,) = session.sql("SELECT numbers FROM variant_killer")[0]
 
     assert numbers == [player["number"] for player in game["standing"]["players"]]
 
@@ -53,7 +53,7 @@ def test_deleting_a_game_drops_its_settings(anon, session):
 
     session.sql("DELETE FROM games WHERE id = :id", id=game["id"])
 
-    assert session.sql("SELECT game_id FROM game_cricket") == []
+    assert session.sql("SELECT game_id FROM variant_cricket") == []
 
 
 def test_every_dart_is_stored_with_the_field_it_was_thrown_at(anon, session):
@@ -113,16 +113,16 @@ def test_the_migrations_move_stored_games_into_the_settings_tables(session):
     finally:
         command.upgrade(config, "head")
 
-    assert tuple(session.sql("SELECT start_score, checkout_mode, catch_up FROM game_x01")[0]) == (
+    assert tuple(session.sql("SELECT start_score, checkout_mode, catch_up FROM variant_x01")[0]) == (
         501,
         "single_out",
         True,
     )
-    assert tuple(session.sql("SELECT start_score, kill FROM game_elimination")[0]) == (301, "any")
-    assert session.sql("SELECT scoring FROM game_cricket")[0][0] == "no_score"
-    assert tuple(session.sql("SELECT numbers, lives, zone FROM game_killer")[0]) == ([7, 12], 5, "any")
-    assert tuple(session.sql("SELECT zone, skip FROM game_around_the_clock")[0]) == ("double", False)
-    assert tuple(session.sql("SELECT goal, fields, repeats, seed FROM game_training")[0]) == (
+    assert tuple(session.sql("SELECT start_score, kill FROM variant_elimination")[0]) == (301, "any")
+    assert session.sql("SELECT scoring FROM variant_cricket")[0][0] == "no_score"
+    assert tuple(session.sql("SELECT numbers, lives, zone FROM variant_killer")[0]) == ([7, 12], 5, "any")
+    assert tuple(session.sql("SELECT zone, skip FROM variant_around_the_clock")[0]) == ("double", False)
+    assert tuple(session.sql("SELECT goal, fields, repeats, seed FROM variant_training")[0]) == (
         "fields",
         [[19, 3]],
         1,
@@ -132,3 +132,13 @@ def test_the_migrations_move_stored_games_into_the_settings_tables(session):
         "SELECT target_value, target_multiplier FROM game_darts ORDER BY dart_index"
     )
     assert [tuple(row) for row in targets] == [(1, 2), (2, 2)]
+
+
+def test_the_variant_tables_carry_their_name_in_every_constraint(session):
+    names = session.sql(
+        "SELECT conrelid::regclass::text, conname FROM pg_constraint"
+        " WHERE conrelid::regclass::text LIKE 'variant\_%'"
+    )
+
+    assert len({table for table, _ in names}) == 7
+    assert all(name.startswith(f"{table}_") for table, name in names)
