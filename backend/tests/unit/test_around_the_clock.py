@@ -119,6 +119,13 @@ def test_skipping_moves_on_by_the_ring():
     assert target(game) == 6
 
 
+def test_a_game_started_without_settings_skips():
+    game = new_game(2, variant=GameVariant.AROUND_THE_CLOCK)
+    play(game, "T1")
+
+    assert target(game) == 4
+
+
 def test_without_skipping_a_triple_moves_on_one():
     game = clock()
     play(game, "T1")

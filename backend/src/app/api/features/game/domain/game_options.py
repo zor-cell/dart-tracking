@@ -29,7 +29,7 @@ def default_options(variant: GameVariant, players: int) -> GameOptions | None:
         case GameVariant.KILLER:
             return KillerOptions(numbers=KILLER_NUMBERS[:players])
         case GameVariant.AROUND_THE_CLOCK:
-            return ClockOptions()
+            return ClockOptions(skip=True)
         case GameVariant.ELIMINATION:
             return EliminationOptions()
         case GameVariant.TRAINING:

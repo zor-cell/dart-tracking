@@ -177,7 +177,7 @@ export class GameNewComponent {
     killerLives: this.fb.nonNullable.control(3),
     killerZone: this.fb.nonNullable.control<KillerZone>('double'),
     clockZone: this.fb.nonNullable.control<ClockZone>('any'),
-    clockSkip: this.fb.nonNullable.control(false),
+    clockSkip: this.fb.nonNullable.control(true),
     eliminationKill: this.fb.nonNullable.control<EliminationKill>('any'),
     trainingGoal: this.fb.nonNullable.control<TrainingGoal>('free'),
     trainingRing: this.fb.nonNullable.control<TrainingRing>('single'),
