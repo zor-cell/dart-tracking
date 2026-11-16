@@ -115,7 +115,8 @@ export class DetectionService {
     this.clearFeedback();
     const testRun = this.game.state()?.evaluationEnabled ?? false;
     await this.socket.sendFrame('detection_frame', frame, {
-      trigger: trigger && !testRun ? { ...trigger, snapshots: [] } : (trigger ?? undefined),
+      trigger:
+        trigger && !testRun ? { ...trigger, timeline: [], snapshots: [] } : (trigger ?? undefined),
       advanceOnPull: this.settings.advanceOnPull(),
     });
   }
