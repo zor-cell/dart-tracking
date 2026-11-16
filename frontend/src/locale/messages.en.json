@@ -404,6 +404,7 @@
     "game.none": "No active game.",
     "game.calibrate": "Calibrate board",
     "game.fullscreen": "Camera in full screen",
+    "game.boardFullscreen": "Board in full screen",
     "game.exitFullscreen": "Exit full screen",
     "game.undo": "Undo",
     "game.deleteDart": "Delete selected dart",

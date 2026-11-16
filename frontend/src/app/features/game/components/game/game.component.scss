@@ -7,21 +7,42 @@
   min-height: 0;
 }
 
-// Fullscreen camera: the top bar stays, the picture takes the rest of the screen.
-:host(.camera-expanded) {
+// Fullscreen camera or board: the top bar stays, the view takes the rest of the screen.
+:host(.camera-expanded),
+:host(.board-expanded) {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: #000;
 
   .game {
     padding: 0;
     overflow: hidden;
   }
 
-  .game > :not(.game__stage),
+  .game > :not(.game__stage) {
+    display: none;
+  }
+}
+
+:host(.camera-expanded) {
+  background: #000;
+
   .game__stage > :not(.game__camera) {
     display: none;
+  }
+}
+
+// The board as wide as the screen, keeping its buttons and the camera inset.
+:host(.board-expanded) {
+  --board-max-width: none;
+  background: var(--p-content-background);
+
+  .game__stage > :not(.game__board, .game__camera) {
+    display: none;
+  }
+
+  .game__board {
+    padding: 0.5rem;
   }
 }
 

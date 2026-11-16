@@ -470,6 +470,7 @@
     "game.none": "Kein aktives Spiel.",
     "game.calibrate": "Board kalibrieren",
     "game.fullscreen": "Kamera im Vollbild",
+    "game.boardFullscreen": "Board im Vollbild",
     "game.exitFullscreen": "Vollbild verlassen",
     "game.undo": "Zurück",
     "game.deleteDart": "Ausgewählten Dart löschen",

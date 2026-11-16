@@ -61,6 +61,15 @@
                 (onClick)="switchRole()"
               />
             }
+            <p-button
+              class="game__expand"
+              [icon]="expanded() === 'board' ? 'pi pi-window-minimize' : 'pi pi-expand'"
+              [rounded]="true"
+              severity="secondary"
+              size="small"
+              [ariaLabel]="expanded() === 'board' ? exitFullscreenLabel : boardFullscreenLabel"
+              (onClick)="toggleExpanded('board')"
+            />
             @if (roomCalibration() !== 'no_camera') {
               <div class="game__recalibrate">
                 <app-tracking-toggle />
@@ -81,7 +90,7 @@
         @if (deviceRole() === 'camera') {
           <div
             class="game__camera"
-            [class.game__camera--expanded]="cameraExpanded()"
+            [class.game__camera--expanded]="expanded() === 'camera'"
             [class.game__camera--inset]="boardShown()"
             [style.aspect-ratio]="boardShown() ? videoAspect() : null"
           >
@@ -199,12 +208,12 @@
                 />
                 <p-button
                   class="game__expand"
-                  [icon]="cameraExpanded() ? 'pi pi-window-minimize' : 'pi pi-expand'"
+                  [icon]="expanded() === 'camera' ? 'pi pi-window-minimize' : 'pi pi-expand'"
                   [rounded]="true"
                   severity="secondary"
                   size="small"
-                  [ariaLabel]="cameraExpanded() ? exitFullscreenLabel : fullscreenLabel"
-                  (onClick)="toggleCameraExpanded()"
+                  [ariaLabel]="expanded() === 'camera' ? exitFullscreenLabel : fullscreenLabel"
+                  (onClick)="toggleExpanded('camera')"
                 />
               }
             }

@@ -10,7 +10,7 @@
 .board {
   display: block;
   width: 100%;
-  max-width: 20rem;
+  max-width: var(--board-max-width, 20rem);
   height: 100%;
 }
 

@@ -108,7 +108,10 @@ const SIDE_KEYS: readonly FixedKey[] = [MISS, BULL, BULLSEYE];
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '[class.camera-expanded]': 'cameraExpanded()' },
+  host: {
+    '[class.camera-expanded]': "expanded() === 'camera'",
+    '[class.board-expanded]': "expanded() === 'board'",
+  },
 })
 export class GameComponent implements OnInit, OnDestroy {
   protected readonly game = inject(GameService);
@@ -136,6 +139,7 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly calibrateLabel = $localize`:@@game.calibrate:Board kalibrieren`;
   protected readonly recalibrateLabel = $localize`:@@game.recalibrate:Rekalibrieren`;
   protected readonly fullscreenLabel = $localize`:@@game.fullscreen:Kamera im Vollbild`;
+  protected readonly boardFullscreenLabel = $localize`:@@game.boardFullscreen:Board im Vollbild`;
   protected readonly exitFullscreenLabel = $localize`:@@game.exitFullscreen:Vollbild verlassen`;
   protected readonly undoLabel = $localize`:@@game.undo:Zurück`;
   protected readonly deleteDartLabel = $localize`:@@game.deleteDart:Ausgewählten Dart löschen`;
@@ -158,7 +162,8 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly padRows = PAD_ROWS;
   protected readonly sideKeys = SIDE_KEYS;
 
-  protected readonly cameraExpanded = signal(false);
+  /** Which of camera and board fills the screen below the top bar, if either. */
+  protected readonly expanded = signal<'camera' | 'board' | null>(null);
 
   /** Whether this camera device shows the drawn board, its picture shrunk to an inset. */
   protected readonly boardShown = signal(false);
@@ -305,7 +310,7 @@ export class GameComponent implements OnInit, OnDestroy {
     effect(() => {
       const phase = this.cameraPhase();
       if (phase === 'idle') {
-        this.collapseCamera();
+        this.collapse();
         this.boardShown.set(false);
       } else if (phase === 'tracking' && !tracking && readStored(BOARD_SHOWN_KEY) === 'true') {
         this.boardShown.set(true);
@@ -316,7 +321,7 @@ export class GameComponent implements OnInit, OnDestroy {
     // Leaving browser fullscreen by gesture or back button collapses the view too.
     const onFullscreenChange = () => {
       if (!this.document.fullscreenElement) {
-        this.cameraExpanded.set(false);
+        this.expanded.set(null);
       }
     };
     this.document.addEventListener('fullscreenchange', onFullscreenChange);
@@ -378,31 +383,39 @@ export class GameComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Fills the screen with the camera below the top bar; browser fullscreen where
-   * supported, a fixed overlay otherwise (iPhone). */
-  protected toggleCameraExpanded(): void {
-    if (this.cameraExpanded()) {
-      this.collapseCamera();
+  /** Fills the screen with the camera or the board below the top bar; browser
+   * fullscreen where supported, a fixed overlay otherwise (iPhone). */
+  protected toggleExpanded(view: 'camera' | 'board'): void {
+    if (this.expanded() === view) {
+      this.collapse();
       return;
     }
-    this.cameraExpanded.set(true);
+    this.expanded.set(view);
     this.document.documentElement.requestFullscreen?.().catch(() => {});
   }
 
   /** The board in the picture's place, while the camera keeps tracking in an inset. */
   protected showBoard(): void {
-    this.collapseCamera();
+    if (this.expanded() === 'camera') {
+      this.expanded.set('board');
+    } else {
+      this.collapse();
+    }
     this.boardShown.set(true);
     writeStored(BOARD_SHOWN_KEY, 'true');
   }
 
   /** The camera picture large again, in the board's place. */
   protected showCamera(): void {
+    if (this.expanded() === 'board') {
+      this.expanded.set('camera');
+    }
     this.boardShown.set(false);
     writeStored(BOARD_SHOWN_KEY, null);
   }
 
   protected switchRole(): void {
+    this.collapse();
     this.boardShown.set(false);
     this.session.setRole(this.deviceRole() === 'camera' ? 'scoreboard' : 'camera');
   }
@@ -492,8 +505,8 @@ export class GameComponent implements OnInit, OnDestroy {
     this.multiplier.set(1);
   }
 
-  private collapseCamera(): void {
-    this.cameraExpanded.set(false);
+  private collapse(): void {
+    this.expanded.set(null);
     if (this.document.fullscreenElement) {
       void this.document.exitFullscreen();
     }
