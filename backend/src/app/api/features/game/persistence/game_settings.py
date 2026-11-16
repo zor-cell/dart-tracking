@@ -77,6 +77,7 @@ def settings_row(game_id: str, setup: GameSetup) -> SettingsRow:
                 fields=[list(field) for field in training.fields],
                 repeats=training.repeats,
                 shuffle=training.shuffle,
+                any_ring=training.any_ring,
                 seed=training.seed,
             )
         case PersonalOptions() as personal:
@@ -153,6 +154,7 @@ def setup_of(row: SettingsRow) -> GameSetup:
                     fields=tuple((value, multiplier) for value, multiplier in row.fields),
                     repeats=row.repeats,
                     shuffle=row.shuffle,
+                    any_ring=row.any_ring,
                     seed=row.seed,
                 ),
             )

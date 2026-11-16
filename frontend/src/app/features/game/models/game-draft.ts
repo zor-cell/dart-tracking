@@ -38,6 +38,7 @@ export interface GameDraft {
     readonly trainingFields: readonly TrainingFieldDto[];
     readonly trainingRepeats: number;
     readonly trainingShuffle: boolean;
+    readonly trainingAnyRing: boolean;
     readonly personalFocus: PersonalFocus;
     readonly personalLength: PersonalLength;
     readonly personalAnyRing: boolean;

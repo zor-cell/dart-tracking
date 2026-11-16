@@ -19,4 +19,5 @@ class TrainingSettingsTable(Base):
     fields: Mapped[list[list[int]]] = mapped_column(JSONB, default=list)
     repeats: Mapped[int] = mapped_column(Integer, default=1)
     shuffle: Mapped[bool] = mapped_column(Boolean, default=False)
+    any_ring: Mapped[bool] = mapped_column(Boolean, default=False)
     seed: Mapped[int] = mapped_column(Integer, default=0)

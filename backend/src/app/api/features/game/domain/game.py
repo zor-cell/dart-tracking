@@ -37,7 +37,12 @@ from app.api.features.game.domain.personal_training import (
 )
 from app.api.features.game.domain.player import Player
 from app.api.features.game.domain.target import Target, finishing_double
-from app.api.features.game.domain.training import TrainingOptions, TrainingProgress, training_progress
+from app.api.features.game.domain.training import (
+    TrainingOptions,
+    TrainingProgress,
+    aimed_target,
+    training_progress,
+)
 from app.api.features.game.domain.turn import Turn
 
 DARTS_PER_TURN = 3
@@ -119,9 +124,9 @@ class Game:
                     [None if n is None else Target(n, ring) for n in turn]
                     for turn in progress.turn_targets
                 ]
-            case TrainingProgress():
+            case TrainingProgress() if isinstance(options, TrainingOptions):
                 return [
-                    [None if aimed is None else Target(*aimed) for aimed in turn]
+                    [None if aimed is None else aimed_target(aimed, options.any_ring) for aimed in turn]
                     for turn in progress.turn_targets
                 ]
             case PersonalProgress() if isinstance(options, PersonalOptions):

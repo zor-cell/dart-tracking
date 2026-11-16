@@ -17,4 +17,6 @@ export interface TrainingSettingsDto {
   readonly repeats: number;
   /** Whether the own fields come up at random rather than in order. */
   readonly shuffle: boolean;
+  /** Whether any ring of a single field's number hits it. */
+  readonly anyRing: boolean;
 }

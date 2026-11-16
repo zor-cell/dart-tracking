@@ -423,6 +423,7 @@
     "settings.announcerLanguageHint": "The language the throws are called in.",
     "settings.announcerVoiceHint": "Who calls in the chosen language.",
     "game.new.shuffleFields": "Random order",
+    "game.new.anyRing": "Doubles and trebles count too",
     "game.new.repeats": "Hits per field",
     "game.variant.training": "Free training",
     "game.training.free": "Free",

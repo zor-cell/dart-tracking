@@ -84,6 +84,7 @@ def to_setup(
                     fields=tuple((field.value, field.multiplier) for field in settings.fields),
                     repeats=settings.repeats,
                     shuffle=settings.shuffle,
+                    any_ring=settings.any_ring,
                     seed=randrange(2**31),
                 ),
             )

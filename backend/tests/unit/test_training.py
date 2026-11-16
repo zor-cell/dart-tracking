@@ -200,3 +200,19 @@ def test_the_quick_start_ignores_the_seed():
     ]
 
     assert setups[0] == setups[1]
+
+
+@pytest.mark.parametrize(("any_ring", "hits"), [(True, 3), (False, 1)])
+def test_any_ring_lets_doubles_and_triples_hit_a_single(any_ring, hits):
+    game = training(goal=TrainingGoal.FIELDS, fields=((20, 1),), repeats=9, any_ring=any_ring)
+    play(game, "20 D20 T20")
+
+    assert standing(game).hits == hits
+    assert [target.multiplier for target in game.targets()[0]] == [None if any_ring else 1] * 3
+
+
+def test_any_ring_keeps_doubles_and_triples_exact():
+    game = training(goal=TrainingGoal.FIELDS, fields=(T19,), repeats=9, any_ring=True)
+    play(game, "19 D19 T19")
+
+    assert standing(game).hits == 1

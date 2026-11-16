@@ -396,6 +396,7 @@
     "game.new.goal": "Ziel",
     "game.new.fields": "Felder",
     "game.new.shuffleFields": "Zufällige Reihenfolge",
+    "game.new.anyRing": "Double und Triple zählen auch",
     "game.new.repeats": "Treffer pro Feld",
     "game.new.finish": "Spielende",
     "game.new.catchUpInfo": "Was heißt mit Nachziehen?",

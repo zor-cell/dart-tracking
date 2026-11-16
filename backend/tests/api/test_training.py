@@ -121,6 +121,7 @@ def test_the_most_played_training_is_offered_as_quick_start(alice, session):
         "fields": [],
         "repeats": 1,
         "shuffle": False,
+        "anyRing": False,
     }
 
 

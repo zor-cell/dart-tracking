@@ -184,6 +184,7 @@ export class GameNewComponent {
     trainingFields: this.fb.nonNullable.control<readonly TrainingFieldDto[]>([]),
     trainingRepeats: this.fb.nonNullable.control(1),
     trainingShuffle: this.fb.nonNullable.control(false),
+    trainingAnyRing: this.fb.nonNullable.control(true),
     personalFocus: this.fb.nonNullable.control<PersonalFocus>('all'),
     personalLength: this.fb.nonNullable.control<PersonalLength>(90),
     personalAnyRing: this.fb.nonNullable.control(true),
@@ -251,6 +252,9 @@ export class GameNewComponent {
   });
   protected readonly trainingGoal = toSignal(this.form.controls.trainingGoal.valueChanges, {
     initialValue: this.form.controls.trainingGoal.value,
+  });
+  protected readonly trainingRing = toSignal(this.form.controls.trainingRing.valueChanges, {
+    initialValue: this.form.controls.trainingRing.value,
   });
   protected readonly pickedFields = toSignal(this.form.controls.trainingFields.valueChanges, {
     initialValue: this.form.controls.trainingFields.value,
@@ -410,6 +414,7 @@ export class GameNewComponent {
       mode, variant, checkoutMode, players, cricketScoring, killerLives, killerZone,
       clockZone, clockSkip, eliminationKill, catchUp, playOn,
       trainingGoal, trainingRing, trainingFields, trainingRepeats, trainingShuffle,
+      trainingAnyRing,
       personalFocus, personalLength, personalAnyRing,
     } = this.form.getRawValue();
     const seats = (players as Seat[]).map<PlayerSlotDto>((seat) =>
@@ -434,6 +439,7 @@ export class GameNewComponent {
         fields: trainingGoal === 'fields' ? trainingFields : [],
         repeats: trainingGoal === 'free' ? 1 : trainingRepeats,
         shuffle: trainingGoal === 'fields' && trainingShuffle,
+        anyRing: trainingGoal === 'random' && trainingRing === 'single' && trainingAnyRing,
       },
       personal: {
         variant: 'personal',
@@ -640,6 +646,7 @@ function formValues(settings: GameSettingsDto) {
         trainingFields: settings.fields,
         trainingRepeats: settings.repeats,
         trainingShuffle: settings.shuffle,
+        trainingAnyRing: settings.anyRing,
       };
     case 'personal':
       return {

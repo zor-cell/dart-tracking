@@ -2,6 +2,7 @@ import { GameSettingsDto } from '../dto/game-settings.dto';
 import { CHECKOUT_HINTS, CLOCK_ZONE_HINTS, KILL_HINTS, KILLER_ZONE_HINTS, SCORING_HINTS, SettingHint } from './setting-hints';
 import { variantLabel } from './game-variant';
 import {
+  ANY_RING,
   PERSONAL_FOCI,
   PERSONAL_LENGTHS,
   personalHasSingles,
@@ -77,7 +78,8 @@ export function setupBadges(settings: GameSettingsDto): SetupBadge[] {
     case 'training':
       if (settings.goal === 'random') {
         const ring = optionLabel(TRAINING_RINGS, settings.ring);
-        badges.push(iconed('pi-sync', `${optionLabel(TRAINING_GOALS, 'random')}, ${ring}`, null));
+        const title = [optionLabel(TRAINING_GOALS, 'random'), ring, ...(settings.anyRing ? [ANY_RING] : [])];
+        badges.push(iconed('pi-sync', title.join(', '), null));
       }
       if (settings.goal === 'fields') {
         const fields = settings.fields.map(fieldLabel).join(' ');

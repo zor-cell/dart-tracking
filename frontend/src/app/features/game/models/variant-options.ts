@@ -47,6 +47,9 @@ export const TRAINING_GOALS: readonly { label: string; value: TrainingGoal }[] =
   { label: $localize`:@@game.training.fields:Eigene Felder`, value: 'fields' },
 ];
 
+/** A random single target also taken by its double and triple. */
+export const ANY_RING = $localize`:@@game.new.anyRing:Double und Triple zählen auch`;
+
 export const TRAINING_RINGS: readonly { label: string; value: TrainingRing }[] = [
   { label: 'Single', value: 'single' },
   { label: 'Double', value: 'double' },

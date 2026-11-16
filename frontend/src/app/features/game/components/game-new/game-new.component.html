@@ -142,6 +142,12 @@
                 optionLabel="label"
                 optionValue="value"
               />
+              @if (trainingRing() === 'single') {
+                <div class="setup__switch">
+                  <p-toggleswitch inputId="trainingAnyRing" formControlName="trainingAnyRing" />
+                  <label for="trainingAnyRing" i18n="@@game.new.anyRing">Double und Triple zählen auch</label>
+                </div>
+              }
             </div>
           }
           @if (trainingGoal() === 'fields') {

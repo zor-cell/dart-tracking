@@ -17,7 +17,7 @@ SETTINGS = [
     {"variant": "cricket", "scoring": "cut_throat"},
     {"variant": "killer", "lives": 5, "zone": "triple"},
     {"variant": "around_the_clock", "zone": "double", "playOn": True},
-    {"variant": "training", "goal": "fields", "fields": [{"value": 19, "multiplier": 3}]},
+    {"variant": "training", "goal": "fields", "fields": [{"value": 19, "multiplier": 3}], "anyRing": True},
 ]
 GUESTS = [{"name": "Ann"}, {"name": "Ben"}, {"name": "Cid"}]
 

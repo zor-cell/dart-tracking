@@ -12,6 +12,7 @@ import { CHECKOUT_MODES } from '../../models/checkout-mode';
 import { finishOf, modeOf, playOf } from '../../models/game-settings';
 import { countsPoints, variantLabel } from '../../models/game-variant';
 import {
+  ANY_RING,
   CLOCK_ZONES,
   KILLER_ZONES,
   PERSONAL_FOCI,
@@ -156,8 +157,9 @@ export class GameDetailComponent {
         random: [optionLabel(TRAINING_RINGS, settings.ring)],
         fields: [settings.fields.map(fieldLabel).join(' ')],
       }[settings.goal];
+      const anyRing = settings.anyRing ? [ANY_RING] : [];
       const repeats = settings.goal !== 'free' && settings.repeats > 1 ? [`${settings.repeats}×`] : [];
-      return [goal, ...detail, ...repeats].join(', ');
+      return [goal, ...detail, ...anyRing, ...repeats].join(', ');
     }
     const { catchUp, playOn } = finishOf(settings);
     const finish = [

@@ -7,6 +7,7 @@ from enum import StrEnum
 from random import Random
 
 from app.api.features.game.domain.dart import Dart
+from app.api.features.game.domain.target import Target
 from app.api.features.game.domain.turn import Turn
 
 # A board field as value and multiplier: (19, 3) is T19, (25, 2) the bull.
@@ -43,6 +44,8 @@ class TrainingOptions:
     repeats: int = 1
     # Whether the own fields come up at random rather than in order.
     shuffle: bool = False
+    # Whether any ring of a single field's number hits it.
+    any_ring: bool = False
     # What the random targets are drawn from, so a replay names the same ones.
     seed: int = 0
 
@@ -140,7 +143,7 @@ def training_progress(
                 continue
             tally = player.tallies.setdefault(player.target, FieldTally())
             tally.darts += 1
-            if not _hits(dart, player.target):
+            if not _hits(dart, player.target, options.any_ring):
                 continue
             tally.hits += 1
             hits += 1
@@ -155,5 +158,11 @@ def training_progress(
     return progress
 
 
-def _hits(dart: Dart, target: Field) -> bool:
-    return (dart.value, dart.multiplier) == target
+def aimed_target(field: Field, any_ring: bool) -> Target:
+    """The field as a target; a single takes any ring of its number when `any_ring`."""
+    value, multiplier = field
+    return Target(value, None if any_ring and multiplier == 1 else multiplier)
+
+
+def _hits(dart: Dart, field: Field, any_ring: bool) -> bool:
+    return aimed_target(field, any_ring).hit_by(dart.value, dart.multiplier)

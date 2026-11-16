@@ -36,6 +36,8 @@ class TrainingSettingsDto(CamelModel):
     repeats: int = Field(1, ge=1, le=MAX_REPEATS)
     # Whether the own fields come up at random rather than in order.
     shuffle: bool = False
+    # Whether any ring of a single field's number hits it.
+    any_ring: bool = False
 
     @model_validator(mode="after")
     def _fields_chosen(self) -> Self:
@@ -54,6 +56,7 @@ class TrainingSettingsDto(CamelModel):
             fields=_fields(options.fields),
             repeats=options.repeats,
             shuffle=options.shuffle,
+            any_ring=options.any_ring,
         )
 
 

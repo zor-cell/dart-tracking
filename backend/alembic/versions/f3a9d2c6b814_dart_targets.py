@@ -44,11 +44,14 @@ def _backfill(session: Session) -> None:
     from app.api.features.game.persistence.game_settings import SETTINGS_TABLES, setup_of
 
     setups = {}
-    existing = set(sa.inspect(session.connection()).get_table_names())
+    inspector = sa.inspect(session.connection())
+    existing = set(inspector.get_table_names())
     for table in SETTINGS_TABLES.values():
         if table.__tablename__ not in existing:
             continue
-        columns = [column.name for column in table.__table__.columns]
+        # Columns added by later revisions are left at their model default.
+        present = {column["name"] for column in inspector.get_columns(table.__tablename__)}
+        columns = [column.name for column in table.__table__.columns if column.name in present]
         rows = session.execute(sa.text(f"SELECT {', '.join(columns)} FROM {table.__tablename__}"))
         for row in rows.mappings():
             setups[str(row["game_id"])] = setup_of(table(**row))
