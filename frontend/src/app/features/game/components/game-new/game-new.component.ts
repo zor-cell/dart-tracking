@@ -287,6 +287,8 @@ export class GameNewComponent {
   protected readonly startable = computed(
     () => this.variant() !== 'personal' || (this.signedIn() && this.selfId() !== null),
   );
+  /** The personal training needs an account; signed out it shows only the way to sign in. */
+  protected readonly signInNeeded = computed(() => this.variant() === 'personal' && !this.signedIn());
   protected readonly loginRedirect = computed(() => `/game/new?game=${this.chosen() ?? ''}`);
   /** Skipping ahead needs singles to tell apart from doubles and triples. */
   protected readonly clockSkippable = computed(() => this.clockZone() === 'any');

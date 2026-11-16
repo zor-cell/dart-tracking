@@ -21,438 +21,444 @@
           [ariaLabel]="rulesLabel(picked)"
           (onClick)="openRules(picked)"
         />
-        <p-button
-          class="setup__start"
-          icon="pi pi-play"
-          [rounded]="true"
-          ariaLabel="Spiel starten"
-          i18n-ariaLabel="@@game.new.start"
-          [disabled]="form.invalid || !startable()"
-          (onClick)="startGame()"
-        />
+        @if (!signInNeeded()) {
+          <p-button
+            class="setup__start"
+            icon="pi pi-play"
+            [rounded]="true"
+            ariaLabel="Spiel starten"
+            i18n-ariaLabel="@@game.new.start"
+            [disabled]="form.invalid || !startable()"
+            (onClick)="startGame()"
+          />
+        }
       </div>
     </header>
 
-    <form class="setup" [formGroup]="form" (ngSubmit)="startGame()">
-      @switch (variant()) {
-        @case ('cricket') {
-          <div class="setup__field">
-            <div class="setup__label-row">
-              <label class="setup__label" for="cricketScoring" i18n="@@game.new.scoring">Punkte</label>
-              <app-info-hint [label]="hintLabel(scoringName)">
-                @for (hint of scoringHints; track hint.label) {
-                  <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
-                }
-              </app-info-hint>
-            </div>
-            <p-selectbutton
-              inputId="cricketScoring"
-              formControlName="cricketScoring"
-              [allowEmpty]="false"
-              [options]="cricketScoringOptions"
-              optionLabel="label"
-              optionValue="value"
-            />
-          </div>
-        }
-        @case ('killer') {
-          <div class="setup__field">
-            <label class="setup__label" for="killerLives" i18n="@@game.new.lives">Leben</label>
-            <p-selectbutton
-              inputId="killerLives"
-              formControlName="killerLives"
-              [allowEmpty]="false"
-              [options]="killerLivesOptions"
-              optionLabel="label"
-              optionValue="value"
-            />
-          </div>
-          <div class="setup__field">
-            <div class="setup__label-row">
-              <label class="setup__label" for="killerZone" i18n="@@game.new.zone">Feld</label>
-              <app-info-hint [label]="hintLabel(zoneName)">
-                @for (hint of killerZoneHints; track hint.label) {
-                  <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
-                }
-              </app-info-hint>
-            </div>
-            <p-selectbutton
-              inputId="killerZone"
-              formControlName="killerZone"
-              [allowEmpty]="false"
-              [options]="killerZoneOptions"
-              optionLabel="label"
-              optionValue="value"
-            />
-          </div>
-        }
-        @case ('around_the_clock') {
-          <div class="setup__field">
-            <div class="setup__label-row">
-              <label class="setup__label" for="clockZone" i18n="@@game.new.zone">Feld</label>
-              <app-info-hint [label]="hintLabel(zoneName)">
-                @for (hint of clockZoneHints; track hint.label) {
-                  <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
-                }
-              </app-info-hint>
-            </div>
-            <p-selectbutton
-              inputId="clockZone"
-              formControlName="clockZone"
-              [allowEmpty]="false"
-              [options]="clockZoneOptions"
-              optionLabel="label"
-              optionValue="value"
-            />
-            @if (clockSkippable()) {
-              <div class="setup__switch">
-                <p-toggleswitch inputId="clockSkip" formControlName="clockSkip" />
-                <label for="clockSkip" i18n="@@game.new.clockSkip">Double und Triple springen weiter</label>
-              </div>
-            }
-          </div>
-        }
-        @case ('training') {
-          <div class="setup__field">
-            <div class="setup__label-row">
-              <label class="setup__label" for="trainingGoal" i18n="@@game.new.goal">Ziel</label>
-              <app-info-hint [label]="hintLabel(goalName)">
-                @for (hint of trainingGoalHints; track hint.label) {
-                  <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
-                }
-              </app-info-hint>
-            </div>
-            <p-selectbutton
-              inputId="trainingGoal"
-              formControlName="trainingGoal"
-              [allowEmpty]="false"
-              [options]="trainingGoalOptions"
-              optionLabel="label"
-              optionValue="value"
-            />
-          </div>
-          @if (trainingGoal() === 'random') {
-            <div class="setup__field">
-              <label class="setup__label" for="trainingRing" i18n="@@game.new.zone">Feld</label>
-              <p-selectbutton
-                inputId="trainingRing"
-                formControlName="trainingRing"
-                [allowEmpty]="false"
-                [options]="trainingRingOptions"
-                optionLabel="label"
-                optionValue="value"
-              />
-              @if (trainingSingles()) {
-                <div class="setup__switch">
-                  <p-toggleswitch inputId="trainingAnyRing" formControlName="trainingAnyRing" />
-                  <label for="trainingAnyRing" i18n="@@game.new.anyRing">Double und Triple zählen für Single</label>
-                </div>
-              }
-            </div>
-          }
-          @if (trainingGoal() === 'fields') {
-            <div class="setup__field">
-              <span class="setup__label" i18n="@@game.new.fields">Felder</span>
-              <app-field-picker [fields]="pickedFields()" (fieldsChange)="setTrainingFields($event)" />
-              <div class="setup__switch">
-                <p-toggleswitch inputId="trainingShuffle" formControlName="trainingShuffle" />
-                <label for="trainingShuffle" i18n="@@game.new.shuffleFields">Zufällige Reihenfolge</label>
-              </div>
-            </div>
-          }
-          @if (trainingGoal() !== 'free') {
-            <div class="setup__field">
-              <label class="setup__label" for="trainingRepeats" i18n="@@game.new.repeats">Treffer pro Feld</label>
-              <p-selectbutton
-                inputId="trainingRepeats"
-                formControlName="trainingRepeats"
-                [allowEmpty]="false"
-                [options]="trainingRepeatsOptions"
-                optionLabel="label"
-                optionValue="value"
-              />
-            </div>
-          }
-          <div class="setup__field">
-            <label class="setup__label" for="trainingEnd" i18n="@@game.training.end">Ende</label>
-            <p-selectbutton
-              inputId="trainingEnd"
-              formControlName="trainingEnd"
-              [allowEmpty]="false"
-              [options]="trainingEndOptions"
-              optionLabel="label"
-              optionValue="value"
-            />
-            @if (trainingEnd() === 'darts') {
-              <p-selectbutton
-                ariaLabel="Darts"
-                formControlName="trainingDarts"
-                [allowEmpty]="false"
-                [options]="trainingDartsOptions"
-                optionLabel="label"
-                optionValue="value"
-              />
-            } @else if (trainingEnd() === 'time') {
-              <p-selectbutton
-                ariaLabel="Zeit"
-                i18n-ariaLabel="@@game.training.time"
-                formControlName="trainingMinutes"
-                [allowEmpty]="false"
-                [options]="trainingMinutesOptions"
-                optionLabel="label"
-                optionValue="value"
-              />
-            }
-          </div>
-        }
-        @case ('personal') {
-          <div class="setup__field">
-            <label class="setup__label" for="personalFocus" i18n="@@game.personal.focus">Fokus</label>
-            <p-selectbutton
-              inputId="personalFocus"
-              formControlName="personalFocus"
-              [allowEmpty]="false"
-              [options]="personalFocusOptions"
-              optionLabel="label"
-              optionValue="value"
-            />
-            @if (personalSingles()) {
-              <div class="setup__switch">
-                <p-toggleswitch inputId="personalAnyRing" formControlName="personalAnyRing" />
-                <label for="personalAnyRing" i18n="@@game.new.anyRing">Double und Triple zählen für Single</label>
-              </div>
-            }
-          </div>
-          <div class="setup__field">
-            <label class="setup__label" for="personalLength" i18n="@@game.personal.length">Dauer</label>
-            <p-selectbutton
-              inputId="personalLength"
-              formControlName="personalLength"
-              [allowEmpty]="false"
-              [options]="personalLengthOptions"
-              optionLabel="label"
-              optionValue="value"
-            />
-          </div>
-        }
-        @default {
-          <div class="setup__field">
-            <label class="setup__label" for="mode" i18n="@@game.new.mode">Modus</label>
-            <p-selectbutton
-              inputId="mode"
-              formControlName="mode"
-              [allowEmpty]="false"
-              [options]="modeOptions"
-              optionLabel="label"
-              optionValue="value"
-            />
-          </div>
-
-          <div class="setup__field">
-            <div class="setup__label-row">
-              <label class="setup__label" for="checkoutMode">Checkout</label>
-              <app-info-hint [label]="hintLabel('Checkout')">
-                @for (hint of checkoutHints; track hint.label) {
-                  <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
-                }
-              </app-info-hint>
-            </div>
-            <p-selectbutton
-              inputId="checkoutMode"
-              formControlName="checkoutMode"
-              [allowEmpty]="false"
-              [options]="checkoutModeOptions"
-              optionLabel="label"
-              optionValue="value"
-            />
-          </div>
-
-          @if (variant() === 'elimination') {
+    @if (signInNeeded()) {
+      <app-empty-state icon="pi-user">
+        <p i18n="@@game.personal.signIn">Das Training baut auf deinen eigenen Darts auf. Melde dich dafür an.</p>
+        <p-button
+          label="Anmelden"
+          i18n-label="@@auth.signIn"
+          icon="pi pi-sign-in"
+          routerLink="/login"
+          [queryParams]="{ redirect: loginRedirect() }"
+        />
+      </app-empty-state>
+    } @else {
+      <form class="setup" [formGroup]="form" (ngSubmit)="startGame()">
+        @switch (variant()) {
+          @case ('cricket') {
             <div class="setup__field">
               <div class="setup__label-row">
-                <label class="setup__label" for="eliminationKill">Kill</label>
-                <app-info-hint [label]="hintLabel('Kill')">
-                  @for (hint of killHints; track hint.label) {
+                <label class="setup__label" for="cricketScoring" i18n="@@game.new.scoring">Punkte</label>
+                <app-info-hint [label]="hintLabel(scoringName)">
+                  @for (hint of scoringHints; track hint.label) {
                     <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
                   }
                 </app-info-hint>
               </div>
               <p-selectbutton
-                inputId="eliminationKill"
-                formControlName="eliminationKill"
+                inputId="cricketScoring"
+                formControlName="cricketScoring"
                 [allowEmpty]="false"
-                [options]="eliminationKillOptions"
+                [options]="cricketScoringOptions"
                 optionLabel="label"
                 optionValue="value"
               />
             </div>
           }
-        }
-      }
+          @case ('killer') {
+            <div class="setup__field">
+              <label class="setup__label" for="killerLives" i18n="@@game.new.lives">Leben</label>
+              <p-selectbutton
+                inputId="killerLives"
+                formControlName="killerLives"
+                [allowEmpty]="false"
+                [options]="killerLivesOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
+            <div class="setup__field">
+              <div class="setup__label-row">
+                <label class="setup__label" for="killerZone" i18n="@@game.new.zone">Feld</label>
+                <app-info-hint [label]="hintLabel(zoneName)">
+                  @for (hint of killerZoneHints; track hint.label) {
+                    <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
+                  }
+                </app-info-hint>
+              </div>
+              <p-selectbutton
+                inputId="killerZone"
+                formControlName="killerZone"
+                [allowEmpty]="false"
+                [options]="killerZoneOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
+          }
+          @case ('around_the_clock') {
+            <div class="setup__field">
+              <div class="setup__label-row">
+                <label class="setup__label" for="clockZone" i18n="@@game.new.zone">Feld</label>
+                <app-info-hint [label]="hintLabel(zoneName)">
+                  @for (hint of clockZoneHints; track hint.label) {
+                    <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
+                  }
+                </app-info-hint>
+              </div>
+              <p-selectbutton
+                inputId="clockZone"
+                formControlName="clockZone"
+                [allowEmpty]="false"
+                [options]="clockZoneOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+              @if (clockSkippable()) {
+                <div class="setup__switch">
+                  <p-toggleswitch inputId="clockSkip" formControlName="clockSkip" />
+                  <label for="clockSkip" i18n="@@game.new.clockSkip">Double und Triple springen weiter</label>
+                </div>
+              }
+            </div>
+          }
+          @case ('training') {
+            <div class="setup__field">
+              <div class="setup__label-row">
+                <label class="setup__label" for="trainingGoal" i18n="@@game.new.goal">Ziel</label>
+                <app-info-hint [label]="hintLabel(goalName)">
+                  @for (hint of trainingGoalHints; track hint.label) {
+                    <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
+                  }
+                </app-info-hint>
+              </div>
+              <p-selectbutton
+                inputId="trainingGoal"
+                formControlName="trainingGoal"
+                [allowEmpty]="false"
+                [options]="trainingGoalOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
+            @if (trainingGoal() === 'random') {
+              <div class="setup__field">
+                <label class="setup__label" for="trainingRing" i18n="@@game.new.zone">Feld</label>
+                <p-selectbutton
+                  inputId="trainingRing"
+                  formControlName="trainingRing"
+                  [allowEmpty]="false"
+                  [options]="trainingRingOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                />
+                @if (trainingSingles()) {
+                  <div class="setup__switch">
+                    <p-toggleswitch inputId="trainingAnyRing" formControlName="trainingAnyRing" />
+                    <label for="trainingAnyRing" i18n="@@game.new.anyRing">Double und Triple zählen für Single</label>
+                  </div>
+                }
+              </div>
+            }
+            @if (trainingGoal() === 'fields') {
+              <div class="setup__field">
+                <span class="setup__label" i18n="@@game.new.fields">Felder</span>
+                <app-field-picker [fields]="pickedFields()" (fieldsChange)="setTrainingFields($event)" />
+                <div class="setup__switch">
+                  <p-toggleswitch inputId="trainingShuffle" formControlName="trainingShuffle" />
+                  <label for="trainingShuffle" i18n="@@game.new.shuffleFields">Zufällige Reihenfolge</label>
+                </div>
+              </div>
+            }
+            @if (trainingGoal() !== 'free') {
+              <div class="setup__field">
+                <label class="setup__label" for="trainingRepeats" i18n="@@game.new.repeats">Treffer pro Feld</label>
+                <p-selectbutton
+                  inputId="trainingRepeats"
+                  formControlName="trainingRepeats"
+                  [allowEmpty]="false"
+                  [options]="trainingRepeatsOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                />
+              </div>
+            }
+            <div class="setup__field">
+              <label class="setup__label" for="trainingEnd" i18n="@@game.training.end">Ende</label>
+              <p-selectbutton
+                inputId="trainingEnd"
+                formControlName="trainingEnd"
+                [allowEmpty]="false"
+                [options]="trainingEndOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
+            @if (trainingEnd() !== 'endless') {
+              <div class="setup__field">
+                <label class="setup__label" for="trainingLength" i18n="@@game.new.length">Dauer</label>
+                @if (trainingEnd() === 'darts') {
+                  <p-selectbutton
+                    inputId="trainingLength"
+                    formControlName="trainingDarts"
+                    [allowEmpty]="false"
+                    [options]="trainingDartsOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                  />
+                } @else {
+                  <p-selectbutton
+                    inputId="trainingLength"
+                    formControlName="trainingMinutes"
+                    [allowEmpty]="false"
+                    [options]="trainingMinutesOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                  />
+                }
+              </div>
+            }
+          }
+          @case ('personal') {
+            <div class="setup__field">
+              <label class="setup__label" for="personalFocus" i18n="@@game.personal.focus">Fokus</label>
+              <p-selectbutton
+                inputId="personalFocus"
+                formControlName="personalFocus"
+                [allowEmpty]="false"
+                [options]="personalFocusOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+              @if (personalSingles()) {
+                <div class="setup__switch">
+                  <p-toggleswitch inputId="personalAnyRing" formControlName="personalAnyRing" />
+                  <label for="personalAnyRing" i18n="@@game.new.anyRing">Double und Triple zählen für Single</label>
+                </div>
+              }
+            </div>
+            <div class="setup__field">
+              <label class="setup__label" for="personalLength" i18n="@@game.new.length">Dauer</label>
+              <p-selectbutton
+                inputId="personalLength"
+                formControlName="personalLength"
+                [allowEmpty]="false"
+                [options]="personalLengthOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
+          }
+          @default {
+            <div class="setup__field">
+              <label class="setup__label" for="mode" i18n="@@game.new.mode">Modus</label>
+              <p-selectbutton
+                inputId="mode"
+                formControlName="mode"
+                [allowEmpty]="false"
+                [options]="modeOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
 
-      @if (racing() && seatControls().length > 1) {
-        <div class="setup__field">
-          <span class="setup__label" i18n="@@game.new.finish">Spielende</span>
-          <div class="setup__switch">
-            <p-toggleswitch inputId="catchUp" formControlName="catchUp" />
-            <label for="catchUp" i18n="@@game.new.catchUp">Mit Nachziehen</label>
-            <app-info-hint
-              label="Was heißt mit Nachziehen?"
-              i18n-label="@@game.new.catchUpInfo"
-              i18n="@@game.new.catchUpHint"
-            >Ist jemand fertig, werfen die übrigen die Runde noch zu Ende. Sind dann mehrere fertig, wiederholen nur sie die Runde, jeder ab seinem Stand davor.</app-info-hint>
-          </div>
-          @if (placesLeft()) {
+            <div class="setup__field">
+              <div class="setup__label-row">
+                <label class="setup__label" for="checkoutMode">Checkout</label>
+                <app-info-hint [label]="hintLabel('Checkout')">
+                  @for (hint of checkoutHints; track hint.label) {
+                    <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
+                  }
+                </app-info-hint>
+              </div>
+              <p-selectbutton
+                inputId="checkoutMode"
+                formControlName="checkoutMode"
+                [allowEmpty]="false"
+                [options]="checkoutModeOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
+
+            @if (variant() === 'elimination') {
+              <div class="setup__field">
+                <div class="setup__label-row">
+                  <label class="setup__label" for="eliminationKill">Kill</label>
+                  <app-info-hint [label]="hintLabel('Kill')">
+                    @for (hint of killHints; track hint.label) {
+                      <p class="setup__hint-line"><strong>{{ hint.label }}</strong> {{ hint.text }}</p>
+                    }
+                  </app-info-hint>
+                </div>
+                <p-selectbutton
+                  inputId="eliminationKill"
+                  formControlName="eliminationKill"
+                  [allowEmpty]="false"
+                  [options]="eliminationKillOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                />
+              </div>
+            }
+          }
+        }
+
+        @if (racing() && seatControls().length > 1) {
+          <div class="setup__field">
+            <span class="setup__label" i18n="@@game.new.finish">Spielende</span>
             <div class="setup__switch">
-              <p-toggleswitch inputId="playOn" formControlName="playOn" />
-              <label for="playOn" i18n="@@game.new.playOn">Plätze ausspielen</label>
+              <p-toggleswitch inputId="catchUp" formControlName="catchUp" />
+              <label for="catchUp" i18n="@@game.new.catchUp">Mit Nachziehen</label>
               <app-info-hint
-                label="Was heißt Plätze ausspielen?"
-                i18n-label="@@game.new.playOnInfo"
-                i18n="@@game.new.playOnHint"
-              >Nach dem Sieger wird weitergespielt, bis alle Plätze vergeben sind.</app-info-hint>
+                label="Was heißt mit Nachziehen?"
+                i18n-label="@@game.new.catchUpInfo"
+                i18n="@@game.new.catchUpHint"
+              >Ist jemand fertig, werfen die übrigen die Runde noch zu Ende. Sind dann mehrere fertig, wiederholen nur sie die Runde, jeder ab seinem Stand davor.</app-info-hint>
+            </div>
+            @if (placesLeft()) {
+              <div class="setup__switch">
+                <p-toggleswitch inputId="playOn" formControlName="playOn" />
+                <label for="playOn" i18n="@@game.new.playOn">Plätze ausspielen</label>
+                <app-info-hint
+                  label="Was heißt Plätze ausspielen?"
+                  i18n-label="@@game.new.playOnInfo"
+                  i18n="@@game.new.playOnHint"
+                >Nach dem Sieger wird weitergespielt, bis alle Plätze vergeben sind.</app-info-hint>
+              </div>
+            }
+          </div>
+        }
+
+        @if (variant() === 'personal') {
+          <app-personal-plan [focus]="personalFocus()" [length]="personalLength()" />
+        } @else {
+        <div class="setup__field">
+          <span class="setup__label" i18n="@@game.new.players">Spieler</span>
+          @if (sessionResolved()) {
+            <app-sortable-list
+              [items]="seatControls()"
+              [label]="seatLabel"
+              (moved)="moveSeat($event)"
+            >
+              <ng-template let-seat let-index="index">
+                @if (signedIn()) {
+                  <p-autocomplete
+                    class="setup__input"
+                    [formControl]="seat"
+                    [suggestions]="suggestions()"
+                    (completeMethod)="completeSeat($event)"
+                    optionLabel="name"
+                    appendTo="body"
+                    [dropdown]="true"
+                    [showEmptyMessage]="false"
+                    [ariaLabel]="seatName(index)"
+                    placeholder="Name wählen oder eintippen"
+                    i18n-placeholder="@@game.new.seatPlaceholder"
+                    fluid
+                  >
+                    <ng-template #item let-identity>
+                      <span>{{ identity.name }}</span>
+                      @if (identity.isSelf) {
+                        <p-tag class="setup__self" value="Du" i18n-value="@@player.list.self" severity="secondary" />
+                      }
+                    </ng-template>
+                  </p-autocomplete>
+                } @else if (seatIdentity(seat); as identity) {
+                  <!-- A player carried over from the last game keeps their seat as they are. -->
+                  <input
+                    pInputText
+                    class="setup__input"
+                    [value]="identity.name"
+                    readonly
+                    [attr.aria-label]="seatName(index)"
+                  />
+                } @else {
+                  <input
+                    pInputText
+                    class="setup__input"
+                    [formControl]="seat"
+                    [attr.aria-label]="seatName(index)"
+                    [attr.aria-describedby]="'seat-' + index + '-error'"
+                    placeholder="Name"
+                    i18n-placeholder="@@player.name"
+                  />
+                }
+                <p-button
+                  type="button"
+                  icon="pi pi-minus-circle"
+                  severity="secondary"
+                  [text]="true"
+                  [disabled]="seats.length <= 1"
+                  ariaLabel="Spieler {{ index + 1 }} entfernen"
+                  i18n-ariaLabel="@@game.new.removeSeat"
+                  (onClick)="removePlayer(index)"
+                />
+                <app-field-error
+                  class="setup__error"
+                  [attr.id]="'seat-' + index + '-error'"
+                  [control]="seat"
+                  [messages]="seatMessages"
+                />
+              </ng-template>
+            </app-sortable-list>
+            @if (variant() !== 'training') {
+              <app-field-error [control]="form" [messages]="formMessages" />
+            }
+            <div class="setup__actions">
+              <p-button
+                type="button"
+                label="Spieler hinzufügen"
+                i18n-label="@@player.create.title"
+                icon="pi pi-plus"
+                severity="secondary"
+                [text]="true"
+                (onClick)="addPlayer()"
+              />
+              <p-button
+                type="button"
+                label="Mischen"
+                i18n-label="@@game.new.shuffle"
+                severity="secondary"
+                [text]="true"
+                [disabled]="seats.length < 2"
+                (onClick)="shuffleSeats()"
+              >
+                <ng-template #icon>
+                  <!-- PrimeIcons' raw-svg/sort-alt.svg, cropped to the box the font glyph fills. -->
+                  <svg #shuffleIcon class="setup__shuffle-icon" viewBox="4 4 16 16" aria-hidden="true">
+                    <path d="M10.5,8.25c-.19,0-.38-.07-.53-.22l-1.97-1.97-1.97,1.97c-.29,.29-.77,.29-1.06,0s-.29-.77,0-1.06l2.5-2.5c.29-.29,.77-.29,1.06,0l2.5,2.5c.29,.29,.29,.77,0,1.06-.15,.15-.34,.22-.53,.22Z" />
+                    <path d="M8,19.75c-.41,0-.75-.34-.75-.75V5c0-.41,.34-.75,.75-.75s.75,.34,.75,.75v14c0,.41-.34,.75-.75,.75Z" />
+                    <path d="M16,19.75c-.19,0-.38-.07-.53-.22l-2.5-2.5c-.29-.29-.29-.77,0-1.06s.77-.29,1.06,0l1.97,1.97,1.97-1.97c.29-.29,.77-.29,1.06,0s.29,.77,0,1.06l-2.5,2.5c-.15,.15-.34,.22-.53,.22Z" />
+                    <path d="M16,19.75c-.41,0-.75-.34-.75-.75V5c0-.41,.34-.75,.75-.75s.75,.34,.75,.75v14c0,.41-.34,.75-.75,.75Z" />
+                  </svg>
+                </ng-template>
+              </p-button>
+            </div>
+          } @else {
+            <!-- Placeholder seats while the address book answers, so the form does not jump. -->
+            @for (row of skeletonSeats; track $index) {
+              <div class="setup__skeleton">
+                <p-skeleton width="1.5rem" [height]="seatRowHeight" />
+                <p-skeleton class="setup__input" [height]="seatRowHeight" />
+                <p-skeleton width="2.5rem" [height]="seatRowHeight" />
+              </div>
+            }
+            <div class="setup__actions">
+              <p-skeleton width="11.5rem" [height]="seatRowHeight" />
+              <p-skeleton width="7rem" [height]="seatRowHeight" />
             </div>
           }
         </div>
-      }
-
-      @if (variant() === 'personal') {
-        @if (signedIn()) {
-          <app-personal-plan [focus]="personalFocus()" [length]="personalLength()" />
-        } @else {
-          <app-empty-state icon="pi-user">
-            <p i18n="@@game.personal.signIn">Das Training baut auf deinen eigenen Darts auf. Melde dich dafür an.</p>
-            <p-button
-              label="Anmelden"
-              i18n-label="@@auth.signIn"
-              icon="pi pi-sign-in"
-              routerLink="/login"
-              [queryParams]="{ redirect: loginRedirect() }"
-            />
-          </app-empty-state>
         }
-      } @else {
-      <div class="setup__field">
-        <span class="setup__label" i18n="@@game.new.players">Spieler</span>
-        @if (sessionResolved()) {
-          <app-sortable-list
-            [items]="seatControls()"
-            [label]="seatLabel"
-            (moved)="moveSeat($event)"
-          >
-            <ng-template let-seat let-index="index">
-              @if (signedIn()) {
-                <p-autocomplete
-                  class="setup__input"
-                  [formControl]="seat"
-                  [suggestions]="suggestions()"
-                  (completeMethod)="completeSeat($event)"
-                  optionLabel="name"
-                  appendTo="body"
-                  [dropdown]="true"
-                  [showEmptyMessage]="false"
-                  [ariaLabel]="seatName(index)"
-                  placeholder="Name wählen oder eintippen"
-                  i18n-placeholder="@@game.new.seatPlaceholder"
-                  fluid
-                >
-                  <ng-template #item let-identity>
-                    <span>{{ identity.name }}</span>
-                    @if (identity.isSelf) {
-                      <p-tag class="setup__self" value="Du" i18n-value="@@player.list.self" severity="secondary" />
-                    }
-                  </ng-template>
-                </p-autocomplete>
-              } @else if (seatIdentity(seat); as identity) {
-                <!-- A player carried over from the last game keeps their seat as they are. -->
-                <input
-                  pInputText
-                  class="setup__input"
-                  [value]="identity.name"
-                  readonly
-                  [attr.aria-label]="seatName(index)"
-                />
-              } @else {
-                <input
-                  pInputText
-                  class="setup__input"
-                  [formControl]="seat"
-                  [attr.aria-label]="seatName(index)"
-                  [attr.aria-describedby]="'seat-' + index + '-error'"
-                  placeholder="Name"
-                  i18n-placeholder="@@player.name"
-                />
-              }
-              <p-button
-                type="button"
-                icon="pi pi-minus-circle"
-                severity="secondary"
-                [text]="true"
-                [disabled]="seats.length <= 1"
-                ariaLabel="Spieler {{ index + 1 }} entfernen"
-                i18n-ariaLabel="@@game.new.removeSeat"
-                (onClick)="removePlayer(index)"
-              />
-              <app-field-error
-                class="setup__error"
-                [attr.id]="'seat-' + index + '-error'"
-                [control]="seat"
-                [messages]="seatMessages"
-              />
-            </ng-template>
-          </app-sortable-list>
-          @if (variant() !== 'training') {
-            <app-field-error [control]="form" [messages]="formMessages" />
-          }
-          <div class="setup__actions">
-            <p-button
-              type="button"
-              label="Spieler hinzufügen"
-              i18n-label="@@player.create.title"
-              icon="pi pi-plus"
-              severity="secondary"
-              [text]="true"
-              (onClick)="addPlayer()"
-            />
-            <p-button
-              type="button"
-              label="Mischen"
-              i18n-label="@@game.new.shuffle"
-              severity="secondary"
-              [text]="true"
-              [disabled]="seats.length < 2"
-              (onClick)="shuffleSeats()"
-            >
-              <ng-template #icon>
-                <!-- PrimeIcons' raw-svg/sort-alt.svg, cropped to the box the font glyph fills. -->
-                <svg #shuffleIcon class="setup__shuffle-icon" viewBox="4 4 16 16" aria-hidden="true">
-                  <path d="M10.5,8.25c-.19,0-.38-.07-.53-.22l-1.97-1.97-1.97,1.97c-.29,.29-.77,.29-1.06,0s-.29-.77,0-1.06l2.5-2.5c.29-.29,.77-.29,1.06,0l2.5,2.5c.29,.29,.29,.77,0,1.06-.15,.15-.34,.22-.53,.22Z" />
-                  <path d="M8,19.75c-.41,0-.75-.34-.75-.75V5c0-.41,.34-.75,.75-.75s.75,.34,.75,.75v14c0,.41-.34,.75-.75,.75Z" />
-                  <path d="M16,19.75c-.19,0-.38-.07-.53-.22l-2.5-2.5c-.29-.29-.29-.77,0-1.06s.77-.29,1.06,0l1.97,1.97,1.97-1.97c.29-.29,.77-.29,1.06,0s.29,.77,0,1.06l-2.5,2.5c-.15,.15-.34,.22-.53,.22Z" />
-                  <path d="M16,19.75c-.41,0-.75-.34-.75-.75V5c0-.41,.34-.75,.75-.75s.75,.34,.75,.75v14c0,.41-.34,.75-.75,.75Z" />
-                </svg>
-              </ng-template>
-            </p-button>
-          </div>
-        } @else {
-          <!-- Placeholder seats while the address book answers, so the form does not jump. -->
-          @for (row of skeletonSeats; track $index) {
-            <div class="setup__skeleton">
-              <p-skeleton width="1.5rem" [height]="seatRowHeight" />
-              <p-skeleton class="setup__input" [height]="seatRowHeight" />
-              <p-skeleton width="2.5rem" [height]="seatRowHeight" />
-            </div>
-          }
-          <div class="setup__actions">
-            <p-skeleton width="11.5rem" [height]="seatRowHeight" />
-            <p-skeleton width="7rem" [height]="seatRowHeight" />
-          </div>
-        }
-      </div>
-      }
 
-      <button type="submit" hidden [disabled]="form.invalid || !startable()"></button>
-    </form>
+        <button type="submit" hidden [disabled]="form.invalid || !startable()"></button>
+      </form>
+    }
   } @else if (!sessionResolved()) {
     <header class="view__header">
       <h1 class="view__title" i18n="@@start.newGame">Neues Spiel</h1>

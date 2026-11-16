@@ -560,6 +560,7 @@
     "game.training.fields": "Eigene Felder",
     "game.training.mixed": "Gemischt",
     "game.training.lastRound": "Letzte Runde",
+    "game.new.length": "Dauer",
     "game.progress.block": "Block {$index} von {$count}",
     "game.progress.training": "Fortschritt des Trainings",
     "game.training.time": "Zeit",
