@@ -79,11 +79,6 @@ class DetectionTrace:
     minimum_speckle_px: float = 0.0
     minimum_candidate_px: float = 0.0
 
-    # The trigger's change box in reference pixels (x0, y0, x1, y1), and how many
-    # candidate fragments outside it were left out; None and 0 without one.
-    change_box: tuple[float, float, float, float] | None = None
-    outside_change_fragments: int = 0
-
     failure: DetectionFailure | None = None
     # A blob found but rejected as too small for a miss; its frame still becomes
     # the next reference.

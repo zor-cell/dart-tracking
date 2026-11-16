@@ -594,12 +594,7 @@ async def _handle_throw_frame(
         image, raw = decoded
         async with _detector_lock:
             outcome = await asyncio.to_thread(
-                dart_detector.detect_dart,
-                reference,
-                image,
-                calibration,
-                empty_board,
-                frame.trigger.change_region() if frame.trigger else None,
+                dart_detector.detect_dart, reference, image, calibration, empty_board
             )
             # Both read under the lock: the trace is a module global that the
             # next run replaces.

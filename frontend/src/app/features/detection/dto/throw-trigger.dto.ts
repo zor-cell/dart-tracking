@@ -1,4 +1,3 @@
-import { TriggerChangeDto } from './trigger-change.dto';
 import { TriggerSampleDto } from './trigger-sample.dto';
 import { TriggerSnapshotDto } from './trigger-snapshot.dto';
 
@@ -16,7 +15,6 @@ export interface ThrowTriggerDto {
   readonly timedOut: boolean; // captured by the motion timeout instead of settling
   readonly gridCols: number; // grid the counts and spans are relative to
   readonly gridRows: number;
-  readonly change: TriggerChangeDto | null; // where the picture differs from before the throw
   readonly timeline: readonly TriggerSampleDto[]; // the frames leading up to the capture
   readonly snapshots: readonly TriggerSnapshotDto[]; // sent in test runs only
 }

@@ -29,9 +29,7 @@ from app.api.features.calibration.domain.calibration_failure import CalibrationF
 from app.api.features.calibration.domain.calibration import Calibration  # noqa: E402
 from app.api.features.calibration.services import board_detector  # noqa: E402
 from app.api.features.calibration.services.board_overlay import build_overlay  # noqa: E402
-from app.api.features.detection.domain.change_region import ChangeRegion  # noqa: E402
 from app.api.features.detection.domain.detection_failure import DetectionFailure  # noqa: E402
-from app.api.features.detection.dto.throw_trigger import ThrowTriggerDto  # noqa: E402
 from app.api.features.detection.services import dart_detector  # noqa: E402
 
 from scripts.common import (  # noqa: E402
@@ -137,14 +135,6 @@ def collect_series(root: Path, out_dir: Path) -> dict[str, list[tuple[str, Path]
     for frames in series.values():
         frames.sort(key=lambda item: frame_order(item[0]))
     return dict(sorted(series.items()))
-
-
-def change_of(frame: Path) -> ChangeRegion | None:
-    """The trigger's change box recorded beside a frame, if the client sent one."""
-    path = frame.with_name(f"{frame.stem}_trigger.json")
-    if not path.is_file():
-        return None
-    return ThrowTriggerDto.model_validate_json(path.read_text()).change_region()
 
 
 def load_ground_truth(folder: Path) -> dict[str, tuple[str, bool]]:
@@ -262,7 +252,6 @@ def run_series(
     out_dir: Path,
     raw: bool,
     only_mismatches: bool = False,
-    use_change: bool = True,
 ) -> list[Result]:
     """Detect every consecutive pair in one series and return one Result per dart,
     writing annotated copies (only mismatches with `only_mismatches`) under `out_dir`.
@@ -300,9 +289,7 @@ def run_series(
             results.append(Result(name, label, path, False, None, expected, uncertain=uncertain))
             continue
 
-        outcome = dart_detector.detect_dart(
-            reference, frame, calibration, empty_board, change_of(path) if use_change else None
-        )
+        outcome = dart_detector.detect_dart(reference, frame, calibration, empty_board)
         shift = dart_detector.trace.alignment_shift_px
         shake = "!" if shift > SHAKE_WARN_PX else " "
         failure = outcome if isinstance(outcome, DetectionFailure) else None
@@ -576,11 +563,6 @@ def main() -> int:
         "client's downscale and JPEG compression (for comparison only - the "
         "default reflects what detection actually receives)",
     )
-    parser.add_argument(
-        "--no-change-box",
-        action="store_true",
-        help="ignore the trigger's recorded change box, to compare against detection without it",
-    )
     args = parser.parse_args()
 
     if not args.images.is_dir():
@@ -601,10 +583,7 @@ def main() -> int:
     all_results: list[Result] = []
     for name, frames in series.items():
         all_results.extend(
-            run_series(
-                name, frames, args.images, out_dir, args.raw, args.only_mismatches,
-                not args.no_change_box,
-            )
+            run_series(name, frames, args.images, out_dir, args.raw, args.only_mismatches)
         )
         print()
 

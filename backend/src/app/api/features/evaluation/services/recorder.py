@@ -185,7 +185,6 @@ def metrics_of(trace: DetectionTrace) -> dict[str, float]:
         "alignment_inliers": trace.alignment_inliers,
         "region_clipped": round(trace.region_clipped, 4),
         "pixels_per_mm": round(trace.pixels_per_mm, 4),
-        "outside_change_fragments": trace.outside_change_fragments,
     }
     # Plain floats, since the figures go into JSONB with the throw.
     return {name: float(value) for name, value in figures.items()}
@@ -207,7 +206,7 @@ def trigger_metrics_of(trigger: ThrowTriggerDto | None) -> dict[str, float]:
         return {}
     return {
         f"trigger_{name}": float(value)
-        for name, value in trigger.model_dump(exclude={"timeline", "snapshots", "change"}).items()
+        for name, value in trigger.model_dump(exclude={"timeline", "snapshots"}).items()
     }
 
 

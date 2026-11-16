@@ -11,7 +11,6 @@ from starlette.websockets import WebSocketDisconnect
 from app.api.core.socket import socket
 from app.api.features.calibration.domain.calibration import Calibration
 from app.api.features.detection.debug.trace import DetectionTrace
-from app.api.features.detection.domain.change_region import ChangeRegion
 from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.evaluation.domain.alignment import DartOutcome
 from app.api.features.evaluation.services import accuracy, frame_buffer
@@ -368,29 +367,6 @@ def test_a_frame_without_a_dart_becomes_the_next_reference(camera, game_id, monk
         after = socket.detection_store.get(game_id, phone.id)
         assert (after is seen) is moves
         assert (after is before) is not moves
-
-
-@pytest.mark.parametrize(
-    ("change", "region"),
-    [({"col": 3, "row": 2, "cols": 2, "rows": 1}, ChangeRegion(3, 2, 2, 1, 16, 9)), (None, None)],
-)
-def test_the_trigger_change_reaches_the_detector(camera, monkeypatch, change, region):
-    monkeypatch.setattr(socket.board_detector, "detect_board", lambda image: Calibration(np.eye(3), 64, 48))
-    received = []
-
-    def detect(*args):
-        received.append(args[4])
-        socket.dart_detector.trace = DetectionTrace()
-        return DetectionFailure.NO_CHANGE
-
-    monkeypatch.setattr(socket.dart_detector, "detect_dart", detect)
-    with camera() as phone:
-        phone.send("calibration_frame", image=jpeg(64, 48))
-        phone.next("calibration_result")
-        phone.send("detection_frame", image=jpeg(64, 48), trigger={**TRIGGER, "change": change})
-        phone.next("detection_result")
-
-    assert received == [region]
 
 
 def test_handover_asks_the_cameras_to_calibrate_again(room, camera, game_id):
