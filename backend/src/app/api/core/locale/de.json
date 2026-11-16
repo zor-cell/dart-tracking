@@ -29,6 +29,7 @@
   "announcer.gameShot": "Spiel gewonnen",
   "announcer.bust": "Überworfen",
   "announcer.turn": "{player}, {score}",
+  "announcer.nextTarget": "Jetzt {target}",
   "announcer.calibrated": "Board kalibriert",
   "announcer.calibrationFailed": "Kalibrierung fehlgeschlagen",
   "announcer.test": "Los geht's"

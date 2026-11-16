@@ -14,9 +14,9 @@ from app.api.features.game.domain.training import TrainingProgress
 
 @dataclass(frozen=True)
 class DartCall:
-    """A dart just booked. `visit_points` is set once the visit is full, busted or
-    won; `eliminated` names whoever the dart sent back to zero; `cricket` is what
-    it did to its Cricket number."""
+    """A dart just booked. `visit_points` is set once the visit is full, busted or won;
+    `eliminated` names whoever it sent back to zero; `cricket` is what it did to its
+    Cricket number; `target` the training field it moved on to while darts are left."""
 
     value: int
     multiplier: int
@@ -25,6 +25,7 @@ class DartCall:
     won: bool
     eliminated: tuple[str, ...]
     cricket: CricketHit | None = None
+    target: tuple[int, int] | None = None
 
     @classmethod
     def of(cls, dart: Dart, game: Game, eliminated: set[int], index: int = -1) -> Self:
@@ -44,7 +45,19 @@ class DartCall:
             won=won,
             eliminated=tuple(p.name for p in game.players if p.id in eliminated),
             cricket=hit,
+            target=None if visit_over else _moved_target(game, index),
         )
+
+
+def _moved_target(game: Game, index: int) -> tuple[int, int] | None:
+    """The training field the last dart of the open visit moved on to, if it did."""
+    progress, darts = game.progress, game.current_turn.darts
+    if not isinstance(progress, TrainingProgress | PersonalProgress) or not darts:
+        return None
+    if index not in (-1, len(darts) - 1):
+        return None
+    target = progress.players[game.current_player.id].target
+    return target if target != progress.turn_targets[-1][-1] else None
 
 
 @dataclass(frozen=True)

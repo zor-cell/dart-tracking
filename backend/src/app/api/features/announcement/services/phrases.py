@@ -19,6 +19,16 @@ def field_phrase(value: int, multiplier: int, language: Language) -> str:
     return translate(_MULTIPLIER_KEYS[multiplier], language, value=value)
 
 
+def _target_phrase(target: tuple[int, int], language: Language) -> int | str:
+    """A field to hit: a single as its number alone."""
+    value, multiplier = target
+    return value if multiplier == 1 else field_phrase(value, multiplier, language)
+
+
+def next_target_phrase(target: tuple[int, int], language: Language) -> str:
+    return translate("announcer.nextTarget", language, target=_target_phrase(target, language))
+
+
 def cricket_phrases(hit: CricketHit, language: Language) -> list[str]:
     """How far the number is from closed, then the points the dart scored."""
     phrases = []
@@ -32,7 +42,8 @@ def cricket_phrases(hit: CricketHit, language: Language) -> list[str]:
 
 
 def dart_phrases(call: DartCall, language: Language) -> list[str]:
-    """The field, what it did in Cricket, whoever it eliminated, then how the visit ended."""
+    """The field, what it did in Cricket, whoever it eliminated, how the visit ended,
+    then the training field to throw at next."""
     phrases = [field_phrase(call.value, call.multiplier, language)]
     if call.cricket is not None:
         phrases.extend(cricket_phrases(call.cricket, language))
@@ -45,6 +56,8 @@ def dart_phrases(call: DartCall, language: Language) -> list[str]:
         phrases.append(translate("announcer.bust", language))
     elif call.visit_points is not None:
         phrases.append(str(call.visit_points))
+    if call.target is not None:
+        phrases.append(next_target_phrase(call.target, language))
     return phrases
 
 
@@ -52,8 +65,7 @@ def turn_phrase(call: TurnCall, language: Language) -> str:
     """The player, then their score or the field to hit; a single field is its number alone."""
     score: int | str | None = call.score
     if call.target is not None:
-        value, multiplier = call.target
-        score = value if multiplier == 1 else field_phrase(value, multiplier, language)
+        score = _target_phrase(call.target, language)
     if score is None:
         return call.player
     return translate("announcer.turn", language, player=call.player, score=score)
@@ -70,14 +82,15 @@ def self_test_phrase(language: Language) -> str:
 
 def fixed_phrases(language: Language) -> list[str]:
     """Every phrase that names no player, so it can be voiced ahead of any game."""
-    fields = [
-        field_phrase(value, multiplier, language)
+    board = [
+        (value, multiplier)
         for value in [*range(1, 21), 25]
         for multiplier in (1, 2, 3)
         if not (value == 25 and multiplier == 3)
     ]
     phrases = [
-        *fields,
+        *(field_phrase(value, multiplier, language) for value, multiplier in board),
+        *(next_target_phrase(target, language) for target in board),
         field_phrase(0, 0, language),
         *(str(points) for points in range(_MAX_VISIT + 1)),
         *(

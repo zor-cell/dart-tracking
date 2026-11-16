@@ -12,6 +12,7 @@ from app.api.features.announcement.services.phrases import (
 from app.api.features.game.domain.around_the_clock import ClockOptions, ClockZone
 from app.api.features.game.domain.cricket import CricketHit, CricketOptions, CricketScoring
 from app.api.features.game.domain.game_variant import GameVariant
+from app.api.features.game.domain.training import TrainingGoal, TrainingOptions
 from tests.unit.darts import new_game, play
 
 EN, DE = Language.EN, Language.DE
@@ -131,3 +132,33 @@ def test_fixed_phrases_cover_the_cricket_calls(language):
 
     for hit in (CricketHit(2, False, 0), CricketHit(0, True, 75), CricketHit(0, False, 60)):
         assert set(dart_phrases(call(cricket=hit), language)) <= set(phrases)
+
+
+def training_call(*visits, index=-1, repeats=1):
+    options = TrainingOptions(TrainingGoal.FIELDS, fields=((19, 3), (16, 2), (20, 1)), repeats=repeats)
+    game = new_game(1, variant=GameVariant.TRAINING, options=options)
+    play(game, *visits)
+    return DartCall.of(game.current_turn.darts[index], game, set(), index)
+
+
+def test_a_training_hit_with_darts_left_calls_the_next_field():
+    assert dart_phrases(training_call("T19"), DE) == ["Trippel 19", "Jetzt Doppel 16"]
+    assert dart_phrases(training_call("T19 D16"), EN) == ["Double 16", "Now 20"]
+
+
+def test_a_training_dart_that_keeps_the_field_or_ends_the_visit_calls_no_field():
+    assert dart_phrases(training_call("5"), DE) == ["Single 5"]
+    assert dart_phrases(training_call("T19", repeats=2), DE) == ["Trippel 19"]
+    assert training_call("0 0 T19").target is None
+
+
+def test_a_corrected_training_dart_before_the_last_calls_no_field():
+    assert training_call("T19 5", index=0).target is None
+
+
+@pytest.mark.parametrize("language", list(Language))
+def test_fixed_phrases_cover_the_next_training_fields(language):
+    phrases = fixed_phrases(language)
+
+    assert dart_phrases(training_call("T19"), language)[1] in phrases
+    assert dart_phrases(training_call("T19 D16"), language)[1] in phrases

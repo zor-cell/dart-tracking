@@ -29,6 +29,7 @@
   "announcer.gameShot": "Game shot",
   "announcer.bust": "Bust!",
   "announcer.turn": "{player}, {score}",
+  "announcer.nextTarget": "Now {target}",
   "announcer.calibrated": "Board calibrated",
   "announcer.calibrationFailed": "Calibration failed",
   "announcer.test": "Game on"
