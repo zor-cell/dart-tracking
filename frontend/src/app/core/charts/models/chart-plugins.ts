@@ -10,11 +10,22 @@ export interface ChartTheme {
   readonly font: string;
 }
 
-/** Reads the theme tokens once; Chart.js needs plain colour values, not CSS variables. */
+/** Reads the theme tokens once as `#rrggbb`, so Chart.js can draw them and callers can append an alpha. */
 export function chartTheme(document: Document): ChartTheme {
-  const root = getComputedStyle(document.documentElement);
-  const token = (name: string, fallback: string) => root.getPropertyValue(name).trim() || fallback;
-  return {
+  const probe = document.createElement('span');
+  document.body.append(probe);
+  const canvas = document.createElement('canvas').getContext('2d');
+  const token = (name: string, fallback: string) => {
+    probe.style.color = `var(${name}, ${fallback})`;
+    const resolved = getComputedStyle(probe).color;
+    if (!canvas) {
+      return resolved || fallback;
+    }
+    canvas.fillStyle = fallback;
+    canvas.fillStyle = resolved;
+    return canvas.fillStyle;
+  };
+  const theme = {
     text: token('--p-text-color', '#374151'),
     muted: token('--p-text-muted-color', '#6b7280'),
     grid: '#e7e6e2',
@@ -22,6 +33,8 @@ export function chartTheme(document: Document): ChartTheme {
     border: token('--p-content-border-color', '#e5e7eb'),
     font: getComputedStyle(document.body).fontFamily,
   };
+  probe.remove();
+  return theme;
 }
 
 /** Smallest vertical distance between two end labels, in pixels. */
