@@ -45,6 +45,8 @@ class ExportedDartDto(CamelModel):
     multiplier: int
     # [x, y] in board millimetres, or None for a dart entered by hand.
     position: list[float] | None
+    # Whether the position was moved into the field a correction booked.
+    snapped: bool
     thrown_at: datetime | None
     target_value: int | None
     target_multiplier: int | None
@@ -56,6 +58,7 @@ class ExportedDartDto(CamelModel):
             value=dart.value,
             multiplier=dart.multiplier,
             position=list(dart.position) if dart.position is not None else None,
+            snapped=dart.snapped,
             thrown_at=dart.thrown_at,
             target_value=target.value if target else None,
             target_multiplier=target.multiplier if target else None,

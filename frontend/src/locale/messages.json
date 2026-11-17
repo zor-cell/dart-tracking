@@ -883,6 +883,8 @@
     "stats.section.oneGame": "1 Spiel, {$darts} Darts",
     "stats.section.games": "{$games} Spiele, {$darts} Darts",
     "stats.targets.aimedTitle": "Auf Ziele",
-    "stats.scoring.title": "Ohne Ziel"
+    "stats.scoring.title": "Ohne Ziel",
+    "eval.snappedOne": "1 davon lag höchstens {$mm} mm daneben und die Spitze wurde ins Feld verschoben.",
+    "eval.snapped": "{$count} davon lagen höchstens {$mm} mm daneben und die Spitze wurde ins Feld verschoben."
   }
 }

@@ -55,7 +55,7 @@ class EvaluationRepository:
                 .order_by(GameEventTable.id)
             )
         ).scalars().all()
-        return {game_id: _events(of_game) for game_id, of_game in by_game(rows).items()}
+        return {game_id: events_from_rows(of_game) for game_id, of_game in by_game(rows).items()}
 
     async def logged_games(
         self,
@@ -110,7 +110,7 @@ def _is_uuid(value: str) -> bool:
     return True
 
 
-def _events(rows: list[GameEventTable]) -> list[GameEvent]:
+def events_from_rows(rows: list[GameEventTable]) -> list[GameEvent]:
     return [
         GameEvent(
             kind=GameEventKind(row.kind),

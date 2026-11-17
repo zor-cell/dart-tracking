@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Self
 
 from app.api.core.dto.base import CamelModel
+from app.api.features.game.domain.correction import SNAP_MM
 from app.api.features.calibration.domain.camera_angle import CameraAngle
 from app.api.features.evaluation.domain.accuracy import (
     Accuracy,
@@ -63,6 +64,9 @@ class AccuracySummaryDto(CamelModel):
     mean_off_by: float | None
     median_off_by: float | None
     worst_off_by: float | None
+    # Of those, the darts within `snap_mm` (mm), whose tip a correction moves into its field.
+    snapped: int
+    snap_mm: float
     fields: list[FieldErrorsDto]
 
     @classmethod
@@ -85,6 +89,8 @@ class AccuracySummaryDto(CamelModel):
             mean_off_by=_rounded(accuracy.mean_off_by),
             median_off_by=_rounded(accuracy.median_off_by),
             worst_off_by=_rounded(accuracy.worst_off_by),
+            snapped=accuracy.snapped,
+            snap_mm=SNAP_MM,
             fields=[FieldErrorsDto.from_entity(field) for field in accuracy.fields],
         )
 

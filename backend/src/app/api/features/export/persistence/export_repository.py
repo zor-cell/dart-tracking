@@ -188,6 +188,7 @@ def _dart(row: DartTable) -> ExportedDart:
             value=row.value,
             multiplier=row.multiplier,
             position=position,
+            snapped=row.pos_snapped,
             thrown_at=row.thrown_at,
         ),
         target=target,

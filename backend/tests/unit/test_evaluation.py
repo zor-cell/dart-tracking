@@ -12,6 +12,7 @@ from app.api.features.evaluation.domain.accuracy import (
 from app.api.features.evaluation.domain.alignment import DartOutcome, align, outcome_of
 from app.api.features.evaluation.domain.evaluation_filter import EvaluationFilter
 from app.api.features.evaluation.domain.game_event import GameEvent, GameEventKind
+from app.api.features.evaluation.domain.snapping import snapped_darts
 from app.api.features.evaluation.domain.visit_replay import replay
 from app.api.features.game.domain.game_mode import GameMode
 
@@ -215,3 +216,18 @@ def test_evaluation_filter_selects_games(criteria, game, selected):
 def test_evaluation_filter_reads_the_camera_tilt(criteria, tilt, selected):
     camera = None if tilt is None else CameraAngle(tilt=tilt, horizontal=0, vertical=0, focal_px=1)
     assert criteria.selects_camera(camera) is selected
+
+
+@pytest.mark.parametrize(("tip", "kept"), [((0.0, 158.5), True), ((0.0, 150.0), False)])
+def test_an_old_correction_keeps_a_tip_on_the_edge_of_its_field(tip, kept):
+    log = [
+        event(K.DETECTED, (20, 1), position=tip),
+        event(K.DART_REPLACED, (20, 2), dart_index=0),
+        event(K.NEXT_PLAYER, camera_armed=True),
+    ]
+
+    found = snapped_darts("game", log)
+
+    assert [(snapped.turn_index, snapped.dart_index, snapped.dart.label) for snapped in found] == (
+        [(0, 0, "D20")] if kept else []
+    )

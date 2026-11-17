@@ -19,6 +19,7 @@ from app.api.features.evaluation.domain.alignment import (
     outcome_of,
 )
 from app.api.features.calibration.domain.camera_angle import CameraAngle
+from app.api.features.game.domain.correction import SNAP_MM
 from app.api.features.evaluation.domain.game_event import GameEvent, GameEventKind
 from app.api.features.evaluation.domain.visit_replay import Visit
 
@@ -172,6 +173,11 @@ class Accuracy:
     @property
     def worst_off_by(self) -> float | None:
         return max(self.distances) if self.distances else None
+
+    @property
+    def snapped(self) -> int:
+        """Mis-scored darts close enough to their field that a correction keeps their tip."""
+        return sum(1 for distance in self.distances if distance <= SNAP_MM)
 
 
 def judge(game_id: str, visit: Visit) -> list[Judgement]:

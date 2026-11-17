@@ -898,6 +898,8 @@
     "stats.section.oneGame": "1 game, {$darts} darts",
     "stats.section.games": "{$games} games, {$darts} darts",
     "stats.targets.aimedTitle": "At targets",
-    "stats.scoring.title": "Without a target"
+    "stats.scoring.title": "Without a target",
+    "eval.snappedOne": "1 of them was at most {$mm} mm off and its tip was moved into the field.",
+    "eval.snapped": "{$count} of them were at most {$mm} mm off and their tip was moved into the field."
   }
 }

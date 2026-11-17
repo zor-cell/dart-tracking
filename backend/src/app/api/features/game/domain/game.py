@@ -15,6 +15,7 @@ from app.api.features.game.domain.around_the_clock import (
 )
 from app.api.features.game.domain.checkout import Setup, checkout_route, setup_route
 from app.api.features.game.domain.checkout_mode import CheckoutMode
+from app.api.features.game.domain.correction import corrected
 from app.api.features.game.domain.cricket import CricketOptions, cricket_progress
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.elimination import EliminationKill, EliminationOptions, can_kill
@@ -505,7 +506,7 @@ class Game:
         turn = self.current_turn
         if not 0 <= index < len(turn.darts):
             return
-        dart = replace(dart, thrown_at=turn.darts[index].thrown_at)
+        dart = replace(corrected(turn.darts[index], dart), thrown_at=turn.darts[index].thrown_at)
         self._rescore(turn.darts[:index] + [dart] + turn.darts[index + 1 :])
 
     def move_dart(self, index: int, to_index: int) -> None:

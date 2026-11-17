@@ -12,6 +12,7 @@ from app.api.features.evaluation.domain.breakdown import (
     version_of,
 )
 from app.api.features.evaluation.domain.evaluation_filter import EvaluationFilter
+from app.api.features.game.domain.correction import SNAP_MM
 
 # A mismatch closer than this to the expected segment is a wire's-width miss.
 NEAR_MISS_MM = 5.0
@@ -121,9 +122,10 @@ def mismatch_table(breakdowns: Breakdowns) -> list[str]:
     if not wrong:
         return ["No mismatches."]
     near = sum(1 for j in wrong if j.off_by_mm is not None and j.off_by_mm <= NEAR_MISS_MM)
+    snapped = sum(1 for j in wrong if j.off_by_mm is not None and j.off_by_mm <= SNAP_MM)
     lines = [
         f"{near} of {len(wrong)} mismatches are within {NEAR_MISS_MM:.0f} mm of the "
-        "expected segment.",
+        f"expected segment, {snapped} within {SNAP_MM:g} mm: their tip is snapped into it.",
         "",
         "| throw | tracked | expected | outcome | off by | fragments |",
         "|---|---|---|---|---|---|",

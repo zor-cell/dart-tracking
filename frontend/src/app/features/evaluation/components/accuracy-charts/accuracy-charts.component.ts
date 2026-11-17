@@ -154,6 +154,15 @@ export class AccuracyChartsComponent {
     }));
   });
 
+  /** How many of the mis-scored darts a correction keeps the tip of, moved into its field. */
+  protected readonly snappedNote = computed(() => {
+    const { snapped, snapMm } = this.summary();
+    const mm = formatNumber(snapMm, this.locale, '1.0-1');
+    return snapped === 1
+      ? $localize`:@@eval.snappedOne:1 davon lag höchstens ${mm}:mm: mm daneben und die Spitze wurde ins Feld verschoben.`
+      : $localize`:@@eval.snapped:${snapped}:count: davon lagen höchstens ${mm}:mm: mm daneben und die Spitze wurde ins Feld verschoben.`;
+  });
+
   /** Mean, median and largest distance, shown above the bands. */
   protected readonly offByNotes = computed(() => {
     const { meanOffBy, medianOffBy, worstOffBy } = this.summary();

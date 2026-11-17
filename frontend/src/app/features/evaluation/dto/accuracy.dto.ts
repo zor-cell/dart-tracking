@@ -36,6 +36,9 @@ export interface AccuracySummaryDto {
   readonly meanOffBy: number | null;
   readonly medianOffBy: number | null;
   readonly worstOffBy: number | null;
+  /** Of those, the darts within `snapMm` (mm), whose tip a correction moves into its field. */
+  readonly snapped: number;
+  readonly snapMm: number;
   readonly fields: readonly FieldErrorsDto[];
 }
 

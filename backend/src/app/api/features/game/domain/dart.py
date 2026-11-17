@@ -11,6 +11,8 @@ class Dart:
     # Where the tip landed in board millimetres, for a dart the camera located;
     # None for one entered by hand.
     position: tuple[float, float] | None = None
+    # Whether the position was moved into the field a correction booked, see `correction.py`.
+    snapped: bool = False
     # When the server booked it; None for darts from before times were kept.
     thrown_at: datetime | None = field(default=None, compare=False)
 

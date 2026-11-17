@@ -120,3 +120,16 @@ def test_events_and_frames_of_own_test_runs(alice, register, session, tmp_path, 
 
     _, _, files = export(alice, frames=True)
     assert files == {f"testdata/evaluation/game_{mine}/throw0_base.jpg": b"jpeg"}
+
+
+def test_a_moved_tip_is_marked(alice, session):
+    game_id = own_game(alice)
+    session.play(game_id, [T20], hand_over=False)
+    session.sql(
+        "UPDATE game_darts SET pos_x = 0, pos_y = 100, pos_snapped = true WHERE game_id = :id",
+        id=game_id,
+    )
+
+    _, [game], _ = export(alice)
+
+    assert game["turns"][0]["darts"][0]["snapped"] is True

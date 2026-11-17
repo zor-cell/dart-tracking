@@ -191,3 +191,23 @@ def distance_to_segment(x: float, y: float, segment: Segment) -> float:
         _distance_to_annular_sector(x, y, r0, r1, centre_angle)
         for r0, r1 in _ring_bounds(segment.multiplier)
     )
+
+
+def point_inside(x: float, y: float, segment: Segment, inset: float) -> tuple[float, float]:
+    """The point of a scoring `segment` nearest to a board coordinate, `inset` mm in
+    from its edges."""
+    radius, angle = math.hypot(x, y), math.atan2(y, x)
+    if segment.value == 25:
+        r0, r1 = (0.0, BULLSEYE_RADIUS) if segment.multiplier == 2 else (BULLSEYE_RADIUS, BULL_RADIUS)
+        inner = min(max(radius, r0 + inset), r1 - inset)
+        return inner * math.cos(angle), inner * math.sin(angle)
+
+    centre_angle = sector_centre_angle(SECTOR_ORDER.index(segment.value))
+    offset = (angle - centre_angle + math.pi) % (2 * math.pi) - math.pi
+    candidates = []
+    for r0, r1 in _ring_bounds(segment.multiplier):
+        inner = min(max(radius, r0 + inset), r1 - inset)
+        half = SECTOR_ANGLE / 2 - inset / inner
+        turned = centre_angle + min(max(offset, -half), half)
+        candidates.append((inner * math.cos(turned), inner * math.sin(turned)))
+    return min(candidates, key=lambda point: math.hypot(point[0] - x, point[1] - y))

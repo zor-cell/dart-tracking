@@ -239,6 +239,7 @@ class GameRepository:
                 multiplier=dart.multiplier,
                 pos_x=dart.position[0] if dart.position else None,
                 pos_y=dart.position[1] if dart.position else None,
+                pos_snapped=dart.snapped,
                 thrown_at=dart.thrown_at,
                 target_value=target.value if target else None,
                 target_multiplier=target.multiplier if target else None,
@@ -838,6 +839,7 @@ def _assemble(
                 value=dart.value,
                 multiplier=dart.multiplier,
                 position=position,
+                snapped=dart.pos_snapped,
                 thrown_at=dart.thrown_at,
             )
         )
@@ -899,6 +901,7 @@ def _dart_json(dart: Dart) -> dict[str, Any]:
         "value": dart.value,
         "multiplier": dart.multiplier,
         "position": list(dart.position) if dart.position is not None else None,
+        "snapped": dart.snapped,
     }
 
 
@@ -908,6 +911,7 @@ def _dart_from_json(data: dict[str, Any]) -> Dart:
         value=data["value"],
         multiplier=data["multiplier"],
         position=(position[0], position[1]) if position is not None else None,
+        snapped=data.get("snapped", False),
     )
 
 
