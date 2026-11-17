@@ -47,7 +47,7 @@
         />
       </app-empty-state>
     } @else {
-      <form class="setup" [formGroup]="form" (ngSubmit)="startGame()">
+      <form class="setup" [formGroup]="form">
         @switch (variant()) {
           @case ('cricket') {
             <div class="setup__field">
@@ -481,8 +481,6 @@
           }
         </div>
         }
-
-        <button type="submit" hidden [disabled]="form.invalid || !startable()"></button>
       </form>
     }
   } @else if (!sessionResolved()) {

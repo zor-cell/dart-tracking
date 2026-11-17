@@ -3,6 +3,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  Injector,
+  afterNextRender,
   afterRenderEffect,
   computed,
   inject,
@@ -137,6 +139,8 @@ export class GameNewComponent {
   private readonly socket = inject(SocketService);
   private readonly location = inject(Location);
   private readonly drafts = inject(GameDraftService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
   protected readonly sections = GAME_SECTIONS;
@@ -400,6 +404,13 @@ export class GameNewComponent {
 
   protected addPlayer(): void {
     this.seats.push(this.createSeat(this.seats.length + 1));
+    afterNextRender(
+      () => {
+        const inputs = this.host.nativeElement.querySelectorAll<HTMLInputElement>('input.setup__input, .setup__input input');
+        inputs.item(inputs.length - 1)?.focus();
+      },
+      { injector: this.injector },
+    );
   }
 
   protected removePlayer(index: number): void {
