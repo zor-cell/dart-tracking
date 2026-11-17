@@ -20,6 +20,10 @@ import { InfoHintComponent } from '../../../../core/view/components/info-hint/in
 /** How many games, up to the current one, the trend line pools. */
 export const TREND_WINDOW = 5;
 
+/** Percentage points the axis starts at least below the lowest value, rounded down to a step. */
+const AXIS_MARGIN = 5;
+const AXIS_STEP = 10;
+
 /** Each game's share of correct darts over it and the games before it, weighted by darts. */
 export function rollingAccuracy(games: readonly GameAccuracyDto[], window = TREND_WINDOW): number[] {
   return games.map((_, index) => {
@@ -83,6 +87,17 @@ export class AccuracyTrendComponent {
     ],
   }));
 
+  /** Where the axis starts: `AXIS_MARGIN` below the lowest game or trend value, on a step. */
+  private readonly axisMin = computed(() => {
+    const games = this.played();
+    const values = [
+      ...games.map((game) => (100 * game.summary.correct) / game.summary.dartsThrown),
+      ...rollingAccuracy(games),
+    ];
+    const lowest = values.length ? Math.min(...values) : 0;
+    return Math.max(0, Math.floor((lowest - AXIS_MARGIN) / AXIS_STEP) * AXIS_STEP);
+  });
+
   protected readonly options = computed<ChartOptions<'line'>>(() => {
     const games = this.played();
     return {
@@ -95,7 +110,7 @@ export class AccuracyTrendComponent {
           ticks: { ...axisTicks(this.theme), maxTicksLimit: 5, maxRotation: 0 },
         },
         y: {
-          min: 0,
+          min: this.axisMin(),
           max: 100,
           grid: { color: this.theme.border },
           border: { display: false },
