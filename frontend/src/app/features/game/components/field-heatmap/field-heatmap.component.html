@@ -9,7 +9,7 @@
 
   <p caption class="caption">
     @if (selected(); as field) {
-      <strong>{{ field.name }}</strong>,
+      <strong>{{ field.name }}</strong>
       @if (field.count === 0 && field.label === miss) {
         <ng-container i18n="@@game.heatmap.noDarts">keine Darts</ng-container>
       } @else if (field.count === 0) {

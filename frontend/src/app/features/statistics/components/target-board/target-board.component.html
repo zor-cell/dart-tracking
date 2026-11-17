@@ -56,7 +56,7 @@
     >
       <span caption>
         @if (shown(); as target) {
-          <strong>{{ target.name }}</strong>,
+          <strong>{{ target.name }}</strong>
           @if (target.rate === null) {
             <ng-container i18n="@@game.heatmap.noHits">keine Treffer</ng-container>
           } @else {
