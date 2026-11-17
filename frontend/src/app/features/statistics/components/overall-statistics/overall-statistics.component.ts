@@ -46,7 +46,7 @@ const RINGS: readonly { key: string; label: string }[] = [
   { key: 'miss', label: $localize`:@@game.miss:Daneben` },
 ];
 
-/** Every game of any kind: how much was played, where the darts went, when and against whom. */
+/** Every game of any kind: how much was played, where the darts went and when. */
 @Component({
   selector: 'app-overall-statistics',
   imports: [

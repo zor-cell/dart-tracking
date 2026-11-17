@@ -11,15 +11,7 @@ export interface DayDto {
   readonly darts: number;
 }
 
-export interface RivalDto {
-  readonly playerId: string;
-  readonly name: string;
-  readonly games: number;
-  readonly wins: number;
-  readonly losses: number;
-}
-
-/** Every finished game of any kind: how much, where the darts went, when and against whom. */
+/** Every finished game of any kind: how much, where the darts went and when. */
 export interface OverallStatisticsDto {
   readonly games: number;
   readonly darts: number;
@@ -41,8 +33,4 @@ export interface OverallStatisticsDto {
   readonly weeks: readonly WeekDto[];
   readonly longestStreak: number;
   readonly busiestDay: DayDto | null;
-  /** How many different players one has played against. */
-  readonly opponents: number;
-  /** The opponent met most often. */
-  readonly rival: RivalDto | null;
 }

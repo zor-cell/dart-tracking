@@ -17,16 +17,8 @@ class DayDto(CamelModel):
     darts: int
 
 
-class RivalDto(CamelModel):
-    player_id: str
-    name: str
-    games: int
-    wins: int
-    losses: int
-
-
 class OverallStatisticsDto(CamelModel):
-    """Every finished game of any kind: how much, where the darts went, when and against whom."""
+    """Every finished game of any kind: how much, where the darts went and when."""
 
     games: int
     darts: int
@@ -48,13 +40,10 @@ class OverallStatisticsDto(CamelModel):
     weeks: list[WeekDto]
     longest_streak: int
     busiest_day: DayDto | None
-    opponents: int
-    rival: RivalDto | None
 
     @classmethod
     def from_entity(cls, statistics: OverallStatistics) -> Self:
         busiest = statistics.busiest_day
-        rival = statistics.rival
         return cls(
             games=statistics.games,
             darts=statistics.darts,
@@ -71,14 +60,4 @@ class OverallStatisticsDto(CamelModel):
             weeks=[WeekDto(week=week, darts=darts) for week, darts in statistics.weeks],
             longest_streak=statistics.longest_streak,
             busiest_day=None if busiest is None else DayDto(day=busiest[0], darts=busiest[1]),
-            opponents=len(statistics.opponents),
-            rival=None
-            if rival is None
-            else RivalDto(
-                player_id=rival[0],
-                name=rival[1].name,
-                games=rival[1].games,
-                wins=rival[1].wins,
-                losses=rival[1].losses,
-            ),
         )

@@ -1,4 +1,4 @@
-"""Everything a player threw, whatever the game: how much, where, when and against whom."""
+"""Everything a player threw, whatever the game: how much, where and when."""
 
 from collections import Counter
 from dataclasses import dataclass, field
@@ -6,15 +6,6 @@ from datetime import date, datetime, timedelta
 
 from app.api.features.game.domain.game import Game
 from app.api.features.statistics.domain.heatmap import heatmap_cell
-
-
-@dataclass
-class OpponentTally:
-    name: str
-    games: int = 0
-    # Games the player won against this opponent, and games the opponent won.
-    wins: int = 0
-    losses: int = 0
 
 
 @dataclass
@@ -36,8 +27,6 @@ class OverallStatistics:
     rings: Counter[str] = field(default_factory=Counter)
     # Darts per day the games were played on.
     days: Counter[date] = field(default_factory=Counter)
-    # Keyed by the opponent's player id.
-    opponents: dict[str, OpponentTally] = field(default_factory=dict)
 
     def add_game(
         self, game: Game, seat: int, played_at: datetime, finished_at: datetime | None
@@ -57,18 +46,11 @@ class OverallStatistics:
                 self.located += 1
                 self.located_fields[dart.label] += 1
                 self.cells[heatmap_cell(*dart.position)] += 1
-        others = [player for player in game.players if player.id != seat]
-        if not others:
+        if len(game.players) < 2:
             return
         self.games_with_opponent += 1
         winner = game.winner
-        won = winner is not None and winner.id == seat
-        self.wins += won
-        for other in others:
-            tally = self.opponents.setdefault(other.identity_id, OpponentTally(other.name))
-            tally.games += 1
-            tally.wins += won
-            tally.losses += winner is not None and winner.id == other.id
+        self.wins += winner is not None and winner.id == seat
 
     @property
     def weeks(self) -> list[tuple[date, int]]:
@@ -103,13 +85,6 @@ class OverallStatistics:
             return None
         day = min(self.days, key=lambda day: (-self.days[day], day))
         return day, self.days[day]
-
-    @property
-    def rival(self) -> tuple[str, OpponentTally] | None:
-        """The opponent met most often, ahead of a tie the one named first."""
-        if not self.opponents:
-            return None
-        return min(self.opponents.items(), key=lambda entry: (-entry[1].games, entry[1].name))
 
 
 def _ring(multiplier: int) -> str:

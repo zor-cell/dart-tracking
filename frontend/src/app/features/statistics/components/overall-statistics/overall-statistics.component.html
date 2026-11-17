@@ -118,22 +118,3 @@
     </div>
   </dl>
 </section>
-
-<section class="panel">
-  <h2 class="panel__title" i18n="@@stats.opponent">Gegner</h2>
-  <dl class="stat-grid">
-    <div class="stat">
-      <dt class="stat__label" i18n="@@stats.all.rival">Häufigster Gegner</dt>
-      @if (totals.rival; as rival) {
-        <dd class="stat__value rival">{{ rival.name }}</dd>
-        <dd class="stat__hint" i18n="@@stats.all.rivalHint">{{ rival.games }} Spiele, {{ rival.wins }} gewonnen</dd>
-      } @else {
-        <dd class="stat__value">&ndash;</dd>
-      }
-    </div>
-    <div class="stat">
-      <dt class="stat__label" i18n="@@stats.all.opponents">Verschiedene Gegner</dt>
-      <dd class="stat__value">{{ totals.opponents | number }}</dd>
-    </div>
-  </dl>
-</section>

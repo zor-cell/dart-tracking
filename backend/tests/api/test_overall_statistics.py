@@ -57,8 +57,8 @@ def test_every_kind_of_game_adds_up(alice, session):
     assert found["weeks"] == [{"week": "2026-11-02", "darts": 6}]
     assert found["longestStreak"] == 2
     assert found["busiestDay"] == {"day": "2026-11-02", "darts": 3}
-    assert (found["gamesWithOpponent"], found["wins"], found["opponents"]) == (1, 0, 1)
-    assert found["rival"] | {"name": "Ben", "games": 1} == found["rival"]
+    assert (found["gamesWithOpponent"], found["wins"]) == (1, 0)
+    assert "rival" not in found and "opponents" not in found
 
 
 def test_a_won_duel_and_the_weeks_between(alice, session):
@@ -74,7 +74,7 @@ def test_a_won_duel_and_the_weeks_between(alice, session):
 
     found = overall(alice)
 
-    assert (found["wins"], found["rival"]["wins"], found["rival"]["losses"]) == (1, 1, 0)
+    assert (found["gamesWithOpponent"], found["wins"]) == (1, 1)
     assert [week["darts"] for week in found["weeks"]] == [2, 0, 3]
     assert found["longestStreak"] == 1
 
