@@ -50,6 +50,11 @@ from app.api.features.game.domain.turn import Turn
 DARTS_PER_TURN = 3
 
 
+def ends_without_winner(variant: GameVariant, options: object) -> bool:
+    """Whether a game of this setup ends by hand, time or darts rather than with a winner."""
+    return variant.open_ended or (isinstance(options, PersonalOptions) and options.minutes is not None)
+
+
 @dataclass
 class Game:
     id: str
@@ -656,9 +661,9 @@ class Game:
         self.revision += 1
 
     def set_ended(self, ended: bool) -> None:
-        """End a game nobody wins, or go back into it. Bumps the revision so every
-        device shows the same screen; a no-op in the games that are won."""
-        if not self.variant.open_ended or self.ended == ended:
+        """End a game nobody wins, or go back into any game its time or darts ended.
+        Bumps the revision so every device shows the same screen."""
+        if self.ended == ended or (ended and not self.variant.open_ended):
             return
         self.ended = ended
         if ended:

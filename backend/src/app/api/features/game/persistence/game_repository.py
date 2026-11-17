@@ -24,7 +24,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.game.domain.dart import Dart
-from app.api.features.game.domain.game import Game
+from app.api.features.game.domain.game import Game, ends_without_winner
 from app.api.features.game.domain.game_claim import ClaimOutcome
 from app.api.features.game.domain.game_filter import GameFilter
 from app.api.features.game.domain.game_record import GameRecord
@@ -863,7 +863,7 @@ def _assemble(
         evaluation_enabled=row.evaluation_enabled,
         tracking_paused=row.tracking_paused,
         win_confirmed=row.win_confirmed,
-        ended=variant.open_ended and row.status == GameStatus.FINISHED.value,
+        ended=row.status == GameStatus.FINISHED.value and ends_without_winner(variant, setup.options),
         current_player_index=row.current_player_index,
         turns=[
             Turn(

@@ -117,3 +117,13 @@ def test_a_timed_training_takes_only_the_offered_minutes(alice):
     own = {"playerId": alice.own_entry()["id"]}
     response = alice.post("/games", json={"players": [own], "settings": {**DOUBLES, "minutes": 5}})
     assert response.status_code == 422
+
+
+def test_a_timed_training_whose_time_ran_out_loads_as_ended(alice, session):
+    game_id = alice.new_game(alice.own_entry()["id"], settings={**DOUBLES, "minutes": 10})["id"]
+    session.play(game_id, [(16, 2), (16, 2), (16, 2)], hand_over=False)
+    session.sql("UPDATE games SET status = 'finished' WHERE id = :id", id=game_id)
+
+    loaded = alice.get(f"/games/{game_id}").json()
+
+    assert loaded["ended"] is True
