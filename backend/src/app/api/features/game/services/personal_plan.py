@@ -61,7 +61,7 @@ def build_plan(
         length=length,
         blocks=plan_blocks(fields, length),
         baselines=tuple(
-            Baseline(field, weak.darts, weak.hits)
+            Baseline(field, weak.darts, weak.hits, weak.located, weak.distance)
             for field, weak in zip(fields, chosen, strict=True)
         ),
     )

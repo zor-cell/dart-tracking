@@ -14,6 +14,9 @@ export interface PersonalBlockRow {
   readonly rate: number | null;
   /** The fields' hit rate before, in percent; null without a record. */
   readonly before: number | null;
+  /** Mean mm of the located darts from their field; null without one. */
+  readonly distance: number | null;
+  readonly distanceBefore: number | null;
 }
 
 /** A block named by its field, the closing one as "Gemischt (D16, D8, T19)". */
@@ -41,16 +44,20 @@ export function hitRate(hits: number, darts: number): number | null {
   return darts === 0 ? null : (100 * hits) / darts;
 }
 
-/** The record before the training over the fields of `block`. */
-export function recordBefore(block: PlanBlockDto, baselines: readonly FieldRecordDto[]): number | null {
+/** The hit rate and mean distance before the training over the fields of `block`. */
+export function recordBefore(
+  block: PlanBlockDto,
+  baselines: readonly FieldRecordDto[],
+): { readonly rate: number | null; readonly distance: number | null } {
   const own = baselines.filter((baseline) =>
     block.fields.some((field) => field.value === baseline.value && field.multiplier === baseline.multiplier),
   );
-  const darts = own.reduce((sum, baseline) => sum + baseline.darts, 0);
-  return hitRate(
-    own.reduce((sum, baseline) => sum + baseline.hits, 0),
-    darts,
-  );
+  const sum = (of: (baseline: FieldRecordDto) => number) => own.reduce((total, baseline) => total + of(baseline), 0);
+  const located = sum((baseline) => baseline.located);
+  return {
+    rate: hitRate(sum((baseline) => baseline.hits), sum((baseline) => baseline.darts)),
+    distance: located === 0 ? null : sum((baseline) => (baseline.distance ?? 0) * baseline.located) / located,
+  };
 }
 
 /** The seat's blocks in plan order. */
@@ -58,24 +65,16 @@ export function personalBlocks(standing: PersonalStandingDto, seat: number): Per
   const player = standing.players[seat];
   return standing.blocks.map((block, index) => {
     const tally = player.blocks[index];
+    const before = recordBefore(block, standing.baselines);
     return {
       label: block.fields.length === 1 ? fieldLabel(block.fields[0]) : $localize`:@@game.training.mixed:Gemischt`,
       planned: block.darts,
       darts: tally.darts,
       hits: tally.hits,
       rate: hitRate(tally.hits, tally.darts),
-      before: recordBefore(block, standing.baselines),
+      before: before.rate,
+      distance: tally.distance,
+      distanceBefore: before.distance,
     };
   });
-}
-
-/** The field of the player's dart number `dart`, from 0; null past the plan. */
-export function plannedField(blocks: readonly PlanBlockDto[], dart: number): PlanBlockDto['fields'][number] | null {
-  for (const block of blocks) {
-    if (dart < block.darts) {
-      return block.fields[dart % block.fields.length];
-    }
-    dart -= block.darts;
-  }
-  return null;
 }

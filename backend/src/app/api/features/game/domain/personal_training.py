@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 
+from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.target import Target
 from app.api.features.game.domain.training import Field, TrainingLength, TrainingMinutes, first_dart
 from app.api.features.game.domain.turn import Turn
@@ -56,6 +57,8 @@ class Baseline:
     field: Field
     darts: int
     hits: int
+    located: int = 0
+    distance: float = 0.0  # summed mm of the located darts from the field
 
 
 @dataclass(frozen=True)
@@ -87,6 +90,8 @@ def plan_blocks(fields: Sequence[Field], length: PersonalLength) -> tuple[PlanBl
 class BlockTally:
     darts: int = 0
     hits: int = 0
+    located: int = 0
+    distance: float = 0.0  # summed mm of the located darts from their field
 
 
 @dataclass
@@ -97,6 +102,8 @@ class PersonalPlayer:
     target: Field | None = None
     # Darts the block under way still takes.
     left: int = 0
+    # The fields of the darts the visit under way still takes.
+    ahead: list[Field] = field(default_factory=list)
     darts: int = 0
     hits: int = 0
     blocks: list[BlockTally] = field(default_factory=list)
@@ -157,22 +164,23 @@ def personal_progress(
             if at is None:
                 continue
             block, target = at
-            hit = planned_target(target, options.any_ring).hit_by(dart.value, dart.multiplier)
-            for tally in (player.blocks[block], player.fields[target]):
-                tally.darts += 1
-                tally.hits += hit
-            hits += hit
+            hits += _book(player, block, target, dart, options.any_ring)
         player.hits += hits
         progress.turn_hits.append(hits)
         progress.turn_targets.append(aimed)
 
     planned = sum(block.darts for block in blocks)
     for player_id, player in progress.players.items():
-        at = aimed_at(blocks, player.darts)
+        rest = _visit_rest(turns, player_id)
+        through = player.darts >= planned
+        # A full visit keeps its block and field on show until it is handed over.
+        at = None if through else aimed_at(blocks, player.darts - 1 if rest == 0 else player.darts)
         player.block, player.target = (len(blocks), None) if at is None else at
         player.left = sum(block.darts for block in blocks[: player.block + 1]) - player.darts
         player.left = max(player.left, 0)
-        if at is None and progress.winner_id is None and player.darts >= planned:
+        ahead = (aimed_at(blocks, player.darts + index) for index in range(rest))
+        player.ahead = [next_at[1] for next_at in ahead if next_at is not None]
+        if through and progress.winner_id is None:
             progress.winner_id = player_id
     return progress
 
@@ -199,11 +207,7 @@ def _timed_progress(
             counts[turn.player_id][block] += 1
             player.darts += 1
             aimed.append(target)
-            hit = planned_target(target, options.any_ring).hit_by(dart.value, dart.multiplier)
-            for tally in (player.blocks[block], player.fields[target]):
-                tally.darts += 1
-                tally.hits += hit
-            hits += hit
+            hits += _book(player, block, target, dart, options.any_ring)
         player.hits += hits
         progress.turn_hits.append(hits)
         progress.turn_targets.append(aimed)
@@ -211,7 +215,10 @@ def _timed_progress(
     for player_id, player in progress.players.items():
         player.block = upcoming[player_id]
         fields = blocks[player.block].fields
-        player.target = fields[counts[player_id][player.block] % len(fields)]
+        done = counts[player_id][player.block]
+        rest = _visit_rest(turns, player_id)
+        player.target = fields[(done - 1 if rest == 0 else done) % len(fields)]
+        player.ahead = [fields[(done + index) % len(fields)] for index in range(rest)]
     return progress
 
 
@@ -232,6 +239,26 @@ def _visit_block(
     if began is None:
         return 0
     return timed_block(blocks, minutes, (began - start).total_seconds())
+
+
+def _visit_rest(turns: Sequence[Turn], player_id: int) -> int:
+    """Darts the player's open visit still takes; a whole visit for a player not at the oche."""
+    current = turns[-1] if turns and turns[-1].ended_at is None else None
+    thrown = len(current.darts) if current is not None and current.player_id == player_id else 0
+    return max(_VISIT - thrown, 0)
+
+
+def _book(player: PersonalPlayer, block: int, target: Field, dart: Dart, any_ring: bool) -> bool:
+    """Counts a dart into its block and field; whether it hit."""
+    aimed = planned_target(target, any_ring)
+    hit = aimed.hit_by(dart.value, dart.multiplier)
+    for tally in (player.blocks[block], player.fields[target]):
+        tally.darts += 1
+        tally.hits += hit
+        if dart.position is not None:
+            tally.located += 1
+            tally.distance += aimed.distance(*dart.position)
+    return hit
 
 
 def _empty_progress(player_ids: Sequence[int], blocks: Sequence[PlanBlock]) -> PersonalProgress:

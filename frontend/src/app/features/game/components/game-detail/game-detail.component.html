@@ -106,7 +106,9 @@
                 <th scope="col" class="data-table__start" i18n="@@game.new.zone">Feld</th>
                 <th scope="col" class="data-table__number" i18n="@@game.detail.hits">Treffer</th>
                 <th scope="col" class="data-table__number" i18n="@@game.scoreboard.hitRate">Quote</th>
-                <th scope="col" class="data-table__number" i18n="@@game.personal.beforeHeading">Vorher</th>
+                @if (personalDistances()) {
+                  <th scope="col" class="data-table__number" i18n="@@stats.targets.distanceShort">Abstand</th>
+                }
               </tr>
             </ng-template>
             <ng-template #body let-row>
@@ -116,10 +118,26 @@
                 <td class="data-table__number">
                   @if (row.rate === null) { – } @else { {{ row.rate | number: '1.0-0' }} % }
                   <app-delta-mark [own]="row.rate" [other]="row.before" [name]="beforeName" [digits]="0" unit=" %" />
+                  @if (row.before !== null) {
+                    <span class="data-table__hint">{{ beforeName }} {{ row.before | number: '1.0-0' }} %</span>
+                  }
                 </td>
-                <td class="data-table__number">
-                  @if (row.before === null) { – } @else { {{ row.before | number: '1.0-0' }} % }
-                </td>
+                @if (personalDistances()) {
+                  <td class="data-table__number">
+                    @if (row.distance === null) { – } @else { {{ row.distance | number: '1.0-0' }} mm }
+                    <app-delta-mark
+                      [own]="row.distance"
+                      [other]="row.distanceBefore"
+                      [name]="beforeName"
+                      [digits]="0"
+                      unit=" mm"
+                      [lowerIsBetter]="true"
+                    />
+                    @if (row.distanceBefore !== null) {
+                      <span class="data-table__hint">{{ beforeName }} {{ row.distanceBefore | number: '1.0-0' }} mm</span>
+                    }
+                  </td>
+                }
               </tr>
             </ng-template>
           </p-table>

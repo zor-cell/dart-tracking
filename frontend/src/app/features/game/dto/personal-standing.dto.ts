@@ -9,12 +9,14 @@ export interface PersonalPlayerDto {
   readonly target: TrainingFieldDto | null;
   /** Darts the block under way still takes. */
   readonly left: number;
+  /** The fields of the darts the visit under way still takes. */
+  readonly ahead: readonly TrainingFieldDto[];
   readonly darts: number;
   readonly hits: number;
   /** Hits of the last closed visit; null before it. */
   readonly lastVisit: number | null;
-  /** Darts and hits per block, in plan order. */
-  readonly blocks: readonly { readonly darts: number; readonly hits: number }[];
+  /** Darts, hits and the located darts' mean distance per block, in plan order. */
+  readonly blocks: readonly Omit<FieldRecordDto, keyof TrainingFieldDto>[];
   /** Today's darts and hits per planned field. */
   readonly fields: readonly FieldRecordDto[];
 }

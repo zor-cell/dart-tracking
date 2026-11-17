@@ -4,7 +4,6 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from app.api.features.calibration.domain.board_geometry import Segment, distance_to_segment
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.target import Target
 from app.api.features.statistics.domain.heatmap import heatmap_cell
@@ -19,12 +18,6 @@ class AimedDart:
     def hit(self) -> bool:
         return self.target.hit_by(self.dart.value, self.dart.multiplier)
 
-
-def target_distance(target: Target, x: float, y: float) -> float:
-    """Shortest distance (mm) from a tip to where `target` counts, 0 inside it."""
-    rings = (1, 2) if target.value == 25 else (1, 2, 3)
-    wanted = rings if target.multiplier is None else (target.multiplier,)
-    return min(distance_to_segment(x, y, Segment(target.value, ring)) for ring in wanted)
 
 @dataclass
 class TargetTally:
@@ -44,7 +37,7 @@ class TargetTally:
         self.hits += aimed.hit
         if aimed.dart.position is not None:
             self.located += 1
-            self.distance += target_distance(aimed.target, *aimed.dart.position)
+            self.distance += aimed.target.distance(*aimed.dart.position)
 
 
 @dataclass

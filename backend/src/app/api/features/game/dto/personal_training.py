@@ -49,11 +49,18 @@ class PlanBlockDto(CamelModel):
 class TallyDto(CamelModel):
     darts: int
     hits: int
+    located: int = 0
+    # Mean mm of the located darts from their field, 0 for a hit; None without one.
+    distance: float | None = None
+
+    @classmethod
+    def of(cls, darts: int, hits: int, located: int, distance: float) -> Self:
+        mean = None if located == 0 else round(distance / located, 1)
+        return cls(darts=darts, hits=hits, located=located, distance=mean)
 
 
-class FieldRecordDto(TrainingFieldDto):
-    darts: int
-    hits: int
+class FieldRecordDto(TrainingFieldDto, TallyDto):
+    pass
 
 
 class PlannedFieldDto(FieldRecordDto):
@@ -115,6 +122,8 @@ class PersonalPlayerDto(CamelModel):
     target: TrainingFieldDto | None
     # Darts the block under way still takes.
     left: int
+    # The fields of the darts the visit under way still takes.
+    ahead: list[TrainingFieldDto]
     darts: int
     hits: int
     # Hits of the last closed visit; None before it.
@@ -149,15 +158,16 @@ class PersonalStandingDto(CamelModel):
                     block=standing.block,
                     target=None if standing.target is None else _field(standing.target),
                     left=standing.left,
+                    ahead=[_field(target) for target in standing.ahead],
                     darts=standing.darts,
                     hits=standing.hits,
                     last_visit=None if last is None else progress.turn_hits[last],
                     blocks=[
-                        TallyDto(darts=tally.darts, hits=tally.hits)
+                        TallyDto.of(tally.darts, tally.hits, tally.located, tally.distance)
                         for tally in standing.blocks
                     ],
                     fields=[
-                        _record(target, tally.darts, tally.hits)
+                        _record(target, tally.darts, tally.hits, tally.located, tally.distance)
                         for target, tally in standing.fields.items()
                     ],
                 )
@@ -165,7 +175,13 @@ class PersonalStandingDto(CamelModel):
         return cls(
             blocks=[PlanBlockDto.from_entity(block) for block in options.blocks],
             baselines=[
-                _record(baseline.field, baseline.darts, baseline.hits)
+                _record(
+                    baseline.field,
+                    baseline.darts,
+                    baseline.hits,
+                    baseline.located,
+                    baseline.distance,
+                )
                 for baseline in options.baselines
             ],
             players=players,
@@ -189,5 +205,8 @@ def _field(target: Field) -> TrainingFieldDto:
     return TrainingFieldDto(value=target[0], multiplier=target[1])
 
 
-def _record(target: Field, darts: int, hits: int) -> FieldRecordDto:
-    return FieldRecordDto(value=target[0], multiplier=target[1], darts=darts, hits=hits)
+def _record(
+    target: Field, darts: int, hits: int, located: int = 0, distance: float = 0.0
+) -> FieldRecordDto:
+    tally = TallyDto.of(darts, hits, located, distance)
+    return FieldRecordDto(value=target[0], multiplier=target[1], **tally.model_dump())

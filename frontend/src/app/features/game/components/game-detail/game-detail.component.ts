@@ -308,6 +308,11 @@ export class GameDetailComponent {
     return play.variant === 'personal' ? personalBlocks(play.standing, 0) : null;
   });
 
+  /** Whether any block has located darts, today or before, to show a distance for. */
+  protected readonly personalDistances = computed(() =>
+    (this.personalRows() ?? []).some((row) => row.distance !== null || row.distanceBefore !== null),
+  );
+
   protected readonly beforeName = $localize`:@@game.personal.before:vorher`;
 
   /** Minutes of actual play, while that is known. */

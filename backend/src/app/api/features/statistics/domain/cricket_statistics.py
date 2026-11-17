@@ -10,7 +10,6 @@ from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.target import Target
 from app.api.features.statistics.domain.heatmap import heatmap_cell
 from app.api.features.statistics.domain.player_statistics import VisitRef
-from app.api.features.statistics.domain.target_statistics import target_distance
 
 def marks_per_round(marks: int, darts: int) -> float | None:
     return None if darts == 0 else 3 * marks / darts
@@ -76,7 +75,7 @@ class CricketStatistics:
             if throw.open:
                 tally.located += 1
                 tally.distance += min(
-                    target_distance(Target(value, None), *dart.position) for value in throw.open
+                    Target(value, None).distance(*dart.position) for value in throw.open
                 )
         for turn, marks in marks_of.items():
             self.visits[marks] += 1

@@ -20,6 +20,8 @@ class Weakness:
     # The ring's darts and hits over every field, the player's average there.
     ring_darts: int
     ring_hits: int
+    located: int = 0
+    distance: float = 0.0  # summed mm of the located darts from the field
 
     @property
     def telling(self) -> bool:
@@ -46,6 +48,8 @@ def weaknesses(
         merged = tallies.setdefault(_ringed(target), FieldTally())
         merged.darts += tally.darts
         merged.hits += tally.hits
+        merged.located += tally.located
+        merged.distance += tally.distance
     pools = {ring: [0, 0] for ring in rings}
     for target, tally in tallies.items():
         if target.multiplier in pools:
@@ -58,6 +62,8 @@ def weaknesses(
             hits=tally.hits,
             ring_darts=pools[target.multiplier][0],
             ring_hits=pools[target.multiplier][1],
+            located=tally.located,
+            distance=tally.distance,
         )
         for target, tally in tallies.items()
         if target.multiplier in pools

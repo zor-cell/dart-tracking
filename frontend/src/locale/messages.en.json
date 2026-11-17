@@ -879,7 +879,6 @@
     "game.personal.mixed": "Mixed ({$fields})",
     "game.personal.before": "before",
     "game.personal.blocks": "Per block",
-    "game.personal.beforeHeading": "Before",
     "game.personal.noRecord": "No darts at target fields yet. The first training gets to know your fields.",
     "game.personal.source": "From your last {$games} games with target fields, {$darts} darts",
     "game.personal.darts": "{$count} darts",

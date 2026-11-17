@@ -60,7 +60,9 @@ def test_a_training_starts_on_the_plan_and_keeps_it(alice):
     assert game["settings"] == {**DOUBLES, "anyRing": True, "minutes": None}
     standing = game["standing"]
     assert [block["fields"] for block in standing["blocks"]] == [[D20], [D16], [D8], [D20, D16, D8]]
-    assert standing["baselines"] == [{**field, "darts": 0, "hits": 0} for field in (D20, D16, D8)]
+    assert standing["baselines"] == [
+        {**field, "darts": 0, "hits": 0, "located": 0, "distance": None} for field in (D20, D16, D8)
+    ]
     player = standing["players"][0]
     assert (player["block"], player["target"], player["left"]) == (0, D20, 12)
     assert alice.get(f"/games/{game['id']}").json()["standing"] == standing

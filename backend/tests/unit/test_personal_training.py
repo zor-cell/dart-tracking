@@ -99,6 +99,56 @@ def test_the_last_planned_dart_ends_the_training():
     assert game.darts_remaining == 0
 
 
+def test_a_full_visit_keeps_its_block_on_show_until_it_is_handed_over():
+    game = personal(PlanBlock((D16,), 3), PlanBlock((D8,), 3))
+
+    play(game, "D16 16 0")
+    player = game.progress.players[0]
+    assert (player.block, player.target, player.left, player.ahead) == (0, D16, 0, [])
+    assert (player.blocks[0].darts, player.blocks[0].hits) == (3, 1)
+
+    game.next_player()
+    player = game.progress.players[0]
+    assert (player.block, player.target, player.left, player.ahead) == (1, D8, 3, [D8, D8, D8])
+
+
+def test_the_open_visit_names_the_fields_of_its_darts_still_to_come():
+    game = personal(PlanBlock((D16,), 3), PlanBlock((D16, D8), 6))
+
+    play(game, "D16 D16 D16", "D16")
+
+    assert game.progress.players[0].ahead == [D8, D16]
+
+
+def test_located_darts_measure_their_distance_per_block_and_field():
+    game = personal(PlanBlock((D20,), 3))
+
+    for position in ((0.0, 165.0), (0.0, 150.0)):
+        value, multiplier = (20, 2) if position[1] > 160 else (20, 1)
+        game.register_dart(Dart(value=value, multiplier=multiplier, position=position))
+    game.register_dart(dart("0"))
+
+    block = game.progress.players[0].blocks[0]
+    assert (block.darts, block.located, block.distance) == (3, 2, 10.0)
+    assert game.progress.players[0].fields[D20].located == 2
+
+
+def test_the_baseline_keeps_the_distance_of_the_located_darts():
+    statistics = TargetStatistics()
+    statistics.add_game(
+        "game",
+        datetime(2026, 11, 1),
+        [AimedDart(Target(16, 2), Dart(16, 1, position=(0.0, -150.0)))] * 10,
+        False,
+    )
+
+    plan = build_plan(statistics, PersonalFocus.DOUBLES, PersonalLength.SHORT)
+
+    baseline = next(item for item in plan.options.baselines if item.field == D16)
+    assert (baseline.darts, baseline.located) == (10, 10)
+    assert baseline.distance > 0
+
+
 def test_the_announcer_calls_the_planned_field():
     game = personal(PlanBlock((T19,), 3))
 
@@ -251,6 +301,22 @@ def test_the_next_target_follows_the_block_the_open_visit_started_in():
 
     player = game.progress.players[0]
     assert (player.block, player.target) == (2, D16)
+
+
+def test_a_timed_visit_keeps_its_block_when_the_time_moves_on_within_it():
+    game = timed()
+    throw(game, ["D16 D16 D16"], seconds_apart=190)
+    for label, seconds in (("D16", 205), ("D16", 210)):
+        game.register_dart(dart(label))
+        game.stamp(START + timedelta(seconds=seconds))
+
+    player = game.progress.players[0]
+    assert (player.block, player.target, player.ahead) == (0, D16, [D16])
+
+    game.register_dart(dart("D16"))
+    game.stamp(START + timedelta(seconds=215))
+    player = game.progress.players[0]
+    assert (player.block, player.target, player.ahead) == (0, D16, [])
 
 
 def test_a_timed_plan_ends_with_the_visit_after_its_time():

@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass
 
+from app.api.features.calibration.domain.board_geometry import Segment, distance_to_segment
+
 # Scores one dart can finish in double out, as the field that does it.
 _BULL_FINISH = 50
 _HIGHEST_DOUBLE = 40
@@ -17,6 +19,12 @@ class Target:
         if value != self.value or multiplier == 0:
             return False
         return self.multiplier is None or multiplier == self.multiplier
+
+    def distance(self, x: float, y: float) -> float:
+        """Shortest distance (mm) from a tip to where the target counts, 0 inside it."""
+        rings = (1, 2) if self.value == 25 else (1, 2, 3)
+        wanted = rings if self.multiplier is None else (self.multiplier,)
+        return min(distance_to_segment(x, y, Segment(self.value, ring)) for ring in wanted)
 
 
 def finishing_double(remaining: int) -> Target | None:

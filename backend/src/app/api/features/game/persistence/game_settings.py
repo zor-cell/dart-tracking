@@ -100,7 +100,13 @@ def settings_row(game_id: str, setup: GameSetup) -> SettingsRow:
                     for block in personal.blocks
                 ],
                 baselines=[
-                    {"field": list(baseline.field), "darts": baseline.darts, "hits": baseline.hits}
+                    {
+                        "field": list(baseline.field),
+                        "darts": baseline.darts,
+                        "hits": baseline.hits,
+                        "located": baseline.located,
+                        "distance": baseline.distance,
+                    }
                     for baseline in personal.baselines
                 ],
             )
@@ -188,6 +194,8 @@ def setup_of(row: SettingsRow) -> GameSetup:
                             (baseline["field"][0], baseline["field"][1]),
                             baseline["darts"],
                             baseline["hits"],
+                            baseline.get("located", 0),
+                            baseline.get("distance", 0.0),
                         )
                         for baseline in row.baselines
                     ),
