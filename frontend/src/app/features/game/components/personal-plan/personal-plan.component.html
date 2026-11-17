@@ -48,6 +48,9 @@
           </li>
         }
       </ol>
+      @if (plan()?.darts === 0) {
+        <p class="plan__aside plan__note">{{ source() }}</p>
+      }
     } @else {
       <p-skeleton height="11rem" borderRadius="0.75rem" />
     }
