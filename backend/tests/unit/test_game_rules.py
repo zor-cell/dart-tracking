@@ -112,36 +112,15 @@ def test_manual_dart_into_a_full_visit_changes_nothing():
     assert game.revision == revision
 
 
-def test_undo_takes_back_the_winning_dart():
+def test_removing_the_winning_dart_takes_the_win_back():
     game = leg_at(40)
     throw(game, "D20")
 
-    game.undo()
+    game.remove_dart(0)
 
     assert game.winner is None
     assert game.current_turn.darts == []
     assert game.darts_remaining == 3
-
-
-def test_undo_on_an_empty_visit_reopens_the_previous_one():
-    game = new_game()
-    throw(game, "T20", "5")
-    game.next_player()
-
-    game.undo()
-
-    assert game.current_player_index == 0
-    assert game.current_turn.darts == darts("T20", "5", "0")
-    assert len(game.turns) == 1
-
-
-def test_undo_at_the_start_changes_nothing():
-    game = new_game()
-
-    game.undo()
-
-    assert game.revision == 0
-    assert not game.can_undo
 
 
 @pytest.mark.parametrize("index", [-1, 2, 5])

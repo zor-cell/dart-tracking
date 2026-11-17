@@ -13,6 +13,7 @@ from app.api.features.calibration.dto.calibration_requested import (
 from app.api.features.calibration.dto.calibration_result import CalibrationResultDto
 from app.api.features.calibration.dto.calibration_state import CalibrationStateDto
 from app.api.features.detection.dto.detection_result import DetectionResultDto
+from app.api.features.game.dto.correction_pending import CorrectionPendingDto
 from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.dto.rematch_started import RematchStartedDto
 
@@ -28,4 +29,5 @@ ServerMessage = (
     | TurnAnnouncementDto
     | CalibrationAnnouncementDto
     | RematchStartedDto
+    | CorrectionPendingDto
 )

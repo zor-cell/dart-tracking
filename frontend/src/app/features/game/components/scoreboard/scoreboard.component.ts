@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { Skeleton } from 'primeng/skeleton';
 import { ScoreboardEntry } from '../../models/scoreboard-entry';
+import { VisitMark } from '../../models/visit-mark';
 import { ProgressSegmentsComponent } from '../progress-segments/progress-segments.component';
 
 /** A row of player cards that keeps the active one centred; null entries draw placeholders. */
@@ -23,6 +24,8 @@ export class ScoreboardComponent {
   readonly entries = input.required<readonly ScoreboardEntry[] | null>();
   readonly activeIndex = input<number | null>(null);
   readonly winnerId = input<number | null>(null);
+  /** An earlier visit on show, whose thrower's card is marked with its round. */
+  readonly visitMark = input<VisitMark | null>(null);
 
   private readonly listRef = viewChild<ElementRef<HTMLUListElement>>('list');
 
@@ -52,6 +55,15 @@ export class ScoreboardComponent {
       const list = this.listRef()?.nativeElement;
       if (list !== undefined && index !== null) {
         centre(list, index);
+      }
+    });
+
+    // Bring the thrower of a visit browsed back to into view.
+    effect(() => {
+      const mark = this.visitMark();
+      const list = this.listRef()?.nativeElement;
+      if (list !== undefined && mark !== null) {
+        centre(list, mark.seat);
       }
     });
 

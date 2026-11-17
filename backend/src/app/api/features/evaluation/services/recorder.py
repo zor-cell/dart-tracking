@@ -35,7 +35,6 @@ from app.api.features.game.dto.command.move_dart import MoveDartDto
 from app.api.features.game.dto.command.register_dart import RegisterDartDto
 from app.api.features.game.dto.command.remove_dart import RemoveDartDto
 from app.api.features.game.dto.command.replace_dart import ReplaceDartDto
-from app.api.features.game.dto.command.undo import UndoDto
 from app.api.features.game.persistence.game_repository import repository as game_repository
 from app.infrastructure import database
 from app.infrastructure.config import get_settings
@@ -45,7 +44,6 @@ logger = logging.getLogger(__name__)
 # Which kind of event a game command leaves behind.
 _KINDS = {
     RegisterDartDto: GameEventKind.MANUAL,
-    UndoDto: GameEventKind.UNDO,
     RemoveDartDto: GameEventKind.DART_REMOVED,
     ReplaceDartDto: GameEventKind.DART_REPLACED,
     MoveDartDto: GameEventKind.DART_MOVED,
@@ -96,10 +94,10 @@ def for_command(command: GameCommand, *, camera_armed: bool) -> Recording:
             if isinstance(command, RemoveDartDto | ReplaceDartDto | MoveDartDto)
             else None
         )
-        reopens = isinstance(command, UndoDto) and at.darts == 0
+        turn = placed.turn if placed is not None and placed.turn is not None else at.turn_index
         return GameEvent(
-            kind=GameEventKind.VISIT_REOPENED if reopens else _KINDS[type(command)],
-            turn_index=at.turn_index,
+            kind=_KINDS[type(command)],
+            turn_index=turn,
             player_index=at.player_index,
             accepted=accepted,
             camera_armed=camera_armed,

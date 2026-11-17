@@ -1,10 +1,11 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, firstValueFrom, tap } from 'rxjs';
+import { Observable, Subject, firstValueFrom, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { SILENT_ERROR_CONTEXT } from '../../../core/interceptors';
 import { SocketService } from '../../../core/socket/services/socket.service';
+import { CorrectionPendingDto } from '../dto/correction-pending.dto';
 import { GameCommandDto } from '../dto/game-command.dto';
 import { GameCreatedDto } from '../dto/game-created.dto';
 import { GameStateDto } from '../dto/game-state.dto';
@@ -34,6 +35,10 @@ export class GameService {
 
   private readonly _state = signal<GameStateDto | null>(null);
   readonly state = this._state.asReadonly();
+
+  private readonly _pendingCorrections = new Subject<CorrectionPendingDto>();
+  /** Corrections this device sent whose consequence waits for a confirmation. */
+  readonly pendingCorrections = this._pendingCorrections.asObservable();
 
   readonly currentTurn = computed<TurnDto | null>(() => this._state()?.turns.at(-1) ?? null);
 
@@ -101,6 +106,11 @@ export class GameService {
       .pipe(takeUntilDestroyed())
       .subscribe((state) => this.setState(state));
 
+    this.socket
+      .on('correction_pending')
+      .pipe(takeUntilDestroyed())
+      .subscribe((pending) => this._pendingCorrections.next(pending));
+
     // Every device in the room follows a rematch; its role stays with the device.
     this.socket
       .on('rematch_started')
@@ -131,30 +141,32 @@ export class GameService {
     this.socket.send({ type: 'register_dart', value, multiplier, ...this.seenVisit() });
   }
 
-  /** Step back one action — a dart, or the switch to the current player. */
-  undo(): void {
-    this.socket.send({ type: 'undo', ...this.seenVisit() });
+  /** Take one dart out of a visit, the open one unless `turn` names another; there
+   * the darts after it move up, a closed visit keeps it as a miss. */
+  removeDart(index: number, turn?: number): void {
+    this.socket.send({ type: 'remove_dart', index, ...visitOf(turn), ...this.seenVisit() });
   }
 
-  /** Take one dart out of the open visit; the darts after it move up. */
-  removeDart(index: number): void {
-    this.socket.send({ type: 'remove_dart', index, ...this.seenVisit() });
-  }
-
-  /** Book a different field for one dart of the open visit, in its place. */
-  replaceDart(index: number, value: number, multiplier: number): void {
+  /** Book a different field for one dart of a visit, in its place. */
+  replaceDart(index: number, value: number, multiplier: number, turn?: number): void {
     this.socket.send({
       type: 'replace_dart',
       index,
       value,
       multiplier,
+      ...visitOf(turn),
       ...this.seenVisit(),
     });
   }
 
-  /** Move one dart of the open visit to another place in it. */
-  moveDart(index: number, toIndex: number): void {
-    this.socket.send({ type: 'move_dart', index, toIndex, ...this.seenVisit() });
+  /** Move one dart of a visit to another place in it. */
+  moveDart(index: number, toIndex: number, turn?: number): void {
+    this.socket.send({ type: 'move_dart', index, toIndex, ...visitOf(turn), ...this.seenVisit() });
+  }
+
+  /** Send a correction again with its consequence accepted, which books it. */
+  confirmCorrection(pending: CorrectionPendingDto): void {
+    this.socket.send({ ...pending.command, confirmed: true });
   }
 
   /** Switch to the next player */
@@ -165,11 +177,6 @@ export class GameService {
   /** Take the winning dart as thrown, for the whole room. */
   confirmWin(): void {
     this.socket.send({ type: 'set_win_confirmed', confirmed: true });
-  }
-
-  /** Back from the finished screen to the win that waits for its confirm tap, for the whole room. */
-  reopenWin(): void {
-    this.socket.send({ type: 'set_win_confirmed', confirmed: false });
   }
 
   /** End a game nobody wins for the whole room, or go back into it. */
@@ -307,4 +314,9 @@ export class GameService {
     writeStored(ACTIVE_GAME_KEY, state.id);
     return true;
   }
+}
+
+/** The visit field of a correction: left out for the open visit. */
+function visitOf(turn: number | undefined): { turn?: number } {
+  return turn === undefined ? {} : { turn };
 }

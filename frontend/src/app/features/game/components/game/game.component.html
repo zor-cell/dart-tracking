@@ -233,49 +233,56 @@
       [entries]="scoreboardEntries()"
       [activeIndex]="state.currentPlayerIndex"
       [winnerId]="game.winner()?.id ?? null"
+      [visitMark]="visitMark()"
     />
 
     <div class="turn">
-      @if (game.currentTurn(); as turn) {
+      @if (shownTurn(); as turn) {
         <div class="turn__row">
-          <!-- Takes the picked dart instead of the last one; see undoOrDelete. -->
-          <p-button
-            class="turn__undo"
-            [icon]="selectedDart() === null ? 'pi pi-arrow-left' : 'pi pi-trash'"
-            [rounded]="true"
-            severity="secondary"
-            [ariaLabel]="selectedDart() === null ? undoLabel : deleteDartLabel"
-            [disabled]="selectedDart() === null && !state.canUndo && !state.ended"
-            (onClick)="undoOrDelete()"
-          />
+          @if (selectedDart() === null) {
+            <p-button
+              class="turn__undo"
+              icon="pi pi-arrow-left"
+              [rounded]="true"
+              severity="secondary"
+              [ariaLabel]="backLabel"
+              [disabled]="state.turns.length === 1 || viewedTurn() === 0"
+              (appRepeatPress)="browseBack()"
+            />
+          } @else {
+            <p-button
+              class="turn__undo"
+              icon="pi pi-trash"
+              [rounded]="true"
+              severity="secondary"
+              [ariaLabel]="deleteDartLabel"
+              (onClick)="deleteDart()"
+            />
+          }
 
           <ul
             class="turn__darts"
+            [class.turn__darts--past]="viewedTurn() !== null"
             aria-label="Darts dieser Runde"
             i18n-aria-label="@@game.roundDarts"
             cdkDropList
             cdkDropListOrientation="horizontal"
-            [cdkDropListDisabled]="game.finished()"
             (cdkDropListDropped)="dropDart($event)"
           >
             @for (dart of turn.darts; track $index) {
-              @if (game.finished()) {
-                <li class="turn__dart" [class.turn__dart--busted]="turn.busted">{{ dart.label }}</li>
-              } @else {
-                <li class="turn__slot" cdkDrag [cdkDragStartDelay]="{ touch: 150, mouse: 0 }">
-                  <button
-                    type="button"
-                    class="turn__dart turn__dart--pickable"
-                    [class.turn__dart--busted]="turn.busted"
-                    [class.turn__dart--selected]="selectedDart() === $index"
-                    [attr.aria-pressed]="selectedDart() === $index"
-                    [attr.aria-label]="pickLabel(dart.label)"
-                    (click)="selectDart($index)"
-                  >
-                    {{ dart.label }}
-                  </button>
-                </li>
-              }
+              <li class="turn__slot" cdkDrag [cdkDragStartDelay]="{ touch: 150, mouse: 0 }">
+                <button
+                  type="button"
+                  class="turn__dart turn__dart--pickable"
+                  [class.turn__dart--busted]="turn.busted"
+                  [class.turn__dart--selected]="selectedDart() === $index"
+                  [attr.aria-pressed]="selectedDart() === $index"
+                  [attr.aria-label]="pickLabel(dart.label)"
+                  (click)="selectDart($index)"
+                >
+                  {{ dart.label }}
+                </button>
+              </li>
             }
             @for (slot of checkoutSlots(); track $index) {
               <li
@@ -299,7 +306,16 @@
             }
           </ul>
 
-          @if (game.finished()) {
+          @if (viewedTurn() !== null) {
+            <p-button
+              class="turn__forward"
+              icon="pi pi-arrow-right"
+              [rounded]="true"
+              severity="secondary"
+              [ariaLabel]="forwardLabel"
+              (appRepeatPress)="browseForward()"
+            />
+          } @else if (game.finished()) {
             @if (signedIn()) {
               <p-button
                 class="turn__stats"
@@ -326,7 +342,7 @@
         </div>
       }
 
-      @if (!game.finished()) {
+      @if (padShown()) {
         <div class="scorepad" role="group" aria-label="Punkte-Eingabe" i18n-aria-label="@@game.scorepad">
           @for (row of padRows; track $index) {
             @for (n of row; track n) {
@@ -378,7 +394,7 @@
         </div>
       }
 
-      @if (game.finished()) {
+      @if (!padShown()) {
         <!-- Takes the keypad's slot, so the picture above keeps its height. -->
         <div class="finish">
           <p-button
@@ -402,6 +418,20 @@
             [outlined]="true"
             (onClick)="leaveGame()"
           />
+          @if (resumable()) {
+            <p-button
+              class="finish__resume"
+              fluid
+              size="small"
+              [dt]="finishButtonTokens"
+              label="Weiterspielen"
+              i18n-label="@@game.resume"
+              icon="pi pi-play"
+              severity="secondary"
+              [text]="true"
+              (onClick)="resume()"
+            />
+          }
         </div>
       }
     </div>

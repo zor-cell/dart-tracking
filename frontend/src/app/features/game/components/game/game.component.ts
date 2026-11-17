@@ -10,8 +10,10 @@ import {
   OnDestroy,
   OnInit,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DOCUMENT, formatNumber } from '@angular/common';
 import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
 import {Router, RouterLink} from '@angular/router';
@@ -41,6 +43,11 @@ import {VirtualBoardComponent} from '../virtual-board/virtual-board.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { backState } from '../../../../core/view/models/back-state';
+import { RepeatPressDirective } from '../../../../core/view/directives/repeat-press.directive';
+import { ConfirmService } from '../../../../core/view/services/confirm.service';
+import { CorrectionPendingDto } from '../../dto/correction-pending.dto';
+import { TurnDto } from '../../dto/turn.dto';
+import { VisitMark } from '../../models/visit-mark';
 import { readStored, writeStored } from '../../../../core/storage/models/browser-storage';
 
 /** A side-column key: a fixed field, booked as it stands whatever D or T is set to. */
@@ -65,7 +72,17 @@ type CheckoutSlot = {
 /** Fields to suggest in the empty slots; `hostile` when they take an opponent's life. */
 type TargetRoute = { readonly darts: readonly string[]; readonly hostile: boolean };
 
-const MISS: FixedKey = { label: '0', value: 0, multiplier: 0 };
+/** An empty box after the darts of an earlier visit. */
+const EMPTY_SLOT: CheckoutSlot = {
+  label: null,
+  eliminating: false,
+  reset: null,
+  setup: false,
+  leave: null,
+  shadow: false,
+};
+
+const MISS: FixedKey ={ label: '0', value: 0, multiplier: 0 };
 const BULL: FixedKey = { label: '25', value: 25, multiplier: 1 };
 const BULLSEYE: FixedKey = { label: '50', value: 25, multiplier: 2 };
 
@@ -103,6 +120,7 @@ const SIDE_KEYS: readonly FixedKey[] = [MISS, BULL, BULLSEYE];
     LoadingStateComponent,
     CdkDropList,
     CdkDrag,
+    RepeatPressDirective,
   ],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss',
@@ -132,6 +150,7 @@ export class GameComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly drafts = inject(GameDraftService);
+  private readonly confirm = inject(ConfirmService);
   protected readonly signedIn = this.auth.isAuthenticated;
   /** The game detail leads back here, so a rematch is one tap away. */
   protected readonly returnState = backState($localize`:@@common.nav.game:Spiel`);
@@ -140,7 +159,8 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly fullscreenLabel = $localize`:@@game.fullscreen:Kamera im Vollbild`;
   protected readonly boardFullscreenLabel = $localize`:@@game.boardFullscreen:Board im Vollbild`;
   protected readonly exitFullscreenLabel = $localize`:@@game.exitFullscreen:Vollbild verlassen`;
-  protected readonly undoLabel = $localize`:@@game.undo:Zurück`;
+  protected readonly backLabel = $localize`:@@game.previousVisit:Runde davor anzeigen`;
+  protected readonly forwardLabel = $localize`:@@game.nextVisit:Nächste Runde anzeigen`;
   protected readonly deleteDartLabel = $localize`:@@game.deleteDart:Ausgewählten Dart löschen`;
   protected readonly pickLabel = (label: string): string =>
     $localize`:@@game.pickDart:${label}:field: auswählen und korrigieren`;
@@ -197,34 +217,72 @@ export class GameComponent implements OnInit, OnDestroy {
     this.multiplier() === 2 ? 'D' : this.multiplier() === 3 ? 'T' : '',
   );
 
+  // The visit browsed back to, from 0; null shows the open one.
+  private readonly browsedTurn = signal<number | null>(null);
+
+  /** The earlier visit on show, or null while the open one is; a visit the game dropped falls back. */
+  protected readonly viewedTurn = computed(() => {
+    const browsed = this.browsedTurn();
+    const turns = this.game.state()?.turns.length ?? 0;
+    return browsed !== null && browsed < turns - 1 ? browsed : null;
+  });
+
+  /** Index of the visit on show: the browsed one, else the open one. */
+  private readonly shownIndex = computed(
+    () => this.viewedTurn() ?? (this.game.state()?.turns.length ?? 1) - 1,
+  );
+
+  /** The visit the dart row and the board show. */
+  protected readonly shownTurn = computed<TurnDto | null>(
+    () => this.game.state()?.turns[this.shownIndex()] ?? null,
+  );
+
+  /** The browsed visit's thrower and round, which the scoreboard marks. */
+  protected readonly visitMark = computed<VisitMark | null>(() => {
+    const state = this.game.state();
+    const viewed = this.viewedTurn();
+    if (state === null || viewed === null) {
+      return null;
+    }
+    const playerId = state.turns[viewed].playerId;
+    return {
+      seat: state.players.findIndex((player) => player.id === playerId),
+      round: roundOf(state.turns, viewed),
+    };
+  });
+
   // The picked dart together with the visit it was picked in.
   private readonly pickedDart = signal<{ turn: number; index: number } | null>(null);
 
-  /**
-   * The dart a keypad tap corrects instead of appending, or null to append; only
-   * a dart of the open visit.
-   */
+  /** The dart a keypad tap corrects instead of appending, or null to append; only
+   * a dart of the visit on show. */
   protected readonly selectedDart = computed(() => {
     const picked = this.pickedDart();
-    const turns = this.game.state()?.turns;
-    if (picked === null || turns === undefined) {
-      return null;
-    }
-    const open = turns.length - 1;
-    return picked.turn === open && picked.index < (turns[open]?.darts.length ?? 0)
+    const darts = this.shownTurn()?.darts.length ?? 0;
+    return picked !== null && picked.turn === this.shownIndex() && picked.index < darts
       ? picked.index
       : null;
   });
 
-  /** Whether the keypad books at all: appending needs room in the visit,
-   * correcting a selected dart does not. */
+  /** Whether the keypad books at all: appending needs the open visit with room in
+   * it, correcting a selected dart does not. */
   protected readonly padAccepts = computed(
-    () => this.game.acceptsManualDarts() || this.selectedDart() !== null,
+    () =>
+      this.selectedDart() !== null || (this.viewedTurn() === null && this.game.acceptsManualDarts()),
   );
 
-  /** The visit being thrown, drawn on the virtual board as it fills up. */
+  /** The keypad takes the finish block's place while a finished game gets corrected. */
+  protected readonly padShown = computed(() => !this.game.finished() || this.selectedDart() !== null);
+
+  /** A free training ended by hand can be played on. */
+  protected readonly resumable = computed(() => {
+    const state = this.game.state();
+    return state !== null && state.ended && state.settings.variant === 'training';
+  });
+
+  /** The visit on show, drawn on the virtual board. */
   protected readonly currentDarts = computed<readonly DartDto[]>(
-    () => this.game.currentTurn()?.darts ?? [],
+    () => this.shownTurn()?.darts ?? [],
   );
 
   protected readonly scoreboardEntries = computed<ScoreboardEntry[]>(() => {
@@ -269,6 +327,10 @@ export class GameComponent implements OnInit, OnDestroy {
    * finish over a reset or setup route, shadow darts in the first free slots.
    */
   protected readonly checkoutSlots = computed<readonly CheckoutSlot[]>(() => {
+    if (this.viewedTurn() !== null) {
+      const thrown = this.shownTurn()?.darts.length ?? DARTS_PER_TURN;
+      return Array.from({ length: DARTS_PER_TURN - thrown }, () => EMPTY_SLOT);
+    }
     const thrown = this.game.currentTurn()?.darts.length ?? 0;
     const state = this.game.state();
     const checkout = state?.checkout ?? null;
@@ -326,6 +388,23 @@ export class GameComponent implements OnInit, OnDestroy {
       }
     };
     this.document.addEventListener('fullscreenchange', onFullscreenChange);
+
+    // A dart booked into the open visit brings the view back to it, unless a
+    // correction is under way.
+    let open: string | null = null;
+    effect(() => {
+      const turns = this.game.state()?.turns;
+      const now = turns === undefined ? null : `${turns.length}:${turns.at(-1)?.darts.length}`;
+      if (open !== null && now !== open && untracked(() => this.selectedDart()) === null) {
+        this.browsedTurn.set(null);
+      }
+      open = now;
+    });
+
+    // A correction in an earlier visit that changes more than that visit asks first.
+    this.game.pendingCorrections
+      .pipe(takeUntilDestroyed())
+      .subscribe((pending) => this.askCorrection(pending));
 
     // A picked dart is a mode, so anything outside the two blocks that act on
     // it — the dart row and the keypad — leaves that mode.
@@ -445,31 +524,39 @@ export class GameComponent implements OnInit, OnDestroy {
    * again. Nothing is booked or taken back here — the next keypad tap decides
    * which it was. */
   protected selectDart(index: number): void {
-    const turn = this.openTurnIndex();
+    const turn = this.shownIndex();
     this.pickedDart.update((picked) =>
       picked?.turn === turn && picked.index === index ? null : { turn, index },
     );
   }
 
-  /** The back key's other job: with a dart picked out there is no step back to
-   * take — that dart is not the last one — so it takes that dart instead,
-   * which is how a phantom booking in the middle of a visit goes. */
-  protected undoOrDelete(): void {
-    if (this.game.ended()) {
-      this.game.setEnded(false);
-      return;
-    }
-    if (this.game.settledWinner() !== null) {
-      this.game.reopenWin();
-      return;
-    }
-    const selected = this.selectedDart();
-    if (selected === null) {
-      this.game.undo();
-      return;
-    }
-    this.game.removeDart(selected);
+  /** Show the visit before the one on show. */
+  protected browseBack(): void {
     this.pickedDart.set(null);
+    this.browsedTurn.set(Math.max(this.shownIndex() - 1, 0));
+  }
+
+  /** Show the visit after the one on show, up to the open one. */
+  protected browseForward(): void {
+    const viewed = this.viewedTurn();
+    if (viewed !== null) {
+      this.pickedDart.set(null);
+      this.browsedTurn.set(viewed + 1);
+    }
+  }
+
+  /** Take the picked dart out: from the open visit, or as a miss from an earlier one. */
+  protected deleteDart(): void {
+    const selected = this.selectedDart();
+    if (selected !== null) {
+      this.game.removeDart(selected, this.viewedTurn() ?? undefined);
+      this.pickedDart.set(null);
+    }
+  }
+
+  /** Go back into a free training ended by hand. */
+  protected resume(): void {
+    this.game.setEnded(false);
   }
 
   /** Drop a dragged dart in its new place. The order comes back from the server
@@ -479,7 +566,7 @@ export class GameComponent implements OnInit, OnDestroy {
     if (event.previousIndex === event.currentIndex) {
       return;
     }
-    this.game.moveDart(event.previousIndex, event.currentIndex);
+    this.game.moveDart(event.previousIndex, event.currentIndex, this.viewedTurn() ?? undefined);
   }
 
   /** A 1–20 key: booked with the active multiplier, which then falls back to
@@ -500,7 +587,7 @@ export class GameComponent implements OnInit, OnDestroy {
     if (selected === null) {
       this.game.registerDart(value, multiplier);
     } else {
-      this.game.replaceDart(selected, value, multiplier);
+      this.game.replaceDart(selected, value, multiplier, this.viewedTurn() ?? undefined);
       this.pickedDart.set(null);
     }
     this.multiplier.set(1);
@@ -513,8 +600,37 @@ export class GameComponent implements OnInit, OnDestroy {
     }
   }
 
-  private openTurnIndex(): number {
-    return (this.game.state()?.turns.length ?? 1) - 1;
+  /** Ask before a correction that ends the game earlier or puts players out earlier. */
+  private askCorrection(pending: CorrectionPendingDto): void {
+    const state = this.game.state();
+    if (state === null) {
+      return;
+    }
+    const name = (id: number | null) => state.players.find((player) => player.id === id)?.name ?? '';
+    const accept = () => this.game.confirmCorrection(pending);
+    if (pending.wonAt !== null) {
+      const round = roundOf(state.turns, pending.wonAt);
+      const winner = name(pending.winnerId);
+      const dropped = pending.dropped;
+      this.confirm.ask(
+        $localize`:@@game.earlyWin.title:Sieg in Runde ${round}:round:?`,
+        dropped === 1
+          ? $localize`:@@game.earlyWin.one:Damit hat ${winner}:name: in Runde ${round}:round: gewonnen. Die Runde danach fällt weg.`
+          : $localize`:@@game.earlyWin.other:Damit hat ${winner}:name: in Runde ${round}:round: gewonnen. Die ${dropped}:count: Runden danach fallen weg.`,
+        dropped === 1
+          ? $localize`:@@game.earlyWin.dropOne:Runde verwerfen`
+          : $localize`:@@game.earlyWin.dropOther:Runden verwerfen`,
+        accept,
+      );
+      return;
+    }
+    const names = pending.outIds.map(name).join(', ');
+    this.confirm.ask(
+      $localize`:@@game.earlyOut.title:Früher draußen?`,
+      $localize`:@@game.earlyOut.message:Damit ist ${names}:names: früher draußen. Die Runden danach zählen nicht.`,
+      $localize`:@@game.earlyOut.accept:Korrigieren`,
+      accept,
+    );
   }
 
   protected toggleDouble(): void {
@@ -584,4 +700,10 @@ function targetRoute(state: GameStateDto): TargetRoute | null {
   }
   const field = zoneLabel(victim.number, zone);
   return { darts: Array.from({ length: state.dartsRemaining }, () => field), hostile: true };
+}
+
+/** The visit's number among its thrower's visits, from 1. */
+function roundOf(turns: readonly TurnDto[], index: number): number {
+  const playerId = turns[index].playerId;
+  return turns.slice(0, index + 1).filter((turn) => turn.playerId === playerId).length;
 }

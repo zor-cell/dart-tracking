@@ -131,10 +131,10 @@ def test_knocking_yourself_out_hands_the_win_to_the_last_one_standing():
     assert game.winner is game.players[1]
 
 
-def test_undo_gives_a_life_back():
+def test_removing_a_hit_gives_the_life_back():
     game = killer()
     play(game, "D20 D5")
-    game.undo()
+    game.remove_dart(1)
 
     assert standing(game, 1).lives == 3
     assert standing(game, 0).killer

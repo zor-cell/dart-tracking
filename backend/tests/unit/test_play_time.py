@@ -26,19 +26,18 @@ def test_stamp_dates_new_darts_and_the_visit_handed_over():
     assert game.current_turn.ended_at is None
 
 
-def test_undo_reopens_the_visit_and_replace_keeps_the_time():
+def test_a_correction_in_a_closed_visit_keeps_its_times():
     game = new_game()
     game.register_dart(dart("20"))
     game.stamp(at(5))
     game.next_player()
     game.stamp(at(10))
-    game.undo()
+    game.replace_dart(0, dart("T20"), turn=0)
+    game.remove_dart(1, turn=0)
     game.stamp(at(15))
-    game.replace_dart(0, dart("T20"))
-    game.stamp(at(20))
 
-    assert game.current_turn.ended_at is None
-    assert game.current_turn.darts[0].thrown_at == at(5)
+    assert game.turns[0].ended_at == at(10)
+    assert [d.thrown_at for d in game.turns[0].darts] == [at(5), at(10), at(10)]
 
 
 def test_the_winning_visit_ends_with_the_win():

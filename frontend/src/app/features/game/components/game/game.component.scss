@@ -297,8 +297,19 @@
 // Keep their size next to the growing dart boxes.
 .turn__undo,
 .turn__confirm,
+.turn__forward,
 .turn__stats {
   flex-shrink: 0;
+}
+
+// An earlier visit on show: its boxes are drawn dashed, the open one's solid.
+.turn__darts--past .turn__dart:not(.turn__dart--selected) {
+  border-style: dashed;
+  background: none;
+}
+
+.finish__resume {
+  grid-column: 1 / -1;
 }
 
 .turn__dart {

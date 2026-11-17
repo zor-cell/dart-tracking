@@ -80,13 +80,13 @@ from app.api.features.evaluation.dto.command.set_evaluation import SetEvaluation
 from app.api.features.game.dto.command.set_tracking_paused import SetTrackingPausedDto
 from app.api.features.evaluation.services import recorder
 from app.api.features.game.dto.command.game_command import GameCommand
+from app.api.features.game.dto.correction_pending import CorrectionPendingDto
 from app.api.features.game.dto.game_state import GameStateDto
 from app.api.features.game.dto.command.move_dart import MoveDartDto
 from app.api.features.game.dto.command.next_player import NextPlayerDto
 from app.api.features.game.dto.command.register_dart import RegisterDartDto
 from app.api.features.game.dto.command.remove_dart import RemoveDartDto
 from app.api.features.game.dto.command.replace_dart import ReplaceDartDto
-from app.api.features.game.dto.command.undo import UndoDto
 from app.api.features.game.dto.command.set_ended import SetEndedDto
 from app.api.features.game.dto.command.set_win_confirmed import SetWinConfirmedDto
 from app.api.features.game.domain.dart import Dart as ScoredDart
@@ -255,11 +255,10 @@ async def _dispatch(
             RegisterDartDto()
             | ReplaceDartDto()
             | MoveDartDto()
-            | UndoDto()
             | RemoveDartDto()
             | NextPlayerDto()
         ):
-            await _handle_game_command(game_id, message)
+            await _handle_game_command(connection, game_id, message)
 
 
 async def _account(access_token: str) -> User | None:
@@ -325,34 +324,47 @@ async def _apply(
     return game, changed
 
 
-async def _handle_game_command(game_id: str, command: GameCommand) -> None:
-    """Apply one command and, once committed, push the result to the room.
+async def _handle_game_command(
+    connection: Connection, game_id: str, command: GameCommand
+) -> None:
+    """Apply one command and, once committed, push the result to the room. A
+    correction whose consequence awaits confirmation goes back to its sender only.
 
     A command that leaves the revision unchanged is not broadcast.
     """
     armed = await recorder.camera_armed(game_id)
     filled = 0
     reset_before: set[int] = set()
+    pending: CorrectionPendingDto | None = None
+    # Whether the command changed the open visit rather than a closed one.
+    open_visit = True
 
     def mutate(game: Game) -> None:
-        nonlocal filled, reset_before
+        nonlocal filled, reset_before, pending, open_visit
         reset_before = game.just_reset()
         if not command.is_current(game):
             logger.info("[socket] refused %s made against an outdated visit", command.type)
             return
+        consequence = None
+        if isinstance(command, ReplaceDartDto | MoveDartDto | RemoveDartDto):
+            open_visit = command.turn is None or command.turn >= len(game.turns) - 1
         match command:
             case RegisterDartDto():
                 game.add_dart(command.to_entity())
             case ReplaceDartDto():
-                game.replace_dart(command.index, command.to_entity())
+                consequence = game.replace_dart(
+                    command.index, command.to_entity(), command.turn, command.confirmed
+                )
             case MoveDartDto():
-                game.move_dart(command.index, command.to_index)
-            case UndoDto():
-                game.undo()
+                consequence = game.move_dart(
+                    command.index, command.to_index, command.turn, command.confirmed
+                )
             case RemoveDartDto():
-                game.remove_dart(command.index)
+                consequence = game.remove_dart(command.index, command.turn, command.confirmed)
             case NextPlayerDto():
                 filled = game.next_player()
+        if consequence is not None and isinstance(command, ReplaceDartDto | MoveDartDto | RemoveDartDto):
+            pending = CorrectionPendingDto.from_entity(consequence, game, command)
 
     if isinstance(command, NextPlayerDto):
         handover = recorder.for_handover(None, camera_armed=armed)
@@ -364,6 +376,8 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
         return
 
     game, changed = applied
+    if pending is not None:
+        await hub.send(connection, pending)
     if not changed:
         return
 
@@ -373,7 +387,7 @@ async def _handle_game_command(game_id: str, command: GameCommand) -> None:
     await recorder.settle_win(game)
 
     await _publish_state(game)
-    if isinstance(command, RegisterDartDto | ReplaceDartDto):
+    if open_visit and isinstance(command, RegisterDartDto | ReplaceDartDto):
         index = command.index if isinstance(command, ReplaceDartDto) else -1
         await _announce(game, command.to_entity(), game.just_reset() - reset_before, index)
 

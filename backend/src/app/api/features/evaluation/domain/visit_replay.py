@@ -70,16 +70,24 @@ def replay(events: Iterable[GameEvent]) -> list[Visit]:
             case GameEventKind.VISIT_REOPENED if event.accepted:
                 open_index = max(open_index - 1, 0)
             case GameEventKind.DART_REMOVED if event.accepted:
-                if event.dart_index is not None and event.dart_index < len(accepted[open_index]):
-                    accepted[open_index].pop(event.dart_index)
-                corrected[open_index] = True
+                slot = _slot(event, open_index)
+                darts = accepted[slot]
+                if event.dart_index is not None and event.dart_index < len(darts):
+                    # A closed visit keeps the place, so later indices still match.
+                    if slot < open_index:
+                        darts[event.dart_index] = event
+                    else:
+                        darts.pop(event.dart_index)
+                corrected[slot] = True
             case GameEventKind.DART_REPLACED if event.accepted:
-                if event.dart_index is not None and event.dart_index < len(accepted[open_index]):
-                    accepted[open_index][event.dart_index] = event
-                corrected[open_index] = True
+                slot = _slot(event, open_index)
+                if event.dart_index is not None and event.dart_index < len(accepted[slot]):
+                    accepted[slot][event.dart_index] = event
+                corrected[slot] = True
             case GameEventKind.DART_MOVED if event.accepted:
-                _move(accepted[open_index], event.dart_index, event.target_index)
-                corrected[open_index] = True
+                slot = _slot(event, open_index)
+                _move(accepted[slot], event.dart_index, event.target_index)
+                corrected[slot] = True
             case GameEventKind.NEXT_PLAYER if event.accepted:
                 # The event carries the player who just finished, so the
                 # new slot's owner is left to the first event that lands in it.
@@ -91,13 +99,18 @@ def replay(events: Iterable[GameEvent]) -> list[Visit]:
             turn_index=index,
             player_index=players[index],
             claimed=claimed[index],
-            accepted=accepted[index],
+            accepted=[e for e in accepted[index] if e.kind is not GameEventKind.DART_REMOVED],
             attempts=attempts[index],
             corrected=corrected[index],
             camera_armed=armed[index],
         )
         for index in sorted(players)
     ]
+
+
+def _slot(event: GameEvent, open_index: int) -> int:
+    """The visit a correction acts on: a closed one it names, else the open one."""
+    return event.turn_index if event.turn_index < open_index else open_index
 
 
 def _undo(

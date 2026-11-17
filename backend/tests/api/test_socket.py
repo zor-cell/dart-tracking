@@ -125,7 +125,7 @@ def test_every_device_in_the_room_gets_each_change(room, game_id):
         other.send("replace_dart", index=1, value=20, multiplier=1)
         other.send("move_dart", index=2, toIndex=0)
         other.send("remove_dart", index=1)
-        other.send("undo")
+        other.send("remove_dart", index=1)
 
         for device in (scoreboard, other):
             for _ in range(7):
@@ -149,7 +149,7 @@ def test_the_announcer_hears_each_booked_dart(room, game_id):
 
 def test_a_command_that_changes_nothing_is_not_broadcast(room, game_id):
     with room(game_id) as device:
-        device.send("undo")
+        device.send("remove_dart", index=0)
         device.send("next_player")
         device.throw(5)
 
@@ -315,10 +315,34 @@ def test_the_win_is_confirmed_and_reopened_for_the_whole_room(room, game_id):
 
         one.send("set_win_confirmed", confirmed=True)
         other.next("game_state")
-        one.send("undo")
+        one.send("replace_dart", index=2, value=2, multiplier=1)
         state = other.next("game_state")
         assert state["winnerId"] is None
         assert state["winConfirmed"] is False
+
+
+def test_a_correction_with_a_consequence_asks_its_sender_before_booking(room, game_id):
+    with room(game_id) as one, room(game_id) as other:
+        for dart in [(20, 3), (20, 3), (20, 3), None, (20, 1), None, (20, 3), (19, 3), (1, 2), None]:
+            if dart is None:
+                one.send("next_player")
+            else:
+                one.throw(*dart)
+        one.throw(5)
+        correction = {"index": 2, "value": 2, "multiplier": 2, "turn": 2}
+        one.send("replace_dart", **correction)
+
+        pending = one.next("correction_pending")
+        assert (pending["wonAt"], pending["dropped"]) == (2, 1)
+        assert pending["winnerId"] == one.state["players"][0]["id"]
+        assert pending["command"]["turn"] == 2
+
+        one.send("replace_dart", **correction, confirmed=True)
+        while other.next("game_state", never=("correction_pending",))["winnerId"] is None:
+            pass
+        assert len(other.state["turns"]) == 3
+        assert other.state["winConfirmed"] is True
+        assert [d["label"] for d in other.state["turns"][2]["darts"]] == ["T20", "T19", "D2"]
 
 
 def win(device: Device) -> dict[str, Any]:

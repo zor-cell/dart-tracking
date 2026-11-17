@@ -21,7 +21,6 @@ export interface GameStateDto {
   /** Darts the camera located after a win or bust closed the open visit; they score nothing yet. */
   readonly shadowDarts: readonly DartDto[];
   readonly dartsRemaining: number;
-  readonly canUndo: boolean;
   readonly winnerId: number | null;
   /** A race's places so far, best first; empty outside the race variants. */
   readonly places: readonly number[];

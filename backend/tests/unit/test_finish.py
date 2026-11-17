@@ -97,10 +97,10 @@ def test_a_tiebreak_leaves_the_others_waiting():
     assert game.current_player_index == 0
 
 
-def test_undoing_the_shared_finish_undoes_the_tiebreak():
+def test_removing_the_shared_finish_undoes_the_tiebreak():
     game = race_at(8, 16, catch_up=True)
     play(game, "D4", "D8")
-    game.undo()
+    game.remove_dart(0)
 
     assert game.race().finishers == [0]
     assert needs(game) == [0, 16]

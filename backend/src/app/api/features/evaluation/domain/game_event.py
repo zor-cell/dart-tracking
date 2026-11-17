@@ -15,9 +15,9 @@ class GameEventKind(StrEnum):
     DETECTION_FAILED = "detection_failed"  # the camera looked and found nothing
     MANUAL = "manual"  # a device booked a dart by hand
     MISS_FILLED = "miss_filled"  # a handover booked a dart the visit lacked as a miss
-    UNDO = "undo"
+    UNDO = "undo"  # read from older logs only
     VISIT_REOPENED = "visit_reopened"  # an undo on an empty visit went back to the previous one
-    DART_REMOVED = "dart_removed"  # a device took one dart out of the open visit
+    DART_REMOVED = "dart_removed"  # a device took one dart out of a visit
     DART_REPLACED = "dart_replaced"  # a device booked another field for one dart
     DART_MOVED = "dart_moved"  # a device moved one dart to another place in the visit
     NEXT_PLAYER = "next_player"
@@ -35,13 +35,14 @@ class VisitPosition:
 
 @dataclass(frozen=True)
 class GameEvent:
-    """What happened, and to which visit; `turn_index` is the slot of the open visit."""
+    """What happened, and to which visit; `turn_index` is the slot of the open visit,
+    or of the closed one a correction changed."""
 
     kind: GameEventKind
     turn_index: int
     player_index: int
-    # Whether the game took the action. A dart past the third is absorbed, and
-    # an undo with nothing left to take back changes nothing.
+    # Whether the game took the action. A dart past the third is absorbed, and a
+    # correction waiting for its consequence to be confirmed changes nothing.
     accepted: bool
     # Whether a scoring camera was in the room, carried by the handover that opens
     # the next visit.

@@ -3,6 +3,7 @@ the turn list.
 """
 
 from collections.abc import Iterator
+from copy import deepcopy
 from dataclasses import dataclass, field, replace
 from datetime import datetime
 
@@ -16,6 +17,7 @@ from app.api.features.game.domain.around_the_clock import (
 from app.api.features.game.domain.checkout import Setup, checkout_route, setup_route
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.correction import corrected
+from app.api.features.game.domain.correction_consequence import CorrectionConsequence
 from app.api.features.game.domain.cricket import CricketOptions, cricket_progress
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.elimination import EliminationKill, EliminationOptions, can_kill
@@ -205,10 +207,6 @@ class Game:
         if state.over:
             return False
         return len(self.turns) - 1 in state.voided or state.board.reached(turn.player_id)
-
-    @property
-    def can_undo(self) -> bool:
-        return bool(self.current_turn.darts) or len(self.turns) > 1
 
     @property
     def checkout(self) -> list[str] | None:
@@ -475,56 +473,146 @@ class Game:
             return dart.multiplier != 2
         return remaining == 1
 
-    def undo(self) -> None:
-        """Take back the last dart of the open turn, or, when it has none yet,
-        reopen the previous turn with its darts intact. Not guarded by `winner`:
-        correcting a misrecorded winning dart is exactly when undo is needed."""
-        if not self.can_undo:
-            return
+    def remove_dart(
+        self, index: int, turn: int | None = None, confirmed: bool = False
+    ) -> CorrectionConsequence | None:
+        """Take one dart out of a visit. The open one loses it; a closed one keeps
+        three darts, so there it becomes a miss without a tip."""
+        at = self._visit_at(turn)
+        if at is None or not 0 <= index < len(darts := self.turns[at].darts):
+            return None
+        if at == len(self.turns) - 1:
+            return self._correct(at, darts[:index] + darts[index + 1 :], confirmed)
+        miss = Dart(value=0, multiplier=0, thrown_at=darts[index].thrown_at)
+        return self._correct(at, [*darts[:index], miss, *darts[index + 1 :]], confirmed)
 
-        turn = self.current_turn
-        if turn.darts:
-            # The bust can sit on an earlier dart once one was inserted or moved.
-            self._rescore(turn.darts[:-1])
-            return
+    def replace_dart(
+        self, index: int, dart: Dart, turn: int | None = None, confirmed: bool = False
+    ) -> CorrectionConsequence | None:
+        """Book a different field for one dart of a visit, in its place. Open to a
+        full or busted visit: correcting the dart that caused the bust is the point."""
+        at = self._visit_at(turn)
+        if at is None or not 0 <= index < len(darts := self.turns[at].darts):
+            return None
+        dart = replace(corrected(darts[index], dart), thrown_at=darts[index].thrown_at)
+        return self._correct(at, [*darts[:index], dart, *darts[index + 1 :]], confirmed)
+
+    def move_dart(
+        self, index: int, to_index: int, turn: int | None = None, confirmed: bool = False
+    ) -> CorrectionConsequence | None:
+        """Move one dart of a visit to another place in it, for a throw the camera
+        missed: entered afterwards, it lands last and belongs where it was thrown."""
+        at = self._visit_at(turn)
+        if at is None:
+            return None
+        count = len(self.turns[at].darts)
+        if not (0 <= index < count and 0 <= to_index < count) or index == to_index:
+            return None
+        darts = list(self.turns[at].darts)
+        darts.insert(to_index, darts.pop(index))
+        return self._correct(at, darts, confirmed)
+
+    def _visit_at(self, turn: int | None) -> int | None:
+        """The visit a correction addresses: the open one unless named."""
+        if turn is None:
+            return len(self.turns) - 1
+        return turn if 0 <= turn < len(self.turns) else None
+
+    def _correct(
+        self, at: int, darts: list[Dart], confirmed: bool
+    ) -> CorrectionConsequence | None:
+        """Take visit `at` as these darts and replay the visits after it. What that
+        changes beyond the visit is returned unbooked until it is confirmed."""
+        if at == len(self.turns) - 1:
+            self._rescore(darts)
+            return None
+        consequence = deepcopy(self)._rewrite(at, darts)
+        if consequence is not None and not confirmed:
+            return consequence
+        self._rewrite(at, darts)
+        if consequence is not None and consequence.won_at is not None:
+            self._end_at(consequence.won_at)
+        elif self._due(len(self.turns) - 1):
+            self._rescore(list(self.current_turn.darts))
+        else:
+            self._pass_on()
         self.revision += 1
-        self.turns.pop()
-        self.current_player_index = next(
-            index
-            for index, player in enumerate(self.players)
-            if player.id == self.current_turn.player_id
-        )
+        return None
+
+    def _rewrite(self, at: int, darts: list[Dart]) -> CorrectionConsequence | None:
+        """Put the darts into closed visit `at` and re-decide every later closed visit."""
+        undue = self._undue(at + 1)
+        self.turns[at].darts = darts
+        turns = self.turns
+        try:
+            for index in range(at, len(turns) - 1):
+                self.turns = turns[: index + 1]
+                self._settle_closed(turns[index])
+                if (winner := self.winner) is not None:
+                    return CorrectionConsequence(won_at=index, winner_id=winner.id)
+        finally:
+            self.turns = turns
+        out = {turns[index].player_id for index in self._undue(at + 1) - undue}
+        return CorrectionConsequence(out=tuple(sorted(out))) if out else None
+
+    def _settle_closed(self, turn: Turn) -> None:
+        """Re-decide the bust of a handed-over visit, the last one of `turns`, and
+        fill it to three darts with misses once nothing closes it early. Darts after
+        a finish are dropped, as a handover drops the shadows."""
+        darts, turn.darts, turn.busted = turn.darts, [], False
+        before = self.remaining(turn.player_id) if self.variant.counts_points else None
+        for dart in darts:
+            if before and not turn.busted and self.remaining(turn.player_id) == 0:
+                break
+            turn.darts.append(dart)
+            if self._busts(dart):
+                turn.busted = True
+        last = turn.darts[-1].thrown_at if turn.darts else None
+        while len(turn.darts) < DARTS_PER_TURN and self.winner is None and not self._visit_closed():
+            miss = Dart(value=0, multiplier=0, thrown_at=last)
+            turn.darts.append(miss)
+            if self._busts(miss):
+                turn.busted = True
+
+    def _undue(self, start: int) -> set[int]:
+        """Visits from `start` on whose thrower was out or placed by then."""
+        return {index for index in range(max(start, 1), len(self.turns)) if not self._due(index)}
+
+    def _due(self, index: int) -> bool:
+        """Whether visit `index`'s thrower could still throw after the visits before it."""
+        if index == 0:
+            return True
+        turns, player_id = self.turns, self.turns[index].player_id
+        self.turns = turns[:index]
+        try:
+            if self.is_out(player_id):
+                return False
+            if not self.variant.races:
+                return True
+            state = self.race()
+            return player_id not in state.places and player_id not in state.waiting
+        finally:
+            self.turns = turns
+
+    def _end_at(self, index: int) -> None:
+        """End the game with the visit that won it, dropping the ones thrown after."""
+        del self.turns[index + 1 :]
+        self.current_player_index = self._seat_of(self.current_turn.player_id)
+        self.shadow_darts = []
+        self.win_confirmed = True
+
+    def _pass_on(self) -> None:
+        """Hand the open visit of a player now out or placed on to whoever is due."""
+        if not self.current_turn.darts:
+            self.turns.pop()
+        self.current_player_index = self._seat_of(self.current_turn.player_id)
+        self.current_player_index = self._next_seat()
+        self.shadow_darts = []
+        self._start_turn()
         self._drop_lost_win()
 
-    def remove_dart(self, index: int) -> None:
-        """Take one dart out of the open visit — what a phantom booking is
-        cleared with, from any position rather than only the last."""
-        turn = self.current_turn
-        if not 0 <= index < len(turn.darts):
-            return
-        self._rescore(turn.darts[:index] + turn.darts[index + 1 :])
-
-    def replace_dart(self, index: int, dart: Dart) -> None:
-        """Book a different field for one dart of the open visit, in its place.
-        Open to a full or busted visit, unlike `register_dart`: correcting the
-        dart that caused the bust is the point."""
-        turn = self.current_turn
-        if not 0 <= index < len(turn.darts):
-            return
-        dart = replace(corrected(turn.darts[index], dart), thrown_at=turn.darts[index].thrown_at)
-        self._rescore(turn.darts[:index] + [dart] + turn.darts[index + 1 :])
-
-    def move_dart(self, index: int, to_index: int) -> None:
-        """Move one dart of the open visit to another place in it, for a throw
-        the camera missed: entered afterwards, it lands last and belongs
-        wherever it was actually thrown."""
-        turn = self.current_turn
-        count = len(turn.darts)
-        if not (0 <= index < count and 0 <= to_index < count) or index == to_index:
-            return
-        darts = list(turn.darts)
-        darts.insert(to_index, darts.pop(index))
-        self._rescore(darts)
+    def _seat_of(self, player_id: int) -> int:
+        return next(index for index, player in enumerate(self.players) if player.id == player_id)
 
     def _rescore(self, darts: list[Dart]) -> None:
         """Take the open visit as this sequence of darts, re-deciding busts from the

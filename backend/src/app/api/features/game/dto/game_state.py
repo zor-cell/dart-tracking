@@ -61,7 +61,6 @@ class GameStateDto(CamelModel):
     turns: list[TurnDto]
     shadow_darts: list[DartDto]
     darts_remaining: int
-    can_undo: bool
     winner_id: int | None
     # A race's places so far, best first; empty outside the race variants.
     places: list[int]
@@ -105,7 +104,6 @@ class GameStateDto(CamelModel):
             turns=[TurnDto.from_entity(turn) for turn in game.turns],
             shadow_darts=[DartDto.from_entity(dart) for dart in game.shadow_darts],
             darts_remaining=game.darts_remaining,
-            can_undo=game.can_undo,
             winner_id=game.winner.id if game.winner is not None else None,
             places=race.places if race is not None else [],
             finisher_ids=race.finishers if race is not None else [],

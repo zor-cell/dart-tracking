@@ -13,7 +13,6 @@ import { SetEndedDto } from '../../../features/game/dto/set-ended.dto';
 import { SetEvaluationDto } from '../../../features/game/dto/set-evaluation.dto';
 import { SetTrackingPausedDto } from '../../../features/game/dto/set-tracking-paused.dto';
 import { SetWinConfirmedDto } from '../../../features/game/dto/set-win-confirmed.dto';
-import { UndoDto } from '../../../features/game/dto/undo.dto';
 
 /**
  * Everything this client sends, discriminated by `type`; each message is defined
@@ -33,7 +32,6 @@ export type ClientMessage =
   | SetWinConfirmedDto
   | SetEndedDto
   | ClaimAnnouncerDto
-  | UndoDto
   | RemoveDartDto
   | NextPlayerDto;
 

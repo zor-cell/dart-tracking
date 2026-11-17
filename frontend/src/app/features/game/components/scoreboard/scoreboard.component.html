@@ -16,8 +16,13 @@
         [class.scoreboard__row--finished]="entry.finished"
         [class.scoreboard__row--winner]="entry.id === winnerId()"
         [class.scoreboard__row--progress]="entry.progress !== null"
+        [class.scoreboard__row--viewed]="$index === visitMark()?.seat"
         [attr.aria-current]="$index === activeIndex() ? 'true' : null"
       >
+        @if ($index === visitMark()?.seat) {
+          <span class="scoreboard__round" aria-hidden="true">R{{ visitMark()?.round }}</span>
+          <span class="sr-only" i18n="@@game.scoreboard.viewedRound">Runde {{ visitMark()?.round }} angezeigt:</span>
+        }
         <span class="scoreboard__name">
           @if (entry.leading) {
             <i class="pi pi-crown scoreboard__lead" aria-hidden="true"></i>

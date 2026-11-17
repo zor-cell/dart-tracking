@@ -166,7 +166,7 @@ def test_a_correction_that_wins_turns_the_later_darts_into_shadows():
     assert game.current_turn.darts == darts("25")
     assert game.shadow_darts == darts("2", "3")
 
-    game.undo()
+    game.remove_dart(0)
     assert game.winner is None
     assert game.current_turn.darts == darts("2", "3")
     assert game.shadow_darts == []

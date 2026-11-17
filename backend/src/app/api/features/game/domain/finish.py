@@ -84,6 +84,10 @@ class _Race[B: RaceBoard]:
 
     def throw(self, index: int, turn: Turn, last: bool) -> None:
         player = turn.player_id
+        if player in self.reached or any(player in group for group in self.groups[:-1]):
+            # Thrown before a correction placed the player or sent them to sit out.
+            self.voided.add(index)
+            return
         if player in self.pending:
             self.pending.remove(player)
         self.board.play(turn)

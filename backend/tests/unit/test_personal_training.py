@@ -332,7 +332,7 @@ def test_a_timed_plan_ends_with_the_visit_after_its_time():
     assert game.progress.winner_id is None
 
 
-def test_a_timed_plan_reopens_after_its_time_to_take_back_the_last_dart():
+def test_a_timed_plan_takes_corrections_after_its_time_without_reopening():
     game = timed()
     throw(game, ["D16 D16 D16"] * 3, seconds_apart=290)
     for label in ("D8", "D8", "D8"):
@@ -340,15 +340,14 @@ def test_a_timed_plan_reopens_after_its_time_to_take_back_the_last_dart():
         game.stamp(START + timedelta(minutes=11))
     assert game.ended is True
 
-    game.set_ended(False)
-    game.undo()
     game.replace_dart(1, dart("D16"))
+    game.replace_dart(0, dart("20"), turn=0)
+    game.stamp(START + timedelta(minutes=12))
 
-    assert game.ended is False
-    assert [d.label for d in game.current_turn.darts] == ["D8", "D16"]
-    game.register_dart(dart("D8"))
-    game.stamp(START + timedelta(minutes=11, seconds=20))
     assert game.ended is True
+    assert [d.label for d in game.current_turn.darts] == ["D8", "D16", "D8"]
+    assert [d.label for d in game.turns[0].darts] == ["20", "D16", "D16"]
+    assert game.progress.players[0].blocks[0].darts == 3
 
 
 def test_a_personal_training_cannot_be_ended_by_hand():

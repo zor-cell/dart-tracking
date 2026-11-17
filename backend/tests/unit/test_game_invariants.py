@@ -31,8 +31,10 @@ actions = st.one_of(
     st.tuples(st.just("replace"), positions, fields),
     st.tuples(st.just("remove"), positions),
     st.tuples(st.just("move"), positions, positions),
-    st.tuples(st.just("undo")),
     st.tuples(st.just("next")),
+    # A correction in an earlier visit, counted back from the open one.
+    st.tuples(st.just("fix"), st.integers(min_value=1, max_value=12), positions, fields, st.booleans()),
+    st.tuples(st.just("clear"), st.integers(min_value=1, max_value=12), positions, st.booleans()),
 )
 # Killer numbers among the low ones, so random darts hit them often.
 options = st.one_of(
@@ -107,8 +109,10 @@ def apply(game: Game, action: tuple) -> None:
             game.remove_dart(index)
         case ("move", index, to_index):
             game.move_dart(index, to_index)
-        case ("undo",):
-            game.undo()
+        case ("fix", back, index, dart, confirmed):
+            game.replace_dart(index, dart, max(len(game.turns) - 1 - back, 0), confirmed)
+        case ("clear", back, index, confirmed):
+            game.remove_dart(index, max(len(game.turns) - 1 - back, 0), confirmed)
         case ("next",):
             game.next_player()
 
@@ -124,9 +128,12 @@ def snapshot(game: Game) -> tuple:
 @settings(max_examples=300, deadline=None)
 @given(games, st.lists(actions, max_size=60))
 def test_every_reachable_state_keeps_the_rules(game, sequence):
+    # A confirmed correction may leave visits behind that count nothing.
+    rewritten = False
     for action in sequence:
         before, revision = snapshot(game), game.revision
         apply(game, action)
+        rewritten = rewritten or (action[0] in ("fix", "clear") and action[-1] and snapshot(game) != before)
 
         assert game.turns, action
         assert game.current_turn.player_id == game.current_player.id, action
@@ -147,12 +154,12 @@ def test_every_reachable_state_keeps_the_rules(game, sequence):
             # Only a player who knocked themselves out in the open visit is still up.
             if game.is_out(game.current_player.id):
                 assert game.current_turn.darts and game.darts_remaining == 0, action
-            assert not any(
+            assert rewritten or not any(
                 replace(game, turns=game.turns[:index]).is_out(turn.player_id)
                 for index, turn in enumerate(game.turns)
                 if index
             ), action
-        if game.winner is not None and not game.variant.counts_points:
+        if game.winner is not None and not game.variant.counts_points and not rewritten:
             # The win fell on the last dart booked: nothing scored after it.
             open_turn = game.current_turn
             before_win = [*game.turns[:-1], Turn(open_turn.player_id, open_turn.darts[:-1])]
@@ -163,11 +170,24 @@ def test_every_reachable_state_keeps_the_rules(game, sequence):
 
 @settings(max_examples=300, deadline=None)
 @given(games, st.lists(actions, max_size=60), fields)
-def test_undo_takes_back_a_booked_dart_exactly(game, sequence, dart):
+def test_removing_a_booked_dart_takes_it_back_exactly(game, sequence, dart):
     for action in sequence:
         apply(game, action)
     before = snapshot(game)
 
     if game.register_dart(dart):
-        game.undo()
+        game.remove_dart(len(game.current_turn.darts) - 1)
         assert snapshot(game) == before
+
+
+@settings(max_examples=300, deadline=None)
+@given(games, st.lists(actions, max_size=60), st.integers(min_value=1, max_value=12), positions, fields)
+def test_an_unconfirmed_correction_with_a_consequence_changes_nothing(game, sequence, back, index, dart):
+    for action in sequence:
+        apply(game, action)
+    before, revision = snapshot(game), game.revision
+
+    consequence = game.replace_dart(index, dart, max(len(game.turns) - 1 - back, 0))
+
+    if consequence is not None:
+        assert (snapshot(game), game.revision) == (before, revision)

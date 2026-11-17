@@ -23,7 +23,7 @@ def event(kind: GameEventKind, field: tuple[int, int] | None = None, **fields) -
     value, multiplier = field if field is not None else (None, None)
     return GameEvent(
         kind=kind,
-        turn_index=0,
+        turn_index=fields.pop("turn", 0),
         player_index=fields.pop("player", 0),
         accepted=fields.pop("accepted", True),
         value=value,
@@ -148,7 +148,7 @@ def test_summary_counts_thrown_and_booked_darts_apart():
             event(K.DART_REPLACED, (20, 3), dart_index=1),
             event(K.NEXT_PLAYER),
             event(K.DETECTED, (5, 1)),
-            event(K.DART_REMOVED, dart_index=0),
+            event(K.DART_REMOVED, dart_index=0, turn=1),
             event(K.NEXT_PLAYER),
             event(K.MANUAL, (0, 0)),
             event(K.NEXT_PLAYER, camera_armed=True),
@@ -231,3 +231,24 @@ def test_an_old_correction_keeps_a_tip_on_the_edge_of_its_field(tip, kept):
     assert [(snapped.turn_index, snapped.dart_index, snapped.dart.label) for snapped in found] == (
         [(0, 0, "D20")] if kept else []
     )
+
+
+def test_a_correction_in_a_closed_visit_lands_in_that_visit():
+    visits = replay(
+        [
+            event(K.DETECTED, (20, 1)),
+            event(K.DETECTED, (5, 1)),
+            event(K.DETECTED, (1, 1)),
+            event(K.NEXT_PLAYER),
+            event(K.DETECTED, (19, 1), turn=1, player=1),
+            event(K.DART_REPLACED, (20, 3), dart_index=0, turn=0, player=1),
+            event(K.DART_REMOVED, dart_index=1, turn=0, player=1),
+            event(K.DART_REPLACED, (18, 1), dart_index=2, turn=0, player=1),
+        ]
+    )
+
+    first, second = visits
+    assert [(e.value, e.multiplier) for e in first.accepted] == [(20, 3), (18, 1)]
+    assert [(e.value, e.multiplier) for e in first.claimed] == [(20, 1), (5, 1), (1, 1)]
+    assert first.corrected and not second.corrected
+    assert [(e.value, e.multiplier) for e in second.accepted] == [(19, 1)]
