@@ -21,6 +21,7 @@ import {
   TrendGame,
   rollingAverage,
 } from '../../models/trend-metric';
+import { DOT_ROOM, axisBounds } from '../../../../core/charts/models/axis-bounds';
 import { chartTheme } from '../../../../core/charts/models/chart-plugins';
 import { axisTicks, axisTitle, chartBase, tooltipStyle } from '../../../../core/charts/models/chart-styles';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
@@ -103,6 +104,7 @@ export class TrendStatisticsComponent<T extends TrendGame> {
           data: values,
           hidden: hidden.has('games'),
           showLine: false,
+          clip: DOT_ROOM,
           pointRadius: 2.5,
           pointHoverRadius: 4,
           pointBackgroundColor: name ? `${color}66` : `${this.theme.muted}99`,
@@ -150,11 +152,23 @@ export class TrendStatisticsComponent<T extends TrendGame> {
     };
   });
 
+  /** The value axis around the games and form lines of both players; the fitted line is clipped. */
+  private readonly bounds = computed(() => {
+    const figure = this.picked();
+    const values = [this.shown(), this.otherShown() ?? []].flatMap((points) => {
+      const figures = points.map(figure.of);
+      return [...figures, ...rollingAverage(figures)];
+    });
+    return axisBounds(values, figure.unit.trim() === '%');
+  });
+
   protected readonly options = computed<ChartOptions<'line'>>(() => {
     const { unit, axis } = this.picked();
     const format = (value: number) => `${formatNumber(value, this.locale, '1.1-1')}${unit}`;
+    const bounds = this.bounds();
     return {
       ...chartBase(this.theme),
+      layout: { padding: { top: DOT_ROOM, right: DOT_ROOM } },
       interaction: { mode: 'index', intersect: false },
       scales: {
         x: {
@@ -163,6 +177,8 @@ export class TrendStatisticsComponent<T extends TrendGame> {
           ticks: { ...axisTicks(this.theme), maxTicksLimit: 4, maxRotation: 0 },
         },
         y: {
+          min: bounds?.min,
+          max: bounds?.max,
           grid: { color: this.theme.grid },
           border: { display: false },
           ticks: { ...axisTicks(this.theme), maxTicksLimit: 5 },

@@ -11,6 +11,7 @@ import {
 import type { ChartData, ChartOptions } from 'chart.js';
 import { UIChart } from 'primeng/chart';
 import { GameAccuracyDto } from '../../dto/accuracy.dto';
+import { DOT_ROOM, axisBounds } from '../../../../core/charts/models/axis-bounds';
 import { chartTheme } from '../../../../core/charts/models/chart-plugins';
 import { axisTicks, axisTitle, chartBase, tooltipStyle } from '../../../../core/charts/models/chart-styles';
 import { SERIES_COLORS } from '../../../../core/charts/models/series-colors';
@@ -19,10 +20,6 @@ import { InfoHintComponent } from '../../../../core/view/components/info-hint/in
 
 /** How many games, up to the current one, the trend line pools. */
 export const TREND_WINDOW = 5;
-
-/** Percentage points the axis starts at least below the lowest value, rounded down to a step. */
-const AXIS_MARGIN = 5;
-const AXIS_STEP = 10;
 
 /** Each game's share of correct darts over it and the games before it, weighted by darts. */
 export function rollingAccuracy(games: readonly GameAccuracyDto[], window = TREND_WINDOW): number[] {
@@ -68,6 +65,7 @@ export class AccuracyTrendComponent {
         data: this.played().map((game) => (100 * game.summary.correct) / game.summary.dartsThrown),
         hidden: this.hidden().has('games'),
         showLine: false,
+        clip: DOT_ROOM,
         pointRadius: 3,
         pointHoverRadius: 4,
         pointBackgroundColor: `${this.theme.muted}99`,
@@ -87,21 +85,21 @@ export class AccuracyTrendComponent {
     ],
   }));
 
-  /** Where the axis starts: `AXIS_MARGIN` below the lowest game or trend value, on a step. */
+  /** Where the axis starts: a little below the lowest game or trend value; it ends at 100 %. */
   private readonly axisMin = computed(() => {
     const games = this.played();
     const values = [
       ...games.map((game) => (100 * game.summary.correct) / game.summary.dartsThrown),
       ...rollingAccuracy(games),
     ];
-    const lowest = values.length ? Math.min(...values) : 0;
-    return Math.max(0, Math.floor((lowest - AXIS_MARGIN) / AXIS_STEP) * AXIS_STEP);
+    return axisBounds(values, true)?.min ?? 0;
   });
 
   protected readonly options = computed<ChartOptions<'line'>>(() => {
     const games = this.played();
     return {
       ...chartBase(this.theme),
+      layout: { padding: { top: DOT_ROOM, right: DOT_ROOM } },
       interaction: { mode: 'index', intersect: false },
       scales: {
         x: {
