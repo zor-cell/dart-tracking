@@ -1,7 +1,7 @@
 import { DestroyRef, Directive, ElementRef, inject, input, output, signal } from '@angular/core';
 
-/** A button that does something else when held: a pointer or Space kept down for
- * `holdMs` emits once, and the click that ends that press is swallowed. */
+/** A button that does something else when held: kept down past `delayMs` it starts
+ * charging, after `holdMs` more it emits once. A press that charged clicks nothing. */
 @Directive({
   selector: '[appHoldPress]',
   host: {
@@ -18,7 +18,9 @@ import { DestroyRef, Directive, ElementRef, inject, input, output, signal } from
   },
 })
 export class HoldPressDirective {
-  readonly holdMs = input(800);
+  /** How long a press stays a tap before it charges, as long as a dart takes to lift for dragging. */
+  readonly delayMs = input(150);
+  readonly holdMs = input(1500);
   /** Whether holding does anything; off, the button is an ordinary one. */
   readonly holdEnabled = input(true);
   readonly appHoldPress = output<void>();
@@ -27,6 +29,7 @@ export class HoldPressDirective {
   protected readonly charging = signal(false);
 
   private timer: ReturnType<typeof setTimeout> | undefined;
+  // Whether the press under way, or just ended, has charged; its click is swallowed.
   private held = false;
 
   constructor() {
@@ -72,12 +75,14 @@ export class HoldPressDirective {
     if (!this.holdEnabled()) {
       return;
     }
-    this.charging.set(true);
     this.timer = setTimeout(() => {
-      this.timer = undefined;
-      this.charging.set(false);
       this.held = true;
-      this.appHoldPress.emit();
-    }, this.holdMs());
+      this.charging.set(true);
+      this.timer = setTimeout(() => {
+        this.timer = undefined;
+        this.charging.set(false);
+        this.appHoldPress.emit();
+      }, this.holdMs());
+    }, this.delayMs());
   }
 }

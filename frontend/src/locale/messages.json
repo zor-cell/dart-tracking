@@ -485,7 +485,6 @@
     "game.confirmWin": "Sieg bestätigen",
     "game.confirmVisitOrEnd": "Runde bestätigen — gedrückt halten beendet das Training",
     "game.confirmVisit": "Runde bestätigen — nächster Spieler",
-    "game.holdToEnd": "Zum Beenden den Haken gedrückt halten.",
     "game.earlyWin.title": "Sieg in Runde {$round}?",
     "game.earlyWin.one": "Damit hat {$name} in Runde {$round} gewonnen. Die Runde danach fällt weg.",
     "game.earlyWin.other": "Damit hat {$name} in Runde {$round} gewonnen. Die {$count} Runden danach fallen weg.",

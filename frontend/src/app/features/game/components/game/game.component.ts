@@ -45,7 +45,6 @@ import { LoadingStateComponent } from '../../../../core/view/components/loading-
 import { backState } from '../../../../core/view/models/back-state';
 import { HoldPressDirective } from '../../../../core/view/directives/hold-press.directive';
 import { RepeatPressDirective } from '../../../../core/view/directives/repeat-press.directive';
-import { NotificationService } from '../../../../core/notification/services/notification.service';
 import { ConfirmService } from '../../../../core/view/services/confirm.service';
 import { CorrectionPendingDto } from '../../dto/correction-pending.dto';
 import { TurnDto } from '../../dto/turn.dto';
@@ -154,7 +153,6 @@ export class GameComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly drafts = inject(GameDraftService);
   private readonly confirm = inject(ConfirmService);
-  private readonly notifications = inject(NotificationService);
   protected readonly signedIn = this.auth.isAuthenticated;
   /** The game detail leads back here, so a rematch is one tap away. */
   protected readonly returnState = backState($localize`:@@common.nav.game:Spiel`);
@@ -518,8 +516,7 @@ export class GameComponent implements OnInit, OnDestroy {
   /** End the visit — or, on the dart that finishes the game, take the win. The
    * server has no handover left to apply once someone is out. */
   protected confirmTurn(): void {
-    if (this.endsByHold() && !this.game.currentTurn()?.darts.length) {
-      this.notifications.showInfo($localize`:@@game.holdToEnd:Zum Beenden den Haken gedrückt halten.`);
+    if (!this.game.currentTurn()?.darts.length) {
       return;
     }
     if (this.game.winner() !== null) {

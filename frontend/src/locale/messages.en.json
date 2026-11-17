@@ -421,7 +421,6 @@
     "game.confirmWin": "Confirm win",
     "game.confirmVisit": "Confirm visit — next player",
     "game.confirmVisitOrEnd": "Confirm visit — hold to end the training",
-    "game.holdToEnd": "Hold the tick to end the training.",
     "game.scoreboard": "Score, scrolls horizontally",
     "game.scoreboard.leading": "Leading:",
     "game.scoreboard.reset": "Reset:",
