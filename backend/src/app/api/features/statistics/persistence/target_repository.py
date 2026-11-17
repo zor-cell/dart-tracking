@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from itertools import groupby
 from typing import Any
 
-from sqlalchemy import Row, exists, select
+from sqlalchemy import Row, exists, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.features.game.domain.dart import Dart
@@ -13,10 +13,12 @@ from app.api.features.game.domain.game_filter import GameFilter
 from app.api.features.game.domain.game_status import GameStatus
 from app.api.features.game.domain.game_variant import GameVariant
 from app.api.features.game.domain.target import Target
+from app.api.features.game.domain.training import TrainingGoal
 from app.api.features.game.persistence.dart import DartTable
 from app.api.features.game.persistence.game import GameTable
 from app.api.features.game.persistence.game_player import GamePlayerTable
 from app.api.features.game.persistence.game_repository import game_filter_clauses, hidden_by
+from app.api.features.game.persistence.training_settings import TrainingSettingsTable
 from app.api.features.game.persistence.turn import TurnTable
 from app.api.features.player.domain.player_identity import PlayerIdentity
 from app.api.features.player.persistence.player import PlayerTable
@@ -60,6 +62,12 @@ class TargetRepository:
             )
             .correlate(GameTable, GamePlayerTable)
         )
+        # A training without a target takes its place among the last games too.
+        free_training = GameTable.id.in_(
+            select(TrainingSettingsTable.game_id).where(
+                TrainingSettingsTable.goal == TrainingGoal.FREE.value
+            )
+        )
         rows = (
             await session.execute(
                 select(GameTable.id, GameTable.created_at, GameTable.variant, DartTable)
@@ -78,7 +86,7 @@ class TargetRepository:
                 .where(
                     *seats,
                     DartTable.target_value.is_not(None),
-                    *latest_games([*seats, aimed_by_seat], last),
+                    *latest_games([*seats, or_(aimed_by_seat, free_training)], last),
                 )
                 .order_by(
                     GameTable.created_at.desc(),

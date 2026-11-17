@@ -25,11 +25,13 @@ from app.api.features.player.persistence.player_repository import repository as 
 from app.api.features.statistics.dto.cricket_statistics import CricketStatisticsDto
 from app.api.features.statistics.dto.kill_statistics import KillStatisticsDto
 from app.api.features.statistics.dto.overall_statistics import OverallStatisticsDto
+from app.api.features.statistics.dto.scoring_statistics import ScoringStatisticsDto
 from app.api.features.statistics.dto.statistics_overview import StatisticsOverviewDto
 from app.api.features.statistics.dto.target_statistics import TargetStatisticsDto
 from app.api.features.statistics.persistence.cricket_repository import repository as cricket
 from app.api.features.statistics.persistence.kill_repository import repository as kills
 from app.api.features.statistics.persistence.overall_repository import repository as overall
+from app.api.features.statistics.persistence.scoring_repository import repository as scoring
 from app.api.features.statistics.persistence.statistics_repository import repository
 from app.api.features.statistics.persistence.target_repository import repository as targets
 from app.infrastructure import database
@@ -116,6 +118,19 @@ async def target_statistics(
         statistics = await targets.overview(session, user.id, criteria, last, compared)
 
     return await asyncio.to_thread(TargetStatisticsDto.from_entity, statistics)
+
+
+@router.get("/scoring", response_model=ScoringStatisticsDto)
+async def scoring_statistics(
+    user: AuthenticatedUser, selection: Selection, player: Compared = None
+) -> ScoringStatisticsDto:
+    """The points of the trainings without a target in the selection."""
+    criteria, last = selection
+    async with database.session_scope() as session:
+        compared = await _compared(session, user.id, player)
+        statistics = await scoring.overview(session, user.id, criteria, last, compared)
+
+    return ScoringStatisticsDto.from_entity(statistics)
 
 
 @router.get("/kills", response_model=KillStatisticsDto)

@@ -13,7 +13,7 @@
       size="small"
     />
   </header>
-  @if (points().length < 2) {
+  @if (shown().length < 2) {
     <app-empty-state icon="pi-chart-line">
       <p i18n="@@stats.trend.tooFew">Für einen Verlauf braucht es mindestens zwei gewertete Spiele.</p>
     </app-empty-state>

@@ -1,5 +1,6 @@
 import { CricketGameDto } from '../dto/cricket-game.dto';
 import { GameTallyDto } from '../dto/game-tally.dto';
+import { ScoringGameDto } from '../dto/scoring-game.dto';
 import { TrendPointDto } from '../dto/trend-point.dto';
 
 /** A game the trend chart places on its axis. */
@@ -16,6 +17,8 @@ export interface TrendFigure<T extends TrendGame> {
   readonly unit: string;
   readonly axis: string;
   readonly of: (game: T) => number | null;
+  /** Leaves games without the figure off the axis instead of drawing a gap. */
+  readonly sparse?: boolean;
 }
 
 /** The figures of x01 and elimination. */
@@ -60,6 +63,29 @@ export const TARGET_FIGURES: readonly TrendFigure<GameTallyDto>[] = [
     unit: ' mm',
     axis: $localize`:@@stats.trend.axis.distance:Abstand zum Ziel in mm`,
     of: (game) => game.distance,
+  },
+];
+
+/** A free training on the trend's axis, with the figures its goal has. */
+export interface TrainingTrendGame extends TrendGame {
+  readonly target: GameTallyDto | null;
+  readonly scoring: ScoringGameDto | null;
+}
+
+/** The figures of the free training: those at targets, and the points of the others. */
+export const TRAINING_FIGURES: readonly TrendFigure<TrainingTrendGame>[] = [
+  ...TARGET_FIGURES.map((figure) => ({
+    ...figure,
+    sparse: true,
+    of: (game: TrainingTrendGame) => (game.target ? figure.of(game.target) : null),
+  })),
+  {
+    label: '3-Dart-Ø',
+    value: 'average',
+    unit: '',
+    axis: '3-Dart-Ø',
+    sparse: true,
+    of: (game) => game.scoring?.average ?? null,
   },
 ];
 

@@ -2,7 +2,7 @@
 
 import asyncio
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -159,13 +159,7 @@ def _legs(rows: _Rows) -> list[_Leg]:
             Dart(value=row.value, multiplier=row.multiplier, position=position)
         )
 
-    # Each turn with darts by its place among its game's visits, as the replay counts them.
-    visit_of: dict[tuple[str, int], int] = {}
-    visits_so_far: Counter[str] = Counter()
-    for row in turn_rows:
-        if (row.game_id, row.turn_index) in darts:
-            visit_of[row.game_id, row.turn_index] = visits_so_far[row.game_id]
-            visits_so_far[row.game_id] += 1
+    visit_of = visit_numbers(turn_rows, darts.keys())
 
     turns_of = by_game(turn_rows)
     legs: list[_Leg] = []
@@ -222,6 +216,19 @@ def _legs(rows: _Rows) -> list[_Leg]:
         )
 
     return legs
+
+
+def visit_numbers(
+    turn_rows: Sequence[TurnTable], with_darts: Collection[tuple[str, int]]
+) -> dict[tuple[str, int], int]:
+    """Each turn with darts by its place among its game's visits, as the replay counts them."""
+    visit_of: dict[tuple[str, int], int] = {}
+    visits_so_far: Counter[str] = Counter()
+    for row in turn_rows:
+        if (row.game_id, row.turn_index) in with_darts:
+            visit_of[row.game_id, row.turn_index] = visits_so_far[row.game_id]
+            visits_so_far[row.game_id] += 1
+    return visit_of
 
 
 def latest_games(

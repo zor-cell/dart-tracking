@@ -1,0 +1,29 @@
+@let totals = statistics();
+<section class="panel">
+  <h2 class="panel__title" i18n="@@stats.scoring.title">Ohne Ziel</h2>
+  @if (counted()) {
+    <p class="panel__hint">{{ hint() }}</p>
+  }
+  <dl class="stat-grid">
+    <div class="stat stat--lead">
+      <dt class="stat__label">3-Dart-<span aria-hidden="true">Ø</span><span class="sr-only">Average</span></dt>
+      <dd class="stat__value">{{ totals.average | number: '1.1-1' }}</dd>
+    </div>
+    <div class="stat stat--lead">
+      <dt class="stat__label" i18n="@@game.detail.bestVisit">Bester Visit</dt>
+      <dd class="stat__value">
+        @if (totals.bestVisitAt; as at) {
+          <app-stat-link [link]="['/account/games', at.gameId]" [queryParams]="{ visit: at.visit }">{{ totals.bestVisit }}</app-stat-link>
+        } @else {
+          {{ totals.bestVisit }}
+        }
+      </dd>
+    </div>
+    @for (band of bands(); track band.label) {
+      <div class="stat stat--half">
+        <dt class="stat__label">{{ band.label }}</dt>
+        <dd class="stat__value">{{ band.count }}</dd>
+      </div>
+    }
+  </dl>
+</section>

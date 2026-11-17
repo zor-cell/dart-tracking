@@ -6,6 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { CricketStatisticsDto } from '../dto/cricket-statistics.dto';
 import { KillStatisticsDto } from '../dto/kill-statistics.dto';
 import { OverallStatisticsDto } from '../dto/overall-statistics.dto';
+import { ScoringStatisticsDto } from '../dto/scoring-statistics.dto';
 import { StatisticsOverviewDto } from '../dto/statistics-overview.dto';
 import { TargetStatisticsDto } from '../dto/target-statistics.dto';
 import { StatisticsFilter } from '../models/statistics-filter';
@@ -31,6 +32,16 @@ export class StatisticsService {
     return firstValueFrom(
       this.http.get<TargetStatisticsDto>(`${this.baseUrl}/targets`, {
         params: this.params(filter, player),
+        context: SILENT_ERROR_CONTEXT,
+      }),
+    );
+  }
+
+  /** The points of the trainings without a target that the filter selects. */
+  scoring(filter: StatisticsFilter): Promise<ScoringStatisticsDto> {
+    return firstValueFrom(
+      this.http.get<ScoringStatisticsDto>(`${this.baseUrl}/scoring`, {
+        params: this.params(filter, null),
         context: SILENT_ERROR_CONTEXT,
       }),
     );

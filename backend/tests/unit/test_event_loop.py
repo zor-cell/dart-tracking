@@ -14,6 +14,7 @@ from app.api.features.export.services import archive
 from app.api.features.statistics.persistence import (
     cricket_repository,
     overall_repository,
+    scoring_repository,
     statistics_repository,
 )
 
@@ -64,6 +65,22 @@ def test_the_overall_tally_leaves_the_event_loop_free(monkeypatch):
         overall_repository,
         "_tally",
         lambda: overall_repository.repository.overview(None, "user"),
+        monkeypatch,
+    )
+
+    assert found == "done"
+
+
+def test_the_scoring_tally_leaves_the_event_loop_free(monkeypatch):
+    async def rows(_self, *_args):
+        return scoring_repository._Rows([], [], [])
+
+    monkeypatch.setattr(scoring_repository.ScoringRepository, "_rows", rows)
+
+    found = beside_the_loop(
+        scoring_repository,
+        "_tally",
+        lambda: scoring_repository.repository.overview(None, "user"),
         monkeypatch,
     )
 

@@ -32,7 +32,16 @@ import {
   StatisticsView,
   showsPoints,
 } from '../../models/statistics-game';
-import { CRICKET_FIGURES, POINTS_FIGURES, TARGET_FIGURES } from '../../models/trend-metric';
+import {
+  CRICKET_FIGURES,
+  POINTS_FIGURES,
+  TARGET_FIGURES,
+  TRAINING_FIGURES,
+  TrainingTrendGame,
+} from '../../models/trend-metric';
+import { gamesAndDarts } from '../../models/count-label';
+import { ScoringStatisticsDto } from '../../dto/scoring-statistics.dto';
+import { ScoringStatisticsComponent } from '../scoring-statistics/scoring-statistics.component';
 import { OverallStatisticsComponent } from '../overall-statistics/overall-statistics.component';
 import { OverallStatisticsDto } from '../../dto/overall-statistics.dto';
 import { StatisticsService } from '../../services/statistics.service';
@@ -177,6 +186,7 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
     Popover,
     PrecisionStatisticsComponent,
     ReactiveFormsModule,
+    ScoringStatisticsComponent,
     Select,
     Tab,
     TabList,
@@ -204,6 +214,8 @@ export class StatisticsComponent {
   protected readonly others = signal<StatisticsOverviewDto | null>(null);
   /** The darts at targets, for the games whose figures are not points. */
   protected readonly targets = signal<TargetStatisticsDto | null>(null);
+  /** The points of the free trainings without a target; null for the other games. */
+  protected readonly scoring = signal<ScoringStatisticsDto | null>(null);
   /** Marks, visits and darts of Cricket; null for the other games. */
   protected readonly cricket = signal<CricketStatisticsDto | null>(null);
   /** Kills, for Elimination and Killer; null for the other games. */
@@ -228,6 +240,40 @@ export class StatisticsComponent {
   protected readonly pointsFigures = POINTS_FIGURES;
   protected readonly targetFigures = TARGET_FIGURES;
   protected readonly cricketFigures = CRICKET_FIGURES;
+
+  /** Whether the free trainings without a target have darts to show beside the others. */
+  protected readonly scored = computed(() => (this.scoring()?.darts ?? 0) > 0);
+  /** Heading and count of the trainings at targets, when those without one stand below. */
+  protected readonly aimedTitle = computed(() =>
+    this.scored() ? $localize`:@@stats.targets.aimedTitle:Auf Ziele` : null,
+  );
+  protected readonly aimedHint = computed(() => {
+    const targets = this.targets();
+    return this.scored() && targets ? gamesAndDarts(targets.games.length, targets.darts, this.locale) : null;
+  });
+  /** Every free training on one axis, oldest first, each with the figures of its goal. */
+  protected readonly trainingTrend = computed<TrainingTrendGame[]>(() =>
+    [
+      ...(this.targets()?.games ?? []).map((game) => ({
+        gameId: game.gameId,
+        playedAt: game.playedAt,
+        target: game,
+        scoring: null,
+      })),
+      ...(this.scoring()?.games ?? []).map((game) => ({
+        gameId: game.gameId,
+        playedAt: game.playedAt,
+        target: null,
+        scoring: game,
+      })),
+    ].sort((a, b) => a.playedAt.localeCompare(b.playedAt)),
+  );
+  /** The training's figures that any of its games has. */
+  protected readonly trainingFigures = computed(() => {
+    const games = this.trainingTrend();
+    const had = TRAINING_FIGURES.filter((figure) => games.some((game) => figure.of(game) !== null));
+    return had.length > 0 ? had : TRAINING_FIGURES;
+  });
 
   /** The tab of a game at targets, which has no checkout tab: that one opens its precision. */
   protected readonly targetTab = computed(() => (this.tab() === 'trend' ? 'trend' : 'precision'));
@@ -254,11 +300,15 @@ export class StatisticsComponent {
         : this.game() === 'cricket'
           ? this.cricket()
           : (this.kills() ?? this.targets());
+    const scoring = this.scoring();
     const tally = points
       ? { games: points.legs, darts: points.darts }
       : overall
         ? { games: overall.games, darts: overall.darts }
-        : other && { games: other.games.length, darts: other.darts };
+        : other && {
+            games: other.games.length + (scoring?.games.length ?? 0),
+            darts: other.darts + (scoring?.darts ?? 0),
+          };
     return tally && tally.games > 0 ? tally : null;
   });
 
@@ -361,13 +411,14 @@ export class StatisticsComponent {
         : this.game() === 'cricket'
           ? this.cricket()?.darts
           : this.targets()?.darts;
+    const scored = this.scoring()?.darts ?? 0;
     if (this.loading() && count === undefined) {
       return 'loading';
     }
     if (this.failed()) {
       return 'failed';
     }
-    return count === 0 ? 'empty' : null;
+    return count === 0 && scored === 0 ? 'empty' : null;
   });
 
   /** Whether anything narrows the statistics below the whole history. */
@@ -545,6 +596,9 @@ export class StatisticsComponent {
     this.failed.set(false);
     try {
       const game = this.game();
+      if (game !== 'training') {
+        this.scoring.set(null);
+      }
       const kills =
         game === 'elimination' || game === 'killer' ? this.statistics.kills(criteria) : null;
       if (game === 'all') {
@@ -569,10 +623,15 @@ export class StatisticsComponent {
           this.kills.set(killed);
         }
       } else {
-        const [targets, killed] = await Promise.all([this.statistics.targets(criteria), kills]);
+        const [targets, killed, scoring] = await Promise.all([
+          this.statistics.targets(criteria),
+          kills,
+          game === 'training' ? this.statistics.scoring(criteria) : null,
+        ]);
         if (request === this.requests) {
           this.targets.set(targets);
           this.kills.set(killed);
+          this.scoring.set(scoring);
         }
       }
     } catch {

@@ -895,6 +895,10 @@
     "game.rules.personal.1": "Your recent games are searched for the doubles and triples you hit worse than your average.",
     "game.rules.personal.2": "You throw a block with a set number of darts at each of these fields, and at all of them in turn at the end.",
     "game.rules.personal.3": "After the last dart you see each field's rate next to the one before. The training needs an account.",
-    "game.scoreboard.blockHitRate": "Hit rate in this block"
+    "game.scoreboard.blockHitRate": "Hit rate in this block",
+    "stats.section.oneGame": "1 game, {$darts} darts",
+    "stats.section.games": "{$games} games, {$darts} darts",
+    "stats.targets.aimedTitle": "At targets",
+    "stats.scoring.title": "Without a target"
   }
 }

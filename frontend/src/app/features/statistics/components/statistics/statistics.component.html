@@ -332,12 +332,32 @@
       } @else if (targets(); as targets) {
         <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
           <p-tabpanel value="precision">
-            <app-target-statistics [statistics]="targets" [game]="game()" [wins]="killerWins()">
-              <ng-container *ngTemplateOutlet="killPanel" />
-            </app-target-statistics>
+            <div class="sections">
+              @if (targets.darts > 0) {
+                <app-target-statistics
+                  [statistics]="targets"
+                  [game]="game()"
+                  [wins]="killerWins()"
+                  [title]="aimedTitle()"
+                  [hint]="aimedHint()"
+                >
+                  <ng-container *ngTemplateOutlet="killPanel" />
+                </app-target-statistics>
+              }
+              @if (scored() ? scoring() : null; as scoring) {
+                <app-scoring-statistics [statistics]="scoring" [counted]="targets.darts > 0" />
+              }
+            </div>
           </p-tabpanel>
           <p-tabpanel value="trend">
-            <app-trend-statistics [figures]="targetFigures" [points]="targets.games" />
+            @if (scored() ? scoring() : null; as scoring) {
+              <div class="trend">
+                <app-trend-statistics [figures]="trainingFigures()" [points]="trainingTrend()" />
+                <app-visit-distribution [visitScores]="scoring.visitScores" />
+              </div>
+            } @else {
+              <app-trend-statistics [figures]="targetFigures" [points]="targets.games" />
+            }
           </p-tabpanel>
         </p-tabpanels>
       }

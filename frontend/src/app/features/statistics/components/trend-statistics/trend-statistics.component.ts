@@ -67,11 +67,23 @@ export class TrendStatisticsComponent<T extends TrendGame> {
     () => this.figures().find((figure) => figure.value === this.metric()) ?? this.figures()[0],
   );
 
+  /** The games the picked figure is drawn over: all of them, or those that have it. */
+  protected readonly shown = computed(() => this.withFigure(this.points()));
+  private readonly otherShown = computed(() => {
+    const other = this.otherPoints();
+    return other && this.withFigure(other);
+  });
+
+  private withFigure(points: readonly T[]): readonly T[] {
+    const figure = this.picked();
+    return figure.sparse ? points.filter((point) => figure.of(point) !== null) : points;
+  }
+
   /** Both players' games on one axis, oldest first; a game they played together is one slot. */
   protected readonly data = computed<ChartData<'line', (number | null)[]>>(() => {
-    const own = this.points();
-    const other = this.otherPoints();
     const figure = this.picked();
+    const own = this.shown();
+    const other = this.otherShown();
     const hidden = this.hidden();
     const slots = new Map<string, string>();
     for (const point of [...own, ...(other ?? [])].sort((a, b) =>
@@ -189,7 +201,7 @@ export class TrendStatisticsComponent<T extends TrendGame> {
 
   /** The figure and where its trend line ends, for screen readers. */
   protected readonly ariaLabel = computed(() => {
-    const points = this.points();
+    const points = this.shown();
     const figure = this.picked();
     const latest = rollingAverage(points.map(figure.of)).at(-1) ?? null;
     const label = $localize`:@@stats.trend.label:${this.picked().label}:metric: über ${points.length}:count: Spiele`;
@@ -197,7 +209,7 @@ export class TrendStatisticsComponent<T extends TrendGame> {
       latest === null
         ? label
         : $localize`:@@stats.trend.latest:${label}:label:, Trend zuletzt ${latest.toFixed(1)}:value:${this.picked().unit}:unit:`;
-    const other = this.otherPoints();
+    const other = this.otherShown();
     const theirs = other ? (rollingAverage(other.map(figure.of)).at(-1) ?? null) : null;
     return theirs === null
       ? own

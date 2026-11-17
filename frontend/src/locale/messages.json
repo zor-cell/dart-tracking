@@ -879,6 +879,10 @@
     "stats.targets.distanceShort": "Abstand",
     "stats.trend.axis.distance": "Abstand zum Ziel in mm",
     "stats.cricket.axis.mpr": "Marks pro Runde",
-    "stats.cricket.axis.distance": "Abstand zur offenen Zahl in mm"
+    "stats.cricket.axis.distance": "Abstand zur offenen Zahl in mm",
+    "stats.section.oneGame": "1 Spiel, {$darts} Darts",
+    "stats.section.games": "{$games} Spiele, {$darts} Darts",
+    "stats.targets.aimedTitle": "Auf Ziele",
+    "stats.scoring.title": "Ohne Ziel"
   }
 }
