@@ -43,7 +43,9 @@ import {VirtualBoardComponent} from '../virtual-board/virtual-board.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { backState } from '../../../../core/view/models/back-state';
+import { HoldPressDirective } from '../../../../core/view/directives/hold-press.directive';
 import { RepeatPressDirective } from '../../../../core/view/directives/repeat-press.directive';
+import { NotificationService } from '../../../../core/notification/services/notification.service';
 import { ConfirmService } from '../../../../core/view/services/confirm.service';
 import { CorrectionPendingDto } from '../../dto/correction-pending.dto';
 import { TurnDto } from '../../dto/turn.dto';
@@ -121,6 +123,7 @@ const SIDE_KEYS: readonly FixedKey[] = [MISS, BULL, BULLSEYE];
     CdkDropList,
     CdkDrag,
     RepeatPressDirective,
+    HoldPressDirective,
   ],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss',
@@ -151,6 +154,7 @@ export class GameComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly drafts = inject(GameDraftService);
   private readonly confirm = inject(ConfirmService);
+  private readonly notifications = inject(NotificationService);
   protected readonly signedIn = this.auth.isAuthenticated;
   /** The game detail leads back here, so a rematch is one tap away. */
   protected readonly returnState = backState($localize`:@@common.nav.game:Spiel`);
@@ -209,7 +213,9 @@ export class GameComponent implements OnInit, OnDestroy {
   protected readonly confirmLabel = computed(() =>
     this.game.winPending()
       ? $localize`:@@game.confirmWin:Sieg bestätigen`
-      : $localize`:@@game.confirmVisit:Runde bestätigen — nächster Spieler`,
+      : this.endsByHold()
+        ? $localize`:@@game.confirmVisitOrEnd:Runde bestätigen — gedrückt halten beendet das Training`
+        : $localize`:@@game.confirmVisit:Runde bestätigen — nächster Spieler`,
   );
 
   protected readonly multiplier = signal<1 | 2 | 3>(1);
@@ -274,11 +280,10 @@ export class GameComponent implements OnInit, OnDestroy {
   /** The keypad takes the finish block's place while a finished game gets corrected. */
   protected readonly padShown = computed(() => !this.game.finished() || this.selectedDart() !== null);
 
-  /** A free training ended by hand can be played on. */
-  protected readonly resumable = computed(() => {
-    const state = this.game.state();
-    return state !== null && state.ended && state.settings.variant === 'training';
-  });
+  /** A running free training ends by holding the confirm key. */
+  protected readonly endsByHold = computed(
+    () => this.game.state()?.settings.variant === 'training' && !this.game.finished(),
+  );
 
   /** The visit on show, drawn on the virtual board. */
   protected readonly currentDarts = computed<readonly DartDto[]>(
@@ -513,6 +518,10 @@ export class GameComponent implements OnInit, OnDestroy {
   /** End the visit — or, on the dart that finishes the game, take the win. The
    * server has no handover left to apply once someone is out. */
   protected confirmTurn(): void {
+    if (this.endsByHold() && !this.game.currentTurn()?.darts.length) {
+      this.notifications.showInfo($localize`:@@game.holdToEnd:Zum Beenden den Haken gedrückt halten.`);
+      return;
+    }
     if (this.game.winner() !== null) {
       this.game.confirmWin();
     } else {
@@ -554,9 +563,9 @@ export class GameComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Go back into a free training ended by hand. */
-  protected resume(): void {
-    this.game.setEnded(false);
+  /** End the free training for the whole room. */
+  protected endTraining(): void {
+    this.game.setEnded(true);
   }
 
   /** Drop a dragged dart in its new place. The order comes back from the server

@@ -335,7 +335,10 @@
               [rounded]="true"
               severity="success"
               [ariaLabel]="confirmLabel()"
-              [disabled]="turn.darts.length === 0"
+              [disabled]="turn.darts.length === 0 && !endsByHold()"
+              appHoldPress
+              [holdEnabled]="endsByHold()"
+              (appHoldPress)="endTraining()"
               (onClick)="confirmTurn()"
             />
           }
@@ -418,20 +421,6 @@
             [outlined]="true"
             (onClick)="leaveGame()"
           />
-          @if (resumable()) {
-            <p-button
-              class="finish__resume"
-              fluid
-              size="small"
-              [dt]="finishButtonTokens"
-              label="Weiterspielen"
-              i18n-label="@@game.resume"
-              icon="pi pi-play"
-              severity="secondary"
-              [text]="true"
-              (onClick)="resume()"
-            />
-          }
         </div>
       }
     </div>

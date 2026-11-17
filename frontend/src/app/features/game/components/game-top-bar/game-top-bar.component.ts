@@ -16,7 +16,7 @@ import { ProgressSegmentsComponent } from '../progress-segments/progress-segment
 /**
  * Header of the game view, holding the game-scoped actions that do not belong to
  * the scoreboard itself — sharing the game and leaving it. Per-turn actions
- * (undo, recalibrate) stay in the view below, where they are used.
+ * stay in the view below, where they are used.
  */
 @Component({
   selector: 'app-game-top-bar',
@@ -41,13 +41,6 @@ export class GameTopBarComponent {
 
   protected readonly shareDialogVisible = signal(false);
   protected readonly leaveLabel = $localize`:@@game.leave:Spiel verlassen`;
-  protected readonly endTrainingLabel = $localize`:@@game.endTraining:Training beenden`;
-
-  /** A running free training has no winner, so closing it ends it rather than leaving. */
-  protected readonly endsTraining = computed(() => {
-    const state = this.game.state();
-    return state !== null && state.settings.variant === 'training' && !this.game.finished();
-  });
 
   /** Milliseconds since the epoch, ticking each second while a timed training runs. */
   private readonly now = signal(Date.now());
@@ -186,14 +179,10 @@ export class GameTopBarComponent {
   }
 
   /** Leaving a running game stops this device's part in it, so that asks first;
-   * a finished one is left at once, and a running training is ended instead. */
+   * a finished one is left at once. */
   protected confirmLeaveGame(): void {
     if (this.game.finished()) {
       this.leaveGame();
-      return;
-    }
-    if (this.endsTraining()) {
-      this.confirmEndTraining();
       return;
     }
     this.confirm.ask(
@@ -201,16 +190,6 @@ export class GameTopBarComponent {
       $localize`:@@game.leaveText:Spiel auf diesem Gerät verlassen? Der bisherige Spielstand bleibt gespeichert.`,
       $localize`:@@game.leaveAction:Verlassen`,
       () => this.leaveGame(),
-    );
-  }
-
-  private confirmEndTraining(): void {
-    this.confirm.ask(
-      this.endTrainingLabel,
-      $localize`:@@game.endTrainingText:Training beenden? Du kannst danach noch zurück ins Training.`,
-      $localize`:@@game.endTrainingAction:Beenden`,
-      () => this.game.setEnded(true),
-      true,
     );
   }
 

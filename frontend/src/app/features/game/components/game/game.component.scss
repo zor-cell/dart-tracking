@@ -308,8 +308,32 @@
   background: none;
 }
 
-.finish__resume {
-  grid-column: 1 / -1;
+// A ring that fills around the confirm key while it is held to end a free training.
+@property --hold-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.turn__confirm {
+  position: relative;
+}
+
+.turn__confirm.hold-press--charging::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: conic-gradient(var(--p-primary-color) var(--hold-angle), transparent 0);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px));
+  animation: hold-ring var(--hold-ms) linear forwards;
+  pointer-events: none;
+}
+
+@keyframes hold-ring {
+  to {
+    --hold-angle: 360deg;
+  }
 }
 
 .turn__dart {
