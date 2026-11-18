@@ -42,6 +42,8 @@ def test_a_free_training_counts_its_points_like_x01(alice, session):
     assert [(game["gameId"], game["darts"], game["average"]) for game in found["games"]] == [
         (game_id, 9, 87.0)
     ]
+    assert found["fields"] == {"T20": 4, "20": 1, "1": 1, "0": 3}
+    assert (found["locatedFields"], found["heatmap"]) == ({}, [])
 
 
 def test_trainings_with_a_target_and_unfinished_ones_stay_out(alice, session):

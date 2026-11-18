@@ -1,11 +1,9 @@
 import { FieldTallyDto } from './field-tally.dto';
+import { HitPatternDto } from './hit-pattern.dto';
 import { ScatterDto } from './scatter.dto';
 import { VisitRefDto } from './visit-ref.dto';
 
-/** A 2 mm cell's centre in board millimetres (x right, y up, origin at the bullseye) and its tips. */
-export type HeatmapCell = readonly [x: number, y: number, count: number];
-
-export interface PlayerStatisticsDto {
+export interface PlayerStatisticsDto extends HitPatternDto {
   readonly legs: number;
   readonly legsWon: number;
   /** Legs against someone else, and those of them won. */
@@ -42,10 +40,6 @@ export interface PlayerStatisticsDto {
   /** Visits begun with a finish in reach, and those of them that busted. */
   readonly finishVisits: number;
   readonly busts: number;
-  readonly fields: Readonly<Record<string, number>>;
-  /** Located darts per field, the ones the heatmap draws. */
-  readonly locatedFields: Readonly<Record<string, number>>;
-  readonly heatmap: readonly HeatmapCell[];
   /** Doubles thrown at for a finish, most attempted first. */
   readonly doubles: readonly FieldTallyDto[];
   readonly doubleDistance: number | null;

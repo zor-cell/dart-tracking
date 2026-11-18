@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 
 from app.api.features.game.domain.game import Game
-from app.api.features.statistics.domain.heatmap import heatmap_cell
+from app.api.features.statistics.domain.heatmap import HitPattern
 
 
 @dataclass
@@ -19,10 +19,8 @@ class OverallStatistics:
     misses: int = 0
     located: int = 0
     variants: Counter[str] = field(default_factory=Counter)
-    # Darts per called-out label, a miss as 0, and the located ones per label and cell.
-    fields: Counter[str] = field(default_factory=Counter)
-    located_fields: Counter[str] = field(default_factory=Counter)
-    cells: Counter[tuple[int, int]] = field(default_factory=Counter)
+    # A miss counts under the label 0.
+    hits: HitPattern = field(default_factory=HitPattern)
     # Darts per ring: single (the 25 too), double (the bull too), triple, miss.
     rings: Counter[str] = field(default_factory=Counter)
     # Darts per day the games were played on.
@@ -39,13 +37,10 @@ class OverallStatistics:
             self.seconds += max(0.0, (finished_at - played_at).total_seconds())
         self.days[played_at.date()] += len(darts)
         for dart in darts:
-            self.fields[dart.label] += 1
+            self.hits.add(dart)
             self.rings[_ring(dart.multiplier)] += 1
             self.misses += dart.multiplier == 0
-            if dart.position is not None:
-                self.located += 1
-                self.located_fields[dart.label] += 1
-                self.cells[heatmap_cell(*dart.position)] += 1
+            self.located += dart.position is not None
         if len(game.players) < 2:
             return
         self.games_with_opponent += 1

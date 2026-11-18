@@ -66,27 +66,9 @@ export const TARGET_FIGURES: readonly TrendFigure<GameTallyDto>[] = [
   },
 ];
 
-/** A free training on the trend's axis, with the figures its goal has. */
-export interface TrainingTrendGame extends TrendGame {
-  readonly target: GameTallyDto | null;
-  readonly scoring: ScoringGameDto | null;
-}
-
-/** The figures of the free training: those at targets, and the points of the others. */
-export const TRAINING_FIGURES: readonly TrendFigure<TrainingTrendGame>[] = [
-  ...TARGET_FIGURES.map((figure) => ({
-    ...figure,
-    sparse: true,
-    of: (game: TrainingTrendGame) => (game.target ? figure.of(game.target) : null),
-  })),
-  {
-    label: '3-Dart-Ø',
-    value: 'average',
-    unit: '',
-    axis: '3-Dart-Ø',
-    sparse: true,
-    of: (game) => game.scoring?.average ?? null,
-  },
+/** The figures of the free trainings without a target. */
+export const SCORING_FIGURES: readonly TrendFigure<ScoringGameDto>[] = [
+  { label: '3-Dart-Ø', value: 'average', unit: '', axis: '3-Dart-Ø', of: (game) => game.average },
 ];
 
 /** The figures of Cricket. */

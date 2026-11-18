@@ -20,8 +20,7 @@ p-tab {
 }
 
 /* The trend tab's panels, spaced like the other tabs'. */
-.trend,
-.sections {
+.trend {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;

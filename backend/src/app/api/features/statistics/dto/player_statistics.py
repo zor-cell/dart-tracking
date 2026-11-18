@@ -1,12 +1,12 @@
 from typing import Self
 
 from app.api.core.dto.base import CamelModel
-from app.api.features.statistics.domain.heatmap import cell_centres
 from app.api.features.statistics.domain.player_statistics import (
     PlayerStatistics,
     Scatter,
     VisitRef,
 )
+from app.api.features.statistics.dto.hit_pattern import HitPatternDto, hit_pattern
 from app.api.features.statistics.dto.target_statistics import FieldTallyDto
 
 
@@ -39,7 +39,7 @@ class VisitRefDto(CamelModel):
         return None if ref is None else cls(game_id=ref.game_id, visit=ref.visit)
 
 
-class PlayerStatisticsDto(CamelModel):
+class PlayerStatisticsDto(HitPatternDto):
     legs: int
     legs_won: int
     # Legs against someone else, and those of them won.
@@ -70,9 +70,6 @@ class PlayerStatisticsDto(CamelModel):
     # Visits begun with a finish in reach, and those of them that busted.
     finish_visits: int
     busts: int
-    fields: dict[str, int]
-    located_fields: dict[str, int]
-    heatmap: list[tuple[int, int, int]]
     doubles: list[FieldTallyDto]
     double_distance: float | None
     grouping: float | None
@@ -111,9 +108,7 @@ class PlayerStatisticsDto(CamelModel):
             finish_visits=statistics.finish_visits,
             busts=statistics.busts,
             checkout_hits=statistics.checkout_hits,
-            fields=dict(statistics.fields),
-            located_fields=dict(statistics.located_fields),
-            heatmap=cell_centres(statistics.heatmap),
+            **hit_pattern(statistics.hits),
             doubles=[
                 FieldTallyDto.from_double(double)
                 for double in sorted(statistics.doubles.values(), key=lambda d: -d.attempts)

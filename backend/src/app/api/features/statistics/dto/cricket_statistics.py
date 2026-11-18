@@ -3,7 +3,7 @@ from typing import Self
 
 from app.api.core.dto.base import CamelModel
 from app.api.features.statistics.domain.cricket_statistics import CricketGame, CricketStatistics
-from app.api.features.statistics.domain.heatmap import cell_centres
+from app.api.features.statistics.dto.hit_pattern import HitPatternDto, hit_pattern
 from app.api.features.statistics.dto.player_statistics import VisitRefDto
 
 
@@ -35,7 +35,7 @@ class CricketGameDto(CamelModel):
         )
 
 
-class CricketStatisticsDto(CamelModel):
+class CricketStatisticsDto(HitPatternDto):
     """Cricket over the selected games, in one tally and game by game."""
 
     darts: int
@@ -52,11 +52,6 @@ class CricketStatisticsDto(CamelModel):
     favourite_visit: int | None
     # Oldest first.
     games: list[CricketGameDto]
-    # Darts per called-out label; the located ones apart, as the heatmaps take them.
-    fields: dict[str, int]
-    located_fields: dict[str, int]
-    # Centre of each heatmap cell in board mm and its located darts.
-    heatmap: list[tuple[int, int, int]]
 
     @classmethod
     def from_entity(cls, statistics: CricketStatistics) -> Self:
@@ -73,7 +68,5 @@ class CricketStatisticsDto(CamelModel):
             best_visit_at=VisitRefDto.from_entity(statistics.best_visit_at),
             favourite_visit=statistics.favourite_visit,
             games=[CricketGameDto.from_entity(game) for game in statistics.games],
-            fields=dict(statistics.fields),
-            located_fields=dict(statistics.located_fields),
-            heatmap=cell_centres(statistics.cells),
+            **hit_pattern(statistics.hits),
         )

@@ -97,7 +97,7 @@ def test_a_dart_on_an_open_number_is_no_distance_away():
     assert on_open == 0
     assert statistics.games[0].located == 2
     assert statistics.mean_distance is not None and statistics.mean_distance > 0
-    assert sum(statistics.located_fields.values()) == 2
+    assert sum(statistics.hits.located_fields.values()) == 2
 
 
 def test_a_closed_number_is_measured_to_the_nearest_one_still_open():

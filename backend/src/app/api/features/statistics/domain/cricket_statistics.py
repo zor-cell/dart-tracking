@@ -8,7 +8,7 @@ from datetime import datetime
 from app.api.features.game.domain.cricket import CricketOptions, cricket_throws
 from app.api.features.game.domain.game import Game
 from app.api.features.game.domain.target import Target
-from app.api.features.statistics.domain.heatmap import heatmap_cell
+from app.api.features.statistics.domain.heatmap import HitPattern
 from app.api.features.statistics.domain.player_statistics import VisitRef
 
 def marks_per_round(marks: int, darts: int) -> float | None:
@@ -47,10 +47,7 @@ class CricketStatistics:
     visits: Counter[int] = field(default_factory=Counter)
     best_visit: int = 0
     best_visit_at: VisitRef | None = None
-    # Darts per called-out label, the located ones per label and per heatmap cell.
-    fields: Counter[str] = field(default_factory=Counter)
-    located_fields: Counter[str] = field(default_factory=Counter)
-    cells: Counter[tuple[int, int]] = field(default_factory=Counter)
+    hits: HitPattern = field(default_factory=HitPattern)
 
     def add_game(self, game: Game, seat: int, played_at: datetime) -> None:
         assert isinstance(game.options, CricketOptions)
@@ -67,11 +64,9 @@ class CricketStatistics:
             tally.marks += throw.marks
             marks_of[throw.turn] = marks_of.get(throw.turn, 0) + throw.marks
             self.empty += throw.marks == 0
-            self.fields[dart.label] += 1
+            self.hits.add(dart)
             if dart.position is None:
                 continue
-            self.located_fields[dart.label] += 1
-            self.cells[heatmap_cell(*dart.position)] += 1
             if throw.open:
                 tally.located += 1
                 tally.distance += min(

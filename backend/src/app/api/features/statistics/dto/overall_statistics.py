@@ -2,8 +2,8 @@ from datetime import date
 from typing import Self
 
 from app.api.core.dto.base import CamelModel
-from app.api.features.statistics.domain.heatmap import cell_centres
 from app.api.features.statistics.domain.overall_statistics import OverallStatistics
+from app.api.features.statistics.dto.hit_pattern import HitPatternDto, hit_pattern
 
 
 class WeekDto(CamelModel):
@@ -17,7 +17,7 @@ class DayDto(CamelModel):
     darts: int
 
 
-class OverallStatisticsDto(CamelModel):
+class OverallStatisticsDto(HitPatternDto):
     """Every finished game of any kind: how much, where the darts went and when."""
 
     games: int
@@ -29,11 +29,6 @@ class OverallStatisticsDto(CamelModel):
     located: int
     # Games per variant.
     variants: dict[str, int]
-    # Darts per called-out label, a miss as 0; the located ones apart, as the heatmaps take them.
-    fields: dict[str, int]
-    located_fields: dict[str, int]
-    # Centre of each heatmap cell in board mm and its located darts.
-    heatmap: list[tuple[int, int, int]]
     # Darts per ring: single (the 25 too), double (the bull too), triple, miss.
     rings: dict[str, int]
     # Oldest first, the weeks without a dart included.
@@ -53,9 +48,7 @@ class OverallStatisticsDto(CamelModel):
             misses=statistics.misses,
             located=statistics.located,
             variants=dict(statistics.variants),
-            fields=dict(statistics.fields),
-            located_fields=dict(statistics.located_fields),
-            heatmap=cell_centres(statistics.cells),
+            **hit_pattern(statistics.hits),
             rings=dict(statistics.rings),
             weeks=[WeekDto(week=week, darts=darts) for week, darts in statistics.weeks],
             longest_streak=statistics.longest_streak,

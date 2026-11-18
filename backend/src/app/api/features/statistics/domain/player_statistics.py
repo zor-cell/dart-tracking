@@ -12,7 +12,7 @@ from itertools import combinations
 from app.api.features.game.domain.checkout_mode import CheckoutMode
 from app.api.features.game.domain.turn import Turn
 from app.api.features.statistics.domain.double_statistics import BULL, DoubleStatistics
-from app.api.features.statistics.domain.heatmap import heatmap_cell
+from app.api.features.statistics.domain.heatmap import HitPattern
 
 # The highest score one visit can finish; above it every dart aims to score.
 _HIGHEST_FINISH = 170
@@ -87,9 +87,7 @@ class PlayerStatistics:
     busts: int = 0
     first_nine_darts: int = 0
     first_nine_points: int = 0
-    fields: Counter[str] = field(default_factory=Counter)
-    located_fields: Counter[str] = field(default_factory=Counter)  # fields of located darts only
-    heatmap: Counter[tuple[int, int]] = field(default_factory=Counter)
+    hits: HitPattern = field(default_factory=HitPattern)
     doubles: dict[int, DoubleStatistics] = field(default_factory=dict)
     # Located darts of scoring visits, and the pairs of two darts within one visit.
     grouping_darts: int = 0
@@ -205,7 +203,7 @@ class PlayerStatistics:
             live = remaining
             for dart in turn.darts:
                 self.darts += 1
-                self.fields[dart.label] += 1
+                self.hits.add(dart)
                 thrown += 1
                 if thrown <= _FIRST_NINE:
                     self.first_nine_darts += 1
@@ -219,10 +217,6 @@ class PlayerStatistics:
                 live -= dart.points
                 if live == 0 and not turn.busted:
                     self.checkout_hits += 1
-                if dart.position is not None:
-                    x, y = dart.position
-                    self.located_fields[dart.label] += 1
-                    self.heatmap[heatmap_cell(x, y)] += 1
 
             if turn.busted:
                 continue

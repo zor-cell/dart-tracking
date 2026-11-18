@@ -40,9 +40,6 @@ export class TargetStatisticsComponent {
   readonly game = input.required<StatisticsView>();
   /** Games won out of those played, where the game has a winner to count (Killer). */
   readonly wins = input<{ readonly wins: number; readonly games: number } | null>(null);
-  /** Heading of the key figures in place of "Allgemein", and a line of what they count. */
-  readonly title = input<string | null>(null);
-  readonly hint = input<string | null>(null);
 
   protected readonly clock = computed(() => this.game() === 'around_the_clock');
 

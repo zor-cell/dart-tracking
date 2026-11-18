@@ -3,6 +3,7 @@ from typing import Self
 
 from app.api.core.dto.base import CamelModel
 from app.api.features.statistics.domain.scoring_statistics import ScoringGame, ScoringStatistics
+from app.api.features.statistics.dto.hit_pattern import HitPatternDto, hit_pattern
 from app.api.features.statistics.dto.player_statistics import VisitRefDto
 
 
@@ -22,7 +23,7 @@ class ScoringGameDto(CamelModel):
         )
 
 
-class ScoringStatisticsDto(CamelModel):
+class ScoringStatisticsDto(HitPatternDto):
     """The trainings without a target: their points, visit by visit and game by game."""
 
     darts: int
@@ -51,4 +52,5 @@ class ScoringStatisticsDto(CamelModel):
             visits_60_plus=statistics.visits_from(60),
             visit_scores=dict(statistics.visit_scores),
             games=[ScoringGameDto.from_entity(game) for game in statistics.games],
+            **hit_pattern(statistics.hits),
         )

@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 
 from app.api.features.game.domain.dart import Dart
 from app.api.features.game.domain.turn import Turn
+from app.api.features.statistics.domain.heatmap import heatmap_cell
 from app.api.features.statistics.domain.player_statistics import VisitRef
 from app.api.features.statistics.domain.scoring_statistics import ScoringStatistics
 
@@ -41,3 +42,15 @@ def test_a_game_without_darts_is_left_out():
     statistics.add_game("empty", PLAYED, [visit()], [None])
 
     assert (statistics.darts, statistics.games, dict(statistics.visit_scores)) == (0, [], {})
+
+
+def test_the_hit_pattern_counts_every_dart_and_locates_those_with_a_tip():
+    statistics = ScoringStatistics()
+    located = Dart(value=20, multiplier=3, position=(0.0, 103.0))
+    turn = Turn(player_id=0, darts=[located, Dart(value=20, multiplier=3), Dart(value=0, multiplier=0)])
+
+    statistics.add_game("a", PLAYED, [turn], refs("a", 1))
+
+    assert statistics.hits.fields == {"T20": 2, "0": 1}
+    assert statistics.hits.located_fields == {"T20": 1}
+    assert statistics.hits.cells == {heatmap_cell(0.0, 103.0): 1}

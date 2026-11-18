@@ -1,8 +1,9 @@
+import { HitPatternDto } from './hit-pattern.dto';
 import { ScoringGameDto } from './scoring-game.dto';
 import { VisitRefDto } from './visit-ref.dto';
 
 /** The trainings without a target: their points, visit by visit and game by game. */
-export interface ScoringStatisticsDto {
+export interface ScoringStatisticsDto extends HitPatternDto {
   readonly darts: number;
   readonly average: number;
   readonly bestVisit: number;

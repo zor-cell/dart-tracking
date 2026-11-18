@@ -1,4 +1,4 @@
-import { HeatmapCell } from './player-statistics.dto';
+import { HitPatternDto } from './hit-pattern.dto';
 
 export interface WeekDto {
   /** The Monday the week starts on, as an ISO date. */
@@ -12,7 +12,7 @@ export interface DayDto {
 }
 
 /** Every finished game of any kind: how much, where the darts went and when. */
-export interface OverallStatisticsDto {
+export interface OverallStatisticsDto extends HitPatternDto {
   readonly games: number;
   readonly darts: number;
   /** From setting each game up to its end, summed. */
@@ -23,10 +23,6 @@ export interface OverallStatisticsDto {
   readonly located: number;
   /** Games per variant. */
   readonly variants: Readonly<Record<string, number>>;
-  /** Darts per called-out label, a miss as 0; the located ones apart, as the heatmaps take them. */
-  readonly fields: Readonly<Record<string, number>>;
-  readonly locatedFields: Readonly<Record<string, number>>;
-  readonly heatmap: readonly HeatmapCell[];
   /** Darts per ring: single (the 25 too), double (the bull too), triple, miss. */
   readonly rings: Readonly<Record<string, number>>;
   /** Oldest first, the weeks without a dart included. */

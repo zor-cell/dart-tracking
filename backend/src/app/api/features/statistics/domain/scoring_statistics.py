@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 from app.api.features.game.domain.turn import Turn
+from app.api.features.statistics.domain.heatmap import HitPattern
 from app.api.features.statistics.domain.player_statistics import VisitRef
 
 
@@ -29,6 +30,7 @@ class ScoringStatistics:
     best_visit: int = 0
     best_visit_at: VisitRef | None = None
     visit_scores: Counter[int] = field(default_factory=Counter)  # visits by points
+    hits: HitPattern = field(default_factory=HitPattern)
     # One per game with darts, oldest first.
     games: list[ScoringGame] = field(default_factory=list)
 
@@ -54,6 +56,8 @@ class ScoringStatistics:
                 continue
             game.darts += len(turn.darts)
             game.points += turn.points
+            for dart in turn.darts:
+                self.hits.add(dart)
             self.visit_scores[turn.points] += 1
             if turn.points > self.best_visit:
                 self.best_visit, self.best_visit_at = turn.points, ref

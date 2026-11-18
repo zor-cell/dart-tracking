@@ -9,7 +9,7 @@ import {
   storeHeatmapLayer,
   storedHeatmapLayer,
 } from '../../../game/models/heatmap-layer';
-import { HeatmapCell } from '../../dto/player-statistics.dto';
+import { HeatmapCell } from '../../dto/hit-pattern.dto';
 
 /** Where a player's darts landed, as a tip cloud or by field; projected content goes below. */
 @Component({

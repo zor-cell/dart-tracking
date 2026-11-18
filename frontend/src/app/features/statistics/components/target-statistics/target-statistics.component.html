@@ -1,13 +1,6 @@
 @let totals = statistics();
 <section class="panel">
-  @if (title(); as title) {
-    <h2 class="panel__title">{{ title }}</h2>
-  } @else {
-    <h2 class="panel__title" i18n="@@settings.general">Allgemein</h2>
-  }
-  @if (hint(); as hint) {
-    <p class="panel__hint">{{ hint }}</p>
-  }
+  <h2 class="panel__title" i18n="@@settings.general">Allgemein</h2>
   <dl class="stat-grid">
     @if (wins(); as wins) {
       <div class="stat stat--lead">

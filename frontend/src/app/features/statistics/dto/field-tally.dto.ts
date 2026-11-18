@@ -1,4 +1,4 @@
-import { HeatmapCell } from './player-statistics.dto';
+import { HeatmapCell } from './hit-pattern.dto';
 import { TargetTallyDto } from './target-tally.dto';
 
 export interface FieldTallyDto extends TargetTallyDto {

@@ -40,7 +40,7 @@ def test_won_leg():
     assert (statistics.first_nine_darts, statistics.first_nine_points) == (8, 301)
     assert (statistics.legs, statistics.legs_won) == (1, 1)
     assert statistics.darts_per_leg == 8
-    assert statistics.fields["T20"] == 6
+    assert statistics.hits.fields["T20"] == 6
     assert statistics.highest_finish == 121
 
 
@@ -50,8 +50,8 @@ def test_located_fields_count_only_darts_with_a_tip():
     turn = Turn(player_id=0, darts=[located, *darts("T20", "5")])
     statistics.add_leg(501, CheckoutMode.DOUBLE_OUT, [turn])
 
-    assert statistics.fields == {"T20": 2, "5": 1}
-    assert statistics.located_fields == {"T20": 1}
+    assert statistics.hits.fields == {"T20": 2, "5": 1}
+    assert statistics.hits.located_fields == {"T20": 1}
 
 
 def test_favourite_visit_is_the_scoring_visit_thrown_most_often():

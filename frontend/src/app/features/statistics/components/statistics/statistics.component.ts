@@ -35,11 +35,9 @@ import {
 import {
   CRICKET_FIGURES,
   POINTS_FIGURES,
+  SCORING_FIGURES,
   TARGET_FIGURES,
-  TRAINING_FIGURES,
-  TrainingTrendGame,
 } from '../../models/trend-metric';
-import { gamesAndDarts } from '../../models/count-label';
 import { ScoringStatisticsDto } from '../../dto/scoring-statistics.dto';
 import { ScoringStatisticsComponent } from '../scoring-statistics/scoring-statistics.component';
 import { OverallStatisticsComponent } from '../overall-statistics/overall-statistics.component';
@@ -115,7 +113,6 @@ const REMEMBERED = [
   'clockZone',
   'killerZone',
   'scoring',
-  'trainingGoal',
   'trainingRing',
 ] as const;
 
@@ -128,7 +125,6 @@ const GAME_FILTERS: Partial<Record<Remembered, readonly StatisticsView[]>> = {
   clockZone: ['around_the_clock'],
   killerZone: ['killer'],
   scoring: ['cricket'],
-  trainingGoal: ['training'],
   trainingRing: ['training'],
 };
 
@@ -151,7 +147,6 @@ const FILTER_PARAMS = {
   clockZone: listParam(oneOfParam(CLOCK_ZONES.map((zone) => zone.value))),
   killerZone: listParam(oneOfParam(KILLER_ZONES.map((zone) => zone.value))),
   scoring: listParam(oneOfParam(CRICKET_SCORINGS.map((scoring) => scoring.value))),
-  trainingGoal: listParam(oneOfParam(TRAINING_GOALS.map((goal) => goal.value))),
   trainingRing: listParam(oneOfParam(TRAINING_RINGS.map((ring) => ring.value))),
 };
 
@@ -241,39 +236,13 @@ export class StatisticsComponent {
   protected readonly targetFigures = TARGET_FIGURES;
   protected readonly cricketFigures = CRICKET_FIGURES;
 
-  /** Whether the free trainings without a target have darts to show beside the others. */
-  protected readonly scored = computed(() => (this.scoring()?.darts ?? 0) > 0);
-  /** Heading and count of the trainings at targets, when those without one stand below. */
-  protected readonly aimedTitle = computed(() =>
-    this.scored() ? $localize`:@@stats.targets.aimedTitle:Auf Ziele` : null,
-  );
-  protected readonly aimedHint = computed(() => {
-    const targets = this.targets();
-    return this.scored() && targets ? gamesAndDarts(targets.games.length, targets.darts, this.locale) : null;
-  });
-  /** Every free training on one axis, oldest first, each with the figures of its goal. */
-  protected readonly trainingTrend = computed<TrainingTrendGame[]>(() =>
-    [
-      ...(this.targets()?.games ?? []).map((game) => ({
-        gameId: game.gameId,
-        playedAt: game.playedAt,
-        target: game,
-        scoring: null,
-      })),
-      ...(this.scoring()?.games ?? []).map((game) => ({
-        gameId: game.gameId,
-        playedAt: game.playedAt,
-        target: null,
-        scoring: game,
-      })),
-    ].sort((a, b) => a.playedAt.localeCompare(b.playedAt)),
-  );
-  /** The training's figures that any of its games has. */
-  protected readonly trainingFigures = computed(() => {
-    const games = this.trainingTrend();
-    const had = TRAINING_FIGURES.filter((figure) => games.some((game) => figure.of(game) !== null));
-    return had.length > 0 ? had : TRAINING_FIGURES;
-  });
+  protected readonly scoringFigures = SCORING_FIGURES;
+
+  /** The free training's goal: always exactly one, as a new training starts with. */
+  protected readonly trainingGoal = signal<TrainingGoal>('free');
+  protected readonly free = computed(() => this.game() === 'training' && this.trainingGoal() === 'free');
+  /** Rebuilt on every opening, like the game picker. */
+  protected readonly goalPickerOpen = signal(false);
 
   /** The tab of a game at targets, which has no checkout tab: that one opens its precision. */
   protected readonly targetTab = computed(() => (this.tab() === 'trend' ? 'trend' : 'precision'));
@@ -299,16 +268,14 @@ export class StatisticsComponent {
         ? null
         : this.game() === 'cricket'
           ? this.cricket()
-          : (this.kills() ?? this.targets());
-    const scoring = this.scoring();
+          : this.free()
+            ? this.scoring()
+            : (this.kills() ?? this.targets());
     const tally = points
       ? { games: points.legs, darts: points.darts }
       : overall
         ? { games: overall.games, darts: overall.darts }
-        : other && {
-            games: other.games.length + (scoring?.games.length ?? 0),
-            darts: other.darts + (scoring?.darts ?? 0),
-          };
+        : other && { games: other.games.length, darts: other.darts };
     return tally && tally.games > 0 ? tally : null;
   });
 
@@ -357,7 +324,6 @@ export class StatisticsComponent {
     clockZone: this.fb.control<ClockZone[]>([], { nonNullable: true }),
     killerZone: this.fb.control<KillerZone[]>([], { nonNullable: true }),
     scoring: this.fb.control<CricketScoring[]>([], { nonNullable: true }),
-    trainingGoal: this.fb.control<TrainingGoal[]>([], { nonNullable: true }),
     trainingRing: this.fb.control<TrainingRing[]>([], { nonNullable: true }),
   });
   private readonly filterValue = toSignal(this.filters.valueChanges, {
@@ -384,7 +350,17 @@ export class StatisticsComponent {
         removable: false,
         opens: true,
       },
-      ...REMEMBERED.filter((key) => this.applies(key)).flatMap((key) => {
+      ...(this.game() === 'training'
+        ? [
+            {
+              key: 'trainingGoal',
+              label: TRAINING_GOALS.find((goal) => goal.value === this.trainingGoal())?.label ?? '',
+              removable: false,
+              opens: true,
+            },
+          ]
+        : []),
+      ...REMEMBERED.filter((key) => this.shown(key)).flatMap((key) => {
         const label = this.chipLabel(key, value[key] ?? []);
         return label ? [{ key, label }] : [];
       }),
@@ -410,15 +386,16 @@ export class StatisticsComponent {
         ? this.overall()?.games
         : this.game() === 'cricket'
           ? this.cricket()?.darts
-          : this.targets()?.darts;
-    const scored = this.scoring()?.darts ?? 0;
+          : this.free()
+            ? this.scoring()?.darts
+            : this.targets()?.darts;
     if (this.loading() && count === undefined) {
       return 'loading';
     }
     if (this.failed()) {
       return 'failed';
     }
-    return count === 0 && scored === 0 ? 'empty' : null;
+    return count === 0 ? 'empty' : null;
   });
 
   /** Whether anything narrows the statistics below the whole history. */
@@ -438,8 +415,8 @@ export class StatisticsComponent {
       clockZones: picks('clockZone') as ClockZone[],
       killerZones: picks('killerZone') as KillerZone[],
       cricketScorings: picks('scoring') as CricketScoring[],
-      trainingGoals: picks('trainingGoal') as TrainingGoal[],
-      trainingRings: picks('trainingRing') as TrainingRing[],
+      trainingGoals: this.game() === 'training' ? [this.trainingGoal()] : [],
+      trainingRings: this.free() ? [] : (picks('trainingRing') as TrainingRing[]),
       opponentIds: opponentId ?? [],
       playerCounts: players ?? [],
       ...periodBounds(period, this.range(), new Date()),
@@ -485,6 +462,12 @@ export class StatisticsComponent {
       oneOfParam(STATISTICS_VIEWS.map((option) => option.value)),
       'all',
     );
+    this.queryState.signal(
+      'trainingGoal',
+      this.trainingGoal,
+      oneOfParam(TRAINING_GOALS.map((goal) => goal.value)),
+      'free',
+    );
     this.queryState.form(this.filters, FILTER_PARAMS);
     this.queryState.signal('compare', this.compareId, TEXT_PARAM, '');
     void this.players.list().then((all) => {
@@ -509,9 +492,14 @@ export class StatisticsComponent {
     return GAME_FILTERS[key]?.includes(this.game()) ?? true;
   }
 
+  /** Whether a filter shows as a chip; the ring means nothing to a training without a target. */
+  private shown(key: Remembered): boolean {
+    return this.applies(key) && !(this.free() && key === 'trainingRing');
+  }
+
   /** How a filter's picks read on a chip; null when none of them is known to this page. */
   private chipLabel(key: string, picks: readonly unknown[]): string | null {
-    if (!REMEMBERED.some((known) => known === key) || !this.applies(key as Remembered)) {
+    if (!REMEMBERED.some((known) => known === key) || !this.shown(key as Remembered)) {
       return null;
     }
     const names = picks.flatMap((pick) => this.nameOf(key as Remembered, pick) ?? []);
@@ -529,8 +517,6 @@ export class StatisticsComponent {
         return KILLER_ZONES.find((option) => option.value === value)?.label ?? null;
       case 'scoring':
         return this.scoringOptions.find((option) => option.value === value)?.label ?? null;
-      case 'trainingGoal':
-        return TRAINING_GOALS.find((option) => option.value === value)?.label ?? null;
       case 'trainingRing':
         return TRAINING_RINGS.find((option) => option.value === value)?.label ?? null;
       case 'opponentId':
@@ -546,13 +532,27 @@ export class StatisticsComponent {
     }
   }
 
-  /** The game and period chips open their pickers under them. */
-  protected openPicker(open: FilterChipOpen, games: Popover, picker: PeriodPickerComponent): void {
+  /** The game, period and goal chips open their pickers under them. */
+  protected openPicker(
+    open: FilterChipOpen,
+    games: Popover,
+    picker: PeriodPickerComponent,
+    goals: Popover,
+  ): void {
     if (open.key === 'game') {
       games.toggle(open.event);
     } else if (open.key === 'period') {
       picker.toggle(open.event);
+    } else if (open.key === 'trainingGoal') {
+      goals.toggle(open.event);
     }
+  }
+
+  protected pickGoal(goal: TrainingGoal | null, picker: Popover): void {
+    if (goal !== null) {
+      this.trainingGoal.set(goal);
+    }
+    picker.hide();
   }
 
   protected pickGame(game: StatisticsView | null, picker: Popover): void {
@@ -596,7 +596,7 @@ export class StatisticsComponent {
     this.failed.set(false);
     try {
       const game = this.game();
-      if (game !== 'training') {
+      if (!this.free()) {
         this.scoring.set(null);
       }
       const kills =
@@ -626,7 +626,7 @@ export class StatisticsComponent {
         const [targets, killed, scoring] = await Promise.all([
           this.statistics.targets(criteria),
           kills,
-          game === 'training' ? this.statistics.scoring(criteria) : null,
+          this.free() ? this.statistics.scoring(criteria) : null,
         ]);
         if (request === this.requests) {
           this.targets.set(targets);

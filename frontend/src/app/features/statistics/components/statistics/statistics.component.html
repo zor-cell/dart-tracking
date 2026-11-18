@@ -10,7 +10,7 @@
       [chips]="chips()"
       [suggestions]="suggestions()"
       (chipRemove)="clearFilter($event)"
-      (chipOpen)="openPicker($event, gamePicker, periodPicker)"
+      (chipOpen)="openPicker($event, gamePicker, periodPicker, goalPicker)"
       (suggestionPick)="pickSuggestion($event)"
       (reset)="resetFilters()"
     >
@@ -77,20 +77,15 @@
             />
           }
           @case ('training') {
-            <app-filter-select
-              label="Ziel"
-              i18n-label="@@game.new.goal"
-              inputId="filter-trainingGoal"
-              [control]="filters.controls.trainingGoal"
-              [options]="trainingGoalOptions"
-            />
-            <app-filter-select
-              label="Feld"
-              i18n-label="@@game.new.zone"
-              inputId="filter-trainingRing"
-              [control]="filters.controls.trainingRing"
-              [options]="trainingRingOptions"
-            />
+            @if (!free()) {
+              <app-filter-select
+                label="Feld"
+                i18n-label="@@game.new.zone"
+                inputId="filter-trainingRing"
+                [control]="filters.controls.trainingRing"
+                [options]="trainingRingOptions"
+              />
+            }
           }
         }
       </form>
@@ -179,6 +174,26 @@
           }
         </ng-template>
       </p-listbox>
+    }
+  </p-popover>
+  <p-popover
+    #goalPicker
+    (onShow)="centreArrow(goalPicker); goalPickerOpen.set(true)"
+    (onHide)="goalPickerOpen.set(false)"
+  >
+    @if (goalPickerOpen()) {
+      <p-listbox
+        class="game-picker"
+        [options]="trainingGoalOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="trainingGoal()"
+        (ngModelChange)="pickGoal($event, goalPicker)"
+        scrollHeight="none"
+        [metaKeySelection]="true"
+        ariaLabel="Ziel"
+        i18n-ariaLabel="@@game.new.goal"
+      />
     }
   </p-popover>
   <p-popover #comparePicker (onShow)="centreArrow(comparePicker)">
@@ -332,27 +347,18 @@
       } @else if (targets(); as targets) {
         <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
           <p-tabpanel value="precision">
-            <div class="sections">
-              @if (targets.darts > 0) {
-                <app-target-statistics
-                  [statistics]="targets"
-                  [game]="game()"
-                  [wins]="killerWins()"
-                  [title]="aimedTitle()"
-                  [hint]="aimedHint()"
-                >
-                  <ng-container *ngTemplateOutlet="killPanel" />
-                </app-target-statistics>
-              }
-              @if (scored() ? scoring() : null; as scoring) {
-                <app-scoring-statistics [statistics]="scoring" [counted]="targets.darts > 0" />
-              }
-            </div>
+            @if (free() ? scoring() : null; as scoring) {
+              <app-scoring-statistics [statistics]="scoring" />
+            } @else {
+              <app-target-statistics [statistics]="targets" [game]="game()" [wins]="killerWins()">
+                <ng-container *ngTemplateOutlet="killPanel" />
+              </app-target-statistics>
+            }
           </p-tabpanel>
           <p-tabpanel value="trend">
-            @if (scored() ? scoring() : null; as scoring) {
+            @if (free() ? scoring() : null; as scoring) {
               <div class="trend">
-                <app-trend-statistics [figures]="trainingFigures()" [points]="trainingTrend()" />
+                <app-trend-statistics [figures]="scoringFigures" [points]="scoring.games" />
                 <app-visit-distribution [visitScores]="scoring.visitScores" />
               </div>
             } @else {

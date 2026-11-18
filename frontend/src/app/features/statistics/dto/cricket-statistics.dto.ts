@@ -1,9 +1,9 @@
 import { CricketGameDto } from './cricket-game.dto';
-import { HeatmapCell } from './player-statistics.dto';
+import { HitPatternDto } from './hit-pattern.dto';
 import { VisitRefDto } from './visit-ref.dto';
 
 /** Cricket over the selected games, in one tally and game by game. */
-export interface CricketStatisticsDto {
+export interface CricketStatisticsDto extends HitPatternDto {
   readonly darts: number;
   readonly marks: number;
   readonly mpr: number | null;
@@ -19,7 +19,4 @@ export interface CricketStatisticsDto {
   readonly favouriteVisit: number | null;
   /** Oldest first. */
   readonly games: readonly CricketGameDto[];
-  readonly fields: Readonly<Record<string, number>>;
-  readonly locatedFields: Readonly<Record<string, number>>;
-  readonly heatmap: readonly HeatmapCell[];
 }

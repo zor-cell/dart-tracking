@@ -1,9 +1,6 @@
 @let totals = statistics();
 <section class="panel">
-  <h2 class="panel__title" i18n="@@stats.scoring.title">Ohne Ziel</h2>
-  @if (counted()) {
-    <p class="panel__hint">{{ hint() }}</p>
-  }
+  <h2 class="panel__title" i18n="@@settings.general">Allgemein</h2>
   <dl class="stat-grid">
     <div class="stat stat--lead">
       <dt class="stat__label">3-Dart-<span aria-hidden="true">Ø</span><span class="sr-only">Average</span></dt>
@@ -27,3 +24,9 @@
     }
   </dl>
 </section>
+
+<app-hit-pattern
+  [fields]="totals.fields"
+  [locatedFields]="totals.locatedFields"
+  [heatmap]="totals.heatmap"
+/>
