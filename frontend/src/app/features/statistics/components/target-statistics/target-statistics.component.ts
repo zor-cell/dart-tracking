@@ -1,4 +1,4 @@
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -16,7 +16,7 @@ import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
 import { TargetBoardComponent } from '../target-board/target-board.component';
 import { StatLinkComponent } from '../stat-link/stat-link.component';
 
-/** Darts a target needs before it can be the strongest. */
+/** Darts a target needs before it can be the strongest or weakest. */
 const STRONGEST_MIN_DARTS = 5;
 
 /** The darts a player threw at named fields: key figures and where they landed. */
@@ -26,6 +26,7 @@ const STRONGEST_MIN_DARTS = 5;
     DecimalPipe,
     DistanceScaleComponent,
     InfoHintComponent,
+    NgTemplateOutlet,
     StatLinkComponent,
     StatSketchComponent,
     TargetBoardComponent,
@@ -62,19 +63,17 @@ export class TargetStatisticsComponent {
     return doubles * 2 > this.statistics().darts ? 'double' : 'other';
   });
 
-  /** The target hit most often for the darts at it, with enough darts to count. */
-  protected readonly strongest = computed(() => {
-    const counted = this.statistics().fields.filter((field) => field.darts >= STRONGEST_MIN_DARTS);
-    const best = counted.reduce<(typeof counted)[number] | null>(
-      (top, field) => (top === null || field.hits / field.darts > top.hits / top.darts ? field : top),
-      null,
-    );
-    return best === null
-      ? null
-      : {
-          label: targetLabel(best),
-          figure: `${Math.round((100 * best.hits) / best.darts)} %`,
-        };
+  /** Targets with enough darts to count, best hit rate first. */
+  private readonly ranked = computed(() =>
+    this.statistics()
+      .fields.filter((field) => field.darts >= STRONGEST_MIN_DARTS)
+      .map((field) => ({ label: targetLabel(field), rate: (100 * field.hits) / field.darts }))
+      .sort((a, b) => b.rate - a.rate),
+  );
+  protected readonly strongest = computed(() => this.ranked().at(0) ?? null);
+  protected readonly weakest = computed(() => {
+    const ranked = this.ranked();
+    return ranked.length > 1 ? ranked[ranked.length - 1] : null;
   });
 
   constructor() {

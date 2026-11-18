@@ -834,6 +834,8 @@
     "stats.targets.dartsToFinishHint": "Darts from the first throw to the hit on the last target. Only games you got round.",
     "stats.targets.distanceHint": "Shortest way from the detected dart to the field it was aimed at. A hit counts as 0 mm.",
     "stats.targets.strongest": "Strongest target",
+    "stats.targets.weakest": "Weakest target",
+    "stats.targets.fieldRate": "{$INTERPOLATION} % hit rate",
     "stats.targets.layer": "Display of the targets",
     "stats.targets.boardLabel": "Darts at targets by field hit",
     "stats.targets.darts": "{$INTERPOLATION} darts at targets",

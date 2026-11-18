@@ -878,6 +878,8 @@
     "stats.targets.averageDarts": "Ø Darts",
     "stats.targets.dartsToFinishHint": " Darts vom ersten Wurf bis zum Treffer auf das letzte Ziel. Nur Spiele, in denen du durchgekommen bist. ",
     "stats.targets.strongest": "Stärkstes Ziel",
+    "stats.targets.weakest": "Schwächstes Ziel",
+    "stats.targets.fieldRate": "{$INTERPOLATION} % Trefferquote",
     "stats.targets.distance": "Ø Abstand zum Ziel",
     "stats.targets.distanceHint": "Kürzester Weg vom erkannten Dart zum Feld, auf das er ging. Ein Treffer zählt 0 mm.",
     "stats.trend.metric": "Kennzahl im Verlauf",
