@@ -110,8 +110,6 @@
         <dd class="stat__hint">
           <app-compared-value [name]="other.name" [other]="other.statistics.fewestDarts" [digits]="0" />
         </dd>
-      } @else {
-        <dd class="stat__hint" i18n="@@stats.fewestDartsHint">in einem gewonnenen Leg</dd>
       }
     </div>
     <div class="stat">
@@ -192,7 +190,6 @@
         <dd class="stat__value">&ndash;</dd>
       }
     </div>
-    <div class="stat" aria-hidden="true"></div>
   </dl>
 </section>
 

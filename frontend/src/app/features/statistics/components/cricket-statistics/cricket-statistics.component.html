@@ -49,14 +49,15 @@
     </div>
     <div class="stat">
       <dt class="stat__label">
-        <ng-container i18n="@@stats.cricket.empty">Leere Darts</ng-container>
-        <app-info-hint class="stat__info" i18n="@@stats.cricket.emptyHint">
-          Darts ohne Mark: daneben, auf anderen Zahlen oder auf Zahlen, die nichts mehr bringen.
+        <ng-container i18n="@@stats.cricket.marked">Mark getroffen</ng-container>
+        <app-info-hint class="stat__info" i18n="@@stats.cricket.markedHint">
+          Darts, die eine Zahl schließen oder punkten. Daneben, andere Zahlen und Zahlen, die nichts
+          mehr bringen, zählen nicht.
         </app-info-hint>
       </dt>
       <dd class="stat__value">
-        @if (emptyRate() !== null) {
-          {{ emptyRate() | number: '1.0-0' }} %
+        @if (markedRate() !== null) {
+          {{ markedRate() | number: '1.0-0' }} %
         } @else {
           &ndash;
         }

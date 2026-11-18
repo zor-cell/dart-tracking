@@ -449,6 +449,11 @@ button.list-group__item:enabled {
   grid-column: 1 / -1;
 }
 
+/* A lone card in the last row sits centred. */
+.stat-grid:not(:has(.stat--half, .stat--wide)) > .stat:last-child:nth-child(odd) {
+  grid-column: 2 / span 2;
+}
+
 .stat--lead {
   .stat__value {
     font-size: 2.25rem;

@@ -33,9 +33,9 @@ export class CricketStatisticsComponent {
     const { wins, gamesWithOpponent } = this.statistics();
     return share(wins, gamesWithOpponent);
   });
-  protected readonly emptyRate = computed(() => {
+  protected readonly markedRate = computed(() => {
     const { empty, darts } = this.statistics();
-    return share(empty, darts);
+    return share(darts - empty, darts);
   });
 
   /** Visits with at least each band's marks. */
