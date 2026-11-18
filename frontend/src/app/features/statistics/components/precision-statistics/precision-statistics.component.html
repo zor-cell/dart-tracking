@@ -118,35 +118,32 @@
     </div>
     <div class="stat">
       <dt class="stat__label">
-        <ng-container i18n="@@stats.bustRate">Bust-Quote</ng-container>
-        <app-info-hint class="stat__info" i18n="@@stats.bustRateHint"
-          >Anteil der Aufnahmen mit 170 oder weniger Rest, die überworfen haben.</app-info-hint
-        >
+        <ng-container i18n="@@stats.bestAverage">Bester</ng-container> 3-Dart-<span aria-hidden="true">Ø</span
+        ><span class="sr-only">Average</span>
       </dt>
       <dd class="stat__value">
-        @let bust = bustRate();
-        @if (bust !== null) {
-          {{ bust | number: '1.0-0' }} %
+        @if (other ? null : bestGame(); as best) {
+          <app-stat-link [link]="['/account/games', best.gameId]" action="game">{{
+            best.average | number: '1.1-1'
+          }}</app-stat-link>
+        } @else if (bestGame(); as best) {
+          {{ best.average | number: '1.1-1' }}
         } @else {
           &ndash;
         }
         @if (other) {
           <app-delta-mark
-            [own]="bustRate()"
-            [other]="otherBustRate()"
+            [own]="bestGame()?.average ?? null"
+            [other]="otherBestAverage()"
             [name]="other.name"
-            [digits]="0"
-            unit=" %"
-            [lowerIsBetter]="true"
+            [digits]="1"
           />
         }
       </dd>
       @if (other) {
         <dd class="stat__hint">
-          <app-compared-value [name]="other.name" [other]="otherBustRate()" [digits]="0" unit=" %" />
+          <app-compared-value [name]="other.name" [other]="otherBestAverage()" [digits]="1" />
         </dd>
-      } @else {
-        <dd class="stat__hint" i18n="@@stats.bustsOf">{{ totals.busts }} von {{ totals.finishVisits }} Aufnahmen</dd>
       }
     </div>
   </dl>

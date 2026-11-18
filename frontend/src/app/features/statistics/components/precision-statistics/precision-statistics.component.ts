@@ -16,6 +16,8 @@ import {
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { PlayerStatisticsDto } from '../../dto/player-statistics.dto';
 import { ScatterDto } from '../../dto/scatter.dto';
+import { StatisticsOverviewDto } from '../../dto/statistics-overview.dto';
+import { TrendPointDto } from '../../dto/trend-point.dto';
 import { COMPARE_COLOR, Comparison, OWN_COLOR } from '../../models/comparison';
 import { visitTotal } from '../../models/visit-scores';
 import { ComparedValueComponent } from '../compared-value/compared-value.component';
@@ -45,7 +47,7 @@ import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PrecisionStatisticsComponent {
-  readonly statistics = input.required<PlayerStatisticsDto>();
+  readonly statistics = input.required<StatisticsOverviewDto>();
   /** Another player's figures set beside one's own; the hit picture is left out meanwhile. */
   readonly comparison = input<Comparison | null>(null);
   protected readonly ownColor = OWN_COLOR;
@@ -59,11 +61,11 @@ export class PrecisionStatisticsComponent {
   /** The field picked on the heatmap, kept when the layer changes. */
   protected readonly pinnedField = signal<string | null>(null);
 
-  /** Busted visits out of those begun with a finish in reach, in percent. */
-  protected readonly bustRate = computed(() => bustRate(this.statistics()));
-  protected readonly otherBustRate = computed(() => {
+  /** The game with the highest 3-dart average, the oldest on a tie. */
+  protected readonly bestGame = computed(() => bestGame(this.statistics().trend));
+  protected readonly otherBestAverage = computed(() => {
     const other = this.comparison()?.statistics;
-    return other ? bustRate(other) : null;
+    return other ? (bestGame(other.trend)?.average ?? null) : null;
   });
 
   /** Legs won out of the legs against someone else, in percent. */
@@ -161,8 +163,11 @@ function tipCounts({ locatedFields }: PlayerStatisticsDto): ReadonlyMap<string, 
   return new Map(Object.entries(locatedFields));
 }
 
-function bustRate({ busts, finishVisits }: PlayerStatisticsDto): number | null {
-  return finishVisits === 0 ? null : (busts / finishVisits) * 100;
+function bestGame(trend: readonly TrendPointDto[]): TrendPointDto | null {
+  return trend.reduce<TrendPointDto | null>(
+    (best, game) => (game.darts > 0 && (best === null || game.average > best.average) ? game : best),
+    null,
+  );
 }
 
 function wonRate({ duelLegsWon, duelLegs }: PlayerStatisticsDto): number | null {

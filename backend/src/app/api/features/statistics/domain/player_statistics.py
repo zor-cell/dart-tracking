@@ -82,9 +82,6 @@ class PlayerStatistics:
     visits_60_plus: int = 0
     checkout_attempts: int = 0
     checkout_hits: int = 0
-    # Visits begun with a finish in reach, and those of them that busted.
-    finish_visits: int = 0
-    busts: int = 0
     first_nine_darts: int = 0
     first_nine_points: int = 0
     hits: HitPattern = field(default_factory=HitPattern)
@@ -196,9 +193,6 @@ class PlayerStatistics:
             # What the player faced at the oche decides whether the visit aimed to score.
             if remaining > _HIGHEST_FINISH and not turn.busted:
                 self._add_scoring_visit(turn)
-            if remaining <= _HIGHEST_FINISH and turn.darts:
-                self.finish_visits += 1
-                self.busts += turn.busted
 
             live = remaining
             for dart in turn.darts:

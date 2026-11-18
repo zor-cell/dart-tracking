@@ -37,9 +37,6 @@ export interface PlayerStatisticsDto extends HitPatternDto {
   readonly visits60Plus: number;
   readonly checkoutAttempts: number;
   readonly checkoutHits: number;
-  /** Visits begun with a finish in reach, and those of them that busted. */
-  readonly finishVisits: number;
-  readonly busts: number;
   /** Doubles thrown at for a finish, most attempted first. */
   readonly doubles: readonly FieldTallyDto[];
   readonly doubleDistance: number | null;

@@ -1,10 +1,10 @@
 import { SERIES_COLORS } from '../../../core/charts/models/series-colors';
-import { PlayerStatisticsDto } from '../dto/player-statistics.dto';
+import { StatisticsOverviewDto } from '../dto/statistics-overview.dto';
 
 /** Another player's figures over the same filters, set beside one's own. */
 export interface Comparison {
   readonly name: string;
-  readonly statistics: PlayerStatisticsDto;
+  readonly statistics: StatisticsOverviewDto;
 }
 
 /** Each side's colour in charts and drawings. As text the compared one reads

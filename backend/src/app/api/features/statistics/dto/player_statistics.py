@@ -67,9 +67,6 @@ class PlayerStatisticsDto(HitPatternDto):
     visits60_plus: int
     checkout_attempts: int
     checkout_hits: int
-    # Visits begun with a finish in reach, and those of them that busted.
-    finish_visits: int
-    busts: int
     doubles: list[FieldTallyDto]
     double_distance: float | None
     grouping: float | None
@@ -105,8 +102,6 @@ class PlayerStatisticsDto(HitPatternDto):
             visits100_plus=statistics.visits_100_plus,
             visits60_plus=statistics.visits_60_plus,
             checkout_attempts=statistics.checkout_attempts,
-            finish_visits=statistics.finish_visits,
-            busts=statistics.busts,
             checkout_hits=statistics.checkout_hits,
             **hit_pattern(statistics.hits),
             doubles=[

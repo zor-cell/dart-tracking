@@ -273,13 +273,3 @@ def test_legs_against_others_and_the_fewest_darts_of_a_won_leg():
     assert (statistics.legs, statistics.legs_won) == (3, 2)
     assert statistics.fewest_darts == 2
 
-
-def test_busts_count_among_the_visits_with_a_finish_in_reach():
-    statistics = PlayerStatistics()
-    statistics.add_leg(
-        201,
-        CheckoutMode.DOUBLE_OUT,
-        [visit("T20", "T20", "20"), visit("T20", "20", busted=True), visit("1", "D20")],
-    )
-
-    assert (statistics.finish_visits, statistics.busts) == (2, 1)
