@@ -1,5 +1,5 @@
-"""Download the announcer's Piper voices and voice every phrase that names no player.
-Run by the Dockerfile; locally it fills `backend/voices` and `backend/speech`."""
+"""Download the announcer's Piper voices and voice every phrase that is a clip of its own
+and names no player. Run by the Dockerfile; locally it fills `backend/voices` and `backend/speech`."""
 
 import argparse
 import sys

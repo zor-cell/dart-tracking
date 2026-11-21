@@ -13,10 +13,8 @@ def test_the_announcer_hears_clips_in_its_own_language(client, room, game_id, vo
                 other.throw(20, 3)
             announcements = [announcer.next("dart_announcement") for _ in range(3)]
 
-    assert announcements[-1]["clips"] == [
-        clip_url(clip_id(text, Speaker(Language.DE))) for text in ("Trippel 20", "180")
-    ]
-    assert "Triple 20" not in voiced
+    assert announcements[-1]["clips"] == [clip_url(clip_id("Trippel 20, 180", Speaker(Language.DE)))]
+    assert "Triple 20, 180" not in voiced
 
 
 def test_a_clip_is_served_once_voiced(client, room, game_id):
@@ -60,7 +58,7 @@ def test_an_announcer_signed_in_speaks_as_its_account_picked(client, room, game_
             announcements = [announcer.next("dart_announcement") for _ in range(3)]
 
     jenny = Speaker(Language.EN, Voice.SECOND)
-    assert announcements[-1]["clips"] == [clip_url(clip_id(text, jenny)) for text in ("Triple 20", "180")]
+    assert announcements[-1]["clips"] == [clip_url(clip_id("Triple 20, 180", jenny))]
 
 
 def test_the_sound_test_speaks_as_the_account_picked(client, register):

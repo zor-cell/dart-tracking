@@ -41,7 +41,7 @@ from app.api.features.auth.services import access_tokens
 from app.api.features.announcement.services.announcer_store import store as announcer_store
 from app.api.features.announcement.services.phrases import (
     calibration_phrase,
-    dart_phrases,
+    dart_phrase,
     turn_phrase,
 )
 from app.api.features.announcement.domain.speaker import Speaker
@@ -453,7 +453,7 @@ async def _announce(game: Game, dart: ScoredDart, eliminated: set[int], index: i
     if (found := await _announcer(game.id)) is not None:
         announcer, speaker = found
         call = DartCall.of(dart, game, eliminated, index)
-        clips = await speech_store().urls(dart_phrases(call, speaker.language), speaker)
+        clips = await speech_store().urls([dart_phrase(call, speaker.language)], speaker)
         await hub.send_to_client(
             game.id, announcer.client.id, DartAnnouncementDto.from_entity(call, clips)
         )

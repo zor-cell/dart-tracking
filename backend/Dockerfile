@@ -24,7 +24,7 @@ RUN .venv/bin/python -m piper.download_voices --download-dir /app/voices \
 COPY . .
 RUN uv sync --frozen --no-dev
 
-# every announcer phrase that names no player, voiced into the image
+# every announcer phrase that is a clip of its own and names no player, voiced into the image
 RUN .venv/bin/python scripts/app/prebuild_speech.py --voices /app/voices --out /app/speech-prebuilt \
     && mkdir /app/speech && chown zorphy-darts:zorphy-darts /app/speech
 ENV VOICES_DIR=/app/voices \

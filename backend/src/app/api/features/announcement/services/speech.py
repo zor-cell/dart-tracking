@@ -31,8 +31,14 @@ VOICES = {
 # How much slower than its own pace a model speaks, as a factor.
 PACES = {"de_DE-thorsten-medium": 1.1}
 
-# Endings a model drops or blurs, with the phonemes that say them clearly.
+# Endings a model drops or blurs before a pause, with the phonemes that say them clearly.
 FINALS = {"de_DE-thorsten-medium": {"f": "fff", "bˈʊl": "bˈʊll"}}
+
+# Words a model stresses oddly, as their phonemes and the ones that say them right.
+SOUNDS = {"en_GB-alan-medium": {"sˈɛvəntˌiːn": "sˈɛvəntiːn"}}
+
+# What sets a clause apart from the next, in Piper's phonemes.
+_PAUSE = re.compile(r"([,.!?]+ *)")
 
 # Voices a phrase as one speaker, as WAV bytes.
 Synthesizer = Callable[[str, Speaker], bytes]
@@ -43,19 +49,28 @@ CLIP_ID = re.compile(r"[0-9a-f]{32}")
 def clip_id(text: str, speaker: Speaker) -> str:
     """Named by voice, its tuning and text, so a change to any gets a clip of its own."""
     model = VOICES[speaker]
-    tuning = [PACES.get(model), FINALS.get(model)] if model in PACES or model in FINALS else ""
+    tuning = [table.get(model) for table in (PACES, FINALS, SOUNDS) if model in table] or ""
     return hashlib.sha256(f"{model}{tuning}\n{text}".encode()).hexdigest()[:32]
 
 
-def respelled(text: str, phonemes: list[list[str]], finals: dict[str, str]) -> str:
-    """`text` as Piper's raw phonemes when it ends in a sound of `finals`, else as it is."""
+def respelled(
+    text: str, phonemes: list[list[str]], finals: dict[str, str], sounds: dict[str, str]
+) -> str:
+    """`text` as Piper's raw phonemes when it holds a sound of `sounds` or a clause
+    ends in one of `finals`, else as it is."""
     if len(phonemes) != 1:
         return text
     spoken = "".join(phonemes[0]).rstrip(" .!?,")
-    for ending, kept in finals.items():
-        if spoken.endswith(ending):
-            return f"[[ {spoken.removesuffix(ending)}{kept} ]]"
-    return text
+    tuned = spoken
+    for sound, kept in sounds.items():
+        tuned = tuned.replace(sound, kept)
+    parts = _PAUSE.split(tuned)
+    for index in range(0, len(parts), 2):
+        ending = next((e for e in finals if parts[index].endswith(e)), None)
+        if ending is not None:
+            parts[index] = parts[index].removesuffix(ending) + finals[ending]
+    tuned = "".join(parts)
+    return text if tuned == spoken else f"[[ {tuned} ]]"
 
 
 def clip_url(clip: str) -> str:
@@ -75,8 +90,9 @@ class PiperSynthesizer:
         model = VOICES[speaker]
         with self._lock:
             voice = self._voice(speaker)
-            if (finals := FINALS.get(model)) is not None:
-                text = respelled(text, voice.phonemize(text), finals)
+            if model in FINALS or model in SOUNDS:
+                phonemes = voice.phonemize(text)
+                text = respelled(text, phonemes, FINALS.get(model, {}), SOUNDS.get(model, {}))
             with wave.open(buffer, "wb") as wav:
                 config = SynthesisConfig(length_scale=PACES.get(model))
                 voice.synthesize_wav(text, wav, syn_config=config)
