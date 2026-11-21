@@ -16,6 +16,7 @@ from app.api.features.calibration.domain.board_geometry import (
 )
 from app.api.features.calibration.domain.calibration import Calibration
 from app.api.features.calibration.domain.camera_angle import outward_direction
+from app.api.features.detection.domain.board_check import BoardCheck
 from app.api.features.detection.domain.detection import Dart
 from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.detection.debug.trace import DetectionTrace
@@ -194,6 +195,23 @@ def darts_pulled(
     return bool(blobs) and all(
         _changed_from_empty(blob, aligned, empty_board) < _MIN_CHANGED_FROM_EMPTY
         for blob in blobs
+    )
+
+
+def check_board(frame: np.ndarray, anchor: np.ndarray, calibration: Calibration) -> BoardCheck:
+    """Align `frame` onto `anchor`, the frame `calibration` was made on, and measure
+    how far the board moved."""
+    outline = _board_outline(calibration.homography, _DETECTION_RADIUS_MM)
+    region = _board_region(outline, anchor.shape)
+    alignment, inliers = _align(frame, anchor, region)
+    if alignment is None:
+        return BoardCheck(inliers=inliers)
+    observed = cv2.bitwise_and(region, _warp_coverage(frame.shape, alignment, anchor.shape))
+    return BoardCheck(
+        inliers=inliers,
+        shift_mm=_alignment_shift(alignment, outline) / _pixels_per_mm(calibration.homography),
+        coverage=cv2.countNonZero(observed) / max(cv2.countNonZero(region), 1),
+        aligned=cv2.warpPerspective(frame, alignment, anchor.shape[1::-1]),
     )
 
 

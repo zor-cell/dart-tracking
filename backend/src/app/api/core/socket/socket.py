@@ -69,8 +69,11 @@ from app.api.features.calibration.services.calibration_progress import (
     progress as calibration_progress,
 )
 from app.api.features.calibration.services.calibration_store import store as calibration_store
+from app.api.features.detection.dto.board_check_frame import BoardCheckFrameDto
+from app.api.features.detection.dto.board_check_requested import BoardCheckRequestedDto
 from app.api.features.detection.dto.detection_result import DetectionResultDto
 from app.api.features.detection.dto.detection_frame import DetectionFrameDto
+from app.api.features.detection.domain.board_check import BoardCheck
 from app.api.features.detection.domain.detection import Dart
 from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.detection.services import dart_detector
@@ -108,12 +111,17 @@ _detector_lock = asyncio.Lock()
 # recalibration, whether it held or not.
 _turn_calls: set[str] = set()
 
+# Games whose scoring camera lost its alignment during the open visit.
+_alignment_lost: set[str] = set()
+
 # Per connection: messages of any kind, and camera frames (each one a detector run).
 _MESSAGES_PER_SECOND, _MESSAGE_BURST = 20, 40
 _FRAMES_PER_SECOND, _FRAME_BURST = 2, 6
 _MAX_CONNECTIONS_PER_GAME = 8
 # Longest side of a frame the decoder accepts, in pixels.
 _MAX_FRAME_SIDE = 4096
+
+_CameraFrame = CalibrationFrameDto | DetectionFrameDto | BoardCheckFrameDto
 
 @router.websocket("/games/{game_id}")
 async def websocket_endpoint(
@@ -173,7 +181,7 @@ async def websocket_endpoint(
                 logger.warning("[socket] ignored malformed message: %s", error)
                 continue
 
-            if isinstance(message, CalibrationFrameDto | DetectionFrameDto) and not frames.take():
+            if isinstance(message, _CameraFrame) and not frames.take():
                 throttled = _note_throttled(connection, throttled)
                 continue
 
@@ -217,7 +225,7 @@ async def _dispatch(
     )
 
     match message:
-        case (CalibrationFrameDto() | DetectionFrameDto()) if (
+        case CalibrationFrameDto() | DetectionFrameDto() | BoardCheckFrameDto() if (
             connection.client.role is not DeviceRole.CAMERA
         ):
             logger.warning(
@@ -229,6 +237,8 @@ async def _dispatch(
             await _handle_calibration_frame(connection, game_id, message)
         case DetectionFrameDto():
             await _handle_throw_frame(connection, game_id, message)
+        case BoardCheckFrameDto():
+            await _handle_board_check_frame(connection, game_id, message)
         case RequestCalibrationDto():
             await _request_calibration(game_id)
         case SetRoleDto():
@@ -556,6 +566,7 @@ async def _handle_calibration_frame(
         detection_store.seed(game_id, client_id, image)
         if await scoring_camera_store.claim(game_id, client_id):
             opens_game = holder is None
+            _alignment_lost.discard(game_id)
             recorder.remember_frame(game_id, raw)
             angle = camera_angle(outcome)
             if angle is not None:
@@ -620,6 +631,8 @@ async def _handle_throw_frame(
     scoring = await scoring_camera_store.is_scoring(game_id, client_id)
 
     if isinstance(outcome, DetectionFailure):
+        if scoring and outcome is DetectionFailure.ALIGNMENT_FAILED:
+            _alignment_lost.add(game_id)
         if outcome.moves_reference and aligned is not None:
             detection_store.set(game_id, client_id, aligned)
             if scoring:
@@ -628,7 +641,7 @@ async def _handle_throw_frame(
         if scoring:
             await recorder.note_failure(game_id, client_id, outcome, metrics)
         if scoring and frame.advance_on_pull and (
-            await _darts_pulled(game_id, client_id, aligned, empty_board)
+            await _darts_pulled(detection_store.darts(game_id, client_id), aligned, empty_board)
         ):
             await _clear_board(game_id, client_id)
         return
@@ -675,14 +688,12 @@ async def _handle_throw_frame(
 
 
 async def _darts_pulled(
-    game_id: str, client_id: str, aligned: np.ndarray | None, empty_board: np.ndarray | None
+    blobs: list[np.ndarray], aligned: np.ndarray | None, empty_board: np.ndarray | None
 ) -> bool:
-    """Whether every dart this camera located in the visit is out of the board again."""
+    """Whether every one of these located darts is out of the board again."""
     if aligned is None or empty_board is None:
         return False
-    return await asyncio.to_thread(
-        dart_detector.darts_pulled, detection_store.darts(game_id, client_id), aligned, empty_board
-    )
+    return await asyncio.to_thread(dart_detector.darts_pulled, blobs, aligned, empty_board)
 
 
 async def _clear_board(game_id: str, client_id: str) -> None:
@@ -712,10 +723,64 @@ async def _end_visit(game: Game) -> None:
     await recorder.settle_visit(game)
     detection_store.end_visit(game.id)
     await _publish_state(game)
-    if await _request_calibration(game.id):
+    if await _check_boards(game.id):
         _turn_calls.add(game.id)
     else:
         await _call_turn(game)
+
+
+async def _check_boards(game_id: str) -> bool:
+    """Have the room's cameras confirm their calibration from a fresh frame, or recalibrate
+    when the scoring camera's is in doubt; returns whether the next player waits for that."""
+    cameras = {c.client.id for c in hub.connections(game_id) if c.client.role is DeviceRole.CAMERA}
+    if not cameras:
+        return False
+    holder = await scoring_camera_store.holder(game_id)
+    lost = game_id in _alignment_lost
+    _alignment_lost.discard(game_id)
+    if lost or holder not in cameras or detection_store.anchor(game_id, holder) is None:
+        return await _request_calibration(game_id)
+    await hub.broadcast(game_id, BoardCheckRequestedDto(), role=DeviceRole.CAMERA)
+    return False
+
+
+async def _handle_board_check_frame(
+    connection: Connection, game_id: str, frame: BoardCheckFrameDto
+) -> None:
+    """Start the camera's next visit from this frame if its calibration still fits
+    the board, else have it calibrate again."""
+    client_id = connection.client.id
+    decoded = await asyncio.to_thread(_decode_jpeg, frame.image)
+    calibration = await calibration_store.get(game_id, client_id)
+    anchor = detection_store.anchor(game_id, client_id)
+    check = None
+    if decoded is not None and calibration is not None and anchor is not None:
+        check = await _check_board(decoded[0], anchor, calibration)
+
+    scoring = await scoring_camera_store.is_scoring(game_id, client_id)
+    if scoring and check is not None:
+        await recorder.note_board_check(game_id, client_id, check)
+    if decoded is not None and check is not None and check.holds and check.aligned is not None:
+        # Darts of the ended visit still in the board keep the last empty board.
+        left = detection_store.ended_darts(game_id, client_id)
+        empty_board = detection_store.empty_board(game_id, client_id)
+        empty = not left or await _darts_pulled(left, check.aligned, empty_board)
+        detection_store.refresh(game_id, client_id, check.aligned, empty=empty)
+        if scoring:
+            recorder.remember_frame(game_id, decoded[1])
+        return
+
+    logger.info("[socket] board check of %s did not hold: %s", client_id, check)
+    if scoring:
+        await _start_calibrating(game_id)
+    await hub.send(connection, CalibrationRequestedDto())
+
+
+async def _check_board(
+    image: np.ndarray, anchor: np.ndarray, calibration: Calibration
+) -> BoardCheck:
+    """How well a fresh frame still aligns onto the frame the camera calibrated on."""
+    return await asyncio.to_thread(dart_detector.check_board, image, anchor, calibration)
 
 
 def _decode_jpeg(encoded: str) -> tuple[np.ndarray, bytes] | None:

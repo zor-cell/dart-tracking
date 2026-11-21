@@ -13,6 +13,7 @@ from app.api.core.socket.services.game_hub import hub
 from app.api.features.calibration.domain.calibration_failure import CalibrationFailure
 from app.api.features.calibration.domain.camera_angle import CameraAngle
 from app.api.features.detection.debug.trace import DetectionTrace
+from app.api.features.detection.domain.board_check import BoardCheck
 from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.detection.dto.throw_trigger import ThrowTriggerDto
 from app.api.features.detection.services.scoring_camera import (
@@ -272,6 +273,34 @@ async def note_calibration(game_id: str, client_id: str, angle: CameraAngle) -> 
             )
     except Exception:  # noqa: BLE001 - diagnostics must not break the game
         logger.exception("[evaluation] could not record a calibration")
+
+
+async def note_board_check(game_id: str, client_id: str, check: BoardCheck) -> None:
+    """Note how the scoring camera's board check at a handover came out."""
+    metrics = {"inliers": float(check.inliers), "coverage": check.coverage}
+    if check.shift_mm is not None:
+        metrics["shift_mm"] = check.shift_mm
+    try:
+        async with database.session_scope() as session:
+            game = await game_repository.get(session, game_id)
+            if game is None:
+                return
+            at = position_of(game)
+            append(
+                session,
+                game_id,
+                GameEvent(
+                    kind=GameEventKind.BOARD_CHECKED,
+                    turn_index=at.turn_index,
+                    player_index=at.player_index,
+                    accepted=check.holds,
+                    camera_armed=True,
+                    client_id=client_id,
+                    metrics=metrics,
+                ),
+            )
+    except Exception:  # noqa: BLE001 - diagnostics must not break the game
+        logger.exception("[evaluation] could not record a board check")
 
 
 async def keep_failed_calibration(game_id: str, jpeg: bytes, failure: CalibrationFailure) -> None:

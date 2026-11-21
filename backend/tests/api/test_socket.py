@@ -11,6 +11,9 @@ from starlette.websockets import WebSocketDisconnect
 from app.api.core.socket import socket
 from app.api.features.calibration.domain.calibration import Calibration
 from app.api.features.detection.debug.trace import DetectionTrace
+from app.api.features.calibration.domain.board_geometry import Segment
+from app.api.features.detection.domain.board_check import BoardCheck
+from app.api.features.detection.domain.detection import Dart
 from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.evaluation.domain.alignment import DartOutcome
 from app.api.features.evaluation.services import accuracy, frame_buffer
@@ -235,9 +238,10 @@ def test_frames_from_a_scoreboard_are_ignored(room, game_id):
     with room(game_id) as device:
         device.send("calibration_frame", image=jpeg(64, 48))
         device.send("detection_frame", image=jpeg(64, 48))
+        device.send("board_check_frame", image=jpeg(64, 48))
         device.send("set_role", role="scoreboard")
 
-        device.next("client_state", never=("calibration_result", "detection_result"))
+        device.next("client_state", never=("calibration_result", "detection_result", "calibration_requested"))
 
 
 @pytest.fixture
@@ -474,6 +478,123 @@ def test_a_failed_recalibration_is_said_once_and_still_calls_the_turn(room, came
     assert heard == [False]
 
 
+def calibrated(phone: Device, monkeypatch) -> None:
+    monkeypatch.setattr(socket.board_detector, "detect_board", lambda image: Calibration(np.eye(3), 64, 48))
+    phone.send("calibration_frame", image=jpeg(64, 48))
+    phone.next("calibration_result")
+
+
+def hand_over(phone: Device) -> None:
+    phone.throw(20)
+    phone.next("game_state")
+    phone.send("next_player")
+
+
+def settled(phone: Device) -> None:
+    """Wait until the server has handled everything the phone sent before."""
+    phone.send("set_role", role="camera")
+    phone.next("client_state")
+
+
+def test_a_handover_calls_the_next_player_at_once_and_checks_the_board(camera, game_id, monkeypatch, session):
+    seen = np.full((48, 64, 3), 7, np.uint8)
+    monkeypatch.setattr(
+        socket.dart_detector,
+        "check_board",
+        lambda *_args: BoardCheck(inliers=900, shift_mm=1.0, coverage=1.0, aligned=seen),
+    )
+    with camera() as phone:
+        calibrated(phone, monkeypatch)
+        anchor = socket.detection_store.anchor(game_id, phone.id)
+        hand_over(phone)
+
+        phone.next("board_check_requested", never=("calibration_requested",))
+        assert phone.next("turn_announcement", never=("calibration_requested",))["player"] == "Ben"
+        phone.send("board_check_frame", image=jpeg(64, 48))
+        settled(phone)
+
+        assert socket.detection_store.get(game_id, phone.id) is seen
+        assert socket.detection_store.empty_board(game_id, phone.id) is seen
+        assert socket.detection_store.anchor(game_id, phone.id) is anchor
+
+    checks = session.sql(
+        "SELECT accepted FROM game_events WHERE game_id = :id AND kind = 'board_checked'", id=game_id
+    )
+    assert [row[0] for row in checks] == [True]
+
+
+def test_a_board_check_that_does_not_hold_recalibrates(camera, game_id, monkeypatch):
+    monkeypatch.setattr(socket.dart_detector, "check_board", lambda *_args: BoardCheck(inliers=12))
+    with camera() as phone:
+        calibrated(phone, monkeypatch)
+        before = socket.detection_store.get(game_id, phone.id)
+        hand_over(phone)
+        phone.next("board_check_requested")
+
+        phone.send("board_check_frame", image=jpeg(64, 48))
+
+        phone.next("calibration_requested")
+        assert socket.detection_store.get(game_id, phone.id) is before
+
+
+def test_a_board_check_from_an_uncalibrated_camera_recalibrates(camera):
+    with camera() as phone:
+        phone.send("board_check_frame", image=jpeg(64, 48))
+        phone.next("calibration_requested")
+
+
+def test_a_lost_alignment_recalibrates_before_the_next_player_is_called(camera, monkeypatch):
+    monkeypatch.setattr(socket.dart_detector, "detect_dart", lambda *_args: DetectionFailure.ALIGNMENT_FAILED)
+    with camera() as phone:
+        calibrated(phone, monkeypatch)
+        phone.send("detection_frame", image=jpeg(64, 48))
+        phone.next("detection_result")
+        hand_over(phone)
+
+        phone.next("calibration_requested", never=("board_check_requested", "turn_announcement"))
+        phone.send("calibration_frame", image=jpeg(64, 48))
+        assert phone.next("turn_announcement")["player"] == "Ben"
+
+        hand_over(phone)
+        phone.next("board_check_requested", never=("calibration_requested",))
+
+
+def locates_a_dart(monkeypatch, blob: np.ndarray) -> None:
+    def detect(*_args):
+        socket.dart_detector.trace = DetectionTrace(aligned=np.zeros((48, 64, 3), np.uint8), blob=blob)
+        return Dart(tip_image=(30, 20), axis_image=((30, 20), (40, 20)), tip_board=(30, 20), segment=Segment(20, 1))
+
+    monkeypatch.setattr(socket.dart_detector, "detect_dart", detect)
+
+
+@pytest.mark.parametrize("pulled", [True, False])
+def test_darts_still_in_at_the_handover_keep_the_empty_board(camera, game_id, monkeypatch, pulled):
+    seen = np.full((48, 64, 3), 7, np.uint8)
+    blob = np.array([[30, 20]], np.float32)
+    locates_a_dart(monkeypatch, blob)
+    monkeypatch.setattr(
+        socket.dart_detector,
+        "check_board",
+        lambda *_args: BoardCheck(inliers=900, shift_mm=1.0, coverage=1.0, aligned=seen),
+    )
+    left = []
+    monkeypatch.setattr(socket.dart_detector, "darts_pulled", lambda blobs, *_args: left.extend(blobs) or pulled)
+    with camera() as phone:
+        calibrated(phone, monkeypatch)
+        empty_board = socket.detection_store.empty_board(game_id, phone.id)
+        phone.send("detection_frame", image=jpeg(64, 48))
+        assert darts(phone.next("game_state")) == ["20"]
+        phone.send("next_player")
+        phone.next("board_check_requested")
+
+        phone.send("board_check_frame", image=jpeg(64, 48))
+        settled(phone)
+
+        assert left == [blob]
+        assert socket.detection_store.get(game_id, phone.id) is seen
+        assert socket.detection_store.empty_board(game_id, phone.id) is (seen if pulled else empty_board)
+
+
 def test_an_elimination_is_named_in_the_dart_call(room, anon):
     game_id = anon.new_game({"name": "Ann"}, {"name": "Ben"}, settings={"variant": "elimination"})["id"]
     with room(game_id) as announcer:
@@ -559,9 +680,11 @@ def test_pulled_darts_hand_over_with_the_rest_as_misses(camera, advance_on_pull)
             state = device.next("game_state")
             assert [dart["label"] for dart in state["turns"][0]["darts"]] == ["15", "0", "0"]
             assert len(state["turns"]) == 2
-            device.next("calibration_requested")
-            device.send("calibration_frame", image=encoded(base))
+            device.next("board_check_requested", never=("calibration_requested",))
             assert device.next("turn_announcement")["player"] == "Ben"
+            device.send("board_check_frame", image=encoded(base))
+            device.send("set_role", role="camera")
+            device.next("client_state", never=("calibration_requested",))
         else:
             device.send("set_role", role="camera")
             device.next("client_state", never=("game_state",))

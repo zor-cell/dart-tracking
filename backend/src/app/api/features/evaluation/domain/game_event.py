@@ -22,6 +22,7 @@ class GameEventKind(StrEnum):
     DART_MOVED = "dart_moved"  # a device moved one dart to another place in the visit
     NEXT_PLAYER = "next_player"
     CALIBRATED = "calibrated"  # the scoring camera calibrated; metrics hold its angle
+    BOARD_CHECKED = "board_checked"  # a handover checked the calibration; accepted if it held
 
 
 @dataclass(frozen=True)

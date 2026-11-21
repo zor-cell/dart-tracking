@@ -3,6 +3,7 @@ import { SetRoleDto } from './set-role.dto';
 import { ClaimAnnouncerDto } from '../../../features/announcement/dto/claim-announcer.dto';
 import { CalibrationFrameDto } from '../../../features/calibration/dto/calibration-frame.dto';
 import { RequestCalibrationDto } from '../../../features/calibration/dto/request-calibration.dto';
+import { BoardCheckFrameDto } from '../../../features/detection/dto/board-check-frame.dto';
 import { DetectionFrameDto } from '../../../features/detection/dto/detection-frame.dto';
 import { MoveDartDto } from '../../../features/game/dto/move-dart.dto';
 import { NextPlayerDto } from '../../../features/game/dto/next-player.dto';
@@ -22,6 +23,7 @@ export type ClientMessage =
   | CalibrationFrameDto
   | RequestCalibrationDto
   | DetectionFrameDto
+  | BoardCheckFrameDto
   | SetRoleDto
   | AuthenticateDto
   | RegisterDartDto
@@ -37,4 +39,4 @@ export type ClientMessage =
 
 /** The camera frames within that set: sent via `sendFrame`, and dropped rather
  * than queued when the socket is not open. */
-export type ClientFrame = CalibrationFrameDto | DetectionFrameDto;
+export type ClientFrame = CalibrationFrameDto | DetectionFrameDto | BoardCheckFrameDto;

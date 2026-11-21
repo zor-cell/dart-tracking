@@ -7,6 +7,7 @@ import numpy as np
 
 from app.api.core.socket import socket
 from app.api.features.auth.services import passwords
+from app.api.features.calibration.domain.calibration import Calibration
 from app.api.features.evaluation.domain.accuracy import LoggedGame
 from app.api.features.evaluation.services import accuracy, frame_buffer
 from app.api.features.evaluation.services.frame_buffer import FrameBuffer, FrameKind
@@ -139,12 +140,25 @@ def test_checking_for_pulled_darts_leaves_the_event_loop_free(monkeypatch):
     pulled = beside_the_loop(
         socket.dart_detector,
         "darts_pulled",
-        lambda: socket._darts_pulled("game", "camera", board, board),
+        lambda: socket._darts_pulled([], board, board),
         monkeypatch,
         True,
     )
 
     assert pulled is True
+
+
+def test_checking_the_board_at_a_handover_leaves_the_event_loop_free(monkeypatch):
+    board = np.zeros((4, 4, 3), dtype=np.uint8)
+
+    found = beside_the_loop(
+        socket.dart_detector,
+        "check_board",
+        lambda: socket._check_board(board, board, Calibration(np.eye(3), 4, 4)),
+        monkeypatch,
+    )
+
+    assert found == "done"
 
 
 def test_the_cricket_tally_leaves_the_event_loop_free(monkeypatch):

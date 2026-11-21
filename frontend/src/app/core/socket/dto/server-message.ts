@@ -6,6 +6,7 @@ import { TurnAnnouncementDto } from '../../../features/announcement/dto/turn-ann
 import { CalibrationRequestedDto } from '../../../features/calibration/dto/calibration-requested.dto';
 import { CalibrationResultDto } from '../../../features/calibration/dto/calibration-result.dto';
 import { CalibrationStateDto } from '../../../features/calibration/dto/calibration-state.dto';
+import { BoardCheckRequestedDto } from '../../../features/detection/dto/board-check-requested.dto';
 import { DetectionResultDto } from '../../../features/detection/dto/detection-result.dto';
 import { CorrectionPendingDto } from '../../../features/game/dto/correction-pending.dto';
 import { GameStateDto } from '../../../features/game/dto/game-state.dto';
@@ -21,6 +22,7 @@ export type ServerMessage =
   | CalibrationResultDto
   | CalibrationStateDto
   | DetectionResultDto
+  | BoardCheckRequestedDto
   | GameStateDto
   | AnnouncerStateDto
   | DartAnnouncementDto

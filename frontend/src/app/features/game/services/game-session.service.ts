@@ -1,6 +1,7 @@
 import { Injectable, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CalibrationService } from '../../calibration/services/calibration.service';
+import { captureFrameAsJpeg } from '../../camera/models/frame-capture';
 import { CameraService } from '../../camera/services/camera.service';
 import { FrameDiffService } from '../../detection/services/frame-diff.service';
 import { DeviceRole } from '../../../core/socket/models/device-role';
@@ -77,6 +78,16 @@ export class GameSessionService {
       .subscribe(() => {
         if (this.phase() !== 'idle') {
           void this.calibrate();
+        }
+      });
+
+    // A handover's check that the calibration still fits, answered while tracking.
+    this.socket
+      .on('board_check_requested')
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.phase() === 'tracking') {
+          void this.sendBoardCheck();
         }
       });
 
@@ -250,6 +261,13 @@ export class GameSessionService {
     if (this.video && this.diffCanvas && this.captureCanvas) {
       this.throwCapture.stopDetectionLoop();
       this.throwCapture.startDetectionLoop(this.video, this.diffCanvas, this.captureCanvas);
+    }
+  }
+
+  private async sendBoardCheck(): Promise<void> {
+    if (this.video && this.captureCanvas) {
+      const frame = await captureFrameAsJpeg(this.video, this.captureCanvas);
+      await this.socket.sendFrame('board_check_frame', frame);
     }
   }
 

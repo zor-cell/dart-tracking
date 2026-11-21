@@ -44,7 +44,7 @@ def replay(events: Iterable[GameEvent]) -> list[Visit]:
 
     open_index = 0
     for event in events:
-        if event.kind is GameEventKind.CALIBRATED:
+        if event.kind in (GameEventKind.CALIBRATED, GameEventKind.BOARD_CHECKED):
             continue
         players.setdefault(open_index, event.player_index)
 

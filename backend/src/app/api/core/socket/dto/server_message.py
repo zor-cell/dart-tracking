@@ -12,6 +12,7 @@ from app.api.features.calibration.dto.calibration_requested import (
 )
 from app.api.features.calibration.dto.calibration_result import CalibrationResultDto
 from app.api.features.calibration.dto.calibration_state import CalibrationStateDto
+from app.api.features.detection.dto.board_check_requested import BoardCheckRequestedDto
 from app.api.features.detection.dto.detection_result import DetectionResultDto
 from app.api.features.game.dto.correction_pending import CorrectionPendingDto
 from app.api.features.game.dto.game_state import GameStateDto
@@ -23,6 +24,7 @@ ServerMessage = (
     | CalibrationResultDto
     | CalibrationStateDto
     | DetectionResultDto
+    | BoardCheckRequestedDto
     | GameStateDto
     | AnnouncerStateDto
     | DartAnnouncementDto
