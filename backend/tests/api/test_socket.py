@@ -595,6 +595,20 @@ def test_darts_still_in_at_the_handover_keep_the_empty_board(camera, game_id, mo
         assert socket.detection_store.empty_board(game_id, phone.id) is (seen if pulled else empty_board)
 
 
+def test_a_dart_the_visit_has_no_room_for_is_not_remembered(camera, game_id, monkeypatch):
+    locates_a_dart(monkeypatch, np.array([[30, 20]], np.float32))
+    with camera() as phone:
+        calibrated(phone, monkeypatch)
+        for _ in range(3):
+            phone.throw(1)
+            phone.next("game_state")
+
+        phone.send("detection_frame", image=jpeg(64, 48))
+        assert darts(phone.next("game_state")) == ["1", "1", "1"]
+
+        assert socket.detection_store.darts(game_id, phone.id) == []
+
+
 def test_an_elimination_is_named_in_the_dart_call(room, anon):
     game_id = anon.new_game({"name": "Ann"}, {"name": "Ben"}, settings={"variant": "elimination"})["id"]
     with room(game_id) as announcer:

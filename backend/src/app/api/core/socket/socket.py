@@ -648,12 +648,12 @@ async def _handle_throw_frame(
 
     if aligned is not None:
         detection_store.set(game_id, client_id, aligned)
-    if blob is not None:
-        detection_store.add_dart(game_id, client_id, blob)
 
     await hub.send(connection, DetectionResultDto.detected(outcome, calibration))
 
     if not scoring:
+        if blob is not None:
+            detection_store.add_dart(game_id, client_id, blob)
         return
 
     # The dart carries its field and tip, the same form as a manually entered one.
@@ -675,6 +675,10 @@ async def _handle_throw_frame(
     applied = await _apply(game_id, mutate, lambda at, _: record(at, booked))
     if applied is None:
         return
+
+    # Only booked darts have to be pulled before the camera hands over.
+    if booked and blob is not None:
+        detection_store.add_dart(game_id, client_id, blob)
 
     # Pushed even when the game absorbed the dart (a trigger during a full
     # visit): the camera trims its drawn outlines against this state.
