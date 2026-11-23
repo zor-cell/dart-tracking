@@ -58,6 +58,8 @@ class AccuracySummaryDto(CamelModel):
     missed: int
     missed_zeros: int
     phantom: int
+    # Darts the players had no reason to correct, left out of the figures above.
+    unverified: int
     # Off-by distances in millimetres, over the mis-scored darts that carried a
     # located tip.
     bands: list[DistanceBandDto]
@@ -76,6 +78,7 @@ class AccuracySummaryDto(CamelModel):
             missed=accuracy.outcomes[DartOutcome.MISSED],
             missed_zeros=accuracy.missed_zeros,
             phantom=accuracy.outcomes[DartOutcome.PHANTOM],
+            unverified=accuracy.unverified,
             bands=[
                 DistanceBandDto(label=band.label, darts=band.darts, snapped=band.snapped)
                 for band in accuracy.bands

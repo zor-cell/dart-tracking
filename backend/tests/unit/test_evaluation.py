@@ -284,3 +284,18 @@ def test_a_correction_in_a_closed_visit_lands_in_that_visit():
     assert first.corrected and not second.corrected
     assert [(e.value, e.multiplier) for e in second.accepted] == [(19, 1)]
 
+
+def test_an_uncorrected_dart_without_effect_is_left_out_as_unverified():
+    no_effect = {"no_effect": 1.0}
+    events = [
+        event(K.DETECTED, (9, 1), metrics=no_effect),
+        event(K.DETECTED, (12, 1), metrics=no_effect),
+        event(K.DART_REPLACED, (20, 1), dart_index=1),
+        event(K.DETECTED, (20, 3)),
+    ]
+    visits = replay(events)
+    judgements = [j for visit in visits for j in judge("g", visit)]
+
+    assert [j.unverified for j in judgements] == [True, False, False]
+    accuracy = summarise(1, visits, judgements)
+    assert (accuracy.unverified, accuracy.darts_thrown, accuracy.correct) == (1, 2, 1)

@@ -11,6 +11,11 @@
     <dd class="stat__hint" i18n="@@eval.correctOf">
       {{ summary().correct }} von {{ summary().dartsThrown }} geworfenen Darts
     </dd>
+    @if (summary().unverified > 0) {
+      <dd class="stat__hint" i18n="@@eval.unverifiedOf">
+        {{ summary().unverified }} ungeprüft, da ohne Wirkung aufs Spiel
+      </dd>
+    }
   </div>
   <div class="stat">
     <dt class="stat__label" i18n="@@eval.visits">Visits gewertet</dt>

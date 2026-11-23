@@ -188,3 +188,23 @@ def test_a_handover_fills_the_visit_with_misses():
 
     assert game.next_player() == 2
     assert game.turns[0].darts == darts("T20", "0", "0")
+
+
+@pytest.mark.parametrize(
+    ("before", "label", "matters"),
+    [
+        ((), "T20", True),
+        ((), "9", False),
+        ((), "0", False),
+        (("T20", "T20", "T20"), "20", False),
+        (("T20", "0"), "20", True),
+    ],
+)
+def test_a_dart_matters_when_it_moves_the_game_unlike_a_miss(before, label, matters):
+    game = cricket()
+    play(game, *before)
+    if before:
+        game.next_player()
+
+    assert game.dart_matters(dart(label)) is matters
+    assert game.current_turn.darts == []

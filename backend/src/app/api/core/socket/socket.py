@@ -677,6 +677,8 @@ async def _handle_throw_frame(
     def mutate(game: Game) -> None:
         nonlocal booked, reset_before
         reset_before = game.just_reset()
+        if not game.dart_matters(dart):
+            metrics["no_effect"] = 1.0
         booked = game.register_dart(dart)
 
     record = recorder.for_detection(dart, client_id, metrics)

@@ -116,8 +116,7 @@ services:
       - garage_meta:/var/lib/garage/meta
       - garage_data:/var/lib/garage/data
 
-  # Lays out the node, brings in the bucket and the backend's key and moves the
-  # frames still on disk into the bucket, then exits.
+  # Lays out the node, brings in the bucket and the backend's key and moves the frames still on disk into the bucket, then exits.
   garage-init:
     build: ./s3
     restart: "no"

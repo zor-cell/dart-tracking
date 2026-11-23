@@ -224,6 +224,7 @@
     "eval.imageCount": "{$count} Bilder",
     "eval.correctSegments": "Korrekte Segmente",
     "eval.correctOf": " {$INTERPOLATION} von {$INTERPOLATION_1} geworfenen Darts ",
+    "eval.unverifiedOf": " {$INTERPOLATION} ungeprüft, da ohne Wirkung aufs Spiel ",
     "eval.visits": "Visits gewertet",
     "eval.fromGames": "aus {$INTERPOLATION} Spielen",
     "eval.clean": "Ohne Korrektur",

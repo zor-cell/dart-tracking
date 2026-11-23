@@ -389,3 +389,7 @@ def test_last_visit_is_the_players_last_closed_one():
     throw(game, "5")
 
     assert (game.last_visit(0), game.last_visit(1)) == (80, None)
+
+
+def test_every_dart_matters_in_x01():
+    assert new_game().dart_matters(dart("0")) is True

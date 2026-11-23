@@ -76,6 +76,14 @@ class Judgement:
         return segment is not None and keeps_tip(self.tracked.position, segment)
 
     @property
+    def unverified(self) -> bool:
+        """Booked by the camera without changing the game and left as it was: the
+        players had no reason to correct it, so their word says nothing."""
+        if self.outcome is not DartOutcome.CORRECT or self.tracked is None:
+            return False
+        return bool((self.tracked.metrics or {}).get("no_effect"))
+
+    @property
     def fragments(self) -> int | None:
         metrics = (self.tracked.metrics or {}) if self.tracked else {}
         count = metrics.get("fragment_count")
@@ -137,6 +145,8 @@ class Accuracy:
     # The off-by distances of those whose tip a correction moved into the field.
     snapped_distances: tuple[float, ...] = ()
     fields: tuple[FieldErrors, ...] = ()
+    # Darts left out of everything above, see `Judgement.unverified`.
+    unverified: int = 0
 
     @property
     def darts_thrown(self) -> int:
@@ -211,6 +221,10 @@ def judge(game_id: str, visit: Visit) -> list[Judgement]:
 
 
 def summarise(games: int, visits: list[Visit], judgements: list[Judgement]) -> Accuracy:
+    """The totals over the verified darts; the unverified ones are only counted."""
+    verified = [judgement for judgement in judgements if not judgement.unverified]
+    unverified = len(judgements) - len(verified)
+    judgements = verified
     counts = Counter(judgement.outcome for judgement in judgements)
     return Accuracy(
         games=games,
@@ -234,6 +248,7 @@ def summarise(games: int, visits: list[Visit], judgements: list[Judgement]) -> A
             if judgement.off_by_mm is not None and judgement.snapped
         ),
         fields=field_errors(judgements),
+        unverified=unverified,
     )
 
 

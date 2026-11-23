@@ -34,6 +34,8 @@ export interface AccuracySummaryDto {
   readonly missed: number;
   readonly missedZeros: number;
   readonly phantom: number;
+  /** Darts the players had no reason to correct, left out of the figures above. */
+  readonly unverified: number;
   readonly bands: readonly DistanceBandDto[];
   readonly fields: readonly FieldErrorsDto[];
 }

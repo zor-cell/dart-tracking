@@ -425,6 +425,21 @@ class Game:
             self.revision += 1
         return False
 
+    def dart_matters(self, dart: Dart) -> bool:
+        """Whether booking this dart now would leave the game elsewhere than a miss
+        would. Every dart counts in the points variants."""
+        if self.progress is None:
+            return True
+        turn = self.current_turn
+        kept = turn.darts
+        try:
+            turn.darts = [*kept, dart]
+            hit = self.progress
+            turn.darts = [*kept, replace(dart, value=0, multiplier=0)]
+            return hit != self.progress
+        finally:
+            turn.darts = kept
+
     def add_dart(self, dart: Dart) -> None:
         """Book a manually entered dart into any visit with room left. A won or busted
         visit is closed by its last dart, so the new one goes before it; with a field

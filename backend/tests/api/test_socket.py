@@ -790,3 +790,26 @@ def test_an_evaluation_run_records_frames_and_events(room, register, session, fr
     assert len(game.judgements) == min(booked, 3)
     assert all(judgement.outcome is DartOutcome.CORRECT for judgement in game.judgements)
 
+
+def test_a_located_dart_without_effect_is_marked_in_the_log(room, anon, session, monkeypatch):
+    game_id = anon.new_game({"name": "Ann"}, {"name": "Ben"}, settings={"variant": "cricket"})["id"]
+    fields = iter([Segment(9, 1), Segment(20, 3)])
+
+    def detect(*_args):
+        socket.dart_detector.trace = DetectionTrace(aligned=np.zeros((48, 64, 3), np.uint8))
+        return Dart(tip_image=(30, 20), axis_image=((30, 20), (40, 20)), tip_board=(30, 20), segment=next(fields))
+
+    monkeypatch.setattr(socket.dart_detector, "detect_dart", detect)
+    with room(game_id) as phone:
+        phone.send("set_role", role="camera")
+        calibrated(phone, monkeypatch)
+        for _ in range(2):
+            phone.send("detection_frame", image=jpeg(64, 48))
+            assert phone.next("detection_result")["success"] is True
+            phone.next("game_state")
+
+    rows = session.sql(
+        "SELECT value, metrics ->> 'no_effect' FROM game_events WHERE game_id = :id AND kind = 'detected' ORDER BY id",
+        id=game_id,
+    )
+    assert [tuple(row) for row in rows] == [(9, "1.0"), (20, None)]

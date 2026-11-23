@@ -83,7 +83,9 @@ def game_table(games: list[JudgedGame]) -> list[str]:
         "|---|---|---|---|---|---|---|---|",
     ]
     for game in games:
-        thrown = [j for j in game.judgements if j.outcome is not DartOutcome.PHANTOM]
+        thrown = [
+            j for j in game.judgements if j.outcome is not DartOutcome.PHANTOM and not j.unverified
+        ]
         correct = sum(1 for j in thrown if j.outcome is DartOutcome.CORRECT)
         camera = game.camera
         angles = (
@@ -180,11 +182,12 @@ def build_report(
         "What the camera booked against what the players accepted, aligned per",
         "visit. *Correct* is a dart booked in the right segment; *missed* is a dart",
         "thrown that the camera never booked - a detection that came back empty",
-        "included. *Phantom* is one it booked with no dart behind it.",
+        "included. *Phantom* is one it booked with no dart behind it. *Unverified*",
+        "darts changed nothing in the game and were left as booked, so they count nowhere.",
         "",
         f"- Games: **{accuracy.games}**, visits judged: **{accuracy.visits}**",
         f"- Darts thrown: **{accuracy.darts_thrown}**, booked by the camera: "
-        f"**{accuracy.darts_booked}**",
+        f"**{accuracy.darts_booked}**, unverified: **{accuracy.unverified}**",
         f"- Correct segment: **{accuracy.correct} / {accuracy.darts_thrown} - "
         f"{100 * accuracy.accuracy:.1f}%**",
         f"- Visits accepted without a correction: **{accuracy.clean_visits} / "
