@@ -143,15 +143,18 @@ einen einzigen Port veröffentlichen, und es ist keine Domain im Build hartkodie
 
 ### Aufgezeichnete Wurfserien
 
-In einem Testlauf legt das Backend jede Runde als Wurfserie unter
-`/app/testdata/evaluation` ab. Der
-Host-Pfad dahinter kommt aus `TESTDATA_DIR`, das der Deploy-Job in
-[deploy.yaml](.github/workflows/deploy.yaml) auf `/srv/dart-tracking/testdata` setzt. Er
-**muss auf dem Pi außerhalb des Runner-Build-Verzeichnisses liegen**: der Runner räumt das Verzeichnis bei jedem Checkout mit `git clean -ffdx`
-auf, und das schließt ignorierte Pfade wie `backend/testdata/` ein. Lag der Mount
-dort, hat der Container die Dateien als `root` angelegt, worauf der Checkout mit
-`failed to remove ...: Permission denied` abbrach — und wären die Rechte gepasst,
-hätte stattdessen jedes Deployment die Aufzeichnungen gelöscht.
+Spiele, die Kamerabilder speichern, legen jede Runde als Wurfserie im Bucket
+`frames` des Garage-Containers ab ([s3/](s3/)). `garage-init` richtet bei jedem
+Start Knoten, Bucket und den Schlüssel des Backends ein und verschiebt Bilder, die
+noch unter `TESTDATA_DIR/evaluation` liegen, in den Bucket. Zum Auswerten holt
+`uv run python scripts/evaluation/pull.py [game-id …]` (in `backend/`) die Serien
+nach `backend/testdata/evaluation/`, ohne Ids alle.
+
+`TESTDATA_DIR` setzt der Deploy-Job in [deploy.yaml](.github/workflows/deploy.yaml)
+auf `/srv/dart-tracking/testdata`; dort liegt auch der CV-Datensatz. Der Pfad
+**muss auf dem Pi außerhalb des Runner-Build-Verzeichnisses liegen**: der Runner
+räumt es bei jedem Checkout mit `git clean -ffdx` auf, auch ignorierte Pfade wie
+`backend/testdata/`.
 
 Für lokales Testen des Prod-Builds legt [compose.dev.yaml](compose.dev.yaml) das
 Backend zusätzlich auf `10021` offen:

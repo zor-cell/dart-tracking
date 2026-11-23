@@ -141,6 +141,10 @@ jobs:
       MAIL_FROM: ${{ vars.MAIL_FROM }}
       APP_URL: https://darts.zorphy.net
       PRIMEUI_LICENSE_KEY: ${{ secrets.PRIMEUI_LICENSE_KEY }}
+      GARAGE_RPC_SECRET: ${{ secrets.GARAGE_RPC_SECRET }}
+      GARAGE_ADMIN_TOKEN: ${{ secrets.GARAGE_ADMIN_TOKEN }}
+      S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
+      S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}
     steps:
       - name: Check out the full history
         uses: actions/checkout@v5

@@ -1,4 +1,5 @@
 import base64
+import re
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from typing import Any
@@ -16,7 +17,7 @@ from app.api.features.detection.domain.board_check import BoardCheck
 from app.api.features.detection.domain.detection import Dart
 from app.api.features.detection.domain.detection_failure import DetectionFailure
 from app.api.features.evaluation.domain.alignment import DartOutcome
-from app.api.features.evaluation.services import accuracy, frame_buffer
+from app.api.features.evaluation.services import accuracy, frame_sweeper
 from app.infrastructure import database
 from tests.api.support import X01
 from tests.cv.replay import dataset_root, manifest, replay_series, series_of
@@ -216,7 +217,7 @@ def test_malformed_messages_are_dropped_and_the_connection_stays(room, game_id, 
         assert darts(device.next("game_state")) == ["5"]
 
 
-def test_evaluation_switch_needs_an_admin_on_the_connection(room, game_id, register, session):
+def test_evaluation_switch_of_an_anonymous_game_needs_an_admin(room, game_id, register, session):
     alice = register("alice")
     with room(game_id) as device:
         device.send("set_evaluation", enabled=True)
@@ -232,6 +233,25 @@ def test_evaluation_switch_needs_an_admin_on_the_connection(room, game_id, regis
         device.send("set_evaluation", enabled=True)
 
         assert device.next("game_state")["evaluationEnabled"] is True
+
+
+def test_the_owner_stops_keeping_frames_and_they_are_deleted(room, register, session, frames):
+    alice, bob = register("alice"), register("bob")
+    game_id = alice.new_game(alice.own_entry()["id"], evaluationEnabled=True)["id"]
+    frames.write(game_id, "throw0_base.jpg", b"jpeg")
+
+    with room(game_id) as device:
+        device.send("authenticate", accessToken=bob.token)
+        device.send("set_evaluation", enabled=False)
+        device.throw(5)
+        assert device.next("game_state")["evaluationEnabled"] is True
+
+        device.send("authenticate", accessToken=alice.token)
+        device.send("set_evaluation", enabled=False)
+        assert device.next("game_state")["evaluationEnabled"] is False
+
+    session.run(frame_sweeper.sweep)
+    assert frames.names(game_id) == []
 
 
 def test_frames_from_a_scoreboard_are_ignored(room, game_id):
@@ -649,7 +669,7 @@ def test_socket_scores_a_throw_series_like_the_pipeline_does(camera):
         assert device.next("calibration_result")["success"] is True
 
         reported, booked = [], 0
-        for _, path in frames[1:]:
+        for _, path in shots[1:]:
             device.send("detection_frame", image=encoded(path))
             result = device.next("detection_result")
             reported.append(result["segment"] or result["failure"])
@@ -717,53 +737,50 @@ def test_camera_frames_are_throttled(camera):
     assert answered in (6, 7)
 
 
-@pytest.mark.parametrize("test_run", [False, True])
-def test_a_test_run_keeps_the_shot_of_a_failed_calibration(room, register, session, tmp_path, monkeypatch, test_run):
-    monkeypatch.setattr(frame_buffer, "_EVALUATION_ROOT", tmp_path)
+@pytest.mark.parametrize("kept", [False, True])
+def test_a_game_keeping_frames_keeps_the_shot_of_a_failed_calibration(room, register, frames, kept):
     alice = register("alice")
-    session.make_admin(alice)
-    game_id = alice.new_game(alice.own_entry()["id"], evaluationEnabled=test_run)["id"]
+    game_id = alice.new_game(alice.own_entry()["id"], evaluationEnabled=kept)["id"]
 
     with room(game_id) as device:
         device.send("set_role", role="camera")
         device.send("calibration_frame", image=jpeg(640, 480))
         assert device.next("calibration_result")["success"] is False
 
-    assert any(tmp_path.rglob("calibration_*.jpg")) is test_run
+    assert any(name.startswith("calibration_") for name in frames.names(game_id)) is kept
 
 
 @pytest.mark.dataset
 @pytest.mark.skipif(dataset_root() is None, reason="TESTDATA_DIR is not set")
-def test_an_evaluation_run_records_frames_and_events(room, register, session, tmp_path, monkeypatch):
-    monkeypatch.setattr(frame_buffer, "_EVALUATION_ROOT", tmp_path / "evaluation")
+def test_an_evaluation_run_records_frames_and_events(room, register, session, frames):
     alice = register("alice")
     session.make_admin(alice)
     game_id = alice.new_game(alice.own_entry()["id"], evaluationEnabled=True)["id"]
-    frames = next(
-        frames
+    shots = next(
+        shots
         for entry in manifest("gate")
         if entry[0].startswith("games/")
-        for frames in series_of(dataset_root(), entry).values()
-        if replay_series(frames)[0]["failure"] is None
+        for shots in series_of(dataset_root(), entry).values()
+        if replay_series(shots)[0]["failure"] is None
     )
 
     with room(game_id) as device:
         device.send("set_role", role="camera")
         device.send("authenticate", accessToken=alice.token)
-        device.send("calibration_frame", image=base64.b64encode(frames[0][1].read_bytes()).decode())
+        device.send("calibration_frame", image=base64.b64encode(shots[0][1].read_bytes()).decode())
         assert device.next("calibration_result")["success"] is True
         booked = 0
-        for _, path in frames[1:]:
+        for _, path in shots[1:]:
             device.send("detection_frame", image=base64.b64encode(path.read_bytes()).decode())
             booked += device.next("detection_result")["success"]
         device.send("next_player")
         while device.next("game_state")["currentPlayerIndex"] != 0 or len(device.state["turns"]) < 2:
             pass
 
-    folder = tmp_path / "evaluation" / f"game_{game_id}"
-    kept = (folder / "throw0_frames.txt").read_text().splitlines()
-    assert (folder / "throw0_base.jpg").is_file()
-    assert sorted(path.name for path in folder.glob("throw0_dart*.jpg")) == [f"throw0_dart{i}.jpg" for i in range(1, len(kept) + 1)]
+    kept = frames.read(game_id, "throw0_frames.txt").decode().splitlines()
+    assert frames.read(game_id, "throw0_base.jpg") is not None
+    darts = [name for name in frames.names(game_id) if re.fullmatch(r"throw0_dart\d+\.jpg", name)]
+    assert sorted(darts) == [f"throw0_dart{i}.jpg" for i in range(1, len(kept) + 1)]
 
     async def judged():
         async with database.session_scope() as db:
@@ -772,3 +789,4 @@ def test_an_evaluation_run_records_frames_and_events(room, register, session, tm
     (game,) = session.run(judged)
     assert len(game.judgements) == min(booked, 3)
     assert all(judgement.outcome is DartOutcome.CORRECT for judgement in game.judgements)
+

@@ -40,7 +40,13 @@ services:
       SMTP_SECURITY: ${SMTP_SECURITY:-starttls}
       MAIL_FROM: ${MAIL_FROM:?missing in .env}
       APP_URL: ${APP_URL:?missing in .env}
+
+      S3_ENDPOINT: http://garage:3900
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
     depends_on:
+      garage-init:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       redis:
@@ -52,7 +58,6 @@ services:
       retries: 3
       start_period: 40s
     volumes:
-      - ${TESTDATA_DIR:-./backend/testdata}:/app/testdata
       - speech_data:/app/speech # announcer phrases with player names, voiced on demand
 
   frontend:
@@ -98,7 +103,38 @@ services:
       timeout: 5s
       retries: 10
 
+  # S3 store for the kept camera frames, see s3/.
+  garage:
+    image: dxflrs/garage:v2.5.0
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:-}
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN:-}
+    volumes:
+      - ./s3/garage.toml:/etc/garage.toml:ro
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+
+  # Lays out the node, brings in the bucket and the backend's key and moves the
+  # frames still on disk into the bucket, then exits.
+  garage-init:
+    build: ./s3
+    restart: "no"
+    logging: *logging
+    environment:
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN:-}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
+      MOVE_FRAMES_FROM: /frames
+    volumes:
+      - ${TESTDATA_DIR:-./backend/testdata}/evaluation:/frames
+    depends_on:
+      - garage
+
 volumes:
   postgres_data:
   redis_data:
   speech_data:
+  garage_meta:
+  garage_data:

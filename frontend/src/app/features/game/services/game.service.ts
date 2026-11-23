@@ -184,8 +184,8 @@ export class GameService {
     this.socket.send({ type: 'set_ended', ended });
   }
 
-  /** Mark the running game as a tracking test run, or stop. Game-wide: it is
-   * the game that is measured, not the device saying so. */
+  /** Keep the running game's camera frames, or stop; the server takes it from
+   * the game's owner only. */
   setEvaluation(enabled: boolean): void {
     this.socket.send({ type: 'set_evaluation', enabled });
   }

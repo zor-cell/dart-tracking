@@ -104,7 +104,6 @@ class GameAccuracyDto(CamelModel):
     game_id: str
     mode: int | None
     created_at: datetime
-    evaluation_enabled: bool
     tracker_versions: list[int]
     camera: CameraAngleDto | None
     summary: AccuracySummaryDto
@@ -115,7 +114,6 @@ class GameAccuracyDto(CamelModel):
             game_id=judged.game.id,
             mode=judged.game.mode,
             created_at=judged.game.created_at,
-            evaluation_enabled=judged.game.evaluation_enabled,
             tracker_versions=list(judged.game.tracker_versions),
             camera=CameraAngleDto.from_entity(judged.camera) if judged.camera else None,
             summary=AccuracySummaryDto.from_entity(judged.accuracy),

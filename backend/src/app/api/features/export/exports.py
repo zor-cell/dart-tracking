@@ -18,7 +18,7 @@ _EXPORT_LIMIT, _EXPORT_WINDOW = 10, 60 * 60
 
 @router.get("", response_class=FileResponse)
 async def export_account(user: AuthenticatedUser, frames: bool = False) -> FileResponse:
-    """`frames` adds the camera frames of the test runs this account set up."""
+    """`frames` adds the camera frames kept of the games this account set up."""
     await rate_limit.enforce("export", user.id, _EXPORT_LIMIT, _EXPORT_WINDOW)
     path = await write_export(user, frames=frames)
     return FileResponse(

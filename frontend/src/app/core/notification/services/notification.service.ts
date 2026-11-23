@@ -37,8 +37,8 @@ export class NotificationService {
     this.messageService.add({ severity: 'error', summary: title, detail: message, life });
   }
 
-  showInfo(message: string, title = $localize`:@@common.info:Hinweis`) {
-    this.messageService.add({ severity: 'info', summary: title, detail: message });
+  showInfo(message: string, title = $localize`:@@common.info:Hinweis`, life = DEFAULT_TOAST_LIFE) {
+    this.messageService.add({ severity: 'info', summary: title, detail: message, life });
   }
 
   showWarning(message: string, title = $localize`:@@common.warning:Warnung`) {

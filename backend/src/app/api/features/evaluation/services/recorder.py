@@ -27,6 +27,10 @@ from app.api.features.evaluation.domain.game_event import (
 from app.api.features.evaluation.persistence.evaluation_repository import (
     repository as events,
 )
+from app.api.features.evaluation.persistence.frame_deletion_repository import (
+    repository as frame_deletions,
+)
+from app.api.features.evaluation.services import frame_sweeper
 from app.api.features.evaluation.services.frame_buffer import FrameKind, write_failed_calibration
 from app.api.features.evaluation.services.frame_buffer import store as frames
 from app.api.features.game.domain.dart import Dart
@@ -304,8 +308,8 @@ async def note_board_check(game_id: str, client_id: str, check: BoardCheck) -> N
 
 
 async def keep_failed_calibration(game_id: str, jpeg: bytes, failure: CalibrationFailure) -> None:
-    """Write the shot of a failed calibration if the game is a test run, so it
-    can be replayed offline with `scripts/calibration/run_debug.py`."""
+    """Write the shot of a failed calibration if the game keeps its frames, so it
+    can be replayed with `scripts/calibration/run_debug.py`."""
     try:
         async with database.session_scope() as session:
             game = await game_repository.get(session, game_id)
@@ -341,7 +345,7 @@ def _trigger_json(trigger: ThrowTriggerDto | None) -> bytes | None:
 
 
 async def settle_visit(game: Game) -> None:
-    """Close the visit that just ended, keeping its frames if the game is a test run."""
+    """Close the visit that just ended, keeping its frames if the game keeps them."""
     # The handover has already opened the next visit, so the one that ended is
     # the slot before it.
     ended = len(game.turns) - 2
@@ -349,6 +353,14 @@ async def settle_visit(game: Game) -> None:
         await frames.flush(game.id, ended)
     else:
         frames.discard(game.id)
+
+
+async def forget_frames(game_id: str) -> None:
+    """Drop what is held for the game and have its kept frames deleted."""
+    frames.discard(game_id)
+    async with database.session_scope() as session:
+        await frame_deletions.stop_keeping_game(session, game_id)
+    frame_sweeper.wake()
 
 
 async def settle_win(game: Game) -> None:

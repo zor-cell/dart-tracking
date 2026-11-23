@@ -3,6 +3,8 @@ services:
     ports:
       - "10021:8000"
     environment:
+      S3_ACCESS_KEY: &dev-access-key GK0123456789abcdef01234567
+      S3_SECRET_KEY: &dev-secret-key 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
       SMTP_SECURITY: none
@@ -13,6 +15,19 @@ services:
   redis:
     ports:
       - "10023:6379"
+  garage:
+    environment:
+      GARAGE_RPC_SECRET: "6464646464646464646464646464646464646464646464646464646464646464"
+      GARAGE_ADMIN_TOKEN: dev-admin-token
+    ports:
+      - "10026:3900" # S3
+      - "10027:3903" # admin API
+  garage-init:
+    environment:
+      GARAGE_ADMIN_TOKEN: dev-admin-token
+      S3_ACCESS_KEY: *dev-access-key
+      S3_SECRET_KEY: *dev-secret-key
+      MOVE_FRAMES_FROM: "" # backend/testdata/evaluation only holds pulled copies in dev
   mailpit:
     image: axllent/mailpit:v1.31.6
     restart: unless-stopped

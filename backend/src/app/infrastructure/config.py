@@ -59,6 +59,15 @@ class Settings(BaseSettings):
     mail_from: str = "Dart-Tracking <noreply@localhost>"
     app_url: str = "http://localhost:4200"
 
+    # Days a game's camera frames are kept; 0 keeps them for good.
+    frame_retention_days: int = 365
+    # S3 bucket for the frames (Garage); the defaults reach the dev container.
+    s3_endpoint: str = "http://localhost:10026"
+    s3_access_key: str = "GK0123456789abcdef01234567"
+    s3_secret_key: str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    s3_region: str = "garage"
+    s3_bucket: str = "frames"
+
     # Pipeline version the image was built from (see deploy.yaml); unset in a local run.
     tracker_version: int | None = None
 
@@ -67,7 +76,12 @@ class Settings(BaseSettings):
     speech_prebuilt_dir: Path | None = None
     speech_dir: Path = _BACKEND_DIR / "speech"
 
-    @field_validator("tracker_version", "smtp_username", "smtp_password", mode="before")
+    @field_validator(
+        "tracker_version",
+        "smtp_username",
+        "smtp_password",
+        mode="before",
+    )
     @classmethod
     def _blank_is_unset(cls, value: object) -> object:
         return None if value == "" else value

@@ -150,8 +150,6 @@ def selection_lines(criteria: EvaluationFilter) -> list[str]:
         lines.append(f"- Tracker versions {span(criteria.version_from, criteria.version_to)}")
     if criteria.modes:
         lines.append(f"- Modes {', '.join(str(mode.value) for mode in criteria.modes)}")
-    if criteria.test_run is not None:
-        lines.append("- Test runs only" if criteria.test_run else "- Ordinary games only")
     if criteria.since is not None or criteria.until is not None:
         since = criteria.since.date() if criteria.since else None
         until = criteria.until.date() if criteria.until else None

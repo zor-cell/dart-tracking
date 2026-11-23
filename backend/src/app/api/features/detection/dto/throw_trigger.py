@@ -21,5 +21,5 @@ class ThrowTriggerDto(CamelModel):
     grid_cols: NonNegativeInt  # grid the counts and spans are relative to
     grid_rows: NonNegativeInt
     timeline: list[TriggerSampleDto] = []  # the frames leading up to the capture
-    snapshots: list[TriggerSnapshotDto] = []  # sent in test runs only
+    snapshots: list[TriggerSnapshotDto] = []  # sent when the game keeps its frames
 

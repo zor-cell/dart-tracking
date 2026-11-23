@@ -5,9 +5,6 @@
       <h1 class="view__title">
         {{ report.game.createdAt | date: shortDateTime }} ({{ report.game.mode ?? '–' }})
       </h1>
-      @if (report.game.evaluationEnabled) {
-        <p class="view__subtitle">{{ testRun }}</p>
-      }
     } @else {
       <h1 class="view__title" i18n="@@common.nav.game">Spiel</h1>
     }

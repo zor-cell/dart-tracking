@@ -14,8 +14,6 @@ class EvaluationFilter:
     version_from: int | None = None
     version_to: int | None = None
     modes: tuple[GameMode, ...] = ()
-    # True for test runs only, False for ordinary games only.
-    test_run: bool | None = None
     since: datetime | None = None
     until: datetime | None = None
     # The scoring camera's tilt to the board, in degrees.
@@ -30,8 +28,6 @@ class EvaluationFilter:
             if not versions or not _within(versions[0], versions[-1], low, high):
                 return False
         if self.modes and game.mode not in self.modes:
-            return False
-        if self.test_run is not None and game.evaluation_enabled is not self.test_run:
             return False
         if self.since is not None and game.created_at < self.since:
             return False

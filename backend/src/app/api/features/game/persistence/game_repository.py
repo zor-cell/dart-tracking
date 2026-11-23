@@ -273,6 +273,14 @@ class GameRepository:
         ).scalars().all()
         return await self._summarize(session, rows, user_id)
 
+    async def owner(self, session: AsyncSession, game_id: str) -> str | None:
+        """The account that set the game up, None for an anonymous one."""
+        if not _is_uuid(game_id):
+            return None
+        return (
+            await session.execute(select(GameTable.owner_user_id).where(GameTable.id == game_id))
+        ).scalar_one_or_none()
+
     async def claimable(
         self, session: AsyncSession, token_hashes: dict[str, str], user_id: str
     ) -> list[GameSummary]:

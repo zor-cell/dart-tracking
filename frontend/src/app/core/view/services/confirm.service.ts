@@ -7,8 +7,15 @@ export class ConfirmService {
   private readonly confirmation = inject(ConfirmationService);
 
   /** `action` labels the button, red unless the action is `safe`; `accept` runs once it is
-   * pressed. */
-  ask(header: string, message: string, action: string, accept: () => void, safe = false): void {
+   * pressed, `reject` when the dialog closes without it. */
+  ask(
+    header: string,
+    message: string,
+    action: string,
+    accept: () => void,
+    safe = false,
+    reject?: () => void,
+  ): void {
     this.confirmation.confirm({
       header,
       message,
@@ -20,6 +27,7 @@ export class ConfirmService {
       },
       acceptButtonProps: { label: action, severity: safe ? 'primary' : 'danger' },
       accept,
+      reject,
     });
   }
 }

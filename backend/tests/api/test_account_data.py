@@ -18,7 +18,6 @@ DEFAULTS = {
     "announcerLanguage": None,
     "announcerVoice": "first",
 }
-EVERYTHING_ON = DEFAULTS | {"evaluationEnabled": True}
 
 
 @pytest.fixture
@@ -31,23 +30,12 @@ def test_anonymous_session_runs_on_the_defaults(anon):
     assert anon.put("/settings", json=DEFAULTS).status_code == 401
 
 
-@pytest.mark.parametrize("admin", [False, True])
-def test_diagnostics_are_an_admin_switch(alice, session, admin):
-    if admin:
-        session.make_admin(alice)
+def test_any_account_may_agree_to_keep_frames_and_withdraw(alice):
+    stored = alice.put("/settings", json=DEFAULTS | {"evaluationEnabled": True}).json()
 
-    stored = alice.put("/settings", json=EVERYTHING_ON).json()
-
-    assert stored["evaluationEnabled"] is admin
+    assert stored["evaluationEnabled"] is True
     assert alice.get("/settings").json() == stored
-
-
-def test_diagnostics_stored_as_admin_are_masked_once_demoted(alice, session):
-    session.make_admin(alice)
-    alice.put("/settings", json=EVERYTHING_ON)
-    session.sql("UPDATE users SET role = 'user' WHERE id = :id", id=alice.id)
-
-    assert alice.get("/settings").json()["evaluationEnabled"] is False
+    assert alice.put("/settings", json=DEFAULTS).json()["evaluationEnabled"] is False
 
 
 def test_advancing_on_pull_can_be_turned_off(alice):
@@ -299,7 +287,6 @@ def test_accuracy_report_is_for_admins(alice, anon, session):
             "versionFrom": 4,
             "versionTo": 5,
             "mode": 501,
-            "testRun": "true",
             "since": "2026-10-01T00:00:00Z",
             "tiltFrom": 10,
             "tiltTo": 45,
@@ -316,14 +303,13 @@ def test_markdown_report_is_for_admins_and_names_the_selection(alice, anon, sess
     assert alice.get("/evaluation/report").status_code == 403
 
     session.make_admin(alice)
-    report = alice.get("/evaluation/report", params={"mode": 301, "testRun": "true"})
+    report = alice.get("/evaluation/report", params={"mode": 301})
 
     assert report.status_code == 200
     assert report.headers["content-type"].startswith("text/markdown")
     assert 'filename="accuracy_' in report.headers["content-disposition"]
     assert "# Tracking accuracy" in report.text
     assert "- Modes 301" in report.text
-    assert "- Test runs only" in report.text
 
 
 def log_events(session, game_id, *events):

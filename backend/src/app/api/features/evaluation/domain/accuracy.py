@@ -272,7 +272,6 @@ class LoggedGame:
     id: str
     mode: int | None
     created_at: datetime
-    evaluation_enabled: bool
     tracker_versions: tuple[int, ...] = ()  # the ones its events were recorded with, ascending
 
 

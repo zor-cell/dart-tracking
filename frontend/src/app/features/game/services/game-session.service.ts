@@ -6,6 +6,7 @@ import { CameraService } from '../../camera/services/camera.service';
 import { FrameDiffService } from '../../detection/services/frame-diff.service';
 import { DeviceRole } from '../../../core/socket/models/device-role';
 import { SocketService } from '../../../core/socket/services/socket.service';
+import { NotificationService } from '../../../core/notification/services/notification.service';
 import { CameraPhase } from '../models/camera-phase';
 import { GameService } from './game.service';
 import { readStored, writeStored } from '../../../core/storage/models/browser-storage';
@@ -19,6 +20,12 @@ const CAMERA_USED_KEY = 'dart-tracking.cameraUsed';
 // Time a restarted camera gets to settle its auto exposure before a frame is used, in ms.
 const CAMERA_SETTLE_MS = 1500;
 
+// Set once this device was told that games keep their camera frames.
+const FRAMES_NOTICE_KEY = 'dart-tracking.framesNotice';
+
+// How long the frames notice stays up, in ms.
+const FRAMES_NOTICE_LIFE_MS = 12000;
+
 /**
  * Owns this device's camera session: its phase and the detection loop. Survives
  * route changes (`attachView`, `detachView`), ends on `endSession`, and resumes
@@ -31,6 +38,7 @@ export class GameSessionService {
   private readonly throwCapture = inject(FrameDiffService);
   private readonly game = inject(GameService);
   private readonly socket = inject(SocketService);
+  private readonly notifications = inject(NotificationService);
 
   readonly phase = signal<CameraPhase>('idle');
   readonly cameraError = this.camera.error;
@@ -158,6 +166,20 @@ export class GameSessionService {
     }
     this.calibration.reset();
     this.phase.set('calibrating');
+    this.noticeFramesKept();
+  }
+
+  /** Say once per device that this game keeps its camera frames, and where to stop it. */
+  private noticeFramesKept(): void {
+    if (!this.game.state()?.evaluationEnabled || readStored(FRAMES_NOTICE_KEY) === 'true') {
+      return;
+    }
+    writeStored(FRAMES_NOTICE_KEY, 'true');
+    this.notifications.showInfo(
+      $localize`:@@game.framesNotice:Von diesem Spiel werden die Kamerabilder gespeichert, damit die Erkennung besser wird. Wer das Spiel angelegt hat, kann das in den Einstellungen abschalten.`,
+      undefined,
+      FRAMES_NOTICE_LIFE_MS,
+    );
   }
 
   /**

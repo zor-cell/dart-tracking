@@ -61,13 +61,11 @@ class EvaluationRepository:
         self,
         session: AsyncSession,
         *,
-        evaluation_only: bool,
         finished_only: bool = False,
         game_ids: list[str] | None = None,
     ) -> list[LoggedGame]:
-        """Games that have a log, oldest first. `evaluation_only` narrows it to
-        the ones marked as a test run, `finished_only` to the ones with a winner,
-        `game_ids` to these games."""
+        """Games that have a log, oldest first. `finished_only` narrows it to the
+        ones with a winner, `game_ids` to these games."""
         versions = func.array_agg(distinct(GameEventTable.tracker_version)).filter(
             GameEventTable.tracker_version.is_not(None)
         )
@@ -76,15 +74,12 @@ class EvaluationRepository:
                 GameTable.id,
                 start_score().label("mode"),
                 GameTable.created_at,
-                GameTable.evaluation_enabled,
                 versions.label("tracker_versions"),
             )
             .join(GameEventTable, GameEventTable.game_id == GameTable.id)
             .group_by(GameTable.id)
             .order_by(GameTable.created_at)
         )
-        if evaluation_only:
-            statement = statement.where(GameTable.evaluation_enabled.is_(True))
         if finished_only:
             statement = statement.where(GameTable.status == GameStatus.FINISHED.value)
         if game_ids is not None:
@@ -95,7 +90,6 @@ class EvaluationRepository:
                 id=row.id,
                 mode=row.mode,
                 created_at=row.created_at,
-                evaluation_enabled=row.evaluation_enabled,
                 tracker_versions=tuple(sorted(row.tracker_versions or ())),
             )
             for row in (await session.execute(statement)).all()

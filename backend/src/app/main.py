@@ -13,6 +13,7 @@ from app.api.features.announcement import announcements
 from app.api.features.announcement.services import speech
 from app.api.features.auth import auth
 from app.api.features.evaluation import evaluation
+from app.api.features.evaluation.services import frame_sweeper
 from app.api.features.export import exports
 from app.api.features.game import games
 from app.api.features.player import players
@@ -28,13 +29,15 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Hold the database and Redis connections for the lifetime of the app, and load
-    the announcer's voices meanwhile."""
+    """Hold the database and Redis connections for the lifetime of the app, load
+    the announcer's voices meanwhile and sweep the kept frames."""
     configure_logging()
     database.init(settings.database_url)
     redis_client.init(settings.redis_url)
     voices = asyncio.create_task(speech.warm_up())
+    sweeper = asyncio.create_task(frame_sweeper.run())
     yield
+    sweeper.cancel()
     await voices
     await redis_client.close()
     await database.close()

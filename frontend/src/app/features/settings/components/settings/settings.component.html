@@ -92,6 +92,25 @@
           />
         </div>
 
+        <div class="list-group__item setting">
+          <div class="setting__text">
+            <div class="setting__label-row">
+              <label class="setting__label" for="frames" i18n="@@settings.frames">
+                Kamerabilder speichern
+              </label>
+              <app-info-hint i18n="@@settings.framesHint">
+                Speichert bei deinen Spielen die Kamerabilder der Würfe für ein Jahr, damit die
+                Erkennung besser wird. Ausschalten löscht die bisher gespeicherten.
+              </app-info-hint>
+            </div>
+          </div>
+          <p-toggleswitch
+            inputId="frames"
+            [ngModel]="framesKept()"
+            (ngModelChange)="setFramesKept($event)"
+          />
+        </div>
+
         <div class="list-group__item setting setting--stacked">
           <div class="setting__text">
             <div class="setting__label-row">
@@ -261,31 +280,5 @@
         </div>
       </div>
     </section>
-
-    @if (isAdmin()) {
-      <section class="list-group">
-        <h2 class="list-group__title">Admin</h2>
-        <div class="list-group__items">
-          <div class="list-group__item setting">
-            <div class="setting__text">
-              <div class="setting__label-row">
-                <label class="setting__label" for="evaluation" i18n="@@settings.evaluation">
-                  Testlauf aufzeichnen
-                </label>
-                <app-info-hint i18n="@@settings.evaluationHint">
-                  Speichert bei neuen Spielen und dem laufenden die Kamerabilder jeder korrigierten
-                  Runde als Wurfserie, dazu jedes Bild einer fehlgeschlagenen Kalibrierung.
-                </app-info-hint>
-              </div>
-            </div>
-            <p-toggleswitch
-              inputId="evaluation"
-              [ngModel]="evaluationEnabled()"
-              (ngModelChange)="setEvaluationEnabled($event)"
-            />
-          </div>
-        </div>
-      </section>
-    }
   }
 </section>

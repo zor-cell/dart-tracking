@@ -15,12 +15,10 @@
       Moment dauern.
     </p>
 
-    @if (isAdmin()) {
-      <div class="export__option">
-        <p-checkbox inputId="export-frames" [binary]="true" [formControl]="frames" />
-        <label for="export-frames" i18n="@@export.frames">Kamerabilder deiner Testläufe mitnehmen</label>
-      </div>
-    }
+    <div class="export__option">
+      <p-checkbox inputId="export-frames" [binary]="true" [formControl]="frames" />
+      <label for="export-frames" i18n="@@export.frames">Gespeicherte Kamerabilder deiner Spiele mitnehmen</label>
+    </div>
 
     @if (error(); as message) {
       <p-message severity="error">{{ message }}</p-message>

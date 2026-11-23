@@ -37,6 +37,10 @@ from app.api.features.auth.services import (
 )
 from app.api.features.auth.services.current_user import AuthenticatedUser
 from app.api.features.auth.services.refresh_store import store as refresh_store
+from app.api.features.evaluation.persistence.frame_deletion_repository import (
+    repository as frame_deletions,
+)
+from app.api.features.evaluation.services import frame_sweeper
 from app.api.features.game.persistence.game_repository import repository as games
 from app.api.features.player.persistence.player_repository import repository as players
 from app.api.features.settings.persistence.settings_repository import repository as settings_repository
@@ -375,14 +379,16 @@ async def delete_account(
     body: AccountDeletionDto, user: AuthenticatedUser, response: Response
 ) -> None:
     """Delete the account and sign out every device. Games no other account is part
-    of go with it; the shared ones stay for the others."""
+    of go with it, the shared ones stay for the others; its kept frames all go."""
     await _confirm_identity(user, body)
 
     async with database.session_scope() as session:
+        await frame_deletions.stop_keeping_owned(session, user.id)
         await games.forget_account(session, user.id)
         await players.forget_account(session, user.id)
         await repository.delete(session, user.id)
 
+    frame_sweeper.wake()
     await refresh_store.revoke_all(user.id)
     response.delete_cookie(_COOKIE_NAME, path=_COOKIE_PATH)
 

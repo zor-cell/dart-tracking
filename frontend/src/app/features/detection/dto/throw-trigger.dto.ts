@@ -16,5 +16,5 @@ export interface ThrowTriggerDto {
   readonly gridCols: number; // grid the counts and spans are relative to
   readonly gridRows: number;
   readonly timeline: readonly TriggerSampleDto[]; // the frames leading up to the capture
-  readonly snapshots: readonly TriggerSnapshotDto[]; // sent in test runs only
+  readonly snapshots: readonly TriggerSnapshotDto[]; // sent when the game keeps its frames
 }

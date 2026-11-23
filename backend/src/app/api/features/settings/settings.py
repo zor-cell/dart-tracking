@@ -1,12 +1,15 @@
 """The account's app settings: anyone reads (anonymous gets the defaults), only
-accounts write; the debug and recording switches are admin only.
+accounts write.
 """
 
 from fastapi import APIRouter
 
-from app.api.features.auth.domain.user import User
 from app.api.features.auth.services.current_user import AuthenticatedUser, CurrentUser
-from app.api.features.settings.domain.app_settings import DEFAULTS, AppSettings
+from app.api.features.evaluation.persistence.frame_deletion_repository import (
+    repository as frame_deletions,
+)
+from app.api.features.evaluation.services import frame_sweeper
+from app.api.features.settings.domain.app_settings import DEFAULTS
 from app.api.features.settings.dto.app_settings import AppSettingsDto
 from app.api.features.settings.dto.filter_usage import FilterUsageDto
 from app.api.features.settings.persistence.settings_repository import repository
@@ -23,17 +26,23 @@ async def read_settings(user: CurrentUser) -> AppSettingsDto:
     async with database.session_scope() as session:
         settings = await repository.get(session, user.id)
 
-    return AppSettingsDto.from_entity(_visible_to(settings, user))
+    return AppSettingsDto.from_entity(settings)
 
 
 @router.put("", response_model=AppSettingsDto)
 async def write_settings(body: AppSettingsDto, user: AuthenticatedUser) -> AppSettingsDto:
     """Answers with what was stored, so the client adopts the server's reading
-    rather than its own optimistic one."""
+    rather than its own optimistic one. Turning frames off deletes the kept ones."""
     async with database.session_scope() as session:
-        await repository.save(session, user.id, _visible_to(body.to_entity(), user))
+        before = await repository.get(session, user.id)
+        await repository.save(session, user.id, body.to_entity())
         settings = await repository.get(session, user.id)
+        stopped = before.evaluation_enabled and not settings.evaluation_enabled
+        if stopped:
+            await frame_deletions.stop_keeping_owned(session, user.id)
 
+    if stopped:
+        frame_sweeper.wake()
     return AppSettingsDto.from_entity(settings)
 
 
@@ -50,7 +59,3 @@ async def write_filter_usage(body: FilterUsageDto, user: AuthenticatedUser) -> N
     async with database.session_scope() as session:
         await repository.save_filter_usage(session, user.id, body.to_entities())
 
-
-def _visible_to(settings: AppSettings, user: User) -> AppSettings:
-    """What this account may see and set of `settings`."""
-    return settings if user.is_admin else settings.without_diagnostics()

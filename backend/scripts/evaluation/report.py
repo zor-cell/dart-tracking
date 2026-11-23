@@ -21,9 +21,13 @@ from app.api.features.evaluation.domain.visit_replay import Visit  # noqa: E402
 from app.api.features.evaluation.services.accuracy import judged_games  # noqa: E402
 from app.api.features.evaluation.services.frame_buffer import (  # noqa: E402
     FrameKind,
-    folder_of,
     read_manifest,
     series_name,
+)
+from app.api.features.evaluation.services.frame_store import (  # noqa: E402
+    FrameStore,
+    folder_name,
+    store,
 )
 from app.api.features.evaluation.services.report_markdown import build_report  # noqa: E402
 from app.infrastructure import database  # noqa: E402
@@ -38,13 +42,13 @@ GROUND_TRUTH_NAME = "ground_truth.txt"
 NO_CHANGE_LABEL = "NO_CHANGE"
 
 
-def series_labels(folder: Path, visit: Visit) -> list[str] | None:
+def series_labels(files: FrameStore, game_id: str, names: list[str], visit: Visit) -> list[str] | None:
     """Truth lines for one visit's frames, or None if they do not match the
     booked darts. Absorbed frames read NO_CHANGE, unbooked ones stay unlabelled."""
     series = series_name(visit.turn_index)
-    frames = len(list(folder.glob(f"{series}_dart*.jpg")))
+    frames = sum(1 for name in names if name.startswith(f"{series}_dart") and name.endswith(".jpg"))
     # Series written before manifests existed hold booked darts only.
-    kinds = read_manifest(folder, series) or [FrameKind.BOOKED] * frames
+    kinds = read_manifest(files, game_id, series) or [FrameKind.BOOKED] * frames
     if len(kinds) != frames or kinds.count(FrameKind.BOOKED) != len(visit.claimed):
         return None
 
@@ -65,11 +69,12 @@ def series_labels(folder: Path, visit: Visit) -> list[str] | None:
     return lines
 
 
-def write_ground_truth(game_id: str, visits: list[Visit]) -> Path | None:
+def write_ground_truth(game_id: str, visits: list[Visit]) -> bool:
     """Label the frames kept for this game, in the offline runner's format."""
-    folder = folder_of(game_id)
-    if not folder.is_dir():
-        return None
+    files = store()
+    names = files.names(game_id)
+    if not names:
+        return False
 
     lines = [
         "# Written by scripts/evaluation/report.py from the game's event log.",
@@ -77,22 +82,20 @@ def write_ground_truth(game_id: str, visits: list[Visit]) -> Path | None:
     ]
     for visit in visits:
         series = series_name(visit.turn_index)
-        if not (folder / f"{series}_base.jpg").exists():
+        if f"{series}_base.jpg" not in names:
             continue
-        labels = series_labels(folder, visit)
+        labels = series_labels(files, game_id, names, visit)
         if labels is None:
-            print(f"  ! {folder.name}/{series}: frames do not match the booked darts, left unlabelled")
+            print(f"  ! {folder_name(game_id)}/{series}: frames do not match the booked darts, left unlabelled")
             continue
         lines += labels
 
-    path = folder / GROUND_TRUTH_NAME
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    return path
+    files.write(game_id, GROUND_TRUTH_NAME, ("\n".join(lines) + "\n").encode())
+    return True
 
 
 async def gather(
     game_ids: list[str] | None,
-    test_runs_only: bool,
     include_unfinished: bool,
     min_version: int | None,
     version: int | None,
@@ -104,7 +107,6 @@ async def gather(
             return await judged_games(
                 session,
                 game_ids=game_ids,
-                test_runs_only=test_runs_only,
                 include_unfinished=include_unfinished,
                 min_version=min_version,
                 version=version,
@@ -125,7 +127,6 @@ def main() -> int:
     games = asyncio.run(
         gather(
             args.games or None,
-            args.test_runs_only,
             args.include_unfinished,
             args.min_version,
             args.version,
@@ -136,9 +137,8 @@ def main() -> int:
         return 1
 
     for game in games:
-        truth = write_ground_truth(game.game.id, game.visits)
-        if truth is not None:
-            print(f"labelled kept frames: {truth}")
+        if write_ground_truth(game.game.id, game.visits):
+            print(f"labelled kept frames: {folder_name(game.game.id)}/{GROUND_TRUTH_NAME}")
 
     accuracy = summarise(
         len(games),

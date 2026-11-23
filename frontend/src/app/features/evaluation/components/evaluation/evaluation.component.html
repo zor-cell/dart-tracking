@@ -69,18 +69,6 @@
         [control]="filters.controls.mode"
         [options]="modeOptions"
       />
-      <label class="list-filters__label" for="filter-run" i18n="@@eval.run">Art</label>
-      <p-select
-        inputId="filter-run"
-        formControlName="run"
-        [options]="runOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Alle"
-        i18n-placeholder="@@player.list.all"
-        [showClear]="true"
-        fluid
-      />
       <span class="list-filters__label" id="filter-tilt">
         <ng-container i18n="@@eval.tilt">Kameraneigung</ng-container>
         <span class="tilt__value">{{ tiltDraft()[0] }}–{{ tiltDraft()[1] }}°</span>

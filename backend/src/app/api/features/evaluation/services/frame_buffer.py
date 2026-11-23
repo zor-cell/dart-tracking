@@ -1,5 +1,5 @@
 """Holds the scoring camera's frames of the open visit, written out as a throw
-series in a test run. Process-local.
+series when the game keeps its frames. Process-local.
 """
 
 import asyncio
@@ -7,12 +7,10 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import StrEnum
-from pathlib import Path
+
+from app.api.features.evaluation.services.frame_store import FrameStore, store as frame_store
 
 logger = logging.getLogger(__name__)
-
-# Recorded evaluation frames, one subfolder per game.
-_EVALUATION_ROOT = Path(__file__).resolve().parents[6] / "testdata" / "evaluation"
 
 
 class FrameKind(StrEnum):
@@ -23,45 +21,24 @@ class FrameKind(StrEnum):
     UNBOOKED = "unbooked"  # a located dart the game did not take (visit full)
 
 
-def folder_of(game_id: str) -> Path:
-    """Where a game's kept throw series live. The prefix names what the id is,
-    and doubles as the runner's `<board>_setup<n>` split, so every recorded
-    setup groups under `game`."""
-    return _EVALUATION_ROOT / f"game_{game_id}"
-
-
-def recorded_files(game_id: str) -> list[tuple[Path, str]]:
-    """A game's recorded files with their archive path, `testdata/evaluation/game_<id>/…`,
-    leaving out the runners' `_results` folders."""
-    folder = folder_of(game_id)
-    if not folder.is_dir():
-        return []
-    files = []
-    for file in sorted(folder.rglob("*")):
-        relative = file.relative_to(folder)
-        if file.is_file() and not any(part.startswith("_") for part in relative.parts):
-            files.append((file, (Path("testdata") / "evaluation" / folder.name / relative).as_posix()))
-    return files
-
-
 def series_name(turn_index: int) -> str:
     """What one visit's frames are called. Shared with the report, which has to
     label the very same files."""
     return f"throw{turn_index}"
 
 
-def manifest_of(folder: Path, series: str) -> Path:
+def manifest_name(series: str) -> str:
     """The file naming the kind of each frame in a series."""
-    return folder / f"{series}_frames.txt"
+    return f"{series}_frames.txt"
 
 
-def read_manifest(folder: Path, series: str) -> list[FrameKind] | None:
+def read_manifest(files: FrameStore, game_id: str, series: str) -> list[FrameKind] | None:
     """The kinds of a series' frames in order, or None for a series written
     before manifests existed."""
-    path = manifest_of(folder, series)
-    if not path.is_file():
+    text = files.read(game_id, manifest_name(series))
+    if text is None:
         return None
-    return [FrameKind(line.split()[1]) for line in path.read_text().splitlines() if line.strip()]
+    return [FrameKind(line.split()[1]) for line in text.decode().splitlines() if line.strip()]
 
 
 @dataclass
@@ -100,14 +77,14 @@ class FrameBuffer:
         self._previous.pop(game_id, None)
         self.discard(game_id)
 
-    async def flush(self, game_id: str, turn_index: int, *, keep: bool = False) -> Path | None:
-        """Write the open visit as `throwN_base.jpg` and `throwN_dartK.jpg` with its
-        manifest and trigger episodes; returns the folder, or None if empty.
+    async def flush(self, game_id: str, turn_index: int, *, keep: bool = False) -> bool:
+        """Write the open visit as `throwN_base.jpg` and `throwN_dartK.jpg`, exactly as
+        sent, with its manifest and trigger episodes; whether anything was written.
         `keep` leaves the visit open.
         """
         visit = self._visits.get(game_id) if keep else self._visits.pop(game_id, None)
         if visit is None or visit.base is None or not visit.frames:
-            return None
+            return False
 
         async with self._writing:
             return await asyncio.to_thread(
@@ -120,49 +97,41 @@ def _write_series(
     turn_index: int,
     base: bytes,
     frames: list[tuple[bytes, FrameKind, bytes | None]],
-) -> Path | None:
-    folder = folder_of(game_id)
+) -> bool:
+    files = frame_store()
     series = series_name(turn_index)
     try:
-        folder.mkdir(parents=True, exist_ok=True)
         # A rewritten series may hold fewer frames than an earlier write.
-        for pattern in (f"{series}_dart*.jpg", f"{series}_dart*_trigger.json"):
-            for stale in folder.glob(pattern):
-                stale.unlink()
-        (folder / f"{series}_base.jpg").write_bytes(base)
+        stale = [name for name in files.names(game_id) if name.startswith(f"{series}_dart")]
+        files.remove(game_id, stale)
+        files.write(game_id, f"{series}_base.jpg", base)
         lines = []
         for index, (jpeg, kind, trigger) in enumerate(frames, start=1):
-            (folder / f"{series}_dart{index}.jpg").write_bytes(jpeg)
+            files.write(game_id, f"{series}_dart{index}.jpg", jpeg)
             if trigger is not None:
-                (folder / f"{series}_dart{index}_trigger.json").write_bytes(trigger)
+                files.write(game_id, f"{series}_dart{index}_trigger.json", trigger)
             lines.append(f"dart{index} {kind}")
-        manifest_of(folder, series).write_text("\n".join(lines) + "\n")
-    except OSError:
+        files.write(game_id, manifest_name(series), ("\n".join(lines) + "\n").encode())
+    except Exception:  # noqa: BLE001 - diagnostics must not break the game
         logger.exception("[evaluation] could not write frames for %s", game_id)
-        return None
+        return False
 
-    logger.info(
-        "[evaluation] wrote %d frame(s) of turn %d to %s",
-        len(frames) + 1,
-        turn_index,
-        folder,
-    )
-    return folder
+    logger.info("[evaluation] wrote %d frame(s) of turn %d of %s", len(frames) + 1, turn_index, game_id)
+    return True
 
 
-def write_failed_calibration(game_id: str, jpeg: bytes, failure: str) -> Path | None:
+def write_failed_calibration(game_id: str, jpeg: bytes, failure: str) -> str | None:
     """Write a calibration shot the board was not found in, beside the game's
-    throw series. Returns the file, or None when it could not be written."""
+    throw series. Returns its name, or None when it could not be written."""
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S_%f")
-    path = folder_of(game_id) / f"calibration_{stamp}_{failure}.jpg"
+    name = f"calibration_{stamp}_{failure}.jpg"
     try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(jpeg)
-    except OSError:
+        frame_store().write(game_id, name, jpeg)
+    except Exception:  # noqa: BLE001 - diagnostics must not break the game
         logger.exception("[evaluation] could not write a failed calibration for %s", game_id)
         return None
-    logger.info("[evaluation] wrote failed calibration to %s", path)
-    return path
+    logger.info("[evaluation] wrote failed calibration %s of %s", name, game_id)
+    return name
 
 
 store = FrameBuffer()

@@ -6,7 +6,6 @@ import pytest
 
 from app.api.features.evaluation.domain.game_event import GameEvent, GameEventKind
 from app.api.features.evaluation.persistence.evaluation_repository import repository as events
-from app.api.features.evaluation.services import frame_buffer
 from app.infrastructure import database
 
 T20, D5 = (20, 3), (5, 2)
@@ -96,8 +95,7 @@ def test_the_password_hash_stays_out(alice):
         assert b"passwordHash" not in archive.read(name)
 
 
-def test_events_and_frames_of_own_test_runs(alice, register, session, tmp_path, monkeypatch):
-    monkeypatch.setattr(frame_buffer, "_EVALUATION_ROOT", tmp_path)
+def test_events_and_frames_of_own_games(alice, register, session, frames):
     bob = register("bob")
     mine, theirs = own_game(alice), bob.new_game(bob.own_entry()["id"], {"name": "Alice"})["id"]
     session.sql("UPDATE games SET evaluation_enabled = true")
@@ -106,10 +104,7 @@ def test_events_and_frames_of_own_test_runs(alice, register, session, tmp_path, 
             kind=GameEventKind.DETECTED, turn_index=0, player_index=0, accepted=True,
             value=20, multiplier=3, position=(3.0, 4.0), tracker_version=7,
         ))
-        folder = frame_buffer.folder_of(game_id)
-        (folder / "_results").mkdir(parents=True)
-        (folder / "throw0_base.jpg").write_bytes(b"jpeg")
-        (folder / "_results" / "annotated.jpg").write_bytes(b"jpeg")
+        frames.write(game_id, "throw0_base.jpg", b"jpeg")
 
     _, games, files = export(alice)
     [game] = games

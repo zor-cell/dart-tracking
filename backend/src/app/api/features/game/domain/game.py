@@ -725,7 +725,7 @@ class Game:
         return False
 
     def set_evaluation(self, enabled: bool) -> None:
-        """Turn the test run on or off. Bumps the revision so the room is told,
+        """Keep the camera frames, or stop. Bumps the revision so the room is told,
         the switch being shown on every device."""
         if self.evaluation_enabled == enabled:
             return

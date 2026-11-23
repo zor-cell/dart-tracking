@@ -36,8 +36,6 @@ import { GroupChartsComponent } from '../group-charts/group-charts.component';
 import { MismatchTableComponent } from '../mismatch-table/mismatch-table.component';
 import {
   EvaluationFilter,
-  RUN_KIND_LABELS,
-  RunKind,
   TILT_LIMITS,
   TiltRange,
   VersionRange,
@@ -90,7 +88,7 @@ function versionLabel([from, to]: VersionRange): string | null {
 }
 
 /** The filters whose picks are remembered and offered back; version and period are not. */
-const REMEMBERED = ['mode', 'run'] as const;
+const REMEMBERED = ['mode'] as const;
 
 /** A range as `4-6`, `5` for one value, `4-` or `-6` for an open end. */
 function rangeParam(parse: (raw: string) => number): QueryParam<[number | null, number | null]> {
@@ -118,7 +116,6 @@ const VERSION_PARAM: QueryParam<[number | null, number | null]> = {
 const FILTER_PARAMS = {
   version: VERSION_PARAM,
   mode: listParam(oneOfParam(GAME_MODES)),
-  run: oneOfParam(Object.keys(RUN_KIND_LABELS) as RunKind[]),
   tilt: rangeParam(Number) as QueryParam<unknown>,
 };
 
@@ -126,9 +123,7 @@ const FILTER_PARAMS = {
 const TILT_DEBOUNCE_MS = 300;
 
 /** Offered while the account has no picks of its own. */
-const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
-  { key: 'run', label: RUN_KIND_LABELS.test, value: 'test' },
-];
+const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [];
 
 /** The tabs of the page, kept in the URL so a game opened from one leads back to it. */
 const TABS = ['overview', 'analysis', 'games'] as const;
@@ -222,10 +217,6 @@ export class EvaluationComponent {
       .map((version) => ({ label: `${version}`, value: version }));
   });
   protected readonly modeOptions = GAME_MODES.map((mode) => ({ label: `${mode}`, value: mode }));
-  protected readonly runOptions = Object.entries(RUN_KIND_LABELS).map(([value, label]) => ({
-    label,
-    value: value as RunKind,
-  }));
 
   protected readonly period = signal<Period>('all');
   protected readonly range = signal<DayRange>(null);
@@ -233,7 +224,6 @@ export class EvaluationComponent {
   protected readonly filters = this.fb.group({
     version: this.fb.control<[number | null, number | null] | null>(null),
     mode: this.fb.control<GameMode[]>([], { nonNullable: true }),
-    run: this.fb.control<RunKind | null>(null),
     tilt: this.fb.control<[number, number] | null>(null),
   });
   protected readonly tiltLimits = TILT_LIMITS;
@@ -249,7 +239,7 @@ export class EvaluationComponent {
 
   /** The filters in use, as chips above the figures; the period shows in its own picker. */
   protected readonly chips = computed<FilterChip[]>(() => {
-    const { version, mode, run, tilt } = this.filterValue();
+    const { version, mode, tilt } = this.filterValue();
     const period = this.period();
     const range = period === 'custom' ? dayRangeLabel(this.range(), this.locale) : null;
     const chips: FilterChip[] = [
@@ -266,9 +256,6 @@ export class EvaluationComponent {
     if (modes) {
       chips.push({ key: 'mode', label: modes });
     }
-    if (run) {
-      chips.push({ key: 'run', label: RUN_KIND_LABELS[run] });
-    }
     if (tilt) {
       chips.push({
         key: 'tilt',
@@ -280,12 +267,12 @@ export class EvaluationComponent {
 
   /** Common filters one tap away, for those still open. */
   protected readonly suggestions = computed<FilterSuggestion[]>(() => {
-    const { mode, run } = this.filterValue();
+    const { mode } = this.filterValue();
     return this.memory.suggest(
       'evaluation',
       DEFAULT_SUGGESTIONS,
       (key, picked) => this.chipLabel(key, [picked]),
-      (key, picked) => (key === 'mode' ? !(mode ?? []).some((m) => m === picked) : !run),
+      (_key, picked) => !(mode ?? []).some((m) => m === picked),
     );
   });
 
@@ -296,7 +283,7 @@ export class EvaluationComponent {
 
   /** Null until the default version is in, so the page never loads every version first. */
   private readonly criteria = computed<EvaluationFilter | null>(() => {
-    const { version, mode, run, tilt } = this.filterValue();
+    const { version, mode, tilt } = this.filterValue();
     if (version === null || version === undefined) {
       return null;
     }
@@ -304,7 +291,6 @@ export class EvaluationComponent {
       versionFrom: version[0],
       versionTo: version[1],
       modes: mode ?? [],
-      testRun: run ? run === 'test' : null,
       ...periodBounds(this.period(), this.range(), new Date()),
       tiltFrom: tilt?.[0] ?? null,
       tiltTo: tilt?.[1] ?? null,
@@ -345,14 +331,9 @@ export class EvaluationComponent {
 
   /** How a filter's picks read on a chip; null when none of them is known to this page. */
   private chipLabel(key: string, picks: readonly unknown[]): string | null {
-    const names = picks.flatMap((pick) => {
-      if (key === 'mode') {
-        return GAME_MODES.some((mode) => mode === pick) ? [`${pick}`] : [];
-      }
-      return key === 'run' && typeof pick === 'string' && Object.hasOwn(RUN_KIND_LABELS, pick)
-        ? [RUN_KIND_LABELS[pick as RunKind]]
-        : [];
-    });
+    const names = picks.flatMap((pick) =>
+      key === 'mode' && GAME_MODES.some((mode) => mode === pick) ? [`${pick}`] : [],
+    );
     return names.length === 0 ? null : orList(names);
   }
 

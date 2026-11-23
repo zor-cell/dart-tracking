@@ -41,14 +41,12 @@ def judged(
     events: list[GameEvent],
     *,
     versions: tuple[int, ...] = (5,),
-    test_run: bool = False,
 ) -> JudgedGame:
     visits = [visit for visit in replay(events) if visit.tracked]
     game = LoggedGame(
         id=game_id,
         mode=501,
         created_at=datetime(2026, 11, 1, tzinfo=UTC),
-        evaluation_enabled=test_run,
         tracker_versions=versions,
     )
     return JudgedGame(game, events, visits, [j for v in visits for j in judge(game_id, v)])

@@ -2,7 +2,6 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { GameReportDto } from '../../dto/accuracy.dto';
-import { RUN_KIND_LABELS } from '../../models/evaluation-filter';
 import { EvaluationService } from '../../services/evaluation.service';
 import { AccuracyChartsComponent } from '../accuracy-charts/accuracy-charts.component';
 import { AccuracySummaryComponent } from '../accuracy-summary/accuracy-summary.component';
@@ -36,7 +35,6 @@ export class EvaluationGameComponent {
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
   protected readonly shortDateTime = SHORT_DATE_TIME;
-  protected readonly testRun = RUN_KIND_LABELS.test;
 
   constructor() {
     void this.load();

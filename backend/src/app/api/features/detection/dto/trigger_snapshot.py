@@ -1,4 +1,4 @@
-"""Client -> server: the trigger's own view of one frame of the episode, in test runs."""
+"""Client -> server: the trigger's own view of one frame of the episode, sent when the game keeps its frames."""
 
 from typing import Literal
 

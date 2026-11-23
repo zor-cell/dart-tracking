@@ -9,7 +9,7 @@ from app.api.core.socket import socket
 from app.api.features.auth.services import passwords
 from app.api.features.calibration.domain.calibration import Calibration
 from app.api.features.evaluation.domain.accuracy import LoggedGame
-from app.api.features.evaluation.services import accuracy, frame_buffer
+from app.api.features.evaluation.services import accuracy, frame_buffer, frame_store, frame_sweeper
 from app.api.features.evaluation.services.frame_buffer import FrameBuffer, FrameKind
 from app.api.features.export.services import archive
 from app.api.features.statistics.persistence import (
@@ -106,7 +106,7 @@ def test_hashing_a_password_leaves_the_event_loop_free(monkeypatch):
 
 
 def test_judging_the_logged_games_leaves_the_event_loop_free(monkeypatch):
-    game = LoggedGame("game", 501, datetime(2026, 1, 1), evaluation_enabled=True)
+    game = LoggedGame("game", 501, datetime(2026, 1, 1))
 
     async def logged(*_args, **_kwargs):
         return [game]
@@ -193,3 +193,26 @@ def test_packing_the_data_export_leaves_the_event_loop_free(monkeypatch):
     )
 
     assert found == "done"
+
+
+def test_sweeping_frames_leaves_the_event_loop_free(monkeypatch):
+    queue = [["game"], []]
+
+    @asynccontextmanager
+    async def no_session():
+        yield None
+
+    async def nothing(*_args):
+        return None
+
+    async def pending(*_args):
+        return queue.pop(0)
+
+    monkeypatch.setattr(frame_sweeper.database, "session_scope", no_session)
+    monkeypatch.setattr(frame_sweeper.repository, "expire", nothing)
+    monkeypatch.setattr(frame_sweeper.repository, "pending", pending)
+    monkeypatch.setattr(frame_sweeper.repository, "done", nothing)
+
+    swept = beside_the_loop(frame_store, "delete", frame_sweeper.sweep, monkeypatch)
+
+    assert swept == 1

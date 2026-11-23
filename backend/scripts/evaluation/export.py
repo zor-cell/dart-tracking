@@ -25,7 +25,7 @@ from app.api import tables  # noqa: E402, F401
 from app.api.features.evaluation.domain.accuracy import LoggedGame  # noqa: E402
 from app.api.features.evaluation.persistence.game_event import GameEventTable  # noqa: E402
 from app.api.features.evaluation.services.accuracy import judged_games  # noqa: E402
-from app.api.features.evaluation.services.frame_buffer import folder_of, recorded_files  # noqa: E402
+from app.api.features.evaluation.services.frame_store import recorded, store  # noqa: E402
 from app.api.features.game.persistence.game import GameTable  # noqa: E402
 from app.infrastructure import database  # noqa: E402
 from app.infrastructure.config import get_settings  # noqa: E402
@@ -64,7 +64,6 @@ async def _rows(session, table: Table, key, game_ids: list[str]) -> list[Any]:
 
 
 async def list_games(
-    test_runs_only: bool,
     include_unfinished: bool,
     min_version: int | None,
     version: int | None,
@@ -75,7 +74,6 @@ async def list_games(
         async with database.session_scope() as session:
             games = await judged_games(
                 session,
-                test_runs_only=test_runs_only,
                 include_unfinished=include_unfinished,
                 min_version=min_version,
                 version=version,
@@ -115,9 +113,10 @@ def write_zip(path: Path, game_ids: list[str]) -> tuple[int, int]:
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("games.csv", games_csv)
         archive.writestr("game_events.csv", events_csv)
+        frames = store()
         for game_id in game_ids:
-            for file, arcname in recorded_files(game_id):
-                archive.write(file, arcname)
+            for name, arcname in recorded(game_id):
+                archive.writestr(arcname, frames.read(game_id, name) or b"")
                 files += 1
     return len(game_ids), files
 
@@ -135,18 +134,14 @@ def main() -> int:
 
     def selected() -> list[tuple[LoggedGame, int]]:
         return asyncio.run(
-            list_games(
-                args.test_runs_only, args.include_unfinished, args.min_version, args.version
-            )
+            list_games(args.include_unfinished, args.min_version, args.version)
         )
 
     if args.list:
         for game, events in selected():
-            frames = folder_of(game.id)
-            count = sum(1 for f in frames.glob("*.jpg")) if frames.is_dir() else 0
-            test = "test run" if game.evaluation_enabled else "        "
+            count = sum(1 for name in store().names(game.id) if name.endswith(".jpg"))
             print(
-                f"{game.id}  {game.created_at:%Y-%m-%d %H:%M}  {test}  "
+                f"{game.id}  {game.created_at:%Y-%m-%d %H:%M}  "
                 f"{events:4d} events  {count:4d} frames"
             )
         return 0

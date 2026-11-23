@@ -149,7 +149,7 @@ async def create_game(body: GameConfigDto, user: CurrentUser, request: Request) 
             identities,
             to_setup(body.settings, len(body.players), plan),
             owner_user_id=owner_id,
-            evaluation_enabled=body.evaluation_enabled and user is not None and user.is_admin,
+            evaluation_enabled=body.evaluation_enabled and user is not None,
             claim_token_hash=claim_token and claim_token_hash(claim_token),
         )
 

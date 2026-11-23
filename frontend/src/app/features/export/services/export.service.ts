@@ -16,7 +16,7 @@ export class ExportService {
   private readonly document = inject(DOCUMENT);
   private readonly baseUrl = `${environment.httpApiUrl}/export`;
 
-  /** Saves the export; `frames` adds the camera frames of the account's test runs. */
+  /** Saves the export; `frames` adds the camera frames kept of the account's games. */
   async download(frames: boolean): Promise<void> {
     const response = await firstValueFrom(
       this.http.get(this.baseUrl, {

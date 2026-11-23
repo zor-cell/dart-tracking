@@ -251,10 +251,8 @@ async def _dispatch(
         case ClaimAnnouncerDto():
             await announcer_store.choose(game_id, connection.client.id)
             await _publish_announcer(game_id)
-        case SetEvaluationDto() if not connection.admin:
-            logger.warning("[socket] ignored set_evaluation from a non-admin connection")
         case SetEvaluationDto():
-            await _handle_set_evaluation(game_id, message)
+            await _handle_set_evaluation(connection, game_id, message)
         case SetTrackingPausedDto():
             await _handle_set_tracking_paused(game_id, message)
         case SetWinConfirmedDto():
@@ -402,12 +400,22 @@ async def _handle_game_command(
         await _announce(game, command.to_entity(), game.just_reset() - reset_before, index)
 
 
-async def _handle_set_evaluation(game_id: str, command: SetEvaluationDto) -> None:
-    """Mark the game as a test run, or stop. Pushed to the room, so the switch
-    reads the same on every device."""
+async def _handle_set_evaluation(
+    connection: Connection, game_id: str, command: SetEvaluationDto
+) -> None:
+    """Keep the game's frames, or stop and delete them; the owner's or an admin's
+    call. Pushed to the room, so the switch reads the same on every device."""
+    async with database.session_scope() as session:
+        owner = await game_repository.owner(session, game_id)
+    if not connection.admin and (owner is None or owner != connection.user_id):
+        logger.warning("[socket] ignored set_evaluation from a connection not owning %s", game_id)
+        return
     applied = await _apply(game_id, lambda game: game.set_evaluation(command.enabled))
-    if applied is not None and applied[1]:
-        await _publish_state(applied[0])
+    if applied is None or not applied[1]:
+        return
+    if not command.enabled:
+        await recorder.forget_frames(game_id)
+    await _publish_state(applied[0])
 
 
 async def _handle_set_tracking_paused(game_id: str, command: SetTrackingPausedDto) -> None:

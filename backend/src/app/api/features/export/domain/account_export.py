@@ -61,5 +61,5 @@ class AccountExport:
 
     @property
     def recorded_game_ids(self) -> list[str]:
-        """The games whose camera frames may belong in the export: test runs this account set up."""
+        """The games whose camera frames may belong in the export: those this account set up."""
         return [game.id for game in self.games if game.owned and game.evaluation_enabled]

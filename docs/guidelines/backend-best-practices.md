@@ -61,9 +61,10 @@ src/app/
   the service fills as it goes, plus the renderer that turns it into one image
   per stage. Only the CV features have one. The trace is read live — the
   evaluation takes its metrics from it — but the renderer runs only from the CLI
-  runners in `backend/scripts/`, which replay photos off disk (a test run's
-  throw series and failed calibrations among them). Those runners are entry
-  points, not app code.
+  runners in `backend/scripts/`, which replay photos off disk (a game's kept
+  throw series and failed calibrations among them, copied out of the Garage
+  bucket by `scripts/evaluation/pull.py`). Those runners are entry points, not
+  app code.
   - The detector owns a module-level `trace` that it replaces on each run, so
     `services/` imports `debug/trace.py`. That direction is deliberate;
     `trace.py` imports nothing from `services/`, so there is no cycle.
@@ -126,7 +127,7 @@ request and every running game's socket.
 - Database, Redis and mail are awaited through their async clients.
 - Work that takes more than a few milliseconds or grows with the account's data
   runs through `asyncio.to_thread`: password hashing, decoding camera frames, the
-  CV pipeline, voicing clips, writing test-run frames, tallying statistics,
+  CV pipeline, voicing clips, writing kept frames, tallying statistics,
   judging the evaluation and mapping large statistics DTOs.
 - Load on the loop first, then hand the loaded rows to one plain function in the
   thread (`_overview(rows)`, `_judged(logs, criteria)`), so the thread never

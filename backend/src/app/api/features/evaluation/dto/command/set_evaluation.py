@@ -4,7 +4,7 @@ from app.api.core.dto.base import CamelModel
 
 
 class SetEvaluationDto(CamelModel):
-    """Client -> server: mark this game as a test run, or stop, from any device."""
+    """Client -> server: keep this game's camera frames, or stop and delete them."""
 
     type: Literal["set_evaluation"]
     enabled: bool

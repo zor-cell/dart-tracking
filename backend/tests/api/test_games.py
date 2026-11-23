@@ -113,14 +113,10 @@ def test_rematch_cannot_seat_identities_of_another_game(alice, bob):
     assert response.status_code == 422
 
 
-@pytest.mark.parametrize(("admin", "enabled"), [(False, False), (True, True)])
-def test_only_admins_start_an_evaluation_run(alice, session, admin, enabled):
-    if admin:
-        session.make_admin(alice)
-
-    game = alice.new_game(guest("Ann"), evaluationEnabled=True)
-
-    assert game["evaluationEnabled"] is enabled
+def test_only_games_of_an_account_keep_frames(alice, anon):
+    assert alice.new_game(guest("Ann"), evaluationEnabled=True)["evaluationEnabled"] is True
+    assert alice.new_game(guest("Ann"), evaluationEnabled=False)["evaluationEnabled"] is False
+    assert anon.new_game(guest("Ann"), evaluationEnabled=True)["evaluationEnabled"] is False
 
 
 def status_of(api, game_id):

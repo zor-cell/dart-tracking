@@ -6,7 +6,6 @@ import { Dialog } from 'primeng/dialog';
 import { Message } from 'primeng/message';
 import { httpErrorMessage } from '../../../../core/notification/models/http-error-message';
 import { DIALOG_STYLE } from '../../../../core/view/models/dialog-style';
-import { AuthService } from '../../../auth/services/auth.service';
 import { ExportService } from '../../services/export.service';
 
 /** Confirms and downloads the account's data export; admins may add the camera frames. */
@@ -20,7 +19,6 @@ import { ExportService } from '../../services/export.service';
 export class ExportDialogComponent {
   protected readonly dialogStyle = DIALOG_STYLE;
   private readonly exports = inject(ExportService);
-  protected readonly isAdmin = inject(AuthService).isAdmin;
 
   readonly visible = model(false);
 
@@ -36,7 +34,7 @@ export class ExportDialogComponent {
     this.frames.disable();
     this.error.set(null);
     try {
-      await this.exports.download(this.isAdmin() && this.frames.value);
+      await this.exports.download(this.frames.value);
       this.visible.set(false);
     } catch (failure) {
       this.error.set(

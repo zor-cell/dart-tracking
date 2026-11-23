@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from app.api.features.auth.domain.user import User
-from app.api.features.evaluation.services.frame_buffer import recorded_files
+from app.api.features.evaluation.services.frame_store import recorded, store
 from app.api.features.export.dto.account_export import AccountFileDto, GamesFileDto
 from app.api.features.export.persistence.export_repository import ExportRows, assemble, repository
 from app.infrastructure import database
@@ -34,9 +34,11 @@ def _write(rows: ExportRows, frames: bool, exported_at: datetime) -> Path:
             games = GamesFileDto.from_entity(export)
             archive.writestr("games.json", games.model_dump_json(by_alias=True, indent=2))
             if frames:
+                files = store()
                 for game_id in export.recorded_game_ids:
-                    for file, arcname in recorded_files(game_id):
-                        archive.write(file, arcname, compress_type=zipfile.ZIP_STORED)
+                    for name, arcname in recorded(game_id):
+                        data = files.read(game_id, name) or b""
+                        archive.writestr(arcname, data, compress_type=zipfile.ZIP_STORED)
     except BaseException:
         path.unlink(missing_ok=True)
         raise

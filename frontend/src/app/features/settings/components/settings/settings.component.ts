@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { NgOptimizedImage, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
@@ -19,6 +26,7 @@ import { SettingsService } from '../../services/settings.service';
 import { FavouriteDoublesComponent } from '../favourite-doubles/favourite-doubles.component';
 import { LanguageSelectComponent } from '../language-select/language-select.component';
 import { BackLinkComponent } from '../../../../core/view/components/back-link/back-link.component';
+import { ConfirmService } from '../../../../core/view/services/confirm.service';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
 import { ThemeMode } from '../../../../core/theme/models/theme';
@@ -77,15 +85,12 @@ export class SettingsComponent {
   private readonly auth = inject(AuthService);
   private readonly appLanguage = inject(LanguageService).current;
 
-  /** The debug and recording switches make the server write camera images, so
-   * they are an admin's; the server masks them off for everyone else as well. */
+  /** Admins see the announcer's diagnostics. */
   protected readonly isAdmin = this.auth.isAdmin;
+  private readonly confirm = inject(ConfirmService);
 
-  /** What is actually being recorded: the running game's flag, or the setting
-   * the next one will adopt. */
-  protected readonly evaluationEnabled = computed(
-    () => this.game.state()?.evaluationEnabled ?? this.settings.evaluationEnabled(),
-  );
+  /** The frame switch as shown: the setting, off already while switching off is asked. */
+  protected readonly framesKept = linkedSignal(() => this.settings.evaluationEnabled());
 
   protected readonly maxVolume = MAX_VOLUME * 100;
   protected readonly volumePercent = computed(() => Math.round(this.announcer.volume() * 100));
@@ -128,14 +133,31 @@ export class SettingsComponent {
   }
 
   /**
-   * Remember the choice for the games this device opens, and apply it to the one
-   * already running. Wired here rather than in the settings service, which the
-   * game service depends on and so cannot depend on in turn.
+   * Keep frames from now on, or stop after asking, since that deletes the kept ones.
+   * Applied to the running game too, which the server takes from its owner only.
    */
-  protected setEvaluationEnabled(enabled: boolean): void {
-    this.settings.setEvaluationEnabled(enabled);
+  protected setFramesKept(kept: boolean): void {
+    this.framesKept.set(kept);
+    if (kept) {
+      this.applyFramesKept(true);
+      return;
+    }
+    this.confirm.ask(
+      $localize`:@@settings.framesOff.title:Kamerabilder nicht mehr speichern?`,
+      $localize`:@@settings.framesOff.message:Die bisher gespeicherten Kamerabilder deiner Spiele werden gelöscht.`,
+      $localize`:@@settings.framesOff.action:Ausschalten`,
+      () => this.applyFramesKept(false),
+      false,
+      () => this.framesKept.set(this.settings.evaluationEnabled()),
+    );
+  }
+
+  /** Wired here rather than in the settings service, which the game service
+   * depends on and so cannot depend on in turn. */
+  private applyFramesKept(kept: boolean): void {
+    this.settings.setEvaluationEnabled(kept);
     if (this.game.state()) {
-      this.game.setEvaluation(enabled);
+      this.game.setEvaluation(kept);
     }
   }
 }

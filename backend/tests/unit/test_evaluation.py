@@ -174,12 +174,11 @@ def test_summary_counts_thrown_and_booked_darts_apart():
     assert accuracy.distances == (150.0 - 107.4,)
 
 
-def logged(versions: tuple[int, ...], *, mode: int = 501, test_run: bool = False) -> LoggedGame:
+def logged(versions: tuple[int, ...], *, mode: int = 501) -> LoggedGame:
     return LoggedGame(
         id="g",
         mode=mode,
         created_at=datetime(2026, 10, 15, tzinfo=UTC),
-        evaluation_enabled=test_run,
         tracker_versions=versions,
     )
 
@@ -194,8 +193,6 @@ def logged(versions: tuple[int, ...], *, mode: int = 501, test_run: bool = False
         (EvaluationFilter(version_from=5), logged((6,)), True),
         (EvaluationFilter(version_to=5), logged(()), False),
         (EvaluationFilter(modes=(GameMode.X01_301,)), logged((5,)), False),
-        (EvaluationFilter(test_run=True), logged((5,), test_run=True), True),
-        (EvaluationFilter(test_run=False), logged((5,), test_run=True), False),
         (EvaluationFilter(since=datetime(2026, 10, 16, tzinfo=UTC)), logged((5,)), False),
         (EvaluationFilter(until=datetime(2026, 10, 16, tzinfo=UTC)), logged((5,)), True),
     ],
@@ -286,3 +283,4 @@ def test_a_correction_in_a_closed_visit_lands_in_that_visit():
     assert [(e.value, e.multiplier) for e in first.claimed] == [(20, 1), (5, 1), (1, 1)]
     assert first.corrected and not second.corrected
     assert [(e.value, e.multiplier) for e in second.accepted] == [(19, 1)]
+

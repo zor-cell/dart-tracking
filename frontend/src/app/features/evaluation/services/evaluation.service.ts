@@ -62,10 +62,9 @@ export function filterParams(filter: EvaluationFilter): HttpParams {
   for (const mode of filter.modes) {
     params = params.append('mode', mode);
   }
-  const values: Record<string, number | boolean | null> = {
+  const values: Record<string, number | null> = {
     versionFrom: filter.versionFrom,
     versionTo: filter.versionTo,
-    testRun: filter.testRun,
     tiltFrom: filter.tiltFrom,
     tiltTo: filter.tiltTo,
   };

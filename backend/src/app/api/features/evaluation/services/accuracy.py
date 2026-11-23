@@ -22,7 +22,6 @@ async def judged_games(
     session: AsyncSession,
     *,
     game_ids: list[str] | None = None,
-    test_runs_only: bool = False,
     include_unfinished: bool = False,
     min_version: int | None = None,
     version: int | None = None,
@@ -33,7 +32,6 @@ async def judged_games(
     """
     games = await repository.logged_games(
         session,
-        evaluation_only=test_runs_only and not game_ids,
         finished_only=not include_unfinished and not game_ids,
         game_ids=game_ids or None,
     )
@@ -69,7 +67,7 @@ def _judged(
 
 async def versions(session: AsyncSession) -> list[int]:
     """The tracker versions the finished logged games were recorded with, newest first."""
-    games = await repository.logged_games(session, evaluation_only=False, finished_only=True)
+    games = await repository.logged_games(session, finished_only=True)
     return sorted({version for game in games for version in game.tracker_versions}, reverse=True)
 
 

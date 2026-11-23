@@ -3,7 +3,7 @@ Alembic and the app. Add a line whenever a feature gains a table.
 """
 
 from app.api.features.auth.persistence import user  # noqa: F401
-from app.api.features.evaluation.persistence import game_event  # noqa: F401
+from app.api.features.evaluation.persistence import frame_deletion, game_event  # noqa: F401
 from app.api.features.game.persistence import (  # noqa: F401
     clock_settings,
     cricket_settings,

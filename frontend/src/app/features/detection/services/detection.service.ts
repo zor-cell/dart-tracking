@@ -113,10 +113,10 @@ export class DetectionService {
   /** Send a triggered throw frame; the result arrives asynchronously. */
   async submitFrame(frame: Blob, trigger: ThrowTriggerDto | null): Promise<void> {
     this.clearFeedback();
-    const testRun = this.game.state()?.evaluationEnabled ?? false;
+    const kept = this.game.state()?.evaluationEnabled ?? false;
     await this.socket.sendFrame('detection_frame', frame, {
       trigger:
-        trigger && !testRun ? { ...trigger, timeline: [], snapshots: [] } : (trigger ?? undefined),
+        trigger && !kept ? { ...trigger, timeline: [], snapshots: [] } : (trigger ?? undefined),
       advanceOnPull: this.settings.advanceOnPull(),
     });
   }
