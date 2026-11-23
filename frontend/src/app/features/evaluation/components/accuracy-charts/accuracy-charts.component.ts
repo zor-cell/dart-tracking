@@ -22,7 +22,7 @@ import {
   partSeries,
   partsOf,
 } from '../../models/chart-parts';
-import { OUTCOME_COLORS, OUTCOME_LABELS } from '../../models/outcome-colors';
+import { OUTCOME_COLORS, OUTCOME_LABELS, SNAPPED_COLOR } from '../../models/outcome-colors';
 import { BarChartComponent, BarRow, BarSeries } from '../bar-chart/bar-chart.component';
 import { chartTheme } from '../../../../core/charts/models/chart-plugins';
 
@@ -52,7 +52,11 @@ export class AccuracyChartsComponent {
     fieldShare: $localize`:@@eval.axis.fieldShare:Anteil der Darts im Feld`,
     images: $localize`:@@eval.axis.images:Bilder`,
   };
-  protected readonly offBySeries: BarSeries[] = [{ label: '', color: OUTCOME_COLORS.wrong }];
+  /** The mis-scored darts, and apart from them those whose tip a correction moved into the field. */
+  protected readonly offBySeries: BarSeries[] = [
+    { label: OUTCOME_LABELS.wrong, color: OUTCOME_COLORS.wrong },
+    { label: $localize`:@@eval.snappedTag:Verschoben`, color: SNAPPED_COLOR },
+  ];
   /** Empty detections are no outcome, so they stay neutral. */
   protected readonly failureSeries: BarSeries[] = [
     { label: '', color: chartTheme(inject(DOCUMENT)).muted },
@@ -134,11 +138,17 @@ export class AccuracyChartsComponent {
   protected readonly offByRows = computed<BarRow[]>(() => {
     const bands = this.summary().bands;
     const total = bands.reduce((sum, band) => sum + band.darts, 0);
-    return bands.map(({ label, darts }) => ({
+    if (total === 0) {
+      return [];
+    }
+    return bands.map(({ label, darts, snapped }) => ({
       label: bandLabel(label),
-      values: [darts],
+      values: [darts - snapped, snapped],
       tip: this.percent(darts, total),
-      tooltip: [$localize`:@@eval.dartCount:${darts}:count: Darts`],
+      tooltip: [
+        $localize`:@@eval.dartCount:${darts}:count: Darts`,
+        ...(snapped ? [$localize`:@@eval.snappedOf:davon ${snapped}:count: verschoben`] : []),
+      ],
     }));
   });
 
@@ -152,23 +162,6 @@ export class AccuracyChartsComponent {
       tip: this.percent(count, total),
       tooltip: [$localize`:@@eval.imageCount:${count}:count: Bilder`],
     }));
-  });
-
-  /** How many of the mis-scored darts a correction keeps the tip of, moved into its field. */
-  protected readonly snappedNote = computed(() => {
-    const { snapped, snapMm } = this.summary();
-    const mm = formatNumber(snapMm, this.locale, '1.0-1');
-    return snapped === 1
-      ? $localize`:@@eval.snappedOne:1 davon lag höchstens ${mm}:mm: mm daneben und die Spitze wurde ins Feld verschoben.`
-      : $localize`:@@eval.snapped:${snapped}:count: davon lagen höchstens ${mm}:mm: mm daneben und die Spitze wurde ins Feld verschoben.`;
-  });
-
-  /** Mean, median and largest distance, shown above the bands. */
-  protected readonly offByNotes = computed(() => {
-    const { meanOffBy, medianOffBy, worstOffBy } = this.summary();
-    const mm = (value: number | null) =>
-      value === null ? '–' : `${formatNumber(value, this.locale, '1.1-1')} mm`;
-    return [`Ø ${mm(meanOffBy)}`, `Median ${mm(medianOffBy)}`, `max ${mm(worstOffBy)}`];
   });
 
   private percent(count: number, base: number): string {

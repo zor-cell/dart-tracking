@@ -149,7 +149,7 @@
     } @else if (total(); as total) {
       <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
         <p-tabpanel value="overview">
-          <app-accuracy-summary [summary]="total" [tips]="tips()" [tipOutcomes]="errorOutcomes">
+          <app-accuracy-summary [summary]="total">
             @if (games().length > 1) {
               <section class="panel">
                 <h2 class="panel__title" i18n="@@game.replay.race">Verlauf</h2>

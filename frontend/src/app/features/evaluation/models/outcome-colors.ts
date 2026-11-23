@@ -9,6 +9,9 @@ export const OUTCOME_COLORS: Record<DartOutcome, string> = {
   phantom: SERIES_COLORS[6],
 };
 
+/** A mis-scored dart whose tip a correction moved into its field. */
+export const SNAPPED_COLOR = SERIES_COLORS[0];
+
 /** What the outcomes are called on the page, in reading order. */
 export const OUTCOME_LABELS: Record<DartOutcome, string> = {
   correct: $localize`:@@eval.correct:Korrekt`,

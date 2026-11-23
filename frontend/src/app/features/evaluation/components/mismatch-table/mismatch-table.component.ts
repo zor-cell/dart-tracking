@@ -7,12 +7,15 @@ import { EmptyStateComponent } from '../../../../core/view/components/empty-stat
 import { PAGE_SIZE } from '../../../../core/view/models/page-size';
 import { SHORT_DATE } from '../../../../core/i18n/models/date-format';
 
-const OUTCOME_TAGS: Record<DartOutcome, { label: string; severity: 'danger' | 'warn' | 'secondary' | 'success' }> = {
+type OutcomeTag = { label: string; severity: 'danger' | 'warn' | 'secondary' | 'success' | 'info' };
+
+const OUTCOME_TAGS: Record<DartOutcome, OutcomeTag> = {
   correct: { label: $localize`:@@eval.correct:Korrekt`, severity: 'success' },
   wrong: { label: $localize`:@@eval.wrong:Falsch`, severity: 'danger' },
   missed: { label: $localize`:@@eval.missed:Verpasst`, severity: 'warn' },
   phantom: { label: $localize`:@@eval.phantom:Phantom`, severity: 'secondary' },
 };
+const SNAPPED_TAG: OutcomeTag = { label: $localize`:@@eval.snappedTag:Verschoben`, severity: 'info' };
 
 /** Every dart the tracker got wrong, nearest to its segment first, paged on the page. */
 @Component({
@@ -39,7 +42,7 @@ export class MismatchTableComponent {
     this.mismatches().map((mismatch, index) => ({
       ...mismatch,
       index,
-      tag: OUTCOME_TAGS[mismatch.outcome],
+      tag: mismatch.snapped ? SNAPPED_TAG : OUTCOME_TAGS[mismatch.outcome],
       playedAt: this.playedAt().get(mismatch.gameId) ?? null,
     })),
   );

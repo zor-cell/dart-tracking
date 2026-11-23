@@ -104,9 +104,9 @@ export function failureColor(failure: string): string {
 }
 
 /** The distance bands from near to far, light to dark red. */
-export const BAND_COLORS = ['#f5bdb6', '#e57a6f', '#c42b2b', '#7a1414'] as const;
+export const BAND_COLORS = ['#f5bdb6', '#e57a6f', '#d24a40', '#a51f1f', '#6b1111'] as const;
 
-/** A band's label as the page writes it: `<= 5 mm` as `≤ 5 mm`, `5 - 20 mm` as `5–20 mm`. */
+/** A band's label as the page writes it: `<= 2 mm` as `≤ 2 mm`, `2 - 10 mm` as `2–10 mm`. */
 export function bandLabel(label: string): string {
   return label.replace('<=', '≤').replace(' - ', '–');
 }

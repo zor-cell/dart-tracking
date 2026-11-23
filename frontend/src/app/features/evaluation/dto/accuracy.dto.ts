@@ -1,9 +1,11 @@
 import { GameMode } from '../../game/models/game-mode';
 
-/** One band of the off-by distribution, e.g. `<= 5 mm`. */
+/** One band of the off-by distribution, e.g. `<= 2 mm`. */
 export interface DistanceBandDto {
   readonly label: string;
   readonly darts: number;
+  /** Of those, the darts whose tip a correction moved into the field. */
+  readonly snapped: number;
 }
 
 export type FieldKind = 'single' | 'double' | 'triple' | 'outside';
@@ -33,12 +35,6 @@ export interface AccuracySummaryDto {
   readonly missedZeros: number;
   readonly phantom: number;
   readonly bands: readonly DistanceBandDto[];
-  readonly meanOffBy: number | null;
-  readonly medianOffBy: number | null;
-  readonly worstOffBy: number | null;
-  /** Of those, the darts within `snapMm` (mm), whose tip a correction moves into its field. */
-  readonly snapped: number;
-  readonly snapMm: number;
   readonly fields: readonly FieldErrorsDto[];
 }
 
@@ -90,6 +86,8 @@ export interface MismatchDto {
   readonly tracked: string | null;
   readonly expected: string | null;
   readonly offBy: number | null;
+  /** Its tip was moved into the expected field. */
+  readonly snapped: boolean;
   readonly fragments: number | null;
 }
 
@@ -107,7 +105,6 @@ export interface AccuracyReportDto {
   readonly groups: readonly GroupBreakdownDto[];
   readonly failures: readonly FailureCountDto[];
   readonly mismatches: readonly MismatchDto[];
-  readonly tips: readonly TipDto[];
 }
 
 /** One game on its own, with the darts the tracker got wrong in it. */

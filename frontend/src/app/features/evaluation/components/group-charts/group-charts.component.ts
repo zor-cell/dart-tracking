@@ -122,7 +122,7 @@ export class GroupChartsComponent {
         label,
         values: summary.bands.map((band) => (100 * band.darts) / total),
         tip: darts(total),
-        tooltip: [`Ø ${this.mm(summary.meanOffBy)}`, `Median ${this.mm(summary.medianOffBy)}`],
+        tooltip: [darts(total)],
       };
     }),
   );
@@ -167,10 +167,6 @@ export class GroupChartsComponent {
     return count === 1
       ? $localize`:@@eval.gameCountOne:1 Spiel`
       : $localize`:@@eval.gameCount:${count}:count: Spiele`;
-  }
-
-  private mm(value: number | null): string {
-    return value === null ? '–' : `${formatNumber(value, this.locale, '1.1-1')} mm`;
   }
 
   private percent(count: number, base: number): string {

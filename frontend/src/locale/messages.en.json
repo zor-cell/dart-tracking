@@ -710,7 +710,6 @@
     "eval.group.none": "No game carries this detail.",
     "eval.group.rate": "Rate",
     "eval.mismatch.title": "Mismatches",
-    "eval.mismatch.hint": "Every dart the camera did not book correctly, the closest first",
     "eval.mismatch.when": "Throw",
     "eval.mismatch.tracked": "Detected",
     "eval.mismatch.expected": "Expected",
@@ -899,7 +898,7 @@
     "game.rules.personal.2": "You throw a block with a set number of darts at each of these fields, and at all of them in turn at the end.",
     "game.rules.personal.3": "After the last dart you see each field's rate next to the one before. The training needs an account.",
     "game.scoreboard.blockHitRate": "Hit rate in this block",
-    "eval.snappedOne": "1 of them was at most {$mm} mm off and its tip was moved into the field.",
-    "eval.snapped": "{$count} of them were at most {$mm} mm off and their tip was moved into the field."
+    "eval.snappedOf": "of which {$count} moved",
+    "eval.snappedTag": "Moved"
   }
 }

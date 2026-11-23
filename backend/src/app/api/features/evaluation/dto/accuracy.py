@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Self
 
 from app.api.core.dto.base import CamelModel
-from app.api.features.game.domain.correction import SNAP_MM
 from app.api.features.calibration.domain.camera_angle import CameraAngle
 from app.api.features.evaluation.domain.accuracy import (
     Accuracy,
@@ -23,6 +22,7 @@ from app.api.features.evaluation.domain.breakdown import (
 class DistanceBandDto(CamelModel):
     label: str
     darts: int
+    snapped: int
 
 
 class FieldErrorsDto(CamelModel):
@@ -61,12 +61,6 @@ class AccuracySummaryDto(CamelModel):
     # Off-by distances in millimetres, over the mis-scored darts that carried a
     # located tip.
     bands: list[DistanceBandDto]
-    mean_off_by: float | None
-    median_off_by: float | None
-    worst_off_by: float | None
-    # Of those, the darts within `snap_mm` (mm), whose tip a correction moves into its field.
-    snapped: int
-    snap_mm: float
     fields: list[FieldErrorsDto]
 
     @classmethod
@@ -83,14 +77,9 @@ class AccuracySummaryDto(CamelModel):
             missed_zeros=accuracy.missed_zeros,
             phantom=accuracy.outcomes[DartOutcome.PHANTOM],
             bands=[
-                DistanceBandDto(label=band.label, darts=band.darts)
+                DistanceBandDto(label=band.label, darts=band.darts, snapped=band.snapped)
                 for band in accuracy.bands
             ],
-            mean_off_by=_rounded(accuracy.mean_off_by),
-            median_off_by=_rounded(accuracy.median_off_by),
-            worst_off_by=_rounded(accuracy.worst_off_by),
-            snapped=accuracy.snapped,
-            snap_mm=SNAP_MM,
             fields=[FieldErrorsDto.from_entity(field) for field in accuracy.fields],
         )
 
@@ -177,6 +166,7 @@ class MismatchDto(CamelModel):
     tracked: str | None
     expected: str | None
     off_by: float | None
+    snapped: bool  # its tip was moved into the expected field
     fragments: int | None
 
     @classmethod
@@ -189,6 +179,7 @@ class MismatchDto(CamelModel):
             tracked=judgement.tracked.label if judgement.tracked else None,
             expected=judgement.expected_label,
             off_by=_rounded(judgement.off_by_mm),
+            snapped=judgement.snapped,
             fragments=judgement.fragments,
         )
 
@@ -215,15 +206,13 @@ class TipDto(CamelModel):
 
 class AccuracyReportDto(CamelModel):
     """Totals plus every game on its own, so the page switches without asking
-    the server again, and the splits of the report over all of them. Its tips
-    leave the correct darts out; a single game's report keeps them."""
+    the server again, and the splits of the report over all of them."""
 
     total: AccuracySummaryDto
     games: list[GameAccuracyDto]
     groups: list[GroupBreakdownDto]
     failures: list[FailureCountDto]
     mismatches: list[MismatchDto]
-    tips: list[TipDto]
 
     @classmethod
     def from_entity(cls, overview: AccuracyOverview, breakdowns: Breakdowns) -> Self:
@@ -234,7 +223,7 @@ class AccuracyReportDto(CamelModel):
                 GroupBreakdownDto.from_entity(kind, rows)
                 for kind, rows in breakdowns.groups.items()
             ],
-            **_issues(breakdowns, correct_tips=False),
+            **_issues(breakdowns),
         )
 
 
@@ -249,19 +238,16 @@ class GameReportDto(CamelModel):
     @classmethod
     def from_entity(cls, game: GameAccuracy, breakdowns: Breakdowns) -> Self:
         return cls(
-            game=GameAccuracyDto.from_entity(game), **_issues(breakdowns, correct_tips=True)
+            game=GameAccuracyDto.from_entity(game),
+            tips=[TipDto.from_entity(j) for j in breakdowns.tips],
+            **_issues(breakdowns),
         )
 
 
-def _issues(breakdowns: Breakdowns, *, correct_tips: bool) -> dict[str, list]:
+def _issues(breakdowns: Breakdowns) -> dict[str, list]:
     return {
         "failures": FailureCountDto.all_of(breakdowns.failures),
         "mismatches": [MismatchDto.from_entity(j) for j in breakdowns.mismatches],
-        "tips": [
-            TipDto.from_entity(j)
-            for j in breakdowns.tips
-            if correct_tips or j.outcome is not DartOutcome.CORRECT
-        ],
     }
 
 

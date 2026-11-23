@@ -55,8 +55,8 @@ def distance_table(accuracy: Accuracy) -> list[str]:
     """How far the mis-scored darts landed from where they belonged."""
     if not accuracy.distances:
         return ["No mis-scored dart carried a located tip."]
-    lines = ["| off by | darts |", "|---|---|"]
-    lines += [f"| {band.label} | {band.darts} |" for band in accuracy.bands]
+    lines = ["| off by | darts | snapped |", "|---|---|---|"]
+    lines += [f"| {band.label} | {band.darts} | {band.snapped} |" for band in accuracy.bands]
     return lines + [
         "",
         f"Mean {accuracy.mean_off_by:.1f} mm, median "
@@ -122,7 +122,7 @@ def mismatch_table(breakdowns: Breakdowns) -> list[str]:
     if not wrong:
         return ["No mismatches."]
     near = sum(1 for j in wrong if j.off_by_mm is not None and j.off_by_mm <= NEAR_MISS_MM)
-    snapped = sum(1 for j in wrong if j.off_by_mm is not None and j.off_by_mm <= SNAP_MM)
+    snapped = sum(1 for j in wrong if j.snapped)
     lines = [
         f"{near} of {len(wrong)} mismatches are within {NEAR_MISS_MM:.0f} mm of the "
         f"expected segment, {snapped} within {SNAP_MM:g} mm: their tip is snapped into it.",
@@ -134,7 +134,7 @@ def mismatch_table(breakdowns: Breakdowns) -> list[str]:
         off_by = "-" if j.off_by_mm is None else f"{j.off_by_mm:.1f} mm"
         lines.append(
             f"| {j.key} | {j.tracked.label if j.tracked else '-'} | {j.expected_label or '-'} "
-            f"| {j.outcome.value} | {off_by} "
+            f"| {'snapped' if j.snapped else j.outcome.value} | {off_by} "
             f"| {j.fragments if j.fragments is not None else '-'} |"
         )
     return lines

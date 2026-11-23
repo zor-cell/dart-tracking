@@ -16,13 +16,16 @@ SNAP_MM = 2.0
 SNAP_INSET_MM = 0.5
 
 
+def keeps_tip(position: tuple[float, float], segment: Segment) -> bool:
+    """Whether a tip at `position` is moved into `segment` when the dart is corrected to it."""
+    return segment.multiplier != 0 and distance_to_segment(*position, segment) <= SNAP_MM
+
+
 def corrected(tracked: Dart, entered: Dart) -> Dart:
     """`entered` in place of `tracked`, with the tracked tip moved just inside the
     entered field when it lay within `SNAP_MM` of it."""
-    if tracked.position is None or tracked.snapped or entered.multiplier == 0:
-        return entered
     segment = Segment(entered.value, entered.multiplier)
-    if distance_to_segment(*tracked.position, segment) > SNAP_MM:
+    if tracked.position is None or tracked.snapped or not keeps_tip(tracked.position, segment):
         return entered
     position = point_inside(*tracked.position, segment, SNAP_INSET_MM)
     return replace(entered, position=position, snapped=True)

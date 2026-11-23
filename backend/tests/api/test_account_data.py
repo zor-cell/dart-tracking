@@ -389,7 +389,7 @@ def test_game_report_shows_one_game_and_its_mismatches(alice, session):
     assert alice.get(f"/evaluation/games/{own_game(alice)}").status_code == 404
 
 
-def test_accuracy_report_leaves_the_correct_tips_out(alice, session):
+def test_only_the_game_report_carries_the_tips(alice, session):
     K = GameEventKind
     session.make_admin(alice)
     game_id = own_game(alice)
@@ -406,7 +406,7 @@ def test_accuracy_report_leaves_the_correct_tips_out(alice, session):
     overview = alice.get("/evaluation/accuracy").json()
     game = alice.get(f"/evaluation/games/{game_id}").json()
 
-    assert [(t["tracked"], t["outcome"]) for t in overview["tips"]] == [("S20", "wrong")]
+    assert "tips" not in overview
     assert len(game["tips"]) == 2
 
 

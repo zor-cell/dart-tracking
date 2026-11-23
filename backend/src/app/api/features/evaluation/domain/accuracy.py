@@ -19,14 +19,15 @@ from app.api.features.evaluation.domain.alignment import (
     outcome_of,
 )
 from app.api.features.calibration.domain.camera_angle import CameraAngle
-from app.api.features.game.domain.correction import SNAP_MM
+from app.api.features.game.domain.correction import keeps_tip
 from app.api.features.evaluation.domain.game_event import GameEvent, GameEventKind
 from app.api.features.evaluation.domain.visit_replay import Visit
 
 # Upper bound of each band, in millimetres from the expected segment.
 DISTANCE_BUCKETS: tuple[tuple[str, float], ...] = (
-    ("<= 5 mm", 5.0),
-    ("5 - 20 mm", 20.0),
+    ("<= 2 mm", 2.0),
+    ("2 - 10 mm", 10.0),
+    ("10 - 20 mm", 20.0),
     ("20 - 50 mm", 50.0),
     ("> 50 mm", float("inf")),
 )
@@ -65,6 +66,14 @@ class Judgement:
         if self.tracked.position is None or segment is None:
             return None
         return distance_to_segment(*self.tracked.position, segment)
+
+    @property
+    def snapped(self) -> bool:
+        """Whether correcting this dart moved its tracked tip into the expected field."""
+        segment = self.expected_segment
+        if self.off_by_mm is None or self.tracked is None or self.tracked.position is None:
+            return False
+        return segment is not None and keeps_tip(self.tracked.position, segment)
 
     @property
     def fragments(self) -> int | None:
@@ -111,6 +120,7 @@ class DistanceBand:
 
     label: str
     darts: int
+    snapped: int  # of those, the darts whose tip a correction moved into the field
 
 
 @dataclass(frozen=True)
@@ -124,6 +134,8 @@ class Accuracy:
     missed_zeros: int  # missed darts the players booked as a zero
     # Off-by distances of the mis-scored darts that carried a located tip.
     distances: tuple[float, ...]
+    # The off-by distances of those whose tip a correction moved into the field.
+    snapped_distances: tuple[float, ...] = ()
     fields: tuple[FieldErrors, ...] = ()
 
     @property
@@ -151,12 +163,13 @@ class Accuracy:
     @property
     def bands(self) -> list[DistanceBand]:
         bands = []
-        low = 0.0
+        low = -1.0  # below zero, so a tip on the field's edge counts in the first band
         for label, high in DISTANCE_BUCKETS:
             bands.append(
                 DistanceBand(
                     label=label,
                     darts=sum(1 for d in self.distances if low < d <= high),
+                    snapped=sum(1 for d in self.snapped_distances if low < d <= high),
                 )
             )
             low = high
@@ -173,11 +186,6 @@ class Accuracy:
     @property
     def worst_off_by(self) -> float | None:
         return max(self.distances) if self.distances else None
-
-    @property
-    def snapped(self) -> int:
-        """Mis-scored darts close enough to their field that a correction keeps their tip."""
-        return sum(1 for distance in self.distances if distance <= SNAP_MM)
 
 
 def judge(game_id: str, visit: Visit) -> list[Judgement]:
@@ -219,6 +227,11 @@ def summarise(games: int, visits: list[Visit], judgements: list[Judgement]) -> A
             judgement.off_by_mm
             for judgement in judgements
             if judgement.off_by_mm is not None
+        ),
+        snapped_distances=tuple(
+            judgement.off_by_mm
+            for judgement in judgements
+            if judgement.off_by_mm is not None and judgement.snapped
         ),
         fields=field_errors(judgements),
     )

@@ -233,6 +233,40 @@ def test_an_old_correction_keeps_a_tip_on_the_edge_of_its_field(tip, kept):
     )
 
 
+def test_the_distance_bands_count_the_darts_a_correction_moved_into_their_field():
+    visits = replay(
+        [
+            event(K.DETECTED, (0, 0), position=(0.0, 171.0)),
+            event(K.DART_REPLACED, (20, 2), dart_index=0),
+            event(K.NEXT_PLAYER, camera_armed=True),
+            event(K.DETECTED, (20, 2), position=(0.0, 169.5), turn=1),
+            event(K.DART_REPLACED, (0, 0), dart_index=0, turn=1),
+            event(K.NEXT_PLAYER, camera_armed=True),
+            event(K.DETECTED, (20, 1), position=(0.0, 150.0), turn=2),
+            event(K.DART_REPLACED, (20, 2), dart_index=0, turn=2),
+            event(K.NEXT_PLAYER, camera_armed=True),
+        ]
+    )
+    judgements = [j for visit in visits for j in judge("game", visit)]
+    accuracy = summarise(1, visits, judgements)
+
+    assert [j.snapped for j in judgements] == [True, False, False]
+    assert [(band.darts, band.snapped) for band in accuracy.bands] == [(2, 1), (1, 0), (0, 0), (0, 0), (0, 0)]
+
+
+def test_a_tip_on_the_edge_of_the_expected_field_counts_in_the_first_band():
+    visits = replay(
+        [
+            event(K.DETECTED, (20, 1), position=(0.0, 165.0)),
+            event(K.DART_REPLACED, (20, 2), dart_index=0),
+            event(K.NEXT_PLAYER, camera_armed=True),
+        ]
+    )
+    accuracy = summarise(1, visits, [j for visit in visits for j in judge("game", visit)])
+
+    assert [(band.darts, band.snapped) for band in accuracy.bands][0] == (1, 1)
+
+
 def test_a_correction_in_a_closed_visit_lands_in_that_visit():
     visits = replay(
         [

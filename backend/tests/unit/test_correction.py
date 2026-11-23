@@ -53,11 +53,21 @@ def test_a_tip_just_outside_the_booked_field_is_kept_inside_it():
     assert fixed.position == pytest.approx((0.0, 160.5))
 
 
+def test_a_tip_just_outside_the_board_is_kept_in_the_double_it_was_entered_as():
+    tracked = Dart(value=0, multiplier=0, position=(0.0, DOUBLE_OUTER_RADIUS + 1.5))
+
+    fixed = corrected(tracked, Dart(value=20, multiplier=2))
+
+    assert fixed.snapped
+    assert distance_to_segment(*fixed.position, D20) == 0
+
+
 @pytest.mark.parametrize(
     ("tracked", "entered"),
     [
         (Dart(value=20, multiplier=1, position=(0.0, 150.0)), Dart(value=20, multiplier=2)),
         (Dart(value=20, multiplier=1, position=(0.0, 165.0)), Dart(value=0, multiplier=0)),
+        (Dart(value=20, multiplier=2, position=(0.0, DOUBLE_OUTER_RADIUS - 1)), Dart(value=0, multiplier=0)),
         (Dart(value=20, multiplier=1), Dart(value=20, multiplier=2)),
         (Dart(value=20, multiplier=2, position=(0.0, 160.5), snapped=True), Dart(value=20, multiplier=1)),
     ],

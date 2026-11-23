@@ -37,7 +37,7 @@
 
 <section class="panel">
   <h2 class="panel__title">{{ titles.offBy }}</h2>
-  @if (summary().meanOffBy === null) {
+  @if (offByRows().length === 0) {
     <p class="panel__hint" i18n="@@eval.offByNone">
       Kein falsch gewerteter Dart trug eine lokalisierte Spitze.
     </p>
@@ -45,11 +45,9 @@
     <app-bar-chart
       [rows]="offByRows()"
       [series]="offBySeries"
-      [notes]="offByNotes()"
       [label]="titles.offBy"
       [axis]="axes.darts"
     />
-    <p class="panel__hint">{{ snappedNote() }}</p>
   }
 </section>
 
