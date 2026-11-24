@@ -2,6 +2,7 @@ import asyncio
 import threading
 from contextlib import asynccontextmanager
 from datetime import datetime
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -208,6 +209,7 @@ def test_sweeping_frames_leaves_the_event_loop_free(monkeypatch):
     async def pending(*_args):
         return queue.pop(0)
 
+    monkeypatch.setattr(frame_sweeper, "get_settings", lambda: SimpleNamespace(frame_retention_days=365))
     monkeypatch.setattr(frame_sweeper.database, "session_scope", no_session)
     monkeypatch.setattr(frame_sweeper.repository, "expire", nothing)
     monkeypatch.setattr(frame_sweeper.repository, "pending", pending)
