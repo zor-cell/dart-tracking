@@ -669,7 +669,7 @@ def test_socket_scores_a_throw_series_like_the_pipeline_does(camera):
         assert device.next("calibration_result")["success"] is True
 
         reported, booked = [], 0
-        for _, path in shots[1:]:
+        for _, path in frames[1:]:
             device.send("detection_frame", image=encoded(path))
             result = device.next("detection_result")
             reported.append(result["segment"] or result["failure"])
