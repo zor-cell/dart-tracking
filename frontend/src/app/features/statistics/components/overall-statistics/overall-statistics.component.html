@@ -46,33 +46,6 @@
   </dl>
 </section>
 
-<section class="panel">
-  <h2 class="panel__title" i18n="@@stats.all.byGame">Nach Spielart</h2>
-  <ul class="bars">
-    @for (row of variants(); track row.key) {
-      <li>
-        @if (row.game; as game) {
-          <button type="button" class="bar bar--link" (click)="pick.emit(game)">
-            <ng-container *ngTemplateOutlet="barContent; context: { $implicit: row }" />
-            <i class="pi pi-angle-right bar__go" aria-hidden="true"></i>
-          </button>
-        } @else {
-          <div class="bar">
-            <ng-container *ngTemplateOutlet="barContent; context: { $implicit: row }" />
-            <span class="bar__go"></span>
-          </div>
-        }
-      </li>
-    }
-  </ul>
-</section>
-
-<ng-template #barContent let-row>
-  <span class="bar__label">{{ row.label }}</span>
-  <span class="bar__track"><span class="bar__fill" [style.width.%]="row.share * 100"></span></span>
-  <span class="bar__figure">{{ row.figure }}</span>
-</ng-template>
-
 <app-hit-pattern
   [fields]="totals.fields"
   [locatedFields]="totals.locatedFields"
@@ -81,40 +54,17 @@
   <h3 class="rings__title" i18n="@@stats.all.rings">Ringe</h3>
   <ul class="bars">
     @for (row of rings(); track row.key) {
-      <li>
-        <div class="bar">
-          <ng-container *ngTemplateOutlet="barContent; context: { $implicit: row }" />
-          <span class="bar__go"></span>
-        </div>
+      <li class="bar">
+        <span class="bar__label">{{ row.label }}</span>
+        <span class="bar__track"><span class="bar__fill" [style.width.%]="row.share * 100"></span></span>
+        <span class="bar__figure">{{ row.figure }}</span>
       </li>
     }
   </ul>
 </app-hit-pattern>
 
-<section class="panel">
-  <h2 class="panel__title" i18n="@@stats.all.activity">Aktivität</h2>
-  <p-chart
-    type="bar"
-    height="10rem"
-    [data]="weeksData()"
-    [options]="weeksOptions()"
-    ariaLabel="Darts pro Woche"
-    i18n-ariaLabel="@@stats.all.dartsPerWeek"
-  />
-  <dl class="stat-grid">
-    <div class="stat">
-      <dt class="stat__label" i18n="@@stats.all.streak">Längste Serie</dt>
-      <dd class="stat__value" i18n="@@stats.all.days">{totals.longestStreak, plural, =1 {1 Tag} other {{{ totals.longestStreak }} Tage}}</dd>
-      <dd class="stat__hint" i18n="@@stats.all.streakHint">am Stück gespielt</dd>
-    </div>
-    <div class="stat">
-      <dt class="stat__label" i18n="@@stats.all.busiest">Aktivster Tag</dt>
-      @if (totals.busiestDay; as day) {
-        <dd class="stat__value">{{ day.darts | number }}</dd>
-        <dd class="stat__hint" i18n="@@stats.all.busiestHint">Darts am {{ day.day | date: shortDate }}</dd>
-      } @else {
-        <dd class="stat__value">&ndash;</dd>
-      }
-    </div>
-  </dl>
-</section>
+@if (totals.activity; as activity) {
+  <section class="panel">
+    <app-activity-chart [activity]="activity" />
+  </section>
+}

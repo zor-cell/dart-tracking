@@ -1,0 +1,39 @@
+/* Same compact toggle as the trend chart. */
+:host {
+  --p-togglebutton-sm-padding: 0.2rem;
+  --p-togglebutton-content-sm-padding: 0.2rem 0.5rem;
+  --p-togglebutton-sm-font-size: 0.75rem;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.activity__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+
+  p-selectbutton {
+    margin-left: auto;
+  }
+}
+
+/* One line whatever the totals, so the chart below never moves; scrolls sideways if too long. */
+app-trend-legend {
+  flex-wrap: nowrap;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.activity__unit {
+  margin: -0.5rem 0 0;
+  color: var(--p-text-muted-color);
+  font-size: 0.75rem;
+  text-align: right;
+}

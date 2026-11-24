@@ -47,11 +47,12 @@ export class StatisticsService {
     );
   }
 
-  /** Every finished game of any kind the filter selects, added up. */
+  /** Every finished game of any kind the filter selects, added up, its days in this device's zone. */
   overall(filter: StatisticsFilter): Promise<OverallStatisticsDto> {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     return firstValueFrom(
       this.http.get<OverallStatisticsDto>(`${this.baseUrl}/all`, {
-        params: this.params(filter, null),
+        params: this.params(filter, null).set('tz', zone),
         context: SILENT_ERROR_CONTEXT,
       }),
     );

@@ -4,6 +4,7 @@ import asyncio
 from datetime import datetime
 from typing import Annotated
 from uuid import UUID
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -159,14 +160,25 @@ async def cricket_statistics(
     return await asyncio.to_thread(CricketStatisticsDto.from_entity, statistics)
 
 
+def _zone(tz: str = "UTC") -> ZoneInfo:
+    """The IANA time zone the days are counted in, such as Europe/Vienna."""
+    try:
+        return ZoneInfo(tz)
+    except (ZoneInfoNotFoundError, ValueError, OSError):
+        raise HTTPException(status_code=422, detail="unknown time zone") from None
+
+
 @router.get("/all", response_model=OverallStatisticsDto)
 async def overall_statistics(
-    user: AuthenticatedUser, selection: Selection, player: Compared = None
+    user: AuthenticatedUser,
+    selection: Selection,
+    zone: Annotated[ZoneInfo, Depends(_zone)],
+    player: Compared = None,
 ) -> OverallStatisticsDto:
-    """Every finished game of any kind in the selection, added up."""
+    """Every finished game of any kind in the selection, added up, its days in `zone`."""
     criteria, last = selection
     async with database.session_scope() as session:
         compared = await _compared(session, user.id, player)
-        statistics = await overall.overview(session, user.id, criteria, last, compared)
+        statistics = await overall.overview(session, user.id, criteria, last, compared, zone)
 
     return await asyncio.to_thread(OverallStatisticsDto.from_entity, statistics)

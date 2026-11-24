@@ -29,6 +29,8 @@ dependencies = [
     "piper-tts>=1.8.0",
     # camera frames in S3 (Garage)
     "boto3>=1.40",
+    # time zones for zoneinfo where the system has none (Windows)
+    "tzdata>=2026.6",
 ]
 
 [dependency-groups]

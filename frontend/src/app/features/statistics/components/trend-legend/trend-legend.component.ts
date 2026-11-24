@@ -5,8 +5,8 @@ import { InfoHintComponent } from '../../../../core/view/components/info-hint/in
 export interface TrendLegendEntry {
   readonly key: string;
   readonly label: string;
-  /** Single games as dots, or a line through them. */
-  readonly swatch: 'dot' | 'line';
+  /** Single games as dots, a line through them, or bars. */
+  readonly swatch: 'dot' | 'line' | 'box';
   /** Colour of the swatch; the muted text colour without one. */
   readonly color?: string;
   /** What the series means, behind an info button. */

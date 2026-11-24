@@ -1,0 +1,17 @@
+<header class="activity__header">
+  <h2 class="panel__title" i18n="@@stats.all.activity">Aktivität</h2>
+  <p-selectbutton
+    [options]="metrics"
+    optionLabel="label"
+    optionValue="value"
+    [allowEmpty]="false"
+    [ngModel]="metric()"
+    (ngModelChange)="metric.set($event)"
+    ariaLabel="Was das Diagramm zählt"
+    i18n-ariaLabel="@@stats.all.metric"
+    size="small"
+  />
+</header>
+<app-trend-legend [entries]="legend()" [hidden]="hidden()" (toggle)="toggle($event)" />
+<p-chart type="bar" height="12rem" [data]="data()" [options]="options()" [ariaLabel]="ariaLabel()" />
+<p class="activity__unit">{{ perUnit() }}</p>
