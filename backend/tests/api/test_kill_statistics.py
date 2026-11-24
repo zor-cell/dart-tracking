@@ -80,3 +80,15 @@ def test_only_finished_games_of_the_own_seat_count(alice, session):
     session.play(game["id"], [(ben, 2), (own, 2)])
     found = kills(alice)
     assert (found["kills"], found["losses"], found["wins"], found["most"]) == (0, 1, 0, None)
+
+
+def test_a_compared_player_is_read_instead(alice, session):
+    ben = alice.add_player("Ben")
+    game = alice.new_game(alice.own_entry()["id"], ben, settings={"variant": "killer", "lives": 2})
+    own, other = (player["number"] for player in game["standing"]["players"])
+    session.play(game["id"], [(own, 2), (other, 2), (other, 2)])
+    finish(session, game["id"])
+
+    found = kills(alice, variant="killer", player=ben)
+
+    assert (found["kills"], found["losses"], found["wins"]) == (0, 2, 0)

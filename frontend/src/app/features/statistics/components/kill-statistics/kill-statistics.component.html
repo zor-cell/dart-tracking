@@ -1,4 +1,5 @@
 @let totals = statistics();
+@let other = comparison();
 <section class="panel">
   <h2 class="panel__title">Kills</h2>
   <dl class="stat-grid">
@@ -13,11 +14,37 @@
           }
         </app-info-hint>
       </dt>
-      <dd class="stat__value">{{ totals.kills | number }}</dd>
+      <dd class="stat__value">
+        {{ totals.kills | number }}
+        @if (other) {
+          <app-delta-mark [own]="totals.kills" [other]="other.statistics.kills" [name]="other.name" [digits]="0" />
+        }
+      </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="other.statistics.kills" [digits]="0" />
+        </dd>
+      }
     </div>
     <div class="stat">
       <dt class="stat__label" i18n="@@stats.kills.livesLost">Leben verloren</dt>
-      <dd class="stat__value">{{ totals.losses | number }}</dd>
+      <dd class="stat__value">
+        {{ totals.losses | number }}
+        @if (other) {
+          <app-delta-mark
+            [own]="totals.losses"
+            [other]="other.statistics.losses"
+            [name]="other.name"
+            [digits]="0"
+            [lowerIsBetter]="true"
+          />
+        }
+      </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="other.statistics.losses" [digits]="0" />
+        </dd>
+      }
     </div>
     <div class="stat">
       <dt class="stat__label" i18n="@@stats.kills.most">Meiste Kills</dt>
@@ -27,11 +54,34 @@
         } @else {
           &ndash;
         }
+        @if (other) {
+          <app-delta-mark
+            [own]="totals.most?.kills ?? null"
+            [other]="other.statistics.most?.kills ?? null"
+            [name]="other.name"
+            [digits]="0"
+          />
+        }
       </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="other.statistics.most?.kills ?? null" [digits]="0" />
+        </dd>
+      }
     </div>
     <div class="stat">
       <dt class="stat__label" i18n="@@stats.kills.perGame">Ø Kills pro Spiel</dt>
-      <dd class="stat__value">{{ (perGame() | number: '1.1-1') ?? '–' }}</dd>
+      <dd class="stat__value">
+        {{ (perGame() | number: '1.1-1') ?? '–' }}
+        @if (other) {
+          <app-delta-mark [own]="perGame()" [other]="otherPerGame()" [name]="other.name" [digits]="1" />
+        }
+      </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="otherPerGame()" [digits]="1" />
+        </dd>
+      }
     </div>
   </dl>
 </section>

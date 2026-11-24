@@ -1,4 +1,5 @@
 @let totals = statistics();
+@let other = comparison();
 <section class="panel">
   <h2 class="panel__title" i18n="@@settings.general">Allgemein</h2>
   <dl class="stat-grid">
@@ -9,7 +10,17 @@
           Marks pro drei Darts. Es zählen nur Marks, die eine Zahl schließen oder punkten.
         </app-info-hint>
       </dt>
-      <dd class="stat__value">{{ (totals.mpr | number: '1.2-2') ?? '–' }}</dd>
+      <dd class="stat__value">
+        {{ (totals.mpr | number: '1.2-2') ?? '–' }}
+        @if (other) {
+          <app-delta-mark [own]="totals.mpr" [other]="other.statistics.mpr" [name]="other.name" [digits]="2" />
+        }
+      </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="other.statistics.mpr" [digits]="2" />
+        </dd>
+      }
     </div>
     <div class="stat stat--lead">
       <dt class="stat__label">
@@ -22,8 +33,15 @@
         } @else {
           &ndash;
         }
+        @if (other) {
+          <app-delta-mark [own]="winRate()" [other]="otherWinRate()" [name]="other.name" [digits]="0" unit=" %" />
+        }
       </dd>
-      @if (totals.gamesWithOpponent > 0) {
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="otherWinRate()" [digits]="0" unit=" %" />
+        </dd>
+      } @else if (totals.gamesWithOpponent > 0) {
         <dd class="stat__hint" i18n="@@stats.kills.wins">{{ totals.wins }} von {{ totals.gamesWithOpponent }} gewonnen</dd>
       }
     </div>
@@ -39,12 +57,36 @@
         </app-info-hint>
       </dt>
       @if (totals.distance !== null) {
-        <dd class="stat__value">{{ totals.distance | number: '1.0-0' }} mm</dd>
-        <dd class="stat__scale">
-          <app-distance-scale [distance]="totals.distance" kind="treble" />
+        <dd class="stat__value">
+          {{ totals.distance | number: '1.0-0' }} mm
+          @if (other) {
+            <app-delta-mark
+              [own]="totals.distance"
+              [other]="other.statistics.distance"
+              [name]="other.name"
+              [digits]="0"
+              unit=" mm"
+              [lowerIsBetter]="true"
+            />
+          }
         </dd>
       } @else {
         <dd class="stat__value">&ndash;</dd>
+      }
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="other.statistics.distance" [digits]="0" unit=" mm" />
+        </dd>
+      }
+      @if (totals.distance !== null) {
+        <dd class="stat__scale">
+          <app-distance-scale
+            [distance]="totals.distance"
+            [compared]="other?.statistics?.distance ?? null"
+            [colors]="other ? pairColors : null"
+            kind="treble"
+          />
+        </dd>
       }
     </div>
     <div class="stat">
@@ -61,7 +103,15 @@
         } @else {
           &ndash;
         }
+        @if (other) {
+          <app-delta-mark [own]="markedRate()" [other]="otherMarkedRate()" [name]="other.name" [digits]="0" unit=" %" />
+        }
       </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="otherMarkedRate()" [digits]="0" unit=" %" />
+        </dd>
+      }
     </div>
   </dl>
 </section>
@@ -70,6 +120,7 @@
   [fields]="totals.fields"
   [locatedFields]="totals.locatedFields"
   [heatmap]="totals.heatmap"
+  [comparison]="other"
 />
 
 <section class="panel">
@@ -85,27 +136,45 @@
         } @else {
           {{ totals.bestVisit }}
         }
+        @if (other) {
+          <app-delta-mark [own]="totals.bestVisit" [other]="other.statistics.bestVisit" [name]="other.name" [digits]="0" />
+        }
       </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="other.statistics.bestVisit" [digits]="0" />
+        </dd>
+      }
     </div>
-    <div class="stat stat--half">
-      <dt class="stat__label">9 Marks</dt>
-      <dd class="stat__value">{{ bands()[9] }}</dd>
-    </div>
-    <div class="stat stat--half">
-      <dt class="stat__label">7+</dt>
-      <dd class="stat__value">{{ bands()[7] }}</dd>
-    </div>
+    <ng-container *ngTemplateOutlet="band; context: { $implicit: bands()[0] }" />
+    <ng-container *ngTemplateOutlet="band; context: { $implicit: bands()[1] }" />
     <div class="stat">
       <dt class="stat__label" i18n="@@stats.favouriteVisit">Häufigster Visit</dt>
       <dd class="stat__value">{{ totals.favouriteVisit ?? '–' }}</dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="other.statistics.favouriteVisit" [digits]="0" />
+        </dd>
+      }
     </div>
-    <div class="stat stat--half">
-      <dt class="stat__label">5+</dt>
-      <dd class="stat__value">{{ bands()[5] }}</dd>
-    </div>
-    <div class="stat stat--half">
-      <dt class="stat__label">3+</dt>
-      <dd class="stat__value">{{ bands()[3] }}</dd>
-    </div>
+    <ng-container *ngTemplateOutlet="band; context: { $implicit: bands()[2] }" />
+    <ng-container *ngTemplateOutlet="band; context: { $implicit: bands()[3] }" />
   </dl>
 </section>
+
+<ng-template #band let-band>
+  <div class="stat" [class.stat--half]="!other" [class.stat--after]="other">
+    <dt class="stat__label">{{ band.label }}</dt>
+    @if (other) {
+      <dd class="stat__value">
+        {{ (band.share | number: '1.1-1') ?? '–' }} %
+        <app-delta-mark [own]="band.share" [other]="band.otherShare" [name]="other.name" [digits]="1" unit=" %" />
+      </dd>
+      <dd class="stat__hint">
+        <app-compared-value [name]="other.name" [other]="band.otherShare" [digits]="1" unit=" %" />
+      </dd>
+    } @else {
+      <dd class="stat__value">{{ band.count }}</dd>
+    }
+  </div>
+</ng-template>

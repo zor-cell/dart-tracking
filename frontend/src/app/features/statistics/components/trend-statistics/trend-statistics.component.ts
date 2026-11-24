@@ -10,11 +10,11 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import type { ChartData, ChartOptions, ScriptableLineSegmentContext } from 'chart.js';
+import type { ChartData, ChartOptions, Point } from 'chart.js';
 import { UIChart } from 'primeng/chart';
 import { SelectButton } from 'primeng/selectbutton';
 import { COMPARE_COLOR, OWN_COLOR } from '../../models/comparison';
-import { FIT_COLOR, FIT_LEGEND, linearFit, toggled } from '../../models/linear-fit';
+import { FIT_COLOR, FIT_LEGEND, linearFit, linearFitOver, toggled } from '../../models/linear-fit';
 import {
   TREND_WINDOW,
   TrendFigure,
@@ -30,14 +30,12 @@ import { TrendLegendComponent, TrendLegendEntry } from '../trend-legend/trend-le
 /** The parts of the chart its legend switches on and off. */
 type TrendPart = 'games' | 'form' | 'trend';
 
-/** Dash and gap of a trend line where its player has no game, in pixels. */
-const GAP_DASH = [4, 4];
-
-/** Dash and gap of the compared player's fitted line, in pixels. */
-const FIT_DASH = [6, 3];
+/** Dash and gap of the fitted lines beside a compared player, in pixels. */
+const FIT_DASH = [5, 4];
 
 /** One figure game by game under the page's filters, with the form (a rolling mean) and the
- * trend (a fitted straight line) through it, and the same for a compared player. */
+ * trend (a fitted straight line) through it. Beside a compared player both run over the dates,
+ * each in its player's colour, the trend dashed. */
 @Component({
   selector: 'app-trend-statistics',
   imports: [EmptyStateComponent, FormsModule, SelectButton, TrendLegendComponent, UIChart],
@@ -80,77 +78,111 @@ export class TrendStatisticsComponent<T extends TrendGame> {
     return figure.sparse ? points.filter((point) => figure.of(point) !== null) : points;
   }
 
-  /** Both players' games on one axis, oldest first; a game they played together is one slot. */
-  protected readonly data = computed<ChartData<'line', (number | null)[]>>(() => {
+  /** Whether a compared player's games are drawn beside one's own. */
+  private readonly compared = computed(() => this.otherShown() !== null && this.compareName() !== null);
+
+  protected readonly data = computed<ChartData<'line', (number | Point | null)[]>>(() =>
+    this.compared() ? this.byDate() : this.byGame(),
+  );
+
+  /** One's own games side by side, one slot each. */
+  private byGame(): ChartData<'line', (number | null)[]> {
     const figure = this.picked();
-    const own = this.shown();
-    const other = this.otherShown();
+    const points = this.shown();
     const hidden = this.hidden();
-    const slots = new Map<string, string>();
-    for (const point of [...own, ...(other ?? [])].sort((a, b) =>
-      a.playedAt.localeCompare(b.playedAt),
-    )) {
-      slots.set(point.gameId, point.playedAt);
-    }
-    const ids = [...slots.keys()];
-    const series = (points: readonly T[], name: string | null, color: string) => {
-      const value = new Map(points.map((point) => [point.gameId, figure.of(point)]));
-      const values = ids.map((id) => value.get(id) ?? null);
-      const rolling = rollingAverage(points.map(figure.of));
-      const form = new Map(points.map((point, index) => [point.gameId, rolling[index]]));
-      return [
+    const values = points.map(figure.of);
+    return {
+      labels: points.map((point) => formatDate(point.playedAt, SHORT_DATE, this.locale)),
+      datasets: [
+        { ...this.dots(`${this.theme.muted}99`), label: GAME_LABEL, data: values, hidden: hidden.has('games') },
         {
-          label: withName($localize`:@@common.nav.game:Spiel`, name),
-          data: values,
-          hidden: hidden.has('games'),
-          showLine: false,
-          clip: DOT_ROOM,
-          pointRadius: 2.5,
-          pointHoverRadius: 4,
-          pointBackgroundColor: name ? `${color}66` : `${this.theme.muted}99`,
-          pointBorderWidth: 0,
-        },
-        {
-          label: withName($localize`:@@stats.trend.form:Form`, name),
-          data: ids.map((id) => form.get(id) ?? null),
-          borderColor: color,
-          backgroundColor: color,
+          ...this.formLine(this.ownColor),
+          label: FORM_LABEL,
+          data: rollingAverage(values),
           hidden: hidden.has('form'),
-          borderWidth: 2,
-          pointRadius: 0,
-          pointHoverRadius: 3,
-          tension: 0.3,
-          spanGaps: true,
-          // Dashed across games the player did not play in.
-          segment: {
-            borderDash: (segment: ScriptableLineSegmentContext) =>
-              segment.p0.skip || segment.p1.skip ? GAP_DASH : undefined,
-          },
         },
         {
-          label: withName(FIT_LEGEND.label, name),
+          label: FIT_LEGEND.label,
           data: linearFit(values),
           borderColor: FIT_COLOR,
           backgroundColor: FIT_COLOR,
           hidden: hidden.has('trend'),
           borderWidth: 1.5,
-          // The compared player's line dashed, so the two stay apart.
-          borderDash: color === this.compareColor ? FIT_DASH : undefined,
           pointRadius: 0,
           pointHoverRadius: 0,
           spanGaps: true,
         },
-      ];
-    };
-    const compared = other ? (this.compareName() ?? '') : null;
-    return {
-      labels: [...slots.values()].map((at) => formatDate(at, SHORT_DATE, this.locale)),
-      datasets: [
-        ...series(own, compared === null ? null : $localize`:@@player.list.self:Du`, this.ownColor),
-        ...(other && compared !== null ? series(other, compared, this.compareColor) : []),
       ],
     };
-  });
+  }
+
+  /** Both players over the dates, each line only through its own games. */
+  private byDate(): ChartData<'line', (Point | null)[]> {
+    const figure = this.picked();
+    const hidden = this.hidden();
+    const side = (points: readonly T[], name: string, color: string) => {
+      const xs = points.map((point) => Date.parse(point.playedAt));
+      const values = points.map(figure.of);
+      const at = (ys: readonly (number | null)[]) =>
+        xs.flatMap((x, index) => (ys[index] === null ? [] : [{ x, y: ys[index] as number }]));
+      return [
+        {
+          ...this.dots(`${color}66`),
+          label: withName(GAME_LABEL, name),
+          data: at(values),
+          hidden: hidden.has('games'),
+        },
+        {
+          ...this.formLine(color),
+          // Games close together in time would make a smoothed curve overshoot.
+          cubicInterpolationMode: 'monotone' as const,
+          label: withName(FORM_LABEL, name),
+          data: at(rollingAverage(values)),
+          hidden: hidden.has('form'),
+        },
+        {
+          label: withName(FIT_LEGEND.label, name),
+          data: linearFitOver(xs, values),
+          borderColor: color,
+          backgroundColor: color,
+          hidden: hidden.has('trend'),
+          borderWidth: 1.5,
+          borderDash: FIT_DASH,
+          pointRadius: 0,
+          pointHoverRadius: 0,
+        },
+      ];
+    };
+    return {
+      datasets: [
+        ...side(this.shown(), $localize`:@@player.list.self:Du`, this.ownColor),
+        ...side(this.otherShown() ?? [], this.compareName() ?? '', this.compareColor),
+      ],
+    };
+  }
+
+  private dots(color: string) {
+    return {
+      showLine: false,
+      clip: DOT_ROOM,
+      pointRadius: 2.5,
+      pointHoverRadius: 4,
+      pointBackgroundColor: color,
+      pointBorderWidth: 0,
+    };
+  }
+
+  private formLine(color: string) {
+    return {
+      borderColor: color,
+      backgroundColor: color,
+      borderWidth: 2,
+      pointRadius: 0,
+      pointHoverRadius: 3,
+      tension: 0.3,
+      spanGaps: true,
+    };
+  }
 
   /** The value axis around the games and form lines of both players; the fitted line is clipped. */
   private readonly bounds = computed(() => {
@@ -166,15 +198,33 @@ export class TrendStatisticsComponent<T extends TrendGame> {
     const { unit, axis } = this.picked();
     const format = (value: number) => `${formatNumber(value, this.locale, '1.1-1')}${unit}`;
     const bounds = this.bounds();
+    const dated = this.compared();
+    const span = dated ? this.span() : null;
     return {
       ...chartBase(this.theme),
       layout: { padding: { top: DOT_ROOM, right: DOT_ROOM } },
-      interaction: { mode: 'index', intersect: false },
+      interaction: dated ? { mode: 'nearest', axis: 'x', intersect: false } : { mode: 'index', intersect: false },
       scales: {
         x: {
+          ...(dated
+            ? {
+                type: 'linear' as const,
+                min: span?.min,
+                max: span?.max,
+                // Four dates spread evenly, the first and last day at the ends.
+                afterBuildTicks: (axis: { ticks: { value: number }[] }) => {
+                  axis.ticks = span ? evenly(span.min, span.max, 4).map((value) => ({ value })) : [];
+                },
+              }
+            : {}),
           grid: { display: false },
           border: { display: false },
-          ticks: { ...axisTicks(this.theme), maxTicksLimit: 4, maxRotation: 0 },
+          ticks: {
+            ...axisTicks(this.theme),
+            maxTicksLimit: 4,
+            maxRotation: 0,
+            ...(dated ? { callback: (value: string | number) => this.date(+value) } : {}),
+          },
         },
         y: {
           min: bounds?.min,
@@ -190,7 +240,8 @@ export class TrendStatisticsComponent<T extends TrendGame> {
         tooltip: {
           ...tooltipStyle(this.theme),
           callbacks: {
-            label: (item) => `${item.dataset.label}: ${format(item.raw as number)}`,
+            ...(dated ? { title: (items) => (items[0] ? this.date(items[0].parsed.x ?? 0) : '') } : {}),
+            label: (item) => `${item.dataset.label}: ${format(item.parsed.y ?? 0)}`,
           },
           filter: (item) => item.raw !== null,
         },
@@ -198,18 +249,34 @@ export class TrendStatisticsComponent<T extends TrendGame> {
     };
   });
 
-  /** The legend's switches; the trend line takes one's own colour unless players are compared. */
-  protected readonly legend = computed<TrendLegendEntry[]>(() => [
-    { key: 'games', label: $localize`:@@stats.trend.games:Einzelne Spiele`, swatch: 'dot' },
-    {
-      key: 'form',
-      label: $localize`:@@stats.trend.form:Form`,
-      swatch: 'line',
-      color: this.otherPoints() ? undefined : this.ownColor,
-      hint: $localize`:@@stats.trend.hint:Schnitt über die letzten ${TREND_WINDOW}:INTERPOLATION: Spiele.`,
-    },
-    FIT_LEGEND,
-  ]);
+  /** The legend's switches; beside a compared player the colours stand for the players, so
+   * the lines show only their stroke. */
+  protected readonly legend = computed<TrendLegendEntry[]>(() => {
+    const compared = this.compared();
+    return [
+      { key: 'games', label: $localize`:@@stats.trend.games:Einzelne Spiele`, swatch: 'dot' },
+      {
+        key: 'form',
+        label: FORM_LABEL,
+        swatch: 'line',
+        color: compared ? undefined : this.ownColor,
+        hint: $localize`:@@stats.trend.hint:Schnitt über die letzten ${TREND_WINDOW}:INTERPOLATION: Spiele.`,
+      },
+      compared ? { ...FIT_LEGEND, swatch: 'dash', color: undefined } : FIT_LEGEND,
+    ];
+  });
+
+  /** The first and last day either player played, as the date axis's ends. */
+  private readonly span = computed(() => {
+    const times = [...this.shown(), ...(this.otherShown() ?? [])].map((point) =>
+      Date.parse(point.playedAt),
+    );
+    return times.length === 0 ? null : { min: Math.min(...times), max: Math.max(...times) };
+  });
+
+  private date(time: number): string {
+    return formatDate(time, SHORT_DATE, this.locale);
+  }
 
   protected toggle(part: string): void {
     this.hidden.update((hidden) => toggled(hidden, part as TrendPart));
@@ -233,7 +300,15 @@ export class TrendStatisticsComponent<T extends TrendGame> {
   });
 }
 
-/** A series label, with the player's name in brackets when players are compared. */
-function withName(label: string, name: string | null): string {
-  return name ? `${label} (${name})` : label;
+/** `count` values from `min` to `max` at even steps, both ends included. */
+function evenly(min: number, max: number, count: number): number[] {
+  return Array.from({ length: count }, (_, index) => min + ((max - min) * index) / (count - 1));
+}
+
+const GAME_LABEL = $localize`:@@common.nav.game:Spiel`;
+const FORM_LABEL = $localize`:@@stats.trend.form:Form`;
+
+/** A series label with the player's name in brackets. */
+function withName(label: string, name: string): string {
+  return `${label} (${name})`;
 }

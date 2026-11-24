@@ -886,7 +886,6 @@
     "stats.targets.distanceHint": "Kürzester Weg vom erkannten Dart zum Feld, auf das er ging. Ein Treffer zählt 0 mm.",
     "stats.trend.metric": "Kennzahl im Verlauf",
     "stats.trend.tooFew": "Für einen Verlauf braucht es mindestens zwei gewertete Spiele.",
-    "stats.trend.gap": "Ohne Spiel",
     "stats.trend.form": "Form",
     "stats.trend.hint": "Schnitt über die letzten {$INTERPOLATION} Spiele.",
     "stats.trend.label": "{$metric} über {$count} Spiele",

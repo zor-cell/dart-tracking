@@ -38,41 +38,41 @@ export class StatisticsService {
   }
 
   /** The points of the trainings without a target that the filter selects. */
-  scoring(filter: StatisticsFilter): Promise<ScoringStatisticsDto> {
+  scoring(filter: StatisticsFilter, player: string | null = null): Promise<ScoringStatisticsDto> {
     return firstValueFrom(
       this.http.get<ScoringStatisticsDto>(`${this.baseUrl}/scoring`, {
-        params: this.params(filter, null),
+        params: this.params(filter, player),
         context: SILENT_ERROR_CONTEXT,
       }),
     );
   }
 
   /** Every finished game of any kind the filter selects, added up, its days in this device's zone. */
-  overall(filter: StatisticsFilter): Promise<OverallStatisticsDto> {
+  overall(filter: StatisticsFilter, player: string | null = null): Promise<OverallStatisticsDto> {
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     return firstValueFrom(
       this.http.get<OverallStatisticsDto>(`${this.baseUrl}/all`, {
-        params: this.params(filter, null).set('tz', zone),
+        params: this.params(filter, player).set('tz', zone),
         context: SILENT_ERROR_CONTEXT,
       }),
     );
   }
 
   /** The kills in the Elimination and Killer games the filter selects. */
-  kills(filter: StatisticsFilter): Promise<KillStatisticsDto> {
+  kills(filter: StatisticsFilter, player: string | null = null): Promise<KillStatisticsDto> {
     return firstValueFrom(
       this.http.get<KillStatisticsDto>(`${this.baseUrl}/kills`, {
-        params: this.params(filter, null),
+        params: this.params(filter, player),
         context: SILENT_ERROR_CONTEXT,
       }),
     );
   }
 
   /** Marks, distances, visits and the hit picture of the Cricket games the filter selects. */
-  cricket(filter: StatisticsFilter): Promise<CricketStatisticsDto> {
+  cricket(filter: StatisticsFilter, player: string | null = null): Promise<CricketStatisticsDto> {
     return firstValueFrom(
       this.http.get<CricketStatisticsDto>(`${this.baseUrl}/cricket`, {
-        params: this.params(filter, null),
+        params: this.params(filter, player),
         context: SILENT_ERROR_CONTEXT,
       }),
     );

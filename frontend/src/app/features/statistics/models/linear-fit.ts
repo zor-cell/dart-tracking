@@ -21,6 +21,29 @@ export function linearFit(values: readonly (number | null)[]): (number | null)[]
   return values.map((_, x) => (x < first || x > last ? null : meanY + slope * (x - meanX)));
 }
 
+/** The least-squares line through `values` at the positions `xs`, as its two ends at the first
+ * and last known value; empty with fewer than two. */
+export function linearFitOver(
+  xs: readonly number[],
+  values: readonly (number | null)[],
+): { x: number; y: number }[] {
+  const known = xs.flatMap((x, index) => {
+    const value = values[index];
+    return value === null || value === undefined ? [] : [[x, value] as const];
+  });
+  if (known.length < 2) {
+    return [];
+  }
+  const n = known.length;
+  const meanX = known.reduce((sum, [x]) => sum + x, 0) / n;
+  const meanY = known.reduce((sum, [, y]) => sum + y, 0) / n;
+  const spread = known.reduce((sum, [x]) => sum + (x - meanX) ** 2, 0);
+  const slope =
+    spread === 0 ? 0 : known.reduce((sum, [x, y]) => sum + (x - meanX) * (y - meanY), 0) / spread;
+  const at = (x: number) => ({ x, y: meanY + slope * (x - meanX) });
+  return [at(known[0][0]), at(known[n - 1][0])];
+}
+
 /** The fitted line's switch in a trend legend; it is what the charts call the trend. */
 export const FIT_LEGEND: TrendLegendEntry = {
   key: 'trend',

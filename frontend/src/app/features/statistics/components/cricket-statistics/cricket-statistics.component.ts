@@ -1,8 +1,11 @@
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { DistanceScaleComponent } from '../../../game/components/distance-scale/distance-scale.component';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { CricketStatisticsDto } from '../../dto/cricket-statistics.dto';
+import { COMPARE_COLOR, Comparison, OWN_COLOR } from '../../models/comparison';
+import { ComparedValueComponent } from '../compared-value/compared-value.component';
+import { DeltaMarkComponent } from '../delta-mark/delta-mark.component';
 import { HitPatternComponent } from '../hit-pattern/hit-pattern.component';
 import { StatLinkComponent } from '../stat-link/stat-link.component';
 import { StatSketchComponent } from '../stat-sketch/stat-sketch.component';
@@ -15,10 +18,13 @@ const BANDS = [9, 7, 5, 3] as const;
 @Component({
   selector: 'app-cricket-statistics',
   imports: [
+    ComparedValueComponent,
     DecimalPipe,
+    DeltaMarkComponent,
     DistanceScaleComponent,
     HitPatternComponent,
     InfoHintComponent,
+    NgTemplateOutlet,
     StatLinkComponent,
     StatSketchComponent,
   ],
@@ -28,26 +34,51 @@ const BANDS = [9, 7, 5, 3] as const;
 })
 export class CricketStatisticsComponent {
   readonly statistics = input.required<CricketStatisticsDto>();
+  readonly comparison = input<Comparison<CricketStatisticsDto> | null>(null);
 
-  protected readonly winRate = computed(() => {
-    const { wins, gamesWithOpponent } = this.statistics();
-    return share(wins, gamesWithOpponent);
+  protected readonly pairColors = [OWN_COLOR, COMPARE_COLOR] as const;
+
+  protected readonly winRate = computed(() => winRate(this.statistics()));
+  protected readonly otherWinRate = computed(() => {
+    const other = this.comparison()?.statistics;
+    return other ? winRate(other) : null;
   });
-  protected readonly markedRate = computed(() => {
-    const { empty, darts } = this.statistics();
-    return share(darts - empty, darts);
+  protected readonly markedRate = computed(() => markedRate(this.statistics()));
+  protected readonly otherMarkedRate = computed(() => {
+    const other = this.comparison()?.statistics;
+    return other ? markedRate(other) : null;
   });
 
-  /** Visits with at least each band's marks. */
+  /** Visits with at least each band's marks; beside a compared player as shares of the visits. */
   protected readonly bands = computed(() => {
-    const visits = Object.entries(this.statistics().visits);
-    return Object.fromEntries(
-      BANDS.map((band) => [
-        band,
-        visits.reduce((sum, [marks, count]) => sum + (Number(marks) >= band ? count : 0), 0),
-      ]),
-    ) as Record<(typeof BANDS)[number], number>;
+    const own = this.statistics();
+    const other = this.comparison()?.statistics ?? null;
+    return BANDS.map((band) => ({
+      label: band === 9 ? '9 Marks' : `${band}+`,
+      count: atLeast(own, band),
+      share: share(atLeast(own, band), visits(own)),
+      otherShare: other ? share(atLeast(other, band), visits(other)) : null,
+    }));
   });
+}
+
+function winRate({ wins, gamesWithOpponent }: CricketStatisticsDto): number | null {
+  return share(wins, gamesWithOpponent);
+}
+
+function markedRate({ empty, darts }: CricketStatisticsDto): number | null {
+  return share(darts - empty, darts);
+}
+
+function atLeast(totals: CricketStatisticsDto, band: number): number {
+  return Object.entries(totals.visits).reduce(
+    (sum, [marks, count]) => sum + (Number(marks) >= band ? count : 0),
+    0,
+  );
+}
+
+function visits(totals: CricketStatisticsDto): number {
+  return Object.values(totals.visits).reduce((sum, count) => sum + count, 0);
 }
 
 /** `part` of `whole` in percent; null without a whole. */

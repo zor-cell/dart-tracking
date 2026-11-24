@@ -23,6 +23,8 @@ import {
 } from '../../../../core/i18n/models/date-format';
 import { GAME_SECTIONS } from '../../../game/models/game-variant';
 import { ActivityBucketDto, ActivityDto, ActivityTallyDto, ActivityUnit } from '../../dto/activity.dto';
+import { onOneAxis } from '../../models/activity-axis';
+import { COMPARE_COLOR, Comparison, OWN_COLOR } from '../../models/comparison';
 import { toggled } from '../../models/linear-fit';
 import { duration } from '../../models/duration';
 import { TrendLegendComponent, TrendLegendEntry } from '../trend-legend/trend-legend.component';
@@ -41,8 +43,9 @@ const PER_UNIT: Record<ActivityUnit, string> = {
   month: $localize`:@@stats.all.perMonth:pro Monat`,
 };
 
-/** One kind of game as the chart stacks it, with its value per bucket. */
-interface KindSeries {
+/** One kind of game as the chart stacks it, or one player of a comparison, with its value
+ * per bucket. */
+interface ActivitySeries {
   readonly key: string;
   readonly label: string;
   readonly color: string;
@@ -50,7 +53,8 @@ interface KindSeries {
   readonly total: number;
 }
 
-/** How much was played when: darts, games or time per bucket, stacked by kind of game. */
+/** How much was played when: darts, games or time per bucket, stacked by kind of game; beside a
+ * compared player one bar each instead. */
 @Component({
   selector: 'app-activity-chart',
   imports: [FormsModule, SelectButton, TrendLegendComponent, UIChart],
@@ -63,29 +67,42 @@ export class ActivityChartComponent {
   private readonly theme = chartTheme(inject(DOCUMENT));
 
   readonly activity = input.required<ActivityDto>();
+  readonly comparison = input<Comparison<ActivityDto> | null>(null);
 
   protected readonly metrics = [...METRICS];
   protected readonly metric = signal<ActivityMetric>('darts');
   protected readonly hidden = signal<ReadonlySet<string>>(new Set());
 
-  protected readonly perUnit = computed(() => PER_UNIT[this.activity().unit]);
+  /** One's own activity, and the compared player's on the same buckets. */
+  private readonly sides = computed(() => {
+    const other = this.comparison();
+    return other ? onOneAxis(this.activity(), other.statistics) : ([this.activity()] as const);
+  });
+  private readonly axis = computed(() => this.sides()[0]);
 
-  /** The kinds played in the span, in the order of the new game page. */
-  private readonly series = computed<KindSeries[]>(() => {
+  protected readonly perUnit = computed(() => PER_UNIT[this.axis().unit]);
+
+  /** The kinds played in the span in the order of the new game page, or both players. */
+  private readonly series = computed<ActivitySeries[]>(() => {
     const metric = this.metric();
-    const buckets = this.activity().buckets;
-    return GAME_SECTIONS.map((section, index) => {
-      const values = buckets.map((bucket) =>
-        section.games.reduce((sum, game) => sum + measure(bucket.variants[game], metric), 0),
-      );
-      return {
+    const [own, other] = this.sides();
+    const compared = this.comparison();
+    if (other && compared) {
+      return [
+        side('own', $localize`:@@player.list.self:Du`, OWN_COLOR, own, metric),
+        side('other', compared.name, COMPARE_COLOR, other, metric),
+      ];
+    }
+    return GAME_SECTIONS.map((section, index) =>
+      withTotal({
         key: section.kind,
         label: section.kind,
         color: SERIES_COLORS[index],
-        values,
-        total: values.reduce((sum, value) => sum + value, 0),
-      };
-    }).filter((series) => series.total > 0);
+        values: own.buckets.map((bucket) =>
+          section.games.reduce((sum, game) => sum + measure(bucket.variants[game], metric), 0),
+        ),
+      }),
+    ).filter((series) => series.total > 0);
   });
 
   protected readonly legend = computed<TrendLegendEntry[]>(() =>
@@ -104,7 +121,7 @@ export class ActivityChartComponent {
   protected readonly data = computed<ChartData<'bar'>>(() => {
     const hidden = this.hidden();
     return {
-      labels: this.activity().buckets.map((bucket) => this.tick(bucket)),
+      labels: this.axis().buckets.map((bucket) => this.tick(bucket)),
       datasets: this.series().map((series) => ({
         label: series.label,
         data: [...series.values],
@@ -117,8 +134,9 @@ export class ActivityChartComponent {
 
   protected readonly options = computed<ChartOptions<'bar'>>(() => {
     const theme = this.theme;
-    const buckets = this.activity().buckets;
+    const buckets = this.axis().buckets;
     const time = this.metric() === 'time';
+    const stacked = this.comparison() === null;
     return {
       ...chartBase(theme),
       datasets: { bar: { categoryPercentage: 0.85, barPercentage: 0.9 } },
@@ -145,12 +163,12 @@ export class ActivityChartComponent {
       },
       scales: {
         x: {
-          stacked: true,
+          stacked,
           ticks: { ...axisTicks(theme), maxTicksLimit: 6, maxRotation: 0 },
           grid: { display: false },
         },
         y: {
-          stacked: true,
+          stacked,
           beginAtZero: true,
           ticks: {
             ...axisTicks(theme),
@@ -177,11 +195,11 @@ export class ActivityChartComponent {
   }
 
   private tick({ start }: ActivityBucketDto): string {
-    return formatDate(start, this.activity().unit === 'month' ? MONTH_YEAR : DAY_MONTH, this.locale);
+    return formatDate(start, this.axis().unit === 'month' ? MONTH_YEAR : DAY_MONTH, this.locale);
   }
 
   private title({ start }: ActivityBucketDto): string {
-    switch (this.activity().unit) {
+    switch (this.axis().unit) {
       case 'day':
         return formatDate(start, WEEKDAY_DAY_MONTH, this.locale);
       case 'week':
@@ -198,4 +216,22 @@ function measure(tally: ActivityTallyDto | undefined, metric: ActivityMetric): n
     return 0;
   }
   return metric === 'darts' ? tally.darts : metric === 'games' ? tally.games : tally.seconds / 3600;
+}
+
+/** A player's whole activity per bucket in `metric`, every kind of game together. */
+function side(
+  key: string,
+  label: string,
+  color: string,
+  activity: ActivityDto,
+  metric: ActivityMetric,
+): ActivitySeries {
+  const values = activity.buckets.map((bucket) =>
+    Object.values(bucket.variants).reduce((sum, tally) => sum + measure(tally, metric), 0),
+  );
+  return withTotal({ key, label, color, values });
+}
+
+function withTotal(series: Omit<ActivitySeries, 'total'>): ActivitySeries {
+  return { ...series, total: series.values.reduce((sum, value) => sum + value, 0) };
 }

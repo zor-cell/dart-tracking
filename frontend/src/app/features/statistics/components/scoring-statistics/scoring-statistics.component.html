@@ -1,10 +1,21 @@
 @let totals = statistics();
+@let other = comparison();
 <section class="panel">
   <h2 class="panel__title" i18n="@@settings.general">Allgemein</h2>
   <dl class="stat-grid">
     <div class="stat stat--lead">
       <dt class="stat__label">3-Dart-<span aria-hidden="true">Ø</span><span class="sr-only">Average</span></dt>
-      <dd class="stat__value">{{ totals.average | number: '1.1-1' }}</dd>
+      <dd class="stat__value">
+        {{ totals.average | number: '1.1-1' }}
+        @if (other) {
+          <app-delta-mark [own]="totals.average" [other]="other.statistics.average" [name]="other.name" [digits]="1" />
+        }
+      </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="other.statistics.average" [digits]="1" />
+        </dd>
+      }
     </div>
     <div class="stat stat--lead">
       <dt class="stat__label" i18n="@@game.detail.bestVisit">Bester Visit</dt>
@@ -14,12 +25,30 @@
         } @else {
           {{ totals.bestVisit }}
         }
+        @if (other) {
+          <app-delta-mark [own]="totals.bestVisit" [other]="other.statistics.bestVisit" [name]="other.name" [digits]="0" />
+        }
       </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="other.statistics.bestVisit" [digits]="0" />
+        </dd>
+      }
     </div>
     @for (band of bands(); track band.label) {
-      <div class="stat stat--half">
+      <div class="stat" [class.stat--half]="!other">
         <dt class="stat__label">{{ band.label }}</dt>
-        <dd class="stat__value">{{ band.count }}</dd>
+        @if (other) {
+          <dd class="stat__value">
+            {{ (band.share | number: '1.1-1') ?? '–' }} %
+            <app-delta-mark [own]="band.share" [other]="band.otherShare" [name]="other.name" [digits]="1" unit=" %" />
+          </dd>
+          <dd class="stat__hint">
+            <app-compared-value [name]="other.name" [other]="band.otherShare" [digits]="1" unit=" %" />
+          </dd>
+        } @else {
+          <dd class="stat__value">{{ band.count }}</dd>
+        }
       </div>
     }
   </dl>
@@ -29,4 +58,5 @@
   [fields]="totals.fields"
   [locatedFields]="totals.locatedFields"
   [heatmap]="totals.heatmap"
+  [comparison]="comparison()"
 />

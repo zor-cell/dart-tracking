@@ -55,3 +55,23 @@ def test_only_finished_cricket_games_of_the_scoring_picked_count(alice, session)
     assert len(cricket(alice)["games"]) == 2
     assert len(cricket(alice, scoring="no_score")["games"]) == 1
     assert len(cricket(alice, last=1)["games"]) == 1
+
+
+def test_a_compared_player_is_read_instead(alice, session):
+    ben = alice.add_player("Ben")
+    game_id = alice.new_game(alice.own_entry()["id"], ben, settings={"variant": "cricket"})["id"]
+    session.play(game_id, [(20, 3), (0, 0), (0, 0)], [(19, 1), (19, 1), (0, 0)])
+    finish(session, game_id)
+
+    found = cricket(alice, player=ben)
+
+    assert (found["darts"], found["marks"]) == (3, 2)
+    assert found["fields"] == {"19": 2, "0": 1}
+
+
+def test_an_unknown_compared_player_is_not_found(alice):
+    response = alice.get(
+        "/statistics/cricket", params={"player": "00000000-0000-0000-0000-000000000000"}
+    )
+
+    assert response.status_code == 404

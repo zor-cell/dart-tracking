@@ -33,6 +33,17 @@
   white-space: nowrap;
 }
 
+.bar__tracks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+/* Beside a compared player each row has two bars and two figures. */
+.bars--compared .bar {
+  padding-block: 0.25rem;
+}
+
 .bar__track {
   height: 0.6rem;
   border-radius: 0.2rem;
@@ -47,5 +58,7 @@
 }
 
 .bar__figure {
-  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }

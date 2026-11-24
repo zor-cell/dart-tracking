@@ -100,7 +100,10 @@ import {
 import { CricketStatisticsComponent } from '../cricket-statistics/cricket-statistics.component';
 import { CheckoutStatisticsComponent } from '../checkout-statistics/checkout-statistics.component';
 import { PrecisionStatisticsComponent } from '../precision-statistics/precision-statistics.component';
-import { TargetStatisticsComponent } from '../target-statistics/target-statistics.component';
+import {
+  TargetStatisticsComponent,
+  TargetWins,
+} from '../target-statistics/target-statistics.component';
 import { TrendStatisticsComponent } from '../trend-statistics/trend-statistics.component';
 import { VisitDistributionComponent } from '../visit-distribution/visit-distribution.component';
 
@@ -152,6 +155,16 @@ const FILTER_PARAMS = {
 
 /** The quick picks the game list knows too; a count of games has no counterpart there. */
 const DAY_PERIODS: readonly Period[] = PERIODS.days.map((option) => option.value);
+
+/** What one side of the page loaded for the shown game; the parts it does not use are null. */
+interface Figures {
+  readonly totals: StatisticsOverviewDto | null;
+  readonly overall: OverallStatisticsDto | null;
+  readonly targets: TargetStatisticsDto | null;
+  readonly scoring: ScoringStatisticsDto | null;
+  readonly cricket: CricketStatisticsDto | null;
+  readonly kills: KillStatisticsDto | null;
+}
 
 /** Offered while the account has no picks of its own. */
 const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
@@ -206,7 +219,7 @@ export class StatisticsComponent {
 
   protected readonly totals = signal<StatisticsOverviewDto | null>(null);
   /** The compared player's figures under the same filters, null while nobody is compared. */
-  protected readonly others = signal<StatisticsOverviewDto | null>(null);
+  protected readonly others = signal<Figures | null>(null);
   /** The darts at targets, for the games whose figures are not points. */
   protected readonly targets = signal<TargetStatisticsDto | null>(null);
   /** The points of the free trainings without a target; null for the other games. */
@@ -248,12 +261,19 @@ export class StatisticsComponent {
   protected readonly targetTab = computed(() => (this.tab() === 'trend' ? 'trend' : 'precision'));
 
   /** Killer's games won, for its figures; null for the other games. */
-  protected readonly killerWins = computed(() => {
-    const kills = this.game() === 'killer' ? this.kills() : null;
-    return kills && kills.games.length > 0 ? { wins: kills.wins, games: kills.games.length } : null;
-  });
+  protected readonly killerWins = computed(() => killerWins(this.game(), this.kills()));
   /** Every game together, for the view over all of them. */
   protected readonly overall = signal<OverallStatisticsDto | null>(null);
+
+  /** Everything one's own side loaded, as `others` holds the compared player's. */
+  private readonly own = computed<Figures>(() => ({
+    totals: this.totals(),
+    overall: this.overall(),
+    targets: this.targets(),
+    scoring: this.scoring(),
+    cricket: this.cricket(),
+    kills: this.kills(),
+  }));
 
   /** How many games and darts the figures shown are counted from; null before they are
    * loaded or without a game. */
@@ -261,22 +281,13 @@ export class StatisticsComponent {
     if (this.failed()) {
       return null;
     }
-    const points = this.points() ? this.totals() : null;
-    const overall = this.game() === 'all' ? this.overall() : null;
-    const other =
-      this.game() === 'all'
-        ? null
-        : this.game() === 'cricket'
-          ? this.cricket()
-          : this.free()
-            ? this.scoring()
-            : (this.kills() ?? this.targets());
-    const tally = points
-      ? { games: points.legs, darts: points.darts }
-      : overall
-        ? { games: overall.games, darts: overall.darts }
-        : other && { games: other.games.length, darts: other.darts };
+    const tally = this.tally(this.own());
     return tally && tally.games > 0 ? tally : null;
+  });
+  /** The same for the compared player; null while nobody is compared. */
+  protected readonly otherCounted = computed(() => {
+    const others = this.others();
+    return others ? this.tally(others) : null;
   });
 
   protected readonly tab = signal<StatisticsTab>(
@@ -309,12 +320,16 @@ export class StatisticsComponent {
   protected readonly comparedPlayer = computed(
     () => this.opponents().find((player) => player.id === this.compareId()) ?? null,
   );
-  /** Handed to the tabs only once the compared player has a counted game. */
-  protected readonly comparison = computed<Comparison | null>(() => {
-    const player = this.comparedPlayer();
-    const statistics = this.others();
-    return player && statistics && statistics.legs > 0 ? { name: player.name, statistics } : null;
-  });
+  /** Each view's comparison, handed over only once the compared player has a counted game. */
+  protected readonly comparison = computed(() => this.compared((figures) => figures.totals));
+  protected readonly overallComparison = computed(() => this.compared((figures) => figures.overall));
+  protected readonly targetComparison = computed(() => this.compared((figures) => figures.targets));
+  protected readonly scoringComparison = computed(() => this.compared((figures) => figures.scoring));
+  protected readonly cricketComparison = computed(() => this.compared((figures) => figures.cricket));
+  protected readonly killComparison = computed(() => this.compared((figures) => figures.kills));
+  protected readonly otherKillerWins = computed(() =>
+    killerWins(this.game(), this.others()?.kills ?? null),
+  );
 
   protected readonly filters = this.fb.group({
     opponentId: this.fb.control<string[]>([], { nonNullable: true }),
@@ -482,7 +497,7 @@ export class StatisticsComponent {
     effect(() => writeStored(TAB_KEY, this.tab()));
     effect(() => {
       const criteria = this.criteria();
-      const compared = this.points() ? this.compareId() : '';
+      const compared = this.compareId();
       untracked(() => void this.load(criteria, compared));
     });
   }
@@ -586,7 +601,7 @@ export class StatisticsComponent {
   }
 
   protected reload(): void {
-    void this.load(this.criteria(), this.points() ? this.compareId() : '');
+    void this.load(this.criteria(), this.compareId());
   }
 
   /** Only the latest request may land, so a quick change of filters cannot be overtaken. */
@@ -595,44 +610,18 @@ export class StatisticsComponent {
     this.loading.set(true);
     this.failed.set(false);
     try {
-      const game = this.game();
-      if (!this.free()) {
-        this.scoring.set(null);
-      }
-      const kills =
-        game === 'elimination' || game === 'killer' ? this.statistics.kills(criteria) : null;
-      if (game === 'all') {
-        const overall = await this.statistics.overall(criteria);
-        if (request === this.requests) {
-          this.overall.set(overall);
-        }
-      } else if (game === 'cricket') {
-        const cricket = await this.statistics.cricket(criteria);
-        if (request === this.requests) {
-          this.cricket.set(cricket);
-        }
-      } else if (this.points()) {
-        const [totals, others, killed] = await Promise.all([
-          this.statistics.load(criteria),
-          compared ? this.statistics.load(criteria, compared) : null,
-          kills,
-        ]);
-        if (request === this.requests) {
-          this.totals.set(totals);
-          this.others.set(others);
-          this.kills.set(killed);
-        }
-      } else {
-        const [targets, killed, scoring] = await Promise.all([
-          this.statistics.targets(criteria),
-          kills,
-          this.free() ? this.statistics.scoring(criteria) : null,
-        ]);
-        if (request === this.requests) {
-          this.targets.set(targets);
-          this.kills.set(killed);
-          this.scoring.set(scoring);
-        }
+      const [own, others] = await Promise.all([
+        this.fetch(criteria, null),
+        compared ? this.fetch(criteria, compared) : null,
+      ]);
+      if (request === this.requests) {
+        this.totals.set(own.totals);
+        this.overall.set(own.overall);
+        this.targets.set(own.targets);
+        this.scoring.set(own.scoring);
+        this.cricket.set(own.cricket);
+        this.kills.set(own.kills);
+        this.others.set(others);
       }
     } catch {
       if (request === this.requests) {
@@ -644,4 +633,53 @@ export class StatisticsComponent {
       }
     }
   }
+
+  /** The figures the shown game needs, one's own or with `player` those of that entry. */
+  private async fetch(criteria: StatisticsFilter, player: string | null): Promise<Figures> {
+    const game = this.game();
+    const points = this.points();
+    const atTargets = game !== 'all' && game !== 'cricket' && !points;
+    const [totals, overall, targets, scoring, cricket, kills] = await Promise.all([
+      points ? this.statistics.load(criteria, player) : null,
+      game === 'all' ? this.statistics.overall(criteria, player) : null,
+      atTargets ? this.statistics.targets(criteria, player) : null,
+      this.free() ? this.statistics.scoring(criteria, player) : null,
+      game === 'cricket' ? this.statistics.cricket(criteria, player) : null,
+      game === 'elimination' || game === 'killer' ? this.statistics.kills(criteria, player) : null,
+    ]);
+    return { totals, overall, targets, scoring, cricket, kills };
+  }
+
+  /** How many games and darts a side's figures for the shown game count. */
+  private tally(figures: Figures): { games: number; darts: number } | null {
+    if (this.points()) {
+      return figures.totals && { games: figures.totals.legs, darts: figures.totals.darts };
+    }
+    if (this.game() === 'all') {
+      return figures.overall && { games: figures.overall.games, darts: figures.overall.darts };
+    }
+    const shown =
+      this.game() === 'cricket'
+        ? figures.cricket
+        : this.free()
+          ? figures.scoring
+          : (figures.kills ?? figures.targets);
+    return shown && { games: shown.games.length, darts: shown.darts };
+  }
+
+  /** A view's comparison from the compared player's figures, once they count a game. */
+  private compared<T>(pick: (figures: Figures) => T | null): Comparison<T> | null {
+    const player = this.comparedPlayer();
+    const others = this.others();
+    const statistics = others ? pick(others) : null;
+    const games = this.otherCounted()?.games ?? 0;
+    return player && statistics && games > 0 ? { name: player.name, statistics } : null;
+  }
+}
+
+/** Killer's games won out of those played; null for the other games or without a game. */
+function killerWins(game: StatisticsView, kills: KillStatisticsDto | null): TargetWins | null {
+  return game === 'killer' && kills && kills.games.length > 0
+    ? { wins: kills.wins, games: kills.games.length }
+    : null;
 }

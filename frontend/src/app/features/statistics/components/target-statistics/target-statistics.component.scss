@@ -3,3 +3,37 @@
   flex-direction: column;
   gap: 1.25rem;
 }
+
+/* Same compact toggle as the boards' own. */
+.boards__header {
+  --p-togglebutton-sm-padding: 0.2rem;
+  --p-togglebutton-content-sm-padding: 0.2rem 0.5rem;
+  --p-togglebutton-sm-font-size: 0.75rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+/* Two boards in a row, each with whose darts it shows above it. */
+.board-pair {
+  --target-board-height: 15.5rem;
+
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.board-pair__side {
+  margin: 0;
+}
+
+.board-pair__name {
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

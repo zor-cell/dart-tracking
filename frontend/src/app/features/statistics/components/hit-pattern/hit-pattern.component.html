@@ -1,3 +1,11 @@
+@let other = comparison();
+<ng-template #board let-points="points" let-fields="fields" let-tips="tips">
+  @if (layer() === 'fields') {
+    <app-field-heatmap [counts]="fields" [(pinned)]="pinnedField" />
+  } @else {
+    <app-tip-heatmap [points]="points" mode="cloud" [counts]="tips" [(pinned)]="pinnedField" />
+  }
+</ng-template>
 <section class="panel">
   <header class="heatmap__header">
     <h2 class="panel__title" i18n="@@stats.hitPattern">Trefferbild</h2>
@@ -13,12 +21,35 @@
       size="small"
     />
   </header>
-  <div class="heatmap">
-    @if (layer() === 'fields') {
-      <app-field-heatmap [counts]="fieldCounts()" [(pinned)]="pinnedField" />
-    } @else {
-      <app-tip-heatmap [points]="heatmap()" mode="cloud" [counts]="tipCounts()" [(pinned)]="pinnedField" />
-    }
-  </div>
+  @if (other) {
+    <!-- Side by side, one field picked on either shows on both. -->
+    <div class="heatmap-pair">
+      <figure class="heatmap-pair__side">
+        <figcaption class="heatmap-pair__name" i18n="@@player.list.self">Du</figcaption>
+        <div class="heatmap-pair__board">
+          <ng-container
+            *ngTemplateOutlet="board; context: { points: heatmap(), fields: fieldCounts(), tips: tipCounts() }"
+          />
+        </div>
+      </figure>
+      <figure class="heatmap-pair__side">
+        <figcaption class="heatmap-pair__name">{{ other.name }}</figcaption>
+        <div class="heatmap-pair__board">
+          <ng-container
+            *ngTemplateOutlet="
+              board;
+              context: { points: other.statistics.heatmap, fields: otherFieldCounts(), tips: otherTipCounts() }
+            "
+          />
+        </div>
+      </figure>
+    </div>
+  } @else {
+    <div class="heatmap">
+      <ng-container
+        *ngTemplateOutlet="board; context: { points: heatmap(), fields: fieldCounts(), tips: tipCounts() }"
+      />
+    </div>
+  }
   <ng-content />
 </section>

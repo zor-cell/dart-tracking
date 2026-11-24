@@ -1,4 +1,5 @@
 @let totals = statistics();
+@let other = comparison();
 <section class="panel">
   <h2 class="panel__title" i18n="@@settings.general">Allgemein</h2>
   <dl class="stat-grid">
@@ -10,7 +11,11 @@
         </app-info-hint>
       </dt>
       <dd class="stat__value">{{ playTime() }}</dd>
-      @if (timePerGame(); as perGame) {
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [text]="otherPlayTime()" />
+        </dd>
+      } @else if (timePerGame(); as perGame) {
         <dd class="stat__hint" i18n="@@stats.all.perGame">Ø {{ perGame }} pro Spiel</dd>
       }
     </div>
@@ -25,13 +30,40 @@
         } @else {
           &ndash;
         }
+        @if (other) {
+          <app-delta-mark [own]="winRate()" [other]="otherWinRate()" [name]="other.name" [digits]="0" unit=" %" />
+        }
       </dd>
-      <dd class="stat__hint" i18n="@@stats.kills.wins">{{ totals.wins }} von {{ totals.gamesWithOpponent }} gewonnen</dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="otherWinRate()" [digits]="0" unit=" %" />
+        </dd>
+      } @else {
+        <dd class="stat__hint" i18n="@@stats.kills.wins">{{ totals.wins }} von {{ totals.gamesWithOpponent }} gewonnen</dd>
+      }
     </div>
     <div class="stat">
       <dt class="stat__label" i18n="@@stats.all.misses">Daneben</dt>
-      <dd class="stat__value">{{ missRate() | number: '1.0-0' }} %</dd>
-      <dd class="stat__hint" i18n="@@stats.all.missesHint">{{ totals.misses | number }} Darts ohne Feld</dd>
+      <dd class="stat__value">
+        {{ missRate() | number: '1.0-0' }} %
+        @if (other) {
+          <app-delta-mark
+            [own]="missRate()"
+            [other]="otherMissRate()"
+            [name]="other.name"
+            [digits]="0"
+            unit=" %"
+            [lowerIsBetter]="true"
+          />
+        }
+      </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="otherMissRate()" [digits]="0" unit=" %" />
+        </dd>
+      } @else {
+        <dd class="stat__hint" i18n="@@stats.all.missesHint">{{ totals.misses | number }} Darts ohne Feld</dd>
+      }
     </div>
     <div class="stat">
       <dt class="stat__label">
@@ -41,7 +73,13 @@
         </app-info-hint>
       </dt>
       <dd class="stat__value">{{ locatedRate() | number: '1.0-0' }} %</dd>
-      <dd class="stat__hint" i18n="@@stats.all.locatedOf">{{ totals.located | number }} Darts mit Position</dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="otherLocatedRate()" [digits]="0" unit=" %" />
+        </dd>
+      } @else {
+        <dd class="stat__hint" i18n="@@stats.all.locatedOf">{{ totals.located | number }} Darts mit Position</dd>
+      }
     </div>
   </dl>
 </section>
@@ -50,14 +88,29 @@
   [fields]="totals.fields"
   [locatedFields]="totals.locatedFields"
   [heatmap]="totals.heatmap"
+  [comparison]="other"
 >
   <h3 class="rings__title" i18n="@@stats.all.rings">Ringe</h3>
-  <ul class="bars">
+  <ul class="bars" [class.bars--compared]="other">
     @for (row of rings(); track row.key) {
       <li class="bar">
         <span class="bar__label">{{ row.label }}</span>
-        <span class="bar__track"><span class="bar__fill" [style.width.%]="row.share * 100"></span></span>
-        <span class="bar__figure">{{ row.figure }}</span>
+        <span class="bar__tracks" aria-hidden="true">
+          <span class="bar__track">
+            <span class="bar__fill" [style.width.%]="row.width * 100" [style.background]="other ? ownColor : null"></span>
+          </span>
+          @if (other) {
+            <span class="bar__track">
+              <span class="bar__fill" [style.width.%]="row.otherWidth * 100" [style.background]="compareColor"></span>
+            </span>
+          }
+        </span>
+        <span class="bar__figure">
+          <span>{{ (row.percent | number: '1.0-0') ?? '–' }} %</span>
+          @if (other) {
+            <app-compared-value [name]="other.name" [other]="row.otherPercent" [digits]="0" unit=" %" [named]="false" />
+          }
+        </span>
       </li>
     }
   </ul>
@@ -65,6 +118,6 @@
 
 @if (totals.activity; as activity) {
   <section class="panel">
-    <app-activity-chart [activity]="activity" />
+    <app-activity-chart [activity]="activity" [comparison]="otherActivity()" />
   </section>
 }

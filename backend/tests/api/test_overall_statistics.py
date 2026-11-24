@@ -190,3 +190,15 @@ def test_a_longer_range_counts_in_weeks_and_months(alice, session):
 
 def test_without_a_game_there_is_no_activity(alice):
     assert overall(alice)["activity"] is None
+
+
+def test_a_compared_player_is_read_instead(alice, session):
+    ben = alice.add_player("Ben")
+    game_id = alice.new_game(alice.own_entry()["id"], ben, settings=X01)["id"]
+    session.play(game_id, [(20, 1), (20, 1), (20, 1)], [(5, 1), MISS, MISS])
+    finish(session, game_id, "2026-11-02 10:00")
+
+    found = overall(alice, player=ben)
+
+    assert (found["games"], found["darts"], found["misses"]) == (1, 3, 2)
+    assert found["activity"]["buckets"][0]["variants"]["x01"]["darts"] == 3

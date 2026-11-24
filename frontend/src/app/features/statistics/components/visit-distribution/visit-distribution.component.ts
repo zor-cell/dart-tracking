@@ -18,6 +18,9 @@ import { chartTheme, indexMarkerPlugin } from '../../../../core/charts/models/ch
 import { axisTicks, chartBase } from '../../../../core/charts/models/chart-styles';
 import { RepeatPressDirective } from '../../../../core/view/directives/repeat-press.directive';
 
+/** Visits by points. */
+type VisitScores = Readonly<Record<string, number>>;
+
 /** How many of the most frequent visits are offered under the bars. */
 const TOP_VISITS = 5;
 
@@ -35,8 +38,8 @@ export class VisitDistributionComponent {
   private readonly theme = chartTheme(inject(DOCUMENT));
 
   /** Visits by their points, keyed as the statistics send them. */
-  readonly visitScores = input.required<Readonly<Record<string, number>>>();
-  readonly comparison = input<Comparison | null>(null);
+  readonly visitScores = input.required<VisitScores>();
+  readonly comparison = input<Comparison<{ readonly visitScores: VisitScores }> | null>(null);
 
   protected readonly maxVisit = MAX_VISIT;
   protected readonly counts = computed(() => visitCounts(this.visitScores()));

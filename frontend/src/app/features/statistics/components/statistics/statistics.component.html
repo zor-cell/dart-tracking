@@ -89,27 +89,25 @@
           }
         }
       </form>
-      @if (points()) {
-        <p-button
-          listToolbarAction
-          icon="pi pi-arrow-right-arrow-left"
-          [rounded]="true"
-          ariaLabel="Mit anderem Spieler vergleichen"
-          i18n-ariaLabel="@@stats.compare"
-          (onClick)="comparePicker.toggle($event)"
-        />
-      }
+      <p-button
+        listToolbarAction
+        icon="pi pi-arrow-right-arrow-left"
+        [rounded]="true"
+        ariaLabel="Mit anderem Spieler vergleichen"
+        i18n-ariaLabel="@@stats.compare"
+        (onClick)="comparePicker.toggle($event)"
+      />
     </app-list-toolbar>
-    @if (points() ? comparedPlayer() : null; as player) {
+    @if (comparedPlayer(); as player) {
       <div class="compare-note">
         <span class="compare-note__key">
           <span class="compare-note__dot" [style.background]="ownColor"></span>
           <strong i18n="@@player.list.self">Du</strong>
-          @if (totals(); as own) {
+          @if (counted(); as own) {
             <span class="compare-note__games">
-              <ng-container i18n="@@stats.games">{own.legs, plural,
+              <ng-container i18n="@@stats.games">{own.games, plural,
                 =1 {1 Spiel}
-                other {{{ own.legs }} Spiele}
+                other {{{ own.games }} Spiele}
               }</ng-container>
             </span>
           }
@@ -117,11 +115,11 @@
         <span class="compare-note__key">
           <span class="compare-note__dot" [style.background]="compareColor"></span>
           <strong>{{ player.name }}</strong>
-          @if (others(); as loaded) {
+          @if (otherCounted(); as loaded) {
             <span class="compare-note__games">
-              <ng-container i18n="@@stats.games">{loaded.legs, plural,
+              <ng-container i18n="@@stats.games">{loaded.games, plural,
                 =1 {1 Spiel}
-                other {{{ loaded.legs }} Spiele}
+                other {{{ loaded.games }} Spiele}
               }</ng-container>
             </span>
           }
@@ -262,7 +260,11 @@
   <ng-template #killPanel>
     @if (kills(); as kills) {
       @if (kills.games.length > 0) {
-        <app-kill-statistics [statistics]="kills" [killer]="game() === 'killer'" />
+        <app-kill-statistics
+          [statistics]="kills"
+          [comparison]="killComparison()"
+          [killer]="game() === 'killer'"
+        />
       }
     }
   </ng-template>
@@ -294,7 +296,7 @@
               <app-trend-statistics
                 [figures]="pointsFigures"
                 [points]="totals.trend"
-                [otherPoints]="comparison() ? (others()?.trend ?? null) : null"
+                [otherPoints]="comparison()?.statistics?.trend ?? null"
                 [compareName]="comparison()?.name ?? null"
               />
               <app-visit-distribution
@@ -314,6 +316,7 @@
         [class.reloading]="loading()"
         [attr.aria-busy]="loading()"
         [statistics]="overall"
+        [comparison]="overallComparison()"
       />
     }
   } @else if (game() === 'cricket') {
@@ -327,10 +330,15 @@
       } @else if (cricket(); as cricket) {
         <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
           <p-tabpanel value="precision">
-            <app-cricket-statistics [statistics]="cricket" />
+            <app-cricket-statistics [statistics]="cricket" [comparison]="cricketComparison()" />
           </p-tabpanel>
           <p-tabpanel value="trend">
-            <app-trend-statistics [figures]="cricketFigures" [points]="cricket.games" />
+            <app-trend-statistics
+              [figures]="cricketFigures"
+              [points]="cricket.games"
+              [otherPoints]="cricketComparison()?.statistics?.games ?? null"
+              [compareName]="cricketComparison()?.name ?? null"
+            />
           </p-tabpanel>
         </p-tabpanels>
       }
@@ -347,9 +355,15 @@
         <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
           <p-tabpanel value="precision">
             @if (free() ? scoring() : null; as scoring) {
-              <app-scoring-statistics [statistics]="scoring" />
+              <app-scoring-statistics [statistics]="scoring" [comparison]="scoringComparison()" />
             } @else {
-              <app-target-statistics [statistics]="targets" [game]="game()" [wins]="killerWins()">
+              <app-target-statistics
+                [statistics]="targets"
+                [game]="game()"
+                [wins]="killerWins()"
+                [comparison]="targetComparison()"
+                [otherWins]="otherKillerWins()"
+              >
                 <ng-container *ngTemplateOutlet="killPanel" />
               </app-target-statistics>
             }
@@ -357,11 +371,24 @@
           <p-tabpanel value="trend">
             @if (free() ? scoring() : null; as scoring) {
               <div class="trend">
-                <app-trend-statistics [figures]="scoringFigures" [points]="scoring.games" />
-                <app-visit-distribution [visitScores]="scoring.visitScores" />
+                <app-trend-statistics
+                  [figures]="scoringFigures"
+                  [points]="scoring.games"
+                  [otherPoints]="scoringComparison()?.statistics?.games ?? null"
+                  [compareName]="scoringComparison()?.name ?? null"
+                />
+                <app-visit-distribution
+                  [visitScores]="scoring.visitScores"
+                  [comparison]="scoringComparison()"
+                />
               </div>
             } @else {
-              <app-trend-statistics [figures]="targetFigures" [points]="targets.games" />
+              <app-trend-statistics
+                [figures]="targetFigures"
+                [points]="targets.games"
+                [otherPoints]="targetComparison()?.statistics?.games ?? null"
+                [compareName]="targetComparison()?.name ?? null"
+              />
             }
           </p-tabpanel>
         </p-tabpanels>

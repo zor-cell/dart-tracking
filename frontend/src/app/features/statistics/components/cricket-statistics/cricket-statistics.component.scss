@@ -3,3 +3,8 @@
   flex-direction: column;
   gap: 1.25rem;
 }
+
+/* The visit bands as whole cards behind the other figures, two per row. */
+.stat--after {
+  order: 1;
+}

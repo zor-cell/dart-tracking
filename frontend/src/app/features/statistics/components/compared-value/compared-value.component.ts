@@ -11,7 +11,9 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ComparedValueComponent {
-  readonly other = input.required<number | null>();
+  readonly other = input<number | null>(null);
+  /** Shown instead of a number, for a figure that is a name or a duration. */
+  readonly text = input<string | null>(null);
   readonly name = input.required<string>();
   /** Writes the name before the value; where the column already says whose it is, only for
    * screen readers. */

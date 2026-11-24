@@ -1,4 +1,5 @@
 @let totals = statistics();
+@let other = comparison();
 <section class="panel">
   <h2 class="panel__title" i18n="@@settings.general">Allgemein</h2>
   <dl class="stat-grid">
@@ -8,8 +9,19 @@
           <ng-container i18n="@@stats.winRate">Siegquote</ng-container>
           <app-info-hint class="stat__info" i18n="@@stats.winRateGamesHint">Nur Spiele mit Gegner.</app-info-hint>
         </dt>
-        <dd class="stat__value">{{ (100 * wins.wins) / wins.games | number: '1.0-0' }} %</dd>
-        <dd class="stat__hint" i18n="@@stats.kills.wins">{{ wins.wins }} von {{ wins.games }} gewonnen</dd>
+        <dd class="stat__value">
+          {{ winRate() | number: '1.0-0' }} %
+          @if (other) {
+            <app-delta-mark [own]="winRate()" [other]="otherWinRate()" [name]="other.name" [digits]="0" unit=" %" />
+          }
+        </dd>
+        @if (other) {
+          <dd class="stat__hint">
+            <app-compared-value [name]="other.name" [other]="otherWinRate()" [digits]="0" unit=" %" />
+          </dd>
+        } @else {
+          <dd class="stat__hint" i18n="@@stats.kills.wins">{{ wins.wins }} von {{ wins.games }} gewonnen</dd>
+        }
       </div>
     }
     <div class="stat stat--lead">
@@ -20,7 +32,15 @@
         } @else {
           &ndash;
         }
+        @if (other) {
+          <app-delta-mark [own]="rate()" [other]="otherRate()" [name]="other.name" [digits]="0" unit=" %" />
+        }
       </dd>
+      @if (other) {
+        <dd class="stat__hint">
+          <app-compared-value [name]="other.name" [other]="otherRate()" [digits]="0" unit=" %" />
+        </dd>
+      }
     </div>
     @if (clock()) {
       <ng-container *ngTemplateOutlet="distanceCard; context: { $implicit: true }" />
@@ -32,7 +52,21 @@
           } @else {
             &ndash;
           }
+          @if (other) {
+            <app-delta-mark
+              [own]="totals.best?.darts ?? null"
+              [other]="other.statistics.best?.darts ?? null"
+              [name]="other.name"
+              [digits]="0"
+              [lowerIsBetter]="true"
+            />
+          }
         </dd>
+        @if (other) {
+          <dd class="stat__hint">
+            <app-compared-value [name]="other.name" [other]="other.statistics.best?.darts ?? null" [digits]="0" />
+          </dd>
+        }
       </div>
       <div class="stat">
         <dt class="stat__label">
@@ -42,7 +76,23 @@
             durchgekommen bist.
           </app-info-hint>
         </dt>
-        <dd class="stat__value">{{ (totals.dartsToFinish | number: '1.0-0') ?? '–' }}</dd>
+        <dd class="stat__value">
+          {{ (totals.dartsToFinish | number: '1.0-0') ?? '–' }}
+          @if (other) {
+            <app-delta-mark
+              [own]="totals.dartsToFinish"
+              [other]="other.statistics.dartsToFinish"
+              [name]="other.name"
+              [digits]="0"
+              [lowerIsBetter]="true"
+            />
+          }
+        </dd>
+        @if (other) {
+          <dd class="stat__hint">
+            <app-compared-value [name]="other.name" [other]="other.statistics.dartsToFinish" [digits]="0" />
+          </dd>
+        }
       </div>
     } @else {
       @if (!wins()) {
@@ -51,14 +101,22 @@
       <div class="stat">
         <dt class="stat__label" i18n="@@stats.targets.strongest">Stärkstes Ziel</dt>
         <dd class="stat__value">{{ strongest()?.label ?? '–' }}</dd>
-        @if (strongest(); as field) {
+        @if (other) {
+          <dd class="stat__hint">
+            <app-compared-value [name]="other.name" [text]="otherStrongest() ?? '–'" />
+          </dd>
+        } @else if (strongest(); as field) {
           <dd class="stat__hint" i18n="@@stats.targets.fieldRate">{{ field.rate | number: '1.0-0' }} % Trefferquote</dd>
         }
       </div>
       <div class="stat">
         <dt class="stat__label" i18n="@@stats.targets.weakest">Schwächstes Ziel</dt>
         <dd class="stat__value">{{ weakest()?.label ?? '–' }}</dd>
-        @if (weakest(); as field) {
+        @if (other) {
+          <dd class="stat__hint">
+            <app-compared-value [name]="other.name" [text]="otherWeakest() ?? '–'" />
+          </dd>
+        } @else if (weakest(); as field) {
           <dd class="stat__hint" i18n="@@stats.targets.fieldRate">{{ field.rate | number: '1.0-0' }} % Trefferquote</dd>
         }
       </div>
@@ -70,18 +128,52 @@
 </section>
 
 <section class="panel">
-  <h2 class="panel__title" i18n="@@stats.hitPattern">Trefferbild</h2>
-  <app-target-board [targets]="totals.fields" [(selected)]="selected" />
+  @if (other) {
+    <!-- Side by side, one target picked on either shows on both. -->
+    <header class="boards__header">
+      <h2 class="panel__title" i18n="@@stats.hitPattern">Trefferbild</h2>
+      <p-selectbutton
+        [options]="layerOptions"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false"
+        [ngModel]="layer()"
+        (ngModelChange)="selectLayer($event)"
+        ariaLabel="Darstellung der Heatmap"
+        i18n-ariaLabel="@@game.replay.layer"
+        size="small"
+      />
+    </header>
+    <div class="board-pair">
+      <figure class="board-pair__side">
+        <figcaption class="board-pair__name" i18n="@@player.list.self">Du</figcaption>
+        <app-target-board [targets]="totals.fields" [layerSwitch]="false" [(layer)]="layer" [(selected)]="selected" />
+      </figure>
+      <figure class="board-pair__side">
+        <figcaption class="board-pair__name">{{ other.name }}</figcaption>
+        <app-target-board
+          [targets]="other.statistics.fields"
+          [layerSwitch]="false"
+          [(layer)]="layer"
+          [(selected)]="selected"
+        />
+      </figure>
+    </div>
+  } @else {
+    <h2 class="panel__title" i18n="@@stats.hitPattern">Trefferbild</h2>
+    <app-target-board [targets]="totals.fields" [(layer)]="layer" [(selected)]="selected" />
+  }
 </section>
 
 <ng-content />
 
 <ng-template #distanceCard let-lead>
+  @let kind = ring() === 'double' ? 'checkout' : 'treble';
   <div class="stat" [class.stat--lead]="lead">
     <dt class="stat__label">
       <ng-container i18n="@@stats.targets.distance">Ø Abstand zum Ziel</ng-container>
       <app-info-hint class="stat__info">
-        <app-stat-sketch [kind]="ring() === 'double' ? 'checkout' : 'treble'" />
+        <app-stat-sketch [kind]="kind" />
         <ng-container i18n="@@stats.targets.distanceHint"
           >Kürzester Weg vom erkannten Dart zum Feld, auf das er ging. Ein Treffer zählt 0 mm.</ng-container
         >
@@ -89,12 +181,36 @@
     </dt>
     @let distance = statistics().distance;
     @if (distance !== null) {
-      <dd class="stat__value">{{ distance | number: '1.0-0' }} mm</dd>
-      <dd class="stat__scale">
-        <app-distance-scale [distance]="distance" [kind]="ring() === 'double' ? 'checkout' : 'treble'" />
+      <dd class="stat__value">
+        {{ distance | number: '1.0-0' }} mm
+        @if (other) {
+          <app-delta-mark
+            [own]="distance"
+            [other]="other.statistics.distance"
+            [name]="other.name"
+            [digits]="0"
+            unit=" mm"
+            [lowerIsBetter]="true"
+          />
+        }
       </dd>
     } @else {
       <dd class="stat__value">&ndash;</dd>
+    }
+    @if (other) {
+      <dd class="stat__hint">
+        <app-compared-value [name]="other.name" [other]="other.statistics.distance" [digits]="0" unit=" mm" />
+      </dd>
+    }
+    @if (distance !== null) {
+      <dd class="stat__scale">
+        <app-distance-scale
+          [distance]="distance"
+          [compared]="other?.statistics?.distance ?? null"
+          [colors]="other ? pairColors : null"
+          [kind]="kind"
+        />
+      </dd>
     }
   </div>
 </ng-template>

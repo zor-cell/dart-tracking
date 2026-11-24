@@ -630,7 +630,6 @@
     "stats.trend.metric": "Figure in the trend",
     "stats.trend.tooFew": "A trend needs at least two scored games.",
     "stats.trend.games": "Single games",
-    "stats.trend.gap": "No game",
     "stats.trend.label": "{$metric} over {$count} games",
     "stats.trend.latest": "{$label}, latest trend {$value}{$unit}",
     "stats.trend.theirs": "{$own}; {$name} latest {$value}{$unit}",

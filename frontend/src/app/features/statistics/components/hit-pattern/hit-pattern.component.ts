@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SelectButton } from 'primeng/selectbutton';
@@ -9,12 +10,14 @@ import {
   storeHeatmapLayer,
   storedHeatmapLayer,
 } from '../../../game/models/heatmap-layer';
-import { HeatmapCell } from '../../dto/hit-pattern.dto';
+import { HeatmapCell, HitPatternDto } from '../../dto/hit-pattern.dto';
+import { Comparison } from '../../models/comparison';
 
-/** Where a player's darts landed, as a tip cloud or by field; projected content goes below. */
+/** Where a player's darts landed, as a tip cloud or by field, beside a compared player's if
+ * there is one; projected content goes below. */
 @Component({
   selector: 'app-hit-pattern',
-  imports: [FieldHeatmapComponent, FormsModule, SelectButton, TipHeatmapComponent],
+  imports: [FieldHeatmapComponent, FormsModule, NgTemplateOutlet, SelectButton, TipHeatmapComponent],
   templateUrl: './hit-pattern.component.html',
   styleUrl: './hit-pattern.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,6 +27,7 @@ export class HitPatternComponent {
   readonly fields = input.required<Readonly<Record<string, number>>>();
   readonly locatedFields = input.required<Readonly<Record<string, number>>>();
   readonly heatmap = input.required<readonly HeatmapCell[]>();
+  readonly comparison = input<Comparison<HitPatternDto> | null>(null);
 
   protected readonly layerOptions = [...HEATMAP_LAYERS];
   protected readonly layer = signal(storedHeatmapLayer());
@@ -31,6 +35,12 @@ export class HitPatternComponent {
 
   protected readonly fieldCounts = computed(() => new Map(Object.entries(this.fields())));
   protected readonly tipCounts = computed(() => new Map(Object.entries(this.locatedFields())));
+  protected readonly otherFieldCounts = computed(
+    () => new Map(Object.entries(this.comparison()?.statistics.fields ?? {})),
+  );
+  protected readonly otherTipCounts = computed(
+    () => new Map(Object.entries(this.comparison()?.statistics.locatedFields ?? {})),
+  );
 
   protected selectLayer(layer: HeatmapLayer): void {
     this.layer.set(layer);

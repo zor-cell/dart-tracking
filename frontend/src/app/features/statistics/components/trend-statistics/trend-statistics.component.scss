@@ -23,17 +23,3 @@
     margin-left: auto;
   }
 }
-
-/* The swatch of the gap marker projected into the legend. */
-.trend__line--gap {
-  display: inline-block;
-  width: 1rem;
-  height: 0.15rem;
-  margin-right: 0.4rem;
-  vertical-align: middle;
-  background: repeating-linear-gradient(
-    to right,
-    var(--p-text-muted-color) 0 0.25rem,
-    transparent 0.25rem 0.5rem
-  );
-}

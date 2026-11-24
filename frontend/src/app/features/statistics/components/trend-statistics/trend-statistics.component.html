@@ -18,14 +18,7 @@
       <p i18n="@@stats.trend.tooFew">Für einen Verlauf braucht es mindestens zwei gewertete Spiele.</p>
     </app-empty-state>
   } @else {
-    <app-trend-legend [entries]="legend()" [hidden]="hidden()" (toggle)="toggle($event)">
-      @if (otherPoints()) {
-        <span
-          ><span class="trend__line trend__line--gap"></span
-          ><ng-container i18n="@@stats.trend.gap">Ohne Spiel</ng-container></span
-        >
-      }
-    </app-trend-legend>
+    <app-trend-legend [entries]="legend()" [hidden]="hidden()" (toggle)="toggle($event)" />
     <p-chart
       type="line"
       height="16rem"

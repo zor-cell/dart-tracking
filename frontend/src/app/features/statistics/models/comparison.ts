@@ -2,9 +2,9 @@ import { SERIES_COLORS } from '../../../core/charts/models/series-colors';
 import { StatisticsOverviewDto } from '../dto/statistics-overview.dto';
 
 /** Another player's figures over the same filters, set beside one's own. */
-export interface Comparison {
+export interface Comparison<T = StatisticsOverviewDto> {
   readonly name: string;
-  readonly statistics: StatisticsOverviewDto;
+  readonly statistics: T;
 }
 
 /** Each side's colour in charts and drawings. As text the compared one reads
