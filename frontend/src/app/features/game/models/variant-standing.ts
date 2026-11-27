@@ -168,7 +168,7 @@ function standingOf(state: GameStateDto, seat: number, format: NumberFormat): St
         srLabel: $localize`:@@game.scoreboard.lastSteps:Felder im letzten Visit`,
       },
       rank: player.done,
-      progress: (100 * player.done) / CLOCK_TARGETS,
+      progress: player.target === null ? null : (100 * player.done) / CLOCK_TARGETS,
     };
   }
 
