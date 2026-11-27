@@ -11,6 +11,7 @@ import { SpeechTestDto } from '../dto/speech-test.dto';
 
 const MUTED_KEY = 'dart-tracking.announcerMuted';
 const VOLUME_KEY = 'dart-tracking.announcerVolume';
+const MIXES_KEY = 'dart-tracking.announcerMixes';
 
 /** Highest volume, as a factor: above 1 the calls are boosted. */
 export const MAX_VOLUME = 3;
@@ -26,6 +27,9 @@ const TEST_TIMEOUT = 8000;
 
 /** Older WebKit has the audio context under a prefix. */
 type WebAudioWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
+
+/** Safari's Audio Session API: `ambient` plays over other apps' audio instead of pausing it. */
+type AudioSessionNavigator = Navigator & { audioSession?: { type: 'auto' | 'ambient' } };
 
 /** What became of the self-test's clip. `spoken` says it played to the end, not
  * that anything was audible. */
@@ -45,6 +49,7 @@ export class AnnouncerService {
   private readonly _muted = signal(readStored(MUTED_KEY) === 'true');
   private readonly _unlocked = signal(false);
   private readonly _volume = signal(storedVolume());
+  private readonly _mixes = signal(readStored(MIXES_KEY) === 'true');
 
   private audio: AudioContext | null = null;
   private output: GainNode | null = null;
@@ -58,6 +63,10 @@ export class AnnouncerService {
   /** Volume of the calls on this device, as a factor from 0 to `MAX_VOLUME`. */
   readonly volume = this._volume.asReadonly();
   readonly supported = this.contextType() !== null;
+  /** Whether the calls play over other apps' music on this device instead of pausing it. */
+  readonly mixes = this._mixes.asReadonly();
+  /** Whether the browser lets the page choose between the two. */
+  readonly canMix = this.session() !== undefined;
 
   /** Whether the browser lets this page play sound; until a tap it may not. */
   readonly unlocked = this._unlocked.asReadonly();
@@ -94,6 +103,7 @@ export class AnnouncerService {
       }
     });
 
+    this.applyMixing();
     for (const event of GESTURE_EVENTS) {
       this.document.addEventListener(event, () => this.resume(), { capture: true });
     }
@@ -106,6 +116,23 @@ export class AnnouncerService {
     if (this.audio !== null && this.output !== null) {
       this.output.gain.setTargetAtTime(clamped, this.audio.currentTime, 0.02);
     }
+  }
+
+  setMixes(mixes: boolean): void {
+    this._mixes.set(mixes);
+    writeStored(MIXES_KEY, String(mixes));
+    this.applyMixing();
+  }
+
+  private applyMixing(): void {
+    const session = this.session();
+    if (session !== undefined) {
+      session.type = this._mixes() ? 'ambient' : 'auto';
+    }
+  }
+
+  private session(): AudioSessionNavigator['audioSession'] {
+    return (this.document.defaultView?.navigator as AudioSessionNavigator | undefined)?.audioSession;
   }
 
   claim(): void {

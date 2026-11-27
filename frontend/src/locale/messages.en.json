@@ -36,6 +36,8 @@
     "settings.announcerVoice": "Voice",
     "settings.announcerVolume": "Caller volume",
     "settings.announcerVolumeHint": "Applies to this device. Above 100 % the calls are boosted further.",
+    "settings.announcerMixes": "Keep music playing",
+    "settings.announcerMixesHint": "Applies to this device. Music from other apps keeps playing under the calls instead of pausing. In silent mode the calls stay silent, though.",
     "settings.announcementTest": "Test the caller",
     "settings.diagnostics.speech": "Audio playback",
     "settings.diagnostics.available": "available",

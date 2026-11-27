@@ -221,6 +221,27 @@
           </div>
         </div>
 
+        @if (announcer.canMix) {
+          <div class="list-group__item setting">
+            <div class="setting__text">
+              <div class="setting__label-row">
+                <label class="setting__label" for="announcer-mixes" i18n="@@settings.announcerMixes">
+                  Musik weiterspielen
+                </label>
+                <app-info-hint i18n="@@settings.announcerMixesHint">
+                  Gilt für dieses Gerät. Musik aus anderen Apps läuft unter der Ansage weiter, statt
+                  zu pausieren. Im Stumm-Modus bleibt die Ansage dann aber still.
+                </app-info-hint>
+              </div>
+            </div>
+            <p-toggleswitch
+              inputId="announcer-mixes"
+              [ngModel]="announcer.mixes()"
+              (ngModelChange)="announcer.setMixes($event)"
+            />
+          </div>
+        }
+
         <div class="list-group__item setting">
           <div class="setting__text">
             <span class="setting__label" i18n="@@settings.announcementTest">Ansage testen</span>

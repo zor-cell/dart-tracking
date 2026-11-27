@@ -736,6 +736,8 @@
     "settings.announcerVoiceHint": " Wer in der gewählten Sprache ansagt. ",
     "settings.announcerVolume": " Ansage-Lautstärke ",
     "settings.announcerVolumeHint": " Gilt für dieses Gerät. Über 100 % wird die Ansage zusätzlich verstärkt. ",
+    "settings.announcerMixes": " Musik weiterspielen ",
+    "settings.announcerMixesHint": " Gilt für dieses Gerät. Musik aus anderen Apps läuft unter der Ansage weiter, statt zu pausieren. Im Stumm-Modus bleibt die Ansage dann aber still. ",
     "settings.announcementTest": "Ansage testen",
     "settings.diagnostics.speech": "Audiowiedergabe",
     "settings.diagnostics.available": "verfügbar",
