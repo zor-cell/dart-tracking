@@ -226,37 +226,6 @@
     [(range)]="range"
   />
 
-  <ng-template #statusView let-inTabs>
-    @switch (status()) {
-      @case ('loading') {
-        <app-loading-state
-          [class.status]="inTabs"
-          label="Statistik wird geladen"
-          i18n-label="@@stats.loading"
-        />
-      }
-      @case ('failed') {
-        <app-load-error
-          [class.status]="inTabs"
-          message="Die Statistik konnte nicht geladen werden."
-          i18n-message="@@stats.loadFailed"
-          (retry)="reload()"
-        />
-      }
-      @case ('empty') {
-        <app-empty-state
-          [class.status]="inTabs"
-          [icon]="filtered() ? 'pi-filter-slash' : 'pi-chart-bar'"
-        >
-          @if (filtered()) {
-            <p i18n="@@stats.noMatch">Keine gewerteten Spiele für diese Auswahl.</p>
-          } @else {
-            <p i18n="@@stats.empty">Noch keine gewerteten Spiele.</p>
-          }
-        </app-empty-state>
-      }
-    }
-  </ng-template>
   <ng-template #killPanel>
     @if (kills(); as kills) {
       @if (kills.games.length > 0) {
@@ -268,56 +237,73 @@
       }
     }
   </ng-template>
-  @if (points()) {
+  @if (status()) {
+    @switch (status()) {
+      @case ('loading') {
+        <app-loading-state label="Statistik wird geladen" i18n-label="@@stats.loading" />
+      }
+      @case ('failed') {
+        <app-load-error
+          message="Die Statistik konnte nicht geladen werden."
+          i18n-message="@@stats.loadFailed"
+          (retry)="reload()"
+        />
+      }
+      @case ('empty') {
+        <app-empty-state [icon]="filtered() ? 'pi-filter-slash' : 'pi-chart-bar'">
+          @if (filtered()) {
+            <p i18n="@@stats.noMatch">Keine gewerteten Spiele für diese Auswahl.</p>
+          } @else {
+            <p i18n="@@stats.empty">Noch keine gewerteten Spiele.</p>
+          }
+        </app-empty-state>
+      }
+    }
+  } @else if (points()) {
     <p-tabs [(value)]="tab" [showNavigators]="false">
       <p-tablist>
         <p-tab value="precision" i18n="@@stats.tab.precision">Präzision</p-tab>
         <p-tab value="checkout">Checkout</p-tab>
         <p-tab value="trend" i18n="@@stats.tab.trend">Trend</p-tab>
       </p-tablist>
-      @if (status()) {
-        <ng-container *ngTemplateOutlet="statusView; context: { $implicit: true }" />
-      } @else if (totals(); as totals) {
-        <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
-          <p-tabpanel value="precision">
-            <app-precision-statistics
-              [statistics]="totals"
-              [comparison]="comparison()"
-              [listParams]="gameListParams()"
-            >
-              <ng-container *ngTemplateOutlet="killPanel" />
-            </app-precision-statistics>
-          </p-tabpanel>
-          <p-tabpanel value="checkout">
-            <app-checkout-statistics [statistics]="totals" [comparison]="comparison()" />
-          </p-tabpanel>
-          <p-tabpanel value="trend">
-            <div class="trend">
-              <app-trend-statistics
-                [figures]="pointsFigures"
-                [points]="totals.trend"
-                [otherPoints]="comparison()?.statistics?.trend ?? null"
-                [compareName]="comparison()?.name ?? null"
-              />
-              <app-visit-distribution
-                [visitScores]="totals.visitScores"
+      @if (totals(); as totals) {
+        <app-reloading [busy]="loading()" label="Statistik wird geladen" i18n-label="@@stats.loading">
+          <p-tabpanels>
+            <p-tabpanel value="precision">
+              <app-precision-statistics
+                [statistics]="totals"
                 [comparison]="comparison()"
-              />
-            </div>
-          </p-tabpanel>
-        </p-tabpanels>
+                [listParams]="gameListParams()"
+              >
+                <ng-container *ngTemplateOutlet="killPanel" />
+              </app-precision-statistics>
+            </p-tabpanel>
+            <p-tabpanel value="checkout">
+              <app-checkout-statistics [statistics]="totals" [comparison]="comparison()" />
+            </p-tabpanel>
+            <p-tabpanel value="trend">
+              <div class="trend">
+                <app-trend-statistics
+                  [figures]="pointsFigures"
+                  [points]="totals.trend"
+                  [otherPoints]="comparison()?.statistics?.trend ?? null"
+                  [compareName]="comparison()?.name ?? null"
+                />
+                <app-visit-distribution
+                  [visitScores]="totals.visitScores"
+                  [comparison]="comparison()"
+                />
+              </div>
+            </p-tabpanel>
+          </p-tabpanels>
+        </app-reloading>
       }
     </p-tabs>
   } @else if (game() === 'all') {
-    @if (status()) {
-      <ng-container *ngTemplateOutlet="statusView; context: { $implicit: false }" />
-    } @else if (overall(); as overall) {
-      <app-overall-statistics
-        [class.reloading]="loading()"
-        [attr.aria-busy]="loading()"
-        [statistics]="overall"
-        [comparison]="overallComparison()"
-      />
+    @if (overall(); as overall) {
+      <app-reloading [busy]="loading()" label="Statistik wird geladen" i18n-label="@@stats.loading">
+        <app-overall-statistics [statistics]="overall" [comparison]="overallComparison()" />
+      </app-reloading>
     }
   } @else if (game() === 'cricket') {
     <p-tabs [value]="targetTab()" (valueChange)="tab.set($any($event))" [showNavigators]="false">
@@ -325,22 +311,22 @@
         <p-tab value="precision" i18n="@@stats.tab.precision">Präzision</p-tab>
         <p-tab value="trend" i18n="@@stats.tab.trend">Trend</p-tab>
       </p-tablist>
-      @if (status()) {
-        <ng-container *ngTemplateOutlet="statusView; context: { $implicit: true }" />
-      } @else if (cricket(); as cricket) {
-        <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
-          <p-tabpanel value="precision">
-            <app-cricket-statistics [statistics]="cricket" [comparison]="cricketComparison()" />
-          </p-tabpanel>
-          <p-tabpanel value="trend">
-            <app-trend-statistics
-              [figures]="cricketFigures"
-              [points]="cricket.games"
-              [otherPoints]="cricketComparison()?.statistics?.games ?? null"
-              [compareName]="cricketComparison()?.name ?? null"
-            />
-          </p-tabpanel>
-        </p-tabpanels>
+      @if (cricket(); as cricket) {
+        <app-reloading [busy]="loading()" label="Statistik wird geladen" i18n-label="@@stats.loading">
+          <p-tabpanels>
+            <p-tabpanel value="precision">
+              <app-cricket-statistics [statistics]="cricket" [comparison]="cricketComparison()" />
+            </p-tabpanel>
+            <p-tabpanel value="trend">
+              <app-trend-statistics
+                [figures]="cricketFigures"
+                [points]="cricket.games"
+                [otherPoints]="cricketComparison()?.statistics?.games ?? null"
+                [compareName]="cricketComparison()?.name ?? null"
+              />
+            </p-tabpanel>
+          </p-tabpanels>
+        </app-reloading>
       }
     </p-tabs>
   } @else {
@@ -349,49 +335,49 @@
         <p-tab value="precision" i18n="@@stats.tab.precision">Präzision</p-tab>
         <p-tab value="trend" i18n="@@stats.tab.trend">Trend</p-tab>
       </p-tablist>
-      @if (status()) {
-        <ng-container *ngTemplateOutlet="statusView; context: { $implicit: true }" />
-      } @else if (targets(); as targets) {
-        <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
-          <p-tabpanel value="precision">
-            @if (free() ? scoring() : null; as scoring) {
-              <app-scoring-statistics [statistics]="scoring" [comparison]="scoringComparison()" />
-            } @else {
-              <app-target-statistics
-                [statistics]="targets"
-                [game]="game()"
-                [wins]="killerWins()"
-                [comparison]="targetComparison()"
-                [otherWins]="otherKillerWins()"
-              >
-                <ng-container *ngTemplateOutlet="killPanel" />
-              </app-target-statistics>
-            }
-          </p-tabpanel>
-          <p-tabpanel value="trend">
-            @if (free() ? scoring() : null; as scoring) {
-              <div class="trend">
+      @if (targets(); as targets) {
+        <app-reloading [busy]="loading()" label="Statistik wird geladen" i18n-label="@@stats.loading">
+          <p-tabpanels>
+            <p-tabpanel value="precision">
+              @if (free() ? scoring() : null; as scoring) {
+                <app-scoring-statistics [statistics]="scoring" [comparison]="scoringComparison()" />
+              } @else {
+                <app-target-statistics
+                  [statistics]="targets"
+                  [game]="game()"
+                  [wins]="killerWins()"
+                  [comparison]="targetComparison()"
+                  [otherWins]="otherKillerWins()"
+                >
+                  <ng-container *ngTemplateOutlet="killPanel" />
+                </app-target-statistics>
+              }
+            </p-tabpanel>
+            <p-tabpanel value="trend">
+              @if (free() ? scoring() : null; as scoring) {
+                <div class="trend">
+                  <app-trend-statistics
+                    [figures]="scoringFigures"
+                    [points]="scoring.games"
+                    [otherPoints]="scoringComparison()?.statistics?.games ?? null"
+                    [compareName]="scoringComparison()?.name ?? null"
+                  />
+                  <app-visit-distribution
+                    [visitScores]="scoring.visitScores"
+                    [comparison]="scoringComparison()"
+                  />
+                </div>
+              } @else {
                 <app-trend-statistics
-                  [figures]="scoringFigures"
-                  [points]="scoring.games"
-                  [otherPoints]="scoringComparison()?.statistics?.games ?? null"
-                  [compareName]="scoringComparison()?.name ?? null"
+                  [figures]="targetFigures"
+                  [points]="targets.games"
+                  [otherPoints]="targetComparison()?.statistics?.games ?? null"
+                  [compareName]="targetComparison()?.name ?? null"
                 />
-                <app-visit-distribution
-                  [visitScores]="scoring.visitScores"
-                  [comparison]="scoringComparison()"
-                />
-              </div>
-            } @else {
-              <app-trend-statistics
-                [figures]="targetFigures"
-                [points]="targets.games"
-                [otherPoints]="targetComparison()?.statistics?.games ?? null"
-                [compareName]="targetComparison()?.name ?? null"
-              />
-            }
-          </p-tabpanel>
-        </p-tabpanels>
+              }
+            </p-tabpanel>
+          </p-tabpanels>
+        </app-reloading>
       }
     </p-tabs>
   }

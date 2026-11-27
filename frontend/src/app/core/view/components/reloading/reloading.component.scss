@@ -1,0 +1,28 @@
+:host {
+  position: relative;
+  display: block;
+}
+
+/* Quick reloads keep the old content; only a slower one swaps it for the spinner. */
+:host(.reloading--busy) .reloading__content {
+  animation: reloading-hide 0s 0.15s forwards;
+}
+
+.reloading__spinner {
+  position: absolute;
+  inset: 0 0 auto;
+  visibility: hidden;
+  animation: reloading-show 0s 0.15s forwards;
+}
+
+@keyframes reloading-hide {
+  to {
+    visibility: hidden;
+  }
+}
+
+@keyframes reloading-show {
+  to {
+    visibility: visible;
+  }
+}

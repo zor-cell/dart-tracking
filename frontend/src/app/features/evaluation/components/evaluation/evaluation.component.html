@@ -135,39 +135,41 @@
         }
       </app-empty-state>
     } @else if (total(); as total) {
-      <p-tabpanels [class.reloading]="loading()" [attr.aria-busy]="loading()">
-        <p-tabpanel value="overview">
-          <app-accuracy-summary [summary]="total">
-            @if (games().length > 1) {
-              <section class="panel">
-                <h2 class="panel__title" i18n="@@game.replay.race">Verlauf</h2>
-                <app-accuracy-trend [games]="games()" />
-              </section>
-            }
-          </app-accuracy-summary>
-        </p-tabpanel>
-        <p-tabpanel value="analysis">
-          <div class="results">
-            @if (chartGroups(); as groups) {
-              @if (groups.length) {
-                <app-group-charts [summary]="total" [failures]="failures()" [groups]="groups" />
-              } @else {
-                <app-empty-state icon="pi-sitemap">
-                  <p i18n="@@eval.group.none">Kein Spiel trägt diese Angabe.</p>
-                </app-empty-state>
+      <app-reloading [busy]="loading()" label="Auswertung wird geladen" i18n-label="@@eval.loading">
+        <p-tabpanels>
+          <p-tabpanel value="overview">
+            <app-accuracy-summary [summary]="total">
+              @if (games().length > 1) {
+                <section class="panel">
+                  <h2 class="panel__title" i18n="@@game.replay.race">Verlauf</h2>
+                  <app-accuracy-trend [games]="games()" />
+                </section>
               }
-            } @else {
-              <app-accuracy-charts [summary]="total" [failures]="failures()" />
-            }
-          </div>
-        </p-tabpanel>
-        <p-tabpanel value="games">
-          <div class="results">
-            <app-game-table [games]="games()" (gameOpen)="openGame($event)" />
-            <app-mismatch-table [mismatches]="mismatches()" [games]="games()" />
-          </div>
-        </p-tabpanel>
-      </p-tabpanels>
+            </app-accuracy-summary>
+          </p-tabpanel>
+          <p-tabpanel value="analysis">
+            <div class="results">
+              @if (chartGroups(); as groups) {
+                @if (groups.length) {
+                  <app-group-charts [summary]="total" [failures]="failures()" [groups]="groups" />
+                } @else {
+                  <app-empty-state icon="pi-sitemap">
+                    <p i18n="@@eval.group.none">Kein Spiel trägt diese Angabe.</p>
+                  </app-empty-state>
+                }
+              } @else {
+                <app-accuracy-charts [summary]="total" [failures]="failures()" />
+              }
+            </div>
+          </p-tabpanel>
+          <p-tabpanel value="games">
+            <div class="results">
+              <app-game-table [games]="games()" (gameOpen)="openGame($event)" />
+              <app-mismatch-table [mismatches]="mismatches()" [games]="games()" />
+            </div>
+          </p-tabpanel>
+        </p-tabpanels>
+      </app-reloading>
     }
   </p-tabs>
 </section>

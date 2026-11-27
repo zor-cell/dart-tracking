@@ -65,6 +65,7 @@ import { BackLinkComponent } from '../../../../core/view/components/back-link/ba
 import { ListToolbarComponent } from '../../../../core/view/components/list-toolbar/list-toolbar.component';
 import { FilterSelectComponent } from '../../../../core/view/components/filter-select/filter-select.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
+import { ReloadingComponent } from '../../../../core/view/components/reloading/reloading.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { InfoHintComponent } from '../../../../core/view/components/info-hint/info-hint.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
@@ -181,6 +182,7 @@ const DEFAULT_SUGGESTIONS: FilterSuggestion[] = [
     CheckoutStatisticsComponent,
     CricketStatisticsComponent,
     LoadingStateComponent,
+    ReloadingComponent,
     EmptyStateComponent,
     ListToolbarComponent,
     LoadErrorComponent,

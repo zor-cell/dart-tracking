@@ -15,10 +15,6 @@ p-tab {
   text-align: center;
 }
 
-.status {
-  margin-top: 1.25rem;
-}
-
 /* The trend tab's panels, spaced like the other tabs'. */
 .trend {
   display: flex;
@@ -93,10 +89,4 @@ p-tab {
   width: 0.6rem;
   height: 0.6rem;
   border-radius: 50%;
-}
-
-/* New figures on their way: the old ones stay, faded, so nothing jumps. */
-.reloading {
-  opacity: 0.6;
-  transition: opacity 0.15s;
 }

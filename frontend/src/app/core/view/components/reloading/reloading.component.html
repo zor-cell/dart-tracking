@@ -1,0 +1,6 @@
+@if (busy()) {
+  <app-loading-state class="reloading__spinner" [label]="label()" [quiet]="true" />
+}
+<div class="reloading__content">
+  <ng-content />
+</div>

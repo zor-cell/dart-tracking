@@ -46,6 +46,7 @@ import { BackLinkComponent } from '../../../../core/view/components/back-link/ba
 import { ListToolbarComponent } from '../../../../core/view/components/list-toolbar/list-toolbar.component';
 import { FilterSelectComponent } from '../../../../core/view/components/filter-select/filter-select.component';
 import { LoadingStateComponent } from '../../../../core/view/components/loading-state/loading-state.component';
+import { ReloadingComponent } from '../../../../core/view/components/reloading/reloading.component';
 import { EmptyStateComponent } from '../../../../core/view/components/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../../../core/view/components/load-error/load-error.component';
 import { PeriodPickerComponent } from '../../../../core/view/components/period-picker/period-picker.component';
@@ -144,6 +145,7 @@ type EvaluationTab = (typeof TABS)[number];
     ListToolbarComponent,
     LoadErrorComponent,
     LoadingStateComponent,
+    ReloadingComponent,
     Menu,
     FilterSelectComponent,
     EmptyStateComponent,

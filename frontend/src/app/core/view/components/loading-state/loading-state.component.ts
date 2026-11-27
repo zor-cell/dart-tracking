@@ -13,4 +13,6 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 export class LoadingStateComponent {
   /** What is happening, e.g. "Spiel wird geladen"; shown with a trailing ellipsis. */
   readonly label = input.required<string>();
+  /** Shows the spinner alone, the label then only for screen readers. */
+  readonly quiet = input(false);
 }
