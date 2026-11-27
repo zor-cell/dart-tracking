@@ -35,7 +35,7 @@ PACES = {"de_DE-thorsten-medium": 1.1}
 FINALS = {"de_DE-thorsten-medium": {"f": "fff", "bˈʊl": "bˈʊll"}}
 
 # Words a model stresses oddly, as their phonemes and the ones that say them right.
-SOUNDS = {"en_GB-alan-medium": {"sˈɛvəntˌiːn": "sˈɛvəntiːn"}}
+SOUNDS = {"en_GB-alan-medium": {"sˈɛvəntˌiːn": "sˈɛvəntiːn", "ɪʲ ˈeɪt": "ɪ ˈeɪt"}}
 
 # What sets a clause apart from the next, in Piper's phonemes.
 _PAUSE = re.compile(r"([,.!?]+ *)")

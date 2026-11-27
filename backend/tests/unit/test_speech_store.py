@@ -132,6 +132,13 @@ def test_alan_says_seventeen_without_a_second_stress():
     assert respelled("Single 19", [list("sˈɪŋɡəl nˈaɪntiːn")], {}, sounds) == "Single 19"
 
 
+def test_alan_says_fifty_eight_without_a_glide():
+    sounds = speech.SOUNDS[VOICES[EN]]
+
+    assert respelled("58", [list("fˈɪftɪʲ ˈeɪt")], {}, sounds) == "[[ fˈɪftɪ ˈeɪt ]]"
+    assert respelled("59", [list("fˈɪftɪ nˈaɪn")], {}, sounds) == "59"
+
+
 def test_a_tuned_voice_names_its_clips_apart(monkeypatch):
     before = clip_id("5", DE)
     monkeypatch.setitem(speech.PACES, VOICES[DE], 1.3)
