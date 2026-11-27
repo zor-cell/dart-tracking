@@ -9,14 +9,12 @@ import { TableModule } from 'primeng/table';
 import { GameDetailDto } from '../../dto/game-detail.dto';
 import { GAME_STATUS_LABELS, GAME_STATUS_SEVERITIES, isResumable } from '../../models/game-filter';
 import { CHECKOUT_MODES } from '../../models/checkout-mode';
-import { finishOf, modeOf, playOf } from '../../models/game-settings';
+import { modeOf, playOf } from '../../models/game-settings';
 import { countsPoints, variantLabel } from '../../models/game-variant';
 import {
-  ANY_RING,
   CLOCK_ZONES,
   KILLER_ZONES,
   PERSONAL_FOCI,
-  personalHasSingles,
   TRAINING_GOALS,
   TRAINING_RINGS,
   fieldLabel,
@@ -148,8 +146,7 @@ export class GameDetailComponent {
       return `${lives}, ${optionLabel(KILLER_ZONES, settings.zone)}`;
     }
     if (settings.variant === 'personal') {
-      const anyRing = settings.anyRing && personalHasSingles(settings.focus) ? [ANY_RING] : [];
-      return [optionLabel(PERSONAL_FOCI, settings.focus), ...anyRing, `${settings.length} Darts`].join(', ');
+      return [optionLabel(PERSONAL_FOCI, settings.focus), `${settings.length} Darts`].join(', ');
     }
     if (settings.variant === 'training') {
       const goal = optionLabel(TRAINING_GOALS, settings.goal);
@@ -158,24 +155,16 @@ export class GameDetailComponent {
         random: [optionLabel(TRAINING_RINGS, settings.ring)],
         fields: [settings.fields.map(fieldLabel).join(' ')],
       }[settings.goal];
-      const anyRing = settings.anyRing ? [ANY_RING] : [];
       const repeats = settings.goal !== 'free' && settings.repeats > 1 ? [`${settings.repeats}×`] : [];
       const limit = trainingLimitLabel(settings);
-      return [goal, ...detail, ...anyRing, ...repeats, ...(limit === null ? [] : [limit])].join(', ');
+      return [goal, ...detail, ...repeats, ...(limit === null ? [] : [limit])].join(', ');
     }
-    const { catchUp, playOn } = finishOf(settings);
-    const finish = [
-      ...(catchUp ? [$localize`:@@game.new.catchUp:Mit Nachziehen`] : []),
-      ...(playOn ? [$localize`:@@game.new.playOn:Plätze ausspielen`] : []),
-    ];
     if (settings.variant === 'around_the_clock') {
-      const zone = optionLabel(CLOCK_ZONES, settings.zone);
-      const skip = settings.skip ? [$localize`:@@game.detail.skip:mit Springen`] : [];
-      return [zone, ...skip, ...finish].join(', ');
+      return optionLabel(CLOCK_ZONES, settings.zone);
     }
     const checkout = optionLabel(CHECKOUT_MODES, settings.checkoutMode);
     const kill = settings.variant === 'elimination' && settings.kill === 'double' ? ['Double Kill'] : [];
-    return [checkout, ...kill, ...finish].join(', ');
+    return [checkout, ...kill].join(', ');
   });
 
   /** Each player's result in the variant's own terms, in seat order: a value and its unit. */

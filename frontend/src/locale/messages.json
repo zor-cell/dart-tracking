@@ -351,7 +351,6 @@
     "game.detail.lives": "{$count} Leben",
     "game.new.catchUp": "Mit Nachziehen",
     "game.new.playOn": "Plätze ausspielen",
-    "game.detail.skip": "mit Springen",
     "game.detail.closed": "zu",
     "game.detail.points": "Punkte",
     "game.scoreboard.lives": "Leben",

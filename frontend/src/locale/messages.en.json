@@ -760,7 +760,6 @@
     "detection.pull": "Waiting for the pull",
     "game.detail.settings": "Rules",
     "game.detail.lives": "{$count} lives",
-    "game.detail.skip": "with skipping",
     "game.detail.closed": "closed",
     "game.detail.points": "Points",
     "game.scoreboard.lives": "Lives",
