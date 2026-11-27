@@ -151,6 +151,24 @@ def test_the_announcer_hears_each_booked_dart(room, game_id):
     assert last["visitPoints"] == 180
 
 
+def test_removing_a_dart_reopens_the_visit_just_handed_over(room, game_id, session):
+    with room(game_id) as device:
+        for _ in range(3):
+            device.throw(0)
+        device.send("next_player")
+        device.send("remove_dart", index=2, turn=0)
+
+        for _ in range(5):
+            state = device.next("game_state")
+
+    assert (len(state["turns"]), state["currentPlayerIndex"], darts(state)) == (1, 0, ["0", "0"])
+    kinds = session.sql(
+        "SELECT kind FROM game_events WHERE game_id = :id AND kind IN ('visit_reopened', 'dart_removed') ORDER BY id",
+        id=game_id,
+    )
+    assert [row[0] for row in kinds] == ["visit_reopened", "dart_removed"]
+
+
 def test_a_command_that_changes_nothing_is_not_broadcast(room, game_id):
     with room(game_id) as device:
         device.send("remove_dart", index=0)

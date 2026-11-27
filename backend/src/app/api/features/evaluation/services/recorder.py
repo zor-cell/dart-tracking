@@ -115,6 +115,17 @@ def for_command(command: GameCommand, *, camera_armed: bool) -> Recording:
     return record
 
 
+def for_reopening(at: VisitPosition, *, camera_armed: bool) -> GameEvent:
+    """The event a correction leaves behind when it goes back into the visit handed over."""
+    return GameEvent(
+        kind=GameEventKind.VISIT_REOPENED,
+        turn_index=at.turn_index,
+        player_index=at.player_index,
+        accepted=True,
+        camera_armed=camera_armed,
+    )
+
+
 def for_detection(dart: Dart, client_id: str, metrics: dict[str, float]) -> Recording:
     """The event one located throw leaves behind."""
 

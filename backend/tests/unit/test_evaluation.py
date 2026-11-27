@@ -100,10 +100,29 @@ def test_replay_follows_a_reopened_visit():
         ]
     )
 
-    reopened, left = visits
+    [reopened] = visits
     assert [e.label for e in reopened.accepted] == ["S1", "T20"]
     assert [e.label for e in reopened.claimed] == ["S20", "S1"]
-    assert not left.tracked
+
+
+def test_replay_takes_a_dart_out_of_the_visit_a_removal_reopened():
+    visits = replay(
+        [
+            event(K.MANUAL, (0, 0)),
+            event(K.MANUAL, (0, 0)),
+            event(K.MANUAL, (0, 0)),
+            event(K.NEXT_PLAYER, camera_armed=True),
+            event(K.VISIT_REOPENED, player=1, turn=1),
+            event(K.DART_REMOVED, player=1, turn=0, dart_index=2),
+            event(K.DETECTED, (20, 1)),
+            event(K.NEXT_PLAYER, camera_armed=True),
+            event(K.DETECTED, (19, 1), player=1, turn=1),
+        ]
+    )
+
+    first, second = visits
+    assert [e.label for e in first.accepted] == ["MISS", "MISS", "S20"]
+    assert (second.player_index, [e.label for e in second.accepted]) == (1, ["S19"])
 
 
 def test_replay_books_the_misses_a_cleared_board_filled_in():

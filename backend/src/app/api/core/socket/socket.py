@@ -346,9 +346,10 @@ async def _handle_game_command(
     pending: CorrectionPendingDto | None = None
     # Whether the command changed the open visit rather than a closed one.
     open_visit = True
+    reopened = False
 
     def mutate(game: Game) -> None:
-        nonlocal filled, reset_before, pending, open_visit
+        nonlocal filled, reset_before, pending, open_visit, reopened
         reset_before = game.just_reset()
         if not command.is_current(game):
             logger.info("[socket] refused %s made against an outdated visit", command.type)
@@ -368,6 +369,7 @@ async def _handle_game_command(
                     command.index, command.to_index, command.turn, command.confirmed
                 )
             case RemoveDartDto():
+                reopened = game.reopens(command.turn)
                 consequence = game.remove_dart(command.index, command.turn, command.confirmed)
             case NextPlayerDto():
                 filled = game.next_player()
@@ -378,7 +380,12 @@ async def _handle_game_command(
         handover = recorder.for_handover(None, camera_armed=armed)
         record: recorder.Recording = lambda at, changed: handover(at, changed, filled)
     else:
-        record = recorder.for_command(command, camera_armed=armed)
+        correction = recorder.for_command(command, camera_armed=armed)
+        record = lambda at, changed: (
+            [recorder.for_reopening(at, camera_armed=armed), correction(at, changed)]
+            if reopened
+            else correction(at, changed)
+        )
     applied = await _apply(game_id, mutate, record)
     if applied is None:
         return

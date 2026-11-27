@@ -551,7 +551,8 @@ export class GameComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Take the picked dart out: from the open visit, or as a miss from an earlier one. */
+  /** Take the picked dart out: from the open visit or the one just handed over, which
+   * opens again, else as a miss. */
   protected deleteDart(): void {
     const selected = this.selectedDart();
     if (selected !== null) {

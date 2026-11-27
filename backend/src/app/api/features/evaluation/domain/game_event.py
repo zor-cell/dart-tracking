@@ -16,7 +16,7 @@ class GameEventKind(StrEnum):
     MANUAL = "manual"  # a device booked a dart by hand
     MISS_FILLED = "miss_filled"  # a handover booked a dart the visit lacked as a miss
     UNDO = "undo"  # read from older logs only
-    VISIT_REOPENED = "visit_reopened"  # an undo on an empty visit went back to the previous one
+    VISIT_REOPENED = "visit_reopened"  # an undo or a removed dart went back to the visit handed over
     DART_REMOVED = "dart_removed"  # a device took one dart out of a visit
     DART_REPLACED = "dart_replaced"  # a device booked another field for one dart
     DART_MOVED = "dart_moved"  # a device moved one dart to another place in the visit

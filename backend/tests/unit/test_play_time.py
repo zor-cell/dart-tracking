@@ -31,6 +31,7 @@ def test_a_correction_in_a_closed_visit_keeps_its_times():
     game.register_dart(dart("20"))
     game.stamp(at(5))
     game.next_player()
+    game.register_dart(dart("5"))
     game.stamp(at(10))
     game.replace_dart(0, dart("T20"), turn=0)
     game.remove_dart(1, turn=0)

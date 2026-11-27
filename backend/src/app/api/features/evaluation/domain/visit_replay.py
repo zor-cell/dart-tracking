@@ -68,6 +68,9 @@ def replay(events: Iterable[GameEvent]) -> list[Visit]:
             case GameEventKind.UNDO if event.accepted:
                 open_index = _undo(accepted, corrected, open_index)
             case GameEventKind.VISIT_REOPENED if event.accepted:
+                if open_index and not (claimed[open_index] or accepted[open_index] or attempts[open_index]):
+                    players.pop(open_index, None)
+                    armed.pop(open_index, None)
                 open_index = max(open_index - 1, 0)
             case GameEventKind.DART_REMOVED if event.accepted:
                 slot = _slot(event, open_index)

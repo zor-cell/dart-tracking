@@ -150,3 +150,55 @@ def test_a_correction_outside_the_visits_changes_nothing():
     assert game.replace_dart(0, dart("T20"), turn=5) is None
     assert game.remove_dart(3, turn=0) is None
     assert game.revision == revision
+
+
+def test_removing_a_dart_from_the_visit_just_handed_over_opens_it_again():
+    game = new_game()
+    play(game, "T20 T20 T20", "0 0 0")
+    game.next_player()
+    turns = len(game.turns)
+
+    game.remove_dart(2, turn=1)
+
+    assert len(game.turns) == turns - 1
+    assert game.current_player.id == 1
+    assert labels(game.current_turn) == ["0", "0"]
+    assert game.current_turn.ended_at is None
+    game.register_dart(dart("T20"))
+    assert game.remaining(1) == 241
+
+
+def test_a_removal_reopens_a_bust_and_lets_the_visit_go_on():
+    game = new_game()
+    play(game, "T20 T20 T20", "0 0 0", "T20 T20 T20")
+    game.next_player()
+    assert game.turns[2].busted
+
+    game.remove_dart(1, turn=2)
+
+    assert game.current_player.id == 0
+    assert not game.current_turn.busted
+    assert game.remaining(0) == 61
+
+
+def test_a_visit_stays_closed_once_the_next_one_has_darts():
+    game = new_game()
+    play(game, "T20 T20 T20", "5")
+
+    game.remove_dart(0, turn=0)
+
+    assert game.current_player.id == 1
+    assert labels(game.turns[0]) == ["0", "T20", "T20"]
+
+
+def test_only_the_visit_just_handed_over_reopens():
+    game = new_game()
+    play(game, "T20 T20 T20", "0 0 0")
+    game.next_player()
+    turns = len(game.turns)
+
+    game.remove_dart(0, turn=0)
+
+    assert len(game.turns) == turns
+    assert game.current_player.id == 0
+    assert labels(game.turns[0]) == ["0", "T20", "T20"]

@@ -491,11 +491,16 @@ class Game:
     def remove_dart(
         self, index: int, turn: int | None = None, confirmed: bool = False
     ) -> CorrectionConsequence | None:
-        """Take one dart out of a visit. The open one loses it; a closed one keeps
-        three darts, so there it becomes a miss without a tip."""
+        """Take one dart out of a visit. The open one loses it, and so does the one
+        just handed over, which opens again; an older one becomes a miss without a tip."""
         at = self._visit_at(turn)
         if at is None or not 0 <= index < len(darts := self.turns[at].darts):
             return None
+        if self.reopens(at):
+            self.turns.pop()
+            self.turns[at].ended_at = None
+            self.current_player_index = self._seat_of(self.current_turn.player_id)
+            at = len(self.turns) - 1
         if at == len(self.turns) - 1:
             return self._correct(at, darts[:index] + darts[index + 1 :], confirmed)
         miss = Dart(value=0, multiplier=0, thrown_at=darts[index].thrown_at)
@@ -526,6 +531,17 @@ class Game:
         darts = list(self.turns[at].darts)
         darts.insert(to_index, darts.pop(index))
         return self._correct(at, darts, confirmed)
+
+    def reopens(self, turn: int | None) -> bool:
+        """Whether taking a dart out of visit `turn` goes back into it: the visit just
+        handed over, while nobody has thrown since."""
+        return (
+            turn is not None
+            and turn == len(self.turns) - 2
+            and not self.over
+            and not self.current_turn.darts
+            and not self.shadow_darts
+        )
 
     def _visit_at(self, turn: int | None) -> int | None:
         """The visit a correction addresses: the open one unless named."""
