@@ -71,6 +71,12 @@ services:
     logging: *logging
     ports:
       - "127.0.0.1:10020:8080" # only cloudflared on the host connects
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/de/index.html"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   postgres:
     image: postgres:18-alpine
@@ -115,6 +121,12 @@ services:
       - ./s3/garage.toml:/etc/garage.toml:ro
       - garage_meta:/var/lib/garage/meta
       - garage_data:/var/lib/garage/data
+    healthcheck:
+      test: ["CMD", "/garage", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   # Lays out the node, brings in the bucket and the backend's key and moves the frames still on disk into the bucket, then exits.
   garage-init:
