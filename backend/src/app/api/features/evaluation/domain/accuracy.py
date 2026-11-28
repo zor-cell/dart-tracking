@@ -20,6 +20,7 @@ from app.api.features.evaluation.domain.alignment import (
 )
 from app.api.features.calibration.domain.camera_angle import CameraAngle
 from app.api.features.game.domain.correction import keeps_tip
+from app.api.features.game.domain.game import DARTS_PER_TURN
 from app.api.features.evaluation.domain.game_event import GameEvent, GameEventKind
 from app.api.features.evaluation.domain.visit_replay import Visit
 
@@ -40,7 +41,7 @@ class Judgement:
     game_id: str
     turn_index: int
     position: int  # place within the visit, 1-based
-    # Which dart of the visit, 1-based: its throw, or for a phantom its booking.
+    # Which dart of the visit, 1-based: its throw, for a phantom the one it came during.
     dart: int
     outcome: DartOutcome
     tracked: GameEvent | None
@@ -199,25 +200,31 @@ class Accuracy:
 
 
 def judge(game_id: str, visit: Visit) -> list[Judgement]:
-    """Align one visit's claimed darts against the ones the players accepted."""
+    """Align one visit's claimed darts against the ones the players accepted. A
+    phantom counts as the throw it was booked during."""
     tracked = [event.label for event in visit.claimed]
     expected = [event.label for event in visit.accepted]
 
-    return [
-        Judgement(
-            game_id=game_id,
-            turn_index=visit.turn_index,
-            position=position,
-            dart=(right if right is not None else left or 0) + 1,
-            outcome=outcome_of(
-                tracked[left] if left is not None else None,
-                expected[right] if right is not None else None,
-            ),
-            tracked=visit.claimed[left] if left is not None else None,
-            expected_label=expected[right] if right is not None else None,
+    judgements = []
+    thrown = 0
+    for position, (left, right) in enumerate(align(tracked, expected), start=1):
+        if right is not None:
+            thrown = right + 1
+        judgements.append(
+            Judgement(
+                game_id=game_id,
+                turn_index=visit.turn_index,
+                position=position,
+                dart=thrown if right is not None else min(thrown + 1, DARTS_PER_TURN),
+                outcome=outcome_of(
+                    tracked[left] if left is not None else None,
+                    expected[right] if right is not None else None,
+                ),
+                tracked=visit.claimed[left] if left is not None else None,
+                expected_label=expected[right] if right is not None else None,
+            )
         )
-        for position, (left, right) in enumerate(align(tracked, expected), start=1)
-    ]
+    return judgements
 
 
 def summarise(games: int, visits: list[Visit], judgements: list[Judgement]) -> Accuracy:

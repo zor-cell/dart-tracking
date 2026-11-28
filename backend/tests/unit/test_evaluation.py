@@ -66,6 +66,27 @@ def test_phantom_dart():
     ]
 
 
+def test_a_phantom_counts_as_the_throw_it_came_during():
+    [visit] = replay(
+        [
+            event(K.DETECTED, (20, 1)),
+            event(K.DETECTED, (5, 1)),
+            event(K.DETECTED, (1, 1)),
+            event(K.DART_REMOVED, dart_index=2),
+            event(K.DETECTED, (18, 1)),
+        ]
+    )
+
+    darts = [(j.dart, j.outcome) for j in judge("game", visit)]
+
+    assert darts == [
+        (1, DartOutcome.CORRECT),
+        (2, DartOutcome.CORRECT),
+        (3, DartOutcome.PHANTOM),
+        (3, DartOutcome.CORRECT),
+    ]
+
+
 def test_replay_keeps_the_claim_that_undo_took_back():
     visits = replay(
         [

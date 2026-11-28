@@ -73,7 +73,7 @@ services:
       - "127.0.0.1:10020:8080" # only cloudflared on the host connects
     depends_on:
       backend:
-        condition: service_started # nginx resolves the backend's address once at start
+        condition: service_started
         restart: true
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/de/index.html"]
