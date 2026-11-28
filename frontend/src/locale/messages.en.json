@@ -397,7 +397,6 @@
     "game.calibrationFailed": "Calibration failed",
     "game.uncalibrated": "Board not calibrated",
     "game.showCamera": "Show the camera picture large",
-    "game.framesNotice": "This game stores its camera images, so the detection gets better. Whoever set up the game can turn this off in the settings.",
     "game.useAsCamera": "Use this device as the camera",
     "game.recalibrate": "Recalibrate",
     "game.calibrating": "Calibrating …",
